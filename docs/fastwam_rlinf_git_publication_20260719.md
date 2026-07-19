@@ -51,11 +51,39 @@ outputs, model weights, environments, datasets, caches, and credentials.
 5. Added explicit ignore rules for regenerated checkpoints, weights, results,
    caches, and experiment trackers. Existing source/config/test paths remain
    trackable.
-
-The repository-creation, commit, push, and final verification results are
-completed in the final section below after the corresponding operations run.
+6. **14:01 CST — identity and remote creation.** Set repository-local author
+   identity to `Yutenji-Nyamu <1842710211@qq.com>`. Created the public GitHub
+   repository and added it as remote `personal`, while preserving the official
+   RLinf repository as `origin`.
+7. Staged only an explicit allowlist of integration files rather than using a
+   blanket `git add -A`. The first `git diff --check` found CRLF in the uploaded
+   `.gitignore` and one trailing space in each of three GRPO YAML files. These
+   were mechanically normalized without changing a configuration value; the
+   repeated whitespace check passed.
+8. Audited the staged tree: 27 files, 6,348 inserted lines and 2 deleted lines;
+   no staged file exceeded 5 MiB; no common GitHub/Hugging Face credential
+   pattern was found; both shell launchers passed `bash -n`.
+9. **14:03 CST — primary commit.** Created the integration commit. Its first
+   local form recorded the PPO launcher as mode `100644`; because the GRPO and
+   official shell entrypoints are executable, the commit was amended before
+   any push so both Fast-WAM launchers are mode `100755`. The final primary
+   commit is `768e0243e4dafedea6c92b3f37b652c51efb5a2e`.
+10. **14:03 CST — first push.** Pushed the integration branch to
+    `personal/main`, set the upstream tracking branch, and verified with both
+    `git ls-remote` and GitHub metadata that `main` points to the primary commit
+    and the repository is public.
 
 ## Final publication result
 
-Pending at the time of the first code commit; completed by the follow-up
-documentation commit after remote verification.
+- Public repository: `https://github.com/Yutenji-Nyamu/rlinf_fastwam`
+- Default branch: `main`
+- Primary integration commit:
+  `768e0243e4dafedea6c92b3f37b652c51efb5a2e`
+- `origin`: `https://github.com/RLinf/RLinf.git` (preserved upstream)
+- `personal`: `https://github.com/Yutenji-Nyamu/rlinf_fastwam.git`
+- Training outputs and external Fast-WAM source/weights remain outside Git.
+- No training process, Ray worker, model file, checkpoint, or experiment
+  configuration value was changed by the publication workflow.
+
+This final record is committed and pushed as a documentation-only follow-up to
+the primary integration commit.
