@@ -491,6 +491,10 @@ class MultiStepRolloutWorker(Worker):
                 kwargs = {"mode": "eval"}
             else:
                 kwargs = {"mode": mode}
+        elif getattr(self.hf_model, "rlinf_accepts_rollout_mode", False):
+            kwargs = dict(kwargs)
+            loss_type = self.algorithm_cfg.get("loss_type", "actor")
+            kwargs["mode"] = "eval" if loss_type == "embodied_dagger" else mode
 
         if SupportedModel(self.model_cfg.model_type) in [
             SupportedModel.CNN_POLICY,

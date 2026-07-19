@@ -56,7 +56,13 @@ class FSDP2Strategy(FSDPStrategyBase):
         mp_policy = MixedPrecisionPolicy(
             param_dtype=param_dtype,
             reduce_dtype=reduce_dtype,
-            cast_forward_inputs=True,
+            # Keep the historical behavior by default. Policies whose replay
+            # contract contains FP32 probability states (for example Fast-WAM
+            # Flow-SDE chains) can opt out and perform their own model-boundary
+            # casts without quantizing the behavior trajectory.
+            cast_forward_inputs=bool(
+                self.cfg.fsdp_config.get("cast_forward_inputs", True)
+            ),
         )
 
         offload_policy = (
