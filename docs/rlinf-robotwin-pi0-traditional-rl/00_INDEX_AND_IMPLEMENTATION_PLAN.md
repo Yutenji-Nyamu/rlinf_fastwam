@@ -463,8 +463,9 @@ PYTHONDONTWRITEBYTECODE=1 \
 - 已冻结：H=50、N=20、单主相机小 actor/critic + 三相机冻结 π0、14D state/action、32D latent repeat-H、flat replay 25k、warm-up 500、UTD20、上述 reward/termination/resume/eval 语义。
 - 暂缓：N=50、三视角小 actor/critic、每步/分段 latent、world-size 变化 resume。
 - 主体实现、基础检查和 fresh/resume smoke 已完成；实现提交
-  `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已包含在当前服务器/云端 HEAD
-  `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`。
+  `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已包含在本次 smoke 使用的代码快照
+  `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；smoke 结果文档随后作为 docs-only
+  commit 推送到同一功能分支。
 - 当前停在正式训练前：先讨论是否追加 micro 64/128 吞吐 A/B，并冻结首段
   `max_steps`、`val_check_interval=13`、checkpoint 周期/保留策略和 run-scoped
   `save_path`；随后重新展示 formal resolved config、精确命令、输出目录、资源和停止条件，
