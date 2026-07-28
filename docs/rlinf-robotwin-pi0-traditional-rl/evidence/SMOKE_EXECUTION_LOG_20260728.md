@@ -276,5 +276,21 @@
    改用 trainer/shadow/replay/RNG/DCP2 连续性作强证据，全部通过。
 3. 一次本地 helper 命令因嵌套 awk 引号被 argparse 拒绝，服务器未执行；随后改用完整
    command-file 取得同一只读数据。
-4. 第一份终态 `pgrep` 输出匹配到正在运行的审计脚本自身；随后用 bracketed pattern
-   避免自匹配，确认目标进程残留为 0。
+4. 两次终态 `pgrep` 的宽正则匹配到正在运行的审计脚本自身；没有据此停止任何进程，
+   随后把训练/Ray 与 Git 进程拆成不会跨命令行自匹配的精确检查，确认残留为 0。
+5. 一次直接传给 helper 的 `ps | grep` 命令被多层引号拆坏，远端只产生
+   `command not found`，没有写状态；改用 command-file 后正确识别到一个由客户端超时
+   留下的本任务 `git push`。它随后按自身网络超时退出，复查无遗留。
+6. smoke 结果的第一份 docs-only commit 正常推送；一行 provenance 修正的普通 push
+   两次遇到 GitHub 443 超时。未改 remote、DNS 或提交历史，最终只对该次命令指定
+   `HTTP/1.1` 与 60 秒进程级 timeout 后推送成功。
+
+## 6. 文档与云端闭环
+
+- smoke 结果、主计划状态和批准包状态作为 docs-only commit
+  `0346966d0b11225e3fb3c49d7a990bc5479dec9c` 推送到
+  `personal/codex/dsrl-pi0-robotwin`。
+- 随后用 docs-only commit `ff0d8d2270aa5ec4f0934c997f53118460bf8152` 把“当前 HEAD”
+  的自指表述改成稳定的“smoke 使用代码快照”；没有修改任何算法、配置或产物。
+- 最终复核时功能分支 HEAD 与 upstream 一致、worktree clean，两卡空闲，训练/Ray/monitor
+  和 Git push 进程均无残留。仓库名和服务器目录均未改动。

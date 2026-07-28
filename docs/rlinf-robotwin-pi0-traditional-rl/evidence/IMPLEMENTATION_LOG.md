@@ -436,3 +436,6 @@ PYTHONDONTWRITEBYTECODE=1
 - 并发建议：第一版保留 2 GPU、4 env、UTD20、micro 64。micro 128 只做可选窄吞吐 A/B；
   formal 启动前必须替换 `max_steps=-1`、`val_check_interval=-1`、`save_interval=10`
   和相对 `save_path` 占位值，并重新给出正式批准包。
+- 文档闭环：smoke 结果和状态更新先作为 docs-only commit `0346966d` 推送；随后
+  `ff0d8d22` 只修正一处会随提交自我过时的 HEAD 表述。普通 push 一度遇到 GitHub 443
+  timeout；没有改 remote/DNS/历史，最终用单次命令级 HTTP/1.1 和 60 秒 timeout 推送成功。
