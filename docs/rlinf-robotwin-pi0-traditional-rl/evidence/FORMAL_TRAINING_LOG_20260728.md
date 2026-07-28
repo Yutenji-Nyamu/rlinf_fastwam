@@ -7,14 +7,13 @@
 
 ## 0. 当前状态
 
-- 状态：训练继续运行；截至 2026-07-28 19:29:08 CST，最新完整记录为 global step 15，
-  step 16 已开始。
-- 进度：global replay resident 585；warm-up 已在 step 13 越过；learned SAC 累计
-  2,260 optimizer updates。
+- 状态：训练继续运行；截至 2026-07-28 20:08:11 CST，最新完整记录为 global step 20。
+- 进度：global replay resident 761；约 15,220 requested primitive interactions；
+  learned SAC 累计 5,780 optimizer updates。
 - 进程：driver、2 actor、2 rollout、2 env workers 仍存活；`oom=0`、`oom_kill=0`，
   已报告 loss/Q/alpha/gradient 均有限。
 - 本次静态状态报告：
-  [`FORMAL_STATUS_REPORT_STEP15_20260728.md`](./FORMAL_STATUS_REPORT_STEP15_20260728.md)。
+  [`FORMAL_STATUS_REPORT_STEP20_20260728.md`](./FORMAL_STATUS_REPORT_STEP20_20260728.md)。
 - 启动时间：2026-07-28 18:54:12 CST。
 - 服务器：`root@autodl-container-nekaqbwt43-6ce5babb`。
 - 分支：`codex/dsrl-pi0-robotwin`。
@@ -110,11 +109,12 @@ run root 内已创建：
 4. `memory.events max` 增量、OOM、env/actor/rollout RSS。
 
 其中 `inactive_file` 是 `file` 的子集，不能重复堆叠；cgroup 总量与进程 RSS 也不能相加。
-当前覆盖到 step 15 / 19:29 的手机可读快照为：
+当前覆盖到 step 20 / 20:09 的手机可读快照为：
 
-- [`FORMAL_PROGRESS_CURVES_STEP15_20260728.png`](./FORMAL_PROGRESS_CURVES_STEP15_20260728.png)；
-- [`FORMAL_OPTIMIZATION_CURVES_STEP15_20260728.png`](./FORMAL_OPTIMIZATION_CURVES_STEP15_20260728.png)；
-- [`FORMAL_RESOURCE_CURVES_STEP15_20260728.png`](./FORMAL_RESOURCE_CURVES_STEP15_20260728.png)。
+- [`FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP20_20260728.png`](./FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP20_20260728.png)；
+- [`FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png`](./FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png)；
+- [`FORMAL_RESOURCE_CURVES_STEP20_20260728.png`](./FORMAL_RESOURCE_CURVES_STEP20_20260728.png)；
+- [`FORMAL_STEP_TIMING_STEP20_20260728.csv`](./FORMAL_STEP_TIMING_STEP20_20260728.csv)。
 
 启动期早期图只保留作初始化追溯，不用它替代最新训练全史。
 
@@ -249,6 +249,197 @@ memory PSI 持续升高并伴随 cycle/DCP 明显变慢，或磁盘跌破安全�
 - 最后一次核验最初用 PowerShell 双引号拼接远程命令，本地提前展开了 `$()`，因此 helper
   在连接前拒绝参数；没有远程副作用。改用固定 command file 后，2026-07-28 19:44:02 CST
   确认 driver 仍存活、服务器 worktree clean。随后停止轮询。
+
+### FORMAL-010　step-20 指标刷新、成功率与逐 step 用时
+
+- 用户要求：再次审阅全部主要指标，绘制成功率/采样效率/优化/资源趋势；解释 eval 周期、
+  是否能证明采样效率优势，以及总 step 数和每个 step 的实际用时。
+- 现场边界：2026-07-28 20:08:11 CST；最新完整 metric table 为 step 20，资源 CSV
+  覆盖到 20:09:12。
+- 现场：driver、2 actor、2 rollout、2 env workers 存活；branch/HEAD/upstream 为
+  `codex/dsrl-pi0-robotwin@95e62518`，worktree clean；OOM/OOM-kill 为 0。
+
+#### FORMAL-010.1　服务器只读快照命令
+
+密码只通过当前 PowerShell 进程的 `SEETA_SSH_PASSWORD` 注入；流水账按安全规则以
+`<process-only secret>` 代替真实值。
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_metrics_refresh_snapshot.sh'
+```
+
+`remote_dsrl_metrics_refresh_snapshot.sh` 原样如下：
+
+```bash
+set -euo pipefail
+
+REPO=/root/autodl-tmp/RLinf_fastwam_rlinf
+RUN=/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1
+
+echo "TIME=$(date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "HOST=$(hostname)"
+echo "USER=$(id -un)"
+
+cd "$REPO"
+echo "BRANCH=$(git branch --show-current)"
+echo "HEAD=$(git rev-parse HEAD)"
+echo "UPSTREAM=$(git rev-parse '@{upstream}')"
+echo "STATUS_BEGIN"
+git status --short
+echo "STATUS_END"
+
+PID=$(cat "$RUN/formal.pid")
+kill -0 "$PID"
+echo "DRIVER_PID=$PID"
+echo "DRIVER_ALIVE=1"
+pgrep -c -f '^ray::EmbodiedSACFSDPPolicy' | awk '{print "ACTOR_WORKERS=" $1}'
+pgrep -c -f '^ray::MultiStepRolloutWorker' | awk '{print "ROLLOUT_WORKERS=" $1}'
+pgrep -c -f '^ray::EnvWorker' | awk '{print "ENV_WORKERS=" $1}'
+
+echo "LAST_GLOBAL_STEP"
+grep 'Global Step:' "$RUN/formal_driver.log" | tail -n 1
+echo "LAST_REPLAY"
+grep 'sac/global_resident_transitions=' "$RUN/formal_driver.log" | tail -n 1
+echo "LAST_LOG_TIME=$(stat -c '%y' "$RUN/formal_driver.log")"
+echo "LOG_BYTES=$(stat -c '%s' "$RUN/formal_driver.log")"
+
+echo "GPU"
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu,power.draw \
+  --format=csv,noheader,nounits
+echo "CGROUP_CURRENT=$(cat /sys/fs/cgroup/memory.current)"
+echo "CGROUP_MAX=$(cat /sys/fs/cgroup/memory.max)"
+grep -E '^(anon|file|inactive_file|active_file) ' /sys/fs/cgroup/memory.stat
+cat /sys/fs/cgroup/memory.events
+cat /sys/fs/cgroup/memory.pressure
+
+echo "CHECKPOINTS"
+find "$RUN" -type d -path '*/checkpoints/global_step_*' -printf '%TY-%Tm-%Td %TH:%TM:%TS %p\n' | sort
+echo "CHECKPOINT_SIZES"
+find "$RUN" -type d -path '*/checkpoints/global_step_*' -print0 |
+  xargs -0 -r du -sh
+echo "EVENT_FILES"
+find "$RUN/tensorboard" -maxdepth 1 -type f -name 'events.out.tfevents.*' -printf '%s %p\n'
+echo "RUN_SIZE=$(du -sh "$RUN" | awk '{print $1}')"
+df -BG --output=avail /root/autodl-tmp | tail -n 1 | awk '{print "DISK_FREE=" $1}'
+sha256sum "$RUN/FORMAL_RUN_VALIDATED_RESOLVED_20260728.yaml"
+```
+
+#### FORMAL-010.2　日志与采样文件下载命令
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $run='/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1'; $dst='C:\Users\86136\Documents\rl\.tmp'; python $helper get "$run/formal_driver.log" "$dst/dsrl_refresh_formal_driver.log"; python $helper get "$run/metrics.log" "$dst/dsrl_refresh_metrics.log"; python $helper get "$run/tensorboard/events.out.tfevents.1785236070.autodl-container-nekaqbwt43-6ce5babb.70062.0" "$dst/dsrl_refresh_events.tfevents"; python $helper get "$run/resource_monitor/resources.csv" "$dst/dsrl_refresh_resources.csv"; python $helper get "$run/resource_monitor/cgroup_detail.csv" "$dst/dsrl_refresh_cgroup_detail.csv"; python $helper get "$run/resource_monitor/peak.txt" "$dst/dsrl_refresh_peak.txt"
+```
+
+#### FORMAL-010.3　图表、摘要和 timing CSV 生成命令
+
+```powershell
+python 'C:\Users\86136\Documents\rl\.tmp\build_dsrl_formal_step20_plots.py' --events 'C:\Users\86136\Documents\rl\.tmp\dsrl_refresh_events.tfevents' --success-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP20_20260728.png' --optimization-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png' --summary-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_refresh_summary_step20.json' --timing-csv-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STEP_TIMING_STEP20_20260728.csv'
+
+python 'C:\Users\86136\Documents\rl\.tmp\build_dsrl_formal_resource_plot.py' --resources 'C:\Users\86136\Documents\rl\.tmp\dsrl_refresh_resources.csv' --cgroup 'C:\Users\86136\Documents\rl\.tmp\dsrl_refresh_cgroup_detail.csv' --out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP20_20260728.png'
+```
+
+上述命令是本次实际执行路径；验证后将两份脚本原样归档到
+`evidence/tools/build_dsrl_formal_step20_plots.py` 和
+`evidence/tools/build_dsrl_formal_resource_plot.py`，供下次从最新 event/CSV 重建，避免
+只留下不可复现的 PNG。
+
+归档后入口复核命令与结果：
+
+```powershell
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' --help; python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py' --help
+```
+
+两者均退出 0 并展示预期参数。
+
+#### FORMAL-010.4　关键结果
+
+- 总预算是 650 collection cycles，不是 650 optimizer updates。eval 每 13 cycles，
+  DCP 每 65 cycles。
+- warm-up step 1–12 平均 40.1 秒；step 13 首次更新并评估为 571.4 秒；learned step
+  14–20 平均 400.4 秒，范围 361.4–445.0 秒。完整逐 step 数值在 timing CSV。
+- Gaussian train phase 为 2/52；learned train phase 为 8/28；最新 trailing-20 为 30%。
+  它是积极的 run 内方向，不是 paired A/B。
+- formal eval 当前只有 step 13 的 1/12；Wilson 95% 区间约 1.5%–35.4%。下一次为 step 26。
+- critic loss 升到 0.880，是当前首要观察项；critic grad 4.84 低于 clip=10，Qπ/Qdata
+  已从最低点回到 -11.25/-11.60，全部 finite。
+- GPU 峰值未变；cgroup anon 约 40.9 GiB、低于初始化峰值，reclaim events 已平台，
+  OOM=0，未改变并发。
+
+#### FORMAL-010.5　可视化 QA 问题与处理
+
+- 三张 PNG 均用本地 `view_image` 逐张检查，轴、图例和标注无重叠。
+- inline success 图先检查 fragment：无 `doctype/html/body`、无转义引号或字面 `\n`，
+  root id 唯一，文件约 12 KiB。
+- 第一次 standalone render 目标写到 `C:\tmp`，因当前 sandbox 身份无该目录写权限而
+  `PermissionError`；没有项目或服务器副作用。改写到项目 `.tmp` 后成功：
+
+```powershell
+python 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' 'E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-success-sample-efficiency-step20.html' 'C:\Users\86136\Documents\rl\.tmp\dsrl-success-sample-efficiency-step20-preview.html'
+```
+
+- Playwright 默认 Chromium 未安装；改用系统 Chrome 的自动 preview 又在工具 30 秒边界超时。
+  没有安装浏览器或依赖，也没有修改训练环境。保留通过的 fragment 结构检查与静态 PNG
+  视觉检查，不把 preview 工具问题误记为训练问题。
+- 文档末尾空白与 timing 行数检查最终输出
+  `TRAILING_WHITESPACE=0`、`TIMING_ROWS=20`；报告首部最初的 Markdown 双空格已改成空引用行。
+
+### FORMAL-011　step-20 文档同步、验证与云端收口
+
+- 写入边界：只同步报告、图表、timing CSV 和复现这些报告所需的脚本；不改生产代码、
+  source config、run root、训练进程或参数。
+- 同步前 gate：服务器仍为
+  `codex/dsrl-pi0-robotwin@95e6251841f6d7256ee2c13de053d4618e02e00e`，
+  upstream 相同、worktree clean，driver 和 worker 均存活。
+- 为避免聊天中省略命令细节，现场快照、服务器验证、commit/push 三份 shell 均原样归档到
+  `evidence/tools/`。密码仍只通过当前 PowerShell 进程注入，记录中以
+  `<process-only secret>` 代替。
+
+精确上传命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'; $pairs=@(
+  @('C:\Users\86136\Documents\rl\HANDOFF.md',"$repo/HANDOFF.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\00_INDEX_AND_IMPLEMENTATION_PLAN.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STATUS_REPORT_STEP20_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP20_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP20_20260728.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP20_20260728.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP20_20260728.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_RESOURCE_CURVES_STEP20_20260728.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STEP_TIMING_STEP20_20260728.csv',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STEP_TIMING_STEP20_20260728.csv"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/build_dsrl_formal_step20_plots.py"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/build_dsrl_formal_resource_plot.py"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_metrics_refresh_snapshot.sh',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/remote_dsrl_metrics_refresh_snapshot.sh"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_step20_docs_validate.sh',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/remote_dsrl_step20_docs_validate.sh"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_step20_docs_commit.sh',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/remote_dsrl_step20_docs_commit.sh")
+); foreach ($pair in $pairs) { python $helper put $pair[0] $pair[1]; if ($LASTEXITCODE -ne 0) { throw "upload failed: $($pair[0])" } }
+```
+
+精确验证与收口命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_step20_docs_validate.sh'
+
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_step20_docs_commit.sh'
+```
+
+验证脚本检查 branch/HEAD/upstream、driver 存活、`git diff --check`、三张 PNG、20 行
+timing 数据、报告入口和两份 Python 绘图入口，只有全部通过才打印 `VALIDATION=PASS`。
+
+- 第一次执行收口脚本时，`git diff --cached --check` 把 timing CSV 的 21 个 Windows
+  CRLF 行尾全部判为 trailing whitespace，脚本在 commit 前退出 1；没有 commit、push
+  或训练副作用。此前 `TRAILING_WHITESPACE=0` 只检查了 Markdown，覆盖面不足。
+- 修正只把该 CSV 从 CRLF 规范化为 LF，不改任一字段或数值；随后重新上传流水账和 CSV，
+  再运行同一验证及收口脚本。该问题归类为报告产物跨平台行尾问题，不是训练异常。
+
+修正后的精确重传命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'; python $helper put 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STEP_TIMING_STEP20_20260728.csv' "$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STEP_TIMING_STEP20_20260728.csv"; if ($LASTEXITCODE -ne 0) { throw 'CSV upload failed' }; python $helper put 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md' "$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"; if ($LASTEXITCODE -ne 0) { throw 'ledger upload failed' }
+```
+
+收口脚本只 stage 上述 13 个精确路径，要求 staged 数量恰为 13，再 commit、在 45 秒边界内
+push，并最终复核 HEAD/upstream、clean worktree 和 driver 存活。实际 commit/push 结果在本轮
+回复中报告；commit 自身的 hash 不写回同一个 commit，以避免自引用修改。
 
 ## 6. 停止与干预条件
 

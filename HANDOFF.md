@@ -7,7 +7,7 @@
 
 | 专题 | 唯一事实源 | 实施账本 | 当前停点 |
 |---|---|---|---|
-| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 截至 19:29 完整到 step 15，已越过 warm-up，训练继续运行 |
+| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 截至 20:08 完整到 step 20，训练继续运行 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | 规划 v4 已完成实现前语义收口；等待“开始实现”授权 |
 | QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 上下文/source lock v1 已完成；等待方法分叉选择与“开始实现”授权 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
@@ -55,8 +55,13 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   指标有限、10-Q 紧密、无 OOM/NaN/crash。GPU 峰约 35.2/34.8 GB，anon 峰约 47.7 GiB，
   cgroup raw 贴顶主要为 file cache，回收事件已平台。当前没有 DCP，首个在 step 65。
 - 本次静态报告与图：
-  `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP15_20260728.md`。
+  `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP20_20260728.md`。
   用户不要求 Codex 持续在线监控；训练保持运行，下次请求时再做新的 live 刷新。
+- 2026-07-28 20:08 现场：最新完整 step 20，resident 761，约 15,220 requested
+  primitive interactions，learned SAC 累计 5,780 updates。Gaussian train phase 2/52，
+  learned train phase 8/28，trailing-20 为 30%；formal eval 仍只有 step 13 的 1/12，
+  下一次为 step 26。critic loss 0.880 是首要观察项，但 critic grad 4.84、Q/alpha/entropy
+  均 finite，无 OOM/crash。逐 step 用时和完整命令见 formal 流水账 FORMAL-010。
 
 ## RLT 当前状态与授权
 
