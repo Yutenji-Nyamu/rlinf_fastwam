@@ -1,6 +1,8 @@
 # π0 × RoboTwin × DSRL：fresh/resume smoke 批准材料
 
-状态：**尚未启动 smoke**。本文固定首轮 N=20 smoke 的实际配置、命令、输出、资源预期和停止条件。
+状态：**已按本批准包执行并通过**。本文保留首轮 N=20 smoke 的批准时配置、命令、输出、
+资源预期和停止条件；实际执行结果与逐操作证据见
+[`SMOKE_EXECUTION_LOG_20260728.md`](./SMOKE_EXECUTION_LOG_20260728.md)。正式训练未启动。
 
 ## 1. 完整有效配置
 

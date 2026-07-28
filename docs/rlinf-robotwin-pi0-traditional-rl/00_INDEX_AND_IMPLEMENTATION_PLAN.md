@@ -1,6 +1,6 @@
 # π0 × RoboTwin × DSRL：设计与实施主计划
 
-> 状态：2026-07-28 N=20 主体与服务器基础检查完成，等待 fresh/resume smoke 批准
+> 状态：2026-07-28 N=20 fresh/resume smoke 已通过；正式训练未启动，等待冻结预算、评估/保存周期与是否做 micro-batch 吞吐 A/B
 >
 > 本文件是当前唯一需要经常读取的实施计划，只讨论第一阶段 DSRL × π0 × RoboTwin。
 >
@@ -9,7 +9,7 @@
 >
 > 本机只保存和编辑代码、文档与 diff；Hydra compose、import、测试、smoke 和训练全部在服务器执行。
 >
-> 2026-07-28 已完成服务器现场刷新；服务器主体实现和 smoke 前基础检查已获批，实际 fresh/resume smoke 仍是强制停止点。
+> 2026-07-28 已完成服务器主体实现、基础检查和获批的 fresh/resume smoke；当前强制停点是正式训练。
 
 ## 1. 当前结论
 
@@ -346,8 +346,8 @@ capacity 是最长历史，不是 warm-up。warm-up 仍是全局累计 500 条�
 ### 阶段 2：服务器基线与当前授权（已完成）
 
 1. 已只读刷新 repo/branch/dirty tree、进程、GPU/RAM、checkpoint、环境和历史日志，并选择不触及主 worktree 既有未跟踪文件的干净功能分支。
-2. 当前授权覆盖服务器代码写入、smoke 前 compose/import/compile/集中基础测试、针对本任务的窄修复，以及完成后的 commit/push。
-3. 删除或覆盖数据、停止无关进程、安装依赖、下载模型不在当前授权内；实际 fresh/resume smoke 和正式训练也未获批。
+2. 已获批并完成服务器代码写入、compose/import/compile/集中基础测试、窄修复、commit/push，以及 fresh/resume smoke。
+3. 删除或覆盖数据、停止无关进程、安装依赖、下载模型不在授权内；正式训练仍未获批。
 
 ### 阶段 3：服务器集中检查（基础部分已完成）
 
@@ -357,19 +357,27 @@ capacity 是最长历史，不是 warm-up。warm-up 仍是全局累计 500 条�
 2. formal、thin smoke 和既有 RoboTwin PPO 三份配置均通过原生 Hydra compose/resolve；mock 掉会启动 Ray 的 `Cluster/placement` 后，其余 `validate_cfg` 检查通过。
 3. 关键模块从目标 worktree 导入、AST、`ruff check`、`ruff format --check`、`git diff --check` 全部通过；没有启动 Ray、模型或环境。
 
-留给获批后的 fresh smoke 主链：
+真实模型/GPU/RoboTwin 主链已经完成：
 
-1. 加载真实 π0 checkpoint 后做 fixed observation + fixed latent，确认冻结 π0 动作路径与 base 参数 delta。
-2. 真实采集后执行 SAC update，确认小 actor/Q/temperature 的有限非零 delta、target EMA、rollout sync 和 DCP。
-3. resume smoke 核对 DCP1→DCP2 的 shadow、phase、`update_step` 和 replay 连续性。
+1. 加载真实 π0 checkpoint 完成 Gaussian/learned rollout；DCP1→DCP2 的 778 个冻结 π0 tensor、
+   共 4,028,019,472 参数 bitwise 不变，小 actor/Q 和 optimizer moments 非零。
+2. 真实采集完成 800 + 740 次 SAC update、target EMA、两次 sync/eval 和 DCP1/DCP2；
+   loss/Q/alpha/gradient 均 finite。
+3. resume 精确恢复 shadow、phase、`update_step`、replay 内容和 replay RNG；DCP1 全树 hash
+   在 resume 后逐文件不变。
 
-这些检查依赖完整模型、环境、GPU worker 和 DCP，和一次真实 fresh/resume smoke 是同一调用链，不在批准前另起一套重型运行。
+边界：本轮没有另起一套“同 observation + 同 latent、DSRL 开关前后输出 hash”的独立数值
+A/B；DSRL 与 base 实际共享同一个 transform/denoise core，smoke 已证明 live 调用链、latent
+合同和冻结参数。若在正式前还要求 bitwise output parity，可单独做一个窄 probe，但不把它
+误写成已经完成。
 
-### 阶段 4：fresh + resume smoke（强制停点）
+### 阶段 4：fresh + resume smoke（已完成）
 
 启动前必须向用户展示完整 resolved config、精确命令、输出目录、预计资源和停止条件并取得明确批准。
 
-2026-07-28 批准材料已生成但尚未执行：[`evidence/SMOKE_APPROVAL_20260728.md`](./evidence/SMOKE_APPROVAL_20260728.md)。其中链接 fresh、resume 和 formal 的完整 validated/resolved YAML 及 SHA-256。
+批准材料：[`evidence/SMOKE_APPROVAL_20260728.md`](./evidence/SMOKE_APPROVAL_20260728.md)。
+实际逐操作、指标、资源、DCP/replay/shadow 和问题证据：
+[`evidence/SMOKE_EXECUTION_LOG_20260728.md`](./evidence/SMOKE_EXECUTION_LOG_20260728.md)。
 
 smoke 保持 formal 的两卡、4 train env、`rollout_epoch=1`、N/H=20/50、batch/micro=256/64、UTD20、replay25k、10-Q、LR、FSDP/offload/sync/DCP 和模型合同。只改：
 
@@ -393,9 +401,19 @@ smoke 必须与命令、resolved config、日志、PID 和 checkpoint 放在同�
 
 复用历史两秒 monitor 时，只给 actor 进程匹配词增加 DSRL worker 名称 `EmbodiedSACFSDPPolicy`；CSV schema 和 cgroup/GPU 统计不改。精确脚本路径在服务器现场刷新后确认，避免把 Fast-WAM worktree 的副本误当主仓文件。
 
-### 阶段 5：并发复核、pilot 与实施账本
+实测结果：fresh 新增 40 transitions / 800 updates，resume 新增 37 / 740；两轮每个
+RLinf step 分别为 534.49 / 511.17 秒，SAC 训练约占 409.41 / 381.04 秒。GPU 峰约
+34.8 GB/卡，无 OOM/NaN/crash；fresh 与 resume 均通过，正式训练未启动。
 
-smoke 后根据 GPU/RAM 峰值、env/actor/rollout RSS、`/dev/shm`、Dbar 和吞吐决定是否调整并发；不预先照搬 PPO/GRPO 的大并发。正式训练先到 100k requested primitive interactions 审阅，再决定是否继续到 200k/约 500k。
+### 阶段 5：并发复核、pilot 与实施账本（当前停点）
+
+smoke 后结论是保留 2 GPU、4 env、UTD20 和已验证的 micro batch 64；不照搬 PPO/GRPO
+的大 env 并发。micro 128 只作为可选的同 global batch 吞吐 A/B，不未经实测直接替换。
+
+正式训练前必须把 formal 的占位值 `max_steps=-1`、`val_check_interval=-1` 和
+`save_interval=10` 改成显式预算。按 smoke 平均每 cycle 约 38.5 transitions / 770
+updates，训练内评估建议每 13 cycles 跑 12 episodes；正式训练先到约 100k requested
+primitive interactions 审阅，再决定是否继续到 200k/约 500k。
 
 真正开始实现时建立：
 
@@ -444,4 +462,10 @@ PYTHONDONTWRITEBYTECODE=1 \
 
 - 已冻结：H=50、N=20、单主相机小 actor/critic + 三相机冻结 π0、14D state/action、32D latent repeat-H、flat replay 25k、warm-up 500、UTD20、上述 reward/termination/resume/eval 语义。
 - 暂缓：N=50、三视角小 actor/critic、每步/分段 latent、world-size 变化 resume。
-- 主体实现和 smoke 前基础检查已完成；实现提交 `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已推送到 `personal/codex/dsrl-pi0-robotwin`。下一步展示完整 resolved config、精确命令、输出目录、资源与停止条件，等待 fresh/resume smoke 批准。
+- 主体实现、基础检查和 fresh/resume smoke 已完成；实现提交
+  `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已包含在当前服务器/云端 HEAD
+  `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`。
+- 当前停在正式训练前：先讨论是否追加 micro 64/128 吞吐 A/B，并冻结首段
+  `max_steps`、`val_check_interval=13`、checkpoint 周期/保留策略和 run-scoped
+  `save_path`；随后重新展示 formal resolved config、精确命令、输出目录、资源和停止条件，
+  等待明确批准。

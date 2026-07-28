@@ -404,3 +404,35 @@ PYTHONDONTWRITEBYTECODE=1
 - 云端状态：实现与交接提交先推送到 `c9cf4316`；监控兼容 `15892e45` 和批准包 `4021245e` 随后创建。服务器本地 DNS 指向的 GitHub edge 连续出现 HTTP2 framing/443 timeout；公共 DNS 返回的备用 edge 经独立 TLS 探测通过后，使用一次性 `git -c http.curloptResolve=...` 推送成功。没有改 remote、全局 DNS/Git 配置或提交历史。
 - 推送后本地/远端均为 `4021245e68372c497286ffaf5258f42cf2f98303`，服务器 worktree clean。
 - fresh/resume smoke 仍未执行；当前等待用户明确批准。
+
+## OP-010：fresh/resume smoke、恢复连续性与资源复核
+
+- 时间：2026-07-28 17:04–17:47。
+- 完整逐命令、PID、时间、指标、DCP/replay/shadow、资源和无害问题记录在
+  [`SMOKE_EXECUTION_LOG_20260728.md`](./SMOKE_EXECUTION_LOG_20260728.md)，本节只保留交接摘要。
+- 执行前 live preflight：服务器 worktree 位于 `codex/dsrl-pi0-robotwin`，HEAD/upstream
+  `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`，clean；两张 A800 空闲；目标 venv、
+  RoboTwin、π0 SFT、assets、seeds 和两份 resolved YAML 哈希均匹配批准包。
+- fresh：
+  - 40 条 macro transitions，800 次 UTD20 updates；
+  - Gaussian collect → learned actor/Q/temperature → target EMA → sync → 4-episode eval →
+    DCP1 全链完成；
+  - loss/Q/alpha/gradient 均 finite；DCP1 trainer state 为 phase 1、`update_step=800`，
+    两 rank FP32 shadow 相同。
+- resume：
+  - 从 DCP1 只运行一个 cycle，新增 37 条 transitions、740 次 updates；
+  - 两 rank `update_step 800→1540`，phase、shadow、replay 内容及 replay sampling RNG
+    精确连续；learned rollout 新 latent 全在 `[-1,1]`；
+  - 新 replay 首次真实覆盖 success→reward 0/termination，同时纯 truncation 仍 bootstrap；
+  - DCP2 完整写出；resume 前 DCP1 的 11 文件 SHA-256 在 resume 后逐项不变。
+- 参数证据：DCP1→DCP2 的 778 个冻结 π0 tensor、4,028,019,472 参数 bitwise 不变；
+  小 actor 32 个 tensor 中 27 个变化，小 critic 156 个中 119 个变化，两个 optimizer
+  moments 均 finite 且非零。
+- 资源：两轮 GPU 峰均约 34.8 GB/卡；训练期平均 GPU 利用率约 22–25%；SAC 约
+  1.94–1.95 updates/s，是主要墙钟瓶颈。cgroup 曾触顶且 `memory.events max` 增长，
+  但匿名工作集约 34–41 GB，其余主要为 file cache，`oom=0`、`oom_kill=0`。
+- 终态：fresh/resume driver、monitor、Ray/worker 均退出，两卡显存归零，worktree clean，
+  run root 约 63 GB；没有启动正式训练。
+- 并发建议：第一版保留 2 GPU、4 env、UTD20、micro 64。micro 128 只做可选窄吞吐 A/B；
+  formal 启动前必须替换 `max_steps=-1`、`val_check_interval=-1`、`save_interval=10`
+  和相对 `save_path` 占位值，并重新给出正式批准包。
