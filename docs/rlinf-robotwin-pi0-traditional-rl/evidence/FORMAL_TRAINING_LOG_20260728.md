@@ -233,6 +233,23 @@ memory PSI 持续升高并伴随 cycle/DCP 明显变慢，或磁盘跌破安全�
   TensorBoard step 13/14 与日志 step 15，逐 step 对齐后重新生成。
 - 用户明确不要求持续在线监控。本轮不改配置、不干预训练；下次收到检查请求后再 live 刷新。
 
+### FORMAL-009　状态产物同步与收尾
+
+- 写入前 gate：服务器仍在 `codex/dsrl-pi0-robotwin@d664bf3`，upstream 相同、worktree
+  clean；driver 和 2 actor/2 rollout/2 env workers 均存活。
+- 仅上传 8 个文档/报告产物：根 `HANDOFF.md`、主计划、formal 流水账、step-15 状态报告、
+  实际 resolved YAML 和三张 PNG；没有上传或修改生产代码、配置源、run root 或活进程状态。
+- 校验：resolved YAML SHA-256 仍为
+  `e99c212d1743e285dcda23cb129e2ed96545cceb36bebe772ae69a693b9df595`；三张 PNG
+  均通过文件类型/非空检查；报告入口与 `FORMAL-008` 存在。
+- 第一次 commit gate 被 `git diff --cached --check` 拒绝，因为报告首部使用了 Markdown
+  的两个行尾空格；没有产生 commit。改成空引用行后重新上传，gate 通过。
+- 结果：docs-only commit `1def9a24e46491f7801ad20badce6afd2fe81467`
+  已推到 `personal/codex/dsrl-pi0-robotwin`；push 后 HEAD/upstream 相同且 worktree clean。
+- 最后一次核验最初用 PowerShell 双引号拼接远程命令，本地提前展开了 `$()`，因此 helper
+  在连接前拒绝参数；没有远程副作用。改用固定 command file 后，2026-07-28 19:44:02 CST
+  确认 driver 仍存活、服务器 worktree clean。随后停止轮询。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

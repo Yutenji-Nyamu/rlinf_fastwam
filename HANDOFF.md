@@ -37,10 +37,10 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
 - 18:17 追加 fixed observation/fixed 32D repeat-H latent 单卡 parity：DSRL 入口与 base
   transform/denoise/output core 的六类输出均 bitwise exact、最大差异 0；这是 18:54
   正式训练启动前的历史验收快照。
-- smoke 实际运行的代码快照为 `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；结果文档
-  已作为 docs-only commit 推送到同一功能分支；2026-07-28 终态 HEAD/upstream 为
-  `d664bf349b63b75f41d51c8295cb0a330780d783`，worktree clean。约 63 GB smoke 产物
-  保存在批准包固定 run root；下轮仍须 live 刷新最新 HEAD。
+- smoke 实际运行的代码快照为 `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；formal 启动
+  时加载的代码快照为 `d664bf349b63b75f41d51c8295cb0a330780d783`。后续只增加状态报告
+  与图，不改变活进程已经加载的代码。约 63 GB smoke 产物保存在批准包固定 run root；
+  下轮仍须 live 刷新分支最新 docs-only HEAD。
 - 用户已授权并启动完整正式训练：2 GPU、4 env、UTD20、micro 64、
   `max_steps=650`、`val_check_interval=13`、`save_interval=65`，每次评估 12 episodes。
 - 正式 run root：
