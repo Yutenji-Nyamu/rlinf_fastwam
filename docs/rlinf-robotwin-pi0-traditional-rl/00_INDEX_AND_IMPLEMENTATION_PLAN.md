@@ -366,10 +366,10 @@ capacity 是最长历史，不是 warm-up。warm-up 仍是全局累计 500 条�
 3. resume 精确恢复 shadow、phase、`update_step`、replay 内容和 replay RNG；DCP1 全树 hash
    在 resume 后逐文件不变。
 
-边界：本轮没有另起一套“同 observation + 同 latent、DSRL 开关前后输出 hash”的独立数值
-A/B；DSRL 与 base 实际共享同一个 transform/denoise core，smoke 已证明 live 调用链、latent
-合同和冻结参数。若在正式前还要求 bitwise output parity，可单独做一个窄 probe，但不把它
-误写成已经完成。
+4. 追加单卡只推理 probe：固定三相机 observation、14D state 和一份 32D latent
+   repeat-H=50，DSRL 入口与冻结 π0 base transform/denoise/output core 的 env actions、
+   model actions、denoise chains/indices 和 prompt tokens 全部 bitwise 相同，
+   `max_abs_delta=0`。环境输出为 `[1,20,14]`，内部 latent 为 `[1,50,32]`。
 
 ### 阶段 4：fresh + resume smoke（已完成）
 
@@ -408,7 +408,8 @@ RLinf step 分别为 534.49 / 511.17 秒，SAC 训练约占 409.41 / 381.04 秒�
 ### 阶段 5：并发复核、pilot 与实施账本（当前停点）
 
 smoke 后结论是保留 2 GPU、4 env、UTD20 和已验证的 micro batch 64；不照搬 PPO/GRPO
-的大 env 并发。micro 128 只作为可选的同 global batch 吞吐 A/B，不未经实测直接替换。
+的大 env 并发。fixed observation/latent parity 已补齐。micro 128 只作为可选的同
+global batch 吞吐 A/B，不未经实测直接替换。
 
 正式训练前必须把 formal 的占位值 `max_steps=-1`、`val_check_interval=-1` 和
 `save_interval=10` 改成显式预算。按 smoke 平均每 cycle 约 38.5 transitions / 770

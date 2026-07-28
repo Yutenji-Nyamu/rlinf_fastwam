@@ -224,6 +224,33 @@
   - smoke run root 共约 63 GB，磁盘剩余约 789 GB；`/dev/shm` 120 GB 全空。
 - 结论：fresh 与 resume smoke 全部通过；未启动正式训练。
 
+### RESUME-006　固定 observation + fixed latent 数值 parity
+
+- 时间：2026-07-28 18:12–18:17 CST。
+- 目的：补齐主计划中独立数值化的最后一项证据；只加载 π0 SFT 做单卡推理，不启动
+  Ray/RoboTwin、不采数据、不更新参数、不写 checkpoint。
+- 输入：
+  - 固定主相机 `[1,480,640,3]` 与左右腕相机 `[1,2,480,640,3]`；
+  - 固定 14D state 和 prompt；
+  - 固定一份 32D latent，并逐值 repeat 到 H=50，即 `[1,50,32]`；
+  - `flow_ode` 4 步去噪、N=20 环境 action 输出。
+- 第一遍 probe：
+  - 六类核心比较已经运行，最后因验收脚本把 `forward_inputs["action"]` 误写成扁平
+    `[1,1600]` 而断言失败；
+  - 实际合同是 `[1,50,32]`，之后 flat replay 投影才保存每条 32D latent；
+  - 失败日志完整保留，没有据此修改项目代码或放宽数值比较。
+- 第二遍只修正上述 shape 断言后通过：
+  - env actions `[1,20,14]`；
+  - model actions `[1,1600]`；
+  - denoise chains `[1,5,50,32]`；
+  - denoise indices `[1,4]`；
+  - prompt tokens/mask `[1,48]`；
+  - 六项均 bitwise exact，全部 `max_abs_delta=0`。
+- 资源：单卡峰值 `7,459 MiB`，cgroup 峰值 `235,260 MiB` 仍主要为 file cache；
+  `oom=0`、`oom_kill=0`。probe 与 monitor 均正常退出，两卡显存归零。
+- 结论：固定 observation/fixed 32D repeat-H latent 下，DSRL 入口与冻结 π0 的
+  transform/denoise/output core 数值完全一致；此前计划中的 parity 边界已补齐。
+
 ## 4. 资源与并行度结论
 
 ### 4.1 实测吞吐与瓶颈
@@ -284,6 +311,8 @@
 6. smoke 结果的第一份 docs-only commit 正常推送；一行 provenance 修正的普通 push
    两次遇到 GitHub 443 超时。未改 remote、DNS 或提交历史，最终只对该次命令指定
    `HTTP/1.1` 与 60 秒进程级 timeout 后推送成功。
+7. fixed-latent parity 第一遍的项目数值比较没有失败，失败来自验收脚本错误假设
+   `forward_inputs["action"]` 已扁平化；按真实 `[1,50,32]` 合同修正后复测通过。
 
 ## 6. 文档与云端闭环
 
