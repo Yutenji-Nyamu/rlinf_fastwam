@@ -1,6 +1,7 @@
 # π0 × RoboTwin × DSRL：设计与实施主计划
 
-> 状态：2026-07-28 N=20 fresh/resume smoke 已通过；正式训练未启动，等待冻结预算、评估/保存周期与是否做 micro-batch 吞吐 A/B
+> 状态：2026-07-28 N=20 fresh/resume smoke 已通过；`650/13/65` 正式训练截至 19:29
+> 完整到 step 15，已越过 warm-up，训练继续运行
 >
 > 本文件是当前唯一需要经常读取的实施计划，只讨论第一阶段 DSRL × π0 × RoboTwin。
 >
@@ -9,7 +10,7 @@
 >
 > 本机只保存和编辑代码、文档与 diff；Hydra compose、import、测试、smoke 和训练全部在服务器执行。
 >
-> 2026-07-28 已完成服务器主体实现、基础检查和获批的 fresh/resume smoke；当前强制停点是正式训练。
+> 2026-07-28 已完成服务器主体实现、基础检查和获批的 fresh/resume smoke；正式训练正在运行，操作与资源状态见 formal 流水账。
 
 ## 1. 当前结论
 
@@ -408,13 +409,15 @@ RLinf step 分别为 534.49 / 511.17 秒，SAC 训练约占 409.41 / 381.04 秒�
 ### 阶段 5：并发复核、pilot 与实施账本（当前停点）
 
 smoke 后结论是保留 2 GPU、4 env、UTD20 和已验证的 micro batch 64；不照搬 PPO/GRPO
-的大 env 并发。fixed observation/latent parity 已补齐。micro 128 只作为可选的同
-global batch 吞吐 A/B，不未经实测直接替换。
+的大 env 并发。fixed observation/latent parity 已补齐。micro 128 不再作为正式启动前置 A/B。
 
-正式训练前必须把 formal 的占位值 `max_steps=-1`、`val_check_interval=-1` 和
-`save_interval=10` 改成显式预算。按 smoke 平均每 cycle 约 38.5 transitions / 770
-updates，训练内评估建议每 13 cycles 跑 12 episodes；正式训练先到约 100k requested
-primitive interactions 审阅，再决定是否继续到 200k/约 500k。
+正式训练已冻结为 `max_steps=650`、`val_check_interval=13`、`save_interval=65`：
+约 500,500 requested primitive interactions，每约 10k optimizer updates 评估 12 episodes，
+每约 50k updates 保存一次，共 10 个 DCP。logger 与 RoboTwin train/eval `save_path` 均使用
+run-scoped 绝对路径。完整参数、命令、产物、资源和逐操作状态见
+[`evidence/FORMAL_TRAINING_LOG_20260728.md`](./evidence/FORMAL_TRAINING_LOG_20260728.md)，
+实际 resolved config 见
+[`evidence/FORMAL_RUN_VALIDATED_RESOLVED_20260728.yaml`](./evidence/FORMAL_RUN_VALIDATED_RESOLVED_20260728.yaml)。
 
 真正开始实现时建立：
 
@@ -467,7 +470,9 @@ PYTHONDONTWRITEBYTECODE=1 \
   `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已包含在本次 smoke 使用的代码快照
   `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；smoke 结果文档随后作为 docs-only
   commit 推送到同一功能分支。
-- 当前停在正式训练前：先讨论是否追加 micro 64/128 吞吐 A/B，并冻结首段
-  `max_steps`、`val_check_interval=13`、checkpoint 周期/保留策略和 run-scoped
-  `save_path`；随后重新展示 formal resolved config、精确命令、输出目录、资源和停止条件，
-  等待明确批准。
+- 完整正式训练已于 2026-07-28 18:54:12 CST 启动：2 GPU、4 env、micro 64、
+  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至 19:29 最新完整
+  step 15，resident 585，step 13 越过 warm-up，累计 2,260 learned updates；首轮 formal
+  eval 为 1/12，优化指标有限、10-Q 紧密，无 OOM/NaN/crash。状态报告和三张曲线见
+  [`evidence/FORMAL_STATUS_REPORT_STEP15_20260728.md`](./evidence/FORMAL_STATUS_REPORT_STEP15_20260728.md)。
+  训练保持运行，不在运行中改变方法参数或并发；用户下次要求时再 live 刷新，不持续在线轮询。
