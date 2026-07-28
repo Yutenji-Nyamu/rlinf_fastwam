@@ -717,6 +717,63 @@ validate 要求 dirty set 精确等于这 7 条、`git diff --check` 通过、�
 stage 这 7 条，以 `docs(dsrl): refresh formal step 53 report` 提交，45 秒边界 push，
 最后检查 HEAD/upstream、clean worktree、driver 和最新 step。
 
+实际结果：
+
+- preflight 在 step 55 输出 `PREFLIGHT=PASS`；上传 7 条后 validate 输出
+  `VALIDATION=PASS`，dirty set 精确为 7。
+- docs-only commit 成功，hash 为
+  `4447d40211be8c78874bf4b000c871e7fbd93561`；服务器 worktree clean。
+- commit 脚本内第一次 45 秒 push 没有完成。23:20 只读快照确认
+  `HEAD=4447d402...`、`UPSTREAM=b01661e8...`，说明提交完整但尚未发布；训练已到
+  step 56。
+- 第二次前台重试使用 55 秒硬边界：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_push_retry.sh'
+```
+
+输出 `PUSH_STATUS=124`。为区分“45/55 秒太短”和“出口不可达”，随后启动一个不占 SSH
+会话、180 秒自终止的后台 push，并用只读状态脚本轮询：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_push_background_start.sh'
+
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_push_background_status.sh'
+```
+
+后台最终退出 128，精确错误为：
+
+```text
+fatal: unable to access 'https://github.com/Yutenji-Nyamu/rlinf_fastwam.git/':
+Failed to connect to github.com port 443 after 129645 ms: Connection timed out
+```
+
+这确认是服务器 GitHub 出口故障，不是 staged scope、commit、认证提示或训练错误。本机
+备用发布检查执行 `gh --version; gh auth status`，发现 `gh` 未安装；没有擅自安装工具、
+创建 PR 或改 Git 远端。最终停点为：服务器 commit `4447d402...` clean、upstream
+`b01661e8...`，训练 step 57 继续。下次 live 刷新后只需重试：
+
+```bash
+timeout --signal=TERM --kill-after=5s 55s \
+  git -c http.version=HTTP/1.1 push personal HEAD:codex/dsrl-pi0-robotwin
+```
+
+为让下一轮在服务器端也能直接看到该 blocker，本轮最后只重传更新后的 `HANDOFF.md`
+和本流水账，并做第二个本地 docs-only commit；不再尝试 GitHub push。实际命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'; python $helper put 'C:\Users\86136\Documents\rl\HANDOFF.md' "$repo/HANDOFF.md"; python $helper put 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md' "$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"
+```
+
+服务器侧在 HEAD 仍为 `4447d402...`、upstream 仍为 `b01661e8...`、worktree 起始 clean
+且 driver 存活的前提下，只 stage 这两条，运行 `git diff --cached --check`，然后：
+
+```bash
+git commit -m "docs(dsrl): record step 53 push blocker"
+```
+
+该 bookkeeping commit 的 hash 在本轮最终回复报告，不为写回自身再制造第三个 commit。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

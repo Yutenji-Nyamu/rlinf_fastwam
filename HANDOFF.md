@@ -77,6 +77,11 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   45.6 GiB、PSI=0、OOM=0。env-worker RSS 峰值 21.5 GiB，仍增长但总 anon 低于初始化
   峰值。下一节点 step 65 同时 eval 和首个 DCP；完整判断见
   `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP53_20260728.md`。
+- step-53 报告已在服务器形成 docs-only commit
+  `4447d40211be8c78874bf4b000c871e7fbd93561`，worktree clean；服务器到
+  `github.com:443` 连续连接超时，故 upstream 仍为
+  `b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`。训练未受影响，23:26 已推进到 step 57。
+  下次刷新先核验 HEAD/upstream/clean 和 driver，再只重试该 commit 的 push，不重做报告。
 
 ## RLT 当前状态与授权
 
