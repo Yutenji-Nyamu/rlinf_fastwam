@@ -360,3 +360,18 @@ PYTHONDONTWRITEBYTECODE=1
 3. 第一次 no-Ray 配置脚本暴露 smoke 的 Hydra searchpath 问题后退出；没有进入 cluster/model/env 初始化。删除无必要 searchpath 后重跑成功。
 
 - 当前结果：服务器功能分支存在预期的 10 个未提交文件；代码、单测、原生 Hydra compose/resolve、no-Ray validator、legacy PPO 配置回归、Ruff 和 whitespace 检查均已通过。下一步更新交接与批准材料，核对精确提交范围后 commit/push；fresh/resume smoke 仍未执行。
+
+## OP-007：精确提交与云端推送
+
+- 时间：2026-07-28 15:48–15:50。
+- 提交前现场：分支 `codex/dsrl-pi0-robotwin`，基线仍为 `8138d6700e3838250c1139289ebfba43d48ff7de`；只存在 3 个预期修改文件和 7 个预期新增文件。
+- 本地补丁与服务器 10 个目标文件逐一 SHA-256 相同；最大新增文档约 61 KiB，没有 checkpoint、模型、日志或二进制文件。
+- 凭据扫描没有发现密码、token、API key 或服务器地址值；历史索引中的 `secret_present: true` 只是说明原始本机材料含敏感内容，实际敏感内容没有复制进仓库。
+- 使用精确 10 路径执行 `git add -- ...`；暂存后 `git diff --cached --check` 返回 0，没有额外 staged/untracked 文件。
+- 使用 `git commit -s -m 'feat(embodiment): add pi0 RoboTwin DSRL port'` 创建带 DCO sign-off 的实现提交：
+  - commit：`6817c73b298ff9df78d371d4b139e4e0fa8ea529`
+  - 范围：10 files，3277 insertions，130 deletions。
+- 使用 `git push --set-upstream personal codex/dsrl-pi0-robotwin` 推送到 `Yutenji-Nyamu/rlinf_fastwam`；远端分支与本地 commit hash 完全一致。
+- 没有改 GitHub 仓库名、remote URL、默认分支；没有创建 PR。仓库改名 `rlinf_exp` 继续作为单独待讨论动作。
+- 推送后服务器 worktree clean，功能分支 tracking `personal/codex/dsrl-pi0-robotwin`。
+- 本 OP 的文档闭环会作为后续 docs-only 提交推送；fresh/resume smoke 和正式训练仍未执行。

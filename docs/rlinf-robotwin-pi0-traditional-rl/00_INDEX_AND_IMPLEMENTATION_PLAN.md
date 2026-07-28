@@ -442,4 +442,4 @@ PYTHONDONTWRITEBYTECODE=1 \
 
 - 已冻结：H=50、N=20、单主相机小 actor/critic + 三相机冻结 π0、14D state/action、32D latent repeat-H、flat replay 25k、warm-up 500、UTD20、上述 reward/termination/resume/eval 语义。
 - 暂缓：N=50、三视角小 actor/critic、每步/分段 latent、world-size 变化 resume。
-- 主体实现和 smoke 前基础检查已完成；下一步提交并推送功能分支，然后展示完整 resolved config、精确命令、输出目录、资源与停止条件，等待 fresh/resume smoke 批准。
+- 主体实现和 smoke 前基础检查已完成；实现提交 `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已推送到 `personal/codex/dsrl-pi0-robotwin`。下一步展示完整 resolved config、精确命令、输出目录、资源与停止条件，等待 fresh/resume smoke 批准。
