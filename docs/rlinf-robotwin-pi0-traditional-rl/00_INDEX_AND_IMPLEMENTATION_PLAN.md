@@ -369,6 +369,8 @@ capacity 是最长历史，不是 warm-up。warm-up 仍是全局累计 500 条�
 
 启动前必须向用户展示完整 resolved config、精确命令、输出目录、预计资源和停止条件并取得明确批准。
 
+2026-07-28 批准材料已生成但尚未执行：[`evidence/SMOKE_APPROVAL_20260728.md`](./evidence/SMOKE_APPROVAL_20260728.md)。其中链接 fresh、resume 和 formal 的完整 validated/resolved YAML 及 SHA-256。
+
 smoke 保持 formal 的两卡、4 train env、`rollout_epoch=1`、N/H=20/50、batch/micro=256/64、UTD20、replay25k、10-Q、LR、FSDP/offload/sync/DCP 和模型合同。只改：
 
 | 项目 | formal | smoke |

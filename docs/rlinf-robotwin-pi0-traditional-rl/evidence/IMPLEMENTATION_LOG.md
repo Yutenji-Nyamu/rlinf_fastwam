@@ -388,3 +388,18 @@ PYTHONDONTWRITEBYTECODE=1
 - 文件在本改动前已存在 Ruff import-order 和 whole-file format 差异；它们与本次三行 matcher 扩展无关，不做无关的整文件重排。
 - 无害问题：第一份手写增量 patch 的 hunk 行数/上下文不匹配，`git apply` 报 corrupt patch 且未写入；更正为现场精确上下文后成功。一次包含嵌套 Python `-c` 的 helper 命令被本地 argparse 拒绝，服务器未执行该次命令；随后用无嵌套引号的 `--help`/grep 检查通过。
 - fresh/resume smoke 仍未启动；该修改只保证获批后资源证据不会漏掉 DSRL actor。
+
+## OP-009：smoke 完整批准材料
+
+- 时间：2026-07-28 15:55–16:03。
+- 使用当前服务器功能分支重新 compose formal/smoke；只 mock 会启动 Ray 的 `Cluster/placement` 资源发现，其余 `validate_cfg` 正常执行，生成过程中断言 Ray 始终未初始化。
+- 生成并核对：
+  - `FORMAL_VALIDATED_RESOLVED_20260728.yaml`：SHA-256 `f128166c80846ab3dddaa8e3b773b9c62db2cdb6aecaaffed452145863ef1422`；
+  - `FRESH_SMOKE_VALIDATED_RESOLVED_20260728.yaml`：SHA-256 `2c616159726dc9d39fbe4d011909dcba963c95c355539c606c718a6ed25da390`；
+  - `RESUME_SMOKE_VALIDATED_RESOLVED_20260728.yaml`：SHA-256 `c81e722d72dc06976f1011f42de1e9701c18d33857dfa1cc296af5216a491d46`。
+- fresh/resume 完整配置 diff 严格只有 `max_steps 1→2` 和 `resume_dir null→DCP1`；两者都已经包含实际固定 output override。
+- 输出根固定为 `/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_smoke_v1`，现场确认当前不存在。
+- 新增 `SMOKE_APPROVAL_20260728.md`，包含完整配置链接、fresh/resume 精确命令、PID/driver/resource 日志、DCP 路径、资源估计、3 小时单阶段上限、停止条件和最低通过结论。
+- 资源估计参考同机历史 π0 smoke 的实际峰值：29–40 GiB GPU/卡、112–125 GiB cgroup、约 27–29 分钟；DSRL 首轮保守预留 60 GiB GPU/卡、180 GiB 非可回收工作集、每阶段 30–90 分钟。
+- 云端状态：实现与交接提交已推送到 `c9cf4316`。监控兼容提交 `15892e45` 已在服务器 clean branch 创建，但连续 push 遇到 GitHub HTTP2 framing、443 timeout 和 curl connect timeout；当前仅本地领先远端 1 commit，没有丢失或重写历史。网络恢复后重试同一 push。
+- fresh/resume smoke 仍未执行；必须等监控提交推送成功和用户明确批准。
