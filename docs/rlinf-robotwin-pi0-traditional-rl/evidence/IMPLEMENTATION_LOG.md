@@ -375,3 +375,16 @@ PYTHONDONTWRITEBYTECODE=1
 - 没有改 GitHub 仓库名、remote URL、默认分支；没有创建 PR。仓库改名 `rlinf_exp` 继续作为单独待讨论动作。
 - 推送后服务器 worktree clean，功能分支 tracking `personal/codex/dsrl-pi0-robotwin`。
 - 本 OP 的文档闭环会作为后续 docs-only 提交推送；fresh/resume smoke 和正式训练仍未执行。
+
+## OP-008：DSRL actor 资源监控兼容
+
+- 时间：2026-07-28 15:52–15:55。
+- 现场发现：分支已有 `examples/embodiment/monitor_resources.py`，可复用历史 2 秒 CSV/peak 监控，但 actor RSS matcher 只包含 `EmbodiedFSDPActor`；DSRL worker 的进程名是 `EmbodiedSACFSDPPolicy`，不适配会漏报 actor RSS。
+- 窄修改：保留原 matcher，并把 `EmbodiedSACFSDPPolicy` 加入同一 tuple；CSV schema、采样、GPU/cgroup/OOM、PID 跟随和其他 worker 分类均不改。
+- 检查：
+  - `git diff --check`：通过；
+  - 脚本 `--help`：通过；
+  - Ruff 排除文件既有的 import-order `I001` 后通过。
+- 文件在本改动前已存在 Ruff import-order 和 whole-file format 差异；它们与本次三行 matcher 扩展无关，不做无关的整文件重排。
+- 无害问题：第一份手写增量 patch 的 hunk 行数/上下文不匹配，`git apply` 报 corrupt patch 且未写入；更正为现场精确上下文后成功。一次包含嵌套 Python `-c` 的 helper 命令被本地 argparse 拒绝，服务器未执行该次命令；随后用无嵌套引号的 `--help`/grep 检查通过。
+- fresh/resume smoke 仍未启动；该修改只保证获批后资源证据不会漏掉 DSRL actor。

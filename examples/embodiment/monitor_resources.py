@@ -308,7 +308,10 @@ def _sample(target_pid: int, cgroup: CgroupMemory) -> dict[str, object]:
     )
 
     env_rss = _sum_matching(processes, ("EnvWorker",))
-    actor_rss = _sum_matching(processes, ("EmbodiedFSDPActor",))
+    actor_rss = _sum_matching(
+        processes,
+        ("EmbodiedFSDPActor", "EmbodiedSACFSDPPolicy"),
+    )
     rollout_rss = _sum_matching(processes, ("MultiStepRolloutWorker",))
     driver_rss = process_by_pid.get(target_pid, ProcessInfo(target_pid, 0.0, "")).rss_mb
     ray_system_rss = _sum_matching(
