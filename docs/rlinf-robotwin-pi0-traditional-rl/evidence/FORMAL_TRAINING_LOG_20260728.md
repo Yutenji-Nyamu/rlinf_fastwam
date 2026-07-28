@@ -567,6 +567,156 @@ timeout --signal=TERM --kill-after=5s 45s \
 
 上传后的服务器验证已输出 `VALIDATION=PASS`；实际 commit/push hash 在本轮回复报告。
 
+### FORMAL-013　step-53 只读刷新、第四次 eval 与资源复核
+
+- 用户要求：按上一轮同样方式刷新正在运行的训练，继续给出横版成功率、优化和资源趋势。
+- 第一现场边界：2026-07-28 23:02:13 CST；服务器最新日志为 step 52。下载 event
+  期间 step 53 于 23:04:08 完成，因此最终报告统一使用 step 53 event 数据，资源 CSV
+  覆盖到 23:05:42。
+- 只读 gate：branch/HEAD/upstream 为
+  `codex/dsrl-pi0-robotwin@b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`，worktree
+  clean；driver PID 70062、2 actor、2 rollout、2 env workers 均存活。
+
+现场快照命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_metrics_refresh_snapshot.sh'
+```
+
+快照输出 step 52、resident 1,658，GPU 当前约 32.4/32.4 GB；cgroup
+`oom=0/oom_kill=0`、PSI avg10=0，尚无 checkpoint，磁盘可用 789 GB。
+
+第一次追加日志检查直接把含分号和管道的远程 shell 作为 `run` 位置参数传入：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run "RUN=/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1; find \"$RUN\" -maxdepth 2 -type f -printf '%s %p\n' | sort -n; ..."
+```
+
+PowerShell/argparse 在引号层拆开参数，helper 报 `unrecognized arguments`，远程命令没有执行。
+修复是把同一只读 shell 写入 `.tmp/remote_dsrl_step52_detail.sh`，再用
+`--command-file`：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step52_detail.sh'
+```
+
+该命令退出 0。日志中的两处 `Traceback` 都在 18:54 初始化阶段，来自可选
+`CuroboPlanner` 缺 `curobo.types.math`；RoboTwin 随后正常进入本任务使用的 qpos 路径，
+训练已经推进 53 步。定向复核命令：
+
+```powershell
+rg -n -i "(^|[^a-z])(nan|inf)([^a-z]|$)|traceback|cuda out of memory|outofmemory|oom" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_formal_driver.log'
+```
+
+只返回上述四行初始化 traceback 标题，没有 NaN/Inf/OOM 或后续 traceback。
+
+第一次下载按六个独立 SFTP 连接顺序执行：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $run='/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1'; python $helper get "$run/tensorboard/events.out.tfevents.1785236070.autodl-container-nekaqbwt43-6ce5babb.70062.0" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_events.tfevents'; python $helper get "$run/resource_monitor/resources.csv" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_resources.csv'; python $helper get "$run/resource_monitor/cgroup_detail.csv" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_cgroup_detail.csv'; python $helper get "$run/resource_monitor/peak.txt" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_peak.txt'; python $helper get "$run/formal_driver.log" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_formal_driver.log'; python $helper get "$run/metrics.log" 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_metrics.log'
+```
+
+工具在 60 秒边界超时：event 和 resources 完整，cgroup 只下载 425,984 bytes。没有覆盖
+远程文件。窄修复是在一个已验证 host-key 的 Paramiko/SFTP 会话里依次下载到
+`.partial`，完成后才原子替换本地目标；实际入口和命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python -B 'C:\Users\86136\Documents\rl\.tmp\download_dsrl_step52_snapshot.py'
+```
+
+六个文件分别为 163,408、1,092,813、782,399、756、441,082 和 377,146 bytes，
+全部完成。密码始终只在当前 PowerShell 进程存在。
+
+横版图与摘要生成命令：
+
+```powershell
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' --events 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_events.tfevents' --success-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP52_20260728_WIDE.png' --optimization-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP52_20260728_WIDE.png' --summary-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_metrics_summary.json' --timing-csv-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_timing.csv' --layout landscape
+
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py' --resources 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_resources.csv' --cgroup 'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_cgroup_detail.csv' --out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP52_20260728_WIDE.png' --layout landscape
+```
+
+生成后 summary 显示 event 已含 step 53。为避免报告名与图内标题不一致，在确认三个
+STEP53 目标均不存在后，用三个精确 `Move-Item -LiteralPath` 把本轮新生成的 STEP52
+文件改名为 STEP53；没有移动历史 step-20/30 文件。
+
+关键结果：
+
+- step 53：resident 1,681、33,620 requested interactions、24,180 optimizer updates；
+  learned train 101/160，trailing-20 为 75%。
+- step 39/52 formal eval 为 8/12、10/12；四次 eval 单调
+  `1/12 → 7/12 → 8/12 → 10/12`。
+- critic loss 0.395，Q-head range 0.111；actor/critic/alpha grad
+  0.54/2.96/0.072，均 finite。
+- alpha/entropy 为 0.0061/-4.15；target entropy=-16，当前仍是朝目标下降，下一节点
+  检查是否减速。
+- 最近 step 40–53 平均 305.4 秒；排除 eval 为 296.0 秒。按该窗口估算剩余约
+  50.7 小时；step 65 约 61 分钟后到达，另加首次 DCP 未知保存耗时。
+- 资源 23:05：两卡约 31.4 GiB，峰 34.4/34.1 GiB；cgroup 234.7/240 GiB，
+  anon 45.6 GiB、file 187.1 GiB、inactive file 155.4 GiB、PSI=0、OOM=0。
+  env RSS 峰 21.5 GiB，仍是观察项，但总 anon 低于初始化峰值 47.8 GiB。
+
+TensorBoard 最新 event wall time 读取第一次 20 秒超时，随后只提高本地读取超时到
+60 秒，没有重下文件或触及训练：
+
+```powershell
+$env:TF_CPP_MIN_LOG_LEVEL='2'; python -B -c "from tensorboard.backend.event_processing.event_accumulator import EventAccumulator; import datetime; p=r'C:\Users\86136\Documents\rl\.tmp\dsrl_step52_events.tfevents'; e=EventAccumulator(p,size_guidance={'scalars':0}); e.Reload(); x=e.Scalars('time/step')[-1]; print('LATEST_STEP',x.step+1); print('WALL_TIME_CST',datetime.datetime.fromtimestamp(x.wall_time).astimezone().strftime('%Y-%m-%d %H:%M:%S %Z'))"
+```
+
+输出 step 53、2026-07-28 23:04:08 CST。
+
+可视化与报告 QA：
+
+- 三张 PNG 均为 2430×1440 横版，已逐张用 `view_image(detail=original)` 检查；
+  0%–100% 成功率完整、时间 tick 和图例无重叠。
+- 新对话图
+  `dsrl-formal-step53-success.html` 使用同一 step-53 数据，大小 10,615 bytes、唯一
+  root、无 document wrapper、转义引号或字面 `\n`，JavaScript 语法通过。
+- fragment 结构/语法和 standalone wrapper 命令：
+
+```powershell
+$p='E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-formal-step53-success.html'; $text=Get-Content -LiteralPath $p -Raw -Encoding UTF8; node -e "const fs=require('fs');const s=fs.readFileSync(process.argv[1],'utf8');const m=s.match(/<script>([\s\S]*?)<\/script>/);if(!m)throw new Error('script missing');new Function(m[1]);console.log('JS_OK');" $p
+
+python -B 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' 'E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-formal-step53-success.html' 'C:\Users\86136\Documents\rl\.tmp\dsrl-formal-step53-success-preview.html'
+```
+
+本轮只新增状态报告和三张图，并更新 HANDOFF、主计划和本流水账；没有修改 production
+code、配置、run root、checkpoint 或训练进程。
+
+#### FORMAL-013.1　step-53 文档同步命令
+
+写入前只读 gate：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_docs_preflight.sh'
+```
+
+七个精确文档/报告路径上传：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'; $pairs=@(
+  @('C:\Users\86136\Documents\rl\HANDOFF.md',"$repo/HANDOFF.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\00_INDEX_AND_IMPLEMENTATION_PLAN.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STATUS_REPORT_STEP53_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP53_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP53_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP53_20260728_WIDE.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP53_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_OPTIMIZATION_TRENDS_STEP53_20260728_WIDE.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP53_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_RESOURCE_CURVES_STEP53_20260728_WIDE.png")
+); foreach($pair in $pairs){python $helper put $pair[0] $pair[1]; if($LASTEXITCODE -ne 0){throw "upload failed: $($pair[0])"}}
+```
+
+服务器验证与 docs-only commit/push：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_docs_validate.sh'
+
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step53_docs_commit.sh'
+```
+
+validate 要求 dirty set 精确等于这 7 条、`git diff --check` 通过、三张 PNG 都是
+2430×1440、报告/主计划/HANDOFF/FORMAL-013 入口存在且 driver 存活。commit 脚本只
+stage 这 7 条，以 `docs(dsrl): refresh formal step 53 report` 提交，45 秒边界 push，
+最后检查 HEAD/upstream、clean worktree、driver 和最新 step。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

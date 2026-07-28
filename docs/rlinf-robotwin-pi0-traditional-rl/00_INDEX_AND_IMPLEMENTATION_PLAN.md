@@ -471,12 +471,13 @@ PYTHONDONTWRITEBYTECODE=1 \
   `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；smoke 结果文档随后作为 docs-only
   commit 推送到同一功能分支。
 - 完整正式训练已于 2026-07-28 18:54:12 CST 启动：2 GPU、4 env、micro 64、
-  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至 21:03 最新完整
-  step 30，resident 1,062，约 21,240 requested interactions，累计 11,800 learned
-  updates；learned train phase 为 33/68，第二次 formal eval（step 26）为 7/12，
-  下一次 eval 在 step 39。critic loss 已从 step-25 峰值 1.929 回落到 0.848，
-  grad/Q finite；alpha/entropy 与 env-worker RSS 是后续观察项，无 OOM/NaN/crash。
-  最新横版状态图和判断见
-  [`evidence/FORMAL_STATUS_REPORT_STEP30_20260728.md`](./evidence/FORMAL_STATUS_REPORT_STEP30_20260728.md)；
-  step-20 报告保留为历史快照。
+  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至 23:04 最新完整
+  step 53，resident 1,681，约 33,620 requested interactions，累计 24,180 learned
+  updates；learned train phase 为 101/160、trailing-20 为 75%。四次 formal eval
+  为 1/12、7/12、8/12、10/12，最近一次在 step 52。critic loss 约 0.395，
+  10-Q/grad finite；alpha/entropy 为 0.0061/-4.15，仍高于 target entropy -16。
+  两卡和 cgroup 无 OOM/PSI，但 env-worker RSS 峰值已到 21.5 GiB，继续观察。
+  下一节点 step 65 同时做 12-episode eval 和首个 DCP。最新横版状态图和判断见
+  [`evidence/FORMAL_STATUS_REPORT_STEP53_20260728.md`](./evidence/FORMAL_STATUS_REPORT_STEP53_20260728.md)；
+  step-20/30 报告保留为历史快照。
   训练保持运行，不在运行中改变方法参数或并发；用户下次要求时再 live 刷新，不持续在线轮询。
