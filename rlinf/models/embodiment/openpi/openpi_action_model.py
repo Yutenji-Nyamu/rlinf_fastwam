@@ -40,6 +40,50 @@ def _to_numpy(x):
     return np.asarray(x.detach().cpu()) if torch.is_tensor(x) else x
 
 
+def preprocess_dsrl_images(images):
+    """Resize the DSRL main-camera input to the compact encoder contract.
+
+    Raw rollout observations may be NHWC uint8 or NCHW floating point.  The
+    flat DSRL replay stores the resulting BCHW tensor as bfloat16 in [-1, 1].
+    Detecting that exact storage contract avoids a second normalize/resize
+    round trip during replay training and keeps rollout and learner pixels on
+    the same path.
+    """
+    main_image = images[0] if isinstance(images, (list, tuple)) else images
+    if main_image.ndim == 5 and main_image.shape[1] == 1:
+        main_image = main_image[:, 0]
+    if main_image.ndim != 4:
+        raise ValueError(
+            f"DSRL main image must be BCHW or BHWC, got shape {tuple(main_image.shape)}"
+        )
+
+    if main_image.dtype == torch.bfloat16 and main_image.shape[1:] == (3, 64, 64):
+        return main_image.unsqueeze(1)
+
+    if main_image.shape[-1] == 3:
+        main_image = main_image.permute(0, 3, 1, 2)
+    elif main_image.shape[1] != 3:
+        raise ValueError(
+            "DSRL main image must have three RGB channels, "
+            f"got shape {tuple(main_image.shape)}"
+        )
+
+    if main_image.dtype == torch.uint8:
+        main_image = main_image.float().div_(255.0)
+    else:
+        main_image = main_image.float()
+        if main_image.min() < 0:
+            main_image = (main_image + 1.0) / 2.0
+    main_image = main_image.clamp_(0.0, 1.0)
+    main_image = F.interpolate(
+        main_image,
+        size=(64, 64),
+        mode="bilinear",
+        align_corners=False,
+    )
+    return (main_image * 2.0 - 1.0).unsqueeze(1)
+
+
 @dataclass(frozen=True)
 class OpenPi0Config(Pi0Config):
     # config for rl
@@ -84,6 +128,9 @@ class OpenPi0Config(Pi0Config):
     dsrl_hidden_dims: tuple = field(
         default_factory=lambda: (128, 128, 128)
     )  # Hidden dims for Q-head and GaussianPolicy
+    # Keep legacy LIBERO behavior unless a new config explicitly opts in.
+    dsrl_gaussian_warmup: bool = False
+    dsrl_eval_deterministic: bool = True
 
     # ===== NFT-specific parameters =====
     is_nft: bool = False
@@ -271,6 +318,16 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 num_q_heads=self.config.dsrl_num_q_heads,
                 output_dim=1,
             ).to(dtype=_dsrl_dtype)
+            initial_phase = 0 if self.config.dsrl_gaussian_warmup else 1
+            self.register_buffer(
+                "dsrl_policy_phase",
+                torch.tensor(initial_phase, dtype=torch.uint8),
+                persistent=True,
+            )
+            # The SAC worker enables this flag only while loading an old
+            # strict DCP/local-shard checkpoint.  Fresh SFT loading uses
+            # strict=False and must retain the configured initial phase.
+            self._load_missing_dsrl_phase_as_learned = False
 
         for name, module in self.named_modules():
             # Set _fsdp_wrap_name to the last part of the path (e.g., "model.action_in_proj" -> "action_in_proj")
@@ -278,6 +335,37 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             setattr(module, "_fsdp_wrap_name", path_parts[-1] if path_parts else name)
 
         self.torch_compile_enabled = False
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        phase_key = f"{prefix}dsrl_policy_phase"
+        if (
+            self.config.use_dsrl
+            and phase_key not in state_dict
+            and getattr(self, "_load_missing_dsrl_phase_as_learned", False)
+        ):
+            state_dict[phase_key] = torch.ones_like(self.dsrl_policy_phase)
+            self.logger.warning(
+                "Loading a legacy DSRL checkpoint without dsrl_policy_phase; "
+                "restoring learned-policy phase for compatibility."
+            )
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
     def set_global_step(self, global_step):
         self.global_step = global_step
@@ -851,9 +939,26 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # Step 1: SAC agent outputs noise
             dsrl_obs = {"images": [env_obs["main_images"]], "states": env_obs["states"]}
 
-            noise_actions, noise_logprob, _ = self.sac_forward(
-                dsrl_obs, train=False, mode=mode
-            )
+            if int(self.dsrl_policy_phase.item()) == 0:
+                latent = torch.randn(
+                    observation.state.shape[0],
+                    self.config.dsrl_action_noise_dim,
+                    device=observation.state.device,
+                    dtype=torch.float32,
+                )
+                noise_logprob = (
+                    -0.5 * (latent.square() + math.log(2.0 * math.pi))
+                ).sum(dim=-1)
+                noise_actions = latent.to(
+                    dtype=next(self.dsrl_action_noise_net.parameters()).dtype
+                )
+                noise_actions = noise_actions.unsqueeze(1).repeat(
+                    1, self.config.action_horizon, 1
+                )
+            else:
+                noise_actions, noise_logprob, _ = self.sac_forward(
+                    dsrl_obs, train=False, mode=mode
+                )
 
             # Step 2: Use noise to sample actual actions from diffusion model
             outputs = self.sample_actions(
@@ -1459,7 +1564,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 )
 
         # Preprocess images: resize to 64x64, use only agentview camera
-        # Returns [B, 1, C, 64, 64] in [-1, 1] range (float32)
+        # Returns [B, 1, C, 64, 64] in [-1, 1].
         images = self._preprocess_dsrl_images(obs["images"], train=train)
         states = self._preprocess_states(obs["states"])
 
@@ -1475,7 +1580,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         # Sample from GaussianPolicy
         mode = kwargs.get("mode", "train")
-        deterministic = mode == "eval"
+        deterministic = mode == "eval" and self.config.dsrl_eval_deterministic
 
         action_noise, logprobs = self.dsrl_action_noise_net.sample(
             features, deterministic=deterministic
@@ -1535,7 +1640,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 )
 
         # Preprocess images: resize to 64x64, use only agentview camera
-        # Returns [B, 1, C, 64, 64] in [-1, 1] range (float32)
+        # Returns [B, 1, C, 64, 64] in [-1, 1].
         images = self._preprocess_dsrl_images(obs["images"], train=train)
         states = self._preprocess_states(obs["states"])
 
@@ -1651,54 +1756,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             Tensor of shape [B, 1, C, 64, 64] - only agentview, resized, in [-1, 1].
         """
 
-        # Extract only agentview camera (first image in the list)
-        if isinstance(images, list):
-            agentview_img = images[0]
-        else:
-            # Assume it's already a tensor
-            agentview_img = images
-
-        # Detect and convert NHWC -> NCHW (environment outputs NHWC)
-        if agentview_img.shape[-1] == 3:
-            # NHWC format: [B, H, W, C] -> [B, C, H, W]
-            agentview_img = agentview_img.permute(0, 3, 1, 2)
-
-        B, C, H, W = agentview_img.shape
-        target_size = 64
-
-        # ===== UNIFIED VALUE RANGE HANDLING =====
-        # Convert to float32 and normalize to [0, 1] for PyTorch resize
-        if agentview_img.dtype == torch.uint8:
-            # [0, 255] -> [0, 1]
-            agentview_img = agentview_img.float() / 255.0
-        else:
-            # Check if in [-1, 1] range
-            if agentview_img.min() < 0:
-                # [-1, 1] -> [0, 1]
-                agentview_img = (agentview_img + 1.0) / 2.0
-            # else: already in [0, 1] range, assume correctly normalized
-        # ===========================================
-
-        # Clamp to ensure valid range
-        agentview_img = agentview_img.clamp(0.0, 1.0)
-
-        # ===== GPU-ACCELERATED RESIZE (aligned with PIL behavior) =====
-        # PyTorch bilinear with align_corners=False approximates PIL's behavior
-        resized_img = F.interpolate(
-            agentview_img,
-            size=(target_size, target_size),
-            mode="bilinear",
-            align_corners=False,
-        )
-        # =============================================================
-
-        # Convert back to [-1, 1] range (to match PIL-based pipeline)
-        resized_img = resized_img * 2.0 - 1.0  # [0, 1] -> [-1, 1]
-
-        # Add num_images dimension: [B, C, 64, 64] -> [B, 1, C, 64, 64]
-        resized_img = resized_img.unsqueeze(1)
-
-        return resized_img
+        return preprocess_dsrl_images(images)
 
     def _preprocess_states(self, states):
         """

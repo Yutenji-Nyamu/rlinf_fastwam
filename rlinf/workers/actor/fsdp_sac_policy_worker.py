@@ -29,7 +29,11 @@ from rlinf.data.embodied_buffer_dataset import (
     replay_buffer_collate_fn,
 )
 from rlinf.data.embodied_io_struct import Trajectory
-from rlinf.data.replay_buffer import TrajectoryReplayBuffer
+from rlinf.data.replay_buffer import (
+    DSRLTransitionReplayBuffer,
+    TrajectoryReplayBuffer,
+    project_dsrl_trajectory,
+)
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.models.embodiment.modules.entropy_tunning import EntropyTemperature
 from rlinf.scheduler import Channel, Worker
@@ -59,10 +63,17 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         self.alpha_optimizer = None
         self.update_step = 0
         self.enable_drq = bool(getattr(self.cfg.actor, "enable_drq", False))
+        self.use_dsrl_flat_replay = False
+        self._local_new_transitions = 0
 
     def init_worker(self):
         self.setup_model_and_optimizer(initialize_target=True)
         self.setup_sac_components()
+        if self.use_dsrl and self.cfg.actor.get("compile_model", False):
+            raise ValueError(
+                "DSRL target-shadow parameter names do not support "
+                "actor.compile_model=True"
+            )
         self.soft_update_target_model(tau=1.0)
         if self.use_dsrl:
             self._init_target_shadow()
@@ -172,27 +183,45 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         """Initialize SAC-specific components"""
         # Initialize replay buffer
         seed = self.cfg.actor.get("seed", 1234)
-        auto_save_path = self.cfg.algorithm.replay_buffer.get("auto_save_path", None)
-        if auto_save_path is None:
-            auto_save_path = os.path.join(
-                self.cfg.runner.logger.log_path, f"replay_buffer/rank_{self._rank}"
+        replay_cfg = self.cfg.algorithm.replay_buffer
+        replay_type = replay_cfg.get("type", "trajectory")
+        self.use_dsrl_flat_replay = bool(
+            self.use_dsrl and replay_type == "dsrl_transition"
+        )
+        if replay_type == "dsrl_transition" and not self.use_dsrl:
+            raise ValueError("dsrl_transition replay requires openpi.use_dsrl=True")
+
+        if self.use_dsrl_flat_replay:
+            self.replay_buffer = DSRLTransitionReplayBuffer(
+                capacity=replay_cfg.capacity,
+                seed=seed,
+                rank=self._rank,
+                world_size=self._world_size,
+                schema_version=replay_cfg.get("schema_version", 1),
             )
         else:
-            auto_save_path = os.path.join(auto_save_path, f"rank_{self._rank}")
-        self.replay_buffer = TrajectoryReplayBuffer(
-            seed=seed,
-            enable_cache=self.cfg.algorithm.replay_buffer.enable_cache,
-            cache_size=self.cfg.algorithm.replay_buffer.cache_size,
-            sample_window_size=self.cfg.algorithm.replay_buffer.sample_window_size,
-            auto_save=self.cfg.algorithm.replay_buffer.get("auto_save", False),
-            auto_save_path=auto_save_path,
-            trajectory_format=self.cfg.algorithm.replay_buffer.get(
-                "trajectory_format", "pt"
-            ),
-        )
+            auto_save_path = replay_cfg.get("auto_save_path", None)
+            if auto_save_path is None:
+                auto_save_path = os.path.join(
+                    self.cfg.runner.logger.log_path,
+                    f"replay_buffer/rank_{self._rank}",
+                )
+            else:
+                auto_save_path = os.path.join(auto_save_path, f"rank_{self._rank}")
+            self.replay_buffer = TrajectoryReplayBuffer(
+                seed=seed,
+                enable_cache=replay_cfg.enable_cache,
+                cache_size=replay_cfg.cache_size,
+                sample_window_size=replay_cfg.sample_window_size,
+                auto_save=replay_cfg.get("auto_save", False),
+                auto_save_path=auto_save_path,
+                trajectory_format=replay_cfg.get("trajectory_format", "pt"),
+            )
 
         min_demo_buffer_size = 0
         if self.cfg.algorithm.get("demo_buffer", None) is not None:
+            if self.use_dsrl_flat_replay:
+                raise ValueError("DSRL transition replay does not support demo_buffer")
             auto_save_path = self.cfg.algorithm.demo_buffer.get("auto_save_path", None)
             if auto_save_path is None:
                 auto_save_path = os.path.join(
@@ -218,17 +247,22 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                     world_size=self._world_size,
                 )
 
-        if self.cfg.algorithm.replay_buffer.get("enable_preload", False):
+        if self.use_dsrl_flat_replay and replay_cfg.get("enable_preload", False):
+            raise ValueError("DSRL transition replay does not support preload sampling")
+        if replay_cfg.get("enable_preload", False):
             buffer_dataset_cls = PreloadReplayBufferDataset
         else:
             buffer_dataset_cls = ReplayBufferDataset
+        min_replay_buffer_size = (
+            1 if self.use_dsrl_flat_replay else replay_cfg.min_buffer_size
+        )
         self.buffer_dataset = buffer_dataset_cls(
             replay_buffer=self.replay_buffer,
             demo_buffer=self.demo_buffer,
             batch_size=self.cfg.actor.global_batch_size // self._world_size,
-            min_replay_buffer_size=self.cfg.algorithm.replay_buffer.min_buffer_size,
+            min_replay_buffer_size=min_replay_buffer_size,
             min_demo_buffer_size=min_demo_buffer_size,
-            prefetch_size=self.cfg.algorithm.replay_buffer.get("prefetch_size", 10),
+            prefetch_size=replay_cfg.get("prefetch_size", 10),
         )
         self.buffer_dataloader = DataLoader(
             self.buffer_dataset,
@@ -248,6 +282,81 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         assert self.target_update_type in ["all", "q_head_only"], (
             f"{self.target_update_type=} is not suppported!"
         )
+        if self.use_dsrl_flat_replay:
+            openpi_cfg = self.cfg.actor.model.openpi
+            action_horizon = int(openpi_cfg.get("action_horizon", 50))
+            num_action_chunks = int(self.cfg.actor.model.num_action_chunks)
+            rollout_epoch = int(self.cfg.env.train.rollout_epoch)
+            if not 0 < num_action_chunks <= action_horizon:
+                raise ValueError(
+                    "DSRL requires 0 < num_action_chunks <= action_horizon, "
+                    f"got N={num_action_chunks}, H={action_horizon}"
+                )
+            if rollout_epoch != 1:
+                raise ValueError(
+                    "DSRL transition projection currently requires "
+                    f"env.train.rollout_epoch=1, got {rollout_epoch}"
+                )
+            if bool(self.cfg.env.train.get("auto_reset", False)):
+                raise ValueError(
+                    "DSRL transition projection requires env.train.auto_reset=False"
+                )
+            if bool(self.cfg.env.train.get("ignore_terminations", False)):
+                raise ValueError(
+                    "DSRL transition projection requires "
+                    "env.train.ignore_terminations=False"
+                )
+            if not 0.0 < float(self.cfg.algorithm.gamma) <= 1.0:
+                raise ValueError("DSRL requires gamma in (0, 1]")
+            if int(replay_cfg.capacity) < int(replay_cfg.warmup_size):
+                raise ValueError(
+                    "DSRL replay capacity must be at least warmup_size, "
+                    f"got {replay_cfg.capacity} < {replay_cfg.warmup_size}"
+                )
+            if self.cfg.algorithm.get("bootstrap_type", "standard") != "standard":
+                raise ValueError(
+                    "DSRL transition replay requires bootstrap_type=standard"
+                )
+            if self.cfg.algorithm.get("utd_ratio", 0) <= 0:
+                raise ValueError("DSRL transition replay requires utd_ratio > 0")
+            if replay_cfg.get("warmup_size", 0) <= 0:
+                raise ValueError("DSRL transition replay requires warmup_size > 0")
+        self._local_new_transitions = 0
+
+    @staticmethod
+    def _is_dsrl_target_q_parameter(name: str) -> bool:
+        parts = name.split(".")
+        return any(
+            component in parts
+            for component in (
+                "critic_image_encoder",
+                "critic_state_encoder",
+                "q_head",
+            )
+        )
+
+    def _named_dsrl_target_q_parameters(self, model) -> dict[str, torch.nn.Parameter]:
+        parameters = {
+            name: parameter
+            for name, parameter in model.named_parameters()
+            if self._is_dsrl_target_q_parameter(name)
+        }
+        components = {
+            component
+            for name in parameters
+            for component in (
+                "critic_image_encoder",
+                "critic_state_encoder",
+                "q_head",
+            )
+            if component in name.split(".")
+        }
+        expected = {"critic_image_encoder", "critic_state_encoder", "q_head"}
+        if components != expected:
+            raise RuntimeError(
+                f"Incomplete DSRL target-Q allowlist: {sorted(components)}"
+            )
+        return parameters
 
     def _init_target_shadow(self):
         """Create persistent float32 shadow of target model parameters.
@@ -258,9 +367,11 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         keeps the accumulated EMA state in float32 (ULP ~3.6e-8) across
         steps, preventing precision loss.
         """
-        self._target_shadow_f32 = {}
-        for name, param in self.target_model.named_parameters():
-            self._target_shadow_f32[name] = param.data.float().clone()
+        target_parameters = self._named_dsrl_target_q_parameters(self.target_model)
+        self._target_shadow_f32 = {
+            name: parameter.data.float().clone()
+            for name, parameter in target_parameters.items()
+        }
 
     def soft_update_target_model(self, tau: Optional[float] = None):
         """Soft update target model parameters.
@@ -275,6 +386,47 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         assert self.target_model_initialized
 
         with torch.no_grad():
+            if self.use_dsrl:
+                online_parameters = self._named_dsrl_target_q_parameters(self.model)
+                target_parameters = self._named_dsrl_target_q_parameters(
+                    self.target_model
+                )
+                if set(online_parameters) != set(target_parameters):
+                    raise RuntimeError("Online/target DSRL target-Q names differ")
+                if hasattr(self, "_target_shadow_f32") and set(
+                    self._target_shadow_f32
+                ) != set(target_parameters):
+                    raise RuntimeError("DSRL FP32 target shadow names differ")
+
+                for name, target_param in target_parameters.items():
+                    online_param = online_parameters[name]
+                    use_ema = (
+                        self.target_update_type == "all" or "q_head" in name.split(".")
+                    )
+                    if hasattr(self, "_target_shadow_f32"):
+                        shadow = self._target_shadow_f32[name]
+                        if (
+                            shadow.shape != target_param.shape
+                            or shadow.dtype != torch.float32
+                        ):
+                            raise RuntimeError(
+                                f"Invalid DSRL FP32 shadow for {name}: "
+                                f"{tuple(shadow.shape)}/{shadow.dtype}"
+                            )
+                        if use_ema:
+                            shadow.mul_(1.0 - tau).add_(
+                                online_param.data.float(), alpha=tau
+                            )
+                        else:
+                            shadow.copy_(online_param.data.float())
+                        target_param.data.copy_(shadow.to(target_param.data.dtype))
+                    elif use_ema:
+                        target_param.data.mul_(1.0 - tau)
+                        target_param.data.add_(online_param.data * tau)
+                    else:
+                        target_param.data.copy_(online_param.data)
+                return
+
             if not hasattr(self, "_target_shadow_f32"):
                 # Non-DSRL path (or before shadow init): direct EMA update
                 for (name1, online_param), (name2, target_param) in zip(
@@ -292,23 +444,6 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                     else:
                         target_param.data.mul_(1.0 - tau)
                         target_param.data.add_(online_param.data * tau)
-            else:
-                # DSRL path: float32 shadow buffer for bf16 precision
-                for (name1, online_param), (name2, target_param) in zip(
-                    self.model.named_parameters(),
-                    self.target_model.named_parameters(),
-                ):
-                    assert name1 == name2
-                    if "q_head" not in name1 and self.target_update_type != "all":
-                        shadow = self._target_shadow_f32[name1]
-                        shadow.copy_(online_param.data.float())
-                        target_param.data.copy_(shadow.to(target_param.data.dtype))
-                    else:
-                        shadow = self._target_shadow_f32[name1]
-                        shadow.mul_(1.0 - tau).add_(
-                            online_param.data.float(), alpha=tau
-                        )
-                        target_param.data.copy_(shadow.to(target_param.data.dtype))
 
     @Worker.timer("actor/recv_traj")
     async def recv_rollout_trajectories(self, input_channel: Channel) -> None:
@@ -330,7 +465,20 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             trajectory: Trajectory = await input_channel.get(async_op=True).async_wait()
             recv_list.append(trajectory)
 
-        self.replay_buffer.add_trajectories(recv_list)
+        if self.use_dsrl_flat_replay:
+            openpi_cfg = self.cfg.actor.model.openpi
+            for trajectory in recv_list:
+                projected = project_dsrl_trajectory(
+                    trajectory,
+                    action_horizon=openpi_cfg.get("action_horizon", 50),
+                    latent_dim=openpi_cfg.dsrl_action_noise_dim,
+                    state_dim=openpi_cfg.dsrl_state_dim,
+                    num_action_chunks=self.cfg.actor.model.num_action_chunks,
+                    gamma=self.cfg.algorithm.gamma,
+                )
+                self._local_new_transitions += self.replay_buffer.add_batch(projected)
+        else:
+            self.replay_buffer.add_trajectories(recv_list)
 
         if self.demo_buffer is not None:
             intervene_traj_list = []
@@ -349,16 +497,24 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         bootstrap_type = self.cfg.algorithm.get("bootstrap_type", "standard")
         agg_q = self.cfg.algorithm.get("agg_q", "min")
         use_dsrl = self.cfg.actor.model.get("openpi", {}).get("use_dsrl", False)
-        if use_dsrl:
+        if self.use_dsrl_flat_replay:
+            discount = batch["discounts"].to(self.torch_dtype)
+            rewards_for_bootstrap = batch["rewards"].to(self.torch_dtype)
+            continuations = batch["continuations"].to(self.torch_dtype)
+            terminations = batch["terminations"].to(self.torch_dtype)
+        elif use_dsrl:
             num_action_chunks = self.cfg.actor.model.get("num_action_chunks", 1)
             discount = self.cfg.algorithm.gamma**num_action_chunks
             rewards_for_bootstrap = batch["rewards"][:, 0:1].to(self.torch_dtype)
+            continuations = None
+            terminations = batch["terminations"].to(self.torch_dtype)
         else:
             discount = self.cfg.algorithm.gamma
             rewards_for_bootstrap = (
                 batch["rewards"].sum(dim=-1, keepdim=True).to(self.torch_dtype)
             )
-        terminations = batch["terminations"].to(self.torch_dtype)
+            continuations = None
+            terminations = batch["terminations"].to(self.torch_dtype)
 
         curr_obs = batch["curr_obs"]
         next_obs = batch["next_obs"]
@@ -414,7 +570,12 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                         qf_next_target - self.entropy_temp.alpha * next_state_log_pi
                     )
                     qf_next_target = qf_next_target.to(dtype=self.torch_dtype)
-                if bootstrap_type == "always":
+                if self.use_dsrl_flat_replay:
+                    target_q_values = (
+                        rewards_for_bootstrap
+                        + continuations * discount * qf_next_target
+                    )
+                elif bootstrap_type == "always":
                     target_q_values = (
                         rewards_for_bootstrap + discount * qf_next_target
                     )  # [bsz, 1]
@@ -454,7 +615,11 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 qf_next = qf_next - self.entropy_temp.alpha * next_state_log_pi
                 qf_next = qf_next.to(dtype=self.torch_dtype)
 
-            if bootstrap_type == "always":
+            if self.use_dsrl_flat_replay:
+                target_q_values = (
+                    rewards_for_bootstrap + continuations * discount * qf_next
+                )
+            elif bootstrap_type == "always":
                 target_q_values = rewards_for_bootstrap + discount * qf_next  # [bsz, 1]
             elif bootstrap_type == "standard":
                 target_q_values = (
@@ -514,7 +679,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             )
         metrics = {
             f"q_value_{q_id}": all_qf_pi[..., q_id].mean().item()
-            for q_id in range(self.cfg.actor.model.get("num_q_heads", 2))
+            for q_id in range(all_qf_pi.shape[-1])
         }
         if agg_q == "min":
             qf_pi, _ = torch.min(all_qf_pi, dim=1, keepdim=True)
@@ -548,6 +713,14 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         alpha_loss = -alpha * (log_pi.mean() + self.target_entropy)
         return alpha_loss
 
+    def _clear_dsrl_critic_grads_before_actor_clip(self):
+        if self.use_dsrl:
+            self.qf_optimizer.zero_grad(set_to_none=True)
+
+    def _clear_dsrl_actor_grads_before_critic_clip(self):
+        if self.use_dsrl:
+            self.optimizer.zero_grad(set_to_none=True)
+
     @Worker.timer("update_one_epoch")
     def update_one_epoch(self, train_actor: bool = True):
         global_batch_size_per_rank = (
@@ -562,7 +735,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             global_batch_size_per_rank // self.cfg.actor.micro_batch_size,
         )
 
-        # move train_micro_batch_list to device and apply DRQ for critic/actor/alpha passes
+        # Move micro-batches to device and apply DRQ for all SAC passes.
         for i, batch in enumerate(train_micro_batch_list):
             batch = put_tensor_device(batch, device=self.device)
             if self.enable_drq:
@@ -571,6 +744,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             train_micro_batch_list[i] = batch
 
         self.qf_optimizer.zero_grad()
+        self._clear_dsrl_actor_grads_before_critic_clip()
         gbs_critic_loss = []
         all_critic_metrics = {}
         for batch in train_micro_batch_list:
@@ -608,6 +782,10 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 gbs_actor_loss.append(actor_loss.item() * self.gradient_accumulation)
                 gbs_entropy.append(entropy.item())
                 append_to_dict(all_actor_metrics, q_metrics)
+            # The DSRL actor needs dQ/da through q_head, but q_head itself
+            # belongs to qf_optimizer. Remove those incidental parameter
+            # gradients before the FSDP-wide actor grad norm.
+            self._clear_dsrl_critic_grads_before_actor_clip()
             all_actor_metrics = {
                 f"actor/{key}": np.mean(value)
                 for key, value in all_actor_metrics.items()
@@ -631,7 +809,8 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                         alpha_loss.item() * self.gradient_accumulation
                     )
                 torch.distributed.all_reduce(
-                    self.entropy_temp.base_alpha.grad, op=torch.distributed.ReduceOp.AVG
+                    self.entropy_temp.base_alpha.grad,
+                    op=torch.distributed.ReduceOp.AVG,
                 )
                 alpha_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.entropy_temp.base_alpha,
@@ -699,6 +878,69 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         )
         return mean_metric_dict
 
+    @staticmethod
+    def _phase_buffers(model) -> list[torch.Tensor]:
+        return [
+            buffer
+            for name, buffer in model.named_buffers()
+            if name.split(".")[-1] == "dsrl_policy_phase"
+        ]
+
+    def _get_dsrl_policy_phase(self) -> int:
+        return self._get_dsrl_policy_phase_from_model(self.model, "online")
+
+    def _get_dsrl_policy_phase_from_model(self, model, model_name: str) -> int:
+        buffers = self._phase_buffers(model)
+        if len(buffers) != 1:
+            raise RuntimeError(
+                f"Expected one {model_name} DSRL phase buffer, found {len(buffers)}"
+            )
+        return int(buffers[0].item())
+
+    def _set_dsrl_policy_phase(self, phase: int):
+        if phase not in (0, 1):
+            raise ValueError(f"Invalid DSRL policy phase: {phase}")
+        for model_name, model in (
+            ("online", self.model),
+            ("target", self.target_model),
+        ):
+            buffers = self._phase_buffers(model)
+            if len(buffers) != 1:
+                raise RuntimeError(
+                    f"Expected one {model_name} DSRL phase buffer, found {len(buffers)}"
+                )
+            buffers[0].fill_(phase)
+
+    @staticmethod
+    def _set_legacy_phase_load(model, enabled: bool):
+        found = 0
+        for module in model.modules():
+            if hasattr(module, "_load_missing_dsrl_phase_as_learned"):
+                module._load_missing_dsrl_phase_as_learned = enabled
+                found += 1
+        if found != 1:
+            raise RuntimeError(
+                f"Expected one OpenPI DSRL phase compatibility module, found {found}"
+            )
+
+    def _consume_global_dsrl_replay_counts(self) -> tuple[int, int, int]:
+        counts = torch.tensor(
+            [self._local_new_transitions, len(self.replay_buffer)],
+            dtype=torch.long,
+            device=self.device,
+        )
+        min_resident = torch.tensor(
+            len(self.replay_buffer), dtype=torch.long, device=self.device
+        )
+        torch.distributed.all_reduce(counts, op=torch.distributed.ReduceOp.SUM)
+        torch.distributed.all_reduce(min_resident, op=torch.distributed.ReduceOp.MIN)
+        self._local_new_transitions = 0
+        return (
+            int(counts[0].item()),
+            int(counts[1].item()),
+            int(min_resident.item()),
+        )
+
     @Worker.timer("run_training")
     def run_training(self):
         """SAC training using replay buffer"""
@@ -706,18 +948,49 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             self.load_param_and_grad(self.device)
             self.load_optimizer(self.device)
 
-        # Check if replay buffer has enough samples
-        min_buffer_size = self.cfg.algorithm.replay_buffer.get("min_buffer_size", 100)
-        if not self.replay_buffer.is_ready(min_buffer_size):
-            self.log_on_first_rank(
-                f"Replay buffer size {len(self.replay_buffer)} < {min_buffer_size}, skipping training"
+        dsrl_counts = None
+        if self.use_dsrl_flat_replay:
+            global_new, global_resident, min_local_resident = (
+                self._consume_global_dsrl_replay_counts()
             )
-            return {}
+            dsrl_counts = {
+                "sac/global_new_transitions": [global_new],
+                "sac/global_resident_transitions": [global_resident],
+            }
+            warmup_size = self.cfg.algorithm.replay_buffer.warmup_size
+            if global_resident < warmup_size:
+                self.log_on_first_rank(
+                    "DSRL replay warm-up: "
+                    f"{global_resident} < {warmup_size} global transitions"
+                )
+                return self.process_train_metrics(dsrl_counts)
+            if min_local_resident <= 0:
+                raise RuntimeError(
+                    "Global DSRL replay is warm but at least one actor rank is empty"
+                )
+            self._set_dsrl_policy_phase(1)
+            update_epoch = int(self.cfg.algorithm.utd_ratio) * global_new
+            dsrl_counts["sac/planned_optimizer_updates"] = [update_epoch]
+            if update_epoch <= 0:
+                return self.process_train_metrics(dsrl_counts)
+            train_actor = True
+        else:
+            # Check if the legacy replay buffer has enough trajectories.
+            min_buffer_size = self.cfg.algorithm.replay_buffer.get(
+                "min_buffer_size", 100
+            )
+            if not self.replay_buffer.is_ready(min_buffer_size):
+                self.log_on_first_rank(
+                    f"Replay buffer size {len(self.replay_buffer)} "
+                    f"< {min_buffer_size}, skipping training"
+                )
+                return {}
 
-        # Delay actor training until buffer has enough samples
-        train_actor_steps = self.cfg.algorithm.get("train_actor_steps", 0)
-        train_actor_steps = max(min_buffer_size, train_actor_steps)
-        train_actor = self.replay_buffer.is_ready(train_actor_steps)
+            # Delay actor training until the legacy buffer has enough trajectories.
+            train_actor_steps = self.cfg.algorithm.get("train_actor_steps", 0)
+            train_actor_steps = max(min_buffer_size, train_actor_steps)
+            train_actor = self.replay_buffer.is_ready(train_actor_steps)
+            update_epoch = self.cfg.algorithm.get("update_epoch", 1)
 
         assert (
             self.cfg.actor.global_batch_size
@@ -731,9 +1004,8 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         )
 
         self.model.train()
-        metrics = {}
+        metrics = dsrl_counts or {}
 
-        update_epoch = self.cfg.algorithm.get("update_epoch", 1)
         for _ in range(update_epoch):
             metrics_data = self.update_one_epoch(train_actor=train_actor)
             append_to_dict(metrics, metrics_data)
@@ -754,6 +1026,129 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         """
         return {}
 
+    def _dsrl_trainer_state_path(self, base_path: str) -> str:
+        return os.path.join(
+            base_path,
+            "sac_components",
+            f"dsrl_trainer_state_rank_{self._rank}.pt",
+        )
+
+    def _save_dsrl_trainer_state(self, save_base_path: str):
+        target_parameters = self._named_dsrl_target_q_parameters(self.target_model)
+        if not hasattr(self, "_target_shadow_f32"):
+            raise RuntimeError("DSRL checkpoint requires an initialized FP32 shadow")
+        if set(self._target_shadow_f32) != set(target_parameters):
+            raise RuntimeError("DSRL checkpoint shadow names do not match target-Q")
+
+        shadow_cpu = {}
+        for name, target_parameter in target_parameters.items():
+            shadow = self._target_shadow_f32[name]
+            if shadow.shape != target_parameter.shape or shadow.dtype != torch.float32:
+                raise RuntimeError(
+                    f"Invalid DSRL checkpoint shadow for {name}: "
+                    f"{tuple(shadow.shape)}/{shadow.dtype}"
+                )
+            if not torch.equal(
+                shadow.to(target_parameter.dtype), target_parameter.data
+            ):
+                raise RuntimeError(
+                    f"DSRL FP32 shadow no longer rounds to target parameter {name}"
+                )
+            shadow_cpu[name] = shadow.detach().cpu().clone()
+
+        state = {
+            "schema_version": 1,
+            "rank": self._rank,
+            "world_size": self._world_size,
+            "update_step": self.update_step,
+            "policy_phase": self._get_dsrl_policy_phase(),
+            "pending_local_new_transitions": self._local_new_transitions,
+            "flat_replay": self.use_dsrl_flat_replay,
+            "target_shadow_f32": shadow_cpu,
+        }
+        target_path = self._dsrl_trainer_state_path(save_base_path)
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        temp_path = f"{target_path}.tmp"
+        torch.save(state, temp_path)
+        os.replace(temp_path, target_path)
+
+    def _load_dsrl_trainer_state(self, load_base_path: str):
+        state_path = self._dsrl_trainer_state_path(load_base_path)
+        if not os.path.isfile(state_path):
+            self._init_target_shadow()
+            self.update_step = 0
+            self._local_new_transitions = 0
+            self._set_dsrl_policy_phase(1)
+            self.logger.warning(
+                "Legacy DSRL checkpoint has no FP32 target shadow/trainer state. "
+                "Rebuilt critic-only shadow from the loaded BF16 target and "
+                "restored learned-policy phase; resume is compatible but not "
+                "bitwise continuous."
+            )
+            return
+
+        state = torch.load(state_path, map_location="cpu", weights_only=True)
+        expected_layout = {
+            "schema_version": 1,
+            "rank": self._rank,
+            "world_size": self._world_size,
+            "flat_replay": self.use_dsrl_flat_replay,
+        }
+        mismatches = {
+            key: (state.get(key), expected)
+            for key, expected in expected_layout.items()
+            if state.get(key) != expected
+        }
+        if mismatches:
+            raise ValueError(f"DSRL trainer-state layout mismatch: {mismatches}")
+
+        target_parameters = self._named_dsrl_target_q_parameters(self.target_model)
+        saved_shadow = state.get("target_shadow_f32", {})
+        if set(saved_shadow) != set(target_parameters):
+            missing = sorted(set(target_parameters) - set(saved_shadow))
+            extra = sorted(set(saved_shadow) - set(target_parameters))
+            raise ValueError(
+                f"DSRL trainer-state shadow names mismatch: {missing=}, {extra=}"
+            )
+        restored_shadow = {}
+        for name, target_parameter in target_parameters.items():
+            shadow = saved_shadow[name]
+            if shadow.dtype != torch.float32 or shadow.shape != target_parameter.shape:
+                raise ValueError(
+                    f"Invalid saved DSRL shadow for {name}: "
+                    f"{tuple(shadow.shape)}/{shadow.dtype}"
+                )
+            shadow = shadow.to(device=target_parameter.device).contiguous()
+            if not torch.equal(
+                shadow.to(target_parameter.dtype), target_parameter.data
+            ):
+                raise ValueError(
+                    f"Saved DSRL shadow does not match loaded target {name}"
+                )
+            restored_shadow[name] = shadow
+        self._target_shadow_f32 = restored_shadow
+
+        phase = int(state["policy_phase"])
+        loaded_online_phase = self._get_dsrl_policy_phase()
+        loaded_target_phase = self._get_dsrl_policy_phase_from_model(
+            self.target_model, "target"
+        )
+        if loaded_online_phase != phase or loaded_target_phase != phase:
+            raise ValueError(
+                "DSRL model/trainer phase mismatch: "
+                f"online={loaded_online_phase}, target={loaded_target_phase}, "
+                f"trainer={phase}"
+            )
+        update_step = int(state["update_step"])
+        pending_new = int(state.get("pending_local_new_transitions", 0))
+        if update_step < 0 or pending_new < 0:
+            raise ValueError(
+                f"Invalid DSRL trainer counters: {update_step=}, {pending_new=}"
+            )
+        self.update_step = update_step
+        self._local_new_transitions = pending_new
+        self._set_dsrl_policy_phase(phase)
+
     def save_checkpoint(self, save_base_path, step):
         if self.is_weight_offloaded:
             self.load_param_and_grad(self.device)
@@ -768,6 +1163,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             optimizers=[self.optimizer, self.qf_optimizer],
             lr_schedulers=[self.lr_scheduler, self.qf_lr_scheduler],
             save_path=save_base_path,
+            save_full_model_weights=self.cfg.actor.fsdp_config.get(
+                "save_full_model_weights", True
+            ),
             checkpoint_format="local_shard"
             if self.cfg.actor.fsdp_config.use_orig_params
             else "dcp",
@@ -797,6 +1195,8 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             target_model_state_dict,
             os.path.join(target_model_save_path, f"checkpoint_rank_{self._rank}.pt"),
         )
+        if self.use_dsrl:
+            self._save_dsrl_trainer_state(save_base_path)
 
         # save replay buffer
         buffer_save_path = os.path.join(
@@ -805,16 +1205,25 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         self.replay_buffer.save_checkpoint(buffer_save_path)
 
     def load_checkpoint(self, load_base_path):
-        # load model
-        self._strategy.load_checkpoint(
-            model=self.model,
-            optimizers=[self.optimizer, self.qf_optimizer],
-            lr_schedulers=[self.lr_scheduler, self.qf_lr_scheduler],
-            load_path=load_base_path,
-            checkpoint_format="local_shard"
-            if self.cfg.actor.fsdp_config.use_orig_params
-            else "dcp",
+        legacy_dsrl_checkpoint = self.use_dsrl and not os.path.isfile(
+            self._dsrl_trainer_state_path(load_base_path)
         )
+        # load model
+        if legacy_dsrl_checkpoint:
+            self._set_legacy_phase_load(self.model, True)
+        try:
+            self._strategy.load_checkpoint(
+                model=self.model,
+                optimizers=[self.optimizer, self.qf_optimizer],
+                lr_schedulers=[self.lr_scheduler, self.qf_lr_scheduler],
+                load_path=load_base_path,
+                checkpoint_format="local_shard"
+                if self.cfg.actor.fsdp_config.use_orig_params
+                else "dcp",
+            )
+        finally:
+            if legacy_dsrl_checkpoint:
+                self._set_legacy_phase_load(self.model, False)
 
         # load alpha
         if self.alpha_optimizer is not None:
@@ -831,14 +1240,24 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             load_base_path, "sac_components/target_model"
         )
         target_model_state_dict = torch.load(
-            os.path.join(target_model_load_path, f"checkpoint_rank_{self._rank}.pt")
+            os.path.join(target_model_load_path, f"checkpoint_rank_{self._rank}.pt"),
+            map_location="cpu",
+            weights_only=True,
         )
-        self._strategy.load_model_with_state_dict(
-            self.target_model,
-            target_model_state_dict,
-            cpu_offload=False,
-            full_state_dict=True,
-        )
+        if legacy_dsrl_checkpoint:
+            self._set_legacy_phase_load(self.target_model, True)
+        try:
+            self._strategy.load_model_with_state_dict(
+                self.target_model,
+                target_model_state_dict,
+                cpu_offload=False,
+                full_state_dict=True,
+            )
+        finally:
+            if legacy_dsrl_checkpoint:
+                self._set_legacy_phase_load(self.target_model, False)
+        if self.use_dsrl:
+            self._load_dsrl_trainer_state(load_base_path)
 
         # load replay buffer
         buffer_load_path = os.path.join(
