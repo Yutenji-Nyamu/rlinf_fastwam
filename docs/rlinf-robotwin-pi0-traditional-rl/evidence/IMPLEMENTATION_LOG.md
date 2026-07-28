@@ -401,5 +401,6 @@ PYTHONDONTWRITEBYTECODE=1
 - 输出根固定为 `/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_smoke_v1`，现场确认当前不存在。
 - 新增 `SMOKE_APPROVAL_20260728.md`，包含完整配置链接、fresh/resume 精确命令、PID/driver/resource 日志、DCP 路径、资源估计、3 小时单阶段上限、停止条件和最低通过结论。
 - 资源估计参考同机历史 π0 smoke 的实际峰值：29–40 GiB GPU/卡、112–125 GiB cgroup、约 27–29 分钟；DSRL 首轮保守预留 60 GiB GPU/卡、180 GiB 非可回收工作集、每阶段 30–90 分钟。
-- 云端状态：实现与交接提交已推送到 `c9cf4316`。监控兼容提交 `15892e45` 已在服务器 clean branch 创建，但连续 push 遇到 GitHub HTTP2 framing、443 timeout 和 curl connect timeout；当前仅本地领先远端 1 commit，没有丢失或重写历史。网络恢复后重试同一 push。
-- fresh/resume smoke 仍未执行；必须等监控提交推送成功和用户明确批准。
+- 云端状态：实现与交接提交先推送到 `c9cf4316`；监控兼容 `15892e45` 和批准包 `4021245e` 随后创建。服务器本地 DNS 指向的 GitHub edge 连续出现 HTTP2 framing/443 timeout；公共 DNS 返回的备用 edge 经独立 TLS 探测通过后，使用一次性 `git -c http.curloptResolve=...` 推送成功。没有改 remote、全局 DNS/Git 配置或提交历史。
+- 推送后本地/远端均为 `4021245e68372c497286ffaf5258f42cf2f98303`，服务器 worktree clean。
+- fresh/resume smoke 仍未执行；当前等待用户明确批准。
