@@ -7,13 +7,13 @@
 
 ## 0. 当前状态
 
-- 状态：训练继续运行；截至 2026-07-28 20:08:11 CST，最新完整记录为 global step 20。
-- 进度：global replay resident 761；约 15,220 requested primitive interactions；
-  learned SAC 累计 5,780 optimizer updates。
+- 状态：训练继续运行；截至 2026-07-28 21:03:56 CST，最新完整记录为 global step 30。
+- 进度：global replay resident 1,062；约 21,240 requested primitive interactions；
+  learned SAC 累计 11,800 optimizer updates。
 - 进程：driver、2 actor、2 rollout、2 env workers 仍存活；`oom=0`、`oom_kill=0`，
   已报告 loss/Q/alpha/gradient 均有限。
-- 本次静态状态报告：
-  [`FORMAL_STATUS_REPORT_STEP20_20260728.md`](./FORMAL_STATUS_REPORT_STEP20_20260728.md)。
+- 最新静态状态报告：
+  [`FORMAL_STATUS_REPORT_STEP30_20260728.md`](./FORMAL_STATUS_REPORT_STEP30_20260728.md)。
 - 启动时间：2026-07-28 18:54:12 CST。
 - 服务器：`root@autodl-container-nekaqbwt43-6ce5babb`。
 - 分支：`codex/dsrl-pi0-robotwin`。
@@ -115,6 +115,12 @@ run root 内已创建：
 - [`FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png`](./FORMAL_OPTIMIZATION_TRENDS_STEP20_20260728.png)；
 - [`FORMAL_RESOURCE_CURVES_STEP20_20260728.png`](./FORMAL_RESOURCE_CURVES_STEP20_20260728.png)；
 - [`FORMAL_STEP_TIMING_STEP20_20260728.csv`](./FORMAL_STEP_TIMING_STEP20_20260728.csv)。
+
+截至 step 30 / 21:04 的横版大图为：
+
+- [`FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP30_20260728_WIDE.png`](./FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP30_20260728_WIDE.png)；
+- [`FORMAL_OPTIMIZATION_TRENDS_STEP30_20260728_WIDE.png`](./FORMAL_OPTIMIZATION_TRENDS_STEP30_20260728_WIDE.png)；
+- [`FORMAL_RESOURCE_CURVES_STEP30_20260728_WIDE.png`](./FORMAL_RESOURCE_CURVES_STEP30_20260728_WIDE.png)。
 
 启动期早期图只保留作初始化追溯，不用它替代最新训练全史。
 
@@ -440,6 +446,126 @@ $env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documen
 收口脚本只 stage 上述 13 个精确路径，要求 staged 数量恰为 13，再 commit、在 45 秒边界内
 push，并最终复核 HEAD/upstream、clean worktree 和 driver 存活。实际 commit/push 结果在本轮
 回复中报告；commit 自身的 hash 不写回同一个 commit，以避免自引用修改。
+
+### FORMAL-012　step-30 只读刷新与横版可视化
+
+- 用户要求：重新检查当前训练，并修正上一轮纵向长图在 Codex 消息中显示过小的问题。
+- 现场边界：2026-07-28 21:03:56 CST；最新完整 step 30，资源 CSV 覆盖到 21:04:56。
+- 服务器只读 gate：branch/HEAD/upstream 为
+  `codex/dsrl-pi0-robotwin@723eb475fd6524851df8471b1f05f6f92aeea508`，
+  worktree clean；driver、2 actor、2 rollout、2 env workers 存活。
+
+服务器快照命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\remote_dsrl_metrics_refresh_snapshot.sh'
+```
+
+日志与采样文件下载命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $run='/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1'; $dst='C:\Users\86136\Documents\rl\.tmp'; python $helper get "$run/formal_driver.log" "$dst/dsrl_step30_formal_driver.log"; if($LASTEXITCODE -ne 0){throw 'driver download failed'}; python $helper get "$run/metrics.log" "$dst/dsrl_step30_metrics.log"; if($LASTEXITCODE -ne 0){throw 'metrics download failed'}; python $helper get "$run/tensorboard/events.out.tfevents.1785236070.autodl-container-nekaqbwt43-6ce5babb.70062.0" "$dst/dsrl_step30_events.tfevents"; if($LASTEXITCODE -ne 0){throw 'events download failed'}; python $helper get "$run/resource_monitor/resources.csv" "$dst/dsrl_step30_resources.csv"; if($LASTEXITCODE -ne 0){throw 'resources download failed'}; python $helper get "$run/resource_monitor/cgroup_detail.csv" "$dst/dsrl_step30_cgroup_detail.csv"; if($LASTEXITCODE -ne 0){throw 'cgroup download failed'}; python $helper get "$run/resource_monitor/peak.txt" "$dst/dsrl_step30_peak.txt"; if($LASTEXITCODE -ne 0){throw 'peak download failed'}
+```
+
+横版图与摘要生成命令：
+
+```powershell
+python -B 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' --events '.tmp\dsrl_step30_events.tfevents' --success-out 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP30_20260728_WIDE.png' --optimization-out 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP30_20260728_WIDE.png' --summary-out '.tmp\dsrl_step30_summary_wide.json' --timing-csv-out '.tmp\dsrl_step30_timing_wide.csv' --layout landscape
+
+python -B 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py' --resources '.tmp\dsrl_step30_resources.csv' --cgroup '.tmp\dsrl_step30_cgroup_detail.csv' --out 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP30_20260728_WIDE.png' --layout landscape
+
+python -m py_compile 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' 'docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py'
+```
+
+结果：
+
+- step 26 formal eval 为 7/12；learned train phase 33/68，trailing-20 为 60%。
+- step 30 为 28 transitions / 560 updates，整轮 322.5 秒；累计 11,800 updates，
+  实测 1.950 updates/s。
+- critic loss 在 step 25 达 1.929 后回落至 0.848；Q、10-head spread 和三个 grad
+  均有限。alpha/entropy 降到 0.076/16.77，作为后续观察项。
+- GPU/cgroup 无 OOM 或 PSI 压力；`memory.events max` 未再增加。env-worker RSS 从
+  19:15 的约 11.9 GiB 升至 21:05 的约 18.3 GiB，是新的资源观察项，但总 anon
+  仍低于初始化峰值。
+
+可视化 QA：
+
+- 第一版横版 success 图继承了旧 `ylim=0.62`，把 step 22 之后的 75%/100% 点裁掉；
+  逐图检查后改为 `[-0.02,1.02]` 并重绘。
+- 第一版横版 resource 图的窄面板仍有时间 tick 重叠；先用 `AutoDateLocator` 时产生
+  interval warning，最终改为按总时长选择 30 分钟/1 小时/4 小时/12 小时 locator，
+  重绘后无 warning。
+- 两个已有绘图脚本只新增 opt-in `--layout landscape`；默认 portrait 不变。
+- 三张最终 PNG 均为约 16:9 横版并已逐张视觉检查；成功率轴覆盖完整 0%–100%，资源图
+  tick 无重叠。对话内 success 图使用相同 step-30 数据和轴语义。
+- `py_compile` 生成的本地 `evidence/tools/__pycache__` 在确认解析路径位于工作区后删除，
+  没有上传或触及服务器环境。
+- 对话图 fragment 检查为 10,278 bytes、唯一 root、无 document wrapper/转义字面量，
+  `render.py` 包装成功。第一次 inline `node -e` 因 Windows 参数引号被剥离而语法失败；
+  第二次临时 `.cjs` 入口又因 sandbox 对 `C:\Users\86136` 的 `lstat` 权限失败。最终改为
+  process-env 传 fragment 路径的 `node -e`，输出 `JS_SYNTAX=PASS`；两次失败均只有本地
+  QA 进程，无项目或服务器副作用。
+
+最终 fragment 检查命令：
+
+```powershell
+$env:VISUAL_PATH='E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-formal-step30-success.html'; node -e "const fs=require('fs'); const s=fs.readFileSync(process.env.VISUAL_PATH,'utf8'); const m=s.match(/<script>([\s\S]*?)<\/script>/); if(!m) throw new Error('missing script'); new Function(m[1]); console.log('JS_SYNTAX=PASS');"
+
+python 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' 'E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-formal-step30-success.html' 'C:\Users\86136\Documents\rl\.tmp\dsrl-formal-step30-success-preview.html'
+```
+
+最终本地 gate 对两个脚本运行 `-B --help`，检查三张 PNG 均为
+`2430×1440`，确认无残留 `__pycache__`，并对本轮 9 个拟同步路径运行
+`git -c safe.directory=... diff --check`；输出 `LOCAL_VALIDATION=PASS`。
+
+#### FORMAL-012.1　文档同步与收口命令
+
+写入前只读 gate 命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step30_docs_preflight.sh'
+```
+
+该 command file 精确检查 branch、HEAD、upstream、clean worktree 和 formal driver PID，
+全部通过后输出 `PREFLIGHT=PASS`。
+
+九个文档/报告路径的精确上传命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'; $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'; $pairs=@(
+  @('C:\Users\86136\Documents\rl\HANDOFF.md',"$repo/HANDOFF.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\00_INDEX_AND_IMPLEMENTATION_PLAN.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STATUS_REPORT_STEP30_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP30_20260728.md"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP30_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP30_20260728_WIDE.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP30_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_OPTIMIZATION_TRENDS_STEP30_20260728_WIDE.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP30_20260728_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_RESOURCE_CURVES_STEP30_20260728_WIDE.png"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/build_dsrl_formal_step20_plots.py"),
+  @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/tools/build_dsrl_formal_resource_plot.py")
+); foreach($pair in $pairs){python $helper put $pair[0] $pair[1]; if($LASTEXITCODE -ne 0){throw "upload failed: $($pair[0])"}}
+```
+
+服务器验证与 commit/push 命令：
+
+```powershell
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step30_docs_validate.sh'
+
+$env:SEETA_SSH_PASSWORD='<process-only secret>'; python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step30_docs_commit.sh'
+```
+
+validate script 要求 dirty path 恰为 9、`git diff --check` 通过、三张 PNG 均为
+2430×1440、报告含 step 30/7-of-12/FORMAL-012，且两个 Python 入口在服务器 venv
+下 `-B --help` 成功。commit script 只 stage 上述 9 个路径，再执行：
+
+```bash
+git diff --cached --check
+test "$(git diff --cached --name-only | wc -l)" -eq 9
+git commit -m "docs(dsrl): refresh formal step 30 report"
+timeout --signal=TERM --kill-after=5s 45s \
+  git -c http.version=HTTP/1.1 push personal HEAD:codex/dsrl-pi0-robotwin
+```
+
+上传后的服务器验证已输出 `VALIDATION=PASS`；实际 commit/push hash 在本轮回复报告。
 
 ## 6. 停止与干预条件
 

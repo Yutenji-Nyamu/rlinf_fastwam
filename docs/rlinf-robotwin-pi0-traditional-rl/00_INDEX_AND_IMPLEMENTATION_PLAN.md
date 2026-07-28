@@ -1,7 +1,7 @@
 # π0 × RoboTwin × DSRL：设计与实施主计划
 
-> 状态：2026-07-28 N=20 fresh/resume smoke 已通过；`650/13/65` 正式训练截至 20:08
-> 完整到 step 20，训练继续运行
+> 状态：2026-07-28 N=20 fresh/resume smoke 已通过；`650/13/65` 正式训练截至 21:03
+> 完整到 step 30，训练继续运行
 >
 > 本文件是当前唯一需要经常读取的实施计划，只讨论第一阶段 DSRL × π0 × RoboTwin。
 >
@@ -471,10 +471,12 @@ PYTHONDONTWRITEBYTECODE=1 \
   `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；smoke 结果文档随后作为 docs-only
   commit 推送到同一功能分支。
 - 完整正式训练已于 2026-07-28 18:54:12 CST 启动：2 GPU、4 env、micro 64、
-  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至 20:08 最新完整
-  step 20，resident 761，约 15,220 requested interactions，累计 5,780 learned updates；
-  learned train phase 为 8/28，首轮 formal eval 为 1/12，下一次 eval 在 step 26。
-  critic loss 0.880 是首要观察项，但 critic grad/Q/alpha/entropy finite，无 OOM/NaN/crash。
-  状态报告、成功率/采样效率、优化、资源曲线和逐 step timing 见
-  [`evidence/FORMAL_STATUS_REPORT_STEP20_20260728.md`](./evidence/FORMAL_STATUS_REPORT_STEP20_20260728.md)。
+  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至 21:03 最新完整
+  step 30，resident 1,062，约 21,240 requested interactions，累计 11,800 learned
+  updates；learned train phase 为 33/68，第二次 formal eval（step 26）为 7/12，
+  下一次 eval 在 step 39。critic loss 已从 step-25 峰值 1.929 回落到 0.848，
+  grad/Q finite；alpha/entropy 与 env-worker RSS 是后续观察项，无 OOM/NaN/crash。
+  最新横版状态图和判断见
+  [`evidence/FORMAL_STATUS_REPORT_STEP30_20260728.md`](./evidence/FORMAL_STATUS_REPORT_STEP30_20260728.md)；
+  step-20 报告保留为历史快照。
   训练保持运行，不在运行中改变方法参数或并发；用户下次要求时再 live 刷新，不持续在线轮询。

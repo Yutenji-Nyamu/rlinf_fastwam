@@ -26,6 +26,12 @@ def main() -> int:
     parser.add_argument("--resources", type=Path, required=True)
     parser.add_argument("--cgroup", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--layout",
+        choices=("portrait", "landscape"),
+        default="portrait",
+        help="Use landscape for readable in-conversation previews.",
+    )
     args = parser.parse_args()
 
     resources = read_rows(args.resources)
@@ -40,7 +46,24 @@ def main() -> int:
 
     mib_per_gib = 1024.0
     event_start = float(cgroup[0]["memory_events_max"])
-    fig, axes = plt.subplots(5, 1, figsize=(7.2, 12.8), sharex=True, constrained_layout=True)
+    if args.layout == "landscape":
+        fig = plt.figure(figsize=(13.5, 8.0), constrained_layout=True)
+        grid = fig.add_gridspec(2, 3)
+        axes = [
+            fig.add_subplot(grid[0, 0:2]),
+            fig.add_subplot(grid[0, 2]),
+            fig.add_subplot(grid[1, 0]),
+            fig.add_subplot(grid[1, 1]),
+            fig.add_subplot(grid[1, 2]),
+        ]
+    else:
+        fig, axes = plt.subplots(
+            5,
+            1,
+            figsize=(7.2, 12.8),
+            sharex=True,
+            constrained_layout=True,
+        )
     fig.suptitle(
         f"DSRL pi0 RoboTwin formal resources\n{times[0]:%Y-%m-%d %H:%M:%S}–{times[-1]:%H:%M:%S} CST",
         fontsize=15,
@@ -91,10 +114,23 @@ def main() -> int:
         fontsize=9,
     )
 
+    duration_hours = (times[-1] - times[0]).total_seconds() / 3600
+
+    def time_locator() -> mdates.DateLocator:
+        if duration_hours <= 4:
+            return mdates.MinuteLocator(byminute=(0, 30))
+        if duration_hours <= 12:
+            return mdates.HourLocator(interval=1)
+        if duration_hours <= 48:
+            return mdates.HourLocator(interval=4)
+        return mdates.HourLocator(interval=12)
+
     for axis in axes:
         axis.grid(True, color="0.88", linewidth=0.7)
         axis.spines[["top", "right"]].set_visible(False)
-    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+        axis.tick_params(labelsize=9)
+        axis.xaxis.set_major_locator(time_locator())
+        axis.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out, dpi=180)
     plt.close(fig)

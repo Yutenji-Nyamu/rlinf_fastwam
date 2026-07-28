@@ -11,6 +11,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 
@@ -41,6 +42,12 @@ def main() -> int:
     parser.add_argument("--optimization-out", type=Path, required=True)
     parser.add_argument("--summary-out", type=Path, required=True)
     parser.add_argument("--timing-csv-out", type=Path, required=True)
+    parser.add_argument(
+        "--layout",
+        choices=("portrait", "landscape"),
+        default="portrait",
+        help="Use landscape for readable in-conversation previews.",
+    )
     args = parser.parse_args()
 
     accumulator = EventAccumulator(str(args.events), size_guidance={"scalars": 0})
@@ -104,9 +111,18 @@ def main() -> int:
         )
 
     args.success_out.parent.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(
-        3, 1, figsize=(7.4, 10.8), constrained_layout=True
-    )
+    if args.layout == "landscape":
+        fig = plt.figure(figsize=(13.5, 8.0), constrained_layout=True)
+        grid = fig.add_gridspec(2, 2, height_ratios=(1.18, 1.0))
+        axes = [
+            fig.add_subplot(grid[0, :]),
+            fig.add_subplot(grid[1, 0]),
+            fig.add_subplot(grid[1, 1]),
+        ]
+    else:
+        fig, axes = plt.subplots(
+            3, 1, figsize=(7.4, 10.8), constrained_layout=True
+        )
     fig.suptitle(
         f"DSRL formal success and sample budget through global step {latest_step}",
         fontsize=15,
@@ -173,7 +189,7 @@ def main() -> int:
             zorder=5,
         )
     axes[0].set_xlim(left=0)
-    axes[0].set_ylim(-0.02, 0.62)
+    axes[0].set_ylim(-0.02, 1.02)
     axes[0].set_ylabel("Success rate")
     axes[0].set_xlabel("Cumulative requested primitive interactions (thousands)")
     axes[0].legend(fontsize=8, ncol=2, loc="upper left")
@@ -229,6 +245,7 @@ def main() -> int:
     for axis in axes:
         axis.grid(True, color="0.88", linewidth=0.7)
         axis.spines[["top", "right"]].set_visible(False)
+        axis.tick_params(labelsize=9)
     fig.savefig(args.success_out, dpi=180)
     plt.close(fig)
 
@@ -250,9 +267,20 @@ def main() -> int:
     q_min = [min(head[step] for head in q_heads) for step in update_steps]
     q_max = [max(head[step] for head in q_heads) for step in update_steps]
 
-    fig, axes = plt.subplots(
-        5, 1, figsize=(7.4, 13.6), sharex=True, constrained_layout=True
-    )
+    if args.layout == "landscape":
+        fig = plt.figure(figsize=(13.5, 8.0), constrained_layout=True)
+        grid = fig.add_gridspec(2, 3)
+        axes = [
+            fig.add_subplot(grid[0, 0:2]),
+            fig.add_subplot(grid[0, 2]),
+            fig.add_subplot(grid[1, 0]),
+            fig.add_subplot(grid[1, 1]),
+            fig.add_subplot(grid[1, 2]),
+        ]
+    else:
+        fig, axes = plt.subplots(
+            5, 1, figsize=(7.4, 13.6), sharex=True, constrained_layout=True
+        )
     fig.suptitle(
         f"DSRL learned SAC diagnostics through global step {latest_step}",
         fontsize=15,
@@ -353,8 +381,12 @@ def main() -> int:
     for axis in axes:
         axis.grid(True, color="0.88", linewidth=0.7)
         axis.spines[["top", "right"]].set_visible(False)
+        axis.tick_params(labelsize=9)
+        axis.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=8))
     entropy_axis.spines["top"].set_visible(False)
-    axes[-1].set_xticks(update_steps)
+    entropy_axis.tick_params(labelsize=9)
+    if args.layout == "portrait":
+        axes[-1].set_xticks(update_steps)
     fig.savefig(args.optimization_out, dpi=180)
     plt.close(fig)
 
@@ -410,6 +442,21 @@ def main() -> int:
             "resident_transitions": [resident[step] for step in steps],
             "new_transitions": [new_transitions[step] for step in steps],
             "cumulative_optimizer_updates": cumulative_updates.tolist(),
+        },
+        "optimization_series": {
+            "step": update_steps,
+            "q_pi": [q_pi[step] for step in update_steps],
+            "q_data": [q_data[step] for step in update_steps],
+            "q_head_min": q_min,
+            "q_head_max": q_max,
+            "critic_loss": [critic_loss[step] for step in update_steps],
+            "actor_loss": [actor_loss[step] for step in update_steps],
+            "alpha_loss": [alpha_loss[step] for step in update_steps],
+            "alpha": [alpha[step] for step in update_steps],
+            "entropy": [entropy[step] for step in update_steps],
+            "actor_grad": [actor_grad[step] for step in update_steps],
+            "critic_grad": [critic_grad[step] for step in update_steps],
+            "alpha_grad": [alpha_grad[step] for step in update_steps],
         },
     }
     args.summary_out.write_text(
