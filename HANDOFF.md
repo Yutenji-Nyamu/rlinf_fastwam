@@ -176,7 +176,12 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `docs/rlinf-robotwin-pi0-rltoken/04_STAGE2_PRE_SMOKE_PACKET_20260729.md`。
 - Stage 2 artifact preflight、formal/fresh/resume compose/audit、Ruff、py_compile和
   19个集中单测已通过；MLP仅2,162,202参数。fresh/resume launch script 服务器
-  `bash -n` 和22-field resource-monitor单样本自测通过。
+  `bash -n` 和22-field resource-monitor单样本自测通过；docs commit 后的治理 gate 已
+  精确允许 `docs/**` 与根 `HANDOFF.md`，同时继续拒绝其他 code/config diff。
+- Stage 2 审批包本地服务器 commit 为
+  `92e02d9e51c47422696f5ed17a2f15165a6331a6`。服务器到 GitHub 主站的 443
+  当前超时，故该 commit 尚未发布到 `personal`；API 端点可达不等于 Git smart-HTTP
+  可达。不得重做 commit，网络恢复后只需刷新并推送当前分支。
 - 计划 smoke 路径
   `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1` 和 runtime evidence
   `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1`
@@ -186,7 +191,8 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
 - 当前授权停点：等待用户审批 `04_STAGE2_PRE_SMOKE_PACKET_20260729.md` 中的
   fresh→postcheck→新进程 resume 两阶段；没有审批不得运行。下一次执行前仍须刷新
-  branch/upstream/dirty tree、进程、GPU/RAM/disk 和目标路径。formal pilot 总 cycle
+  branch/upstream/dirty tree、进程、GPU/RAM/disk 和目标路径，并先确认待发布 commit
+  是否已推送。formal pilot 总 cycle
   预算继续未批准；smoke 后再在约30-cycle phase-transition pilot 与约60-cycle
   初步趋势 pilot 之间决定。
 

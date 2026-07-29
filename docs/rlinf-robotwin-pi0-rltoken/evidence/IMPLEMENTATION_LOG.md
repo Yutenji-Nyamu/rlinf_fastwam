@@ -3408,3 +3408,38 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
   - 原子更新 staging/worktree 中的 packet 与本流水账，并同步更新 upload manifest；
   - 重新运行全量内容 QA，再由同一 commit 脚本重新暂存28个精确路径。
 - 当前没有形成 commit、没有 push、没有改变算法代码，也没有启动 smoke。
+
+### A076 — Stage 2 packet commit 成功，GitHub 网络发布暂缓
+
+- 去掉两处双空格、原子更新 packet/ledger 与 staging manifest 后，重新执行全量 review：
+  - update 后 manifest SHA：
+    `84858557cb02a0d3b61ae070035337e5dc985f8e96ccf889d22680ef0ec80d9e`
+  - 28个 upload SHA、内容/链接/JSON/YAML/21个 evidence SHA、8个 Bash syntax 均通过；
+  - dirty set 精确为28个 manifest path。
+- 第二次提交尝试通过 staged diff gate并成功生成：
+  ```text
+  92e02d9e51c47422696f5ed17a2f15165a6331a6
+  docs(rlt): prepare Stage 2 smoke approval
+  28 files changed, 3952 insertions(+), 120 deletions(-)
+  ```
+- 同一脚本中的首次 push 被服务器侧60秒 timeout 终止，exit 124；commit 已存在且
+  worktree clean。
+- 随后执行一次有界恢复脚本：
+  - 开始时 HEAD 相对 upstream left/right 为 `3/0`；
+  - 30秒 `ls-remote` 未得到结果；
+  - 最多240秒的 push 实际在约129秒报
+    `Failed to connect to github.com port 443: Connection timed out`，exit 128；
+  - 没有遗留 push 进程，没有改 remote/ref/commit。
+- 按本项目此前成功经验再做一次窄网络探针，而不是继续盲重试：
+  - `https://github.com`：10秒连接超时，HTTP `000`；
+  - `https://api.github.com`：HTTP `200`；
+  - 因 Git smart-HTTP 所需主站不可达，脚本返回
+    `NETWORK_PROBE_UNAVAILABLE_NO_PUSH`，没有发起第三次 push。
+- 当前结论：
+  - commit 与全部证据安全保存在服务器独立 branch；
+  - upstream publication 暂缓是外部网络状态，不是代码/测试/配置失败；
+  - 不安装代理、不改 remote、不输出 credential，也不继续占用连接；
+  - 网络恢复后从精确 HEAD/clean/ahead 状态做一次 push 即可，不重做实施或 packet。
+- 本节与 `HANDOFF.md` 的 publication 状态作为终端 closeout 追加；为避免“记录最后一次
+  记录提交”递归制造无限 commit，本轮最终 closeout commit SHA 由聊天交接给出。
+- Stage 2 smoke、Ray、RoboTwin、模型加载和训练仍均未启动。
