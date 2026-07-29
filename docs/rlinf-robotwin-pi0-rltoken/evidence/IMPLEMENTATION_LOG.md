@@ -2730,3 +2730,39 @@ hard-fail：
 
 按用户要求，本轮到此停止主动轮询，不等待2k。下一次询问时必须重新读取服务器现场，不能把
 step172、PID、显存或 ETA 当成持续当前值。
+
+## 53. A053：文档收口、提交与有限网络重试
+
+把本轮正式转换、清理、配置、启动和一次性健康快照整理进专题 SSOT、HANDOFF 和机器证据。
+第一次文档审查发现 `exact_command.txt` 被仓库的 `*.txt` 规则忽略；没有改写忽略规则，而是
+把该精确命令作为证据文件单独 `git add -f`。第一次提交前的
+`git diff --cached --check` 又发现正式训练交接文档两行末尾各有两个空格；仅对本轮精确
+staged paths 执行 `git restore --staged`，保留 worktree 内容，删除尾随空格后重新运行完整
+审查。第二次审查于 `2026-07-29T19:49:02+08:00` 通过：
+
+```text
+FORMAL_DOCS_REVIEW_OK files=14
+```
+
+审查覆盖 UTF-8、Markdown 相对链接、JSON/YAML 解析、证据 SHA 与口令/私钥模式。随后提交：
+
+```text
+d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
+docs(rlt): record formal Stage 1 launch
+14 files changed, 1876 insertions(+), 48 deletions(-)
+```
+
+第一次 `git push` 在等待约 131 秒后因 GitHub 443 连接超时失败；该失败只影响 Git 同步，
+不影响已经独立运行的 Stage 1 driver。一次内联重试命令在 Windows helper 参数解析阶段失败，
+未产生远端操作。随后上传窄重试脚本
+`/root/autodl-tmp/tmp/remote_rlt_20260729_retry_docs_push.sh`，脚本先 hard-fail 检查精确 HEAD、
+clean worktree 和 upstream ahead=1，再给 `git push` 240 秒上限。有限重试成功：
+
+```text
+4ac48d54..d7c3ca7e  codex/rlt-pi0-robotwin -> codex/rlt-pi0-robotwin
+remote refs/heads/codex/rlt-pi0-robotwin =
+d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
+```
+
+到此不再轮询训练；下次查看实验时从服务器现场重新核对 driver/exit、最终日志、资源尾部、
+`global_step_2000` 完整性和固定 prefix 的 endpoint 质量证据。
