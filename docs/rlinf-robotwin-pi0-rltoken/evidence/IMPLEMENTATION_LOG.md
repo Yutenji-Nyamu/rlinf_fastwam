@@ -1002,3 +1002,46 @@ personal/codex/rlt-pi0-robotwin
 
 没有创建 PR，也没有合并到主 π0、DSRL 或 personal main。此后仅允许追加本账本 closeout
 和最终交接，不再改变已验证算法/config。
+
+## 23. A023：closeout commit 推送故障与恢复
+
+把 A022 追加为独立 docs commit：
+
+```text
+3a23317d81828293f0a0c0e93e516b8f5af2e2c5
+docs(rlt): record pre-smoke implementation evidence
+```
+
+第一次普通 push 失败：
+
+```text
+fatal: ... Error in the HTTP2 framing layer
+```
+
+随后两次 HTTP/1.1 重试在本地 SSH 调用 50–60 秒超时后仍留有服务器 push/helper 进程。
+每次都先只读确认：
+
+- remote-tracking ref 仍为 `1a923a...`，没有部分更新；
+- 精确 PID 仍停在 `git push` / `git-remote-https`；
+
+等待约两分钟仍无进展后，只终止这两个精确 PID。没有停止训练（现场无训练），也没有删除、
+reset 或改写 Git ref。SSH Git 探针把 GitHub ED25519 host key 加入服务器
+`known_hosts`，但服务器没有 SSH public-key 权限，因此没有切换 remote protocol。
+
+继续检查：
+
+- `curl` 到 `github.com` / `api.github.com` 均 HTTP 200；
+- `gh auth status` 确认既有账号和 HTTPS credential helper 正常；
+- 没有输出或保存 token。
+
+最后使用服务器侧 `timeout 25s` 包住一次有界 `GIT_TRACE/GIT_CURL_VERBOSE` 普通 push。
+trace 中 Authorization 按 Git 默认显示为 `<redacted>`；确认 1,550-byte pack 已完整上传并收到
+GitHub HTTP/2 200。推送成功：
+
+```text
+1a923a23..3a23317d
+codex/rlt-pi0-robotwin -> personal/codex/rlt-pi0-robotwin
+```
+
+因此算法 implementation commit 和 docs closeout commit 都已在远端。该网络故障没有改变
+代码、测试结果、branch 历史或 smoke 授权边界。
