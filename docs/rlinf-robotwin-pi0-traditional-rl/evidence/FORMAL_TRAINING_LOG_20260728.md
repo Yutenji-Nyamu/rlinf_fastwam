@@ -887,6 +887,120 @@ view_image(detail=original)
 visualization；没有修改 production code、resolved config、run root、checkpoint
 或活训练进程。
 
+#### FORMAL-014.1　图表 QA、服务器同步与发布
+
+对话内可缩放图是新建的独立 fragment，没有覆盖 step-53 版本。结构、JavaScript
+和 standalone wrapper 的精确检查命令：
+
+```powershell
+$fragment='E:\Codex\home\visualizations\2026\07\27\019fa3db-1fba-7d22-a35c-eaa3b1ec680d\dsrl-formal-step188-success.html'
+$text=Get-Content -LiteralPath $fragment -Raw -Encoding UTF8
+[pscustomobject]@{
+  Bytes=(Get-Item -LiteralPath $fragment).Length
+  RootCount=([regex]::Matches($text,'id="dsrl-step188-review-root"')).Count
+  ForbiddenTags=([regex]::Matches($text,'<(?:html|head|body|iframe)\b','IgnoreCase')).Count
+  EscapedQuotes=([regex]::Matches($text,'\\"')).Count
+  LiteralBackslashN=([regex]::Matches($text,'\\n')).Count
+}
+node -e "const fs=require('fs');const s=fs.readFileSync(process.argv[1],'utf8');const m=s.match(/<script>([\s\S]*?)<\/script>/);if(!m)throw new Error('script missing');new Function(m[1]);console.log('JS_OK');" $fragment
+python -B 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' `
+  $fragment 'C:\Users\86136\Documents\rl\.tmp\dsrl-formal-step188-success-preview.html'
+```
+
+结果：10,279 bytes、唯一 root、四类 forbidden count 全为 0、`JS_OK`，wrapper
+生成成功。
+
+服务器写入前 gate：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step188_docs_preflight.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+输出 `PREFLIGHT=PASS`：HEAD `50ebc678...`、upstream `b01661e8...`、worktree
+clean、driver 存活，训练已到 step 191。
+
+七个精确文档/报告路径上传：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  $helper='C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py'
+  $repo='/root/autodl-tmp/RLinf_fastwam_rlinf'
+  $pairs=@(
+    @('C:\Users\86136\Documents\rl\HANDOFF.md',"$repo/HANDOFF.md"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\00_INDEX_AND_IMPLEMENTATION_PLAN.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_TRAINING_LOG_20260728.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_STATUS_REPORT_STEP188_20260729.md',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP188_20260729.md"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP188_20260729_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP188_20260729_WIDE.png"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP188_20260729_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_OPTIMIZATION_TRENDS_STEP188_20260729_WIDE.png"),
+    @('C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP188_20260729_WIDE.png',"$repo/docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_RESOURCE_CURVES_STEP188_20260729_WIDE.png")
+  )
+  foreach($pair in $pairs){
+    python $helper put $pair[0] $pair[1]
+    if($LASTEXITCODE -ne 0){throw "upload failed: $($pair[0])"}
+  }
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+```
+
+上传后精确验证和提交命令：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step188_docs_validate.sh'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step188_docs_commit.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+第一次 commit gate 被 `git diff --cached --check` 正确拦截，唯一问题是新报告 EOF
+多一个空白行：
+
+```text
+FORMAL_STATUS_REPORT_STEP188_20260729.md:103: new blank line at EOF.
+```
+
+窄修只删除该空白行，单独重传报告，再重复同一 validate/commit；没有改变任何指标、
+图片或训练文件。复测通过，形成：
+
+```text
+dc6a3a430be9c3a5002b436c4aeeaa399509f334
+docs(dsrl): refresh formal step 188 report
+```
+
+最后只做一次 55 秒边界的前台 push：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step188_push_retry.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+本次 GitHub 出口已恢复，`PUSH_STATUS=0`，HEAD=upstream=`dc6a3a43...`，
+服务器 worktree clean；此前积压的 docs commits 一并发布。推送后训练仍存活并已到
+step 192。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

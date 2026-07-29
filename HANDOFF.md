@@ -93,9 +93,11 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   env-worker RSS 约 28.5 GiB且增速已放缓。当前可以继续训练，但不扩大 env 并发。
   预计剩余约 35.9 小时，下一节点 step 195 同时 eval 和 DCP。完整横版报告见
   `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP188_20260729.md`。
-- 本轮 live 刷新时服务器 `HEAD=50ebc6780435b677fa507286e6252559fd6b9c79`、
-  upstream 仍为 `b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`、worktree clean；未重试
-  GitHub push 前仍按“服务器 docs commits 待发布”处理。训练配置、进程和 run 产物均未改动。
+- step-188 报告已形成 docs-only commit
+  `dc6a3a430be9c3a5002b436c4aeeaa399509f334` 并成功推送到
+  `personal/codex/dsrl-pi0-robotwin`，此前积压的 docs commits 也一并发布；
+  推送后 HEAD=upstream、worktree clean，训练已推进到 step 192。训练配置、进程和
+  run 产物均未改动；下轮仍先 live 刷新，不能把本条静态快照称为当前。
 
 ## RLT 当前状态与授权
 
