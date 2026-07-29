@@ -2276,3 +2276,58 @@ PRECOMMIT_REVIEW_OK
 - S1-A/S1-B/original-command/addendum/LR-contract/postcheck SHA 输出。
 
 本次审查没有改变真实 Git index、没有启动训练、没有加载模型/GPU，也没有删除服务器文件。
+
+## 44. A044：主提交推送与 17:03 最终现场
+
+在真实 index 为空且 HEAD 仍为 `e4127fd49e38362161eac08c551a7a98c11e9802` 时，提交脚本：
+
+1. 只 `git add -f` A043 审核通过的 22 个 expected paths；
+2. 要求 staged path 集合与 expected 完全相同；
+3. 要求 `git diff --cached --check` 通过；
+4. 要求没有额外 unstaged tracked 或 untracked non-ignored 文件；
+5. commit 后推送精确的 `personal/codex/rlt-pi0-robotwin`。
+
+执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_stage1_commit_push.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_commit_push_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_commit_push_20260729.sh"
+```
+
+结果：
+
+```text
+commit c22ba19af0b6dfd130e289f02efd3a42ce5e938f
+fix(rlt): validate Stage 1 smoke scheduler
+22 files changed, 4102 insertions(+), 127 deletions(-)
+push e4127fd4..c22ba19a
+ahead/behind 0/0
+remote head c22ba19af0b6dfd130e289f02efd3a42ce5e938f
+```
+
+随后上传并执行只读终态脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_stage1_delivery_refresh.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_delivery_refresh_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_delivery_refresh_20260729.sh"
+```
+
+`2026-07-29T17:03:46+08:00`：
+
+- RLT branch `codex/rlt-pi0-robotwin`，HEAD=remote=`c22ba19a...`，clean，upstream `0/0`；
+- DSRL worktree 仍为 `codex/dsrl-pi0-robotwin` 且 clean；
+- 两卡 `0 MiB/0%`，没有 SFT/Ray/RoboTwin 相关进程；
+- host available `966 GiB`、无 swap；
+- `/root/autodl-tmp` 可用 `673 GiB`、64% used；
+- S1-A checkpoint 仍为 `21G`；
+- 当前 formal source config hash `8340ef4e...f2`；
+- Git evidence 和 export 的 LR contract hash 都为 `e68a7da1...14df`。
+
+本节和根 `HANDOFF.md` 的 17:03 状态将作为 ledger-only 收尾提交；该收尾提交自身的 hash
+由最终 Git history/交接给出，避免在提交内容中形成不可满足的自引用。

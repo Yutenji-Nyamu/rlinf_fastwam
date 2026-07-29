@@ -164,6 +164,11 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   正式 endpoint/manifest/hash；
   当前 UTD5/ratio2 是论文导向 candidate，不是 ManiSkill YAML 的有效 UTD1/ratio4，
   正式 Stage 2 packet 再显式批准。
+- 2026-07-29 17:03 最终现场：RLT 主提交
+  `c22ba19af0b6dfd130e289f02efd3a42ce5e938f` 已推送，HEAD=remote、clean、upstream
+  `0/0`；DSRL worktree 仍 clean。两卡 `0 MiB/0%`、无相关进程，host available
+  `966 GiB`，数据盘余 `673 GiB`。S1-A 21G checkpoint、formal source
+  `8340ef4e...f2` 和 LR contract `e68a7da1...14df` 均在。
 
 ## QAM 当前状态与授权
 
