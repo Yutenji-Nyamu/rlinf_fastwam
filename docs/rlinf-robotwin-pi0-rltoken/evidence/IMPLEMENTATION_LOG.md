@@ -2766,3 +2766,645 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
 
 到此不再轮询训练；下次查看实验时从服务器现场重新核对 driver/exit、最终日志、资源尾部、
 `global_step_2000` 完整性和固定 prefix 的 endpoint 质量证据。
+### A054 — 2026-07-29 Stage 1 收尾与 Stage 2 pre-smoke 授权、现场刷新
+
+- 用户授权边界：
+  - 可执行简洁的 Stage 1 endpoint reload、fixed-prefix、瓶颈对照、冻结性与 artifact manifest 检查；
+  - 可筛选、打包并下载 Stage 1 小型高信息量证据；
+  - 可完成 Stage 2 smoke 之前的配置审计、compose、静态/单元测试和机器检查；
+  - **不得在本轮直接启动 Stage 2 smoke**；必须先给出 resolved config、精确命令、输出目录、资源预估和停止条件，等待用户批准。
+- 按工作区规则重新完整读取：
+  - `PROJECT_CONTEXT.md`
+  - `HANDOFF.md`
+  - `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md`
+  - `docs/rlinf-robotwin-pi0-rltoken/03_STAGE1_FORMAL_TRAINING_20260729.md`
+  - 本实施账本最近条目。
+- 使用密码附件仅向当前进程注入凭据，通过
+  `local_scripts/remote_exec_autodl.py` 做只读身份探针和现场刷新；未打印或落盘保存密码。
+- 现场观察时间：`2026-07-29T20:48:19+08:00`。
+- Git：
+  - worktree：`/root/autodl-tmp/RLinf_rlt_pi0_robotwin`
+  - branch：`codex/rlt-pi0-robotwin`
+  - HEAD：`6df42bf488ef10d9c7eb2f89584bc5ab7543a08a`
+  - porcelain：空，服务器 worktree clean；
+  - 与 upstream：`0 behind / 1 ahead`，ahead 为此前收尾文档提交，尚未因远端网络恢复而推送。
+- 运行现场：
+  - 没有存活的 RLT 训练进程；旧 PID 文件不代表存活进程；
+  - 两张 GPU 均为 `0%` util、约 `0 MiB` 占用；
+  - 主机内存总计约 `1.0 TiB`，available 约 `982 GiB`；
+  - `/root/autodl-tmp`：约 `1.9 TiB` 总量、`1019 GiB` 已用、`826 GiB` 可用、`56%`。
+- Stage 1 正式运行：
+  - `runtime/exit_code.txt = 0`
+  - 结束时间 `2026-07-29 20:03:22+08:00`
+  - 唯一 endpoint：
+    `/root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1/robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1/checkpoints/global_step_2000`
+  - endpoint 总量约 `20.56 GiB`，包括 `full_weights.pt` 与两 rank DCP shards；没有临时 checkpoint 残留。
+- 本条仅记录现场与授权，没有启动模型、测试、smoke 或训练。
+
+### A055 — 服务器当前配置取证与一次 SFTP 瞬时失败
+
+- 目标：以服务器 branch 当前文件为准，取回 ManiSkill RLT、RoboTwin Stage 2
+  formal/smoke、Stage 1 source config 和既有 prefix probe，避免把本机旧 worktree
+  当作动态真相。
+- 第一次命令：在一个 PowerShell 循环中连续调用
+  `local_scripts/remote_exec_autodl.py get`。
+- 结果：
+  - 第一个 ManiSkill YAML 下载成功；
+  - 第二次新建 SSH connection 时 Paramiko 报
+    `SSHException: Error reading SSH protocol banner`；
+  - 没有改动服务器文件。
+- 诊断：不是认证失败或文件缺失，而是短时间连续新建 SSH transport 的 banner
+  瞬时失败。最小修复是不重试并发连接，而是在同一个已校验 host-key 的 Paramiko/SFTP
+  session 中批量获取。
+- 新增临时、无凭据工具：
+  `.tmp/remote_get_current_rlt_files.py`。第一次运行因脚本目录在 `.tmp`、Python
+  没把仓库根加入 `sys.path`，报
+  `ModuleNotFoundError: No module named 'local_scripts'`；随后仅增加仓库根
+  `sys.path`，复测成功。
+- 成功取回目录：
+  `.tmp/rlt-stage2-prep-server/`。
+- 当前服务器关键 SHA-256：
+  - RoboTwin Stage 2 formal：
+    `426c09e2d9b036c566560124059917e9c22059457e75035e924fb678f6018637`
+  - RoboTwin Stage 2 smoke：
+    `02715a69ac5ff76fb6d3d7250b447dd0131f3621ae87271d54e9fe4ef6712aa8`
+  - Stage 1 source config：
+    `c293bc476ec7458c6bfc5c5c59393e48b286f3e12007f3039ccc282e30645a4c`
+  - prefix probe：
+    `ac0555274f6347b0bd089a8d626477d1a8b26d870731f235bd2e0c25b8d9df33`
+- 发现：本机 `.rlt-impl-worktree` 中 RoboTwin Stage 2 两份 YAML 与服务器逐字一致；
+  ManiSkill 文件不一致，因此后续参数溯源固定使用刚取回的服务器版本
+  `bb5c01c0db25fcd962b5fa21d2fe60505ed73ed86bb8875e19167378d6456457`。
+
+### A056 — 新增 Stage 1 artifact acceptance probe
+
+- 新增文件：
+  `toolkits/rlt/validate_robotwin_rlt_stage1_artifact.py`。
+- 调用链和检查：
+  1. 用原 π0 checkpoint、正式 Stage 1 架构和 seed 0 构造 fresh control；
+  2. `torch.load(..., mmap=True, weights_only=True)` 打开正式
+     `full_weights.pt`；
+  3. 对 endpoint 与 fresh/base 的完整 state-dict key set 做严格相等检查；
+  4. 对所有非 `rlt_module.*` 张量逐元素 `torch.equal`，作为 π0 delta=0 hard gate；
+  5. 从 clean-50 OpenPI loader 取固定 seed 的真实 batch=4，构造同一 image-prefix；
+  6. 先测 fresh seed-0 proxy loss，再 `strict=True` 加载 endpoint；
+  7. 检查 reload 前后 frozen prefix 完全一致；
+  8. 比较 endpoint true-`z_rl`、batch-shuffled-`z_rl` 和 zero-`z_rl`
+     reconstruction；
+  9. 输出 `validation.json` 和供 Stage 2 绑定的
+     `stage1_artifact_manifest.json`，后者记录 endpoint/full-weight SHA、DCP
+     inventory、dataset/config/stats/validation identities。
+- 这个 probe 不做 backward、不改模型、不产生新 checkpoint；它是一次单卡 artifact
+  验收，不是新训练实验。
+- 上传前 guard：
+  - server HEAD
+    `6df42bf488ef10d9c7eb2f89584bc5ab7543a08a`
+  - branch `codex/rlt-pi0-robotwin`
+  - worktree clean；
+  - 无 RLT 训练/验收进程。
+- 静态检查过程：
+  - `python -m py_compile`：通过；
+  - `git diff --check`：通过；
+  - 第一次 `ruff check`：仅报 import block `I001`；
+  - 手动调整一次仍被 `I001` 拒绝；
+  - 用仓库同版 `ruff check --fix` 做机械排序，再运行
+    `ruff check`、`py_compile`、`git diff --check`：全部通过；
+  - 格式化后的服务器文件已取回本机对应 RLT worktree，避免两端漂移。
+
+### A057 — Stage 1 acceptance v1 启动失败与不覆盖修复
+
+- 新增可复现包装器：
+  - `local_scripts/remote_rlt_20260729_stage1_artifact_acceptance.sh`
+  - `local_scripts/remote_rlt_20260729_start_stage1_artifact_acceptance.sh`
+- v1 目标目录：
+  `/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/artifact_acceptance_v1`
+- v1 启动前两卡都是 `0 MiB / 0%`，正式 endpoint、dataset manifest 和输入配置均存在。
+- v1 PID：`718791`。
+- v1 结果：在加载 Python/模型之前立即退出，`exit_code=127`；
+  `driver.log` 为 0 bytes，GPU 始终为空。
+- 原始错误：
+  `/root/autodl-tmp/tmp/rlt_stage1_artifact_acceptance_20260729_v1.sh:
+  line 47: /usr/bin/time: No such file or directory`。
+- 原因：包装器错误假设镜像提供 GNU `/usr/bin/time`；这不是模型、checkpoint 或 CUDA
+  错误。
+- 处理：
+  - 不安装新依赖；
+  - 保留整个 `artifact_acceptance_v1` 失败目录和 exit code；
+  - validation Python 使用标准库
+    `resource.getrusage(resource.RUSAGE_SELF).ru_maxrss` 记录进程 max RSS；
+  - 移除外部 `/usr/bin/time`；
+  - 新建不覆盖的 `artifact_acceptance_v2`。
+- v2 重新上传后再跑 `ruff check --fix`、`ruff check`、`py_compile` 和
+  `git diff --check`，全部通过。
+- v2 PID：`719016`。
+- v2 输出目录：
+  `/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/artifact_acceptance_v2`
+- 当前状态：已启动，尚未把运行中状态误报为通过；等待 `exit_code.txt`、
+  `validation.json` 和 manifest 后再验收。
+
+### A058 — Stage 1 artifact acceptance v2 完成
+
+- v2 时间：
+  - start：`2026-07-29T21:04:56+08:00`
+  - finish：`2026-07-29T21:06:54+08:00`
+  - validation 内部 wall：`104.814 s`
+- 退出：`exit_code=0`；退出后两张 GPU 均为 `0 MiB`，无验收进程。
+- 产物：
+  - `artifact_acceptance_v2/validation.json`
+  - `artifact_acceptance_v2/stage1_artifact_manifest.json`
+  - `artifact_acceptance_v2/artifact_sha256.txt`
+  - `artifact_acceptance_v2/driver.log`
+  - `artifact_acceptance_v2/stderr.log`
+  - `artifact_acceptance_v2/resources_before_after.txt`
+  - `artifact_acceptance_v2/launch_provenance.txt`
+- 所有 hard gates 为 true：
+  - full state dict strict reload；
+  - 非 `rlt_module.*` 的 π0 tensors delta=0；
+  - reload 前后 fixed frozen prefix 完全相等；
+  - 所有 loss finite；
+  - endpoint loss 优于 fresh seed-0 matched proxy；
+  - true `z_rl` 优于 batch-shuffled `z_rl`；
+  - true `z_rl` 优于 zero `z_rl`。
+- fixed real batch 的结果：
+  - fresh proxy loss：`5.1976585388`
+  - endpoint/true-z loss：`0.5337553024`
+  - shuffled-z loss：`1.7118018866`
+  - zero-z loss：`2.1026575565`
+  - endpoint/fresh：`0.10269`
+  - true/shuffled：`0.31181`
+  - true/zero：`0.25385`
+- 参数冻结/更新：
+  - non-RLT changed tensor count：`0`
+  - RLT changed tensor count：`54 / 62`
+  - Stage 1 trainable parameter count：`743,094,272`
+- 资源：
+  - CUDA peak allocated：`9,055,774,720 bytes`，约 `8.43 GiB`
+  - CUDA peak reserved：`9,367,977,984 bytes`，约 `8.72 GiB`
+  - process max RSS：`20,728,152 KiB`，约 `19.77 GiB`
+  - 主机 available 从约 `982.88 GiB` 到约 `982.69 GiB`，无内存压力；
+  - v2 不做 backward，因此不能拿这组 8.4GiB 替代 Stage 1 正式训练的
+    26,447MiB/card 峰值。
+- artifact identity：
+  - manifest ID：
+    `robotwin-adjust_bottle-rlt-stage1-clean50-step2000-v1`
+  - manifest SHA-256：
+    `6ca58f26f801e4630f26d6aed36c5084ce1ea3fa93730e54aa69a0f2a3712433`
+  - validation SHA-256：
+    `90385a9ffd812e5806cd97db7537a4e1d8c62f873711a18e72c0c010d4de66cc`
+  - full weights SHA-256：
+    `7dddc268733b978bf382cda77257371cf9de4155f60ec3094cc8ffcfd6d74bd0`
+- 结论边界：
+  - 现在可以把 Stage 1 称为“artifact 验收通过”，并绑定 Stage 2；
+  - 这证明 checkpoint 可加载、π0 未改、重建已学习且 decoder 使用了 sample-specific
+    bottleneck；
+  - 它仍不证明 `z_rl` 一定提升控制成功率，后者只能由 Stage 2 smoke/pilot 给出。
+
+### A059 — Stage 1 内存图表生成与双视口 QA
+
+- 数据源固定为正式运行的 `runtime/resources.csv`，共 `1,455` 个采样点；曲线只为显示做降采样，
+  卡片中的峰值和最小值仍由全部采样点计算。
+- 新增独立内联可视化：
+  `E:/Codex/home/visualizations/2026/07/28/019fa752-79fd-7de3-b66f-5ac4f0a72bfc/rlt-stage1-memory-breakdown.html`。
+- 图中明确拆分：
+  - 仅匹配训练 rank 的 RSS；
+  - 整个容器 cgroup anonymous memory；
+  - cgroup accounted total 与其中可回收的 file cache；
+  - 主机 available memory。
+- 使用技能提供的 `render.py` 生成预览；第一次浏览器检查的是预览包装页，
+  截图正常，但 DOM 查询落在包装层，`querySelector("main")` 返回空。这不是图表缺失。
+- 窄修复：改为直接打开原始 HTML，再以系统 Chrome/Playwright 做桌面和移动端 QA。
+- QA 结果：
+  - 桌面 `1440×1100`：`scrollWidth=clientWidth=1440`；
+  - 移动端 `390×844`：`scrollWidth=clientWidth=390`；
+  - 两端均有 3 个 SVG 图、无 console error、无横向溢出；
+  - 桌面截图 `127,983 bytes`，移动端截图 `110,344 bytes`；
+  - 人工查看移动端截图，标题、四张指标卡、三张曲线和解释文字均完整可读。
+
+### A060 — Stage 1 服务器证据包 v1 失败与 v2 窄修复
+
+- 新增并执行：
+  `local_scripts/remote_rlt_20260729_package_stage1_evidence.sh`。
+- v1 在复制
+  `/root/autodl-tmp/RLinf_rlt_pi0_robotwin/local_scripts/remote_rlt_20260729_stage1_artifact_acceptance.sh`
+  时以 exit 1 停止；原始错误为 `cp: cannot stat ... No such file or directory`。
+- 原因：两个验收启动包装器是本地实施工具，没有被提交到服务器 worktree；正式运行证据、
+  验收 Python 和 checkpoint 均未缺失。
+- 处理：
+  - 保留服务器 `download_bundle_v1` 作为失败证据，不删除、不覆盖；
+  - 新增 `remote_rlt_20260729_package_stage1_evidence_v2.sh`；
+  - v2 只从服务器仓库复制确实存在的验收 Python，本地包装器在下载后加入最终 ZIP。
+- v2 成功生成：
+  `/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/rlt_stage1_formal_high_info_20260729_v2.tar.gz`
+- v2 大小 `327,611 bytes`（`du -h` 为 `320K`），SHA-256：
+  `07b24ab71a0cff2ed6a6ccaee0abed828def2ec870acc35ea6ba9fd9e11b3166`。
+- 服务器 tar 包含 34 个文件：完整 driver/resources/TensorBoard、source/resolved config、
+  数据和运行 provenance、v1 失败、v2 成功验收、manifest/validation 与验收源码；
+  不含 20.56 GiB checkpoint。
+
+### A061 — Stage 1 证据下载、校验与最终 ZIP
+
+- 通过 host-key 校验的单次 Paramiko SFTP 下载服务器 tar；密码只在当前 PowerShell
+  进程环境中短暂注入，`finally` 中清除。
+- 本地 tar：
+  `exports/rlt_stage1_formal_high_info_20260729_v2.tar.gz`；
+  下载后 SHA 与服务器的
+  `07b24ab71a0cff2ed6a6ccaee0abed828def2ec870acc35ea6ba9fd9e11b3166`
+  一致。
+- 解包前先检查所有 archive member 均以 `download_bundle_v2/` 开头、没有绝对路径或
+  `..`；随后解到独立目录，不覆盖已有文件。
+- 对服务器生成的 `CONTENTS_SHA256.txt` 做本机逐文件复验：
+  `SERVER_BUNDLE_CONTENTS_OK files=34`。
+- 下载后加入：
+  - 正式精确命令；
+  - 验收的两个本地包装器；
+  - 训练状态图；
+  - 内存桌面/移动端图；
+  - 中文 README。
+- `LOCAL_ADDITIONS_SHA256.txt` 的 7 个文件也逐文件复验通过。
+- 最终用户包：
+  `exports/rlt_stage1_formal_high_info_20260729_v2.zip`
+  - 大小：`630,816 bytes`
+  - SHA-256：
+    `9d9e2c38789897479a27cc04ed15034a9d65175284c837f3c1c6f54ca0c2daa8`
+  - 同目录有 `.zip.sha256`。
+
+### A062 — Stage 2 方法源复核与 PDF 下载失败边界
+
+- 重新以三层来源核对 Stage 2：
+  - RLT 论文/Physical Intelligence 项目页决定方法高层语义；
+  - 服务器当前 RLinf ManiSkill RLT YAML 决定可执行参考实现；
+  - 已验证 RoboTwin π0 配置决定任务、相机、H=50、14D canonical action、
+    normalization 与 env/rollout 接口。
+- 论文/官方页面确认的高层项包括：frozen Stage 1 feature、reference-conditioned
+  actor、BC+Q actor objective、高 UTD=5、每两个 critic update 做一个 actor update、
+  fixed-small exploration、critical-phase/人工 intervention 为可选机器人设定。
+- 服务器 ManiSkill YAML 的当前 SHA-256 固定为
+  `bb5c01c0db25fcd962b5fa21d2fe60505ed73ed86bb8875e19167378d6456457`；
+  其可执行 schedule 是 `update_epoch=5`、每 5 个 transition 触发，等效 macro-UTD=1，
+  `critic_actor_ratio=4`，不能误写成论文 UTD5/ratio2。
+- 为保留论文离线副本，先后尝试：
+  - PowerShell `Invoke-WebRequest` 下载 arXiv PDF；
+  - Windows `curl.exe` 下载同一 PDF。
+- 两次均未产生可用文件：
+  - 前者为 TLS receive 失败；
+  - 后者为 Schannel `SEC_E_NO_CREDENTIALS`。
+- 未绕过证书、未安装工具、未保留 0-byte 假 PDF。参数复核继续使用已打开的论文
+  HTML、Physical Intelligence 项目页和 RLinf 官方文档；这不影响本轮代码检查。
+
+### A063 — Stage 2 fail-closed artifact/预算加固
+
+- 修改文件：
+  - `examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml`
+  - `rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py`
+  - `tests/unit_tests/test_robotwin_rlt_contract.py`
+- 新增文件：
+  - `toolkits/rlt/preflight_robotwin_rlt_stage2_artifact.py`
+  - `toolkits/rlt/audit_robotwin_rlt_stage2_resolved.py`
+- 配置修复：formal source 的 `runner.max_steps` 从会实际执行的 `-1` 改为
+  fail-closed `0`；正式 collection-cycle 预算必须在 smoke 后由启动命令显式覆盖。
+  dedicated smoke config 仍显式覆盖为 `1`，不受影响。
+- resume/artifact 合同新增 hard gates：
+  - manifest 必须 `accepted=true`、`schema_version=1`；
+  - manifest 内 Stage 1 model path 必须与实际 feature model 路径一致；
+  - stats SHA、canonical adapter、H/C/D、`z_rl` 和 prefix shape 必须同时与
+    manifest 和 resolved config 一致。
+- 新 preflight 以流式 SHA-256 验证 9.55GB `full_weights.pt`，避免把“目录存在”
+  当成 artifact 身份；新 resolved-audit 同时审 formal/fresh/resume 三份绑定后配置。
+- 上传前执行
+  `local_scripts/remote_rlt_20260729_stage2_hardening_upload_guard.sh`，逐项核对 branch、
+  HEAD、三个被修改文件的服务器 baseline SHA、目标新文件不存在且目标路径无 dirty
+  change；结果 `STAGE2_HARDENING_UPLOAD_GUARD_OK`。随后才上传精确五个文件，
+  未覆盖其他用户修改。
+
+### A064 — Stage 2 集中测试首次失败、原因与窄修复
+
+- 服务器检查命令固定在
+  `local_scripts/remote_rlt_20260729_stage2_hardening_checks.sh`：
+  `py_compile`、`ruff check`、`git diff --check`，再运行
+  `tests/unit_tests/test_robotwin_rlt_contract.py`。
+- 第一次结果：
+  - 静态检查全部通过；
+  - 单测 `16 passed / 3 failed`。
+- 三个失败都来自同一新增 model-path gate：测试的 resumed worker 使用了自己的临时
+  Stage 1 model 目录，而 source worker 的 manifest 仍记录另一个临时目录。该失败证明
+  hard gate 确实生效，不是训练实现回归。
+- 窄修复：测试 helper 新增 `_bind_same_stage1_artifact`，在模拟合法 resume 时把 source
+  与 resumed worker 的 Stage 1 model/stats identity 对齐；不放宽生产代码验证。
+- 只重新上传测试文件后再次运行同一脚本：
+  - `ruff`、`py_compile`、`git diff --check` 全通过；
+  - `19 passed in 8.39s`；
+  - 终标记 `STAGE2_HARDENING_CHECKS_OK`。
+- 本项没有加载 π0、没有启动 Ray/RoboTwin，也没有运行 smoke。
+
+### A065 — Stage 1 绑定、三份 Stage 2 compose 与资源现场
+
+- 执行
+  `local_scripts/remote_rlt_20260729_stage2_bind_compose_preflight.sh`。
+- 执行前 hard fail 检查：
+  - branch/HEAD 精确为
+    `codex/rlt-pi0-robotwin@6df42bf488ef10d9c7eb2f89584bc5ab7543a08a`；
+  - 无 RLT/Ray 进程；
+  - 新 evidence root、计划 smoke root 和待批准 pilot root 均不存在。
+- 新建的仅是轻量 evidence root：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_pre_smoke_20260729_v1`。
+  计划 smoke root
+  `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1`
+  仍不存在。
+- artifact preflight 通过：
+  - manifest SHA
+    `6ca58f26f801e4630f26d6aed36c5084ce1ea3fa93730e54aa69a0f2a3712433`
+  - full weights `9,551,212,074 bytes`
+  - full-weights SHA
+    `7dddc268733b978bf382cda77257371cf9de4155f60ec3094cc8ffcfd6d74bd0`
+  - H/C/D=`50/10/14`、`z_rl=2048`、prefix=`768×2048`、stats SHA 全一致。
+- 使用 `--cfg job --resolve` compose，不初始化模型、Ray 或模拟器：
+  - formal bound SHA：
+    `4cbb7c7c03457276723293845c14ddc3a2f960badabd38cc40b2c9c592baf59c`
+  - fresh bound SHA：
+    `c45743c1c797a9010d9a0f0c36a41c4cbabf4fd8f69e39707cb501e7b3d5c229`
+  - resume bound SHA：
+    `f91688d21c7d6180dacb169824210b415e49f1c7d26a27d2a917f562ab24c82a`
+  - resolved audit SHA：
+    `a26d8db55d4ac306a618511ed971b325f219f0bb270d2bb26b638d540038469f`
+  完整 SHA 位于 evidence root 的 `SHA256SUMS`，不以省略值作机器合同。
+- resolved audit 全部通过；推导 smoke 合同：
+  - 两 rank、global/micro=`512/128`，gradient accumulation=`2`；
+  - fresh 满长 collection 为 global 8 rows、每 rank 4 rows；
+  - fresh 做 8 critic / 4 actor updates；
+  - 新进程 resume 满长做 20 critic / 10 actor updates，终态
+    `update_step=28`、pending=`20`。
+- 运行耗时 `39s`，主要是流式计算 9.55GB checkpoint SHA 和 Hydra import；
+  仅出现 TensorFlow CPU/oneDNN 提示，无模型/Ray/模拟器启动。
+- 资源前后：
+  - 前：两卡 `0MiB/0%`；host available 约 `982.2GiB`；
+    `/root/autodl-tmp` available 约 `826GiB`；
+  - 后：两卡各约 `4MiB/0%`；host available 变化约 `0.5GiB`；
+    磁盘仅增加约百 KB evidence。
+- 输出中最重要的 11 个文件已通过同一 host-key 校验的 Paramiko/SFTP session
+  下载到本机 `.tmp/rlt-stage2-pre-smoke-v1/`；密码仍只存在当前进程并在
+  `finally` 清除。
+
+### A066 — pre-smoke evidence 本地校验、一次 PowerShell 解析失败与修复
+
+- 目标：把服务器已下载的绑定/resolved/audit/source/resource 文件整理到
+  `docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_pre_smoke_20260729/`，
+  但不把未经校验的 SFTP 字节直接当成证据。
+- 第一次 PowerShell 命令在执行任何目录创建/复制前就被 parser 拒绝：
+  `"SHA mismatch for $rel: ..."` 中变量后紧跟冒号，被 PowerShell 解释成无效 drive
+  变量引用。没有文件被创建或覆盖。
+- 窄修复：
+  - 字符串变量改为 `${rel}`；
+  - SHA 行匹配从易误转义的正则改为 `EndsWith("  $rel")`。
+- 第二次结果：
+  - 逐个对照服务器 `SHA256SUMS` 验证10个下载文件；
+  - 新建独立 evidence 目录；
+  - `STAGE2_EVIDENCE_COPY_OK verified=10 files=11`。
+- source/resolved 文件保持服务器原字节；只把编码后的临时下载名改为可读证据名。
+
+### A067 — Stage 2 小模型与 replay 资源预算实测
+
+- 新增并执行：
+  `local_scripts/remote_rlt_20260729_stage2_model_budget.sh`。
+- guard：branch/HEAD 精确、pre-smoke evidence 存在、输出不存在、无 RLT/Ray 进程。
+- 在服务器共享 venv 的 CPU 上实际构造
+  `RLTMLPPolicy(z=2048,proprio=14,C=10,D=14,3×256,twin-Q)`，没有加载 π0、
+  GPU、Ray 或模拟器。
+- 结果：
+  - actor optimizer group：`767,512`
+  - critic/twin-Q group：`1,394,690`
+  - model total：`2,162,202`
+  - model+target FP32 raw tensors：`17,297,616 bytes`
+  - model/target/grad/Adam 粗上界：`43,244,040 bytes`
+  - compact replay raw estimate：`18,359 bytes/row`
+  - smoke 64 rows/rank：`1,174,976 bytes/rank`
+  - formal 15k rows/rank：`275,385,000 bytes/rank`
+- 输出：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_pre_smoke_20260729_v1/model_replay_budget.json`；
+  下载 SHA-256
+  `9913e641cb909535b2fdc31cd022a3daa79d86d8a133bb47029a2482e5537d2d`。
+- 这个 replay 数只含 tensor payload，不含 Python object、allocator、trajectory staging、
+  dataloader batch 或 frozen π0，因此只能用于确认“小 MLP/replay 不是资源主项”。
+
+### A068 — Stage 2 代码提交
+
+- 提交前服务器精确 status 只有本轮三个 tracked changes 和三个新 toolkit files：
+  formal config、RLT worker、contract test、Stage1 acceptance、Stage2 artifact preflight、
+  resolved audit；没有其他 dirty/untracked 文件。
+- 新增并执行
+  `local_scripts/remote_rlt_20260729_stage2_code_commit.sh`：
+  - hard-code 对比精确 `git status --short`；
+  - 对5个 Python 文件做 `py_compile`/Ruff；
+  - 运行19个 RLT contract tests；
+  - `git diff --check` 与 staged diff check；
+  - 只 `git add` 六个精确目标文件。
+- 结果：
+  - `19 passed in 8.20s`
+  - Ruff/compile/diff 全通过；
+  - commit：
+    `3b610cb4685a1d41c97da64df67ab86561697dfd`
+  - message：
+    `fix(rlt): bind Stage 1 artifact before Stage 2`
+  - `6 files changed, 1176 insertions(+), 16 deletions(-)`；
+  - commit 后 worktree clean。
+- 本项尚未 push；后续文档收口后统一做有限网络同步。
+
+### A069 — fresh/resume 精确 launch wrappers 与 monitor 自测
+
+- 新增但**未执行 smoke**：
+  - `remote_rlt_20260729_stage2_resource_monitor.sh`
+  - `remote_rlt_20260729_start_stage2_smoke_fresh.sh`
+  - `remote_rlt_20260729_start_stage2_smoke_resume.sh`
+  - `remote_rlt_20260729_stage2_launch_scripts_validate.sh`
+- wrapper hard gates：
+  - clean/upstream0/0、code commit ancestor、code commit 后无非 docs diff；
+  - source/worker/monitor/manifest/stats SHA；
+  - Stage1 artifact preflight 与 fresh/resume resolved SHA；
+  - 无 RLT/Ray/GPU process、host available RAM、disk、output 不存在；
+  - resume 额外检查 fresh exit0、DCP1 completion/rank state/replay。
+- 第一次尝试把多行 remote `awk` validation 塞进 PowerShell 双引号字符串，在本地 parser
+  阶段因嵌套引号报 `UnexpectedToken`；没有建立 SSH 连接或上传文件。
+- 窄修复：把验证命令写为独立 Bash 文件，不再跨 PowerShell/SSH 两层拼接复杂引号。
+- 服务器验证：
+  - `bash -n` 三个脚本通过；
+  - monitor 用不存在 PID 做一次单样本执行；
+  - CSV `22 fields / 2 rows`，每行 field 数相同；
+  - 计划 smoke run/evidence root 仍不存在。
+- 首次成功后又给 fresh/resume 加入 monitor SHA hard gate；为保留 v1 selftest，
+  第二次使用不覆盖的 `rlt_stage2_monitor_selftest_20260729_v2.csv` 复测。
+- 最终脚本 SHA：
+  - monitor：
+    `925cb515a4ecd6dbfcb192168c63644e1b2b2d691f6a4d50fdc3ddd8a5bbd96b`
+  - fresh：
+    `13ea8602d257bc084b3441ecd7a2220dcfb2d0aab6869dd7fb5ac0445fdeb7c6`
+  - resume：
+    `b76b67c47cd1e629990157ad5c4f1d8628bd253a26cf533989aadfde166b896c`
+
+### A070 — 当前 Stage 2 packet 与文档分层
+
+- 新增当前唯一 Stage 2 审批文件：
+  `docs/rlinf-robotwin-pi0-rltoken/04_STAGE2_PRE_SMOKE_PACKET_20260729.md`。
+- packet 逐组覆盖：
+  - 论文/ManiSkill/RoboTwin/项目适配/工程治理来源；
+  - runner/topology/env/feature/action/route/TD/target/actor loss/optimizer/replay/
+    UTD/warm-up/cap/resume；
+  - formal 与 smoke 唯一差异；
+  - fresh/resume 调用流、expected updates、resolved SHA、精确脚本、输出；
+  - GPU/RAM/disk/time 预算、停止条件和结论边界；
+  - formal 总 cycle 继续 fail closed，smoke 后才在约30/60-cycle pilot 中决策。
+- 更新：
+  - `00_INDEX_AND_IMPLEMENTATION_PLAN.md`：路由到当前 Stage2 packet，Stage1/artifact
+    状态改为已完成；
+  - `01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md`：明确为历史参数来源快照，不再用
+    unresolved config 启动；
+  - `03_STAGE1_FORMAL_TRAINING_20260729.md`：补齐2k指标、内存口径、artifact验收和用户包；
+  - 根 `HANDOFF.md`：当前停点改为“Stage2 packet 已准备、smoke 未启动”。
+- evidence 目录加入机器原始文件、source/resolved、两份 SHA 清单、资源预算和8个可复现
+  脚本；大 checkpoint 仍只留服务器。
+
+### A071 — 本地文档与证据 QA，以及根目录 Git 边界
+
+- 对当前 RLT 文档、Stage 2 evidence 和 Stage 1 下载包做只读一致性检查，结果：
+  `RLT_DOC_QA_OK markdown=8 hashes=21 json=3`。
+- 检查内容包括：
+  - 8 份 Markdown 的相对链接均能解析到现有文件；
+  - 3 份 JSON 可解析，formal/fresh/resume resolved YAML 可解析；
+  - Stage 2 bound config 中不存在未解析的 artifact 占位符；
+  - `LOCAL_SHA256SUMS` 中 21 个文件逐一复算一致；
+  - 文档、脚本和证据中没有密码、SSH 密码变量值或附件原文。
+- 第一次把根目录 `git diff --check` 混入 QA 时，Git 因仓库探测/ownership 边界报错；
+  后续只读核对确认：
+  - `C:/Users/86136/Documents/rl/.git` 存在，但这是一个尚无 commit 的文档聚合仓；
+  - sandbox 用户与目录 owner 不同，普通 Git 命令会触发 `dubious ownership`；
+  - 使用单次命令参数
+    `git -c safe.directory=C:/Users/86136/Documents/rl ...` 可只读访问，不修改全局配置；
+  - 因当前文档全是 untracked，根仓的 `git diff --check` 本身不能覆盖这些文件，不能把它
+    当作有效 whitespace 证据。
+- 因此根目录只承担 SSOT/下载包，最终 Git diff、精确 dirty-set、commit 和 push 以服务器
+  `codex/rlt-pi0-robotwin` 独立 worktree 为准；同步前仍会对所有待上传文本做独立
+  UTF-8、trailing-whitespace、link、JSON/YAML 和 SHA 检查。
+- 内存可视化已做桌面 `1440×1100` 与移动端 `390×844` QA：3 个 SVG、无 console error、
+  无横向溢出；它只读取 Stage 1 `resources.csv`，没有修改实验产物。
+
+### A072 — Stage 2 文档原子同步与提交工具准备
+
+- 新增本地、无凭证的单次实施工具：
+  - `local_scripts/sync_rlt_stage2_docs.py`：通过已固定 host-key 的 Paramiko 连接，把6个
+    SSOT/交接文件与22个 Stage 2 evidence 文件上传到独立 staging，不直接碰 Git worktree；
+    每个文件使用 `.part -> posix_rename`，最后生成并复核 `UPLOAD_SHA256SUMS`；
+  - `remote_rlt_20260729_stage2_docs_upload_guard.sh`：上传前检查 branch/HEAD/clean、
+    RLT/Ray/GPU/RAM/disk、smoke 路径和 staging 路径；
+  - `remote_rlt_20260729_stage2_docs_deploy_review.sh`：先复核 staging 全文件 SHA，再只复制
+    manifest 内路径，随后检查 dirty-set、UTF-8、链接、JSON/YAML、resolved binding、
+    21个 evidence hash、凭证模式和8份脚本的 `bash -n`；
+  - `remote_rlt_20260729_stage2_docs_commit_push.sh`：只暂存 upload manifest 中的路径，
+    校验 staged diff 后提交并有限时 push。
+- 本地 `sync_rlt_stage2_docs.py` 已通过 AST parse；四个新工具均通过严格 UTF-8、
+  trailing-whitespace 和精确 private-key marker 检查。
+- 第一次本地 Bash 检查误判为可用：`Get-Command bash` 找到了 WSL shim，但三次实际启动均
+  返回 `Bash/Service/CreateInstance/E_ACCESSDENIED`；该命令随后仍打印了
+  `LOCAL_BASH_N_OK`，所以这个标记被判定为无效，不作为证据。
+- 同一复合检查中的第一次 secret scan 又因 pattern 以 `-----BEGIN` 开头且未加 `--`，
+  被 `rg` 当成命令行选项；加 `rg --` 后会命中 review 脚本自身的检测正则，仍不能当成泄露。
+  最终改成精确 fixed-string 私钥头检查，并把真正的 Bash `-n` 留给服务器。
+- 以上两个失败都发生在 SSH/上传之前，没有改变服务器；后续服务器 guard、staging、
+  deploy、review、commit/push 的实际结果将另记，不提前写成成功。
+
+### A073 — 文档 deploy review v1 的 pathspec 失败与窄修复
+
+- 服务器上传 guard 于 `2026-07-29T22:26:03+08:00` 通过：
+  - branch/HEAD：
+    `codex/rlt-pi0-robotwin@3b610cb4685a1d41c97da64df67ab86561697dfd`
+  - upstream left/right：`2/0`
+  - 两卡 `0 MiB / 0%`
+  - host available：`1,001,745,600 KiB`
+  - `/root/autodl-tmp` available：`886,849,052,672 bytes`
+  - smoke run/evidence 与 staging v1 均不存在。
+- 单一 Paramiko/SFTP session 把28个文件原子上传到
+  `/root/autodl-tmp/tmp/rlt_stage2_docs_upload_20260729_v1`；远端逐文件 SHA 通过，
+  upload manifest SHA：
+  `b2a22b1313adfe5d3787e402e84b5f4069948b3c0753c5b403caabc2eff60c24`。
+- v1 deploy 已把这28个精确文件复制到 worktree；随后：
+  - 28个 upload SHA 全部通过；
+  - 内容 QA 通过：`files=28 markdown=7 hashes=21`；
+  - 8份 evidence Bash 全部 `bash -n` 通过；
+  - 但 review 最后 exit 1，因此没有 commit/push。
+- 新增只读诊断
+  `remote_rlt_20260729_stage2_docs_review_diagnose.sh` 后定位为唯一原因：
+  - 旧 gate `git diff ... ':(exclude)docs/**'` 仍看到根目录 `HANDOFF.md`，故失败；
+  - 同一 diff 再精确排除 `HANDOFF.md` 后为空；
+  - 不是代码、配置、脚本语法、证据 SHA 或 smoke 失败。
+- 这个问题同时会让正式 docs commit 后的 fresh/resume launcher 自我拒绝，所以不能只修改
+  review。窄修复同时作用于：
+  - docs review/commit gate；
+  - fresh launcher；
+  - resume launcher；
+  - evidence 中的两份 launcher 副本。
+- 新 gate 只允许 `docs/**` 与根目录唯一的 `HANDOFF.md` 在 code commit 之后变化；
+  branch clean/upstream、code commit ancestor、config/worker/artifact/stats/monitor SHA、GPU/Ray、
+  输出不存在等 hard gates 均保留，因此没有放宽算法代码或运行配置。
+- 修复后的 launcher identity：
+  - fresh：
+    `6e0f1c7ce5497bd3d5a2bef539bbea5e3fc964a5d8259b16f472cf353d19e27a`
+  - resume：
+    `6494eaeb8cb2e6c1decee07d97798a0aba368ee15b0491faf3ecdfe6a9ff054c`
+  - monitor 不变：
+    `925cb515a4ecd6dbfcb192168c63644e1b2b2d691f6a4d50fdc3ddd8a5bbd96b`
+- `04` packet、evidence README 和 `LOCAL_SHA256SUMS` 已同步新 identity。v1 staging 和失败
+  dirty state 不删除、不覆盖；v2 guard 只接受 dirty path 是 v1 manifest 的子集，然后使用
+  新 staging
+  `/root/autodl-tmp/tmp/rlt_stage2_docs_upload_20260729_v2` 覆盖同一精确文件集合。
+- 当前仍未提交、未 push、未启动 smoke；v2 staging/deploy/review、服务器 `/tmp` launcher
+  替换与 v3 syntax/hash 检查尚待执行。
+
+### A074 — 文档 v2 全量复核与服务器 launcher v3 就绪
+
+- v2 guard 于 `2026-07-29T22:32:25+08:00` 通过：
+  - HEAD 仍是 Stage 2 code commit，upstream left/right 仍为 `2/0`；
+  - 两卡仍 `0 MiB / 0%`；
+  - host available `968,385,896 KiB`，磁盘 available
+    `886,848,389,120 bytes`；
+  - dirty path 全部属于 v1 upload manifest，没有夹入代码或无关文件；
+  - v2 staging 与 smoke run/evidence 仍不存在。
+- v2 单连接原子上传28个文件到
+  `/root/autodl-tmp/tmp/rlt_stage2_docs_upload_20260729_v2`；所有远端 SHA 通过，
+  manifest SHA：
+  `7888f139e22a60113fa605663ccfd9c2807ee4c9d0cc1e262c71eb74332e527a`。
+- v2 deploy/review 通过：
+  - 28个 upload SHA 全部通过；
+  - `STAGE2_DOCS_CONTENT_QA_OK files=28 markdown=7 hashes=21`；
+  - 8份 evidence Bash 全部 `bash -n`；
+  - code commit 后排除 `docs/**` 与 `HANDOFF.md` 时没有其他 diff；
+  - `STAGE2_DOCS_DEPLOY_REVIEW_OK`。
+- Git status 默认只显示24个 path；缺少的4个是 `.gitignore` 覆盖的
+  `LOCAL_SHA256SUMS.txt`、`SHA256SUMS.server.txt`、`resources_before.txt`、
+  `resources_after.txt`。它们是 packet 链接的机器证据，不能静默漏掉，因此提交脚本窄改为
+  对 upload manifest 的28个精确 path 使用 `git add -f`，并要求 staged name list 与
+  manifest 完全相等；没有扩大到目录级强制暂存。
+- 实际供未来批准后执行的服务器 `/root/autodl-tmp/tmp` fresh/resume launcher 使用
+  `.v3.part` 上传，先检查旧 SHA、新 SHA 和 `bash -n`，再原子替换；monitor 未改。
+- 随后运行只做 syntax/hash/root-absence 的 v3 验证：
+  - fresh：
+    `6e0f1c7ce5497bd3d5a2bef539bbea5e3fc964a5d8259b16f472cf353d19e27a`
+  - resume：
+    `6494eaeb8cb2e6c1decee07d97798a0aba368ee15b0491faf3ecdfe6a9ff054c`
+  - monitor：
+    `925cb515a4ecd6dbfcb192168c63644e1b2b2d691f6a4d50fdc3ddd8a5bbd96b`
+  - 结果：`STAGE2_LAUNCH_SCRIPTS_V3_OK`。
+- v3 检查没有执行 launcher 主体，没有创建 smoke 输出或 runtime evidence；当前仍未提交、
+  未 push、未启动 Stage 2 smoke。
+
+### A075 — 首次 docs commit 被 staged whitespace gate 拦截
+
+- 提交脚本先按 upload manifest 对28个精确路径执行 `git add -f`，随后
+  `git diff --cached --check` 在 commit 前 exit 2。
+- 唯一错误是 Stage 2 packet 顶部两行 blockquote 末尾的 Markdown 双空格：
+  - `04_STAGE2_PRE_SMOKE_PACKET_20260729.md:4`
+  - `04_STAGE2_PRE_SMOKE_PACKET_20260729.md:5`
+- 本地 QA 曾把 Markdown 双空格视为合法 hard break，因此没有提前拦截；Git 的 staged gate
+  更严格且正确地成为最终准入标准。
+- 处理：
+  - 去掉这两个不必要的 hard-break 空格；连续 blockquote 行本身仍保持所需排版；
+  - 不 `reset --hard`、不丢弃已 staged 的其余文件；
+  - 原子更新 staging/worktree 中的 packet 与本流水账，并同步更新 upload manifest；
+  - 重新运行全量内容 QA，再由同一 commit 脚本重新暂存28个精确路径。
+- 当前没有形成 commit、没有 push、没有改变算法代码，也没有启动 smoke。

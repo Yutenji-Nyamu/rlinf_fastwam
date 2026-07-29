@@ -9,7 +9,7 @@
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/03_STAGE1_FORMAL_TRAINING_20260729.md` | full clean-50 Stage 1 2k 已启动；19:38 固定快照 step172、运行健康 |
-| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | Plain+B1+F1+C1+M2+N20 已收束；shared ZIP 已验 archive、未解压/schema；等待“开始实现”授权 |
+| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 已确认 Plain/action/B1+F1；C1 工程细节已委托；fixed-N M2+N20+online-only 待协议确认；服务器只读接口/资源已刷新 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
 
@@ -126,13 +126,14 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   deterministic student eval、无人/无 expert、compact replay。
 - 首批正确性修复已实现：RLT trainer state、feature/action/schedule/optimizer/bootstrap
   resume fingerprint、per-rank warm-up、completion marker 和首 rollout full sync；
-  不做 hard capacity、RNG exact、async 或跨 world-size。
+  Stage 1 accepted manifest/model path/full-weights/stats/H/C/D/z/prefix 又增加 fail-closed
+  双向验证。不做 hard capacity、RNG exact、async 或跨 world-size。
 - 服务器独立 worktree：
   `/root/autodl-tmp/RLinf_rlt_pi0_robotwin`，
   从 `48a775db09c16c455aeba7b0600c920e7c80d534` 建立；分支
-  `codex/rlt-pi0-robotwin`。正式运行 source config 提交为
-  `4ac48d54c63b3a83d99f551fb54f738297525acf`，已推送、launch 时 worktree clean、
-  upstream `0/0`；没有切换 DSRL worktree，也没有复制/安装环境。
+  `codex/rlt-pi0-robotwin`。Stage 2 artifact/预算加固代码提交为
+  `3b610cb4685a1d41c97da64df67ab86561697dfd`；没有切换 DSRL worktree，也没有
+  复制/安装环境。
 - full clean-50 已从
   `TianxingChen/RoboTwin2.0@9dc9299c163db059931898a9f0852098a61155a1`
   转为 50 episodes / 7,188 frames / 50FPS：
@@ -150,59 +151,103 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
 - 正式 source config SHA-256 `c293bc47...5a4c`，resolved config SHA-256
   `5aa824fc...d67e`；`min_lr_rate=.1`，2k/无 val/micro-global16/32/no-shard/仅 RLT
   trainable 均经机器断言。
-- 正式 run 已在 `2026-07-29T19:34` 后启动；driver PID `650254`，monitor PID `650255`。
-  运行根：
+- 正式 Stage 1 已 exit0 完成2,000步，总时长28m54s。运行根：
   `/root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1`；
   runtime/evidence：
   `/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1`。
-  预期唯一 endpoint 是
+  唯一 endpoint 是
   `.../robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1/checkpoints/global_step_2000`。
-- 固定、不可外推的最后观察为 `2026-07-29T19:38:41+08:00`：step172/2000，
-  最近20步中位数0.777s/step；两卡各26,447MiB，matched RSS峰值约38.5GiB；
-  `loss=rlt_loss=1.05`、`vla_loss=0`、grad norm1.03，OOM/CUDA/NCCL/Traceback/
-  rank-death计数均0。训练当时仍 running；用户不要求持续在线监控。
+- 正式训练前100/后100 loss均值 `3.9023/0.5551`，下降85.8%；两卡各
+  26,447MiB，matched RSS峰值38.51GiB，cgroup anon峰值39.53GiB，host available最低
+  928.83GiB；无 OOM/CUDA/NCCL/rank-death。
+- Stage 1 artifact acceptance 全门通过：
+  fresh/endpoint/shuffled/zero reconstruction loss
+  `5.1977/0.5338/1.7118/2.1027`，non-RLT changed tensor=0，RLT changed=54/62。
+  manifest ID 为
+  `robotwin-adjust_bottle-rlt-stage1-clean50-step2000-v1`，manifest SHA
+  `6ca58f26...12433`，full-weights SHA `7dddc268...4bd0`。
+- 高信息量 Stage 1 用户包：
+  `exports/rlt_stage1_formal_high_info_20260729_v2.zip`，SHA-256
+  `9d9e2c38789897479a27cc04ed15034a9d65175284c837f3c1c6f54ca0c2daa8`；
+  不含20.56GiB checkpoint。
+- Stage 2 formal source 现在 `max_steps=0` fail closed。正式 candidate 保持2GPU/4env、
+  H50/C10/D14、batch512/128、UTD5/ratio2、500 rows/rank、5k critic floor、
+  cap400、15k replay/rank；这些相对 ManiSkill/论文/RoboTwin 的来源与风险见
+  `docs/rlinf-robotwin-pi0-rltoken/04_STAGE2_PRE_SMOKE_PACKET_20260729.md`。
+- Stage 2 artifact preflight、formal/fresh/resume compose/audit、Ruff、py_compile和
+  19个集中单测已通过；MLP仅2,162,202参数。fresh/resume launch script 服务器
+  `bash -n` 和22-field resource-monitor单样本自测通过。
+- 计划 smoke 路径
+  `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1` 和 runtime evidence
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1`
+  在最后预检时均不存在；**Stage 2 smoke 尚未启动**。
 - 启动前按授权精确删除12个旧 RLinf DCP和51个 Motus OPD实验`.pt`，回收约177.85GiB；
   PPO step20、GRPO step100、轻量日志/配置/指标与Motus官方/base权重均保留。删除清单位于
   `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
-- 下一次请求必须先刷新 live进程/step/GPU/RAM/磁盘/log/checkpoint；若2k endpoint完成，
-  再做 checkpoint/reload、fixed-prefix loss、true/shuffled/zero、π0 delta和artifact
-  manifest验收。Stage 2仍未授权，且必须等待正式endpoint/manifest/hash；UTD5/ratio2、
-  500/5k warm-up等仍需独立Stage2 packet明确批准。
+- 当前授权停点：等待用户审批 `04_STAGE2_PRE_SMOKE_PACKET_20260729.md` 中的
+  fresh→postcheck→新进程 resume 两阶段；没有审批不得运行。下一次执行前仍须刷新
+  branch/upstream/dirty tree、进程、GPU/RAM/disk 和目标路径。formal pilot 总 cycle
+  预算继续未批准；smoke 后再在约30-cycle phase-transition pilot 与约60-cycle
+  初步趋势 pilot 之间决定。
 
 ## QAM 当前状态与授权
 
 - 方法真值锁定 arXiv v4 与
   `ColinQiyangLi/qam@2726d767c9a0a7a46d49693f0391f73dc2cf58ac`：JAX/Flax、
-  OGBench flat observation、behavior FM/EMA + 独立 fine flow + 10-Q。官方无
-  π0/RoboTwin/真机实现；LWD 只提供 VLA/真机方向证据，不是可直接抄的 Plain 代码。
-- 用户已确认生产主线
-  `Plain+action-space+adjust_bottle+B1+F1+C1+M2+N20+online-only`，准确名称
-  “Plain-QAM π0 online adaptation（frozen behavior + macro transition）”。P1 小网络
-  仍 exact 复现官方 B2+F1/FM/AM/10-Q/EMA；其他路线只按专题 §4.4 的失败门触发。
+  behavior FM/EMA + 独立 fine flow + 10-Q。论文只抽象写 state；官方复现实验使用
+  actor/critic 对称的 nonvisual OGBench low-dimensional state，其中 manipulation
+  observation 含 simulator-derived 物体真值。官方无 π0/RoboTwin/真机实现；LWD 只提供
+  VLA/真机方向证据，不是可直接抄的 Plain 代码。
+- 用户已确认 `Plain+action-space+adjust_bottle+B1+F1`，并把 C1 pooling/双视图与两卡
+  ownership 交由实施侧按 probe 落定；当前仍待确认的单一训练协议是
+  `fixed-N M2+N20+online-only`，准确名称
+  “Plain-QAM π0 online adaptation（frozen behavior + fixed-N macro transition）”，
+  P1 小网络 exact 复现官方 B2+F1/FM/AM/10-Q/EMA。
 - 原 SFT action expert 是 frozen behavior，无 FM/optimizer；F1 是独立完整
   action-expert copy，只由 AM 更新。两者共享 frozen VLM/prefix。rollout、evaluation
   和 TD next action 用 fine ODE；memoryless SDE 只在 trainer 内生成 AM 辅助轨迹，
   锁定代码最后边界步用 behavior ODE。
 - C1 是 frozen 三视角/语言 feature + normalized 14D proprio + planned fixed-N action，
   后接 10 个独立 Q。它高层对齐官方“固定 observation map + 独立 Q”，但 ensemble std
-  不覆盖 frozen encoder 的共同表示错误。
-- planned action 进入 Q；执行后才知道的 realized L/mask 不进 Q，否则泄露 outcome。
-  L 只进 reward、$\gamma^L$、end/bootstrap 和 provenance；`N:50` 与 14D 外静态
-  padding 才由 $P_N^\top$ 固定为零梯度。
-- v1 的 critic transition 全来自 RoboTwin 在线真实执行：先 `collect`，再 `q_only`，
+  不覆盖 frozen encoder 的共同表示错误。当前 C1 推荐的 pooling 是三相机+语言四块 mask-aware
+  position-block mean `[4,2048]` BF16 storage/FP32 critic，另拼 proprio。该 pooled view
+  只够 Q；AM current state 和 TD next action 还需 canonical 三相机/task/proprio
+  `obs_id/next_obs_id`，由 actor worker 重算 frozen prefix KV，不存 full tokens/KV。
+- 2026-07-29 19:22 CST 服务器只读核对确认：RoboTwin qpos 路径把完整 planned
+  waypoints 先组成 TOPP trajectory，向上不提供 planned-action `realized L`，
+  `_cal_chunk_rewards()` 的 `n_steps_to_run` 还是 0。故 M2 改为每 query 一条固定
+  N=20 macro；$R_{\rm macro}=\sum_{i=0}^{19}\gamma_{\rm slot}^i r_i$，target
+  bootstrap 使用 $\Gamma_{20}=\gamma_{\rm slot}^{20}$；无 executed-prefix mask。
+  `slot` 是逻辑 planned waypoint/reward 位置，不是测得的 simulator primitive duration。
+  `N:50` 与 14D 外 padding 只在 $P_N^\top$ 嵌入的 terminal direct-Q gradient 为 0；
+  frozen behavior reverse VJP 后的 intermediate adjoint 不强制裁零。
+- 当前 online-only 推荐的 critic transition 全来自 RoboTwin 在线真实执行：先
+  `collect`，再 `q_only`，
   Q 有动作区分且 gradient finite 后才 `am_on`。clean-50 不进 v1 Q loss、不建 QAM
   sidecar、不阻塞实现；RLT 已下载 ZIP 只作可选诊断资产。
 - endpoint target-Q mean action gradient 经 frozen behavior 的逐步 VJP 搬回各 flow
   time，形成 AM 而非 FM 标签。OpenPI 必须统一使用
   `t_qam=1-t_pi0`、`f_qam=-v_pi0`，Q gradient 不穿
-  `Unnormalize+AlohaOutputs`。
+  `Unnormalize+AlohaOutputs`。官方 `[-1,1]` action clamp 尚需 P2 先量 π0 越界率；
+  current/next/terminal-Q 与 env 执行不得使用两套不同 action。
 - 生产不复制/改名 shared 14GB venv，也不安装官方 QAM；独立
   `/root/autodl-tmp/RLinf_qam_pi0_robotwin` worktree 显式复用
   `/root/autodl-tmp/RLinf/.venv`。官方小网络 oracle 使用独立 pinned CPU-JAX venv。
-- 实施阶段还需用事实确定：C1 feature capture/cache fingerprint、M2 final
-  observation/L/end/policy-version payload、两卡 critic/replay 同步所有权、F1 资源和
-  数值超参。默认不改通用 runner/env；payload 不足时只做 `embodied_qam` opt-in metadata
-  扩展。
+- 同次只读 header 计数把 F1 candidate allowlist 收窄为 173 tensors / 314,713,120 参数，排除
+  263,323,648 参数的 unused `gemma_expert.lm_head`；真实 AM-SDE/VJP/FSDP peak 仍待
+  实现 probe，并须包含 frozen-prefix recompute。当前两卡推荐复用 DSRL 式 per-rank
+  replay/local B，每 rank 对本地 batch 计算完整逻辑 10-Q、同步梯度/target、per-rank
+  replay checkpoint，不拆 5+5 heads；同 rank heads 初始化不同，跨 rank 对应 head
+  初始化必须相同。
+- 第一组 probe 起点是 `K10/flow10/gamma_slot=.99/Gamma20=.8179069/rho=.5/EMA=.005/
+  clip1/globalB64/warmup512/UTD1`，critic `3e-4`、fine `2e-5`、`inv_temp 0→0.5`；
+  replay 50k 只作为 canonical observation bytes probe 后的目标。分离 optimizer 共享
+  pre-update snapshot。事实门是 F1 peak、C1 dual-view store/recompute、final-view
+  payload、critic FSDP/resume，以及 normalized action clamp/env parity。
+- 19:22 CST 身份探针为 `autodl-container-nekaqbwt43-6ce5babb /root uid=0`；
+  baseline 仍是
+  `local/openpi-a800-2gpu-migration@6d0db56bf26f972cd27fa29535f5eb939e80e5bf`，
+  仅见已知 untracked A800 configs/local scripts；QAM worktree 尚不存在。
 - 当前只授权本地专题文档与服务器只读审查；未授权创建 QAM branch/worktree、改服务器
   代码、解压/转换数据、运行 compose/import/test、smoke 或训练。后续默认只读根上下文、
   QAM 主计划和账本最新批次；来源查 `01`，教学查 `02`。

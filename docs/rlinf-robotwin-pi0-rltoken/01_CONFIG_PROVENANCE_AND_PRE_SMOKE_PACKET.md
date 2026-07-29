@@ -1,30 +1,33 @@
 # π0 × RoboTwin × RLT：配置依据与 pre-smoke packet
 
-> 状态：2026-07-29 Stage 1 smoke 后复核版；单 episode converter、S1-A 与 S1-B 已通过，
-> **正式 Stage 1 2k 与 Stage 2 均未启动**。
+> 状态：2026-07-29 Stage 1 smoke 后的参数来源快照；Stage 1 后续已完成。
+> 当前 Stage 2 批准材料以
+> [`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md)
+> 为准，不能用本文件中的旧 unresolved resolved-config 启动。
 > 唯一设计规范见 [`00_INDEX_AND_IMPLEMENTATION_PLAN.md`](00_INDEX_AND_IMPLEMENTATION_PLAN.md)；
 > 每条命令、错误、修复和结果见
 > [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md)。
 
 ## 1. 当前结论
 
-代码主体、无训练前检与 Stage 1 最小 smoke 已完成。后续顺序不能颠倒：
+代码主体、Stage 1 smoke、正式2k endpoint 与 artifact 验收均已完成。当前顺序是：
 
 ```text
 clean-50 单 episode 格式合同                         [已通过]
 -> Stage 1 micro1/global2 两步显存/反传/save smoke  [已通过]
 -> Stage 1 formal micro16/global32 单步 batch-fit   [已通过]
--> Stage 1 全部有效 clean-50 固定 2k endpoint
--> endpoint reload + manifest/stats hash
--> Stage 2 fresh smoke
--> 新进程从 DCP1 resume 到 step 2
+-> Stage 1 全部有效 clean-50 固定 2k endpoint          [已通过]
+-> endpoint reload + manifest/stats hash               [已通过]
+-> Stage 2 artifact binding / compose / tests           [已通过]
+-> Stage 2 fresh smoke                                  [待批准]
+-> 新进程从 DCP1 resume 到 step 2                       [待 fresh 通过]
 -> 才讨论正式 pilot
 ```
 
-clean-50 原始 ZIP 已下载并通过大小、SHA256、ZIP 完整性和 50-episode 结构检查；episode 0
-已选择性解压并完成 raw → Aloha → LeRobot 合同。Stage 1 smoke 曾启动 Ray/SFT 并生成一个
-21G 的两步证据 checkpoint，终态已无相关进程。Stage 2 中所有正式 Stage 1 路径和 hash
-仍是 `UNRESOLVED`，会按设计 fail closed。
+clean-50 已全量转换为50 episodes / 7,188 frames。正式 Stage 1 endpoint 和 accepted
+manifest 已绑定到 Stage 2；formal/fresh/resume 三份当前 resolved config 不再含
+`UNRESOLVED`。最新机器证据见
+[`evidence/stage2_pre_smoke_20260729/`](evidence/stage2_pre_smoke_20260729/)。
 
 ## 2. 配置文件与 resolved 证据
 
@@ -319,7 +322,7 @@ runner.logger.experiment_name=<resume evidence name>
 rollout 前必须 full sync；新 transition 应由 student 产生，RLT raw state 延续，pending
 由 update step、lifetime totals 和 anchors 重算，而不是从 checkpoint 重复保存。
 
-## 6. 运行前未解析项与停止条件
+## 6. 后续状态
 
 以下 Stage 1 smoke packet 已展示并执行：
 
@@ -327,10 +330,10 @@ rollout 前必须 full sync；新 transition 应由 student 产生，RLT raw sta
 - 单 episode converter 命令与“不覆盖已有目录”的行为；
 - S1-A correctness 与 S1-B formal-batch-fit 的完整 resolved config、精确启动命令和各自输出目录；
 - 实测两卡峰值显存与 checkpoint 磁盘增量；
-- stop：OOM、非 RLT trainable 参数、loss NaN/Inf、save/load 失败。逐参数 π0 delta=0
-  与 fixed-prefix reload equivalence 是正式 2k endpoint 的验收项，不冒充本轮已测。
+- stop：OOM、非 RLT trainable 参数、loss NaN/Inf、save/load 失败。后续正式2k
+  artifact 验收已经补做逐参数 π0 delta=0、fixed-prefix、true/shuffled/zero 和 manifest。
 
-Stage 2 smoke 之前还必须解析：
+Stage 2 这些旧未解析项现已全部解析：
 
 - `RLT_STAGE1_MODEL_PATH`；
 - manifest path/ID/SHA；
@@ -339,11 +342,9 @@ Stage 2 smoke 之前还必须解析：
 - stop：任一 rank 未 ready、无真实 update、canonical parity 失败、target/replay/state
   不完整、completion marker 非 true、resume 没有新增 rollout。
 
-当前**正式 Stage 1 / Stage 2** packet 仍缺 full clean-50 路径、正式 Stage 1 artifact 和
-Stage 2 实际输出目录，所以本文件不能被误当成后续启动批准。
-
-正式 Stage 1 packet 还必须把“resolved config 仅含 `min_lr_rate=.1`，且 CPU scheduler
-contract 通过”列为 hard gate；不得复用 smoke-time resolved YAML 中的 absolute `min_lr`。
+完整值、SHA、命令、输出、资源和停止条件见当前
+[`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md)；
+fresh/resume 仍未执行，等待明确批准。
 
 ## 7. 磁盘与隔离
 

@@ -1,20 +1,19 @@
 # RLT Stage 1 formal training（2026-07-29）
 
 > 任务：RoboTwin `adjust_bottle`，full clean-50，低预算 RLT 移植
-> 状态边界：2026-07-29 19:38:41（Asia/Shanghai）已启动并通过早期健康门；不声称 endpoint 完成
+> 状态边界：2026-07-29 endpoint exit0，artifact acceptance 全门通过
 > 机器证据：[`evidence/stage1_formal_20260729/`](evidence/stage1_formal_20260729/)
 
 ## 1. 结果先行
 
-Stage 1 已从 clean、已推送的
-`codex/rlt-pi0-robotwin@4ac48d54c63b3a83d99f551fb54f738297525acf` 启动。固定早期
-快照为 step 172/2000，连续训练约 0.777s/step；两卡各 26,447MiB，matched RSS 峰值约
-38.5GiB；`loss == rlt_loss`、`vla_loss=0`、grad/LR finite，OOM/CUDA/NCCL/Traceback/
-rank-death 信号全为 0。
+Stage 1 已完整训练 2,000 optimizer steps 并以 exit0 保存唯一 endpoint。总 wall time
+`28m54s`；前100步 loss 均值 `3.9023`，后100步 `0.5551`，下降 `85.8%`；
+`vla_loss=0` 全程成立。两卡峰值均 `26,447MiB`，matched rank RSS 峰值约
+`38.51GiB`，无 OOM/CUDA/NCCL/rank-death。
 
-这表示数据、两 rank、冻结 π0、RLT reconstruction、optimizer 和 resource monitor 已进入
-稳定执行，不表示 2k endpoint 已保存或表征质量验收完成。按用户要求，本轮不再持续轮询；
-下次询问时重新刷新服务器进程、step、日志、资源和 checkpoint。
+新进程 artifact acceptance 又通过 strict reload、非RLT π0 tensor bitwise不变、
+fixed prefix 一致和 true/shuffled/zero bottleneck 对照。因此现在可以称为
+“可供 Stage 2 绑定的 task-specific RL-token artifact”；仍不能称为控制性能已提升。
 
 ## 2. 数据与 manifest
 
@@ -66,49 +65,96 @@ manifest SHA-256:
 [`exact_command.txt`](evidence/stage1_formal_20260729/exact_command.txt)。核心运行与目录：
 
 ```text
-driver PID:
-  650254
-resource monitor PID:
-  650255
-run:
-  /root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1
-runtime/evidence:
-  /root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/runtime
-driver log:
-  .../runtime/driver.log
-resource CSV:
-  .../runtime/resources.csv
-expected checkpoint:
+endpoint:
   /root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1/
   robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1/checkpoints/global_step_2000
+runtime/evidence:
+  /root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1
+artifact acceptance:
+  .../artifact_acceptance_v2
 ```
 
-只在 endpoint 保存约 21GiB，避免形成中间 checkpoint 堆积；代价是 step2000 前机器中断要
-fresh restart。18 小时 timeout 只是故障上限，不是 ETA；19:38 快照按最近 20 步中位数估算
-剩余训练约 23.7 分钟，尚未计 endpoint save。
+endpoint 总计 `20.56GiB`：
 
-## 5. 早期健康证据与后续验收
+| 文件 | 大小 | 用途 |
+|---|---:|---|
+| `actor/model_state_dict/full_weights.pt` | 8.895GiB | 聚合加载与 Stage 2 frozen feature |
+| `actor/dcp_checkpoint/__0_0.distcp` | 5.833GiB | rank0 恢复 shard |
+| `actor/dcp_checkpoint/__1_0.distcp` | 5.832GiB | rank1 恢复 shard |
+| `actor/dcp_checkpoint/.metadata` | 约1KiB | DCP metadata |
 
-[`early_health.json`](evidence/stage1_formal_20260729/early_health.json) 记录：
+没有中间 checkpoint 堆积。高信息量日志/配置/指标/资源/manifest/验收源码已打包到：
 
-| step | LR | loss/rlt_loss | grad norm | step 时间 |
-|---:|---:|---:|---:|---:|
-| 1 | 2.5e-7 | 5.20 | 2.30 | 20.1s（冷首步） |
-| 10 | 2.5e-6 | 5.19 | 2.34 | 0.780s |
-| 20 | 5.0e-6 | 5.16 | 2.30 | 0.783s |
-| 50 | 1.25e-5 | 4.51 | 1.94 | 0.777s |
-| 172 | 2.49e-5 | 1.05 | 1.03 | 0.774s |
+```text
+C:\Users\86136\Documents\rl\exports\
+  rlt_stage1_formal_high_info_20260729_v2.zip
+SHA-256:
+  9d9e2c38789897479a27cc04ed15034a9d65175284c837f3c1c6f54ca0c2daa8
+```
 
-所有记录均 `loss=rlt_loss`、`vla_loss=0`；LR 与 100-step warm-up 一致。早期 loss 下降是
-有用但不充分的直接证据。endpoint 后仍要做：
+包大小约616KiB，不复制20.56GiB checkpoint。
 
-1. checkpoint 文件完整性与新进程 reload；
-2. fixed-prefix step0→2k reconstruction loss 对比；
-3. true-`z_rl` 对 shuffled/zero 的优越性；
-4. frozen π0 数值 delta=0；
-5. Stage 1 artifact manifest，记录 checkpoint、config、dataset、stats 和 Git hash。
+## 5. 训练指标、资源与 artifact 验收
 
-正式 endpoint 不按未来 Stage 2 成绩回头挑选。
+### 5.1 训练曲线
+
+| 指标 | 结果 |
+|---|---:|
+| optimizer steps | 2,000 |
+| step1 / step2000 loss | 5.203 / 0.579 |
+| first100 / last100 mean | 3.9023 / 0.5551 |
+| minimum | 0.515 at step1802 |
+| grad norm mean / p95 / max | 0.995 / 2.12 / 4.22 |
+| LR | 2.5e-7 → 2.5e-5 at step100 → 2.5e-6 |
+| steady step p50 | 0.777s |
+| sample presentations | 64,000，约8.90个 dataset-frame equivalents |
+
+TensorBoard 有7类、每类完整2,000点。console step为1–2000，TensorBoard为0–1999，
+只是编号习惯不同。
+
+### 5.2 内存到底看哪个数
+
+| 指标 | 峰值/最低值 | 解释 |
+|---|---:|---|
+| GPU | 26,447MiB/card | 两 rank 真实训练峰值 |
+| matched rank RSS | 38.51GiB | 只加匹配训练 rank 的进程常驻集 |
+| cgroup anonymous | 39.53GiB | 最接近容器不可回收训练工作集 |
+| cgroup file cache | 229.94GiB | checkpoint/model page cache，大多可回收 |
+| raw cgroup current | 约240GiB | anon+file cache等，不能当成私有训练内存 |
+| host available minimum | 928.83GiB | 整机没有 RAM 压力 |
+
+因此“总内存曲线”同时保留 cgroup anon/file/current 和 host available；RSS 只是相关进程视角，
+raw cgroup 又包含大量可回收 cache，两者不能相互替代。1,455点曲线已放入下载包和当前
+对话可视化。
+
+### 5.3 artifact acceptance
+
+fixed real batch=4：
+
+| 检查 | 结果 |
+|---|---:|
+| fresh seed-0 proxy loss | 5.1977 |
+| endpoint true-`z_rl` loss | 0.5338 |
+| shuffled-`z_rl` loss | 1.7118 |
+| zero-`z_rl` loss | 2.1027 |
+| endpoint/fresh | 0.1027 |
+| true/shuffled | 0.3118 |
+| true/zero | 0.2539 |
+| non-RLT changed tensors | 0 |
+| RLT changed tensors | 54/62 |
+
+所有 hard gates 为 true。manifest：
+
+```text
+ID:
+  robotwin-adjust_bottle-rlt-stage1-clean50-step2000-v1
+manifest SHA:
+  6ca58f26f801e4630f26d6aed36c5084ce1ea3fa93730e54aa69a0f2a3712433
+full-weights SHA:
+  7dddc268733b978bf382cda77257371cf9de4155f60ec3094cc8ffcfd6d74bd0
+```
+
+正式 endpoint 固定，不按未来 Stage 2 成绩回头挑选。
 
 ## 6. 本轮定向磁盘清理
 
