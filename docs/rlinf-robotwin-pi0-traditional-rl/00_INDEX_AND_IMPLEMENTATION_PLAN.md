@@ -1,7 +1,7 @@
 # π0 × RoboTwin × DSRL：设计与实施主计划
 
-> 状态：2026-07-29 N=20 fresh/resume smoke 已通过；`650/13/65` 正式训练截至 10:02
-> 完整到 step 188，训练继续运行
+> 状态：2026-07-29 N=20 fresh/resume smoke 已通过；正式训练已在 step 198 主动收尾，
+> 可恢复 DCP 为 step 195
 >
 > 本文件是当前唯一需要经常读取的实施计划，只讨论第一阶段 DSRL × π0 × RoboTwin。
 >
@@ -470,15 +470,13 @@ PYTHONDONTWRITEBYTECODE=1 \
   `6817c73b298ff9df78d371d4b139e4e0fa8ea529` 已包含在本次 smoke 使用的代码快照
   `2d942b714b004de9a7efdbd4a7e2efaac3ef6d01`；smoke 结果文档随后作为 docs-only
   commit 推送到同一功能分支。
-- 完整正式训练已于 2026-07-28 18:54:12 CST 启动：2 GPU、4 env、micro 64、
-  `max_steps=650`、`val_check_interval=13`、`save_interval=65`。截至
-  2026-07-29 10:02 最新完整 step 188，resident 4,959，约 99,180 requested
-  interactions，累计 89,740 updates；learned train phase 为 586/700、trailing-20
-  为 95%。step 65–182 的 10 次 formal eval 合计 112/120=93.3%，最近 5 次合计
-  57/60=95%；alpha/entropy 已在约 0.0024/-16 稳定。critic loss/Q finite，但
-  裁剪前 critic grad 在 step 91–188 持续高于 clip=10，最新 29.18，作为当前首要
-  优化观察项。两个 DCP 结构完整，GPU/cgroup 无 OOM，env RSS 增速已放缓。
-  下一节点 step 195 同时做 12-episode eval 和第三个 DCP。最新横版状态图和判断见
-  [`evidence/FORMAL_STATUS_REPORT_STEP188_20260729.md`](./evidence/FORMAL_STATUS_REPORT_STEP188_20260729.md)；
+- 完整正式训练于 2026-07-28 18:54:12 CST 启动；用户确认信息足够后，于
+  2026-07-29 10:49:33 在最近完整 DCP195 之后发送 TERM，10:49:41 driver、本次
+  Ray session 和资源监控均退出。最后完整 cycle 198，共 792 个 train episodes、
+  5,185 macros、103,700 requested interactions、94,260 updates；step 195 eval
+  11/12，step 65–195 formal eval 合计 123/132=93.18%。TensorBoard 最后 flush
+  到 step 197，step 198 指标在 driver/metrics log；可恢复参数为 DCP195。
+  三个 DCP 保持服务器原位，轻量运行包和本地工作材料包已生成。最终结论、指标词典、
+  资源解释、旧 PPO/GRPO 对照和样本量核算见
+  [`evidence/FORMAL_CLOSEOUT_REPORT_STEP198_20260729.md`](./evidence/FORMAL_CLOSEOUT_REPORT_STEP198_20260729.md)；
   早期报告保留为历史快照。
-  训练保持运行，不在运行中改变方法参数或并发；用户下次要求时再 live 刷新，不持续在线轮询。

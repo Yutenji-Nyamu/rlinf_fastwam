@@ -1001,6 +1001,197 @@ exit $code
 服务器 worktree clean；此前积压的 docs commits 一并发布。推送后训练仍存活并已到
 step 192。
 
+#### FORMAL-015　step-198 主动收尾、产物冻结与打包
+
+用户于 2026-07-29 明确授权结束本次训练并保存产物。本轮先用：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_closeout_preflight.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+做停止前只读 gate。10:48:27 CST 结果：
+
+- branch/HEAD/upstream=`codex/dsrl-pi0-robotwin`/
+  `acc7c14b93aec8eb2f2e8f32e4072be3957b761b`/同 HEAD，worktree clean；
+- driver、两 actor、两 rollout、两 env worker 和 Ray session 均存活；
+- 最新完整 step 197；DCP65/130/195 均为 11 个文件、无 temp，DCP195 最新写入
+  时间 10:35:54；
+- 两卡 32,407/32,377 MiB；cgroup anon/file 56.2/186.0 GiB，PSI=0，
+  OOM/OOM-kill=0；
+- run 约 94 GiB，其中 checkpoints 94 GiB，非 checkpoint 约 11 MiB。
+
+DCP195 已完整且当时没有 checkpoint 写入，因此不等待新保存点。停止脚本：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_graceful_stop.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+脚本只向 formal PID 70062 发 TERM，捕获该 driver 的后代 PID 集；driver 退出后只对
+这组 PID 和两个精确 monitor PID 补 TERM，不调用全局 `ray stop`。结果：
+
+- 10:49:33 请求停止；TERM 前最后完整 cycle 已到 step 198；
+- 10:49:41 driver、全部捕获后代和两个 monitor 均退出；
+- 两卡显存均归零，OOM/OOM-kill=0；
+- DCP195 仍为 33,593,452,122 bytes/11 files/temp=0；
+- `GRACEFUL_STOP=PASS`。日志末尾的 `SIGTERM received` 是本次授权停止信号，不是
+  训练自发 crash。
+
+停止后六个最终源文件用同一 verified Paramiko 连接、服务器 `gzip -c`、本机
+`.partial` 原子替换下载：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python -B 'C:\Users\86136\Documents\rl\.tmp\download_dsrl_step198_snapshot.py'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+最终大小：event 665,016、resources 4,079,152、cgroup 2,974,952、peak 780、
+driver log 1,609,049、metrics log 1,489,311 bytes。TensorBoard 最后 flush 到
+step 197；step 198 完整表在 driver/metrics log。由 step 197 的 5,159 resident、
+93,740 updates，加 step 198 的 26 new macros/520 updates，最终为 5,185 macros、
+103,700 requested interactions、94,260 updates。
+
+最终三图与 JSON/CSV：
+
+```powershell
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' `
+  --events 'C:\Users\86136\Documents\rl\.tmp\dsrl_step198_events.tfevents' `
+  --success-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_FINAL_STEP198_20260729_WIDE.png' `
+  --optimization-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_FINAL_STEP198_20260729_WIDE.png' `
+  --summary-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step198_metrics_summary.json' `
+  --timing-csv-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step198_timing.csv' `
+  --layout landscape
+
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py' `
+  --resources 'C:\Users\86136\Documents\rl\.tmp\dsrl_step198_resources.csv' `
+  --cgroup 'C:\Users\86136\Documents\rl\.tmp\dsrl_step198_cgroup_detail.csv' `
+  --out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_FINAL_STEP198_20260729_WIDE.png' `
+  --layout landscape
+```
+
+三图均 2430×1440，并逐张用 `view_image(detail=original)` 检查，无标题、图例、坐标或
+边界裁切。JSON/CSV 以 `FINAL_FLUSH_STEP197` 命名，避免把未 flush 的 step198 冒充
+TensorBoard 数据。
+
+服务器运行包的构建命令：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_build_runtime_bundle.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+它复制 run 非 checkpoint 文件、352 MiB Ray logs、关键代码/config、环境快照、Git
+binary patch，并为 94 GiB DCP 生成 manifest/metadata hash，不复制 DCP payload。
+第一次 secret scan 只命中 binary patch 中 38 次凭据环境**变量名**
+`SEETA_SSH_PASSWORD`，归档尚未生成。只输出匹配 token/文件而不打印整行的复核命令：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_secret_scan_inspect.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+确认唯一 token 是变量名、唯一文件是已将值写成 `<process-only secret>` 的项目 patch，
+其他 credential/private-key token 均不存在。在不删除 staging 的前提下，使用
+`remote_dsrl_finish_runtime_bundle.sh` 以“name-only whitelist”完成归档。结果：
+
+```text
+archive bytes: 21,055,941
+SHA-256: f64762c1f95f881732facf9d7da2870dc1bfb96f9a2e4328180d145b8a7f877c
+server: /root/autodl-tmp/experiment_exports/dsrl_pi0_robotwin_formal_v1_20260729/
+```
+
+第一次普通 SFTP get 在 60 秒边界超时，本机只得到 16,121,856-byte 非完整目标。
+没有把它当成成品，也没有删除服务器包。最终下载改用
+`download_dsrl_runtime_bundle.py`：服务器先返回 size/SHA，再流式 `cat` 到本机
+`.partial`，边收边算 SHA，全部一致后才原子替换目标和 checksum。执行入口：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python -B 'C:\Users\86136\Documents\rl\.tmp\download_dsrl_runtime_bundle.py'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+85.5 秒后输出 `DOWNLOAD=PASS`；本机 archive 大小和 SHA 与服务器完全相同。随后
+`tar -tzf` 验证 driver/metrics/TensorBoard/resources/cgroup/Ray logs/checkpoint
+manifest/Git patch 均存在。
+
+最终解释统一见 `FORMAL_CLOSEOUT_REPORT_STEP198_20260729.md`。本轮结束训练和生成
+新归档属于用户明确授权范围；未删除或覆盖 checkpoint、run、环境、模型或其他实验。
+
+本机工作材料包先建立唯一 staging：
+
+```powershell
+$staging='C:\Users\86136\Documents\rl\exports\dsrl_pi0_robotwin_formal_v1_work_materials_20260729'
+if(Test-Path -LiteralPath $staging){throw "staging already exists: $staging"}
+New-Item -ItemType Directory -Path $staging
+```
+
+随后复制 `AGENTS.md`、`HANDOFF.md`、`PROJECT_CONTEXT.md` 和整个
+`docs/rlinf-robotwin-pi0-traditional-rl/`；另复制用户最初提供的七份 Markdown。
+只对其中精确出现旧服务器密码的 `fastwam rlinf.md`、`fastwam.md` 做机械替换：
+
+```text
+<REDACTED_SERVER_PASSWORD>
+```
+
+staging 完成后为 61 files/8,119,705 bytes，精确 credential value 扫描为 0。
+归档命令：
+
+```powershell
+$exports='C:\Users\86136\Documents\rl\exports'
+$staging="$exports\dsrl_pi0_robotwin_formal_v1_work_materials_20260729"
+$temp="$exports\dsrl_pi0_robotwin_formal_v1_work_materials_20260729.partial.zip"
+$final="$exports\dsrl_pi0_robotwin_formal_v1_work_materials_20260729.zip"
+Compress-Archive -LiteralPath `
+  (Get-ChildItem -LiteralPath $staging | ForEach-Object FullName) `
+  -DestinationPath $temp -CompressionLevel Optimal
+Move-Item -LiteralPath $temp -Destination $final
+```
+
+`tar -tf` 验证 README、根交接/规则、主计划、closeout、formal ledger 和 sanitized
+historical sources 均存在。最终 ZIP 完成后把 SHA-256 写入相邻同名 `.sha256`；
+checksum 不写回 ZIP 内部文档，避免自引用导致每次重打包都改变自身 hash。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

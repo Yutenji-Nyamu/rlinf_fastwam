@@ -7,7 +7,7 @@
 
 | 专题 | 唯一事实源 | 实施账本 | 当前停点 |
 |---|---|---|---|
-| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 截至 2026-07-29 10:02 完整到 step 188，训练继续运行 |
+| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | 规划 v4 已完成实现前语义收口；等待“开始实现”授权 |
 | QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 上下文/source lock v1 已完成；等待方法分叉选择与“开始实现”授权 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
@@ -98,6 +98,25 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `personal/codex/dsrl-pi0-robotwin`，此前积压的 docs commits 也一并发布；
   推送后 HEAD=upstream、worktree clean，训练已推进到 step 192。训练配置、进程和
   run 产物均未改动；下轮仍先 live 刷新，不能把本条静态快照称为当前。
+- 用户确认信息足够后，2026-07-29 10:49:33 向 formal driver 发 TERM；10:49:41
+  driver、本次 Ray session 全部后代及两个资源 monitor 均退出，两卡显存归零，
+  `GRACEFUL_STOP=PASS`。最后完整 cycle 为 step 198，TensorBoard 最后 flush 到
+  step 197；最终累计 5,185 macros、103,700 requested interactions、94,260 updates。
+- 可恢复终点是完整的 `global_step_195`：约 32 GiB、11 个必需文件、无临时残留；
+  step 196–198 的日志/指标保留，但其参数更新不在 DCP195。三个 DCP 仍原地保存在
+  formal run root，未删除或搬运。
+- 最终效果：step 195 formal eval 11/12；step 65–195 合计 123/132=93.18%，
+  step 130–195 合计 68/72=94.44%。完整解释、指标词典、资源/PPO-GRPO 对照和样本量
+  核算见
+  `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_CLOSEOUT_REPORT_STEP198_20260729.md`。
+- 服务器运行材料包保存在
+  `/root/autodl-tmp/experiment_exports/dsrl_pi0_robotwin_formal_v1_20260729/`，
+  本机副本为
+  `exports/dsrl_pi0_robotwin_formal_v1_runtime_step198_20260729.tar.gz`，
+  SHA-256 `f64762c1f95f881732facf9d7da2870dc1bfb96f9a2e4328180d145b8a7f877c`；
+  本地工作材料包为
+  `exports/dsrl_pi0_robotwin_formal_v1_work_materials_20260729.zip`，校验值在同名
+  `.sha256` 文件。大 DCP 只留服务器，运行包包含完整 manifest 和恢复路径。
 
 ## RLT 当前状态与授权
 
