@@ -3712,3 +3712,32 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
 - 使用 `apply_patch` 只删除三个 EOF 空白行；不改运行证据值或结论。由于本节也需随最终
   commit 保存，下一步生成 v3 staging，复核已有 staged path 仍全部属于同一 manifest，
   再重新 stage exact 21 paths。
+
+### A085 — 主文档提交、push 与最终只读停点
+
+- v3 staging 21文件 manifest SHA：
+  `d48f1bafb564f3877b31b8891984bb5faa45c568252cc2a9bbad393aa507a54c`。
+- `2026-07-30T00:44:33+08:00` v3 deploy review 通过：
+  - 21个文件逐 SHA；
+  - 既有21个 staged path 和4个 worktree-visible dirty path 均是 manifest 子集；
+  - JSON/link/fresh evidence SHA 与 credential marker 复核通过。
+- exact 21 paths 再次 `git add -f` 后，staged path 与 manifest 完全相等；
+  text-only `git diff --cached --check` 通过。形成并推送主提交：
+  - commit `9bb2dd78feff7133780c3df6a88618d10168c4e4`；
+  - message `docs(rlt): record Stage 2 fresh smoke`；
+  - `21 files changed, 1717 insertions(+), 40 deletions(-)`；
+  - remote head等于本地HEAD，left/right `0/0`。
+- 第一次最终只读审计脚本在输出前 exit1。`bash -x` 定位到“无匹配进程”时
+  `pgrep | grep | wc` 在 `set -o pipefail` 下仍返回非零；这是审计 helper 逻辑问题，
+  不是服务器状态或实验失败。
+- 窄修复为 `mapfile < <(pgrep ... || true)` 后，`00:46:17+08:00` 最终审计通过：
+  - branch `codex/rlt-pi0-robotwin`；
+  - HEAD `9bb2dd78...c4e4`、clean、left/right `0/0`；
+  - RLT/Ray进程0，两卡 `0MiB/0%`；
+  - fresh exit0、保存态 `update_step=8`、checkpoint `52,542,741 bytes`；
+  - formal source `max_steps=0`；
+  - host available `1,029,204,604 KiB`；
+  - disk available `886,792,486,912 bytes`；
+  - 标记 `RLT_STAGE2_FRESH_FINAL_CLOSEOUT_AUDIT_OK`。
+- 本节和 HANDOFF 中的主提交身份将形成一次终端 ledger-only closeout；该 closeout
+  commit 自身 SHA 只在聊天交接，不再为记录自身制造第三个递归提交。

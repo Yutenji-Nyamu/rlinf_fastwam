@@ -204,7 +204,9 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `473f339a...abd985`，未改算法/config。
 - 用户明确省略本轮 resume；因此 DCP completion 已验证，但不声称新进程
   save→load→continue 已通过。完整结果见
-  `docs/rlinf-robotwin-pi0-rltoken/05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`。
+  `docs/rlinf-robotwin-pi0-rltoken/05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`；结果与
+  高信息量 evidence 主提交为
+  `9bb2dd78feff7133780c3df6a88618d10168c4e4`。
 - 启动前按授权精确删除12个旧 RLinf DCP和51个 Motus OPD实验`.pt`，回收约177.85GiB；
   PPO step20、GRPO step100、轻量日志/配置/指标与Motus官方/base权重均保留。删除清单位于
   `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
