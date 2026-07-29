@@ -774,6 +774,119 @@ git commit -m "docs(dsrl): record step 53 push blocker"
 
 该 bookkeeping commit 的 hash 在本轮最终回复报告，不为写回自身再制造第三个 commit。
 
+#### FORMAL-014　2026-07-29 step-188 / 100k interactions 审阅
+
+本轮只读刷新边界为：TensorBoard 最新完整 step 188 的 wall time
+2026-07-29 10:02:37 CST；资源 CSV 到 10:05:04。10:04:22 现场确认 driver
+PID 70062、2 actor、2 rollout worker 和 2 env worker 存活。服务器仓库为
+`codex/dsrl-pi0-robotwin`，`HEAD=50ebc6780435b677fa507286e6252559fd6b9c79`，
+upstream 仍为 `b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`，worktree clean。
+
+快照下载使用一个经过既有 host-key 校验的 Paramiko 连接，在服务器端对只读源文件
+`gzip -c` 流式输出；没有创建服务器临时文件。密码仅存在于当前 PowerShell 进程，
+六个本地目标都先写 `.partial`，完整解压后才原子替换：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python -B 'C:\Users\86136\Documents\rl\.tmp\download_dsrl_step188_snapshot.py'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+下载结果为：
+
+- event 633,283 bytes；
+- `resources.csv` 3,888,132 bytes；
+- `cgroup_detail.csv` 2,836,402 bytes；
+- `peak.txt` 756 bytes；
+- `formal_driver.log` 1,527,895 bytes；
+- `metrics.log` 1,412,406 bytes。
+
+日志错误扫描和两个 DCP 的精确结构检查由以下只读脚本执行：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_step188_detail.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+脚本逐个要求 `global_step_{65,130}` 中存在 actor shard、alpha、target model、
+replay rank 0/1，且没有 `*.tmp`/`.metadata.tmp`。两者均为 11 个文件，分别
+33,593,452,121 和 33,593,452,122 bytes，输出 `CHECKPOINT_VALIDATION=PASS`。
+日志只命中初始化阶段的两条可选 Curobo import traceback；其后没有
+Traceback、NaN/Inf、CUDA OOM 或 ERROR。
+
+三张横版图和完整 scalar/timing 摘要使用以下命令生成：
+
+```powershell
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_step20_plots.py' `
+  --events 'C:\Users\86136\Documents\rl\.tmp\dsrl_step188_events.tfevents' `
+  --success-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_SUCCESS_SAMPLE_EFFICIENCY_STEP188_20260729_WIDE.png' `
+  --optimization-out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_OPTIMIZATION_TRENDS_STEP188_20260729_WIDE.png' `
+  --summary-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step188_metrics_summary.json' `
+  --timing-csv-out 'C:\Users\86136\Documents\rl\.tmp\dsrl_step188_timing.csv' `
+  --layout landscape
+
+python -B 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\tools\build_dsrl_formal_resource_plot.py' `
+  --resources 'C:\Users\86136\Documents\rl\.tmp\dsrl_step188_resources.csv' `
+  --cgroup 'C:\Users\86136\Documents\rl\.tmp\dsrl_step188_cgroup_detail.csv' `
+  --out 'C:\Users\86136\Documents\rl\docs\rlinf-robotwin-pi0-traditional-rl\evidence\FORMAL_RESOURCE_CURVES_STEP188_20260729_WIDE.png' `
+  --layout landscape
+```
+
+critic gradient 的含义通过代码现场核对：
+
+```powershell
+rg -n "clip_grad_norm_|critic/grad_norm" `
+  'C:\Users\86136\Documents\rl\.research-rlinf\rlinf\workers\actor\fsdp_sac_policy_worker.py'
+```
+
+worker 把 `self.model.clip_grad_norm_(max_norm=...)` 的返回值记录为
+`critic/grad_norm`，因此 dashboard 数值是裁剪前 norm；真正更新仍被 clip=10 限制。
+
+关键结果：
+
+- step 188/650，resident 4,959，99,180 requested primitive interactions，
+  89,740 optimizer updates；
+- 14 次 formal eval 为
+  `1,7,8,10,11,11,11,11,11,12,11,12,12,10 / 12`；
+  step 65–182 合计 112/120=93.3%，step 130–182 合计 57/60=95%；
+- learned train phase 586/700=83.7%，trailing-20 为 95%，step 188 为 4/4；
+- critic/actor loss 0.914/3.959，`Qπ=-3.921`、`Qdata=-4.341`，
+  10-Q spread 0.068；alpha/entropy 0.00237/-15.93；
+- critic 裁剪前 grad 在 step 91–188 连续 98 次超过 10，最新 29.18；
+  loss/Q/eval 仍稳定，因此记录为优化压力，不在活 run 中改参；
+- 最近 20 轮均值 276.9 秒，排除 eval 为 269.2 秒；最近 50 轮去 eval 为
+  272.5 秒。按该速度剩余约 35.9 小时；
+- 预测 run 结束约 312k actual requested interactions、303k updates；
+  `650` 是 outer cycles，不是 primitive steps；
+- 两卡当前 31.65/31.62 GiB，DCP 峰 40.48/40.43 GiB；
+  cgroup anon 54.3 GiB、PSI=0、OOM=0；env RSS 当前约 28.5 GiB，
+  02:00 后增长放缓但尚未完全平台；
+- DCP65/130 的推断保存额外耗时约 30.3/27.9 秒；run 约 63 GiB，
+  磁盘剩余约 726 GiB。
+
+三张 PNG 均为 2430×1440，并已逐张用：
+
+```text
+view_image(detail=original)
+```
+
+检查文字、图例、坐标和边界，无裁切或重叠。本轮完整报告：
+`FORMAL_STATUS_REPORT_STEP188_20260729.md`。本轮只新增文档、图和对话内
+visualization；没有修改 production code、resolved config、run root、checkpoint
+或活训练进程。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：

@@ -1,13 +1,13 @@
 # AutoDL / RLinf 当前交接入口
 
-最后更新：2026-07-28。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
+最后更新：2026-07-29。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
 `docs/project-history/00_INDEX.md`。进入某个窗口时只选择对应专题，不默认加载另一专题正文。
 
 ## 并行专题路由
 
 | 专题 | 唯一事实源 | 实施账本 | 当前停点 |
 |---|---|---|---|
-| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 截至 23:04 完整到 step 53，训练继续运行 |
+| π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 截至 2026-07-29 10:02 完整到 step 188，训练继续运行 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | 规划 v4 已完成实现前语义收口；等待“开始实现”授权 |
 | QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 上下文/source lock v1 已完成；等待方法分叉选择与“开始实现”授权 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
@@ -82,6 +82,20 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `github.com:443` 连续连接超时，故 upstream 仍为
   `b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`。训练未受影响，23:26 已推进到 step 57。
   下次刷新先核验 HEAD/upstream/clean 和 driver，再只重试该 commit 的 push，不重做报告。
+- 2026-07-29 10:02 指标现场：最新完整 step 188/650，resident 4,959，约
+  99,180 requested interactions、89,740 optimizer updates，已经到约 100k review 点。
+  step 65–182 的 10 次 formal eval 合计 112/120=93.3%，step 130–182 合计
+  57/60=95%；最新 step 182 为 10/12，最近训练 trailing-20 为 95%，目前没有退化证据。
+  alpha/entropy 已稳定在约 0.0024/-16；critic loss 和 Q finite，但记录的裁剪前 critic
+  grad 在 step 91–188 持续高于 clip=10，最新 29.18，作为当前首要优化观察项。
+- step 65/130 两个约 32 GiB DCP 结构完整，保存额外耗时约 30/28 秒。两卡当前约
+  31.6 GiB，历史 DCP 峰约 40.5/40.4 GiB；cgroup anon 54.3 GiB、PSI=0、OOM=0，
+  env-worker RSS 约 28.5 GiB且增速已放缓。当前可以继续训练，但不扩大 env 并发。
+  预计剩余约 35.9 小时，下一节点 step 195 同时 eval 和 DCP。完整横版报告见
+  `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_STATUS_REPORT_STEP188_20260729.md`。
+- 本轮 live 刷新时服务器 `HEAD=50ebc6780435b677fa507286e6252559fd6b9c79`、
+  upstream 仍为 `b01661e8a6b3ca1b883fb61d4ade9a467ffd84b5`、worktree clean；未重试
+  GitHub push 前仍按“服务器 docs commits 待发布”处理。训练配置、进程和 run 产物均未改动。
 
 ## RLT 当前状态与授权
 
