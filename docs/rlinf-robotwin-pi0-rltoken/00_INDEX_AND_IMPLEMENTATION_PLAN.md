@@ -1,6 +1,7 @@
 # π0 × RoboTwin × RLToken / RLT：上下文索引与实施主计划
 
-> 状态：2026-07-29 实现候选版 v10（Stage 1 artifact 已验收；Stage 2 fresh/resume smoke 待批准）
+> 状态：2026-07-30 实现候选版 v11（Stage 1 artifact 已验收；Stage 2 fresh smoke
+> 已通过，resume 按用户要求省略；formal pilot 待预算批准）
 > 本文件是 RLToken / RLT × π0 × RoboTwin 的唯一专题设计与实施计划。
 > 动态服务器状态、命令和结果只写入 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 与根 [`HANDOFF.md`](../../HANDOFF.md)，不在本文件复制成第二份真相。
 > DSRL、QAM、Fast-WAM 和旧附件均不进入 RLT 默认上下文；其历史只在明确追溯时按索引读取。
@@ -39,7 +40,9 @@ Stage 1、Stage 2 smoke 和 formal run 均以当次展示的完整 resolved conf
 | 继续实现、复盘命令、声称服务器/测试状态 | [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 的索引与相关批次 | 精确命令、文件、结果、错误、修复和时间边界 |
 | 查看 Stage 1 smoke、专家数据解释、参数来源与磁盘审计 | [`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md) | 本轮结论与 evidence 索引；不替代本文件的规范 |
 | 查看 full clean-50、正式 Stage 1 指标、endpoint 与 artifact 验收 | [`03_STAGE1_FORMAL_TRAINING_20260729.md`](03_STAGE1_FORMAL_TRAINING_20260729.md) | Stage 1 完成、资源、重建对照与交付包 |
-| 审批 Stage 2 参数或 fresh/resume smoke | [`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md) | 当前完整 resolved config、参数来源、精确命令、输出、资源和停止条件 |
+| 追溯 Stage 2 参数与运行前配置 | [`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md) | 历史批准包、参数来源、resolved config 与预期合同 |
+| 查看 Stage 2 fresh smoke、资源或选择 formal 预算 | [`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md) | 当前结果、产物、限制与30/60-cycle决策 |
+| 处理 AutoDL Git/GitHub 网络 | [`06_AUTODL_NETWORK_PLAYBOOK.md`](06_AUTODL_NETWORK_PLAYBOOK.md) | 大陆线路短探针、有界 push 与故障分流 |
 | 改方法语义或判断是否忠于论文 | [RLT 论文 v2](https://arxiv.org/html/2604.23073)、[Physical Intelligence 项目页](https://www.pi.website/research/rlt/) | 方法不变量、作者实验和公开限制 |
 | 改 Stage 1/Stage 2 算法代码 | [RLinf RLT 文档](https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html) 与第 1.3 节锁定源码 | 可执行复现、真实 config 和 symbol |
 | 下载/转换 demonstration | RoboTwin [π0 数据文档](https://robotwin-platform.github.io/doc/usage/Pi0.html)、官方 HF 单文件 metadata、账本 A008/A009 | revision、schema、动作语义、空间和覆盖风险 |
@@ -597,24 +600,24 @@ route/transition、bootstrap 和最小 resume。逐项命令、修改、问题�
    reload，以及正式 micro/global 16/32 单步前反传容量门均通过；S1-B 的唯一 update 使用
    warm-up 初始 LR 0，不声称参数 delta；正式2k endpoint、严格 reload、π0 delta=0 和
    true/shuffled/zero 诊断也已完成；
-3. **已完成真实 checkpoint 合同**：canonical reference decode 与旧
-   `output_transform(raw_template)[:C,:D]` parity；模拟器 fixed observation
-   execution 仍待 Stage 2 smoke；
+3. **已完成真实 checkpoint 与模拟器执行合同**：canonical reference decode 与旧
+   `output_transform(raw_template)[:C,:D]` parity；fresh smoke 已走通真实
+   RoboTwin collect、canonical action、eval 与 DCP；
 4. **已完成单元合同**：route、current/next、termination/pure truncation；
-5. **待 Stage 2 smoke**：一个真实 distributed update 的 MLP/Q/target delta 与 frozen
-   feature 不变；
-6. **部分完成**：Stage 1 artifact 新进程严格 reload 通过；Stage 2 的多 rank
-   save→load→continue 和 first-sync 仍待 Stage 2 smoke；
+5. **已完成 Stage 2 fresh smoke**：真实两 rank replay、8 critic/4 actor updates、
+   target/sync、deterministic student eval 与 `global_step_1` completion 通过；
+6. **部分完成**：Stage 1 artifact 新进程严格 reload 通过；Stage 2 多 rank DCP 已保存，
+   但用户明确省略本轮 resume，因此不声称 save→load→continue 已验证；
 7. **已完成**：Stage 2 当前代码的 Ruff、py_compile、whitespace 和19个集中单测；
    artifact preflight 与 formal/fresh/resume compose/audit 也通过，且没有启动 Ray。
 
 Windows 本机只编辑文档、代码和 diff，不运行这些项目检查。
 
-### 阶段 3：Stage 1 smoke 已完成；Stage 2 smoke 待审批
+### 阶段 3：Stage 1 已验收；Stage 2 fresh smoke 已完成
 
 Stage 1 已按展示后的 resolved packet 执行，结果见
 [`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md)。
-Stage 2 启动所需材料已经集中在
+Stage 2 运行前材料集中在历史批准包
 [`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md)，包括：
 
 - 完整 resolved config；
@@ -624,24 +627,24 @@ Stage 2 启动所需材料已经集中在
 - transition/update/eval 预算；
 - stop conditions。
 
-这些材料已展示但尚未获得本轮运行批准；计划 smoke run/evidence root 均不存在。
+用户随后批准 fresh-only 主链 smoke 并明确省略 resume。fresh 于2026-07-30 exit0，
+完整结果见
+[`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md)。
 
-Stage 2 用户批准后，fresh smoke 覆盖：
+fresh smoke 实际覆盖：
 
 ```text
 reference collect
 -> per-rank replay ready
 -> critic warm-up
--> student collect
 -> update
 -> MLP/version sync
 -> deterministic student eval
 -> DCP
--> shortest resume continue
 ```
 
 只缩短 warm-up、总更新、save/val interval 和 eval episodes；不缩模型、不改 H/C、动作域、
-route、loss、sync 或 DCP 主链。
+route、loss、sync 或 DCP 主链。resume 未运行。
 
 ## 11. 运行前剩余的不确定性
 
@@ -706,9 +709,9 @@ batch 得到 fresh/endpoint/shuffled/zero loss
 `5.1977/0.5338/1.7118/2.1027`，非RLT tensor变化数0，manifest与full-weights SHA已固定。
 Stage 2 三份 bound config 已替换所有 `UNRESOLVED` 并通过 hard audit。
 
-当前精确停点是：**不启动 Stage 2 smoke，等待用户批准**
-[`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md)
-中的 fresh/resume 两阶段命令、资源上限和停止条件。formal source `max_steps=0`，
-pilot 总预算继续 fail closed。
+当前精确停点是：**fresh smoke 已通过；resume 按用户要求省略；不启动 formal pilot，
+等待用户在30-cycle phase-transition pilot 与60-cycle初步趋势 pilot之间批准总预算。**
+formal source `max_steps=0`，因此预算决定前继续 fail closed。结果、资源和限制见
+[`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md)。
 最新现场状态和具体授权以根 [`HANDOFF.md`](../../HANDOFF.md) 与
 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 为准。

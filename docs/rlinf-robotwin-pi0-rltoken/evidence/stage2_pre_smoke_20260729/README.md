@@ -1,7 +1,8 @@
 # RLT Stage 2 pre-smoke evidence（2026-07-29）
 
-> 状态：artifact 绑定、Hydra compose、静态/单元测试、资源预算和 launch-script
-> 语法/monitor 自测已通过；**fresh/resume smoke 尚未启动**。
+> 历史状态：这是2026-07-29的运行前快照；当时 fresh/resume 尚未启动。
+> fresh 后续已通过、resume 按用户要求省略；当前结果见
+> [`../../05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](../../05_STAGE2_FRESH_SMOKE_RESULT_20260730.md)。
 
 ## 1. 身份与服务器位置
 

@@ -1,8 +1,8 @@
 # RLT Stage 2：参数审阅与 fresh/resume smoke 批准包（2026-07-29）
 
-> 当前状态：Stage 1 正式 artifact 已验收；Stage 2 artifact 绑定、配置 compose、
-> 静态/单元测试和 launch-script 自测已通过。
-> 授权边界：**本文件不是已执行记录；fresh/resume smoke 尚未启动，等待用户明确批准。**
+> 历史状态：这是运行前批准包。fresh 已于2026-07-30通过；用户明确省略 resume。
+> 当前结果、资源与正式 pilot 停点见
+> [`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md)。
 > 机器证据：
 > [`evidence/stage2_pre_smoke_20260729/`](evidence/stage2_pre_smoke_20260729/)。
 

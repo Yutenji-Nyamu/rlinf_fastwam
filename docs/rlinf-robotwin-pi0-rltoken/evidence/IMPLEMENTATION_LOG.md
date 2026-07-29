@@ -3476,3 +3476,239 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
   - Stage 2 smoke run root 与 runtime evidence root 均不存在。
 - 本节是终端审计记录；后续只需将它形成一个 ledger-only 本地 commit。由于 GitHub 主站
   网络已确认不可用，本轮不再 push，也不再运行会改变实验状态的操作。
+
+### A078 — 2026-07-30 fresh-only Stage 2 smoke 授权与执行边界
+
+- 用户明确批准执行一个简洁的 Stage 2 主链 smoke，并冻结本轮范围：
+  - 只做 fresh；
+  - 省略 resume；
+  - 不增加额外实验或大批检查；
+  - 尽量在约30分钟内返回；
+  - 继续记录 GPU、host/cgroup RAM、磁盘和错误；
+  - 同步总结中国大陆服务器的 Git/GitHub 网络经验，形成一份短副本。
+- 本轮重新完整读取根 `PROJECT_CONTEXT.md`、`HANDOFF.md`、RLT 当前索引与
+  `04_STAGE2_PRE_SMOKE_PACKET_20260729.md`；动态状态仍以新服务器现场为准。
+- 算法和正式 batch 不缩：继续使用2 GPU/4 env、H50/C10/D14、frozen Stage 1、
+  batch512/128、8 critic/4 actor updates、deterministic student eval 和 DCP1。
+- 只调整执行治理：
+  - 不运行 resume wrapper；
+  - 先做一次短 GitHub 网络探针和有界 push，不重复长时间盲试；
+  - fresh driver 目标 wall-clock 约30分钟，若必须修改原90分钟 hard timeout，只复制为
+    fresh-only 运行包装并记录新 SHA，不改算法 config；
+  - 保留原 artifact/config hash、空闲 GPU/Ray、输出不存在和资源下限 hard gates。
+- 当前尚未刷新服务器、尚未创建 smoke 目录或启动进程；下一条先记录 live
+  Git/network/process/GPU/RAM/disk/path 现场。
+
+### A079 — fresh smoke 启动前现场与3秒 Git 推送恢复
+
+- 执行只读脚本
+  `local_scripts/remote_rlt_20260730_fresh_smoke_live_audit.sh`，现场时间
+  `2026-07-30T00:14:24+08:00`。
+- Git：
+  - branch `codex/rlt-pi0-robotwin`
+  - HEAD `6fd3ee7106fb82f06eda82603c41a09767151709`
+  - worktree clean
+  - 相对 upstream left/right `5/0`
+  - upstream/remote head 均为
+    `d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc`
+- 网络现场：
+  - 所有大小写 HTTP(S)/ALL proxy 环境变量均未设置；
+  - Git `http.version` 为默认值；
+  - `https://github.com`、API、raw 均 HTTP 200；
+  - connect/total 分别约 `0.107/0.903s`、`0.111/0.397s`、
+    `0.295/1.659s`；
+  - `ls-remote` 正常返回旧 remote head。
+- 资源/路径：
+  - 无 RLT/Ray/push 进程；
+  - 两张 A800 均 `0 MiB / 0%`；
+  - host available `1,030,629,608 KiB`；
+  - cgroup current/anon/file
+    `228,076,175,360 / 309,866,496 / 226,026,766,336 bytes`，
+    raw total 几乎全是可回收 file cache；
+  - `oom=0`、`oom_kill=0`；
+  - `/root/autodl-tmp` available `886,847,029,248 bytes`，使用率56%；
+  - smoke run/evidence root 均不存在。
+- source formal/smoke config、worker、Stage 1 manifest、fresh launcher 和 monitor SHA
+  与批准包完全一致。
+- 因主站已经恢复，执行
+  `remote_rlt_20260730_bounded_push_before_smoke.sh`：
+  - exact HEAD、clean、left/right `5/0`、主站HTTP200 hard gate；
+  - `GIT_TERMINAL_PROMPT=0`；
+  - push 最长60秒。
+- push 实际3秒成功：
+  `d7c3ca7e..6fd3ee71`；随后 HEAD=remote、left/right `0/0`。
+- 结论：前一轮慢是大陆服务器到 `github.com:443` 的瞬时链路/路由不可达，不是 Git
+  历史、认证或大 pack。当前默认直连本身就是已验证的成功路径；不安装代理、不固定
+  HTTP/1.1、不改 remote。以后先做7–10秒主站/API/raw探针，仅在主站200时做一次有界
+  push，失败即延期，避免把单次连接拖到数分钟。
+- 当前满足原 fresh launcher 的 upstream `0/0` 门；尚未创建 smoke 目录或启动 driver。
+
+### A080 — fresh v1 launcher exit127、定位与不覆盖重试准备
+
+- 执行批准包精确命令：
+  `bash /root/autodl-tmp/tmp/remote_rlt_20260729_start_stage2_smoke_fresh.sh`。
+- artifact preflight 和 resolved compose 已先完成；约22.7秒后 launcher 自身 exit 1，
+  原因是启动后2秒的 `kill -0 729402` 发现 driver 已退出，没有误报为“运行中”。
+- 只读检查时间 `2026-07-30T00:16:50+08:00`：
+  - driver start/finish 都是 `00:16:16+08:00`；
+  - `exit_code=127`；
+  - driver.log 401 bytes；
+  - 无 Ray/RLT 进程；
+  - 两卡 `0 MiB / 0%`；
+  - smoke run root 内没有模型/checkpoint 文件；
+  - monitor 只有表头和两条空闲样本，GPU最高4MiB，`oom/oom_kill=0`。
+- 原始错误：
+  `timeout` 把
+  `python -B ... runner.resume_dir=null`
+  整串当成单一可执行文件名，报 `No such file or directory`。
+- 原因：outer launcher 在未引用 heredoc 中展开 `"${fresh_cmd[@]}"`；展开结果写入
+  `run_foreground.sh` 后不会再次按 shell 参数数组解析，因此命令被合并。
+- 窄修复：
+  - 不改 YAML、模型、batch、环境、更新数或算法；
+  - 只把生成的 `run_foreground.sh` 中 timeout 后的命令改为逐参数显式 Bash 命令；
+  - old launcher SHA
+    `6e0f1c7ce5497bd3d5a2bef539bbea5e3fc964a5d8259b16f472cf353d19e27a`；
+  - fixed launcher SHA
+    `473f339af5123802526dae93fe2fde7289fe52f32efb80b581ded073eaabd985`。
+- 为避免覆盖失败证据，下一步只在以下 hard gates 通过后：
+  - 把失败 run/evidence 分别原子移动到后缀
+    `_failed_launcher_127`；
+  - 把 old launcher 及 SHA 放入失败 evidence；
+  - 对 fixed `.part` 先做 SHA 和 `bash -n`，再原子替换 `/tmp` launcher；
+  - 原批准包 run/evidence 路径重新为空后做一次 fresh 重试。
+- 当前没有删除失败文件，没有启动第二次 driver。
+
+### A081 — 重试准备 gate 修正与 fresh driver 正常启动
+
+- fixed launcher `.part` 上传后，第一次执行 retry-prep 脚本 exit 1，且没有输出。
+- 使用同一无凭证脚本经 `bash -x -s` 只读定位；失败点是
+  `test -d /root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1`。
+- 原因：exit127 发生在训练程序启动前，旧 launcher 只建立了
+  `experiment_exports/.../fresh_runtime`，训练 run root 从未创建。此前 failure inspector
+  已输出 `smoke_files=NONE`，但 retry-prep 错把“没有 run root”当成“必须移动 run root”。
+- 窄修复：
+  - 要求 run root 必须不存在；
+  - 不创建伪失败 run root；
+  - 只归档实际存在的 evidence root；
+  - 其余 exact HEAD/clean/upstream、exit127、错误文本、old/new launcher SHA、
+    `bash -n` 和目标不存在 gate 不变。
+- 第二次 retry-prep 通过：
+  - failed run：`NOT_CREATED`
+  - failed evidence：
+    `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1_failed_launcher_127`
+  - fixed `/tmp` launcher SHA：
+    `473f339af5123802526dae93fe2fde7289fe52f32efb80b581ded073eaabd985`
+  - 标记：`RLT_FRESH_RETRY_PREPARED`
+- 重新运行同一 fresh 命令后，launcher 正常返回：
+  - driver PID `730146`
+  - monitor PID `730147`
+  - runtime：
+    `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1/fresh_runtime`
+  - run root：
+    `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1`
+  - expected DCP：
+    `.../robotwin_adjust_bottle_rlt_stage2_smoke_fresh_v1/checkpoints/global_step_1`
+- launcher 返回前 `kill -0` 已通过；当前只称为“已启动”，尚未称为 smoke 通过。
+
+### A082 — fresh smoke 完成、资源与精简 postcheck
+
+- 第一次健康检查在启动后约73秒完成；driver/monitor 仍活跃，日志已进入 RoboTwin/π0
+  初始化。两卡当时约947MiB；日志打印 Vulkan fallback 和 Curobo import traceback。
+- 没有仅凭 `traceback` 字样停止任务：resolved task 使用 `planner_backend=mplib`，
+  且 driver 仍活跃；继续按实际退出码、rollout/eval/update/DCP 判断。
+- `2026-07-30T00:25:27+08:00` driver 自行 exit0，monitor 同步退出：
+  - started `00:22:45`，总 wall-clock 约162秒；
+  - RLinf cycle `58.145s`；
+  - train rollout 和 deterministic eval 各完成1 epoch；
+  - 保存 `global_step_1`。
+- fresh hard contract：
+  - global lifetime transitions `8`；
+  - replay rank0/rank1 各4 rows；
+  - critic/actor updates `8/4`；
+  - train `actor_switch_rate=0`；
+  - completion manifest `complete=true`、world size2、rank0/1；
+  - 两 rank 保存后均为 `update_step=8`、`warmup_transitions=8`。
+- metric table 的 `rlt/update_step=0` 是本 cycle 更新前快照；同表报告
+  `updates_to_run=8`，DCP completion manifest 的保存后值8是恢复合同的权威值。
+- 数值健康：
+  - actor/critic loss `2.189/0.017`；
+  - actor/critic grad norm `5.055/4.591`，均低于 clip10；
+  - CUDA OOM、NCCL fatal、NaN metric、Ray actor death、SIGSEGV 均为0。
+- 资源 monitor 73点、2秒间隔、覆盖164秒：
+  - GPU峰值 `15,375/15,368 MiB`，util峰值 `96%/93%`；
+  - matched RSS峰值 `47,664,296 KiB`（45.46GiB）；
+  - cgroup anon峰值 `44,007,514,112 bytes`（40.99GiB）；
+  - cgroup file峰值 `226,419,949,568 bytes`（210.87GiB）；
+  - host available最低 `1,010,300,000,000 bytes`（940.92GiB）；
+  - disk available最低 `886,794,207,232 bytes`（825.89GiB）；
+  - cgroup oom/oom_kill 增量 `0/0`。
+- checkpoint `52,542,741 bytes`，包含两 rank DCP、8.66MB聚合 actor权重、两 rank
+  replay、trainer state、target model；run总计 `52,542,809 bytes`。
+- postcheck Bash 由 Windows PowerShell 5.1 写出时带 UTF-8 BOM，远端第一行报告
+  `#!/usr/bin/env: No such file or directory`；后续 Bash 内容仍执行并 exit0。该一次性
+  helper 随后用 `apply_patch` 去掉 BOM；这不影响服务器运行、checkpoint或上述结果。
+- 用户明确要求省略 resume，因此没有调用 resume wrapper，也没有把“DCP完整”误写成
+  “新进程恢复继续已通过”。
+
+### A083 — 成功证据下载与上下文收口
+
+- 通过逐连接、固定 host-key 的 Paramiko/SFTP 下载11个小文件到
+  `docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_fresh_smoke_20260730/`：
+  driver log、resources CSV、resolved config、provenance、Stage1 preflight、
+  exact command、起止/exit、resources-before 与 trainer completion。
+- 所有密码仍只存在当前 PowerShell 进程的 `SEETA_SSH_PASSWORD`，每组连接结束后在
+  `finally` 清除；未下载52.5MB checkpoint。
+- 新增：
+  - `05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`；
+  - `06_AUTODL_NETWORK_PLAYBOOK.md`；
+  - fresh evidence README、postcheck summary 和 SHA256SUMS。
+- `04_STAGE2_PRE_SMOKE_PACKET_20260729.md` 明确降为历史批准包；RLT 索引与根
+  `HANDOFF.md` 改为 fresh通过、resume省略、formal budget待批准。服务器同步、
+  文档QA与Git结果另记。
+
+### A084 — closeout 原子同步与服务器 QA
+
+- 本地先完成：
+  - 3份 JSON 解析；
+  - 11个服务器原始文件 SHA 逐一复算；
+  - 9份相关 Markdown 的相对链接检查；
+  - Markdown trailing-whitespace 检查；
+  - 标记 `RLT_STAGE2_LOCAL_QA_OK markdown=9 hashes=11 json=3`。
+- `2026-07-30T00:38:24+08:00` 服务器上传 gate 通过：
+  - branch `codex/rlt-pi0-robotwin`；
+  - HEAD `6fd3ee7106fb82f06eda82603c41a09767151709`；
+  - clean、upstream `0/0`；
+  - 无 RLT/Ray进程，两卡 `0MiB/0%`；
+  - host available `1,029,260,896 KiB`；
+  - disk available `886,794,207,232 bytes`；
+  - fresh exit0、completion保存态 `update_step=8`。
+- 第一次 staging v1 原子上传21个精确文件，manifest SHA
+  `54beb68d7ae21220a02d424ff16bd1984e555706e5ed3b111f44f52eda7726aa`；
+  逐文件远端 SHA 通过。
+- 第一次 deploy review 在复制后、Git stage/commit前被 whitespace gate 拦截：
+  `exact_command.txt:1` 保留原始 shell 命令的行尾空格。该文件是按 SHA 固定的原始机器
+  证据，不应为了手写文档风格而改字节。
+- 窄修复只调整 review helper：
+  - Markdown/JSON/YAML/TSV 继续做 trailing-whitespace gate；
+  - 原始 driver log、CSV、command/time/resource文本保持服务器下载字节和 SHA；
+  - 重跑时只接受现有 dirty path 是 upload manifest 的子集，仍拒绝任何范围外变化。
+- 第二次 deploy review 于 `00:40:39+08:00` 通过：
+  - 21个 upload SHA、JSON字段、Markdown links、fresh 11-file SHA均通过；
+  - visible dirty 14个，其余是 `.gitignore` 覆盖的原始 evidence，后续只按21个 exact
+    manifest path 用 `git add -f`；
+  - 标记 `RLT_STAGE2_FRESH_CLOSEOUT_DEPLOY_REVIEW_OK`。
+- 为把本节本身纳入同一个最终文档提交，下一步重新生成不可覆盖的 v2 staging 和 manifest，
+  再做同一 review、精确 stage、commit与一次有界 push。最终 commit SHA 在聊天交接，
+  不为记录自身 SHA 再制造递归 ledger-only commit。
+- v2 staging manifest SHA 为
+  `8e97b08bd17d05ccabe37e9d11f0d3df2d68d23f10bf88c61e8e486a21c3f36e`；
+  `00:42:10+08:00` 第二次全量 deploy review 通过。
+- 首次 commit/push helper 已精确 stage 21个 manifest path，但在 commit 前被
+  `git diff --cached --check` 拦截：
+  - `05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`；
+  - `06_AUTODL_NETWORK_PLAYBOOK.md`；
+  - `postcheck_summary.json`；
+  三者各多一个 EOF 空白行。exit2发生在 commit/push前，所以没有新 commit、没有网络写入。
+- 使用 `apply_patch` 只删除三个 EOF 空白行；不改运行证据值或结论。由于本节也需随最终
+  commit 保存，下一步生成 v3 staging，复核已有 staged path 仍全部属于同一 manifest，
+  再重新 stage exact 21 paths。

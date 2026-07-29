@@ -1,6 +1,6 @@
 # AutoDL / RLinf 当前交接入口
 
-最后更新：2026-07-29。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
+最后更新：2026-07-30。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
 `docs/project-history/00_INDEX.md`。进入某个窗口时只选择对应专题，不默认加载另一专题正文。
 
 ## 并行专题路由
@@ -178,23 +178,40 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   19个集中单测已通过；MLP仅2,162,202参数。fresh/resume launch script 服务器
   `bash -n` 和22-field resource-monitor单样本自测通过；docs commit 后的治理 gate 已
   精确允许 `docs/**` 与根 `HANDOFF.md`，同时继续拒绝其他 code/config diff。
-- Stage 2 审批包本地服务器 commit 为
-  `92e02d9e51c47422696f5ed17a2f15165a6331a6`。服务器到 GitHub 主站的 443
-  当前超时，故该 commit 尚未发布到 `personal`；API 端点可达不等于 Git smart-HTTP
-  可达。不得重做 commit，网络恢复后只需刷新并推送当前分支。
-- 计划 smoke 路径
-  `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1` 和 runtime evidence
-  `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1`
-  在最后预检时均不存在；**Stage 2 smoke 尚未启动**。
+- Stage 2 运行代码与批准材料已发布到 `personal/codex/rlt-pi0-robotwin`；smoke source
+  HEAD 为 `6fd3ee7106fb82f06eda82603c41a09767151709`。2026-07-30 运行前 main/API/raw
+  与 `ls-remote` 全部恢复，一次有界 push 用时3秒，left/right `0/0`。此前变慢是
+  `github.com:443` 的瞬时大陆线路不可达，不是仓库、认证或大 pack；短流程见
+  `docs/rlinf-robotwin-pi0-rltoken/06_AUTODL_NETWORK_PLAYBOOK.md`。
+- Stage 2 fresh smoke 已于
+  `2026-07-30T00:22:45+08:00` 至 `00:25:27+08:00` exit0：
+  - 真实 train/eval 各1 epoch；
+  - global transitions 8、每 rank replay 4；
+  - critic/actor updates `8/4`，保存后两 rank `update_step=8`；
+  - train `actor_switch_rate=0`，deterministic student eval 已执行；
+  - `global_step_1` completion=true、rank0/1完整；
+  - actor/critic loss `2.189/0.017`，grad norm `5.055/4.591`；
+  - CUDA OOM、NCCL fatal、NaN、Ray actor death与cgroup OOM均为0。
+- smoke 两卡显存峰 `15,375/15,368 MiB`，matched RSS峰45.46GiB，cgroup anon峰
+  40.99GiB，host available最低940.92GiB，磁盘 available最低825.89GiB。
+  run/checkpoint约52.5MB。Curobo/Vulkan提示未阻止 mplib train/eval/DCP。
+- smoke run：
+  `/root/autodl-tmp/experiments/rlt_stage2_smoke_20260729_v1/
+  robotwin_adjust_bottle_rlt_stage2_smoke_fresh_v1`；runtime evidence：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_smoke_20260729_v1/fresh_runtime`。
+  第一次 launcher 在训练程序前因 heredoc 参数数组合并 exit127；失败 evidence 保存在
+  同级 `_failed_launcher_127`，窄修复 launcher SHA 为
+  `473f339a...abd985`，未改算法/config。
+- 用户明确省略本轮 resume；因此 DCP completion 已验证，但不声称新进程
+  save→load→continue 已通过。完整结果见
+  `docs/rlinf-robotwin-pi0-rltoken/05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`。
 - 启动前按授权精确删除12个旧 RLinf DCP和51个 Motus OPD实验`.pt`，回收约177.85GiB；
   PPO step20、GRPO step100、轻量日志/配置/指标与Motus官方/base权重均保留。删除清单位于
   `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
-- 当前授权停点：等待用户审批 `04_STAGE2_PRE_SMOKE_PACKET_20260729.md` 中的
-  fresh→postcheck→新进程 resume 两阶段；没有审批不得运行。下一次执行前仍须刷新
-  branch/upstream/dirty tree、进程、GPU/RAM/disk 和目标路径，并先确认待发布 commit
-  是否已推送。formal pilot 总 cycle
-  预算继续未批准；smoke 后再在约30-cycle phase-transition pilot 与约60-cycle
-  初步趋势 pilot 之间决定。
+- 当前授权停点：fresh 已完成、resume 已省略；formal source 仍 `max_steps=0`
+  fail closed。formal pilot 总预算未批准，不得启动；下一步只需在约30-cycle
+  phase-transition pilot 与约60-cycle初步趋势 pilot之间决定，随后重新展示绑定后的
+  resolved config、精确命令、输出目录、资源和停止条件。
 
 ## QAM 当前状态与授权
 
