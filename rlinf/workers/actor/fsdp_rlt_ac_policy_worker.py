@@ -901,6 +901,115 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 f"{stage1_manifest.get('manifest_id')!r} != "
                 f"{configured_contract['stage1_manifest_id']!r}."
             )
+        if stage1_manifest.get("accepted") is not True:
+            raise ValueError("RLT Stage 1 manifest is not marked accepted.")
+        if int(stage1_manifest.get("schema_version", -1)) != 1:
+            raise ValueError(
+                "Unsupported RLT Stage 1 artifact-manifest schema: "
+                f"{stage1_manifest.get('schema_version')!r}."
+            )
+
+        manifest_stage1 = stage1_manifest.get("stage1")
+        if not isinstance(manifest_stage1, dict):
+            raise ValueError("RLT Stage 1 manifest is missing the stage1 mapping.")
+        manifest_model_path = manifest_stage1.get("model_path")
+        configured_model_path = self._select_config(
+            "rollout.rlt_feature_model.model_path"
+        )
+        if not isinstance(manifest_model_path, str) or not manifest_model_path:
+            raise ValueError("RLT Stage 1 manifest has no model_path.")
+        if not isinstance(configured_model_path, str) or not os.path.isdir(
+            configured_model_path
+        ):
+            raise ValueError(
+                "RLT Stage 2 requires an existing feature-model directory, got "
+                f"{configured_model_path!r}."
+            )
+        if os.path.realpath(manifest_model_path) != os.path.realpath(
+            configured_model_path
+        ):
+            raise ValueError(
+                "RLT Stage 1 manifest/model path mismatch: "
+                f"{manifest_model_path!r} != {configured_model_path!r}."
+            )
+
+        manifest_model_contract = stage1_manifest.get("model_contract")
+        if not isinstance(manifest_model_contract, dict):
+            raise ValueError(
+                "RLT Stage 1 manifest is missing the model_contract mapping."
+            )
+        feature_action_chunk = int(
+            self._select_config("rollout.rlt_feature_model.openpi.action_chunk")
+        )
+        actor_action_chunk = int(
+            self._select_config("actor.model.num_action_chunks")
+        )
+        actor_ref_action_chunk = int(
+            self._select_config("actor.model.ref_num_action_chunks")
+        )
+        if len(
+            {
+                feature_action_chunk,
+                actor_action_chunk,
+                actor_ref_action_chunk,
+            }
+        ) != 1:
+            raise ValueError(
+                "RLT Stage 2 action-chunk config mismatch: "
+                f"feature={feature_action_chunk}, actor={actor_action_chunk}, "
+                f"reference={actor_ref_action_chunk}."
+            )
+        feature_action_dim = int(
+            self._select_config("rollout.rlt_feature_model.openpi.action_env_dim")
+        )
+        actor_action_dim = int(self._select_config("actor.model.action_dim"))
+        if feature_action_dim != actor_action_dim:
+            raise ValueError(
+                "RLT Stage 2 action-dimension config mismatch: "
+                f"{feature_action_dim} != {actor_action_dim}."
+            )
+        feature_z_dim = int(
+            self._select_config("rollout.rlt_feature_model.openpi.rlt_embed_dim")
+        )
+        actor_z_dim = int(self._select_config("actor.model.z_dim"))
+        if feature_z_dim != actor_z_dim:
+            raise ValueError(
+                "RLT Stage 2 z-dimension config mismatch: "
+                f"{feature_z_dim} != {actor_z_dim}."
+            )
+        expected_manifest_model_contract = {
+            "norm_stats_sha256": configured_contract["norm_stats_sha256"],
+            "canonical_adapter_version": configured_contract[
+                "canonical_adapter_version"
+            ],
+            "action_horizon": int(
+                self._select_config(
+                    "rollout.rlt_feature_model.openpi.action_horizon"
+                )
+            ),
+            "action_chunk": feature_action_chunk,
+            "action_dim": feature_action_dim,
+            "z_rl_dim": feature_z_dim,
+            "image_prefix_shape": [
+                int(
+                    self._select_config(
+                        "rollout.rlt_feature_model.openpi.rlt_prefix_seq_len"
+                    )
+                ),
+                int(
+                    self._select_config(
+                        "rollout.rlt_feature_model.openpi.rlt_input_dim"
+                    )
+                ),
+            ],
+        }
+        for key, expected_value in expected_manifest_model_contract.items():
+            if manifest_model_contract.get(key) != expected_value:
+                raise ValueError(
+                    "RLT Stage 1 manifest model-contract mismatch for "
+                    f"{key}: {manifest_model_contract.get(key)!r} != "
+                    f"{expected_value!r}."
+                )
 
         norm_stats_path = self._select_config(
             "rollout.rlt_feature_model.openpi_data.norm_stats_path"

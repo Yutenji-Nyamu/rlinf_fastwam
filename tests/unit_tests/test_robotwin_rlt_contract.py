@@ -14,6 +14,7 @@
 
 import hashlib
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -256,12 +257,30 @@ def _make_resume_worker(
     worker_class = _rlt_worker_module().RLTACFSDPPolicy
     tmp_path.mkdir(parents=True, exist_ok=True)
     stage1_manifest = tmp_path / "stage1_manifest.json"
+    stage1_model = tmp_path / "stage1_model"
     norm_stats = tmp_path / "norm_stats.json"
+    stage1_model.mkdir()
+    norm_stats.write_text('{"state": {"mean": [0.0]}}', encoding="utf-8")
     stage1_manifest.write_text(
-        json.dumps({"manifest_id": "stage1-test"}),
+        json.dumps(
+            {
+                "accepted": True,
+                "schema_version": 1,
+                "manifest_id": "stage1-test",
+                "stage1": {"model_path": str(stage1_model)},
+                "model_contract": {
+                    "norm_stats_sha256": _sha256(norm_stats),
+                    "canonical_adapter_version": "robotwin_aloha_canonical_v1",
+                    "action_horizon": 4,
+                    "action_chunk": 2,
+                    "action_dim": 3,
+                    "z_rl_dim": 5,
+                    "image_prefix_shape": [7, 11],
+                },
+            }
+        ),
         encoding="utf-8",
     )
-    norm_stats.write_text('{"state": {"mean": [0.0]}}', encoding="utf-8")
     contract = {
         "stage1_manifest_path": str(stage1_manifest),
         "stage1_manifest_id": "stage1-test",
@@ -303,13 +322,22 @@ def _make_resume_worker(
                 "model": {
                     "model_type": "rlt_mlp",
                     "num_action_chunks": 2,
+                    "ref_num_action_chunks": 2,
                     "action_dim": 3,
+                    "z_dim": 5,
                 }
             },
             "rollout": {
                 "rlt_feature_model": {
+                    "model_path": str(stage1_model),
                     "openpi": {
                         "rlt_action_adapter": "robotwin_aloha_canonical_v1",
+                        "action_horizon": 4,
+                        "action_chunk": 2,
+                        "action_env_dim": 3,
+                        "rlt_embed_dim": 5,
+                        "rlt_prefix_seq_len": 7,
+                        "rlt_input_dim": 11,
                     },
                     "openpi_data": {
                         "norm_stats_path": str(norm_stats),
@@ -337,16 +365,23 @@ def _make_resume_worker(
     return worker
 
 
+def _bind_same_stage1_artifact(target, source) -> None:
+    target.cfg.rollout.rlt_feature_model.model_path = (
+        source.cfg.rollout.rlt_feature_model.model_path
+    )
+    target.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path = (
+        source.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path
+    )
+    target.rlt_resume_cfg.contract = source.rlt_resume_cfg.contract
+
+
 def test_rlt_resume_state_world1_roundtrip_restores_independent_state(tmp_path):
     checkpoint_dir = tmp_path / "checkpoint"
     source = _make_resume_worker(tmp_path / "source")
     source._save_rlt_trainer_state(str(checkpoint_dir), runner_step=11)
 
     resumed = _make_resume_worker(tmp_path / "resumed")
-    resumed.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path = (
-        source.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path
-    )
-    resumed.rlt_resume_cfg.contract = source.rlt_resume_cfg.contract
+    _bind_same_stage1_artifact(resumed, source)
     state = resumed._preflight_rlt_trainer_state(str(checkpoint_dir))
     resumed._restore_rlt_trainer_state(state)
 
@@ -367,15 +402,36 @@ def test_rlt_resume_preflight_fails_closed_for_missing_checkpoint(tmp_path):
         worker._preflight_rlt_trainer_state(str(tmp_path / "missing_checkpoint"))
 
 
+def test_rlt_resume_contract_rejects_unaccepted_stage1_manifest(tmp_path):
+    worker = _make_resume_worker(tmp_path / "source")
+    manifest_path = Path(worker.rlt_resume_cfg.contract.stage1_manifest_path)
+    stage1_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    stage1_manifest["accepted"] = False
+    manifest_path.write_text(json.dumps(stage1_manifest), encoding="utf-8")
+    worker.rlt_resume_cfg.contract.stage1_manifest_sha256 = _sha256(
+        manifest_path
+    )
+
+    with pytest.raises(ValueError, match="not marked accepted"):
+        worker._rlt_resume_contract()
+
+
+def test_rlt_resume_contract_rejects_stage1_model_path_mismatch(tmp_path):
+    worker = _make_resume_worker(tmp_path / "source")
+    other_model = tmp_path / "other_model"
+    other_model.mkdir()
+    worker.cfg.rollout.rlt_feature_model.model_path = str(other_model)
+
+    with pytest.raises(ValueError, match="manifest/model path mismatch"):
+        worker._rlt_resume_contract()
+
+
 def test_rlt_resume_preflight_fails_closed_for_contract_change(tmp_path):
     checkpoint_dir = tmp_path / "checkpoint"
     source = _make_resume_worker(tmp_path / "source")
     source._save_rlt_trainer_state(str(checkpoint_dir), runner_step=11)
     changed = _make_resume_worker(tmp_path / "changed", gamma=0.98)
-    changed.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path = (
-        source.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path
-    )
-    changed.rlt_resume_cfg.contract = source.rlt_resume_cfg.contract
+    _bind_same_stage1_artifact(changed, source)
 
     with pytest.raises(ValueError, match="contract fingerprint mismatch"):
         changed._preflight_rlt_trainer_state(str(checkpoint_dir))
@@ -389,10 +445,7 @@ def test_rlt_resume_preflight_locks_bootstrap_semantics(tmp_path):
         tmp_path / "changed",
         bootstrap_type="always",
     )
-    changed.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path = (
-        source.cfg.rollout.rlt_feature_model.openpi_data.norm_stats_path
-    )
-    changed.rlt_resume_cfg.contract = source.rlt_resume_cfg.contract
+    _bind_same_stage1_artifact(changed, source)
 
     with pytest.raises(ValueError, match="contract fingerprint mismatch"):
         changed._preflight_rlt_trainer_state(str(checkpoint_dir))

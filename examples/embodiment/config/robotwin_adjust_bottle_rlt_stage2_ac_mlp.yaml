@@ -26,8 +26,10 @@ runner:
     logger_backends: ["tensorboard"]
 
   max_epochs: 1000
-  # The formal collection-cycle budget is selected after the approved smoke.
-  max_steps: -1
+  # Fail closed: the formal collection-cycle budget is selected after the
+  # approved smoke and must be supplied as an explicit launch override.
+  # The dedicated smoke config overrides this to one fresh cycle.
+  max_steps: 0
   only_eval: False
   weight_sync_interval: 1
   val_check_interval: 10
