@@ -1,0 +1,21 @@
+defaults:
+  - robotwin_rlt_stage1_sft_openpi
+  - _self_
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_stage1_sft_openpi_a800_2gpu_smoke"
+  # Two real optimizer steps test memory, frozen-parameter deltas, loss, and
+  # endpoint serialization without pretending to establish convergence.
+  max_steps: 2
+  save_interval: 2
+
+actor:
+  # The RLT module has 743M trainable parameters. Prove this minimum batch
+  # first; micro16/global32 remains a candidate for the fixed 2k endpoint.
+  micro_batch_size: 1
+  global_batch_size: 2
+
+  optim:
+    total_training_steps: 2
+    lr_warmup_steps: 1

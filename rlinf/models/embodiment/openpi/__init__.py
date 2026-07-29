@@ -88,6 +88,8 @@ def get_model(cfg: DictConfig, torch_dtype=None):
         model.load_state_dict(all_state_dict, strict=False)
 
     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+    if actor_model_config.use_rlt and not actor_model_config.rlt_train_vla:
+        model.freeze_for_rlt_stage1()
     # fsdp replace
     # model.paligemma_with_expert.replace_gemma_decoder_layers()
     # load data stats

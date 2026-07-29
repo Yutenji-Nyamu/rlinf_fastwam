@@ -137,6 +137,7 @@ class OpenPi0Config(Pi0Config):
 
     # ===== RLT SFT parameters =====
     use_rlt: bool = False
+    rlt_train_vla: bool = True
     rlt_alpha: float = 1.0
     rlt_input_dim: int = 2048
     rlt_embed_dim: int = 2048
@@ -147,6 +148,7 @@ class OpenPi0Config(Pi0Config):
     rlt_mlp_ratio: float = 4.0
     rlt_image_only: bool = True
     rlt_use_mask: bool = False
+    rlt_action_adapter: str = "identity"
     state_indices: list[int] | None = None
 
 
@@ -480,15 +482,27 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         actions = actions.to(dtype=torch.float32)
 
         # PI0Pytorch.forward returns per-element MSE (reduction="none").
-        if self.config.use_rlt:
+        if self.config.use_rlt and not self.config.rlt_train_vla:
+            if self.config.rlt_alpha != 0.0:
+                raise ValueError(
+                    "RLT token-only SFT requires rlt_alpha=0 when rlt_train_vla=False."
+                )
+            prefix_output, prefix_mask = self._extract_rlt_prefix_embeddings(
+                observation, train=False
+            )
+            vla_loss = torch.zeros((), device=device, dtype=torch.float32)
+        elif self.config.use_rlt:
             loss, prefix_output, prefix_mask = self._sft_forward_with_rlt_prefix(
                 observation, actions
             )
+            if use_action_chunk_loss:
+                loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
+            vla_loss = loss.mean()
         else:
             loss = super().forward(observation, actions)
-        if use_action_chunk_loss:
-            loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
-        vla_loss = loss.mean()
+            if use_action_chunk_loss:
+                loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
+            return loss.mean()
         if not self.config.use_rlt:
             return vla_loss
 
@@ -634,7 +648,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
     def extract_rlt_obs(
         self,
         env_obs: dict[str, Any],
-    ) -> dict[str, torch.Tensor]:
+        *,
+        return_decode_context: bool = False,
+    ) -> (
+        dict[str, torch.Tensor]
+        | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor] | None]
+    ):
         if not self.config.use_rlt or not hasattr(self, "rlt_module"):
             raise ValueError("extract_rlt_obs requires openpi.use_rlt=True.")
 
@@ -666,9 +685,34 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode="eval",
             compute_values=False,
         )
-        ref_chunk = self.output_transform(
-            {"actions": outputs["actions"], "state": observation.state}
-        )["actions"]
+        decode_context = None
+        if self.config.rlt_action_adapter == "identity":
+            ref_chunk = self.output_transform(
+                {"actions": outputs["actions"], "state": observation.state}
+            )["actions"]
+        elif self.config.rlt_action_adapter == "robotwin_aloha_canonical_v1":
+            raw_actions = outputs["actions"]
+            chunk_len = int(self.config.action_chunk)
+            action_dim = int(self.config.action_env_dim)
+            if raw_actions.ndim != 3:
+                raise ValueError(
+                    "RoboTwin RLT raw reference must be [B,H,D], got "
+                    f"{tuple(raw_actions.shape)}."
+                )
+            if raw_actions.shape[1] < chunk_len or raw_actions.shape[2] < action_dim:
+                raise ValueError(
+                    "RoboTwin RLT canonical slice exceeds the raw reference: "
+                    f"raw={tuple(raw_actions.shape)}, C={chunk_len}, D={action_dim}."
+                )
+            ref_chunk = raw_actions[:, :chunk_len, :action_dim]
+            decode_context = {
+                "processed_state": observation.state.detach(),
+                "raw_action_template": raw_actions.detach(),
+            }
+        else:
+            raise ValueError(
+                f"Unsupported RLT action adapter {self.config.rlt_action_adapter!r}."
+            )
         raw_proprio = self._select_configured_state(env_obs["states"])
         if (
             isinstance(self.config.config_name, str)
@@ -685,11 +729,86 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if not torch.is_tensor(proprio):
             proprio = torch.as_tensor(proprio)
 
-        return {
+        rlt_obs = {
             "z_rl": z_rl,
             "proprio": proprio.to(device=z_rl.device, dtype=torch.float32),
             "ref_chunk": ref_chunk.to(device=z_rl.device, dtype=torch.float32),
         }
+        if return_decode_context:
+            return rlt_obs, decode_context
+        return rlt_obs
+
+    @torch.no_grad()
+    def decode_rlt_action(
+        self,
+        canonical_actions: torch.Tensor,
+        decode_context: dict[str, torch.Tensor],
+    ) -> torch.Tensor:
+        """Decode one routed canonical RoboTwin action through OpenPI transforms."""
+        if self.config.rlt_action_adapter != "robotwin_aloha_canonical_v1":
+            raise ValueError(
+                "decode_rlt_action requires "
+                "rlt_action_adapter=robotwin_aloha_canonical_v1."
+            )
+        if decode_context is None:
+            raise ValueError("RoboTwin RLT decode context is required.")
+        raw_template = decode_context.get("raw_action_template")
+        processed_state = decode_context.get("processed_state")
+        if not isinstance(raw_template, torch.Tensor) or not isinstance(
+            processed_state, torch.Tensor
+        ):
+            raise ValueError(
+                "RoboTwin RLT decode context must contain tensor "
+                "raw_action_template and processed_state."
+            )
+        if canonical_actions.ndim != 3 or raw_template.ndim != 3:
+            raise ValueError(
+                "RoboTwin RLT canonical/template actions must be [B,C,D] and "
+                f"[B,H,D], got {tuple(canonical_actions.shape)} and "
+                f"{tuple(raw_template.shape)}."
+            )
+        if canonical_actions.shape[0] != raw_template.shape[0]:
+            raise ValueError(
+                "RoboTwin RLT canonical/template batch mismatch: "
+                f"{canonical_actions.shape[0]} != {raw_template.shape[0]}."
+            )
+        chunk_len = canonical_actions.shape[1]
+        action_dim = canonical_actions.shape[2]
+        expected_action_dim = int(self.config.action_env_dim)
+        if action_dim != expected_action_dim:
+            raise ValueError(
+                "RoboTwin RLT canonical action dim mismatch: "
+                f"expected {expected_action_dim}, got {action_dim}."
+            )
+        if (
+            chunk_len > int(self.config.action_chunk)
+            or chunk_len > raw_template.shape[1]
+            or action_dim > raw_template.shape[2]
+        ):
+            raise ValueError(
+                "RoboTwin RLT canonical action exceeds the decode template: "
+                f"canonical={tuple(canonical_actions.shape)}, "
+                f"template={tuple(raw_template.shape)}, "
+                f"configured_chunk={self.config.action_chunk}."
+            )
+
+        raw_actions = raw_template.clone()
+        raw_actions[:, :chunk_len, :action_dim] = canonical_actions.to(
+            device=raw_actions.device,
+            dtype=raw_actions.dtype,
+        )
+        decoded_actions = self.output_transform(
+            {"actions": raw_actions, "state": processed_state}
+        )["actions"]
+        return decoded_actions[:, :chunk_len, :action_dim]
+
+    def freeze_for_rlt_stage1(self) -> None:
+        """Freeze the base VLA and leave only the RLT token module trainable."""
+        if not self.config.use_rlt or not hasattr(self, "rlt_module"):
+            raise ValueError("RLT Stage 1 freezing requires use_rlt=True.")
+        for parameter in self.parameters():
+            parameter.requires_grad_(False)
+        self.rlt_module.requires_grad_(True)
 
     def prepare_dagger_sft_batch(self, batch):
         """Prepare replay-buffer samples for DAgger SFT updates."""

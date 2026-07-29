@@ -15,6 +15,7 @@
 from rlinf.algorithms.rlt.expert import build_expert_model_config
 from rlinf.algorithms.rlt.rollout import predict_rlt_actions
 from rlinf.algorithms.rlt.route import (
+    FullTaskRLTRoute,
     RealworldRLTRoute,
     RLTRoute,
     RLTRouteContext,
@@ -26,6 +27,7 @@ from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
 __all__ = [
     "RLTRoute",
     "RLTRouteContext",
+    "FullTaskRLTRoute",
     "RealworldRLTRoute",
     "SimulatorRLTRoute",
     "build_expert_model_config",
