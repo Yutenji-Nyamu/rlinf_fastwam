@@ -1,0 +1,14 @@
+cd /root/autodl-tmp/RLinf_rlt_pi0_robotwin
+export PYTHONPATH=/root/autodl-tmp/RLinf_rlt_pi0_robotwin:/root/autodl-tmp/RoboTwin_RLinf
+export PYTHONDONTWRITEBYTECODE=1
+export CUDA_VISIBLE_DEVICES=0,1
+export MUJOCO_GL=egl
+export PYOPENGL_PLATFORM=egl
+export JAX_PLATFORMS=cpu
+export TOKENIZERS_PARALLELISM=false
+export HYDRA_FULL_ERROR=1
+export ROBOTWIN_RLT_CLEAN50_PATH=/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-v1
+export ROBOTWIN_PI0_BASE_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle
+export ROBOTWIN_PI0_NORM_STATS_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json
+export RLT_LOG_ROOT=/root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1
+timeout --signal=TERM --kill-after=120s 64800s /root/autodl-tmp/RLinf/.venv/bin/python -B examples/sft/train_vla_sft.py --config-path /root/autodl-tmp/RLinf_rlt_pi0_robotwin/examples/sft/config --config-name robotwin_rlt_stage1_sft_openpi runner.logger.experiment_name=robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1

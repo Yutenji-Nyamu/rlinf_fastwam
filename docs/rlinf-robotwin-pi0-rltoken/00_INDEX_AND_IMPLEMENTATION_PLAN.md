@@ -1,6 +1,6 @@
 # π0 × RoboTwin × RLToken / RLT：上下文索引与实施主计划
 
-> 状态：2026-07-29 实现候选版 v8（converter、Stage 1 S1-A/S1-B 与 scheduler contract 已通过）
+> 状态：2026-07-29 实现候选版 v9（full clean-50 Stage 1 2k 已启动并通过早期健康门）
 > 本文件是 RLToken / RLT × π0 × RoboTwin 的唯一专题设计与实施计划。
 > 动态服务器状态、命令和结果只写入 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 与根 [`HANDOFF.md`](../../HANDOFF.md)，不在本文件复制成第二份真相。
 > DSRL、QAM、Fast-WAM 和旧附件均不进入 RLT 默认上下文；其历史只在明确追溯时按索引读取。
@@ -38,6 +38,7 @@ Stage 1、Stage 2 smoke 和 formal run 均以当次展示的完整 resolved conf
 |---|---|---|
 | 继续实现、复盘命令、声称服务器/测试状态 | [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 的索引与相关批次 | 精确命令、文件、结果、错误、修复和时间边界 |
 | 查看 Stage 1 smoke、专家数据解释、参数来源与磁盘审计 | [`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md) | 本轮结论与 evidence 索引；不替代本文件的规范 |
+| 查看 full clean-50、正式 resolved config、运行目录与早期健康 | [`03_STAGE1_FORMAL_TRAINING_20260729.md`](03_STAGE1_FORMAL_TRAINING_20260729.md) | 正式 Stage 1 启动与固定时间边界；不冒充 endpoint 完成 |
 | 改方法语义或判断是否忠于论文 | [RLT 论文 v2](https://arxiv.org/html/2604.23073)、[Physical Intelligence 项目页](https://www.pi.website/research/rlt/) | 方法不变量、作者实验和公开限制 |
 | 改 Stage 1/Stage 2 算法代码 | [RLinf RLT 文档](https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html) 与第 1.3 节锁定源码 | 可执行复现、真实 config 和 symbol |
 | 下载/转换 demonstration | RoboTwin [π0 数据文档](https://robotwin-platform.github.io/doc/usage/Pi0.html)、官方 HF 单文件 metadata、账本 A008/A009 | revision、schema、动作语义、空间和覆盖风险 |
@@ -689,17 +690,18 @@ route、loss、sync 或 DCP 主链。
 compose/无 Ray validation 和真实 checkpoint prefix 探针已通过。实现保持 config opt-in，
 没有切换或修改主 π0/DSRL worktree，也没有修改共享环境。
 
-当前停在 **Stage 1 最小 smoke 已通过、正式 clean-50 2k endpoint 之前**。episode 0
-已选择性解压并转换为 139-frame LeRobot 数据；S1-A 两卡两步、21G checkpoint 与
-new-process reload-only 通过，S1-B 正式 micro/global 16/32 单步通过，每卡峰值
-26,447MiB。S1-B 是 LR=0 的 batch-fit 门；S1-A 有一次非零 LR 更新。smoke-time
-absolute `min_lr` 解析问题已在当前正式 source config 中改成 `min_lr_rate=.1`，CPU
-scheduler contract 通过；历史 smoke checkpoint 只作执行证据，不作为正式 Stage 1 artifact。
+full clean-50 已按锁定 ZIP 转换为 50 episodes / 7,188 frames / 50FPS 的版本化 canonical
+数据，dataset manifest SHA-256 为 `12ce2ed6...f86c`；正式 global32 loader 两 rank 各
+local16 通过。source config 已改为版本化路径并提交
+`4ac48d54c63b3a83d99f551fb54f738297525acf`；正式 resolved config SHA-256 为
+`5aa824fc...d67e`。
 
-下一次 Stage 1 写操作是：全量转换其余 clean-50、生成 dataset manifest、compose 实际
-full-data resolved config（hard-fail absolute `min_lr`），并在独立批准后运行固定 2k
-endpoint。其后才用正式
-manifest/stats/artifact hash 替换 Stage 2 config 的 `UNRESOLVED`，提交独立 Stage 2
-fresh/resume smoke packet。
+正式 2k run 已于 2026-07-29 19:34 后启动。固定早期快照
+`2026-07-29T19:38:41+08:00` 为 step172/2000、0.777s/step、两卡各26,447MiB，
+`loss=rlt_loss=1.05`、`vla_loss=0`、错误计数0；当前只说明连续训练健康，不说明 endpoint
+完成。下一次任务应先刷新 live state；若 endpoint 已完成，再做 checkpoint/reload、
+fixed-prefix loss、true/shuffled/zero、frozen π0 delta 和 artifact manifest 验收。通过后
+才用正式 manifest/stats/artifact hash 替换 Stage 2 config 的 `UNRESOLVED`，提交独立
+Stage 2 fresh/resume smoke packet。
 最新现场状态和具体授权以根 [`HANDOFF.md`](../../HANDOFF.md) 与
 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 为准。

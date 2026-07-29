@@ -8,7 +8,7 @@
 | 专题 | 唯一事实源 | 实施账本 | 当前停点 |
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
-| RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | Stage 1 converter、S1-A/S1-B 与 LR scheduler contract 已通过；停在 full clean-50 2k endpoint 前 |
+| RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/03_STAGE1_FORMAL_TRAINING_20260729.md` | full clean-50 Stage 1 2k 已启动；19:38 固定快照 step172、运行健康 |
 | QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | Plain+B1+F1+C1+M2+N20 已收束；shared ZIP 已验 archive、未解压/schema；等待“开始实现”授权 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
@@ -129,46 +129,45 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   不做 hard capacity、RNG exact、async 或跨 world-size。
 - 服务器独立 worktree：
   `/root/autodl-tmp/RLinf_rlt_pi0_robotwin`，
-  从 `48a775db09c16c455aeba7b0600c920e7c80d534` 建立；主体实现提交为
-  `1a923a23`，本轮 smoke 前 clean-50/docs 收口 HEAD 为 `e4127fd4`。
-  分支为 `codex/rlt-pi0-robotwin`，没有切换或修改 DSRL worktree，也没有复制/安装环境。
-- 2026-07-29 16:11 终态：两张 A800 均空闲，无 Ray/RoboTwin/SFT/RLT 进程；
-  RAM available 776 GiB；`/root/autodl-tmp` 可用 673 GiB、64% used。
-- AST/Ruff/whitespace、25 个聚焦测试通过；9 份 candidate/legacy resolved config
-  经原生 compose 和无 Ray `validate_cfg` 通过。真实 checkpoint 探针确认 image prefix
-  `[1,768,2048]`、`z_rl=[1,2048]`、只有 `rlt_module.*` 可训练、token module
-  743,094,272 参数，canonical reference decode 与旧 transform max-abs `0.0`。
-- clean-50 原始 ZIP 已从
+  从 `48a775db09c16c455aeba7b0600c920e7c80d534` 建立；分支
+  `codex/rlt-pi0-robotwin`。正式运行 source config 提交为
+  `4ac48d54c63b3a83d99f551fb54f738297525acf`，已推送、launch 时 worktree clean、
+  upstream `0/0`；没有切换 DSRL worktree，也没有复制/安装环境。
+- full clean-50 已从
   `TianxingChen/RoboTwin2.0@9dc9299c163db059931898a9f0852098a61155a1`
-  下载到 `/root/autodl-tmp/datasets/robotwin2/source/<revision>/dataset/adjust_bottle/`；
-  `298659710` bytes、SHA256 `5554b6b3...be50e`、ZIP test、50 组
-  `pkl+hdf5+mp4+instruction` 和 path safety 均通过。episode 0 已选择性解压并转换为
-  1 episode/139 frames/50FPS 的 LeRobot canonical 数据；其余 49 条未解压/转换。
+  转为 50 episodes / 7,188 frames / 50FPS：
+  `/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-v1`。
+  dataset manifest 为
+  `/root/autodl-tmp/datasets/robotwin2/manifests/pi0-aloha-clean50-v1.json`，
+  SHA-256 `12ce2ed6...f86c`；全量动作时序 max-abs0，正式 global32 loader 两 rank 各
+  local16 通过。
 - Stage 1 smoke 已完成：S1-A 两卡 micro/global1/2 两个 optimizer step，loss
   `5.15/5.21`、vla loss 0、step2 DCP/full-weights 20.56GiB，新进程 reload-only exit0；
   S1-B 两卡 micro/global16/32 单步 loss5.18，显存峰 26,447MiB/卡，无 checkpoint/OOM。
   scheduler 在 step 前后记录方式意味着 S1-A 只有第 2 次 update 使用非零 LR，S1-B 的
   唯一 update 使用 LR 0；因此 S1-B 是正式 batch 的前反传/容量门，不是参数 delta 证据。
-  两卡和相关进程已清空。两步 checkpoint 只作 smoke 证据，不是正式 feature artifact。
-- smoke-time absolute `min_lr` 被 Transformers 按 AdamW defaults `1e-3` 解析，导致日志
-  floor `6.25e-8`；当前正式 source config 已窄改为 `min_lr_rate=.1`，SHA-256
-  `8340ef4e...f2`。无模型/GPU CPU contract 已验证 2k schedule 最终 floor
-  `2.5e-6`；历史 resolved/log/checkpoint 保持原样。
-- source/resolved config、精确命令、资源 CSV/log、postcheck、专家数据解释、参数来源与
-  磁盘审计见
-  `docs/rlinf-robotwin-pi0-rltoken/02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`；
-  逐命令事实见账本 A031 起、Stage 1 command addendum 与磁盘 A–P 命令附件。
-- 当前 Stage 1 smoke 授权已完成；尚未授权全量转换其余 clean-50、正式 2k endpoint、
-  Stage 2、安装依赖或磁盘清理。下一步是展示 full-data converter/manifest、正式 resolved
-  config（hard-fail absolute `min_lr`）、2k 命令/输出/资源/stop packet。Stage 2 必须等待
-  正式 endpoint/manifest/hash；
-  当前 UTD5/ratio2 是论文导向 candidate，不是 ManiSkill YAML 的有效 UTD1/ratio4，
-  正式 Stage 2 packet 再显式批准。
-- 2026-07-29 17:03 最终现场：RLT 主提交
-  `c22ba19af0b6dfd130e289f02efd3a42ce5e938f` 已推送，HEAD=remote、clean、upstream
-  `0/0`；DSRL worktree 仍 clean。两卡 `0 MiB/0%`、无相关进程，host available
-  `966 GiB`，数据盘余 `673 GiB`。S1-A 21G checkpoint、formal source
-  `8340ef4e...f2` 和 LR contract `e68a7da1...14df` 均在。
+  两步 checkpoint 只作 smoke 证据，不是正式 feature artifact。
+- 正式 source config SHA-256 `c293bc47...5a4c`，resolved config SHA-256
+  `5aa824fc...d67e`；`min_lr_rate=.1`，2k/无 val/micro-global16/32/no-shard/仅 RLT
+  trainable 均经机器断言。
+- 正式 run 已在 `2026-07-29T19:34` 后启动；driver PID `650254`，monitor PID `650255`。
+  运行根：
+  `/root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1`；
+  runtime/evidence：
+  `/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1`。
+  预期唯一 endpoint 是
+  `.../robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1/checkpoints/global_step_2000`。
+- 固定、不可外推的最后观察为 `2026-07-29T19:38:41+08:00`：step172/2000，
+  最近20步中位数0.777s/step；两卡各26,447MiB，matched RSS峰值约38.5GiB；
+  `loss=rlt_loss=1.05`、`vla_loss=0`、grad norm1.03，OOM/CUDA/NCCL/Traceback/
+  rank-death计数均0。训练当时仍 running；用户不要求持续在线监控。
+- 启动前按授权精确删除12个旧 RLinf DCP和51个 Motus OPD实验`.pt`，回收约177.85GiB；
+  PPO step20、GRPO step100、轻量日志/配置/指标与Motus官方/base权重均保留。删除清单位于
+  `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
+- 下一次请求必须先刷新 live进程/step/GPU/RAM/磁盘/log/checkpoint；若2k endpoint完成，
+  再做 checkpoint/reload、fixed-prefix loss、true/shuffled/zero、π0 delta和artifact
+  manifest验收。Stage 2仍未授权，且必须等待正式endpoint/manifest/hash；UTD5/ratio2、
+  500/5k warm-up等仍需独立Stage2 packet明确批准。
 
 ## QAM 当前状态与授权
 

@@ -2367,3 +2367,366 @@ micro_batch_size
 feature/actor model、world size 和 syncer。故该审阅意见不适用于当前 HEAD；设计文档和
 HANDOFF 中“bootstrap/optimizer/batch 已进入 resume fingerprint”的表述保持不变。
 本次没有代码修改、没有启动 Stage 2 smoke，也没有扩大测试。
+
+## 46. A046：正式 Stage 1 2k 启动授权与执行边界
+
+2026-07-29，用户明确授权本轮完成：
+
+1. 将锁定 revision 的 `adjust_bottle/clean_50` 剩余 49 条按已经通过的 converter 合同转为
+   版本化 full clean-50 canonical 数据；
+2. 生成 full dataset manifest，重新 compose/hash 正式配置；
+3. 以两张 GPU、`micro_batch_size=16`、`global_batch_size=32`、固定 step 2000 endpoint
+   启动 Stage 1；
+4. 启动后只检查数据加载、连续训练 step、loss、GPU/RAM 与 checkpoint 路径等早期健康
+   信号，不持续在线轮询；
+5. 对旧 Motus 实验 checkpoint，以及 RLinf PPO/GRPO 旧 run 的获批 DCP 做精确、定向清理，
+   保留 Motus 官方/base 权重以及 PPO baseline、GRPO formal 的最终 checkpoint，并保留
+   smoke/formal 的轻量日志、配置和指标。
+
+本轮不启动 Stage 2，不改变 RLT 高层语义，不做额外 batch/data-scaling sweep，不安装或复制
+环境，不停止无关进程。所有动态状态先以新的服务器只读探针刷新；任何删除都必须先解析为
+精确绝对路径并验证处在已授权实验根目录内，再执行并记录实际回收量与不可恢复边界。
+
+## 47. A047：19:09 正式运行前现场探针
+
+上传并执行只读脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_formal_preflight.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_formal_preflight_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_formal_preflight_20260729.sh"
+```
+
+SSH 密码仍只从既有 attachment 提取到当前 PowerShell 进程的
+`SEETA_SSH_PASSWORD`，两个 helper 调用结束后在 `finally` 中移除；没有输出或持久化密码。
+
+第一次脚本于 `19:09:47+08:00` 执行到 RLinf 历史 run 时退出。原因是脚本把审计材料中的
+时间戳简称误写成完整目录名，而现场目录实际还带实验 slug；失败前只有 `date/id/git/df/
+free/nvidia-smi/find/sha256sum` 等只读命令，未清理、转换或启动训练。窄修复仅把四个 run
+改为各自唯一的 `*<timestamp>*` glob，并断言恰好解析为四个目录。
+
+`19:10:18+08:00` 复测通过，现场为：
+
+- RLT `codex/rlt-pi0-robotwin@66dc388e...`，upstream `0/0`，输出为空即 clean；
+- DSRL `codex/dsrl-pi0-robotwin@48a775db...`，输出为空即 clean；
+- 两张 A800 80GB 均 `0 MiB/0%`，没有实际 SFT/Ray/RoboTwin 训练进程；
+- `/root/autodl-tmp` 可用 `673G`、64% used；host available RAM `965GiB`；
+- full canonical、formal experiment 和 formal export 三个目标均不存在；
+- source ZIP 为 `298,659,710 B`，SHA-256
+  `5554b6b30e37c6ed2f0bbc48079e8ad79d9512e9d4f910a5e71b0d5ad8fbe50e`；
+- formal source config、scheduler contract、norm stats 的 SHA-256 分别为
+  `8340ef4e...a8f2`、`e68a7da1...14df`、`649ed92b...f6a`。
+
+只读清单进一步确认：RLinf 将删除 12 个获批旧 DCP（两个 smoke、PPO step10、GRPO
+step10–90），保留 PPO step20 与 GRPO step100；Motus 目标精确为两个
+`Motus_old_20260618_111133/logs_single_*` 下共 51 个 `opd_checkpoints/turn_switch/*.pt`
+实验输出。`policy/Motus` 下没有匹配的大权重文件；本轮仍只会触碰上述两个旧实验输出根，
+不会扫描删除任何模型根或官方/base checkpoint。
+
+## 48. A048：19:12 获批旧 checkpoint 定向清理
+
+上传并执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_approved_cleanup.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_approved_cleanup_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_approved_cleanup_20260729.sh"
+```
+
+脚本在删除前 hard-fail 检查：
+
+- 12 个 RLinf DCP 的精确绝对路径均存在且 `realpath` 位于对应
+  `/root/autodl-tmp/RLinf/logs/*/checkpoints/global_step_*`；
+- PPO step20 与 GRPO step100 两个保留 endpoint 存在且不在删除数组；
+- Motus 只从两个精确
+  `Motus_old_20260618_111133/logs_single_*/opd_checkpoints/turn_switch` 父目录解析
+  `.pt`，数量必须恰为 51，且每个 `realpath` 仍在原父目录；
+- 独立 evidence 根
+  `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729` 必须原先不存在。
+
+按用户本轮最新、直接的“实验目录下的大 checkpoint 删除，只保留 Motus 原本官方
+checkpoint”授权，51 个 OPD/GKD 实验 `.pt` 全部删除；没有把旧讨论中的“每 run 保留一个
+endpoint”覆盖到这次更明确的新指令。Motus 官方/base 权重位于独立模型根，不在两个
+`logs_single_*` 删除范围内；`logs_his` PNG、CSV/log、代码/config 均未触碰。
+
+执行结果：
+
+| 类别 | 删除数 | 现场记录 bytes | 约 GiB |
+|---|---:|---:|---:|
+| RLinf 旧 DCP | 12 个目录 | 124,744,056,832 | 116.18 |
+| Motus OPD 实验 checkpoint | 51 个文件 | 66,219,777,050 | 61.67 |
+| 合计 | 63 项 | 190,963,833,882 | 177.85 |
+
+删除后逐项断言目标不存在；PPO step20 与 GRPO step100 分别仍约 9.7G；两个 Motus 实验
+目录剩余 `.pt` 数为 0。`/root/autodl-tmp` 从 673G available、64% used 变为
+851G available、54% used。
+
+审计产物位于：
+
+```text
+/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729/
+  summary.tsv
+  deleted_rlt_dcp.tsv
+  deleted_motus_checkpoints.tsv
+  df_before.txt
+  df_after.txt
+  SHA256SUMS
+```
+
+其中两个删除清单 SHA-256 分别为
+`49536ff4b3e2f0964bdc296821beb2b8d2970f417a770c9fea489f698abec066` 与
+`d91e1aecae4af136351964ab5ff08d36ab997f95e2c16be043f85406a577e744`。
+这些删除不可恢复，除非服务器另有外部快照；清单只保留审计元数据，不包含被删权重内容。
+
+## 49. A049：full clean-50 转换脚本固化与 extract 两次窄失败
+
+新增并上传四个相互独立的正式转换脚本，避免一个总脚本跨阶段覆盖失败证据：
+
+```text
+/root/autodl-tmp/tmp/rlt_extract_clean50_full_20260729_v1.sh
+/root/autodl-tmp/tmp/rlt_process_clean50_full_20260729_v1.sh
+/root/autodl-tmp/tmp/rlt_lerobot_clean50_full_20260729_v1.sh
+/root/autodl-tmp/tmp/rlt_manifest_clean50_full_20260729_v1.sh
+```
+
+上传后先对四个文件统一执行 `bash -n`，语法检查通过；再逐阶段运行。设计边界是：raw、
+intermediate、canonical 均只在同一文件系统的唯一 `mktemp` staging 中生成，完整校验后才
+用 `mv -T` 提升；最终 target 只接受原先不存在的版本化路径；所有阶段共用 non-blocking
+`flock`；LeRobot converter 的 `HF_LEROBOT_HOME` 只指向全新 staging parent，因此其内部
+递归清理逻辑无法碰到最终 canonical。
+
+第一次 extract 于 `19:19:15+08:00` 在创建 staging 前失败：
+
+```text
+ValueError: expected 207 files, got 202
+```
+
+原因是历史审计的 207 指 ZIP 总 entries，而脚本先过滤了目录；真实结构为 207 entries =
+202 files + 5 directories，其中 202 files = 50×`pkl+hdf5+mp4+instruction` + `seed.txt`
++ `scene_info.json`。窄修复为分别断言 207 entries/202 files；未写 raw target。
+
+第二次于 `19:19:54+08:00` 通过 archive 合同、完成 staging 解压后，在 episode 0 首帧检查
+失败：
+
+```text
+ValueError: episode 0: bad head_camera frame 0: (240, 320, 3)
+```
+
+原因是把已经通过的 **intermediate** 480×640 输出尺寸误套给 raw HDF5；既有 ep0 合同的
+raw 正确尺寸为 240×320。窄修复只把 raw 首末帧 gate 与 raw validation metadata 改为
+`[240,320,3]`，intermediate/canonical 的 480×640 合同不变。失败 staging 精确为：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/raw/9dc9299c163db059931898a9f0852098a61155a1/
+adjust_bottle/.clean50-v1.extract.kOi5x9
+```
+
+final raw target 仍不存在；后续只会在验证该绝对 staging 位于上述 raw parent 且 final 不存在
+后清除这个由本轮创建的失败临时目录，再执行修订版，不会清理任何其他 raw/canonical 数据。
+
+## 50. A050：full clean-50 转换、manifest 与正式 global32 loader
+
+修订版四个 wrapper 在服务器的最终 SHA-256 为：
+
+```text
+extract   ecb21f6ba8e4cbc56e9e0e95c1e6a1225ff50883d7b8c1e1330ece84392440d8
+process   04249ea1d150d63d1a42f23f9b60a39529124927034deb3056a6bf55f97596bf
+lerobot   bcd75635be00741d27ff7e5c6aa9b251f4499a06810b5c62c23e825e453deb97
+manifest  55f0e2d4db42f53e4e028c5b235b6971bba46c9101824687260698acfc0da9c3
+```
+
+先精确清除了 A049 的 430M 失败 extract staging，再于
+`19:23:00–19:23:08+08:00` 成功完成 raw：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/raw/
+  9dc9299c163db059931898a9f0852098a61155a1/adjust_bottle/clean50-v1
+```
+
+50 个 episode 的四组文件、joint/gripper finite、三相机首末帧 240×320、instruction 均通过；
+总有效训练 row 为 7,188，raw validation SHA-256 为
+`09130eb8e6158960ade2367dc8e214146e98b842ae7109866c57d07d524437d2`。
+
+第一次 raw→Aloha converter 已报告 0–49 全部成功，但 validation 在读取 gripper 时失败：
+
+```text
+ValueError: 2 indexing arguments for 1 dimensions
+```
+
+根因是对 h5py dataset 直接写 `dataset[:, None]`；此前 ep0 合同正确做法是先 `[:]` 读成
+NumPy，再扩维。final intermediate 未提升。精确删除本轮 683M 失败 staging 后，仅把两侧
+gripper 改为 `np.asarray(dataset[:]).reshape(-1,1)`，于
+`19:24:34–19:25:07+08:00` 复测通过：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/intermediate/
+  9dc9299c163db059931898a9f0852098a61155a1/adjust_bottle/pi0-aloha-clean50-v1
+```
+
+官方一级 converter SHA-256 为
+`b462918bf3f41f6d2fc30c3498381ac3cc7d8ce7a8bd6333fafb925e7d9d5590`；
+50/50 episode、7,188 rows、三相机首末帧 480×640、14D state/action 均闭合，
+`qpos-raw_t` 与 `action-raw_{t+1}` 全量最大绝对误差均为 0；intermediate validation
+SHA-256 为 `a6990d6979706119979ca0409f3d14c6b5d45c58d7e84179e485ae01f35fbddd`。
+
+`19:25:21–19:28:05+08:00`，在独立
+`.pi0-aloha-clean50-v1.hfhome.BK76GA` 中运行已通过 ep0 的二级 converter：
+
+```text
+/root/autodl-tmp/RoboTwin/policy/pi0/examples/aloha_real/
+  convert_aloha_data_to_lerobot_robotwin.py
+SHA-256 b8f0829329e099b7246b3d6467cec3ea4d60767eedd219b825d0b7f26bb7c373
+```
+
+50 个 episode 全部完成后，canonical validation 证明 50 episodes、7,188 frames、50 FPS、
+14D state/action finite、三相机列无缺失、episode/frame/timestamp 与 task metadata 闭合，
+再提升到：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-v1
+```
+
+现场大小约 1.6G；canonical validation、`info.json`、`episodes.jsonl`、`tasks.jsonl` 的
+SHA-256 分别为 `3be98ee9...2c73`、`9561367f...4a05`、`1e3ecae1...b611`、
+`b8017646...aff7`。
+
+dataset manifest 独立于训练 config/checkpoint，避免 hash 循环；它再次 hard-fail 固定 ZIP
+size/hash，记录真实 HF source `TianxingChen/RoboTwin2.0@9dc929...`、filename、两级
+converter/wrapper SHA、seed、RoboTwin HEAD/dirty、actual tasks/episode metadata、per-episode
+row、metadata hash 和 55 个 canonical file 的排序 digest。路径与 SHA-256：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/manifests/pi0-aloha-clean50-v1.json
+12ce2ed68632e2b18cf96f52b717edec00bcebb6cc0a446f83da1670d81ef86c
+```
+
+最后只跑一次无 GPU 模型加载的正式 loader 合同：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_loader_contract.py `
+  /root/autodl-tmp/tmp/rlt_loader_full_clean50_20260729.py
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_loader_full_clean50_global32_20260729.sh"
+```
+
+两 rank 都得到 `DistributedSampler`、local batch16、dataset length7,188、三相机
+`[16,3,224,224]`、state `[16,32]`、action horizon `[16,50,32]` 和 tokenized prompt
+`[16,48]`；这里 32 是 OpenPI pad 后宽度，canonical 原始合同仍是 14D。stats 明确从既有
+checkpoint 加载，SHA-256 仍为 `649ed92b...f6a`。
+
+## 51. A051：正式配置收口、提交与 2k 启动
+
+只把 source config 的默认 dataset 从旧占位路径改为：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-v1
+```
+
+其他参数不变；新 source SHA-256 为
+`c293bc476ec7458c6bfc5c5c59393e48b286f3e12007f3039ccc282e30645a4c`。
+运行前 compose 使用与实际训练完全相同的 model/dataset/stats/log env 和 experiment name；
+机器断言包括：无 `min_lr` key、`min_lr_rate=.1`、2k max/save/optimizer steps、无 val、
+micro/global16/32、no-shard、frozen VLA、dataset/model/stats/output 精确路径。resolved
+SHA-256：
+
+```text
+5aa824fc9ac5cc361dace2b1162b2ef1bdf52adab3c775b8cd2e1ae468dfd67e
+```
+
+完整批准包在：
+
+```text
+/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/
+  formal_resolved.yaml
+  source_config.yaml
+  dataset_manifest.json
+  exact_command.txt
+  prelaunch_provenance.tsv
+  PRELAUNCH_SHA256SUMS
+```
+
+配置单文件经 `git diff --check`、精确 staged-path 检查后提交并推送：
+
+```text
+4ac48d54c63b3a83d99f551fb54f738297525acf
+chore(rlt): bind Stage 1 to clean50 dataset
+```
+
+推送到 `personal/codex/rlt-pi0-robotwin` 后 HEAD=remote、upstream `0/0`、worktree clean。
+
+完整 resolved packet、精确命令、输出、资源预期和停止条件再次在聊天中展示后，于
+`2026-07-29T19:34:31+08:00` 后台启动。启动命令主体为：
+
+```bash
+timeout --signal=TERM --kill-after=120s 64800s \
+  /root/autodl-tmp/RLinf/.venv/bin/python -B examples/sft/train_vla_sft.py \
+  --config-path /root/autodl-tmp/RLinf_rlt_pi0_robotwin/examples/sft/config \
+  --config-name robotwin_rlt_stage1_sft_openpi \
+  runner.logger.experiment_name=robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1
+```
+
+driver PID `650254`，resource monitor PID `650255`。目录：
+
+```text
+run:
+  /root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1
+runtime/evidence:
+  /root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/runtime
+expected endpoint:
+  /root/autodl-tmp/experiments/rlt_stage1_formal_20260729_v1/
+  robotwin_adjust_bottle_rlt_stage1_clean50_2k_v1/checkpoints/global_step_2000
+```
+
+`19:35:33` 两个 FSDP worker 均已建立，读取 full clean-50 与同一 stats，local batch 均为
+16；`19:36:19` 每卡已分配 17,705MiB、resource monitor 观察到 matched RSS 峰值约
+38.5GiB，driver 仍 running、错误计数 0，处于模型初始化而尚无 optimizer metric。
+后续只观察到连续 finite optimizer step 和稳定资源后停止本轮轮询，不等待 2k 完成。
+
+## 52. A052：19:38 一次性早期健康快照与停止轮询
+
+为避免用滚动进度条或人工抄数，上传并运行
+`rlt_capture_early_health_20260729.sh`。脚本只读 driver log/resource CSV/Git/GPU，
+hard-fail：
+
+- driver 不存活或 Git HEAD/clean 漂移；
+- 少于 20 个 optimizer step；
+- loss/rlt loss/grad/LR/time 任一非 finite；
+- `loss != rlt_loss` 或 `vla_loss != 0`；
+- OOM、CUDA error、Traceback、NCCL error、ChildFailed 或 killed 信号。
+
+输出写入：
+
+```text
+/root/autodl-tmp/experiment_exports/rlt_stage1_formal_20260729_v1/
+  early_health.json
+  early_health.json.sha256
+```
+
+`2026-07-29T19:38:41.986924+08:00` 快照：
+
+| 项 | 结果 |
+|---|---:|
+| state | running |
+| latest step | 172/2000 |
+| step1 | loss5.20，LR2.5e-7，冷首步20.1s |
+| step10 | loss5.19，LR2.5e-6，0.780s |
+| step20 | loss5.16，LR5e-6，0.783s |
+| step50 | loss4.51，LR1.25e-5，0.777s |
+| step172 | loss1.05，LR2.49e-5，grad1.03，0.774s |
+| median last20 | 0.777s/step |
+| GPU now/peak | 26,447MiB each；100%/94% 当前利用率 |
+| matched RSS peak | 40,378,024KiB，约38.5GiB |
+| error counts | 全0 |
+
+所有采样点均 `loss=rlt_loss`、`vla_loss=0`。按最近20步中位数计算的纯训练剩余时间约
+1,420s，即23.7分钟，尚未计 endpoint save；这替代了冷 S1-B 单步给出的11.5小时保守上界，
+但仍只是现场估计，不是完成承诺。`early_health.json` SHA-256 为
+`eb18a1622e53d202f10d9a05e1f64d47d85b8945a0947d3dd45f1cb116dc2f4f`。
+
+按用户要求，本轮到此停止主动轮询，不等待2k。下一次询问时必须重新读取服务器现场，不能把
+step172、PID、显存或 ETA 当成持续当前值。

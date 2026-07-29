@@ -558,3 +558,15 @@ Stage 2 packet 的显式审批项，不阻塞 full clean-50 转换和 Stage 1 2k
 | 代码与数据调用流 | §10 |
 | RLinf/RoboTwin 磁盘归属与候选 | §11 |
 | 正式 Stage 1 下一步 | §12 |
+
+## 14. 正式 Stage 1 后续状态
+
+§12 是本轮正式启动前的 checklist；它已于 2026-07-29 完成，不再是当前 blocker。full
+clean-50 转换、manifest、global32 loader、正式 resolved config、启动命令、目录、定向磁盘
+清理和 step172 早期健康证据统一见：
+
+[`03_STAGE1_FORMAL_TRAINING_20260729.md`](03_STAGE1_FORMAL_TRAINING_20260729.md)
+
+固定时间边界为 `2026-07-29T19:38:41+08:00`：run 正在 step172/2000，不得把本节误读为
+endpoint 已完成。下一次先刷新服务器现场；本文件保留 smoke 与方法解释，不继续复制动态
+训练状态。
