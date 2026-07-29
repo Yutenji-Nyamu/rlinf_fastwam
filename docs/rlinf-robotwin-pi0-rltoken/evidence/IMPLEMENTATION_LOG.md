@@ -952,3 +952,53 @@ RLT 专题默认上下文。
 
 截至本项仍没有下载/转换 clean-50，没有运行 Stage 1/Stage 2 smoke、训练、Ray、
 RoboTwin simulator 或 checkpoint save/load。
+
+## 22. A022：提交与首次推送
+
+提交前用 alternate index 纳入 tracked + untracked 全量变更，执行：
+
+```text
+git diff --cached --check
+name-status/stat
+新增文件 1 MiB size guard
+private-key/AWS/OpenAI-key/SEETA env assignment 敏感模式扫描
+git remote -v
+git branch -vv
+```
+
+结果：
+
+- 23 个文件，`5,146 insertions / 24 deletions`；
+- full diff whitespace check 通过；
+- 最大新增文件约 43 KiB，没有大文件/checkpoint；
+- credential pattern scan 通过；
+- 变更范围只有 RLT code/config/test/toolkit 和本专题文档/小型证据。
+
+服务器 RLT worktree 执行：
+
+```bash
+git add -A
+git diff --cached --check
+git commit -m "feat(rlt): port RoboTwin pi0 RL-token training"
+```
+
+得到 implementation commit：
+
+```text
+1a923a2305b9bd01647fb66509f19caceff1a310
+```
+
+随后：
+
+```bash
+git push -u personal codex/rlt-pi0-robotwin
+```
+
+新 remote branch 推送成功并建立 tracking：
+
+```text
+personal/codex/rlt-pi0-robotwin
+```
+
+没有创建 PR，也没有合并到主 π0、DSRL 或 personal main。此后仅允许追加本账本 closeout
+和最终交接，不再改变已验证算法/config。
