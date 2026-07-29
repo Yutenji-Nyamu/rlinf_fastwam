@@ -3443,3 +3443,36 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
 - 本节与 `HANDOFF.md` 的 publication 状态作为终端 closeout 追加；为避免“记录最后一次
   记录提交”递归制造无限 commit，本轮最终 closeout commit SHA 由聊天交接给出。
 - Stage 2 smoke、Ray、RoboTwin、模型加载和训练仍均未启动。
+
+### A077 — 最终只读审计的 schema 打印失败与通过结果
+
+- A076/HANDOFF closeout 已作为本地服务器 commit：
+  `4f3062762043558a22c375eb415e636e08de9369`
+  （`docs(rlt): record Stage 2 publication state`）；commit 后 clean、相对 upstream
+  left/right `4/0`。
+- 第一次最终只读审计在以下项目全部通过后，因摘要打印器 exit 1：
+  - branch/HEAD/clean/ahead；
+  - 无 RLT/Ray/push 进程；
+  - 两卡空闲；
+  - host/cgroup/disk；
+  - Stage 1 manifest/validation、Stage 2 三份 resolved/audit、三份 launcher/monitor SHA。
+- 唯一错误为 Python 读取 `validation.json` 时误用不存在的顶层键
+  `all_gates_passed`，触发 `KeyError`。实际 schema 是：
+  `accepted`、`gates`、`metrics`、`reload_contract`；这不是 artifact 内容错误。
+- 窄修复只改本地只读审计脚本的字段名，没有改 repo、artifact、checkpoint 或配置。
+- `2026-07-29T22:47:49+08:00` 复跑得到
+  `STAGE2_FINAL_READONLY_AUDIT_OK`：
+  - HEAD `4f306276...9369`、clean、left/right `4/0`；
+  - 无 RLT/Ray/push 进程；
+  - 两张 A800 均 `0 MiB / 0%`；
+  - host available `968,499,880 KiB`，约 `923.63 GiB`；
+  - cgroup current/anon/file 约 `214.45/0.289/212.54 GiB`，file cache 是主体；
+  - cgroup `oom=0`、`oom_kill=0`；
+  - `/root/autodl-tmp` available `886,847,287,296 bytes`，约 `825.94 GiB`，使用率56%；
+  - Stage 1 accepted/all-gates 均 true，fresh/true/shuffled/zero loss
+    `5.1976585388/0.5337553024/1.7118018866/2.1026575565`，
+    non-RLT changed `0`；
+  - endpoint `22,076,275,790 bytes`，约 `20.56 GiB`；
+  - Stage 2 smoke run root 与 runtime evidence root 均不存在。
+- 本节是终端审计记录；后续只需将它形成一个 ledger-only 本地 commit。由于 GitHub 主站
+  网络已确认不可用，本轮不再 push，也不再运行会改变实验状态的操作。
