@@ -1465,3 +1465,46 @@ python local_scripts/remote_exec_autodl.py run `
 
 密码仍只从用户既有附件中定位后注入当前 PowerShell 进程的
 `SEETA_SSH_PASSWORD`，每组命令在 `finally` 中删除；没有打印、写入脚本、文档或服务器。
+
+## 30. A030：文档提交、推送与下载阶段停点
+
+将提交逻辑写入
+`local_scripts/remote_rlt_20260729_docs_commit.sh`，上传为服务器临时脚本后执行。脚本先锁定
+branch，要求 `git status --short` 的路径集合严格等于四份预期 Markdown，再执行：
+
+```bash
+git add -- \
+  HANDOFF.md \
+  docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md \
+  docs/rlinf-robotwin-pi0-rltoken/01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md \
+  docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md
+git diff --cached --check
+git commit -m "docs(rlt): lock clean50 and review pre-smoke config"
+timeout 30s git push personal codex/rlt-pi0-robotwin
+git status --short
+git rev-list --left-right --count HEAD...@{upstream}
+```
+
+结果：
+
+```text
+[codex/rlt-pi0-robotwin e02ce9c4] docs(rlt): lock clean50 and review pre-smoke config
+4 files changed, 754 insertions(+), 65 deletions(-)
+COMMIT e02ce9c495f58dc6eaae6d8828c3810703ae56c0
+PUSH_OK
+0  0
+```
+
+remote 为 `personal=https://github.com/Yutenji-Nyamu/rlinf_fastwam.git`；推送范围为
+`cfa55655..e02ce9c4` 的独立 `codex/rlt-pi0-robotwin` 分支。commit 后
+`git status --short` 无输出，upstream ahead/behind 为 `0/0`。
+
+本节自身随后作为 ledger-only 收尾提交同步；该收尾提交的最终 hash 由 Git history 和本轮
+交接给出，避免在提交内容中制造不可满足的自引用 hash。下载阶段的最终停点不变：
+
+- raw ZIP 已下载、固定 revision/hash，并通过 ZIP/path/成员计数验收；
+- 未解压、未转换、未创建 canonical dataset；
+- 未修改 source/resolved config；
+- 未运行 Stage 1/Stage 2 smoke 或训练；
+- 下一次服务器写操作必须先获得“单 episode 解压/converter 合同 + Stage 1 S1-A/S1-B”
+  明确批准。
