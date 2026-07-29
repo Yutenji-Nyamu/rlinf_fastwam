@@ -1,6 +1,6 @@
 # π0 × RoboTwin × RLToken / RLT：上下文索引与实施主计划
 
-> 状态：2026-07-29 实现候选版 v5（主体完成，停在 smoke 前）
+> 状态：2026-07-29 实现候选版 v6（clean-50 ZIP 已验证，停在解压/转换与 smoke 前）
 > 本文件是 RLToken / RLT × π0 × RoboTwin 的唯一专题设计与实施计划。
 > 动态服务器状态、命令和结果只写入 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 与根 [`HANDOFF.md`](../../HANDOFF.md)，不在本文件复制成第二份真相。
 > DSRL、QAM、Fast-WAM 和旧附件均不进入 RLT 默认上下文；其历史只在明确追溯时按索引读取。
@@ -389,7 +389,7 @@ curr {z_rl, proprio, ref_chunk}
 约为 `warmup_min_size=500` per rank，并等待较慢 rank 达标；实际 ready 时仍要报告 observed
 global total。该数值只是解释示例，正式 packet 再冻结。
 
-论文/可靠来源支持的结构参数保留：
+论文支持、但必须和 RLinf ManiSkill 可执行 YAML 区分的结构参数：
 
 - twin Q，target 取 min；
 - reference dropout 0.5；
@@ -397,6 +397,12 @@ global total。该数值只是解释示例，正式 packet 再冻结。
 - actor 每 2 次 critic update 更新一次；
 - actor loss 为 `-q_weight * Q1 + bc_weight * BC(reference)`；
 - fixed entropy alpha 为 0。
+
+其中 UTD5 与 critic:actor=2 来自 RLT 论文；当前 RLinf ManiSkill YAML 在同步 worker 下实际是
+`update_epoch=5/train_every_transitions=5`，即有效 macro-UTD1，并设置
+`critic_actor_ratio=4`。本项目候选 `5/1` 与 ratio2 更接近论文，但比 ManiSkill YAML
+激进，必须作为 RoboTwin 低预算 candidate 在 Stage 2 packet 中显式批准，不能描述为
+“ManiSkill 原值”。
 
 `gamma`、两段 warm-up、batch、LR、tau、fixed std、BC/Q 数值权重和总预算不冒充论文默认，
 统一在 formal packet 冻结一组，不先做 sweep。
@@ -560,8 +566,8 @@ state dict 一致，且 `rollout.version == restored update_step`。
    `/root/autodl-tmp/RLinf_rlt_pi0_robotwin` 和
    `codex/rlt-pi0-robotwin`；
 3. 没有切换/复用 DSRL worktree，没有修改共享 `.venv` 或 editable-install；
-4. 数据下载/解压/转换仍未授权；启动前另行展示 revision、单文件 hash、路径、空间和
-   覆盖风险。
+4. clean-50 原始 ZIP 已在后续授权后按锁定 revision 下载并独立校验；解压、单 episode
+   converter 和全量转换仍未执行，启动前另行展示路径、空间和覆盖风险。
 
 ### 阶段 1：连贯主体实现
 
@@ -574,8 +580,9 @@ route/transition、bootstrap 和最小 resume。逐项命令、修改、问题�
 
 1. **已完成**：四份新 config 原生 compose/resolve；ManiSkill RLT、旧 π0 PPO、
    Fast-WAM GRPO 和 DSRL 回归；
-2. **部分完成**：真实 checkpoint 的 prefix/mask 已验证；clean-50 尚未下载，因此真实
-   Stage 1 batch、短 reconstruction decrease 和端点 reload 尚待 Stage 1 smoke；
+2. **部分完成**：真实 checkpoint 的 prefix/mask 已验证；clean-50 ZIP 已下载且
+   size/SHA/ZIP/50-episode 结构通过，但尚未解压/转换，因此真实 Stage 1 batch、短
+   reconstruction decrease 和端点 reload 尚待 Stage 1 smoke；
 3. **已完成真实 checkpoint 合同**：canonical reference decode 与旧
    `output_transform(raw_template)[:C,:D]` parity；模拟器 fixed observation
    execution 仍待 Stage 2 smoke；
@@ -659,14 +666,19 @@ route、loss、sync 或 DCP 主链。
 
 ## 12. 当前停点
 
-主体实现已经位于独立
-`codex/rlt-pi0-robotwin@48a775db...` worktree；静态检查、25 个聚焦测试、config
+主体实现基线已经位于从 `48a775db...` 建立的独立
+`codex/rlt-pi0-robotwin` worktree，基线提交为
+`cfa556550efa7da1779a0d29c3a34b00a7f17ed8`；后续提交只补充 clean-50 下载和本轮
+配置复核的文档证据。
+静态检查、25 个聚焦测试、config
 compose/无 Ray validation 和真实 checkpoint prefix 探针已通过。实现保持 config opt-in，
 没有切换或修改主 π0/DSRL worktree，也没有修改共享环境。
 
-当前停在 **Stage 1 数据取得与任何 smoke/training 之前**。尚未下载/转换 clean-50，
-尚未运行 Stage 1 reconstruction smoke、RoboTwin simulator、Ray、真实 update、DCP 或
-resume。下一次写操作必须先提交 Stage 1 审批 packet；Stage 1 产物生成后，再用真实
+当前停在 **clean-50 原始 ZIP 已取得、Stage 1 解压/转换与任何 smoke/training 之前**。
+ZIP 已固定 revision 并通过字节数、SHA256、ZIP 完整性、50 组
+`pkl+hdf5+mp4+instruction` 和 path-traversal 检查；尚未解压/转换，也尚未运行 Stage 1
+reconstruction smoke、RoboTwin simulator、Ray、真实 update、DCP 或 resume。下一次写操作
+先提交单 episode converter 与 Stage 1 S1-A/S1-B 审批 packet；Stage 1 产物生成后，再用真实
 manifest/stats hash 替换 Stage 2 config 的 `UNRESOLVED`，提交独立 Stage 2 smoke packet。
 最新现场状态和具体授权以根 [`HANDOFF.md`](../../HANDOFF.md) 与
 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 为准。

@@ -1045,3 +1045,423 @@ codex/rlt-pi0-robotwin -> personal/codex/rlt-pi0-robotwin
 
 因此算法 implementation commit 和 docs closeout commit 都已在远端。该网络故障没有改变
 代码、测试结果、branch 历史或 smoke 授权边界。
+
+## 24. A024：最终 remote/worktree 对齐
+
+把 A023 作为最后一个 branch-side publication recovery 记录提交：
+
+```text
+cfa556550efa7da1779a0d29c3a34b00a7f17ed8
+docs(rlt): record publication recovery
+```
+
+使用服务器侧 `timeout 25s git push`，本次 4.1 秒成功：
+
+```text
+3a23317d..cfa55655
+codex/rlt-pi0-robotwin -> personal/codex/rlt-pi0-robotwin
+```
+
+最终只读核验边界：`2026-07-29T13:35:17+08:00`。
+
+- server HEAD 与 upstream 都是 `cfa556550efa7da1779a0d29c3a34b00a7f17ed8`；
+- `HEAD...@{u}` 为 `0 0`；
+- RLT worktree status clean；
+- DSRL worktree status clean；
+- 两张 GPU 均 `0 MiB/0%`；
+- 未见 Ray、RoboTwin、SFT、embodied training 或 probe 进程。
+
+本节是 push 完成后的根工作区最终交接记录；不再为了记录“最后一次记录提交”递归制造新
+branch commit。远端 branch 内的账本截至 A023，根工作区本文件截至 A024。
+
+## 25. A025：2026-07-29 Stage 1 配置复核与数据/磁盘刷新
+
+用户要求在 smoke 前继续逐项讨论 Stage 1/Stage 2 配置，并确认、下载 clean-50；下载属于
+服务器写操作，必须和代码实现一样记录命令、结果、问题与解决。本轮授权解释为：
+
+- 可以按此前中国大陆 AutoDL 的成功经验，把锁定的 clean-50 单文件下载到
+  `/root/autodl-tmp`；
+- 可以创建只用于下载的目标目录、Hugging Face cache、互斥锁、下载脚本和日志；
+- 可以做 ZIP 大小、SHA256、完整性和只读目录/schema 检查；
+- 本轮仍不解压、不转换数据，不启动 Stage 1/Stage 2 smoke、训练、Ray 或模拟器；
+- 不删除、覆盖或清理服务器任何既有文件。
+
+按工作区规则重新完整读取：
+
+```text
+PROJECT_CONTEXT.md
+HANDOFF.md
+docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md
+docs/rlinf-robotwin-pi0-rltoken/01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md
+evidence/IMPLEMENTATION_LOG.md 的数据、配置、磁盘和最终状态批次
+```
+
+同时只读搜索 Memory 注册表的 RLT/clean-50/ManiSkill/worktree 条目；动态事实仍以下面的
+服务器现场为准。
+
+新增本地可审计脚本：
+
+```text
+local_scripts/remote_rlt_20260729_prestage1_refresh.sh
+local_scripts/remote_rlt_20260729_clean50_download.sh
+```
+
+第一个脚本只执行身份、GPU/RAM/磁盘、进程、Git/worktree、目标 ZIP、网络能力和主要目录
+分层审计。第二个脚本锁定：
+
+```text
+repo: TianxingChen/RoboTwin2.0
+revision: 9dc9299c163db059931898a9f0852098a61155a1
+file: dataset/adjust_bottle/aloha-agilex_clean_50.zip
+expected bytes: 298659710
+expected SHA256:
+  5554b6b30e37c6ed2f0bbc48079e8ad79d9512e9d4f910a5e71b0d5ad8fbe50e
+target:
+  /root/autodl-tmp/datasets/robotwin2/source/
+  9dc9299c163db059931898a9f0852098a61155a1/
+  dataset/adjust_bottle/aloha-agilex_clean_50.zip
+```
+
+密码继续只从既有用户附件中定位 `ssh -p` 后第一条非空值，注入当前 PowerShell
+`SEETA_SSH_PASSWORD`；命令结束后立即删除变量，不打印、不写脚本或文档。执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  --command-file local_scripts/remote_rlt_20260729_prestage1_refresh.sh
+```
+
+观察边界：`2026-07-29T14:42:39+08:00`。结果：
+
+- 身份仍为预期 AutoDL 容器/UID 0；两张 A800 80GB 均 `0 MiB/0%`；
+- RAM available 778 GiB；`/root/autodl-tmp` 仍约 1.9 TiB 总量、1.2 TiB 已用、
+  694 GiB 可用、63%；
+- 进程匹配只有本次审计 shell，没有 Ray、RoboTwin、SFT/RLT/DSRL 训练；
+- RLT HEAD/upstream 均为 `cfa55655...`、ahead/behind `0/0`、worktree clean；
+- DSRL worktree clean；
+- 两个约定目标路径均不存在；有界 `find` 也没有找到同名 ZIP，因此现场确认
+  **clean-50 尚未下载**；
+- 所有大小写 proxy 与 `HF_ENDPOINT` 均未设置；共享 π0 venv 已安装
+  `huggingface_hub 0.36.2`，不需安装依赖；
+- 本项没有创建服务器数据目录或修改服务器文件。
+
+磁盘分层的新证据：
+
+- `RLinf_fastwam_rlinf` 533.6 GiB 几乎全是 `logs/`：move-stapler GRPO formal
+  188.5 GiB、DSRL formal 93.9 GiB、move-stapler PPO formal 80.8 GiB、DSRL smoke
+  62.6 GiB、adjust-bottle GRPO formal 53.9 GiB，其余两个历史 smoke 各约 27 GiB；
+- `RLinf` 149.3 GiB 中 logs 135.6 GiB、共享 `.venv` 13.7 GiB；logs 主要是
+  2026-07-15 adjust-bottle OpenPI GRPO baseline 96.8 GiB，以及 2026-07-14/15
+  PPO/GRPO smoke/formal；
+- `RoboTwin` 111.8 GiB 中 `policy/Motus_old_20260618_111133` 78.9 GiB、
+  `policy/ACT` 16.5 GiB、assets 15.5 GiB；不是本次 RLT 数据；
+- `RLinf_wamppo_backup_20260714_step57_lastdcp40` 110.9 GiB 中 logs 56.0 GiB，
+  另有四套约 13.6～13.9 GiB 的 venv/venv backup；这是 7 月 13～14 日
+  adjust-bottle PPO/旧 Motus/LaWAM 迁移备份；
+- `models` 90.7 GiB 中 Motus 60.1 GiB、Fast-WAM 23.1 GiB、当前 RLT 必需的
+  π0 RoboTwin SFT checkpoint 7.5 GiB；
+- `conda` 48.0 GiB 主要是五个独立旧环境；`cache` 27.5 GiB 主要是可再生的 uv/pip
+  下载 cache，但 `cache/uv_python` 是共享 π0 venv 的解释器依赖，不能盲删；
+- `RLinf_old_20260618_085536` 30.9 GiB 是 6 月旧 π0 PPO repo/logs/venv；
+  `RoboTwin_RLinf` 15.5 GiB 几乎全为当前 RLinf 模拟器 assets；
+  `backups` 13.7 GiB 是当前 π0 venv golden rollback。
+
+本项只做审计和本地记账；下载的每条实际命令、PID、日志、校验和问题继续记入下一批。
+
+## 26. A026：clean-50 锁定下载、独立校验与日志收尾修复
+
+### 26.1 上传与启动
+
+下载脚本的网络边界：
+
+```bash
+unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+export HF_ENDPOINT=https://hf-mirror.com
+export HF_HOME=/root/autodl-tmp/cache/huggingface
+export HF_HUB_DISABLE_XET=1
+export PYTHONDONTWRITEBYTECODE=1
+```
+
+没有启用 `/etc/network_turbo`，没有并行启动 `wget`/`aria2`/第二个 Hugging Face downloader，
+没有安装依赖。共享 π0 venv 内的 `huggingface_hub 0.36.2` 直接调用：
+
+```python
+hf_hub_download(
+    repo_id="TianxingChen/RoboTwin2.0",
+    filename="dataset/adjust_bottle/aloha-agilex_clean_50.zip",
+    repo_type="dataset",
+    revision="9dc9299c163db059931898a9f0852098a61155a1",
+    local_dir="/root/autodl-tmp/datasets/robotwin2/source/"
+              "9dc9299c163db059931898a9f0852098a61155a1",
+)
+```
+
+先通过 SFTP 上传无凭据脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_clean50_download.sh `
+  /root/autodl-tmp/tmp/rlt_clean50_download_20260729_v1.sh
+```
+
+再执行
+`local_scripts/remote_rlt_20260729_start_clean50_download.sh`。远端启动：
+
+```bash
+chmod 700 /root/autodl-tmp/tmp/rlt_clean50_download_20260729_v1.sh
+nohup bash /root/autodl-tmp/tmp/rlt_clean50_download_20260729_v1.sh \
+  >/root/autodl-tmp/tmp/rlt_clean50_download_20260729_v1.log 2>&1 \
+  </dev/null &
+```
+
+结果：
+
+```text
+start: 2026-07-29T14:45:21+08:00
+PID: 602939
+log: /root/autodl-tmp/tmp/rlt_clean50_download_20260729_v1.log
+lock: /root/autodl-tmp/tmp/rlt_clean50_download.lock
+```
+
+脚本在创建目标前持有 `flock -n`；若目标已经存在但 hash 不同则 fail closed，不覆盖、改名或
+删除旧文件。
+
+### 26.2 第一次状态检查与独立校验
+
+执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  --command-file local_scripts/remote_rlt_20260729_status_clean50_download.sh
+
+python local_scripts/remote_exec_autodl.py run `
+  --command-file local_scripts/remote_rlt_20260729_verify_clean50_download.sh
+```
+
+状态检查时间 `14:46:32+08:00`：下载 PID 已退出，目标存在。独立校验时间
+`14:47:23+08:00`，没有依赖 producer 脚本的成功判断：
+
+```text
+path:
+  /root/autodl-tmp/datasets/robotwin2/source/
+  9dc9299c163db059931898a9f0852098a61155a1/
+  dataset/adjust_bottle/aloha-agilex_clean_50.zip
+bytes:
+  298659710
+SHA256:
+  5554b6b30e37c6ed2f0bbc48079e8ad79d9512e9d4f910a5e71b0d5ad8fbe50e
+unzip -tqq:
+  PASS
+archive:
+  207 files, 450331107 uncompressed bytes
+  50 _traj_data/episode*.pkl
+  50 episode video files
+  50 instructions/episode*.json
+```
+
+下载树总实占 298,668,032 bytes；除目标 ZIP 外只有 Hugging Face 的 1-byte `.gitignore`
+和 125-byte download metadata，没有残留 partial 大文件。数据盘仍显示约 694 GiB 可用、
+63% used。
+
+### 26.3 问题、诊断与窄修复
+
+问题：v1 producer 日志已经记录正确的 `actual_size`、`actual_sha256`、ZIP 完整性和
+archive listing，但缺少脚本末尾预期的 `SUCCESS` 行。数据独立校验全部通过，所以这是
+**脚本收尾证据不完整**，不是数据损坏或下载失败。
+
+初始怀疑是 `set -o pipefail` 下的：
+
+```bash
+unzip -Z1 "$target" | head -30
+```
+
+可能让上游收到 broken pipe。为消除这个风险，将它改成完整消费输入的：
+
+```bash
+unzip -Z1 "$target" | awk 'NR <= 30 {print}'
+```
+
+同时把“目标已存在且大小/hash 正确”的幂等路径补上 `unzip -tqq` 和终态
+`SUCCESS`。不过随后单独复现旧 pipeline 的返回码为 0，因此不能把 SIGPIPE 声称为已证实
+根因；v1 缺终态行的精确原因保持未证实，不继续为已通过独立校验的数据扩大调查。
+
+把修正版作为新文件上传：
+
+```text
+/root/autodl-tmp/tmp/rlt_clean50_download_20260729_v2.sh
+```
+
+执行 `local_scripts/remote_rlt_20260729_close_clean50_download.sh`，保留 v1 日志不覆盖。
+v2 检查到目标已正确存在，重新做大小、SHA256 和 ZIP 完整性校验，不重新下载，结果：
+
+```text
+producer_v2_rc=0
+ALREADY_VALID
+SUCCESS 2026-07-29T14:48:56+08:00
+```
+
+最终结论：clean-50 原始 ZIP 已锁定、完整下载且可复核；尚未解压、转换或用于训练。
+
+### 26.4 解压前 archive 安全与结构检查
+
+执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  --command-file local_scripts/remote_rlt_20260729_inspect_clean50_archive.sh
+```
+
+脚本把完整 archive listing 保存到：
+
+```text
+/root/autodl-tmp/tmp/rlt_clean50_archive_listing_20260729.txt
+```
+
+只读检查时间 `2026-07-29T14:54:26+08:00`。结果：
+
+- 207 个路径全部位于唯一顶层目录 `aloha-agilex_clean_50/`；
+- 绝对路径、Windows drive 路径、反斜杠和 `../` traversal 数均为 0；
+- 50 个 `_traj_data/episode*.pkl`；
+- 50 个 `data/episode*.hdf5`；
+- 50 个 `video/episode*.mp4`；
+- 50 个 `instructions/episode*.json`；
+- 另有 `seed.txt` 和 `scene_info.json`。
+
+这把先前简单的“50 trajectory/video/instruction”计数补全为 50 组
+`pkl+hdf5+mp4+instruction`。ZIP 内已有 `data/episode*.hdf5` 不代表可以跳过官方
+RoboTwin→Aloha 转换：是否已是 Stage 1 converter 接受的 schema，仍要在单 episode
+解压后按 key/shape/时序事实判断，不能仅凭扩展名决定。
+
+## 27. A027：smoke 前逐参数复核与事实纠正
+
+用户逐项询问 Stage 1/Stage 2 的并发、ManiSkill 来源、replay、UTD、warm-up、cap、
+actor loss、H/C/D、route、743M 模块和训练效果。本项没有启动项目或修改服务器代码；
+只读对照：
+
+```text
+examples/sft/config/maniskill_rlt_stage1_sft_openpi_pi05.yaml
+examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml
+examples/sft/config/robotwin_rlt_stage1_sft_openpi_a800_2gpu_smoke.yaml
+examples/embodiment/config/maniskill_rlt_stage2_ac_mlp.yaml
+examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml
+examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke.yaml
+rlinf/models/embodiment/modules/rlt_token_transformer.py
+rlinf/models/embodiment/openpi/openpi_action_model.py
+rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+rlinf/workers/actor/fsdp_sac_policy_worker.py
+rlinf/data/replay_buffer.py
+```
+
+同时复核 RLT 论文 v2、RLinf RLT 官方文档、RoboTwin π0 数据文档与 ManiSkill 官方说明。
+新增/纠正结论：
+
+1. Stage 1 smoke 已保留正式两卡/两 rank、同模型/loss/no-shard/optimizer/save 主链；
+   micro1/global2 能测真实分布式同步，但不能证明 formal micro16/global32 的 activation
+   memory。推荐同一 smoke 增加一条 formal-batch 单步 gate，不改模型。
+2. “官方 token 模块大小”必须分三层：PI 论文未公开；RLinf ManiSkill 代码严格为
+   744,667,136 参数；本项目真实 probe 为 743,094,272。差异只有约 0.21%，743M 不是
+   RoboTwin 意外膨胀，也不能称为 PI 官方大小。
+3. token-only Stage 1 的 `rlt_loss` 是 frozen π0 image-prefix embeddings 的 masked MSE，
+   **不是 action reconstruction**。action 字段仍需通过 loader/schema，但
+   `rlt_train_vla=false` 时不进入梯度。
+4. RLinf decoder 是无 causal mask 的 parallel reconstruction；RLT 论文写的是
+   autoregressive decoder。这是既有 RLinf 复现差异，首版不重写。
+5. ManiSkill YAML 的 `update_epoch=5/train_every_transitions=5` 按当前 worker 公式实际为
+   macro-UTD1，`critic_actor_ratio=4`；本项目 `5/1` 为 UTD5、ratio2。后者与论文明确的
+   UTD5 和 2 critic : 1 actor 一致，但不是 ManiSkill YAML 原值。
+6. 500 rows/rank + 5k critic updates 是预算 heuristic，不是把 ManiSkill
+   10k/30k 按 64→4 env 严格等比例缩放。
+7. cap400 是每个 collect→train 周期的上限。首次 floor5k 留约4600 pending；满长失败周期
+   80 new macro rows × UTD5=400，pending 会保持而非清空。该设计避免首次 5k 连续 burst，
+   不承诺 catch-up。
+8. replay 15k/rank 是 compact tensor cache/recent sampling window，不是删除 lifetime
+   index 的 hard capacity；只有 bounded pilot 每 rank 不超过15k时才是全量 replay。
+9. clean-50 在 token-only Stage 1 提供的是成功轨迹 observation/prompt frame 分布；
+   首版除 fixed-prefix loss 下降、π0 delta0、reload 一致外，应增加 true-z 对
+   shuffled/zero-z 的 post-hoc reconstruction 对照，防止 decoder 忽略瓶颈。
+10. 当前没有真实 Stage 1 step timing。只能报告
+    `2000 × steady_step_time + startup/save`；2/5/10/20 秒每 step 分别约
+    1.1/2.8/5.6/11.1 小时。
+
+据此使用 `apply_patch` 更新：
+
+```text
+docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md
+docs/rlinf-robotwin-pi0-rltoken/01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md
+HANDOFF.md
+```
+
+改动只修正来源标签、数据动态状态、术语、两阶段 smoke 建议与磁盘归属；没有修改当前
+Stage 2 candidate 数值，也没有为 unresolved 的 UTD1/UTD5 选择偷偷切换配置。现有 Stage 1
+默认 dataset path 与版本化 canonical 规划不一致，明确留到 converter 产出路径冻结后再改
+source YAML、重新 compose/hash，不建立兼容 symlink。
+
+## 28. A028：文档收口与跨专题动态状态校正
+
+在准备交付前执行本地文档只读检查：
+
+```powershell
+rg -n -C 3 "ZIP尚未下载|RLT.*下载|clean-50" HANDOFF.md
+Get-Content -LiteralPath `
+  "docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md" `
+  -Encoding utf8 | Select-Object -Last 36
+```
+
+发现根 `HANDOFF.md` 的 RLT 段已经记录 ZIP 下载完成，但 QAM 段仍保留“ZIP 尚未下载”的
+旧动态状态。该 ZIP 是 RLT/QAM 共用的只读 raw source，因此这不是 QAM 设计变化，而是根
+交接页同一物理对象的状态矛盾。使用 `apply_patch` 只更新 QAM 的动态事实：
+
+- ZIP 已由 RLT owner 下载到版本化 source 目录；
+- size、SHA-256、ZIP 完整性和 archive 路径安全检查已通过；
+- QAM 本身没有解压、转换或创建 sidecar；
+- 单 episode schema/mask 合同仍未验收。
+
+保留本账本 A021 等带时间戳的“当时尚未下载”记录；它们是实施历史，不能改写成事后状态。
+本次收口没有修改算法代码、source/resolved YAML、服务器环境、解压目录或训练产物，也没有
+启动 compose、import、测试、smoke 或训练。
+
+## 29. A029：文档证据同步前检查
+
+服务器同步前先上传并执行只读脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  --command-file local_scripts/remote_rlt_20260729_docs_preflight.sh
+```
+
+`2026-07-29T15:06:06+08:00` 的结果：
+
+- worktree 为 `/root/autodl-tmp/RLinf_rlt_pi0_robotwin`；
+- branch 为 `codex/rlt-pi0-robotwin`；
+- HEAD 为 `cfa556550efa7da1779a0d29c3a34b00a7f17ed8`；
+- upstream ahead/behind 为 `0/0`；
+- `git status --short` 无输出；
+- `HANDOFF.md`、专题索引、配置复核和本账本四个目标文件全部已跟踪。
+
+之后通过四次 `put` 把同名本地文档上传到该独立 worktree；没有上传 checkpoint、数据 ZIP、
+运行产物或本地 operational scripts。上传后第一次误写成：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  --command "bash /root/autodl-tmp/tmp/rlt_docs_precommit_20260729.sh"
+```
+
+helper 的 `run` 没有 `--command` option，`argparse` 将此前缀匹配成
+`--command-file`，因此返回本地 `FileNotFoundError`；远程预提交脚本没有开始执行，
+已上传的四份文档未被回滚或覆盖。核对 `run --help` 后改为它定义的位置参数：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_docs_precommit_20260729.sh"
+```
+
+复测通过：
+
+- 临时 alternate index 的 `git diff --cached --check HEAD` 无输出；
+- 只有四份预期 Markdown 为 modified；
+- diff 为 706 insertions / 65 deletions，最大变化是细粒度实施账本和逐参数配置复核；
+- 没有新文件越过 1 MiB guard；
+- credential pattern scan 为 `CREDENTIAL_PATTERN_SCAN_OK`；
+- 没有改动实际 Git index。
+
+密码仍只从用户既有附件中定位后注入当前 PowerShell 进程的
+`SEETA_SSH_PASSWORD`，每组命令在 `finally` 中删除；没有打印、写入脚本、文档或服务器。
