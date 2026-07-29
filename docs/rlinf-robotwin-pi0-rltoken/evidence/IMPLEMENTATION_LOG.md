@@ -2331,3 +2331,39 @@ python local_scripts/remote_exec_autodl.py run `
 
 本节和根 `HANDOFF.md` 的 17:03 状态将作为 ledger-only 收尾提交；该收尾提交自身的 hash
 由最终 Git history/交接给出，避免在提交内容中形成不可满足的自引用。
+
+## 45. A045：Stage 2 resume-fingerprint 审阅意见的当前源码复核
+
+收尾时一份并行只读审阅意见称 `_rlt_resume_contract()` 可能没有纳入
+`algorithm.bootstrap_type`。由于动态源码事实优先于审阅摘要，本轮没有据此直接修改代码，
+而是对最终服务器 HEAD 做定点只读检查。
+
+第一次把带引号的 `grep -A/-B` 命令直接作为 PowerShell native argv 传给 helper，在本地
+argparse 阶段被拆成多余参数而失败；远端未执行、未写入。随后上传：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_resume_contract_inspect.sh `
+  /root/autodl-tmp/tmp/rlt_resume_contract_inspect_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_resume_contract_inspect_20260729.sh"
+```
+
+当前
+`rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py::_rlt_resume_contract()` 的
+`optimization` payload 已明确包含：
+
+```text
+bootstrap_type
+target_update_freq
+target_update_type
+actor_optim
+critic_optim
+global_batch_size
+micro_batch_size
+```
+
+同时还包含 loss/Q aggregation、gamma/tau、update cadence、route、transition/replay、
+feature/actor model、world size 和 syncer。故该审阅意见不适用于当前 HEAD；设计文档和
+HANDOFF 中“bootstrap/optimizer/batch 已进入 resume fingerprint”的表述保持不变。
+本次没有代码修改、没有启动 Stage 2 smoke，也没有扩大测试。
