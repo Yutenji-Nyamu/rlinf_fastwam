@@ -1192,6 +1192,86 @@ Move-Item -LiteralPath $temp -Destination $final
 historical sources 均存在。最终 ZIP 完成后把 SHA-256 写入相邻同名 `.sha256`；
 checksum 不写回 ZIP 内部文档，避免自引用导致每次重打包都改变自身 hash。
 
+#### FORMAL-016　收尾文档发布与 GitHub 网络恢复
+
+先上传 `HANDOFF.md`、专题入口、流水账、closeout、三张 2430×1440 PNG、
+最终 flush JSON/CSV 共 9 个精确路径，再执行：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_closeout_docs_validate_v2.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+原校验脚本中的中文 `grep` 字面量在临时脚本生成时发生编码损坏，第一次静默退出；
+改成只含 ASCII 的 `grep -q 'step 198/650'` 后，精确 9-path、图片尺寸、driver
+已退出和文档 token 检查全部通过。第一次 publish 被
+`git diff --cached --check` 拦截：新生成 CSV/JSON 的 Windows CRLF 被远端视为
+尾随空白。只对 6 个文本上传副本机械转换 LF，确认 `CR_BYTES=0` 后重传；指标值、
+图片和训练产物均未改变。发布入口：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_closeout_docs_publish.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+commit gate 通过并生成：
+
+```text
+51753eab66e49454f7ba5c56020cf49be706aba8
+docs(dsrl): close formal run at step 198
+```
+
+该次 55 秒 push 超时；只读刷新确认 HEAD 已前进、worktree clean，但 upstream 仍为
+`acc7c14b`。第一次 180 秒重试又因服务器到 `github.com:443` 超时而失败。诊断命令
+仅读取 remote/proxy/DNS 并做 10 秒 TCP 探针：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_git_network_diagnostic.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+为避免丢失提交，另生成并校验了一个未用于最终发布的 925,504-byte 增量 Git bundle：
+`dsrl_closeout_51753eab.bundle`，SHA-256
+`3af61f0cda0be867502dc586ed28e55f1ec91ee2ef39b60148f8b297c9ded7e3`。
+TCP 443 恢复后执行同一窄重试：
+
+```powershell
+try {
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python 'C:\Users\86136\Documents\rl\local_scripts\remote_exec_autodl.py' run `
+    --command-file 'C:\Users\86136\Documents\rl\.tmp\remote_dsrl_closeout_push_retry.sh'
+  $code=$LASTEXITCODE
+} finally {
+  Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+}
+exit $code
+```
+
+最终 `acc7c14b..51753eab` fast-forward 成功；HEAD=upstream=`51753eab...`、
+worktree clean、`DRIVER_ALIVE=0`。整个发布过程没有重跑训练、改 checkpoint 或
+改实验指标。
+
 ## 6. 停止与干预条件
 
 发生下列任一项才停止并保留现场：
