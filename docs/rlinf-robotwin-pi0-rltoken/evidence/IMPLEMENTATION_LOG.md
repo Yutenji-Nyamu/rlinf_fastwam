@@ -1508,3 +1508,771 @@ remote 为 `personal=https://github.com/Yutenji-Nyamu/rlinf_fastwam.git`；推�
 - 未运行 Stage 1/Stage 2 smoke 或训练；
 - 下一次服务器写操作必须先获得“单 episode 解压/converter 合同 + Stage 1 S1-A/S1-B”
   明确批准。
+
+## 31. A031：Stage 1 smoke 授权、范围与上下文重载
+
+用户在 2026-07-29 明确授权自行完成 Stage 1 的全部必要 smoke，并要求：
+
+- 继续使用细粒度流水账，记录每条指令、结果、问题、原因、修复和复测；
+- 监控 GPU 显存、主机内存和进程资源，作为后续并行度与 batch 调整依据；
+- smoke 保持克制，只做简洁且会改变决策的必要检查；
+- 回答 demonstrations/rollout 数据、高层论文/ManiSkill 对齐、Stage 1 并行和 Stage 2
+  参数来源问题；
+- 只讨论 `RLinf`/`RoboTwin` 历史空间是否可清，不删除、移动或覆盖。
+
+本轮授权边界解释为：
+
+1. 可以选择性解压并完成单 episode 数据/schema/converter 合同；
+2. 可以创建全新、版本化 canonical smoke 数据目录和 manifest；
+3. 可以 compose 最终 S1-A/S1-B resolved config，启动两卡 Stage 1 smoke；
+4. 可以执行最小保存/新进程重载、trainable-set 和参数更新链检查；
+5. 遇到 blocker 可以做一个由证据直接支持的窄修复并复测；
+6. 不自动扩展到 2,000-step Stage 1 正式训练、Stage 2、超参 sweep、依赖安装或磁盘清理。
+
+按工作区规则重新完整读取：
+
+```text
+PROJECT_CONTEXT.md
+HANDOFF.md
+docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md
+docs/rlinf-robotwin-pi0-rltoken/01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md
+evidence/IMPLEMENTATION_LOG.md 的 Stage 1 implementation/probe/config/download 批次
+```
+
+同时只读搜索 Memory 注册表中 RLT、Stage 1、clean-50、worktree 和 smoke 规则；动态
+进程、资源、Git、数据和日志仍只以本轮服务器现场为真。
+
+最小运行序列冻结为：
+
+```text
+现场刷新
+-> 单 episode schema/converter 合同
+-> S1-A：2 ranks，micro/global 1/2，2 optimizer steps，save/reload
+-> S1-B：2 ranks，formal micro/global 16/32，1 optimizer step
+-> 终态资源/Git/产物检查
+```
+
+本轮不增加 data-scaling、held-out eval、模型结构消融、单卡替代、Stage 2 或长训。
+
+## 32. A032：Stage 1 smoke 前服务器现场刷新
+
+新增并上传只读脚本：
+
+```text
+local_scripts/remote_rlt_20260729_stage1_refresh.sh
+/root/autodl-tmp/tmp/rlt_stage1_refresh_20260729.sh
+```
+
+执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_refresh_20260729.sh"
+```
+
+密码只注入该 PowerShell 进程的 `SEETA_SSH_PASSWORD`，在 `finally` 删除。观察时间
+`2026-07-29T15:37:29+08:00`：
+
+- 两张 A800-SXM4-80GB 均为 `0 MiB/0%`；
+- host RAM available `774 GiB`，无 swap；
+- `/root/autodl-tmp` 可用 `694 GiB`、63% used；
+- 进程匹配只有本次刷新 shell，无 Ray、RoboTwin、SFT、RLT、DSRL 或 torchrun；
+- RLT worktree branch 为 `codex/rlt-pi0-robotwin`，HEAD
+  `e4127fd49e38362161eac08c551a7a98c11e9802`，ahead/behind `0/0`，clean；
+- DSRL worktree clean；
+- ZIP 大小、SHA256 和 `unzip -tqq` 再次通过；
+- versioned raw/intermediate/canonical、S1-A/S1-B output 六个目标均不存在，不会覆盖旧 run；
+- 共享解释器解析到
+  `/root/autodl-tmp/cache/uv_python/install/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11`；
+- 运行时已有 `torch 2.6.0+cu124`、`datasets 3.6.0`、`lerobot 0.1.0`，没有安装依赖。
+
+刷新脚本只在 `/root/autodl-tmp/checkpoints` 搜索 `norm_stats.json`，该项无输出；实际 Stage 1
+config 指向 `/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/...`，后续
+packet 用精确路径单独校验，不把这次范围过窄的 `find` 解释为 checkpoint 缺失。
+
+## 33. A033：clean-50 单 episode 选择性解压与两级官方 converter 合同
+
+为避免把全部 50 条数据提前解包，只处理 `adjust_bottle` 的 `episode0`。先只读检查
+RoboTwin converter 源码：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_converter_inventory.sh `
+  /root/autodl-tmp/tmp/rlt_converter_inventory_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_converter_inventory_20260729.sh"
+
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_converter_source.sh `
+  /root/autodl-tmp/tmp/rlt_converter_source_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_converter_source_20260729.sh"
+```
+
+确认两级官方路径为：
+
+```text
+/root/autodl-tmp/RoboTwin/policy/pi0/scripts/process_data.py
+/root/autodl-tmp/RoboTwin/policy/pi0/scripts/convert_aloha_data_to_lerobot_robotwin.py
+```
+
+源码 SHA-256 分别以 `b462...` 和 `b8f...` 开头。第二级脚本在目标目录已经存在时会执行
+递归删除，且内部使用未排序遍历和随机 instruction；因此本次只允许写入预检已确认不存在的
+版本化目录，并由外层固定 NumPy seed。没有修改 RoboTwin 工作树。
+
+执行选择性解压：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_extract_contract_ep0.sh `
+  /root/autodl-tmp/tmp/rlt_extract_contract_ep0_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_extract_contract_ep0_20260729.sh"
+```
+
+源为已固定 SHA 的 clean-50 ZIP；新目标为：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/raw/\
+9dc9299c.../adjust_bottle/contract_ep0
+```
+
+结果：
+
+- raw episode 长度 `T=140`；
+- 左、右臂均为 `(140, 6)`，左右 gripper 均为 `(140,)`；
+- head/left/right 三路压缩图像均可解码为 `(240, 320, 3)`；
+- instruction 候选数为 `100`；
+- HDF5 为 `9,104,360` bytes，SHA-256 以 `6e5a49e2...` 开头；
+- 目标总大小约 `8.8 MiB`。
+
+随后按官方 π0 数据链运行 raw RoboTwin → Aloha：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_process_contract_ep0.sh `
+  /root/autodl-tmp/tmp/rlt_process_contract_ep0_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_process_contract_ep0_20260729.sh"
+```
+
+新目标为：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/intermediate/\
+9dc9299c.../adjust_bottle/pi0-aloha-clean50-contract-ep0-v1
+```
+
+结果为 `139` rows、`state/action` 均为 `[139, 14]`。逐元素合同检查：
+
+```text
+processed qpos[t] == raw state[t]       max_abs_error = 0
+processed action[t] == raw state[t + 1] max_abs_error = 0
+```
+
+三路处理后图像均为 `(480, 640, 3)`，100 条 instruction 候选仍保留；输出 HDF5 为
+`14,231,682` bytes，SHA-256 以 `ee5938...` 开头。
+
+最后运行 Aloha → LeRobot：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_lerobot_contract_ep0.sh `
+  /root/autodl-tmp/tmp/rlt_lerobot_contract_ep0_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_lerobot_contract_ep0_20260729.sh"
+```
+
+新 canonical smoke 数据集为：
+
+```text
+/root/autodl-tmp/datasets/robotwin2/canonical/\
+pi0-aloha-clean50-contract-ep0-v1
+```
+
+结果：
+
+- `1 episode / 139 frames / 50 FPS`；
+- 包含 action、state、head/left/right image、task 等列；
+- 固定 seed 后选择的 prompt 为
+  `Lift the smooth green plastic bottle head-up from the table.`；
+- parquet 为 `35,036,057` bytes，SHA-256 以 `382cb...` 开头；
+- canonical 目录约 `34 MiB`。
+
+本批没有展开其余 49 条 episode，也没有复制样本凑 400。这里验证的是格式与时序合同，
+不把单条数据称为 Stage 1 正式训练集。
+
+## 34. A034：OpenPI 分布式 loader 合同、一次环境错误与窄修复
+
+先检查 RLinf wrapper 与已安装 OpenPI loader 源码，再用同一个 canonical episode 模拟
+S1-A 和 S1-B 两种 batch：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_openpi_loader_source.sh `
+  /root/autodl-tmp/tmp/rlt_openpi_loader_source_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_openpi_loader_source_20260729.sh"
+
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_loader_contract.py `
+  /root/autodl-tmp/tmp/rlt_loader_contract_20260729.py
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_loader_contract.sh `
+  /root/autodl-tmp/tmp/rlt_loader_contract_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_loader_contract_20260729.sh"
+```
+
+源码事实是：RLinf 传入 `micro_batch_size * world_size`；OpenPI 检测到
+`torch.distributed` 后构造 `DistributedSampler`，再把传入 batch 除以 world size。因此：
+
+| 配置 | loader 传入值 | rank 数 | 每 rank 实际 batch | accumulation |
+|---|---:|---:|---:|---:|
+| S1-A | 2 | 2 | 1 | 1 |
+| S1-B | 32 | 2 | 16 | 1 |
+
+第一次 loader 合同命令失败在取 batch 之前：
+
+```text
+RuntimeError: Unable to initialize backend cuda ...
+Set JAX_PLATFORMS=cpu
+```
+
+原因是脚本清空了 `CUDA_VISIBLE_DEVICES` 以做 CPU-only loader 检查，但 JAX 仍尝试初始化
+CUDA plugin；这不是数据/schema 错误，也没有启动训练。窄修复只是在合同脚本增加：
+
+```bash
+export JAX_PLATFORMS=cpu
+```
+
+没有安装、升级或修改项目依赖。相同命令复测成功：
+
+- 两个模拟 rank 均使用 `DistributedSampler`，dataset length 均为 `139`；
+- S1-A 每 rank 图像为 `[1, 3, 224, 224]`，state `[1, 32]`，
+  actions `[1, 50, 32]`，token/mask `[1, 48]`；
+- S1-B 每 rank 图像为 `[16, 3, 224, 224]`，state `[16, 32]`，
+  actions `[16, 50, 32]`，token/mask `[16, 48]`；
+- 三路图像、state、action 均 finite；
+- normalization stats 从
+  `/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/`
+  `physical-intelligence/robotwin/norm_stats.json` 加载，文件 SHA-256 为
+  `649ed92b431bd70627febdb00b2385e35fcab5088e72a4e4a4845585f8ce4f6a`；
+- 整个双 batch 合同约 `73.9 s`，没有占用 GPU。
+
+`no_shard` 在这里表示两张 GPU 各保留完整模型/optimizer 副本并同步 data-parallel 梯度，
+不是参数分片。RLT module 显式使用 BF16，reconstruction MSE 在 FP32 计算；YAML 中
+`precision: null` 不等于 token module 以 FP32 保存。当前自定义 Stage 1 forward 会关闭
+gradient checkpointing，因此不把它预设为显存不足时的兜底。若 S1-B OOM，只允许按证据
+做一次窄调整：先将 per-rank micro batch 从 16 降到 8，同时用 accumulation 2 保持
+global batch 32；不做 batch sweep。
+
+## 35. A035：S1-A/S1-B 最终 resolved packet
+
+新增并上传：
+
+```text
+local_scripts/remote_rlt_20260729_stage1_final_packet.sh
+/root/autodl-tmp/tmp/rlt_stage1_final_packet_20260729.sh
+```
+
+执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_stage1_final_packet.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_final_packet_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_final_packet_20260729.sh"
+```
+
+脚本先锁定独立 branch、clean worktree、所有输入存在以及两个 run 目标均不存在，再通过
+Hydra `--cfg job --resolve` 生成：
+
+```text
+/root/autodl-tmp/experiment_exports/rlt_stage1_smoke_20260729_v1/
+  s1a_resolved.yaml
+  s1b_resolved.yaml
+  exact_commands.txt
+```
+
+观察时间为 `2026-07-29T15:57:11+08:00`。最终关键值：
+
+| 项 | S1-A | S1-B |
+|---|---:|---:|
+| ranks | 2 | 2 |
+| per-rank micro batch | 1 | 16 |
+| global batch | 2 | 32 |
+| accumulation | 1 | 1 |
+| optimizer steps | 2 | 1 |
+| optimizer schedule length | 2 | 2000 |
+| LR warm-up | 1 | 100 |
+| save interval | 2 | -1 |
+
+两份配置都断言：
+
+- placement 为 GPU `0-1`；
+- dataset 为
+  `/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1`；
+- model 为
+  `/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle`；
+- norm stats 为该 checkpoint 下的
+  `physical-intelligence/robotwin/norm_stats.json`；
+- `rlt_train_vla=false`；
+- `sharding_strategy=no_shard`。
+
+resolved SHA-256：
+
+```text
+S1-A 2aa7400eb1355bcb1b84cdb431c6110f6f6bde378861379dbffce340befae49d
+S1-B 5b984a6865df3d0f2aed8e957a4ba8f7f040ef1010ce606b5150714f9811723a
+commands 1ea9f65590f211c027641fadc98fea142a0b4cd64b2da3a8cd7472cf1d22dc2b
+```
+
+停止条件也随 packet 固定：S1-A 在 step 2 保存并由新进程 reload-only 成功后停止；S1-B
+只跑一个 optimizer step、不保存；任一 rank 失败、loss 非有限、OOM 或出现非 RLT
+trainable parameters 都停止。S1-B 只有发生 OOM 时才允许一次
+`micro16 → micro8 + accumulation2` 窄重试。
+
+## 36. A036：S1-A 两卡两步、checkpoint 与 reload-only
+
+新增并上传资源监控、启动和状态脚本：
+
+```text
+local_scripts/remote_rlt_20260729_resource_monitor.sh
+local_scripts/remote_rlt_20260729_start_s1a.sh
+local_scripts/remote_rlt_20260729_status_s1a.sh
+/root/autodl-tmp/tmp/rlt_stage1_resource_monitor_20260729.sh
+/root/autodl-tmp/tmp/rlt_stage1_start_s1a_20260729.sh
+/root/autodl-tmp/tmp/rlt_stage1_status_s1a_20260729.sh
+```
+
+启动命令：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_start_s1a_20260729.sh"
+```
+
+远程脚本在预检 branch、clean tree、输入存在、输出不存在以及无相关训练/Ray 进程后，用
+`nohup` 启动最终 packet 中的精确命令；外层设置 30 分钟硬超时。资源 monitor 每秒记录
+GPU 0/1 显存与利用率、主机 available RAM、cgroup memory、相关进程 RSS 和 GPU compute
+process 数。driver PID 为 `611074`，monitor PID 为 `611075`。
+
+轮询只调用状态脚本，没有向运行中的训练写入控制信号。观察到：
+
+- 两个 worker 的 `local_batch_size` 均为 `1`；
+- 两个 rank 都从固定 checkpoint 路径加载 norm stats；
+- `NO_SHARD` warning 是 PyTorch 对该旧接口的弃用提示，不是本轮失败；
+- FSDP AMP 关闭，但 RLT module 自身仍按实现显式使用 BF16；本轮不借 warning 改动数值
+  精度；
+- gradient checkpointing 按 resolved config 关闭；
+- 没有 traceback、OOM、RayTaskError 或非有限 metric。
+
+训练以 exit code `0` 完成。去重后的两步 metric：
+
+| step | loss / rlt_loss | vla_loss | grad norm | LR |
+|---:|---:|---:|---:|---:|
+| 1 | 5.15 | 0 | 2.42 | `2.5e-5` |
+| 2 | 5.21 | 0 | 2.33 | `6.25e-8` |
+
+两步只是执行合同；不同 shuffled batch 上 `5.15 → 5.21` 不应用来判断收敛。第一步显示
+`time/training≈18.6 s`；第二步日志的 training 子计时受异步/缓存影响而显示约 `0.172 s`，
+同时外层 step 包含 checkpoint 保存约 `34.1 s`，因此不把第二个数字外推为正式吞吐。
+本轮日志和先前 probe 证明 optimizer/trainable names 只含 `rlt_module.*`，但没有保存逐参数
+π0 before/after snapshot，因此不声称已经数值验证 π0 delta=0。
+
+checkpoint 位于：
+
+```text
+/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1a/
+robotwin_adjust_bottle_rlt_stage1_s1a_2step_v1/
+checkpoints/global_step_2
+```
+
+包含：
+
+| 文件 | bytes |
+|---|---:|
+| `actor/dcp_checkpoint/.metadata` | 542,278 |
+| `actor/dcp_checkpoint/__0_0.distcp` | 6,262,795,292 |
+| `actor/dcp_checkpoint/__1_0.distcp` | 6,261,725,940 |
+| `actor/model_state_dict/full_weights.pt` | 9,551,212,074 |
+
+合计 `20.56 GiB`，`du -sh` 为 `21G`。
+
+随后新增并上传：
+
+```text
+local_scripts/remote_rlt_20260729_start_s1a_reload.sh
+local_scripts/remote_rlt_20260729_status_s1a_reload.sh
+```
+
+以相同配置、新 Ray/worker 进程和：
+
+```text
++runner.resume_dir=<上述 global_step_2>
+runner.max_steps=2
+```
+
+启动 reload-only。driver PID 为 `621054`；exit code 为 `0`。resolved config 日志记录精确
+`resume_dir`，新进程初始化后进度直接显示 `2/2 [00:00<?, ?it/s]`，没有执行第三步、没有
+写第二份 checkpoint。这证明该 checkpoint 可由同 world size 的新进程加载模型、optimizer
+和 scheduler，并满足本轮最小 endpoint 合同；不声称 RNG bitwise、跨 world size 或
+OpenPI dataloader cursor 恢复，也不声称同一 fixed prefix 在保存前后的 `z_rl/loss`
+数值等价；后者留到正式 2k endpoint。
+
+## 37. A037：S1-B 正式 batch 单步显存门
+
+新增并上传：
+
+```text
+local_scripts/remote_rlt_20260729_start_s1b.sh
+local_scripts/remote_rlt_20260729_status_s1b.sh
+```
+
+启动：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_start_s1b_20260729.sh"
+```
+
+driver PID 为 `629633`。两个 worker 都报告 `local_batch_size: 16`，即真正测试了
+2 ranks × 16 = global batch 32，而不是复用 S1-A 的小 batch。单步以 exit code `0`
+完成：
+
+```text
+time/step = 20.7 s
+time/training = 20.7 s
+loss = rlt_loss = 5.18
+vla_loss = 0
+grad_norm = 2.30
+learning_rate = 2.5e-7
+```
+
+所有 metric 有限；没有 OOM、traceback 或 rank failure。`save_interval=-1` 生效，输出下
+checkpoint 文件数为 `0`。因此不执行预案中的 micro8 重试，也不继续尝试更大 batch。
+
+## 38. A038：资源汇总、一次 postcheck 断言错误与终态
+
+新增并上传：
+
+```text
+local_scripts/remote_rlt_20260729_stage1_postcheck.sh
+/root/autodl-tmp/tmp/rlt_stage1_postcheck_20260729.sh
+```
+
+第一次执行该汇总脚本返回非零，但三个 smoke 进程早已正常退出。失败文本是：
+
+```text
+RuntimeError: reload log lacks DCP load marker
+```
+
+原因是汇总脚本过度假设这版 Ray 会把内部固定短语 `loading DCP checkpoint` 转发到
+driver log。只读 `grep` 显示实际日志保留的是精确 `resume_dir` 和 `Global Step 2/2`，
+而非该内部短语。窄修复仅调整 postcheck 证据断言为：
+
+1. reload resolved config 中必须出现精确 `global_step_2` 路径；
+2. 新进程必须 exit `0`；
+3. 进度必须直接为 `2/2`；
+4. checkpoint DCP metadata/full weights 必须仍存在。
+
+没有重跑 S1-A、reload 或 S1-B。相同 postcheck 复测通过，生成：
+
+```text
+/root/autodl-tmp/experiment_exports/rlt_stage1_smoke_20260729_v1/
+stage1_postcheck.json
+```
+
+资源结果：
+
+| run | wall | 每卡 GPU peak | 相关 RSS peak | host available 最低 | 从首样本最大下降 |
+|---|---:|---:|---:|---:|---:|
+| S1-A 两步+保存 | 155 s | 23,073 MiB | 39.44 GiB | 737.97 GiB | 37.82 GiB |
+| reload-only | 122 s | 20,485 MiB | 39.15 GiB | 739.47 GiB | 36.05 GiB |
+| S1-B micro16 一步 | 121 s | 26,447 MiB | 39.09 GiB | 741.10 GiB | 33.98 GiB |
+
+三次运行每卡利用率采样峰值都到 `100%`，GPU compute process 峰值均为 `2`。S1-B 比
+S1-A 每卡峰值只增加约 `3.3 GiB`，在 80GB A800 上留有约 53GB 余量；因此正式
+micro16/global32 已通过容量门，不需要为了“吃满显存”扩 batch。cgroup current 含服务器
+大文件 page cache，峰值约 240GiB，不等价于训练进程私有内存；决策以相关 RSS 和 host
+available 为主。
+
+终态 `2026-07-29T16:11:32+08:00`：
+
+- 两卡均 `0 MiB/0%`，无相关训练、Ray、raylet 或 GCS 进程；
+- host available `776 GiB`，无 swap；
+- `/root/autodl-tmp` 余 `673 GiB`、64% used；相较 smoke 前约减少 21GiB，主要就是
+  S1-A checkpoint；
+- RLT worktree 仍为 `codex/rlt-pi0-robotwin`、HEAD
+  `e4127fd49e38362161eac08c551a7a98c11e9802`、clean、upstream `0/0`；
+- S1-A/S1-B resolved SHA 保持不变；
+- `stage1_postcheck.json` SHA-256 为
+  `8f84e8c5297f1ea8bd6eb55fa6b8c19bd6eea31be66d0a0d8f12fd8c41870acd`；
+- DCP metadata SHA-256 为
+  `09a51c2530d095d838b41eb928729daf15b7d82f233e0e247153927cdf9d590d`。
+
+## 39. A039：历史磁盘只读审计与两次命令问题
+
+本轮另行对用户点名的 `RLinf`、`RoboTwin/Motus/ACT` 做只读归属审计。使用的命令类型为：
+
+```bash
+du -x -B1 --max-depth=<n> <精确目录> | sort -n
+find <精确 run/checkpoint 目录> -maxdepth <n> -type f -printf '%p\t%s\n'
+git -C <精确 repo> status --short
+git -C <精确 repo> log --oneline -- <相关路径>
+stat <精确 checkpoint/manifest/config>
+```
+
+所有目标都写成 `/root/autodl-tmp/...` 下的精确路径；没有运行 `rm`、`mv`、`truncate`、
+压缩、重命名或 checkpoint 转换。
+
+审计中有两次无副作用问题：
+
+1. 第一次命令在本地 helper 参数解析/引号层失败，未连接到服务器执行；
+2. 一次只读 `awk` 汇总表达式语法错误，未写入文件；随后改为逐目录
+   `du/find/stat` 统计并复测。
+
+结论：
+
+- `/root/autodl-tmp/RLinf/logs` 为 `135.562 GiB`，对应四个 2026-07-14/15 的
+  adjust-bottle π0 PPO/GRPO smoke/formal；保留 GRPO step100、PPO step20 和小型元数据后，
+  旧中间/smoke DCP 是约 `116.177 GiB` 的人工候选；
+- `RoboTwin/policy/Motus_old_20260618_111133` 为 `78.824 GiB`，确属 TTS/VTTS 与
+  OPD/GKD online distillation 历史；49 个中间 checkpoint 约 `59.253 GiB`，PNG 历史约
+  `16.9 GiB`（约 `18.15 GB` decimal），均只列候选；
+- `RoboTwin/policy/ACT` 为 `beat_block_hammer clean-50` imitation，不是 Motus；
+  processed data `14.616 GiB` 可由仍存在的 raw 50 重建，四个中间 checkpoint 约
+  `1.251 GiB`；
+- `/root/autodl-tmp/RoboTwin/assets` 与 `/root/autodl-tmp/RoboTwin_RLinf/assets`
+  各 `15.521 GiB`，是两个实体副本；
+  当前 RLT 用后者，前者只有在旧 standalone Motus/ACT 路线退役后才讨论。
+
+完整解释和保留/候选边界写入
+[`../02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](../02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md)
+§11。本轮没有执行任何清理。
+
+## 40. A040：本地 evidence 收口与上下文索引更新
+
+通过 helper 的 `get REMOTE LOCAL` 子命令，逐一下载小型、可审阅的 Stage 1 证据：
+
+```text
+两份服务器 source config
+S1-A/S1-B resolved YAML
+exact_commands.txt
+stage1_postcheck.json
+S1-A/reload/S1-B driver.log
+S1-A/reload/S1-B resources.csv
+```
+
+本地目标为：
+
+```text
+docs/rlinf-robotwin-pi0-rltoken/evidence/stage1_smoke_20260729/
+```
+
+每个 `get` 均建立独立 Paramiko 连接、验证固定 host-key；密码只在当前 PowerShell
+`SEETA_SSH_PASSWORD` 中存在并在 `finally` 删除。大 checkpoint 未下载。
+
+下载后用 `Get-FileHash -Algorithm SHA256` 校验核心文件与服务器输出一致，并新增
+`evidence/stage1_smoke_20260729/README.md` 作为证据索引。随后使用 `apply_patch` 更新：
+
+```text
+docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md
+docs/rlinf-robotwin-pi0-rltoken/01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md
+docs/rlinf-robotwin-pi0-rltoken/02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md
+docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md
+HANDOFF.md
+```
+
+`00` 保持唯一设计规范；`01` 保留配置来源和 Stage 2 pre-smoke 语义；`02` 集中回答本轮
+专家数据、50 条、Stage 1 结果、参数来源、调用流和磁盘问题；原始 runtime evidence
+不复制进正文。根 `HANDOFF.md` 的 RLT 行已从“smoke 前”改为“Stage 1 smoke 已通过，
+停在 full clean-50 2k endpoint 前”。
+
+## 41. A041：服务器文档同步、预提交 QA 与证据口径收窄
+
+第一次尝试把 preflight 写成内联 PowerShell/remote shell 字符串时，本地 quoting 解析失败；
+命令没有连接服务器，也没有远端写入。随后改用版本化脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_stage1_docs_preflight.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_docs_preflight_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_docs_preflight_20260729.sh"
+```
+
+`2026-07-29 16:29` preflight 确认 branch
+`codex/rlt-pi0-robotwin`、HEAD `e4127fd49e38362161eac08c551a7a98c11e9802`、upstream
+`0/0`，且拟新增 evidence 目录不存在。随后逐文件使用 helper `put LOCAL REMOTE` 上传第一版
+18 个 docs/evidence 文件。
+
+使用 alternate index 的预提交审查第一次只因三份 Ray/RLinf 原始 driver log 有行尾空格
+而失败。没有改训练文本、metric 或控制字符；本地仅机械删除：
+
+```text
+[ \t]+(?=\r?$)
+```
+
+匹配的行尾空白，然后重传：
+
+```text
+runtime/s1a_driver.log
+runtime/s1a_reload_driver.log
+runtime/s1b_driver.log
+```
+
+独立文档 QA 随后指出并修正了这些口径问题：
+
+1. smoke 只证明 trainable-set 为 `rlt_module.*`，没有逐参数 π0 delta=0；
+2. reload-only 只证明同 world-size checkpoint 可加载，没有 fixed-prefix `z_rl/loss`
+   保存前后等价；
+3. 原 `exact_commands.txt` 缺 reload/status/postcheck 细节，故保持原文件/hash不变，新增
+   [`stage1_smoke_20260729/exact_commands_addendum.md`](stage1_smoke_20260729/exact_commands_addendum.md)；
+4. 磁盘审计 A–P exact commands 单列为
+   [`DISK_AUDIT_COMMANDS_20260729.md`](DISK_AUDIT_COMMANDS_20260729.md)；
+5. 修正 assets 绝对路径、GiB/GB、reload-only 无训练 metric 和 primitive $\gamma$ 术语。
+
+本节只记录文档/证据同步；没有启动训练、Ray、RoboTwin 或 simulator。
+
+## 42. A042：LR scheduler 根因、最窄配置修复与 CPU contract
+
+文档 QA 注意到 smoke-time source/resolved 均声明：
+
+```text
+lr=2.5e-5
+min_lr=2.5e-6
+```
+
+但 S1-A step 2 日志为 `train/learning_rate=6.25e-8`。这不会推翻 forward/backward/save/load
+或 micro16 容量结论，却会阻塞正式 2k 的 schedule 语义。
+
+第一次只读源码搜索把带 `|` 的 regex 直接经过 PowerShell native argv 传递；服务器没有
+`rg`，且 shell 把 regex 中的 `|` 解释为管道，产生 `rg: command not found` 等只读错误。
+没有写入。随后上传并执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_lr_scheduler_audit.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_audit_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_audit_20260729.sh"
+```
+
+源码链闭合为：
+
+```text
+robotwin_rlt_stage1_sft_openpi.yaml
+-> fsdp_model_manager.py build_optimizer:
+   param group lr=2.5e-5，但 AdamW constructor 没有顶层 lr
+-> optimizer.defaults["lr"]=1e-3
+-> fsdp/utils.py get_lr_scheduler
+-> Transformers 4.53.2:
+   min_lr_rate = min_lr / optimizer.defaults["lr"] = .0025
+-> real floor = 2.5e-5 * .0025 = 6.25e-8
+```
+
+将服务器 source config 下载到 `C:\tmp` 的第一次本地 `get` 因 sandbox 用户无该路径写权限
+失败；服务器未改。改为 workspace 内
+`local_scripts/remote_commands/robotwin_rlt_stage1_sft_openpi.formal_current.yaml` 后下载成功，
+原文件 SHA-256 为
+`0fa01fa8c6f8624438a3d27288ecb848336cd2857599bc4b1a1d369dfc563cb3`。
+
+最窄修改只在 RoboTwin RLT Stage 1 config 中：
+
+```diff
+- min_lr: 2.5e-6
++ min_lr_rate: 0.1
+```
+
+不修改通用 optimizer builder，避免波及其他 FSDP workload 和多 param-group 语义。一次内联
+PowerShell preflight 又在本地 `$()` quoting 解析阶段失败、未连接；随后通过精确脚本：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_fix_preflight_20260729.sh"
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_commands/robotwin_rlt_stage1_sft_openpi.formal_current.yaml `
+  /root/autodl-tmp/RLinf_rlt_pi0_robotwin/examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_fix_verify_20260729.sh"
+```
+
+preflight 锁定 branch/HEAD、旧 hash 和该 config 在上传前无 diff；上传后 `git diff --check`
+通过，新 source SHA-256：
+
+```text
+8340ef4e953877de510da18548d0a69802104b7b2f8218698cd0fb586b49a8f2
+```
+
+最后运行无模型、无数据 batch、`CUDA_VISIBLE_DEVICES` 为空的 CPU scalar contract：
+
+```powershell
+python local_scripts/remote_exec_autodl.py put `
+  local_scripts/remote_rlt_20260729_lr_scheduler_contract.sh `
+  /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_contract_20260729.sh
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_lr_scheduler_contract_20260729.sh"
+```
+
+第一次 probe 的 Python exact-float dictionary equality 在旧 floor
+`6.250000000000001e-08` 上失败；未生成 evidence。断言窄改为 `math.isclose` 后，同一
+probe 通过：
+
+```text
+legacy smoke 0 -> 2.5e-5 -> 6.25e-8
+fixed smoke  0 -> 2.5e-5 -> 2.5e-6
+fixed formal step 0/1/100/1050/2000
+             0/2.5e-7/2.5e-5/1.375e-5/2.5e-6
+```
+
+输出
+[`stage1_smoke_20260729/lr_scheduler_contract.json`](stage1_smoke_20260729/lr_scheduler_contract.json)
+SHA-256 为
+`e68a7da1457e32538995f39b41f23a21b34d248e2ed3fa37f1177476e7c614df`。
+
+RLinf 在 `optimizer.step()` 后调用 `scheduler.step()` 再记录 LR，因此 smoke 证据需精确
+解释为：S1-A 第一次 update 用 LR 0、第二次用 `2.5e-5`，有一次非零更新；S1-B 唯一
+update 用 LR 0，只证明正式 batch 的前反传/optimizer 链和容量，不证明参数 delta。无需
+重跑两卡 smoke；正式 2k packet 必须 hard-fail absolute `min_lr` 或 scheduler contract
+不一致。
+
+## 43. A043：22 文件统一预提交审查
+
+把 scheduler 修复、CPU contract、command addendum 和磁盘 exact-command 附件加入 expected
+scope 后，重新上传本地文档与 review 脚本。alternate-index 审查精确锁定 22 个拟提交文件，
+避免把服务器其他 dirty/untracked 内容误加入真实 index。
+
+第一次统一审查发现
+`00_INDEX_AND_IMPLEMENTATION_PLAN.md` 链接到服务器 worktree 不存在的
+`../../PROJECT_CONTEXT.md`。这是文档链接问题，不是训练或 evidence 问题；只读 `ls` 确认
+`AGENTS.md/HANDOFF.md` 存在而 `PROJECT_CONTEXT.md` 只属于本地工作区根。窄修复把它改为
+plain-text 本地上下文入口，不把本地治理文件复制进服务器代码仓。
+
+再次执行：
+
+```powershell
+python local_scripts/remote_exec_autodl.py run `
+  "bash /root/autodl-tmp/tmp/rlt_stage1_docs_review_20260729.sh"
+```
+
+结果：
+
+```text
+UTF8_LINK_CREDENTIAL_JSON_OK files=22
+PRECOMMIT_REVIEW_OK
+```
+
+检查内容包括：
+
+- alternate index staged path 与 22-file expected set 完全相同；
+- `git diff --cached --check`；
+- 所有文本 strict UTF-8、单文件小于 1MiB；
+- 所有相对 Markdown 链接存在；
+- 无 password/API-key/bearer-like 内容；
+- postcheck 与 LR scheduler JSON 机器断言；
+- S1-A/S1-B/original-command/addendum/LR-contract/postcheck SHA 输出。
+
+本次审查没有改变真实 Git index、没有启动训练、没有加载模型/GPU，也没有删除服务器文件。

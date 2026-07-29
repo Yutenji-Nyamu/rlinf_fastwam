@@ -95,10 +95,7 @@ actor:
     lr_warmup_steps: 100
     lr_scheduler: "cosine"
     num_cycles: 0.5
-    # Use an explicit ratio: RLinf assigns lr on each param group while the
-    # optimizer defaults retain AdamW's 1e-3, which makes absolute min_lr
-    # resolve against the wrong denominator in Transformers.
-    min_lr_rate: 0.1
+    min_lr: 2.5e-6
 
   fsdp_config:
     strategy: "fsdp"

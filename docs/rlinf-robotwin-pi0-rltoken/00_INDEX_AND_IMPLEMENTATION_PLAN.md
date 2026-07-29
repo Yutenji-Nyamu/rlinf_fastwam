@@ -1,6 +1,6 @@
 # π0 × RoboTwin × RLToken / RLT：上下文索引与实施主计划
 
-> 状态：2026-07-29 实现候选版 v6（clean-50 ZIP 已验证，停在解压/转换与 smoke 前）
+> 状态：2026-07-29 实现候选版 v8（converter、Stage 1 S1-A/S1-B 与 scheduler contract 已通过）
 > 本文件是 RLToken / RLT × π0 × RoboTwin 的唯一专题设计与实施计划。
 > 动态服务器状态、命令和结果只写入 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 与根 [`HANDOFF.md`](../../HANDOFF.md)，不在本文件复制成第二份真相。
 > DSRL、QAM、Fast-WAM 和旧附件均不进入 RLT 默认上下文；其历史只在明确追溯时按索引读取。
@@ -26,7 +26,7 @@ Stage 1、Stage 2 smoke 和 formal run 均以当次展示的完整 resolved conf
 按顺序：
 
 1. [`AGENTS.md`](../../AGENTS.md)：工作区执行、授权和文档规则；
-2. [`PROJECT_CONTEXT.md`](../../PROJECT_CONTEXT.md)：跨专题稳定原则；
+2. 本地工作区根 `PROJECT_CONTEXT.md`：跨专题稳定原则；该文件不复制进服务器代码 worktree；
 3. [`HANDOFF.md`](../../HANDOFF.md)：只选择 RLT 专题行，读取当前停点与授权；
 4. **本文件**：RLT 唯一规范、调用流、改动面和开放决策。
 
@@ -37,6 +37,7 @@ Stage 1、Stage 2 smoke 和 formal run 均以当次展示的完整 resolved conf
 | 当前动作 | 额外读取 | 读取目的 |
 |---|---|---|
 | 继续实现、复盘命令、声称服务器/测试状态 | [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 的索引与相关批次 | 精确命令、文件、结果、错误、修复和时间边界 |
+| 查看 Stage 1 smoke、专家数据解释、参数来源与磁盘审计 | [`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md) | 本轮结论与 evidence 索引；不替代本文件的规范 |
 | 改方法语义或判断是否忠于论文 | [RLT 论文 v2](https://arxiv.org/html/2604.23073)、[Physical Intelligence 项目页](https://www.pi.website/research/rlt/) | 方法不变量、作者实验和公开限制 |
 | 改 Stage 1/Stage 2 算法代码 | [RLinf RLT 文档](https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html) 与第 1.3 节锁定源码 | 可执行复现、真实 config 和 symbol |
 | 下载/转换 demonstration | RoboTwin [π0 数据文档](https://robotwin-platform.github.io/doc/usage/Pi0.html)、官方 HF 单文件 metadata、账本 A008/A009 | revision、schema、动作语义、空间和覆盖风险 |
@@ -102,6 +103,13 @@ config opt-in 和 legacy 回归隔离，而不能把它描述成纯官方 π0 co
 | replay | 复用 RLinf compact transition；首轮 bounded run，不改通用 hard capacity | 冻结 |
 | resume | 首批包含最小 RLT trainer-state/contract 修复 | 冻结 |
 | 隔离 | 独立 `codex/rlt-pi0-robotwin` branch/worktree；新行为 config opt-in，legacy 默认不变 | 冻结 |
+
+服务器上的 worktree 不是重新下载两份 Git 历史：同一 object store 挂出两个并列工作目录，
+每个目录有独立 branch、index 和工作文件。DSRL 用
+`cd /root/autodl-tmp/RLinf_fastwam_rlinf`，RLT 用
+`cd /root/autodl-tmp/RLinf_rlt_pi0_robotwin`；分别提交各自分支、写各自 output。两者只读
+复用同一个已验证 `.venv`，用显式 `PYTHONPATH` 选择当前 worktree，不复制/重命名环境，也
+不需要从云端重新拉一份仓库。
 
 50 条的结论是：**足够开始首版实现、Stage 1 和低预算 pilot；不保证复现 ManiSkill
 400-demo 或论文真机效果。** 首版不复制样本凑 400、不做 10/25/50 sweep，也不预先收集
@@ -172,7 +180,8 @@ state:        [1,32]
 ```
 
 因此 `768` 是 image-only token length，`2048` 是真实 hidden width；这两个值已经写入
-config。真实 clean-50 batch 仍需在数据转换后补 data-loader/重建合同验证。
+config。单条真实 clean-50 的 OpenPI distributed loader 与 reconstruction 主链已由
+S1-A/S1-B 验证；全部有效 clean-50 的正式 2k endpoint 仍待单独批准。
 
 ### 4.2 Stage 2
 
@@ -566,8 +575,8 @@ state dict 一致，且 `rollout.version == restored update_step`。
    `/root/autodl-tmp/RLinf_rlt_pi0_robotwin` 和
    `codex/rlt-pi0-robotwin`；
 3. 没有切换/复用 DSRL worktree，没有修改共享 `.venv` 或 editable-install；
-4. clean-50 原始 ZIP 已在后续授权后按锁定 revision 下载并独立校验；解压、单 episode
-   converter 和全量转换仍未执行，启动前另行展示路径、空间和覆盖风险。
+4. clean-50 原始 ZIP 已按锁定 revision 下载并独立校验；episode 0 已选择性解压并通过
+   raw → Aloha → LeRobot converter、三相机、14D 与时序合同。其余 49 条未解压/转换。
 
 ### 阶段 1：连贯主体实现
 
@@ -580,25 +589,29 @@ route/transition、bootstrap 和最小 resume。逐项命令、修改、问题�
 
 1. **已完成**：四份新 config 原生 compose/resolve；ManiSkill RLT、旧 π0 PPO、
    Fast-WAM GRPO 和 DSRL 回归；
-2. **部分完成**：真实 checkpoint 的 prefix/mask 已验证；clean-50 ZIP 已下载且
-   size/SHA/ZIP/50-episode 结构通过，但尚未解压/转换，因此真实 Stage 1 batch、短
-   reconstruction decrease 和端点 reload 尚待 Stage 1 smoke；
+2. **Stage 1 smoke 已完成**：真实 checkpoint prefix/mask、单 episode clean-50 loader、
+   两卡 micro/global 1/2 两个 optimizer step（其中一次非零 LR）/save/new-process
+   reload，以及正式 micro/global 16/32 单步前反传容量门均通过；S1-B 的唯一 update 使用
+   warm-up 初始 LR 0，不声称参数 delta。2k endpoint 的 reconstruction decrease 与
+   true/shuffled/zero 诊断仍待正式 Stage 1；
 3. **已完成真实 checkpoint 合同**：canonical reference decode 与旧
    `output_transform(raw_template)[:C,:D]` parity；模拟器 fixed observation
    execution 仍待 Stage 2 smoke；
 4. **已完成单元合同**：route、current/next、termination/pure truncation；
 5. **待 Stage 2 smoke**：一个真实 distributed update 的 MLP/Q/target delta 与 frozen
    feature 不变；
-6. **部分完成**：world-size=1 state round trip 通过；多 rank save→load→continue 和
-   first-sync 待同一个 Stage 2 smoke；
+6. **部分完成**：Stage 1 同 world-size 新进程 reload-only 通过；Stage 2 的多 rank
+   save→load→continue 和 first-sync 仍待 Stage 2 smoke；
 7. **已完成**：AST、Ruff、whitespace、25 个聚焦测试、9 份 resolved config 的
    `validate_cfg`，且验证过程没有启动 Ray。
 
 Windows 本机只编辑文档、代码和 diff，不运行这些项目检查。
 
-### 阶段 3：smoke 审批
+### 阶段 3：Stage 1 smoke 已完成；Stage 2 smoke 待审批
 
-启动前展示：
+Stage 1 已按展示后的 resolved packet 执行，结果见
+[`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md)。
+Stage 2 启动前仍需展示：
 
 - 完整 resolved config；
 - 精确命令与输出/checkpoint 目录；
@@ -607,7 +620,7 @@ Windows 本机只编辑文档、代码和 diff，不运行这些项目检查。
 - transition/update/eval 预算；
 - stop conditions。
 
-用户批准后，fresh smoke 覆盖：
+Stage 2 用户批准后，fresh smoke 覆盖：
 
 ```text
 reference collect
@@ -628,8 +641,9 @@ route、loss、sync 或 DCP 主链。
 
 ### 11.1 不需用户逐项选择，由事实检查解决
 
-- clean-50 实际有效 episode/frame 数与单 episode loader 接受情况；
-- converter instruction/seed、三相机、prompt、state/action14、50 FPS 和动作时序；
+- clean-50 全量转换后的实际有效 episode/frame 数；单 episode loader 已接受；
+- 全量 converter instruction/seed 与 manifest；单 episode 三相机、prompt、
+  state/action14、50 FPS 和动作时序已通过；
 - checkpoint stats 的 key/shape/hash 与 clean-50 诊断分布；
 - clean-50 真实 batch 与已验证 image-only prefix `L=768`、width `2048` 的一致性；
 - canonical reference/decode parity 与单次预处理；
@@ -640,6 +654,8 @@ route、loss、sync 或 DCP 主链。
 
 - 实际使用的全部有效 episode/frame 数；
 - Stage 1 steps、global/micro batch、LR 和固定 endpoint；
+- resolved config 必须只有 `min_lr_rate=.1`、没有 absolute `min_lr`；CPU scheduler
+  contract 已验证 2k 关键步，正式 packet 复核其 hash；
 - resolved dataset/checkpoint/stats/manifest/output 路径；
 - 若实际有效 episode 明显不是名义 50，是否仍按全部有效数据继续。
 
@@ -668,17 +684,22 @@ route、loss、sync 或 DCP 主链。
 
 主体实现基线已经位于从 `48a775db...` 建立的独立
 `codex/rlt-pi0-robotwin` worktree，基线提交为
-`cfa556550efa7da1779a0d29c3a34b00a7f17ed8`；后续提交只补充 clean-50 下载和本轮
-配置复核的文档证据。
+`1a923a23`；本轮 smoke 前 clean-50/docs 收口 HEAD 为 `e4127fd4`。
 静态检查、25 个聚焦测试、config
 compose/无 Ray validation 和真实 checkpoint prefix 探针已通过。实现保持 config opt-in，
 没有切换或修改主 π0/DSRL worktree，也没有修改共享环境。
 
-当前停在 **clean-50 原始 ZIP 已取得、Stage 1 解压/转换与任何 smoke/training 之前**。
-ZIP 已固定 revision 并通过字节数、SHA256、ZIP 完整性、50 组
-`pkl+hdf5+mp4+instruction` 和 path-traversal 检查；尚未解压/转换，也尚未运行 Stage 1
-reconstruction smoke、RoboTwin simulator、Ray、真实 update、DCP 或 resume。下一次写操作
-先提交单 episode converter 与 Stage 1 S1-A/S1-B 审批 packet；Stage 1 产物生成后，再用真实
-manifest/stats hash 替换 Stage 2 config 的 `UNRESOLVED`，提交独立 Stage 2 smoke packet。
+当前停在 **Stage 1 最小 smoke 已通过、正式 clean-50 2k endpoint 之前**。episode 0
+已选择性解压并转换为 139-frame LeRobot 数据；S1-A 两卡两步、21G checkpoint 与
+new-process reload-only 通过，S1-B 正式 micro/global 16/32 单步通过，每卡峰值
+26,447MiB。S1-B 是 LR=0 的 batch-fit 门；S1-A 有一次非零 LR 更新。smoke-time
+absolute `min_lr` 解析问题已在当前正式 source config 中改成 `min_lr_rate=.1`，CPU
+scheduler contract 通过；历史 smoke checkpoint 只作执行证据，不作为正式 Stage 1 artifact。
+
+下一次 Stage 1 写操作是：全量转换其余 clean-50、生成 dataset manifest、compose 实际
+full-data resolved config（hard-fail absolute `min_lr`），并在独立批准后运行固定 2k
+endpoint。其后才用正式
+manifest/stats/artifact hash 替换 Stage 2 config 的 `UNRESOLVED`，提交独立 Stage 2
+fresh/resume smoke packet。
 最新现场状态和具体授权以根 [`HANDOFF.md`](../../HANDOFF.md) 与
 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 为准。

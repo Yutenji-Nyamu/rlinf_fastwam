@@ -1,19 +1,19 @@
 # π0 × RoboTwin × RLT：配置依据与 pre-smoke packet
 
-> 状态：2026-07-29 下载后复核版；clean-50 原始 ZIP 已锁定并校验，
-> **尚未解压/转换，也尚未批准或启动 Stage 1/Stage 2 smoke**。
+> 状态：2026-07-29 Stage 1 smoke 后复核版；单 episode converter、S1-A 与 S1-B 已通过，
+> **正式 Stage 1 2k 与 Stage 2 均未启动**。
 > 唯一设计规范见 [`00_INDEX_AND_IMPLEMENTATION_PLAN.md`](00_INDEX_AND_IMPLEMENTATION_PLAN.md)；
 > 每条命令、错误、修复和结果见
 > [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md)。
 
 ## 1. 当前结论
 
-代码主体和无训练前检已经完成。运行顺序不能颠倒：
+代码主体、无训练前检与 Stage 1 最小 smoke 已完成。后续顺序不能颠倒：
 
 ```text
-clean-50 单 episode 格式合同
--> Stage 1 micro1/global2 两步显存/反传/save smoke
--> Stage 1 formal micro16/global32 单步 batch-fit gate
+clean-50 单 episode 格式合同                         [已通过]
+-> Stage 1 micro1/global2 两步显存/反传/save smoke  [已通过]
+-> Stage 1 formal micro16/global32 单步 batch-fit   [已通过]
 -> Stage 1 全部有效 clean-50 固定 2k endpoint
 -> endpoint reload + manifest/stats hash
 -> Stage 2 fresh smoke
@@ -21,9 +21,10 @@ clean-50 单 episode 格式合同
 -> 才讨论正式 pilot
 ```
 
-clean-50 原始 ZIP 已下载到固定 revision 目录并通过大小、SHA256、ZIP 完整性和 50-episode
-结构检查；尚未解压或转换。没有启动 Ray、RoboTwin、SFT、RL update 或 checkpoint 保存。
-Stage 2 中所有 Stage 1 路径和 hash 默认是 `UNRESOLVED`，会按设计 fail closed。
+clean-50 原始 ZIP 已下载并通过大小、SHA256、ZIP 完整性和 50-episode 结构检查；episode 0
+已选择性解压并完成 raw → Aloha → LeRobot 合同。Stage 1 smoke 曾启动 Ray/SFT 并生成一个
+21G 的两步证据 checkpoint，终态已无相关进程。Stage 2 中所有正式 Stage 1 路径和 hash
+仍是 `UNRESOLVED`，会按设计 fail closed。
 
 ## 2. 配置文件与 resolved 证据
 
@@ -45,7 +46,21 @@ Stage 2 中所有 Stage 1 路径和 hash 默认是 `UNRESOLVED`，会按设计 f
 | [`robotwin_rlt_stage2_candidate_resolved.yaml`](evidence/rlt_pre_smoke_20260729/robotwin_rlt_stage2_candidate_resolved.yaml) | `bdc1ffa9d475457579522964b056677c1328aba502333633a13ea7f467917c88` |
 | [`robotwin_rlt_stage2_smoke_candidate_resolved.yaml`](evidence/rlt_pre_smoke_20260729/robotwin_rlt_stage2_smoke_candidate_resolved.yaml) | `197900afbaa783e53f68b4f7097fba048623a0199325a086f659cbe71e540077` |
 
-这里的“resolved”只证明 Hydra/RLinf config 闭合；数据、模型训练、模拟器和 DCP 仍未运行。
+这里旧的“resolved”只证明 Hydra/RLinf config 闭合；不能用它们替代后续实际 smoke 证据。
+
+Stage 1 实际运行证据另见：
+
+| 文件 | SHA256 |
+|---|---|
+| [`s1a_resolved.yaml`](evidence/stage1_smoke_20260729/s1a_resolved.yaml) | `2aa7400eb1355bcb1b84cdb431c6110f6f6bde378861379dbffce340befae49d` |
+| [`s1b_resolved.yaml`](evidence/stage1_smoke_20260729/s1b_resolved.yaml) | `5b984a6865df3d0f2aed8e957a4ba8f7f040ef1010ce606b5150714f9811723a` |
+| [`stage1_postcheck.json`](evidence/stage1_smoke_20260729/stage1_postcheck.json) | `8f84e8c5297f1ea8bd6eb55fa6b8c19bd6eea31be66d0a0d8f12fd8c41870acd` |
+| [`lr_scheduler_contract.json`](evidence/stage1_smoke_20260729/lr_scheduler_contract.json) | `e68a7da1457e32538995f39b41f23a21b34d248e2ed3fa37f1177476e7c614df` |
+
+这里 S1-A/S1-B 已运行；上表旧 `rlt_pre_smoke_20260729` resolved 文件仍只作为 compose 历史。
+smoke-time resolved/source snapshot 保留原字节；其 absolute `min_lr` 问题已在当前正式 source
+config 中改为 `min_lr_rate=0.1`，新 source SHA-256 为
+`8340ef4e953877de510da18548d0a69802104b7b2f8218698cd0fb586b49a8f2`。
 
 ## 3. Stage 1：每组参数从哪里来
 
@@ -59,11 +74,11 @@ Stage 2 中所有 Stage 1 路径和 hash 默认是 `UNRESOLVED`，会按设计 f
 | token module | 1 RL token、encoder/decoder 各 2 layers、8 heads、MLP ratio 4、`z=2048` | 继承 RLinf ManiSkill RLT 结构；RLinf ManiSkill 为 744,667,136 参数，本项目真实模块为 743,094,272 |
 | VLA update | `rlt_train_vla=false`、`rlt_alpha=0` | 本项目低预算适配：π0 真冻结且排除 optimizer，只学习对 frozen image-prefix embeddings 的压缩/重建；不是 action reconstruction |
 | endpoint | 2,000 steps，单一 endpoint | 与 RLinf 示例实际 runner 2k 对齐；不按 Stage 2 成绩选 checkpoint |
-| LR/schedule | `2.5e-5`，cosine，warm-up 100，min `2.5e-6` | LR/optimizer 继承 ManiSkill；把其 500/10k scheduler 按固定 2k endpoint 缩成 100/2k |
+| LR/schedule | `2.5e-5`，cosine，warm-up 100，`min_lr_rate=.1`（实际 floor `2.5e-6`） | LR/optimizer 继承 ManiSkill；把其 500/10k scheduler 按固定 2k endpoint 缩成 100/2k。使用 ratio 是因为 RLinf 只在 param group 写 LR，而 Transformers 的 absolute `min_lr` 会除以 AdamW defaults `1e-3` |
 | optimizer | AdamW `β=(0.9,0.95)`、eps `1e-8`、wd `1e-10`、clip 1 | 继承 ManiSkill Stage 1 |
 | FSDP | 2 ranks、`no_shard`、`use_orig_params=true` | `no_shard` 继承 ManiSkill；`use_orig_params=true` 用于安全表达 frozen π0 + trainable token 的混合参数 |
-| formal batch | micro/global `16/32` | 来自既有 RoboTwin π0 两卡形状，**目前只是吞吐 candidate**；原 SFT 的 sharding/训练参数集合与本次 `no_shard` 7.43 亿 token 不同，不能凭来源直接认为可放下 |
-| smoke batch | A：micro/global `1/2`、2 steps；B：formal `16/32`、1 step batch-fit gate | A 验证两 rank forward/backward/optimizer、冻结、loss 和 save；B 才验证正式 activation 容量。二者都不宣称收敛 |
+| formal batch | micro/global `16/32` | 来自既有 RoboTwin π0 两卡形状；现已由 S1-B 两卡单步验证，每卡峰值 26,447MiB |
+| smoke batch | A：micro/global `1/2`、2 steps；B：formal `16/32`、1 step batch-fit gate | A 验证两 rank forward/backward、scheduler/optimizer/save，其中第 2 次更新使用非零 LR；B 的唯一 update 使用 warm-up 初始 LR 0，只验证正式 activation、前反传和 optimizer 链容量。二者都不宣称收敛 |
 
 ### clean-50 是否足够
 
@@ -87,26 +102,31 @@ RLinf ManiSkill Stage 1 本身 `val_check_interval=-1`，没有现成 embodied S
    decoder 只学习位置均值而忽略瓶颈；
 6. manifest 记录 dataset revision/episode 数、base checkpoint、stats SHA、config SHA 和 endpoint。
 
-两步 smoke 只能证明 1/2/4 的执行合同和 loss 可计算，不证明 2k 后的表征质量。
+本轮两步 smoke 证明了第 1 项的数据/loader 合同、loss 可计算、两卡
+forward/backward/scheduler/optimizer/save 和同 world-size 新进程 checkpoint load 可执行；
+其中 S1-A 两步里有一次非零 LR 更新；先前
+trainable-set probe 证明 optimizer/trainable names 只有 `rlt_module.*`。本轮没有做逐参数
+π0 delta=0 比较，也没有做同一 fixed prefix 保存前后 `z_rl/loss` 数值等价检查；这两项连同
+第 3/5/6 项都留到正式 2k endpoint，不把“结构上冻结、checkpoint 可加载”写成表征质量证据。
 
 ### Stage 1 smoke 是否保留正式并发
 
 当前 smoke 继承正式配置的两张 GPU、两个 actor ranks、同一个 frozen π0、同一个 743M token
 模块、同 loss/optimizer、`no_shard`、normalization 和 checkpoint 主链，因此不是单卡玩具。
 micro/global `1/2` 下两个 rank 各处理 1 个样本并同步梯度，能够验证真实 distributed
-forward/backward/optimizer/save。
+forward/backward/scheduler/optimizer/save。
 
-但它没有证明 formal micro/global `16/32` 的 activation memory。正式 smoke packet 应拆成
-同一 Stage 1 smoke 的两个门禁：
+因此正式 smoke 被拆成同一 Stage 1 smoke 的两个门禁：
 
 1. **S1-A correctness**：2 GPU、micro/global `1/2`、2 steps、step 2 save/reload；
 2. **S1-B batch-fit**：仍是 2 GPU，同正式 micro/global `16/32`，只做 1 optimizer step，
    不把它解释为训练效果。
 
-如果 S1-B OOM，不缩 token 模型；先降低 micro batch，并增加 gradient accumulation 以保持
-global32，再重新 compose 一份确定配置。也就是说，并行拓扑、模型、loss、transform 和
-optimizer 应与正式一致；steps/save/eval 是可缩的串行预算，而 micro batch 需要单独做容量
-门禁，不能用 S1-A 代替。
+实际 S1-A 与 S1-B 均已通过，S1-B 没有 OOM，故没有执行 micro8 fallback。S1-B 的单步
+发生在 warm-up 初始 LR 0，因此它是严格的 batch-fit/前反传门，不是“参数已改变”的证据。
+smoke-time absolute `min_lr` 还暴露了 scheduler floor 解析错误；当前正式 source 已换成
+`min_lr_rate=.1`，CPU scalar contract 验证正式 2k 的 step
+`0/1/100/1050/2000 = 0/2.5e-7/2.5e-5/1.375e-5/2.5e-6`，无需重跑两卡容量门。
 
 ## 4. Stage 2：每组参数从哪里来
 
@@ -120,7 +140,7 @@ optimizer 应与正式一致；steps/save/eval 是可缩的串行预算，而 mi
 | reward/TD | primitive sparse reward，`gamma=.99`，`tau=.005`，pure truncation bootstrap | `.99` 是 RoboTwin 时间尺度适配；`.005` 沿用 SAC/RLT；termination 仍截断 |
 | update cadence | `update_epoch=5`、每 1 transition 触发，steady macro-UTD5 | 与论文的 UTD5 对齐，但不是 RLinf ManiSkill YAML 的有效 UTD1；是同步 RoboTwin 的显式 candidate，也不继承 DSRL UTD20 |
 | warm-up | 500 replay rows/rank；5,000 critic updates 后 student | 相对 ManiSkill 10k/30k 的预算 heuristic，不是按 64→4 env 严格等比例缩放 |
-| per-cycle cap | 400 updates | 防止单周期 5k burst；满长失败 rollout 时 steady UTD5 成立但 pending 约 4,600，不承诺清空历史 debt |
+| per-cycle cap | 400 updates | 数值继承 ManiSkill；与本项目 5k floor/UTD5 组合后防止单周期 burst，但 pending 约 4,600，不承诺清空历史 debt |
 | actor loss | schedule `BC/Q: 7/.05 -> 2.5/.45`，dropout .5 | 权重值继承 ManiSkill RLT；5k warm-up/10k ramp 是本项目缩放 |
 | actor/Q | fixed std `.002`，LR 各 `1e-4`，critic:actor 2，clip 10 | std/LR/clip 继承 ManiSkill；ratio 2 与论文“2 critic : 1 actor”一致，但 ManiSkill YAML 是 4，因此仍是更积极的项目 candidate |
 | batch | global/micro `512/128`，2 ranks，accumulation 2 | 直接继承 ManiSkill MLP head batch；不是 π0 大模型 batch |
@@ -256,15 +276,15 @@ layers/ratio。
 
 Stage 1 的直接 loss 是 frozen π0 image-prefix embeddings 的 masked MSE，不是动作重建。
 “训好”的首版直接证据是 loss 下降、π0 delta=0、reload 一致、`z` 非塌缩且 true-`z`
-优于 shuffled/zero；最终是否对控制有用只能由 Stage 2 pilot 判断。当前没有真实 step timing，
-只能用：
+优于 shuffled/zero；最终是否对控制有用只能由 Stage 2 pilot 判断。已有 cold-step timing，
+但 S1-A 第二步受预取/异步与 checkpoint 干扰，仍不能当成 2k steady throughput，只能用：
 
 $$
 T_{\rm stage1}\approx2000\times t_{\rm steady-step}+T_{\rm startup/save}.
 $$
 
-例如稳态每 step 为 2/5/10/20 秒时，2k 分别约 1.1/2.8/5.6/11.1 小时。正式时间必须由
-Stage 1 smoke 的真实 timing 收窄。
+S1-B 冷启动单步 20.7s 给出的保守上界约 11.5 小时；真实 ETA 应在正式 run 的前
+10–20 步由同一 monitor 重算，不另做吞吐 sweep。
 
 ## 5. Stage 2 smoke 与 resume 验收
 
@@ -301,13 +321,14 @@ rollout 前必须 full sync；新 transition 应由 student 产生，RLT raw sta
 
 ## 6. 运行前未解析项与停止条件
 
-Stage 1 smoke 之前必须展示并确认：
+以下 Stage 1 smoke packet 已展示并执行：
 
 - clean-50 固定 revision、ZIP SHA、已下载 source 路径、拟解压/LeRobot 路径和空间增量；
 - 单 episode converter 命令与“不覆盖已有目录”的行为；
 - S1-A correctness 与 S1-B formal-batch-fit 的完整 resolved config、精确启动命令和各自输出目录；
-- 预计两卡峰值显存与 checkpoint 磁盘增量；
-- stop：OOM、非 RLT trainable 参数、loss NaN/Inf、π0 delta 非 0、save/reload 失败。
+- 实测两卡峰值显存与 checkpoint 磁盘增量；
+- stop：OOM、非 RLT trainable 参数、loss NaN/Inf、save/load 失败。逐参数 π0 delta=0
+  与 fixed-prefix reload equivalence 是正式 2k endpoint 的验收项，不冒充本轮已测。
 
 Stage 2 smoke 之前还必须解析：
 
@@ -318,7 +339,11 @@ Stage 2 smoke 之前还必须解析：
 - stop：任一 rank 未 ready、无真实 update、canonical parity 失败、target/replay/state
   不完整、completion marker 非 true、resume 没有新增 rollout。
 
-当前 packet 仍缺真实数据路径、Stage 1 artifact 和实际输出目录，所以不能被误当成启动批准。
+当前**正式 Stage 1 / Stage 2** packet 仍缺 full clean-50 路径、正式 Stage 1 artifact 和
+Stage 2 实际输出目录，所以本文件不能被误当成后续启动批准。
+
+正式 Stage 1 packet 还必须把“resolved config 仅含 `min_lr_rate=.1`，且 CPU scheduler
+contract 通过”列为 hard gate；不得复用 smoke-time resolved YAML 中的 absolute `min_lr`。
 
 ## 7. 磁盘与隔离
 
@@ -347,9 +372,10 @@ Stage 2 smoke 之前还必须解析：
 
 用户提到的“60 多”是 DSRL smoke 单个 run root 约 62.6 GiB，不是整机只用了 60 GiB。
 clean-50 ZIP 新增实占仅约 285 MiB；下载后 `df` 四舍五入仍为 694 GiB 可用、63%。
-本轮没有删除、移动或覆盖任何既有文件。
+Stage 1 smoke 又新增 `20.56 GiB` 的 S1-A checkpoint；2026-07-29 16:11 终态为
+673GiB 可用、64% used，两卡和相关进程均已清空。本轮没有删除、移动或覆盖任何既有文件。
 
-## 8. 本轮复核后的推荐停点
+## 8. Stage 1 smoke 后的推荐停点
 
 ### Stage 1
 
@@ -360,8 +386,8 @@ clean-50 ZIP 新增实占仅约 285 MiB；下载后 `df` 四舍五入仍为 694 
 - RLinf ManiSkill 的 1 token / 2+2 layers / d2048 / ratio4 结构先不缩；
 - 两卡并发不变。
 
-运行 packet 增加 S1-B formal-batch-fit。当前 source config 里的 formal micro16/global32 仍只是
-候选，不能在 S1-A micro1 通过后直接称为已验证。转换完成后 source config 的默认数据路径
+S1-B formal-batch-fit 已通过，正式 micro16/global32 已验证。全量转换完成后 source config
+的默认数据路径
 还要从旧的：
 
 ```text
@@ -374,7 +400,10 @@ clean-50 ZIP 新增实占仅约 285 MiB；下载后 `df` 四舍五入仍为 694 
 /root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-v1
 ```
 
-然后重新 compose/hash；不建立兼容 symlink 掩盖两套路径。
+然后重新 compose/hash；不建立兼容 symlink 掩盖两套路径。两步 smoke checkpoint 只作执行
+证据，不能直接当成 Stage 2 feature artifact；正式固定 2k endpoint 仍需独立批准。
+重新 compose 时还必须断言 `min_lr` 不存在、`min_lr_rate=.1`；当前 CPU contract 已通过，
+正式训练无需为 scheduler 再增加 GPU smoke。
 
 ### Stage 2
 

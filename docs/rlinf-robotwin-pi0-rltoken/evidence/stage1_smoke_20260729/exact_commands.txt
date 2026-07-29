@@ -1,0 +1,31 @@
+S1-A:
+cd /root/autodl-tmp/RLinf_rlt_pi0_robotwin
+ROBOTWIN_RLT_CLEAN50_PATH=/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1 \
+ROBOTWIN_PI0_BASE_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle \
+ROBOTWIN_PI0_NORM_STATS_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json \
+RLT_LOG_ROOT=/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1a \
+/root/autodl-tmp/RLinf/.venv/bin/python -B examples/sft/train_vla_sft.py \
+  --config-path /root/autodl-tmp/RLinf_rlt_pi0_robotwin/examples/sft/config \
+  --config-name robotwin_rlt_stage1_sft_openpi_a800_2gpu_smoke \
+  runner.logger.log_path=/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1a \
+  runner.logger.experiment_name=robotwin_adjust_bottle_rlt_stage1_s1a_2step_v1
+
+S1-B:
+cd /root/autodl-tmp/RLinf_rlt_pi0_robotwin
+ROBOTWIN_RLT_CLEAN50_PATH=/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1 \
+ROBOTWIN_PI0_BASE_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle \
+ROBOTWIN_PI0_NORM_STATS_PATH=/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json \
+RLT_LOG_ROOT=/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1b \
+/root/autodl-tmp/RLinf/.venv/bin/python -B examples/sft/train_vla_sft.py \
+  --config-path /root/autodl-tmp/RLinf_rlt_pi0_robotwin/examples/sft/config \
+  --config-name robotwin_rlt_stage1_sft_openpi \
+  runner.logger.log_path=/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1b \
+  runner.logger.experiment_name=robotwin_adjust_bottle_rlt_stage1_s1b_formal_batch_1step_v1 \
+  runner.max_steps=1 \
+  runner.save_interval=-1
+
+STOP CONDITIONS:
+- stop after S1-A global_step_2 is saved and reload-only exits successfully;
+- stop S1-A immediately on non-finite loss, OOM, either rank failure, or unexpected pi0 trainable parameters;
+- stop after exactly one S1-B optimizer step; no checkpoint;
+- on S1-B OOM, allow at most one evidence-driven retry at micro8/global32/accumulation2.
