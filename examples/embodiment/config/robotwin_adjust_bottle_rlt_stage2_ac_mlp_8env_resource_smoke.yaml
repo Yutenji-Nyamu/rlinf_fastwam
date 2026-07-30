@@ -1,0 +1,24 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250
+  - _self_
+
+# Capacity/contract gate only. It keeps the formal topology, batch sizes,
+# replay window, Stage 1 artifact, and 20-seed evaluation protocol while
+# shortening only the outer collection budget and readiness thresholds.
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_stage2_resource_smoke_8env3c_v1"
+  max_steps: 3
+  val_check_interval: 3
+  save_interval: 3
+  resume_dir: null
+
+algorithm:
+  rlt_schedule:
+    max_updates_per_train_step: 1600
+    warmup_min_size: 1
+    warmup_post_collect_updates: 1600
+
+  actor_weight_schedule:
+    warmup_updates: 1600
+    ramp_updates: 1600
