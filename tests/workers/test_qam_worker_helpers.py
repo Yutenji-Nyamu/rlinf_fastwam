@@ -30,6 +30,7 @@ from rlinf.models.embodiment.modules.qam_critic import QAMCriticEnsemble
 from rlinf.workers.actor.fsdp_qam_policy_worker import (
     QAMFSDPPolicy,
     QAMUpdateCredit,
+    _am_is_enabled_for_next_update,
     _phase_transition_is_valid,
     _resume_update_credit,
     classify_qam_end,
@@ -144,6 +145,31 @@ def test_global_insert_utd_credit_is_persistent_and_capped() -> None:
     credit.add_global_inserts(1)
     assert credit.take(10) == 2
     assert credit.pending == pytest.approx(0.0)
+
+
+def test_am_starts_only_after_exact_critic_only_budget() -> None:
+    for completed in (0, 510, 511):
+        assert not _am_is_enabled_for_next_update(
+            configured_phase="am_on",
+            critic_updates=completed,
+            q_only_updates_before_am=512,
+        )
+    assert _am_is_enabled_for_next_update(
+        configured_phase="am_on",
+        critic_updates=512,
+        q_only_updates_before_am=512,
+    )
+    assert not _am_is_enabled_for_next_update(
+        configured_phase="q_only",
+        critic_updates=512,
+        q_only_updates_before_am=512,
+    )
+    with pytest.raises(ValueError, match="non-negative"):
+        _am_is_enabled_for_next_update(
+            configured_phase="am_on",
+            critic_updates=-1,
+            q_only_updates_before_am=512,
+        )
 
 
 def test_q_only_utd_credit_starts_after_online_warmup() -> None:
@@ -520,6 +546,14 @@ def _checkpoint_worker() -> QAMFSDPPolicy:
     worker.global_total_inserts = 7
     worker.update_credit = QAMUpdateCredit(utd_ratio=1.0, pending=3.0)
     worker.q_only_anchor_global_inserts = 0
+    worker.qam_cfg = OmegaConf.create(
+        {
+            "warmup_global_inserts": 512,
+            "q_only_updates_before_am": 512,
+            "utd_ratio": 1.0,
+            "inv_temp": 1.0,
+        }
+    )
     return worker
 
 
@@ -555,6 +589,11 @@ def test_qam_checkpoint_snapshot_manifest_and_preflight(
     assert worker._preflight_qam_checkpoint(str(base_path))["rng_state"] == {
         "rank_local_marker": 17
     }
+
+    worker.qam_cfg.inv_temp = 0.3
+    with pytest.raises(ValueError, match="schedule contract mismatch"):
+        worker._preflight_qam_checkpoint(str(base_path))
+    worker.qam_cfg.inv_temp = 1.0
 
     manifest["snapshot_id"] = "wrong-snapshot"
     worker._atomic_json_dump(manifest, manifest_path)
@@ -606,3 +645,11 @@ def test_qam_requires_raw_transition_collection() -> None:
     cfg.rollout.collect_transitions = False
     with pytest.raises(ValueError, match="collect_transitions=true"):
         _validate_embodied_qam_contract(cfg, only_eval=False)
+
+
+def test_qam_am_on_uses_counted_burn_in_without_manual_evidence_gate() -> None:
+    cfg = _load_qam_source_config()
+    cfg.actor.model.model_type = "openpi"
+    cfg.algorithm.qam.phase = "am_on"
+    cfg.algorithm.qam.inv_temp = 1.0
+    _validate_embodied_qam_contract(cfg, only_eval=False)

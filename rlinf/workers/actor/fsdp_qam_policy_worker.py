@@ -187,6 +187,18 @@ def _phase_transition_is_valid(saved: str, requested: str) -> bool:
     )
 
 
+def _am_is_enabled_for_next_update(
+    *,
+    configured_phase: str,
+    critic_updates: int,
+    q_only_updates_before_am: int,
+) -> bool:
+    """Return whether the next logical update includes adjoint matching."""
+    if critic_updates < 0 or q_only_updates_before_am < 0:
+        raise ValueError("QAM update counters must be non-negative")
+    return configured_phase == "am_on" and critic_updates >= q_only_updates_before_am
+
+
 def _resume_update_credit(
     *,
     saved_phase: str,
@@ -214,7 +226,7 @@ def _resume_update_credit(
 class QAMFSDPPolicy(EmbodiedFSDPActor):
     """Plain-QAM worker with B1+F1+C1 and fixed-N online macro replay."""
 
-    _QAM_CHECKPOINT_SCHEMA_VERSION = 1
+    _QAM_CHECKPOINT_SCHEMA_VERSION = 2
 
     def __init__(self, cfg: DictConfig):
         super().__init__(cfg)
@@ -1129,15 +1141,22 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
 
         updates_to_run = self._updates_to_run()
         metrics: dict[str, list[float]] = {}
+        am_updates_run = 0
         for _ in range(updates_to_run):
+            run_am = _am_is_enabled_for_next_update(
+                configured_phase=self.phase,
+                critic_updates=self.critic_updates,
+                q_only_updates_before_am=int(self.qam_cfg.q_only_updates_before_am),
+            )
             samples = self._sample_batch()
             (
                 update_metrics,
                 critic_batch,
                 critic_preupdate,
             ) = self._critic_update(samples)
-            if self.phase == "am_on":
+            if run_am:
                 update_metrics.update(self._am_update(samples, critic_batch))
+                am_updates_run += 1
             assert self.target_critic is not None
             # Match the official joint-update order: critic and AM losses use
             # the old target; only after both optimizer steps does target-Q
@@ -1151,10 +1170,23 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                 metrics.setdefault(key, []).append(float(value))
 
         result = {key: float(np.mean(values)) for key, values in metrics.items()}
+        am_enabled_next_update = _am_is_enabled_for_next_update(
+            configured_phase=self.phase,
+            critic_updates=self.critic_updates,
+            q_only_updates_before_am=int(self.qam_cfg.q_only_updates_before_am),
+        )
+        executed_phase = (
+            "am_on"
+            if am_updates_run > 0
+            else ("q_only" if self.phase == "am_on" else self.phase)
+        )
         result.update(self._last_ingest_metrics)
         result.update(
             {
-                "qam/phase": float(_PHASE_ORDER[self.phase]),
+                "qam/phase": float(_PHASE_ORDER[executed_phase]),
+                "qam/configured_phase": float(_PHASE_ORDER[self.phase]),
+                "qam/am_enabled_next_update": float(am_enabled_next_update),
+                "qam/am_updates_run": float(am_updates_run),
                 "qam/updates_run": float(updates_to_run),
                 "qam/critic_updates": float(self.critic_updates),
                 "qam/fine_updates": float(self.fine_updates),
@@ -1285,7 +1317,16 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             int(state["global_total_inserts"]),
             float(state["pending_update_credit"]),
             None if anchor is None else int(anchor),
+            tuple(sorted(state["schedule_contract"].items())),
         )
+
+    def _schedule_contract(self) -> dict[str, int | float]:
+        return {
+            "warmup_global_inserts": int(self.qam_cfg.warmup_global_inserts),
+            "q_only_updates_before_am": int(self.qam_cfg.q_only_updates_before_am),
+            "utd_ratio": float(self.qam_cfg.utd_ratio),
+            "inv_temp": float(self.qam_cfg.inv_temp),
+        }
 
     def _checkpoint_state(
         self,
@@ -1320,6 +1361,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             "global_total_inserts": self.global_total_inserts,
             "pending_update_credit": self.update_credit.pending,
             "q_only_anchor_global_inserts": self.q_only_anchor_global_inserts,
+            "schedule_contract": self._schedule_contract(),
             "rng_state": get_rng_state(),
         }
 
@@ -1429,6 +1471,8 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                 )
             if "rng_state" not in state:
                 raise ValueError("QAM checkpoint is missing rank-local RNG")
+            if state.get("schedule_contract") != self._schedule_contract():
+                raise ValueError("QAM resume schedule contract mismatch")
 
             critic_feature_dim = state["critic_feature_dim"]
             critic_components = (

@@ -858,10 +858,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
             "embodied_qam v1 keeps policy conditioning available during replay "
             "ingestion and therefore requires actor/rollout offload=false"
         )
-    if (
-        not only_eval
-        and not bool(cfg.rollout.get("collect_transitions", False))
-    ):
+    if not only_eval and not bool(cfg.rollout.get("collect_transitions", False)):
         raise ValueError(
             "embodied_qam requires rollout.collect_transitions=true so "
             "online replay receives current and next raw observations"
@@ -872,9 +869,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
     if bool(cfg.env.train.get("auto_reset", False)):
         raise ValueError("embodied_qam requires env.train.auto_reset=false")
     if bool(cfg.env.train.get("ignore_terminations", False)):
-        raise ValueError(
-            "embodied_qam requires env.train.ignore_terminations=false"
-        )
+        raise ValueError("embodied_qam requires env.train.ignore_terminations=false")
     if int(cfg.actor.model.num_action_chunks) != 20:
         raise ValueError("embodied_qam fixed-N v1 requires num_action_chunks=20")
     if int(cfg.actor.model.action_dim) != 14:
@@ -884,9 +879,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
 
     openpi_cfg = cfg.actor.model.openpi
     if not bool(openpi_cfg.get("train_expert_only", False)):
-        raise ValueError(
-            "embodied_qam B1+F1 requires openpi.train_expert_only=true"
-        )
+        raise ValueError("embodied_qam B1+F1 requires openpi.train_expert_only=true")
     if bool(openpi_cfg.get("use_dsrl", False)) or bool(
         openpi_cfg.get("use_rlt", False)
     ):
@@ -896,9 +889,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
         raise ValueError("algorithm.qam configuration is required")
     prompt = str(qam_cfg.get("task_prompt", "")).strip()
     if not prompt:
-        raise ValueError(
-            "embodied_qam raw replay requires algorithm.qam.task_prompt"
-        )
+        raise ValueError("embodied_qam raw replay requires algorithm.qam.task_prompt")
     openpi_prompt = OmegaConf.select(
         cfg,
         "actor.model.openpi_data.default_prompt",
@@ -911,9 +902,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
         )
     phase = str(qam_cfg.get("phase", ""))
     if phase not in {"collect", "q_only", "am_on"}:
-        raise ValueError(
-            "algorithm.qam.phase must be collect, q_only, or am_on"
-        )
+        raise ValueError("algorithm.qam.phase must be collect, q_only, or am_on")
     if not bool(qam_cfg.get("online_only", False)):
         raise ValueError("embodied_qam v1 requires online_only=true")
     if int(qam_cfg.get("num_q_heads", 0)) != 10:
@@ -936,6 +925,7 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
         "replay_capacity",
         "min_replay_per_rank",
         "warmup_global_inserts",
+        "q_only_updates_before_am",
         "max_updates_per_step",
         "critic_init_seed",
     ):
@@ -955,28 +945,18 @@ def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None
         raise ValueError("algorithm.qam.target_tau must be in (0, 1]")
     if float(qam_cfg.get("rho", -1.0)) < 0:
         raise ValueError("algorithm.qam.rho must be non-negative")
-    hidden_dims = tuple(
-        int(width) for width in qam_cfg.get("critic_hidden_dims", ())
-    )
+    hidden_dims = tuple(int(width) for width in qam_cfg.get("critic_hidden_dims", ()))
     if hidden_dims != (512, 512, 512, 512):
-        raise ValueError(
-            "Plain-QAM v1 requires critic_hidden_dims=[512,512,512,512]"
-        )
+        raise ValueError("Plain-QAM v1 requires critic_hidden_dims=[512,512,512,512]")
 
     inv_temp = float(qam_cfg.get("inv_temp", -1.0))
     if not math.isfinite(inv_temp) or inv_temp < 0:
         raise ValueError("algorithm.qam.inv_temp must be finite and non-negative")
     if phase in {"collect", "q_only"} and inv_temp != 0.0:
-        raise ValueError(
-            "collect/q_only require algorithm.qam.inv_temp=0 (tau=0 gate)"
-        )
+        raise ValueError("collect/q_only require algorithm.qam.inv_temp=0 (tau=0 gate)")
     if phase == "am_on":
         if inv_temp <= 0:
             raise ValueError("am_on requires a positive algorithm.qam.inv_temp")
-        if not bool(qam_cfg.get("am_evidence_passed", False)):
-            raise ValueError(
-                "am_on requires explicit algorithm.qam.am_evidence_passed=true"
-            )
 
 
 def validate_embodied_cfg(cfg):

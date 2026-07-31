@@ -46,11 +46,11 @@ algorithm:
   gamma: 0.99
   reward_coef: 1.0
   qam:
-    # Phase transitions are monotonic across checkpoints:
-    # collect -> q_only -> am_on.
+    # The source remains launch-closed. A reviewed formal launch sets
+    # phase=am_on/inv_temp>0; that mode still performs the counted critic-only
+    # burn-in below before its first AM update.
     phase: collect
     online_only: true
-    am_evidence_passed: false
     task_prompt: adjust the bottle
 
     flow_steps: 10
@@ -73,6 +73,7 @@ algorithm:
     replay_capacity: 4096
     min_replay_per_rank: 32
     warmup_global_inserts: 512
+    q_only_updates_before_am: 512
     utd_ratio: 1.0
     max_updates_per_step: 32
 
