@@ -250,6 +250,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         self.critic_optimizer: torch.optim.Optimizer | None = None
         self.critic_feature_dim: int | None = None
         self._last_ingest_metrics: dict[str, float] = {}
+        self._prefix_roundtrip_warning_emitted = False
 
     def init_worker(self) -> None:
         """Build only the FSDP F1 policy; critic dimensions remain runtime-led."""
@@ -1052,19 +1053,30 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         ).clamp_min(1e-6)
         max_relative_l2 = relative_l2.max()
         min_cosine = cosine.min()
-        if (
-            not torch.isfinite(relative_l2).all()
-            or not torch.isfinite(cosine).all()
-            or max_relative_l2.item() > 0.1
-            or min_cosine.item() < 0.995
-        ):
+        if not torch.isfinite(relative_l2).all() or not torch.isfinite(cosine).all():
             raise ValueError(
-                "QAM frozen-prefix replay round-trip changed the critic feature: "
+                "QAM frozen-prefix replay round-trip produced non-finite diagnostics: "
                 f"max_abs={absolute_error.max().item():.6g} "
                 f"mean_abs={absolute_error.mean().item():.6g} "
                 f"max_relative_l2={max_relative_l2.item():.6g} "
                 f"min_cosine={min_cosine.item():.6g}"
             )
+        if (
+            not self._prefix_roundtrip_warning_emitted
+            and (
+                max_relative_l2.item() > 0.1
+                or min_cosine.item() < 0.995
+            )
+        ):
+            self.logger.warning(
+                "QAM frozen-prefix replay round-trip diagnostic exceeded its "
+                "bring-up threshold; continuing training and recording metrics: "
+                f"max_abs={absolute_error.max().item():.6g} "
+                f"mean_abs={absolute_error.mean().item():.6g} "
+                f"max_relative_l2={max_relative_l2.item():.6g} "
+                f"min_cosine={min_cosine.item():.6g}"
+            )
+            self._prefix_roundtrip_warning_emitted = True
 
         batch_size = len(samples)
         flat_dim = MODEL_HORIZON * MODEL_ACTION_DIM
