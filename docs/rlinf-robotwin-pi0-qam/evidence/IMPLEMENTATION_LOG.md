@@ -4891,3 +4891,15 @@ unexpected code/config changes    = none
 
 提交前只 stage 这 10 个路径并复核 cached allowlist；push 仍沿用“直连短探针，明确超时才
 在单个 child shell 临时 `source /etc/network_turbo`”的既有有界流程。
+
+实际 docs commit 为
+`d6fa0f0f4915587ae5e6a03c580fea7938acd3ca`（`docs(qam): record formal launch`），
+10 files、1,439 insertions、28 deletions；提交后 tree clean。push 前 GitHub main
+HTTP 200、0.94 秒，但 direct `ls-remote` 在 15 秒超时（exit124），因此仅在该次
+remote child shell 内启用 `/etc/network_turbo`。一次 push 成功：
+
+```text
+personal/codex/qam-pi0-robotwin = d6fa0f0f4915587ae5e6a03c580fea7938acd3ca
+ahead/behind                    = 0/0
+persistent proxy/remote/config  = unchanged
+```
