@@ -363,13 +363,14 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   opt-in。replay 自身 RNG/world-size 与 phase/credit helper 已覆盖；worker 的
   rank-local process RNG 和跨 rank QAM completion manifest 留到 fresh 后、resume
   smoke 前补齐。实际 code files 和逐行流水只在 QAM SSOT/账本维护。
-- 当前本机 code commit 为 `c32d044bcb559aa9c618dcb74c23263592ee0b50`；服务器 commit 为
-  `7bc5f87086035087adf6d44ddda76eb5a9e54ee8`；两端 tree 均为
-  `6dc9124ba63b5712918ba2dbdcffde203cfb5eed`。服务器 worktree clean；2026-07-31
-  14:05 默认直连 main/raw 与 smart-HTTP 超时后，只在一次性
-  `/etc/network_turbo` 子 shell 内成功创建并推送
-  `personal/codex/qam-pi0-robotwin`，远端 HEAD 与服务器一致、ahead/behind `0/0`，
-  父 shell 无残留 proxy。
+- 当前本机 code 副本 commit 为 `c32d044bcb559aa9c618dcb74c23263592ee0b50`；服务器
+  runtime 实现 commit 为 `7bc5f87086035087adf6d44ddda76eb5a9e54ee8`，两者 code tree
+  均为 `6dc9124ba63b5712918ba2dbdcffde203cfb5eed`。2026-07-31 14:22 又在服务器
+  runtime commit 上增加 QAM SSOT/完整账本/resolved 配置与无凭据 SSH helper，形成
+  docs/tooling commit `3e7f26eb0cc38cc2f44e4145af480a71a2948262` 并推送
+  `personal/codex/qam-pi0-robotwin`；服务器 worktree clean、远端与服务器
+  ahead/behind `0/0`。两次默认 smart-HTTP 超时后均只在一次性
+  `/etc/network_turbo` 子 shell 内 push，父 shell 无残留 proxy。
 - 真实模型事实：F1 为 173 tensors / 314,713,120 参数；C1 block 长度
   `[256,256,256,48]`、valid `[256,256,256,5]`；raw active endpoint 越界
   `20/280=7.14%`，Q 与 env 已共用 canonical clamp；replay 4,096/rank，约
@@ -378,8 +379,10 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   Ruff/format/compile/diff 均通过。
   两卡真实 `FULL_SHARD + use_orig_params`、K=10、batch=32/rank probe 峰值
   14,148,494,848 bytes/卡，F1 173 个梯度 finite、10-Q/target 跨 rank 一致。
-- 13:21 CST 现场：两张 A800 均 0 MiB/0%，无训练/Ray；数据盘 1.9 TiB 总、1.1 TiB
-  已用、807 GiB 可用（57%），inode 2%；fresh smoke run root 不存在。
+- 13:38 CST 最终 smoke 前现场：两张 A800 均 0 MiB/0%，无训练/Ray，fresh smoke
+  run/runtime root 不存在。14:14 CST 磁盘复核仍为 1.9 TiB 总、1.1 TiB 已用、
+  807 GiB 可用（57%）；四个旧 smoke 合计约 137.01 GiB，旧 WAM/PPO backup
+  110.94 GiB，本轮没有删除。
 - 首个正式 smoke 只做 fresh `q_only`：2 GPU/2 env、1 outer cycle、2 episodes、
   最多 400 requested action slots、预计 2–20 global macro inserts、恰好 2 次 critic
   update、0 AM/fine update、0 eval、1 个 DCP；hard limit 2h/4 GPU-hours。

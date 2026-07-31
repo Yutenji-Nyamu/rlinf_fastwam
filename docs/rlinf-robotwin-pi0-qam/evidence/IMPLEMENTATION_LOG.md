@@ -3887,3 +3887,59 @@ autodl-container-nekaqbwt43-6ce5babb
 
 本次未触发重试，说明直连当时正常；后续 smoke 启动仍优先复用一次连接完成只读前检，
 正式命令发出后不靠自动重放兜底。
+
+## QAM-GIT-0003：QAM 文档、流水账与 SSH helper 云端固化
+
+时间：2026-07-31 14:18–14:22 CST。根协调目录自身是无 commit/无 remote 的本地索引，
+因此为了落实“每个连贯改动主动 push”，把本轮 QAM 专属材料和无凭据 helper 加到现有
+QAM 云端分支，而不是只留在本机。
+
+上传前对以下 11 个文件做精确密码、private-key 和 GitHub token 模式扫描，零命中：
+
+```text
+PROJECT_CONTEXT.md
+HANDOFF.md
+local_scripts/remote_exec_autodl.py
+docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md
+docs/rlinf-robotwin-pi0-qam/01_CONTEXT_AND_SOURCE_MAP.md
+docs/rlinf-robotwin-pi0-qam/02_METHOD_AND_PORT_DECISION_GUIDE.md
+docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md
+docs/rlinf-robotwin-pi0-qam/evidence/qam_qonly_smoke_launch_20260731_v1.sh
+docs/rlinf-robotwin-pi0-qam/evidence/qam_qonly_smoke_resolved_20260731_v1.yaml
+docs/rlinf-robotwin-pi0-qam/evidence/qam_source_resolved_20260731_v1.yaml
+docs/rlinf-robotwin-pi0-qam/evidence/qam_source_to_qonly_smoke_20260731_v1.diff
+```
+
+服务器先验证 branch、HEAD `7bc5f870...` 和 clean，再 `mkdir -p` 精确目标目录，并逐文件
+SFTP `put`。服务器检查：
+
+```bash
+/root/autodl-tmp/RLinf/.venv/bin/python -m py_compile \
+  local_scripts/remote_exec_autodl.py
+bash -n \
+  docs/rlinf-robotwin-pi0-qam/evidence/qam_qonly_smoke_launch_20260731_v1.sh
+git diff --check
+grep -R -n -F '<exact-password-redacted>' \
+  PROJECT_CONTEXT.md HANDOFF.md local_scripts/remote_exec_autodl.py \
+  docs/rlinf-robotwin-pi0-qam
+```
+
+全部通过。只 `git add` 上述 11 个路径，提交：
+
+```text
+3e7f26eb0cc38cc2f44e4145af480a71a2948262
+chore(qam): publish implementation docs and ssh helper
+```
+
+默认直连 `timeout 15 git ls-remote` 再次返回 124；当时 HEAD clean、相对 upstream
+ahead 1。随后只在子 shell `source /etc/network_turbo`，执行一次有界 push 并复核：
+
+```text
+remote: 7bc5f870... -> 3e7f26eb...
+server HEAD: 3e7f26eb...
+ahead/behind: 0/0
+parent proxy before/after: 0/0
+```
+
+没有改 remote、Git HTTP 配置、shell 配置或历史，也没有启动 smoke。随后只再提交这段
+自描述流水和对应 HANDOFF 更新；该最后 docs-only commit 本身由 Git 历史记录。
