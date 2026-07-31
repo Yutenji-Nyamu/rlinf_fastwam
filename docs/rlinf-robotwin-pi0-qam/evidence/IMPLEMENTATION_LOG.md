@@ -4480,7 +4480,7 @@ fresh q_only process
 锁定 sparse route 的 pure truncation 使用 true query-final observation bootstrap。
 正式 cycles 仍不能由 batch1 smoke 推断，必须等获批的 production-batch 短吞吐点。
 
-## QAM-GIT-0001：实现提交与第一次推送
+## QAM-GIT-0003：exact-resume 实现提交与推送
 
 为把实现与运行附件分开，先只 stage 四个已经通过服务器回归的代码/测试文件：
 
@@ -4523,7 +4523,7 @@ git ls-remote --heads personal codex/qam-pi0-robotwin
 `851db175fb8e9743585bbbdcd90298741fa910e0`。本次直连成功，没有启用学术加速，也没有
 修改持久 Git/proxy 配置。
 
-## QAM-GIT-0002：运行附件与文档提交前检查
+## QAM-GIT-0004：运行附件与文档提交前检查
 
 文档包只包含 HANDOFF/SSOT/账本、两个精确服务器脚本、定向清理脚本与 stdout，以及
 116 KiB 的 smoke runtime evidence；没有 checkpoint、视频或模型。对该 allowlist 搜索

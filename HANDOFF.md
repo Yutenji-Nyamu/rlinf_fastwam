@@ -399,7 +399,7 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   稳定化适配，不是官方阶段比例。正式 v1 可在 fresh `q_only` 进程内完成前 512 条
   collect warm-up，不需要 collect→q_only resume；当前 batch1 smoke 不能给 batch32
   正式吞吐。
-- 当前授权停点：可继续完成 exact-resume 代码与服务器前置测试；fresh→resume、
+- 当前授权停点：exact-resume 代码与服务器前置测试已完成；fresh→resume、
   production-batch q-only 诊断、`am_on` smoke 和正式训练均需分别展示完整配置/命令/
   预算并取得新批准。锁定的 sparse route 已证明 `truncated && !terminated` 是
   time limit，且 `auto_reset=false` 保存 true query-final observation；当前只需验证
