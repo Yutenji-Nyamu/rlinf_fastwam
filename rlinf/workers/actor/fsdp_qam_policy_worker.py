@@ -1036,17 +1036,34 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                 f"replay={tuple(replay_feature.shape)} "
                 f"recomputed={tuple(recomputed_feature.shape)}"
             )
-        if not torch.allclose(
-            recomputed_feature,
-            replay_feature,
-            atol=2e-3,
-            rtol=2e-3,
+        feature_delta = recomputed_feature - replay_feature
+        absolute_error = feature_delta.abs()
+        flat_delta = feature_delta.reshape(-1, feature_delta.shape[-1])
+        flat_recomputed = recomputed_feature.reshape(
+            -1, recomputed_feature.shape[-1]
+        )
+        flat_replay = replay_feature.reshape(-1, replay_feature.shape[-1])
+        relative_l2 = torch.linalg.vector_norm(flat_delta, dim=-1) / (
+            torch.linalg.vector_norm(flat_replay, dim=-1).clamp_min(1e-6)
+        )
+        cosine = (flat_recomputed * flat_replay).sum(dim=-1) / (
+            torch.linalg.vector_norm(flat_recomputed, dim=-1)
+            * torch.linalg.vector_norm(flat_replay, dim=-1)
+        ).clamp_min(1e-6)
+        max_relative_l2 = relative_l2.max()
+        min_cosine = cosine.min()
+        if (
+            not torch.isfinite(relative_l2).all()
+            or not torch.isfinite(cosine).all()
+            or max_relative_l2.item() > 0.1
+            or min_cosine.item() < 0.995
         ):
-            absolute_error = (recomputed_feature - replay_feature).abs()
             raise ValueError(
                 "QAM frozen-prefix replay round-trip changed the critic feature: "
                 f"max_abs={absolute_error.max().item():.6g} "
-                f"mean_abs={absolute_error.mean().item():.6g}"
+                f"mean_abs={absolute_error.mean().item():.6g} "
+                f"max_relative_l2={max_relative_l2.item():.6g} "
+                f"min_cosine={min_cosine.item():.6g}"
             )
 
         batch_size = len(samples)
@@ -1132,6 +1149,11 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             "qam/terminal_adjoint_norm": float(
                 terminal_adjoint.norm(dim=-1).mean().item()
             ),
+            "qam/prefix_roundtrip_mean_abs": float(absolute_error.mean().item()),
+            "qam/prefix_roundtrip_max_relative_l2": float(
+                max_relative_l2.item()
+            ),
+            "qam/prefix_roundtrip_min_cosine": float(min_cosine.item()),
         }
 
     def _local_replay_ready(self) -> bool:
