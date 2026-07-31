@@ -16,6 +16,7 @@
 
 import hashlib
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -28,6 +29,59 @@ PLANNED_HORIZON = 20
 ACTIVE_ACTION_DIM = 14
 PREFIX_BLOCKS = 4
 QAM_REPLAY_SCHEMA_VERSION = 1
+QAM_PROMPT_BYTES = 256
+
+
+def encode_qam_prompt_batch(
+    prompts: Sequence[str],
+    *,
+    device: torch.device | str | None = None,
+) -> tuple[Tensor, Tensor]:
+    """Encode exact rollout prompts as fixed-width tensors for Trajectory."""
+    if isinstance(prompts, (str, bytes)) or len(prompts) == 0:
+        raise ValueError("QAM prompts must be a non-empty sequence of strings")
+    encoded = torch.zeros(
+        len(prompts),
+        QAM_PROMPT_BYTES,
+        dtype=torch.uint8,
+        device=device,
+    )
+    lengths = torch.zeros(len(prompts), dtype=torch.long, device=device)
+    for index, prompt in enumerate(prompts):
+        if not isinstance(prompt, str) or not prompt:
+            raise ValueError("each QAM prompt must be a non-empty string")
+        payload = prompt.encode("utf-8")
+        if len(payload) > QAM_PROMPT_BYTES:
+            raise ValueError(
+                f"QAM prompt uses {len(payload)} UTF-8 bytes; "
+                f"the fixed trajectory limit is {QAM_PROMPT_BYTES}"
+            )
+        encoded[index, : len(payload)] = torch.tensor(
+            list(payload),
+            dtype=torch.uint8,
+            device=device,
+        )
+        lengths[index] = len(payload)
+    return encoded, lengths
+
+
+def decode_qam_prompt(encoded: Tensor, length: Tensor | int) -> str:
+    """Decode one exact prompt row received through Trajectory."""
+    row = encoded.detach().cpu().to(dtype=torch.uint8).reshape(-1)
+    size = int(length.detach().cpu().reshape(-1)[0].item()) if isinstance(
+        length, Tensor
+    ) else int(length)
+    if row.numel() != QAM_PROMPT_BYTES:
+        raise ValueError(
+            f"QAM prompt row must contain {QAM_PROMPT_BYTES} bytes, "
+            f"got {row.numel()}"
+        )
+    if size <= 0 or size > QAM_PROMPT_BYTES:
+        raise ValueError(f"invalid QAM prompt byte length: {size}")
+    try:
+        return bytes(row[:size].tolist()).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("QAM prompt tensor is not valid UTF-8") from exc
 
 
 def _expect_shape(tensor: Tensor, shape: tuple[int, ...], name: str) -> None:

@@ -21,6 +21,7 @@ from omegaconf import OmegaConf
 
 from rlinf.algorithms.qam.contracts import (
     QAMPolicyObservation,
+    encode_qam_prompt_batch,
     project_planned_action,
 )
 from rlinf.algorithms.qam.core import terminal_mean_q_adjoint
@@ -357,6 +358,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
         dtype=torch.float32,
     ).reshape(1, 1, 4, 5)
     obs_proprio = torch.arange(14, dtype=torch.float32).reshape(1, 1, 14)
+    actual_prompt = "Lift the blue bottle head-up with the right arm."
+    prompt_bytes, prompt_lengths = encode_qam_prompt_batch([actual_prompt])
 
     trajectory = Trajectory(
         actions=planned_env,
@@ -369,6 +372,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
         forward_inputs={
             "qam_planned_action_normalized": planned_normalized,
             "qam_obs_feature": obs_feature,
+            "qam_prompt_utf8": prompt_bytes.unsqueeze(0),
+            "qam_prompt_length": prompt_lengths.unsqueeze(0),
             "qam_prefix_block_lengths": torch.tensor([[[[3, 3, 3, 2]]]]).reshape(
                 1, 1, 4
             ),
@@ -407,6 +412,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
     assert torch.equal(transition.chunk_rewards_native, rewards[0, 0])
     assert transition.reward_macro_discounted == pytest.approx(2.0 * 0.9**19)
     assert transition.policy_version == 7
+    assert sample.observation.prompt == actual_prompt
+    assert sample.next_observation.prompt == actual_prompt
     assert transition.query_index == 0
     assert not transition.success_terminated
     assert transition.next_state_valid
@@ -476,6 +483,7 @@ def test_qam_ingest_skips_rows_after_first_episode_end(monkeypatch) -> None:
     )
 
     trajectory_steps = 3
+    prompt_bytes, prompt_lengths = encode_qam_prompt_batch(["actual prompt"])
     trajectory = Trajectory(
         actions=torch.zeros(trajectory_steps, 1, 20, 14),
         rewards=torch.zeros(trajectory_steps, 1, 20),
@@ -491,6 +499,12 @@ def test_qam_ingest_skips_rows_after_first_episode_end(monkeypatch) -> None:
                 14,
             ),
             "qam_obs_feature": torch.zeros(trajectory_steps, 1, 4, 5),
+            "qam_prompt_utf8": prompt_bytes.unsqueeze(0).repeat(
+                trajectory_steps, 1, 1
+            ),
+            "qam_prompt_length": prompt_lengths.unsqueeze(0).repeat(
+                trajectory_steps, 1
+            ),
             "qam_prefix_block_lengths": torch.tensor([3, 3, 3, 2])
             .reshape(1, 1, 4)
             .repeat(trajectory_steps, 1, 1),

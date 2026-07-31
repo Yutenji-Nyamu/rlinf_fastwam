@@ -40,6 +40,7 @@ from rlinf.algorithms.qam.contracts import (
     PLANNED_HORIZON,
     QAMMacroTransition,
     QAMPolicyObservation,
+    decode_qam_prompt,
     fixed_slot_bootstrap_discount,
     fixed_slot_discounted_return,
     macro_bootstrap_mask,
@@ -386,6 +387,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         step: int,
         env: int,
         transform_fingerprint: str,
+        prompt: str,
     ) -> QAMPolicyObservation:
         cameras = extract_qam_camera_triplet(
             obs,
@@ -404,7 +406,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         return QAMPolicyObservation(
             cameras_uint8=cameras,
             proprio=proprio,
-            prompt=str(self.qam_cfg.task_prompt),
+            prompt=prompt,
             task_id=str(self.cfg.env.train.task_config.task_name),
             transform_fingerprint=transform_fingerprint,
         )
@@ -499,6 +501,8 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         required = {
             "qam_planned_action_normalized",
             "qam_obs_feature",
+            "qam_prompt_utf8",
+            "qam_prompt_length",
             "qam_prefix_block_lengths",
             "qam_proprio_normalized",
             "qam_projection_contract",
@@ -544,6 +548,18 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                     projection_fingerprint=fingerprint,
                     prefix_block_lengths=block_lengths,
                 )
+                prompt = decode_qam_prompt(
+                    self._row(
+                        forward_inputs["qam_prompt_utf8"],
+                        step=step,
+                        env=env,
+                    ),
+                    self._row(
+                        forward_inputs["qam_prompt_length"],
+                        step=step,
+                        env=env,
+                    ),
+                )
 
                 terminated = self._trajectory_end_flag(
                     trajectory.terminations,
@@ -572,6 +588,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                     step=step,
                     env=env,
                     transform_fingerprint=worker_fingerprint,
+                    prompt=prompt,
                 )
                 next_observation = None
                 if next_state_valid:
@@ -580,6 +597,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
                         step=step,
                         env=env,
                         transform_fingerprint=worker_fingerprint,
+                        prompt=prompt,
                     )
 
                 planned = self._row(
@@ -997,24 +1015,38 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
     ) -> dict[str, float]:
         assert self.target_critic is not None
         observations = [sample.observation for sample in samples]
-        conditioning = self.model(
-            forward_type=ForwardType.QAM_FLOW,
-            operation="conditioning",
-            env_obs=self._observations_to_env_obs(observations),
-        )
+        was_training = self.model.training
+        try:
+            self.model.eval()
+            conditioning = self.model(
+                forward_type=ForwardType.QAM_FLOW,
+                operation="conditioning",
+                env_obs=self._observations_to_env_obs(observations),
+            )
+        finally:
+            self.model.train(was_training)
         replay_feature = critic_batch["feature"]
         recomputed_feature = conditioning["critic_feature"].to(
             device=self.device,
             dtype=torch.float32,
         )
-        if recomputed_feature.shape != replay_feature.shape or not torch.allclose(
+        if recomputed_feature.shape != replay_feature.shape:
+            raise ValueError(
+                "QAM frozen-prefix replay round-trip changed feature shape: "
+                f"replay={tuple(replay_feature.shape)} "
+                f"recomputed={tuple(recomputed_feature.shape)}"
+            )
+        if not torch.allclose(
             recomputed_feature,
             replay_feature,
             atol=2e-3,
             rtol=2e-3,
         ):
+            absolute_error = (recomputed_feature - replay_feature).abs()
             raise ValueError(
-                "QAM frozen-prefix replay round-trip changed the critic feature"
+                "QAM frozen-prefix replay round-trip changed the critic feature: "
+                f"max_abs={absolute_error.max().item():.6g} "
+                f"mean_abs={absolute_error.mean().item():.6g}"
             )
 
         batch_size = len(samples)

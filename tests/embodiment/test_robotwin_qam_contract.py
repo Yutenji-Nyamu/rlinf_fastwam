@@ -26,7 +26,9 @@ from rlinf.algorithms.qam.contracts import (
     QAMMacroTransition,
     QAMPolicyObservation,
     canonicalize_model_action,
+    decode_qam_prompt,
     embed_planned_adjoint,
+    encode_qam_prompt_batch,
     fixed_slot_bootstrap_discount,
     fixed_slot_discounted_return,
     macro_bootstrap_mask,
@@ -36,6 +38,21 @@ from rlinf.data.qam_transition_replay import QAMTransitionReplay
 
 CONTRACT_FINGERPRINT = "base+norm+pooling+action-v1"
 TEST_PREFIX_FEATURE_DIM = 8
+
+
+def test_qam_prompt_tensor_round_trip_preserves_exact_language() -> None:
+    prompts = [
+        "Lift the red bottle head-up.",
+        "用右臂把蓝色瓶子直立拿起。",
+    ]
+    encoded, lengths = encode_qam_prompt_batch(prompts)
+    assert encoded.shape == (2, 256)
+    assert encoded.dtype == torch.uint8
+    assert lengths.dtype == torch.long
+    assert [
+        decode_qam_prompt(encoded[index], lengths[index])
+        for index in range(len(prompts))
+    ] == prompts
 
 
 def _observation(value: int) -> QAMPolicyObservation:

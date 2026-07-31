@@ -1304,6 +1304,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             forward_inputs["action"] = forward_action
 
         if is_qam_active:
+            from rlinf.algorithms.qam.contracts import encode_qam_prompt_batch
             from rlinf.models.embodiment.modules.qam_modules import (
                 projection_fingerprint_tensor,
             )
@@ -1311,6 +1312,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             assert canonical_planned_action is not None
             planned_action = canonical_planned_action.to(dtype=torch.float32)
             batch_size = planned_action.shape[0]
+            prompt_bytes, prompt_lengths = encode_qam_prompt_batch(
+                env_obs["task_descriptions"],
+                device=planned_action.device,
+            )
             forward_inputs.update(
                 {
                     "qam_planned_action_normalized": planned_action.contiguous(),
@@ -1318,6 +1323,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     "qam_proprio_normalized": outputs[
                         "qam_proprio_normalized"
                     ].contiguous(),
+                    "qam_prompt_utf8": prompt_bytes.contiguous(),
+                    "qam_prompt_length": prompt_lengths.contiguous(),
                     "qam_prefix_block_lengths": outputs[
                         "qam_prefix_block_lengths"
                     ].contiguous(),
