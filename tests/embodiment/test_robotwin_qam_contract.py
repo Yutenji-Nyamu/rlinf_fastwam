@@ -307,12 +307,19 @@ def test_replay_checkpoint_restores_ring_rng_and_rejects_rank_mismatch(
 
     replay.sample(5)
     checkpoint = tmp_path / "rank0_qam_replay.pt"
-    replay.save_checkpoint(checkpoint)
+    snapshot = {
+        "schema_version": 1,
+        "checkpoint_step": 3,
+        "snapshot_id": "test-snapshot",
+        "rank": 0,
+        "world_size": 1,
+    }
+    replay.save_checkpoint(checkpoint, snapshot=snapshot)
     assert checkpoint.is_file()
     assert not [path for path in tmp_path.iterdir() if ".tmp-" in path.name]
 
     resumed = _replay(capacity=3)
-    resumed.load_checkpoint(checkpoint)
+    resumed.load_checkpoint(checkpoint, expected_snapshot=snapshot)
     assert len(resumed) == len(replay)
     assert resumed.cursor == replay.cursor
     assert resumed.total_inserted == replay.total_inserted
@@ -323,4 +330,8 @@ def test_replay_checkpoint_restores_ring_rng_and_rejects_rank_mismatch(
 
     wrong_rank = _replay(capacity=3, rank=1)
     with pytest.raises(ValueError, match="metadata mismatch"):
-        wrong_rank.load_checkpoint(checkpoint)
+        wrong_rank.load_checkpoint(checkpoint, expected_snapshot=snapshot)
+
+    wrong_snapshot = dict(snapshot, snapshot_id="other")
+    with pytest.raises(ValueError, match="snapshot mismatch"):
+        resumed.load_checkpoint(checkpoint, expected_snapshot=wrong_snapshot)

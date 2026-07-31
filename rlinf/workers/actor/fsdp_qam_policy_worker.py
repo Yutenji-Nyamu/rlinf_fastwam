@@ -21,6 +21,7 @@ worker-owned sidecars and therefore never enter policy state-dict syncing.
 
 import copy
 import hashlib
+import json
 import math
 import os
 import uuid
@@ -64,7 +65,7 @@ from rlinf.models.embodiment.modules.qam_critic import QAMCriticEnsemble
 from rlinf.scheduler import Channel, Worker
 from rlinf.utils.distributed import all_reduce_dict
 from rlinf.utils.metric_utils import compute_split_num
-from rlinf.utils.utils import clear_memory
+from rlinf.utils.utils import clear_memory, get_rng_state, set_rng_state
 from rlinf.workers.actor.fsdp_actor_worker import EmbodiedFSDPActor
 
 QAM_PHASES = ("collect", "q_only", "am_on")
@@ -100,20 +101,12 @@ class QAMUpdateCredit:
 def classify_qam_end(
     *, terminated: bool, truncated: bool
 ) -> tuple[bool, bool, bool, bool]:
-    """Return success/time-limit/other/next-valid under the v1 payload.
-
-    The current RoboTwin trajectory payload does not preserve a timeout kind.
-    Consequently every observed truncation is conservatively classified as
-    ``other_truncated`` and does not bootstrap.  This is deliberate; guessing
-    that a truncation is a time limit would bootstrap from an unverified final
-    observation.
-    """
+    """Return success/time-limit/other/next-valid for RoboTwin ends."""
     success_terminated = bool(terminated)
-    time_limit_truncated = False
-    # RoboTwin may report success and the time-limit boundary on the same
-    # final slot. Success is authoritative and must remain non-bootstrapping.
-    other_truncated = bool(truncated and not terminated)
-    next_state_valid = not (success_terminated or other_truncated)
+    time_limit_truncated = bool(truncated and not terminated)
+    other_truncated = False
+    # RoboTwin supplies the true query-final observation at a time limit.
+    next_state_valid = not success_terminated
     return (
         success_terminated,
         time_limit_truncated,
@@ -201,17 +194,27 @@ def _resume_update_credit(
     saved_pending: float,
     saved_anchor: int | None,
     global_total_inserts: int,
+    warmup_global_inserts: int,
 ) -> tuple[float, int | None]:
     """Restore UTD state without training collect warm-up rows retroactively."""
     if requested_phase == "collect":
         return 0.0, None
     if saved_phase == "collect":
-        return 0.0, int(global_total_inserts)
-    return float(saved_pending), (int(saved_anchor) if saved_anchor is not None else 0)
+        anchor = (
+            int(global_total_inserts)
+            if global_total_inserts >= warmup_global_inserts
+            else None
+        )
+        return 0.0, anchor
+    return float(saved_pending), (
+        int(saved_anchor) if saved_anchor is not None else None
+    )
 
 
 class QAMFSDPPolicy(EmbodiedFSDPActor):
     """Plain-QAM worker with B1+F1+C1 and fixed-N online macro replay."""
+
+    _QAM_CHECKPOINT_SCHEMA_VERSION = 1
 
     def __init__(self, cfg: DictConfig):
         super().__init__(cfg)
@@ -224,9 +227,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         self.local_total_inserts = 0
         self.global_total_inserts = 0
         self.update_credit = QAMUpdateCredit(utd_ratio=float(self.qam_cfg.utd_ratio))
-        self.q_only_anchor_global_inserts: int | None = (
-            None if self.phase == "collect" else 0
-        )
+        self.q_only_anchor_global_inserts: int | None = None
 
         self.replay: QAMTransitionReplay | None = None
         self.contract_fingerprint: str | None = None
@@ -742,8 +743,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
         global_added = self._global_sum_int(local_added)
         self.local_total_inserts += local_added
         self.global_total_inserts += global_added
-        if self.phase != "collect":
-            self.update_credit.add_global_inserts(global_added)
+        self._accrue_update_credit(global_added)
         self._last_ingest_metrics = {
             "qam/local_replay_size": float(
                 0 if self.replay is None else len(self.replay)
@@ -756,6 +756,23 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
     def compute_advantages_and_returns(self) -> dict[str, float]:
         """QAM is off-policy and does not construct PPO advantages."""
         return dict(self._last_ingest_metrics)
+
+    def _accrue_update_credit(self, global_added: int) -> None:
+        """Start UTD accounting only after the online warm-up boundary."""
+        if self.phase == "collect":
+            return
+        if self.q_only_anchor_global_inserts is None:
+            warmup = int(self.qam_cfg.warmup_global_inserts)
+            if self.global_total_inserts >= warmup:
+                previous_total = self.global_total_inserts - int(global_added)
+                anchor = max(previous_total, warmup)
+                self.q_only_anchor_global_inserts = anchor
+                self.update_credit.pending = 0.0
+                self.update_credit.add_global_inserts(
+                    self.global_total_inserts - anchor
+                )
+            return
+        self.update_credit.add_global_inserts(global_added)
 
     def _sample_batch(self) -> list[QAMReplaySample]:
         if self.replay is None:
@@ -1163,17 +1180,120 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
     def _sidecar_path(self, base_path: str) -> Path:
         return Path(base_path) / "qam_components" / f"rank_{self._rank}.pt"
 
-    def save_checkpoint(self, save_base_path: str, step: int) -> None:
-        """Save F1 with FSDP and worker-only QAM state in rank sidecars."""
-        super().save_checkpoint(save_base_path, step)
-        sidecar_path = self._sidecar_path(save_base_path)
-        sidecar_path.parent.mkdir(parents=True, exist_ok=True)
-        replay_path = sidecar_path.parent / f"replay_rank_{self._rank}.pt"
-        if self.replay is not None:
-            self.replay.save_checkpoint(replay_path)
+    def _replay_checkpoint_path(self, base_path: str) -> Path:
+        return Path(base_path) / "qam_components" / f"replay_rank_{self._rank}.pt"
 
-        state = {
+    @staticmethod
+    def _completion_manifest_path(base_path: str) -> Path:
+        return Path(base_path) / "qam_components" / "complete.json"
+
+    @staticmethod
+    def _atomic_json_dump(payload: dict[str, Any], path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}")
+        try:
+            with temporary.open("w", encoding="utf-8") as handle:
+                json.dump(payload, handle, indent=2, sort_keys=True)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+
+    @staticmethod
+    def _atomic_torch_dump(payload: dict[str, Any], path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}")
+        try:
+            with temporary.open("wb") as handle:
+                torch.save(payload, handle)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+
+    @staticmethod
+    def _distributed_active() -> bool:
+        return torch.distributed.is_available() and torch.distributed.is_initialized()
+
+    def _new_checkpoint_snapshot_id(self) -> str:
+        values = [uuid.uuid4().hex if int(self._rank) == 0 else None]
+        if self._distributed_active():
+            torch.distributed.broadcast_object_list(values, src=0)
+        if not isinstance(values[0], str) or not values[0]:
+            raise ValueError("QAM checkpoint snapshot ID broadcast failed")
+        return values[0]
+
+    def _gather_checkpoint_status(
+        self,
+        local_status: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        if self._distributed_active():
+            statuses = [None] * torch.distributed.get_world_size()
+            torch.distributed.all_gather_object(statuses, local_status)
+        else:
+            statuses = [local_status]
+        if any(not isinstance(status, dict) for status in statuses):
+            raise ValueError("QAM checkpoint gathered an invalid rank status")
+
+        failures = sorted(
+            (int(status["rank"]), str(status["error"]))
+            for status in statuses
+            if status["error"] is not None
+        )
+        if failures:
+            details = "; ".join(f"rank {rank}: {error}" for rank, error in failures)
+            raise ValueError(f"QAM checkpoint failed closed: {details}")
+
+        statuses = sorted(statuses, key=lambda status: int(status["rank"]))
+        ranks = [int(status["rank"]) for status in statuses]
+        if ranks != list(range(int(self._world_size))):
+            raise ValueError(f"QAM checkpoint rank set mismatch: {ranks}")
+        signatures = {status["signature"] for status in statuses}
+        if len(signatures) != 1:
+            raise ValueError("QAM checkpoint rank metadata mismatch")
+        return statuses
+
+    @staticmethod
+    def _checkpoint_signature(state: dict[str, Any]) -> tuple[Any, ...]:
+        """Return state that must match to keep collective update counts equal."""
+        snapshot = state["snapshot"]
+        feature_dim = state["critic_feature_dim"]
+        prefix_lengths = state.get("prefix_block_lengths")
+        anchor = state.get("q_only_anchor_global_inserts")
+        return (
+            int(snapshot["checkpoint_step"]),
+            str(snapshot["snapshot_id"]),
+            int(state["world_size"]),
+            str(state["saved_phase"]),
+            state["contract_fingerprint"],
+            (
+                None
+                if prefix_lengths is None
+                else tuple(int(value) for value in prefix_lengths)
+            ),
+            None if feature_dim is None else int(feature_dim),
+            bool(state["has_replay"]),
+            int(state["runner_global_step"]),
+            int(state["fine_policy_version"]),
+            int(state["critic_updates"]),
+            int(state["fine_updates"]),
+            int(state["global_total_inserts"]),
+            float(state["pending_update_credit"]),
+            None if anchor is None else int(anchor),
+        )
+
+    def _checkpoint_state(
+        self,
+        snapshot: dict[str, Any],
+    ) -> dict[str, Any]:
+        return {
             "complete": True,
+            "snapshot": snapshot,
             "rank": self._rank,
             "world_size": self._world_size,
             "saved_phase": self.phase,
@@ -1200,47 +1320,186 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             "global_total_inserts": self.global_total_inserts,
             "pending_update_credit": self.update_credit.pending,
             "q_only_anchor_global_inserts": self.q_only_anchor_global_inserts,
+            "rng_state": get_rng_state(),
         }
-        temporary = sidecar_path.with_name(
-            f".{sidecar_path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex}"
-        )
+
+    def _write_qam_checkpoint_components(
+        self,
+        save_base_path: str,
+        step: int,
+    ) -> None:
+        sidecar_path = self._sidecar_path(save_base_path)
+        replay_path = self._replay_checkpoint_path(save_base_path)
+        snapshot_id = self._new_checkpoint_snapshot_id()
+        snapshot = {
+            "schema_version": self._QAM_CHECKPOINT_SCHEMA_VERSION,
+            "checkpoint_step": int(step),
+            "snapshot_id": snapshot_id,
+            "rank": int(self._rank),
+            "world_size": int(self._world_size),
+        }
+        state = self._checkpoint_state(snapshot)
+        error = None
         try:
-            torch.save(state, temporary)
-            os.replace(temporary, sidecar_path)
-        finally:
-            if temporary.exists():
-                temporary.unlink()
+            if self.replay is not None:
+                self.replay.save_checkpoint(replay_path, snapshot=snapshot)
+            self._atomic_torch_dump(state, sidecar_path)
+        except Exception as exc:  # pragma: no cover - distributed smoke
+            error = f"{type(exc).__name__}: {exc}"
+        local_status = {
+            "rank": int(self._rank),
+            "error": error,
+            "signature": self._checkpoint_signature(state),
+        }
+        self._gather_checkpoint_status(local_status)
+
+        manifest_error = [None]
+        if int(self._rank) == 0:
+            try:
+                manifest = {
+                    "complete": True,
+                    "schema_version": self._QAM_CHECKPOINT_SCHEMA_VERSION,
+                    "checkpoint_step": int(step),
+                    "snapshot_id": snapshot_id,
+                    "world_size": int(self._world_size),
+                }
+                self._atomic_json_dump(
+                    manifest,
+                    self._completion_manifest_path(save_base_path),
+                )
+            except Exception as exc:  # pragma: no cover - shared filesystem
+                manifest_error[0] = f"{type(exc).__name__}: {exc}"
+        if self._distributed_active():
+            torch.distributed.broadcast_object_list(manifest_error, src=0)
+        if manifest_error[0] is not None:
+            raise ValueError(f"could not complete QAM checkpoint: {manifest_error[0]}")
+
+    def _preflight_qam_checkpoint(
+        self,
+        load_base_path: str,
+    ) -> dict[str, Any]:
+        state = None
+        signature = None
+        error = None
+        try:
+            manifest_path = self._completion_manifest_path(load_base_path)
+            with manifest_path.open(encoding="utf-8") as handle:
+                manifest = json.load(handle)
+            if manifest.get("complete") is not True:
+                raise ValueError("QAM completion manifest is not complete")
+            if (
+                int(manifest.get("schema_version", -1))
+                != self._QAM_CHECKPOINT_SCHEMA_VERSION
+            ):
+                raise ValueError("QAM completion manifest schema mismatch")
+            if int(manifest.get("world_size", -1)) != int(self._world_size):
+                raise ValueError("QAM completion manifest world-size mismatch")
+            checkpoint_step = int(manifest["checkpoint_step"])
+            snapshot_id = manifest.get("snapshot_id")
+            if not isinstance(snapshot_id, str) or not snapshot_id:
+                raise ValueError("QAM completion manifest snapshot ID is invalid")
+
+            sidecar_path = self._sidecar_path(load_base_path)
+            state = torch.load(
+                sidecar_path,
+                map_location="cpu",
+                weights_only=False,
+            )
+            expected_snapshot = {
+                "schema_version": self._QAM_CHECKPOINT_SCHEMA_VERSION,
+                "checkpoint_step": checkpoint_step,
+                "snapshot_id": snapshot_id,
+                "rank": int(self._rank),
+                "world_size": int(self._world_size),
+            }
+            if state.get("complete") is not True:
+                raise ValueError("incomplete QAM worker checkpoint")
+            if state.get("snapshot") != expected_snapshot:
+                raise ValueError("QAM sidecar/manifest snapshot mismatch")
+            if (state.get("rank"), state.get("world_size")) != (
+                self._rank,
+                self._world_size,
+            ):
+                raise ValueError("QAM resume requires the same rank/world size")
+            saved_phase = str(state["saved_phase"])
+            if not _phase_transition_is_valid(saved_phase, self.phase):
+                raise ValueError(
+                    "QAM resume phase must move monotonically "
+                    "collect -> q_only -> am_on"
+                )
+            if "rng_state" not in state:
+                raise ValueError("QAM checkpoint is missing rank-local RNG")
+
+            critic_feature_dim = state["critic_feature_dim"]
+            critic_components = (
+                state.get("critic"),
+                state.get("target_critic"),
+                state.get("critic_optimizer"),
+            )
+            if critic_feature_dim is None:
+                if any(component is not None for component in critic_components):
+                    raise ValueError("QAM critic checkpoint is inconsistent")
+            elif any(component is None for component in critic_components):
+                raise ValueError("QAM critic checkpoint is incomplete")
+            else:
+                critic_feature_dim = int(critic_feature_dim)
+
+            prefix_block_lengths = state.get("prefix_block_lengths")
+            if prefix_block_lengths is not None:
+                self.prefix_block_lengths = validate_qam_prefix_block_lengths(
+                    torch.tensor(prefix_block_lengths),
+                    feature_blocks=4,
+                )
+            contract_fingerprint = state["contract_fingerprint"]
+            if contract_fingerprint is not None:
+                self._init_replay(contract_fingerprint)
+
+            signature = self._checkpoint_signature(state)
+            has_replay = bool(state["has_replay"])
+            replay_path = self._replay_checkpoint_path(load_base_path)
+            if has_replay:
+                if self.replay is None:
+                    raise ValueError("QAM replay checkpoint is missing its contract")
+                self.replay.load_checkpoint(
+                    replay_path,
+                    expected_snapshot=expected_snapshot,
+                )
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {exc}"
+
+        self._gather_checkpoint_status(
+            {
+                "rank": int(self._rank),
+                "error": error,
+                "signature": signature,
+            }
+        )
+        assert state is not None
+        return state
+
+    def save_checkpoint(self, save_base_path: str, step: int) -> None:
+        """Save F1 with FSDP and worker-only QAM state in rank sidecars."""
+        manifest_error = [None]
+        if int(self._rank) == 0:
+            try:
+                self._completion_manifest_path(save_base_path).unlink(missing_ok=True)
+            except Exception as exc:  # pragma: no cover - shared filesystem
+                manifest_error[0] = f"{type(exc).__name__}: {exc}"
+        if self._distributed_active():
+            torch.distributed.broadcast_object_list(manifest_error, src=0)
+        if manifest_error[0] is not None:
+            raise ValueError(
+                "could not invalidate prior QAM completion manifest: "
+                f"{manifest_error[0]}"
+            )
+        super().save_checkpoint(save_base_path, step)
+        self._write_qam_checkpoint_components(save_base_path, step)
 
     def load_checkpoint(self, load_base_path: str) -> None:
         """Restore F1 and exact QAM sidecar/replay continuation state."""
+        state = self._preflight_qam_checkpoint(load_base_path)
         super().load_checkpoint(load_base_path)
-        sidecar_path = self._sidecar_path(load_base_path)
-        state = torch.load(
-            sidecar_path,
-            map_location="cpu",
-            weights_only=False,
-        )
-        if state.get("complete") is not True:
-            raise ValueError("incomplete QAM worker checkpoint")
-        if (state["rank"], state["world_size"]) != (
-            self._rank,
-            self._world_size,
-        ):
-            raise ValueError("QAM resume requires the same rank/world size")
-        if not _phase_transition_is_valid(state["saved_phase"], self.phase):
-            raise ValueError(
-                "QAM resume phase must move monotonically collect -> q_only -> am_on"
-            )
 
-        contract_fingerprint = state["contract_fingerprint"]
-        prefix_block_lengths = state.get("prefix_block_lengths")
-        if prefix_block_lengths is not None:
-            self.prefix_block_lengths = validate_qam_prefix_block_lengths(
-                torch.tensor(prefix_block_lengths),
-                feature_blocks=4,
-            )
-        if contract_fingerprint is not None:
-            self._init_replay(contract_fingerprint)
         feature_dim = state["critic_feature_dim"]
         if feature_dim is not None:
             self._init_critic(feature_dim)
@@ -1254,12 +1513,6 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             )
             self.critic_optimizer.load_state_dict(state["critic_optimizer"])
 
-        if state["has_replay"]:
-            if self.replay is None:
-                raise ValueError("QAM replay checkpoint is missing its contract")
-            replay_path = sidecar_path.parent / f"replay_rank_{self._rank}.pt"
-            self.replay.load_checkpoint(replay_path)
-
         self.runner_global_step = int(state["runner_global_step"])
         self.fine_policy_version = int(state["fine_policy_version"])
         self.critic_updates = int(state["critic_updates"])
@@ -1272,9 +1525,11 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
             saved_pending=float(state["pending_update_credit"]),
             saved_anchor=state.get("q_only_anchor_global_inserts"),
             global_total_inserts=self.global_total_inserts,
+            warmup_global_inserts=int(self.qam_cfg.warmup_global_inserts),
         )
         self.update_credit = QAMUpdateCredit(
             utd_ratio=float(self.qam_cfg.utd_ratio),
             pending=pending,
         )
         self.q_only_anchor_global_inserts = anchor
+        set_rng_state(state["rng_state"])

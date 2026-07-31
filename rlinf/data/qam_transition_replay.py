@@ -274,10 +274,14 @@ class QAMTransitionReplay:
             )
         return samples
 
-    def _checkpoint_state(self) -> dict[str, Any]:
+    def _checkpoint_state(
+        self,
+        snapshot: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         return {
             "complete": True,
             "schema_version": QAM_REPLAY_SCHEMA_VERSION,
+            "snapshot": snapshot,
             "metadata": {
                 "capacity": self.capacity,
                 "rank": self.rank,
@@ -302,7 +306,12 @@ class QAMTransitionReplay:
             "observation_refcounts": dict(self._observation_refcounts),
         }
 
-    def save_checkpoint(self, path: str | os.PathLike[str]) -> None:
+    def save_checkpoint(
+        self,
+        path: str | os.PathLike[str],
+        *,
+        snapshot: dict[str, Any] | None = None,
+    ) -> None:
         """Atomically replace one trusted local replay checkpoint file."""
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -311,7 +320,7 @@ class QAMTransitionReplay:
         )
         try:
             with temporary.open("wb") as file:
-                torch.save(self._checkpoint_state(), file)
+                torch.save(self._checkpoint_state(snapshot), file)
                 file.flush()
                 os.fsync(file.fileno())
             os.replace(temporary, destination)
@@ -335,7 +344,12 @@ class QAMTransitionReplay:
                 f"got {metadata}"
             )
 
-    def load_checkpoint(self, path: str | os.PathLike[str]) -> None:
+    def load_checkpoint(
+        self,
+        path: str | os.PathLike[str],
+        *,
+        expected_snapshot: dict[str, Any] | None = None,
+    ) -> None:
         """Load a complete replay checkpoint with exact RNG and ring cursor."""
         checkpoint = torch.load(
             Path(path),
@@ -346,6 +360,11 @@ class QAMTransitionReplay:
             raise ValueError("unsupported QAM replay schema version")
         if checkpoint.get("complete") is not True:
             raise ValueError("incomplete QAM replay checkpoint")
+        if (
+            expected_snapshot is not None
+            and checkpoint.get("snapshot") != expected_snapshot
+        ):
+            raise ValueError("QAM replay checkpoint snapshot mismatch")
         self._validate_checkpoint_metadata(checkpoint["metadata"])
 
         slots = [

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from pathlib import Path
 
 import pytest
@@ -145,6 +146,38 @@ def test_global_insert_utd_credit_is_persistent_and_capped() -> None:
     assert credit.pending == pytest.approx(0.0)
 
 
+def test_q_only_utd_credit_starts_after_online_warmup() -> None:
+    worker = object.__new__(QAMFSDPPolicy)
+    worker.phase = "q_only"
+    worker.qam_cfg = OmegaConf.create({"warmup_global_inserts": 5})
+    worker.update_credit = QAMUpdateCredit(utd_ratio=2.0)
+    worker.q_only_anchor_global_inserts = None
+
+    worker.global_total_inserts = 4
+    worker._accrue_update_credit(4)
+    assert worker.q_only_anchor_global_inserts is None
+    assert worker.update_credit.pending == 0
+
+    worker.global_total_inserts = 5
+    worker._accrue_update_credit(1)
+    assert worker.q_only_anchor_global_inserts == 5
+    assert worker.update_credit.pending == 0
+
+    worker.global_total_inserts = 7
+    worker._accrue_update_credit(2)
+    assert worker.update_credit.pending == pytest.approx(4.0)
+
+    crossing = object.__new__(QAMFSDPPolicy)
+    crossing.phase = "q_only"
+    crossing.qam_cfg = worker.qam_cfg
+    crossing.update_credit = QAMUpdateCredit(utd_ratio=2.0)
+    crossing.q_only_anchor_global_inserts = None
+    crossing.global_total_inserts = 7
+    crossing._accrue_update_credit(3)
+    assert crossing.q_only_anchor_global_inserts == 5
+    assert crossing.update_credit.pending == pytest.approx(4.0)
+
+
 def test_collect_resume_establishes_q_only_credit_anchor() -> None:
     pending, anchor = _resume_update_credit(
         saved_phase="collect",
@@ -152,6 +185,7 @@ def test_collect_resume_establishes_q_only_credit_anchor() -> None:
         saved_pending=512.0,
         saved_anchor=None,
         global_total_inserts=512,
+        warmup_global_inserts=512,
     )
     assert pending == 0.0
     assert anchor == 512
@@ -162,6 +196,7 @@ def test_collect_resume_establishes_q_only_credit_anchor() -> None:
         saved_pending=1.5,
         saved_anchor=512,
         global_total_inserts=640,
+        warmup_global_inserts=512,
     )
     assert pending == pytest.approx(1.5)
     assert anchor == 512
@@ -172,12 +207,13 @@ def test_collect_resume_establishes_q_only_credit_anchor() -> None:
         saved_pending=8.0,
         saved_anchor=None,
         global_total_inserts=128,
+        warmup_global_inserts=512,
     )
     assert pending == 0.0
     assert anchor is None
 
 
-def test_current_truncation_payload_never_guesses_timeout() -> None:
+def test_robotwin_time_limit_keeps_query_final_state_valid() -> None:
     assert classify_qam_end(terminated=False, truncated=False) == (
         False,
         False,
@@ -192,9 +228,9 @@ def test_current_truncation_payload_never_guesses_timeout() -> None:
     )
     assert classify_qam_end(terminated=False, truncated=True) == (
         False,
-        False,
         True,
         False,
+        True,
     )
     assert classify_qam_end(terminated=True, truncated=True) == (
         True,
@@ -462,6 +498,81 @@ def test_qam_resume_phase_is_monotonic() -> None:
     assert _phase_transition_is_valid("am_on", "am_on")
     assert not _phase_transition_is_valid("am_on", "q_only")
     assert not _phase_transition_is_valid("unknown", "collect")
+
+
+def _checkpoint_worker() -> QAMFSDPPolicy:
+    worker = object.__new__(QAMFSDPPolicy)
+    worker._rank = 0
+    worker._world_size = 1
+    worker.phase = "q_only"
+    worker.replay = None
+    worker.contract_fingerprint = None
+    worker.prefix_block_lengths = (2, 2, 2, 1)
+    worker.critic_feature_dim = None
+    worker.critic = None
+    worker.target_critic = None
+    worker.critic_optimizer = None
+    worker.runner_global_step = 2
+    worker.fine_policy_version = 0
+    worker.critic_updates = 4
+    worker.fine_updates = 0
+    worker.local_total_inserts = 7
+    worker.global_total_inserts = 7
+    worker.update_credit = QAMUpdateCredit(utd_ratio=1.0, pending=3.0)
+    worker.q_only_anchor_global_inserts = 0
+    return worker
+
+
+def test_qam_checkpoint_snapshot_manifest_and_preflight(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    worker = _checkpoint_worker()
+    monkeypatch.setattr(
+        "rlinf.workers.actor.fsdp_qam_policy_worker.get_rng_state",
+        lambda: {"rank_local_marker": 17},
+    )
+
+    base_path = tmp_path / "global_step_3" / "actor"
+    worker._write_qam_checkpoint_components(str(base_path), 3)
+    manifest_path = worker._completion_manifest_path(str(base_path))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert set(manifest) == {
+        "complete",
+        "schema_version",
+        "checkpoint_step",
+        "snapshot_id",
+        "world_size",
+    }
+
+    sidecar = torch.load(
+        worker._sidecar_path(str(base_path)),
+        map_location="cpu",
+        weights_only=False,
+    )
+    assert sidecar["snapshot"]["snapshot_id"] == manifest["snapshot_id"]
+    assert sidecar["rng_state"] == {"rank_local_marker": 17}
+    assert worker._preflight_qam_checkpoint(str(base_path))["rng_state"] == {
+        "rank_local_marker": 17
+    }
+
+    manifest["snapshot_id"] = "wrong-snapshot"
+    worker._atomic_json_dump(manifest, manifest_path)
+    with pytest.raises(ValueError, match="snapshot mismatch"):
+        worker._preflight_qam_checkpoint(str(base_path))
+
+
+def test_qam_checkpoint_status_requires_every_rank() -> None:
+    worker = _checkpoint_worker()
+    worker._world_size = 2
+    with pytest.raises(ValueError, match="rank set mismatch"):
+        worker._gather_checkpoint_status(
+            {
+                "rank": 0,
+                "error": None,
+                "signature": ("snapshot",),
+            }
+        )
 
 
 def test_qam_double_opt_in_is_fail_closed_and_legacy_is_untouched() -> None:
