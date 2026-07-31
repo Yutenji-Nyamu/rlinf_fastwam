@@ -4903,3 +4903,139 @@ personal/codex/qam-pi0-robotwin = d6fa0f0f4915587ae5e6a03c580fea7938acd3ca
 ahead/behind                    = 0/0
 persistent proxy/remote/config  = unchanged
 ```
+
+## QAM-FORMAL-0007：首轮 formal 异常、最小修复与 09:00 续跑
+
+### 1. 现场结论与直接失败
+
+2026-07-31 23:53–2026-08-01 00:14 CST 使用固定 host-key 的 Paramiko password-auth
+helper 做身份探针与只读审查。首轮 formal 已于 18:05 异常退出，并非配置的正常停止：
+
+```text
+last complete outer cycle = 51 / 500
+global inserts            = 1005
+critic updates            = 493
+fine / AM updates         = 0 / 0
+fine policy version       = 0
+exit code                 = 255
+fatal                     = QAM frozen-prefix replay round-trip changed the critic feature
+OOM / OOM-kill            = 0 / 0
+```
+
+自动 schedule 在 cycle 52 把 critic update 从 493 推向 513；第 513 次 logical update
+首次进入 AM，校验在 fine optimizer 前抛错。因而阶段配置只负责暴露此前未执行的 AM 路径，
+不是主动停止条件。`global_step_50` 的 DCP/两 rank sidecar/replay/complete manifest 结构完整，
+但旧 replay 只保存了固定 prompt，无法无损恢复实际 rollout language，故没有冒险 resume。
+
+根因位于 π0/RoboTwin observation 适配层：RoboTwin 每 episode 从
+`description/task_instruction/adjust_bottle.json` 随机选实际指令；rollout frozen feature
+使用该指令，通用 trajectory 随后删除字符串，而 QAM replay 旧实现用固定
+`adjust the bottle` 重建。官方 QAM 直接读 flat simulator state，没有视觉/语言 prefix
+或这项 round-trip；Plain-QAM 的 critic、endpoint gradient、VJP 与 AM 数学未改。
+
+### 2. 两个窄代码修复
+
+首个提交 `e49bba1d9e92808847c76641c3e7a65d2b4e2160`：
+
+- `contracts.py` 新增固定 256-byte UTF-8 prompt tensor encode/decode；
+- `openpi_action_model.py` 只在 QAM opt-in 分支把当次实际 prompt 放进 forward payload；
+- `fsdp_qam_policy_worker.py` 从 payload 无损恢复 prompt，并让 AM conditioning 显式走
+  eval 后恢复原模式；
+- 两个测试文件覆盖英文/中文 prompt round-trip 与真实 ingest prompt；
+- 5 files，`+132/-8`，不修改 DSRL/RLT/PPO/GRPO、shared venv 或旧 config。
+
+第一次真实 AM fixcheck 证明 prompt 合同已修，但旧逐元素 `allclose(2e-3)` 仍把同一输入在
+rollout 单样本和 actor batch32 的 BF16/FSDP 数值差异当成 fatal：
+
+```text
+max_abs=0.25
+mean_abs=0.00856103
+```
+
+第二个提交 `d5f6d7d1da0fc355a71ca653be027282cad040d2` 仅修改同一校验：按每个样本、
+每个 prefix block 检查 `max_relative_l2 <= 0.1` 且 `min_cosine >= 0.995`，并把实际
+mean-abs/relative-L2/cosine 写进 AM metrics。该门仍能发现 block/prompt/相机合同错配，
+但不再要求不同 batch kernel 逐元素近似相等；QAM loss、更新顺序和正式超参均未变。
+
+两次修改后都在服务器执行同一集中命令：
+
+```bash
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+PYTHONPATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin \
+  /root/autodl-tmp/RLinf/.venv/bin/python -m pytest -q \
+  tests/embodiment/test_robotwin_qam_contract.py \
+  tests/workers/test_qam_worker_helpers.py \
+  tests/embodiment/test_qam_openpi_adapter.py
+```
+
+结果均为 `31 passed, 3 dependency warnings`；分别用时 8.92 s 与 8.41 s。
+
+默认直连 `ls-remote` 两次 15 s 超时；没有改 remote/Git config。仅在各自 child shell
+临时 `source /etc/network_turbo`，两次 fast-forward push 后复核 remote HEAD，最终为
+`d5f6d7d1da0fc355a71ca653be027282cad040d2`，server tree clean，代理未持久化。
+
+### 3. 一次 AM 的真实验证
+
+第二次 fixcheck 使用 formal 的两卡、2 env、global/local batch `64/32`，只把测试预算改为：
+
+```text
+runner.max_steps=4
+warmup_global_inserts=32
+q_only_updates_before_am=1
+max_updates_per_step=2
+save_interval=100
+video=false
+```
+
+四个 outer cycle 是让每 rank replay 达到正式 local batch32 所需的最小收集量；实际只执行
+2 次 critic update，其中第 1 次 q_only、第 2 次 joint critic+AM。结果自然 exit0：
+
+```text
+critic_updates          = 2
+am_updates / fine       = 1 / 1
+fine_policy_version     = 1
+am_loss                 = 0.011
+terminal_adjoint_norm   = 0.098
+fine_grad_norm(preclip) = 10.055
+OOM / OOM-kill          = 0 / 0
+```
+
+没有保存大 checkpoint。第一次失败 fixcheck 和第二次通过 fixcheck 分别保存在
+`qam_prompt_fixcheck_20260801_v1`、`v2` 的独立 run/runtime，均未覆盖首轮 formal。
+
+### 4. fresh formal v2 启动
+
+用户再次授权后，使用新增脚本
+`evidence/qam_formal_launch_20260801_v2.sh` fresh 启动；除代码 HEAD、独立输出路径和
+重新计算的 wall timeout 外，正式配置保持已批准版本：
+
+```text
+512 global macro collect, 0 update
+-> 512 critic-only updates, UTD=1
+-> logical update 513 起 joint critic + AM
+2 GPU / 2 env
+global/local batch = 64 / 32
+inv_temp = 1.0
+max_updates_per_step = 32
+save_interval = 25
+max_steps = 500 safety ceiling
+hard deadline = 2026-08-01 09:00 CST
+```
+
+启动现场：
+
+```text
+launch time       = 2026-08-01 00:43:47 CST
+wall limit        = 29,773 s
+supervisor PID    = 183126
+HEAD / tree       = d5f6d7d1... / d63c2a03...
+run root          = /root/autodl-tmp/experiments/qam_formal_20260801_v2
+runtime evidence  = /root/autodl-tmp/experiment_exports/qam_formal_20260801_v2/runtime
+disk available    = 967,284,490,240 B
+```
+
+00:46:39 的一次启动健康探针确认 supervisor/driver/Ray 和两 rank actor/rollout/env 存活，
+首个真实 rollout 已在 18.72 s 内完成；GPU 为 24,628/24,165 MiB、util 55%/74%，
+cgroup anon 约 27.8 GiB，OOM/OOM-kill 为 0/0，fatal 扫描为空。Curobo/pytorch3d 是既有
+可选 planner 探测，实际 mplib/TOPP rollout 已完成。按用户要求，此后不持续监控；下一次
+只有收到请求才重新连接并刷新当前状态。

@@ -399,21 +399,24 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   macro 纯 collect，再 512 次 critic-only update，第 513 次 logical update 起 joint
   critic+AM；UTD=1、global/local batch=64/32、`inv_temp=1.0`。outcome/Q-gradient
   诊断只记录，不阻塞切换；NaN/Inf、OOM、NCCL/Ray fatal 仍停止。
-- 用户已授权正式训练；2026-07-31 17:32 CST detached 启动，run root
-  `/root/autodl-tmp/experiments/qam_formal_20260731_v1`，runtime evidence
-  `/root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime`，supervisor
-  PID `103802`，timeout driver PID `103857`，hard deadline 为
-  2026-08-01 09:00 CST，runner `max_steps=500` 只是安全上限。
-- 17:35 CST 一次性健康门：supervisor/driver/Ray 与两 rank actor/rollout/env 均存活；
-  至少完成 3 个真实 rollout cycle，累计 60 global macro、每 rank replay 30，仍在
-  warm-up，所以 critic/fine update 与 policy version 都为 0；GPU 使用
-  23,259/23,781 MiB，其中 GPU1 采样点利用率 99%；cgroup current 约 198.8 GB，
-  OOM/OOM-kill 0/0，磁盘仍有 933 GiB。可选 Curobo/pytorch3d import traceback 与
-  smoke 相同，TOPP 已继续完成 rollout，不是 fatal。
-- 当前停点：按用户要求不持续监控，也不启动第二个进程。下次请求时先 live 刷新
-  driver/Ray、cycle/global inserts、critic/fine update、实际 phase、success、
-  checkpoint、GPU/cgroup 与 fatal。独立 fresh→resume live smoke 仍未做，不能把静态
-  resume 回归等同于已验证的中断恢复。
+- 首轮 formal 在 cycle 52 首次进入 AM 前异常退出；直接原因不是阶段配置，而是 QAM
+  π0/RoboTwin 适配层用固定 prompt 重建 replay observation，和 rollout 的实际随机语言
+  指令不一致，随后又被过严的逐元素 prefix parity 门拦截。旧 `global_step_50` 虽结构完整，
+  但缺少实际 prompt，未作有损 resume。
+- 两个最小修复已测试并推送：`e49bba1d...` 无损传递实际 prompt，`d5f6d7d1...` 把
+  BF16/FSDP 跨 batch 的逐元素门改为逐 sample/block relative-L2+cosine，并记录指标；
+  Plain-QAM 的 10-Q、endpoint gradient、VJP、AM 和正式超参未改。服务器集中回归两次均
+  `31 passed`；4-cycle 最小真实路径恰好完成 1 次 AM，fine version `0→1`，自然 exit0。
+- 用户已授权 fresh formal v2。2026-08-01 00:43:47 CST detached 启动，代码 HEAD
+  `d5f6d7d1da0fc355a71ca653be027282cad040d2`；run root
+  `/root/autodl-tmp/experiments/qam_formal_20260801_v2`，runtime evidence
+  `/root/autodl-tmp/experiment_exports/qam_formal_20260801_v2/runtime`，supervisor PID
+  `183126`，hard deadline 仍为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。
+- 00:46:39 一次性健康门：supervisor/driver/Ray 与两 rank actor/rollout/env 均存活，
+  首个真实 rollout 18.72 s 完成；GPU 24,628/24,165 MiB、util 55%/74%，cgroup anon
+  约27.8GiB，OOM/OOM-kill 0/0，fatal 扫描为空。按用户要求不持续监控。下次请求时先
+  live 刷新 driver/Ray、cycle/global inserts、critic/fine update、actual phase、success、
+  checkpoint、GPU/cgroup 和 fatal，再把状态称为当前。
 
 ## 共同执行边界
 

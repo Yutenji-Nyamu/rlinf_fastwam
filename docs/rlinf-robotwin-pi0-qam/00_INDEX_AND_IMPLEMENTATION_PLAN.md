@@ -980,15 +980,24 @@ DSRL/RLT worktree 与所有 formal checkpoint/run artifacts 未改。按用户�
   -> 第 513 个 logical update 起 joint critic + AM
 ```
 
-正式代码快照为 `4a15699e10971e306ed756dcbbf8aa65632553d5`，run root 为
-`/root/autodl-tmp/experiments/qam_formal_20260731_v1`，runtime evidence 为
-`/root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime`，hard deadline
-为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。17:35 CST 的一次性启动门：
-supervisor/driver/Ray/两 rank actor-rollout-env 全存活，至少 3 cycles、60 条 global
-macro 已写 replay，仍处于 warm-up，Q/AM update 均为 0；GPU 为
-23,259/23,781 MiB，cgroup OOM/OOM-kill 为 0/0。Curobo/pytorch3d 的可选 planner
-import traceback 与既有 smoke 相同，TOPP 路径继续完成 rollout，非本次 fatal。
+首轮 formal 在第一次 AM 前暴露了 observation 适配 bug：rollout 使用 RoboTwin 当次随机
+语言指令，replay 却用固定 prompt 重建；此外逐元素 `allclose` 不适合跨 rollout-single/
+actor-batch32 的 BF16/FSDP prefix。修复只发生在 QAM payload/parity 层：实际 prompt
+无损随 tensor payload 传递；parity 改为逐 sample/block relative-L2+cosine 并记录指标。
+Plain-QAM 的 critic、endpoint gradient、behavior VJP、AM、schedule 和正式超参均未改。
+两个修复提交 `e49bba1d...`、`d5f6d7d1...` 已推送；服务器回归 `31 passed`，最小
+4-cycle 路径只执行 1 次 AM，fine version `0→1` 且自然 exit0。旧 step50 缺实际 prompt，
+不作有损 resume。
+
+fresh formal v2 已于 2026-08-01 00:43:47 CST 启动，代码快照为
+`d5f6d7d1da0fc355a71ca653be027282cad040d2`，run root 为
+`/root/autodl-tmp/experiments/qam_formal_20260801_v2`，runtime evidence 为
+`/root/autodl-tmp/experiment_exports/qam_formal_20260801_v2/runtime`，hard deadline
+仍为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。00:46:39 一次性启动门：
+supervisor/driver/Ray/两 rank actor-rollout-env 全存活，首个真实 rollout 18.72 s 完成；
+GPU 24,628/24,165 MiB、util 55%/74%，cgroup anon 约27.8GiB，OOM/OOM-kill 0/0，
+fatal 扫描为空。
 
 按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、
 global inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，
-再把快照称为当前；独立 live fresh→resume 仍不是本次 formal 已验证结论。
+再把快照称为当前。
