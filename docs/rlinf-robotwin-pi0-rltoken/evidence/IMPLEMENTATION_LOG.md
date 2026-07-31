@@ -6043,3 +6043,78 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
   四个允许docs文件的未暂存工作树版本，没有提交、push或代码/config变化。修复为只统计
   正则`(?m)^````匹配的行首围栏，并把重入门从“必须完全clean”收紧为“允许且只允许这四个
   已验证docs路径”，以便在不reset用户内容的情况下继续同一事务。
+- 修复后原样重跑apply/commit，四文件QA、精确allowlist和staged diff gate均通过，形成
+  docs-only提交：
+
+  ```text
+  d81267b57eb5ce13e6452139aaeba02af3911624
+  docs(rlt): record cycle 480 formal closeout
+  ```
+
+  提交修改4个文件、2773 insertions/17 deletions，其中新增17号最终报告；服务器
+  worktree随后clean，相对远端由ahead2变为ahead3。该提交没有修改算法、配置、checkpoint、
+  数据集或实验产物。
+- 服务器随后执行
+  `local_scripts/remote_rlt_20260731_git_sync_bounded_push.sh`。脚本先短探针
+  `github.com`和`git ls-remote`；主站仍HTTP000且`ls-remote`返回124，因此按网络手册
+  输出`PUSH_SKIPPED_NETWORK_UNAVAILABLE`并以75退出，没有进入认证或pack阶段，也没有
+  改远端。
+- 为避免用旧Windows开发镜像倒灌服务器，服务器从云端已知基线
+  `9bb2dd78feff7133780c3df6a88618d10168c4e4`到当前HEAD生成仅含ahead3的增量bundle：
+
+  ```text
+  /root/autodl-tmp/experiment_exports/rlt_git_sync_20260731_0957_v1/
+    codex-rlt-ahead3.bundle
+  bytes=69651
+  sha256=fe9ec6782030b46ed81e845ebd56178590055499194fbbed186f5e14912f9404
+  ```
+
+  bundle下载到
+  `C:\Users\86136\Documents\rl\.tmp\rlt_git_sync_20260731_0957_v1\`后SHA一致。本机另建
+  全新bare relay：先从GitHub只读fetch精确云端HEAD，再`git bundle verify`并fetch
+  bundle；`merge-base --is-ancestor`确认`9bb2dd78 -> d81267b5`是fast-forward，
+  `git fsck`通过。旧`.rlt-impl-worktree`全程只读，未参与fetch、commit、bundle或push。
+- Windows第一次relay push在任何写入前失败：
+
+  ```text
+  error: cannot spawn sh: No such file or directory
+  fatal: could not read Username for 'https://github.com': terminal prompts disabled
+  ```
+
+  push后`git ls-remote`仍为`9bb2dd78...`。只读诊断确认Git为
+  `E:\long\Git\cmd\git.exe`、Credential Manager 2.5.0可单独运行、`sh.exe`存在于
+  `E:\long\Git\bin`；加入该路径后Git trace仍显示失败发生在内部
+  `run_command: 'git credential-manager get'`的shell启动层。没有修改global/system
+  Git配置。
+- 拟改用已配置Credential Manager在当前PowerShell进程内直接提供一次认证头：不打印、
+  不落盘、push后清除。但Windows sandbox在启动Credential Manager前以
+  `CreateProcessAsUserW failed: 5`拒绝；按规则申请一次沙箱外执行后，安全审查又因
+  “未把具体提交批次和具体GitHub目的地写成精确授权”拒绝。两次均发生在读取凭据和push
+  之前，不能用替代路径绕过。当前云端仍为`9bb2dd78...`，服务器为clean
+  `d81267b5...`、ahead3；下一步只等待用户精确批准把这3个提交fast-forward到
+  `Yutenji-Nyamu/rlinf_fastwam`的`codex/rlt-pi0-robotwin`。
+- 本专题机器角色由此冻结为：
+  1. 服务器独立worktree是compose/test/smoke/train与“实际跑过”的运行时真值；
+  2. GitHub同名分支是源码和文档的持久、协作与灾备真值；
+  3. Windows根目录主要承载交接文档、diff、图和小型证据，RLT本地镜像应可从云端重建；
+  4. `.tmp`下bundle/bare relay只作一次性传输，不是开发真值；
+  5. 任何本地dirty镜像都不得反向覆盖服务器，除非先逐提交证明来源、差异和
+     fast-forward关系。
+
+  因此“本机不运行项目”不等于“可以不维护”：长期源码副本应跟云端一致或明确标记为
+  disposable；未提交文档在同步前仍可能是唯一副本。冗余清理须等云端核验后先列精确
+  目录、大小和可恢复性，再另行取得删除授权。
+- 为把上述边界形成可精确授权的服务器提交，使用`apply_patch`新增：
+
+  ```text
+  local_scripts/remote_rlt_20260731_git_sync_prepare_authority_docs.sh
+  local_scripts/remote_rlt_20260731_git_sync_commit_authority_docs.sh
+  ```
+
+  prepare脚本要求branch不变、HEAD精确为`d81267b5...`、worktree clean和新staging
+  不存在；commit脚本只允许`HANDOFF.md`与本账本两条路径，执行UTF-8/BOM/newline/
+  whitespace/fence、`diff --check`和staged allowlist后形成docs-only提交。
+  本地首次QA发现commit脚本为了断言“文档不含密码”而把密码原文本身写进否定检查，导致
+  `CredentialLiteral=true`。该脚本尚未上传或执行；立即用`apply_patch`删除该原文断言，
+  保留不依赖任何秘密值的通用格式检查。修复后再执行Bash语法和文本QA，确认本批脚本无
+  BOM、无CRLF、无尾随空白，也不再包含密码原文。
