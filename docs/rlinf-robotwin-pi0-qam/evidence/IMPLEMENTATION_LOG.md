@@ -3969,3 +3969,568 @@ df -h /root/autodl-tmp
 ahead/behind `0/0`；`pgrep` 只匹配到包含搜索字符串的本次只读 shell 自身，没有真实
 training/Ray 进程；GPU0/1 均 0 MiB、0%；两个 smoke 目标目录均不存在；磁盘
 1.9 TiB / 1.1 TiB / 807 GiB / 57%。正式 smoke 仍未启动。
+
+## QAM-SMOKE-0001：授权后前检、运行代码锁与启动
+
+时间：2026-07-31 14:56:43–14:57:35 CST。用户明确批准本批准包中的 fresh
+`q_only` smoke；没有批准正式训练、resume smoke 或 `am_on` smoke。
+
+第一条远端命令仍是 `hostname; pwd; id -u`，随后在同一只读前检中核对：
+
+```text
+host = autodl-container-nekaqbwt43-6ce5babb
+uid = 0
+branch = codex/qam-pi0-robotwin
+HEAD = de99f969975564c8fec53de09c595b6670e3a416
+tree = 3a495f06cc79a5f00a7543b21e4a6953039f7ea9
+status = clean
+ahead/behind = 0/0
+GPU0/GPU1 = 0 MiB, 0%
+training/Ray = none
+run root/runtime root = absent
+disk available = 866,263,560,192 B
+cgroup anon/file = 311 MB / 183.84 GB
+cgroup oom/oom_kill = 0/0
+```
+
+服务器 runtime HEAD 比最初实现 commit 多了已经审查过的 QAM 文档与无凭据 SSH
+helper；`git diff 7bc5f870... de99f969...` 没有 runtime code/config 变化。旧 launcher
+仍硬锁旧 HEAD/tree，因此只更新以下 provenance 常量，不改训练配置：
+
+```text
+expected_head: de99f969975564c8fec53de09c595b6670e3a416
+expected_tree: 3a495f06cc79a5f00a7543b21e4a6953039f7ea9
+launcher SHA-256:
+92a76d47615e34c02f6c33d33fb84d194a03e5310aaf4d3cb0550aeed18d79b4
+```
+
+上传后执行 `bash -n`、源/resolved/diff/monitor SHA 和 run-root 不存在检查均通过。
+启动命令为：
+
+```bash
+bash /root/autodl-tmp/qam_qonly_smoke_launch_20260731_v1.sh
+```
+
+launcher 内真正送入训练程序的完整命令、所有环境变量和覆盖项原样保存在
+`qam_qonly_smoke_20260731_v1/exact_command.txt`；resolved config、穷尽 diff 和
+provenance 位于同目录。本次精确预算仍为 2 GPU、2 env、1 outer cycle、2 episode、
+最多 400 requested slots、预期 2–20 global macro、恰好 2 次 critic update、
+0 fine update、0 eval 和 1 个 DCP。
+
+## QAM-SMOKE-0002：监控权限故障、窄恢复与永久修复
+
+训练 driver 正常启动，但原资源 monitor 立即返回：
+
+```text
+/root/autodl-tmp/qam_qonly_smoke_launch_20260731_v1.sh: line 181:
+/root/autodl-tmp/qam_resource_monitor_20260731_v1.sh: Permission denied
+monitor_exit_code = 126
+```
+
+原因是 SFTP 上传后的脚本 mode 为 `644`，launcher 直接把路径当可执行文件调用。
+算法、配置和 driver 均未受影响。15:00:27 CST 在训练仍运行时执行唯一窄恢复：
+
+```bash
+bash /root/autodl-tmp/qam_resource_monitor_20260731_v1.sh \
+  82368 \
+  /root/autodl-tmp/experiment_exports/qam_qonly_smoke_20260731_v1/runtime/resources.csv \
+  2 \
+  >/root/autodl-tmp/experiment_exports/qam_qonly_smoke_20260731_v1/runtime/monitor_recovered.log \
+  2>&1 &
+```
+
+其中 `82368` 是 driver PID；恢复 monitor 自然跟随 driver 退出。launcher 的永久修复仅为：
+
+```diff
+-"$monitor" "$driver_pid" "$runtime_root/resources.csv" 2
++bash "$monitor" "$driver_pid" "$runtime_root/resources.csv" 2
+```
+
+15:11:27 CST 又用一个 3 秒 `sleep` 假 driver 做窄复测：
+
+```bash
+sleep 3 &
+probe_pid=$!
+bash /root/autodl-tmp/qam_resource_monitor_20260731_v1.sh \
+  "$probe_pid" /root/autodl-tmp/qam_resource_monitor_retest_20260731.csv 1
+```
+
+结果 `MONITOR_STATUS=0`、CSV 共 5 行（header + 4 sample）、GPU/内存/磁盘字段完整；
+临时 CSV 随后删除。无需为这一 launcher 权限问题重跑 11 GB smoke。
+
+## QAM-SMOKE-0003：fresh q_only 结果、checkpoint 与资源
+
+训练自然完成，driver exit 0；启动到完成约 3 分 14 秒，其中模型/环境初始化约
+2 分 31 秒，唯一训练 cycle 为 42.753 秒：
+
+| 项 | 实测 |
+|---|---:|
+| rollout | 2 trajectories；每条 200 slots；18.872 s |
+| 环境结果 | return 0；reward 0；success 0 |
+| replay | global 20；每 rank 10；每 rank 10 个不同 planned chunk |
+| critic | exactly 2 updates；loss 23.505；pre-clip grad norm 286.3 |
+| Q | mean -1.992；10-head std 3.610；TD target mean -0.822 |
+| fine/F1 | 0 update；policy version 0 |
+| UTD credit | 剩余 18；符合 20 inserts - 2 updates |
+| 保存 | `global_step_1` DCP + 2 sidecar + 2 replay |
+
+两次 update 后数值全 finite；随机冷启动 Q 的 loss/未裁剪 grad 较大，本轮只证明调用链，
+不作为收敛结论。配置中的 critic grad clip 为 1.0。日志中的 Curobo/pytorch3d traceback
+是 RoboTwin planner 的既有可选 Curobo 导入提示；TOPP/SAPIEN 实际 rollout、Q update
+和保存均继续完成，未安装新依赖或改环境。
+
+checkpoint 精确目录：
+
+```text
+/root/autodl-tmp/experiments/qam_qonly_smoke_20260731_v1/
+  robotwin_adjust_bottle_qam_qonly_smoke_20260731_v1/
+  checkpoints/global_step_1
+```
+
+主要文件：
+
+```text
+4,988,130,752 B  __1_0.distcp
+4,987,882,268 B  __0_0.distcp
+  822,350,722 B  qam_components/rank_0.pt
+  822,350,722 B  qam_components/rank_1.pt
+    7,283,083 B  qam_components/replay_rank_0.pt
+    7,283,083 B  qam_components/replay_rank_1.pt
+    1,112,122 B  .metadata
+```
+
+run 共 11,636,440,837 B，另有两个 16,304/15,036 B train video、metrics 和
+TensorBoard 小文件。没有 full-weight 导出。
+
+服务器 validator 逐 tensor/transition 检查：
+
+- 2 个 sidecar/replay 均 complete，900 个 sidecar tensor 和 replay tensor 全 finite；
+- 对应 critic、target、optimizer 跨 rank digest 相同；
+- 每 rank 的 10 个 Q 首层 digest 均不同，确为 10 套独立 Q；
+- online critic 与 target 已有非零 EMA 差：
+  `max_abs=0.0005989075`、`L2=3.26567`；
+- counters 两 rank 完全一致：`q_only`、critic 2、fine 0、version 0、
+  local/global inserts 10/20、pending 18；
+- action normalized 精确在 `[-1,1]`；两 rank 9/9 相邻链完整；
+- 每 rank 最后一条为 generic `other_truncated`，故 9 条可 bootstrap、1 条终止。
+
+`runner_global_step=0` 与目录 `global_step_1` 不是丢步：runner 在 cycle 开头把零基
+step 0 传给 worker，cycle 完成后自增到 1 再保存；resume 后 runner 从目录恢复为 1，
+下一 cycle 开头会把 worker 覆盖为 1。
+
+恢复 monitor 仅覆盖 rollout/update/save/teardown 的最后 22 秒，不能声称包含初始化峰值：
+
+```text
+samples = 11
+GPU peak = 23,486 / 23,677 MiB
+GPU util peak = 100% / 100%
+cgroup anon peak = 36,866,805,760 B (34.34 GiB)
+QAM process RSS peak = 34,575,536 KiB (32.98 GiB)
+cgroup current peak = 235,295,363,072 B，主要为 file cache
+OOM/OOM-kill delta = 0/0
+captured min disk available = 851,218,075,648 B
+```
+
+完整小型 runtime evidence 已下载到新增目录
+`evidence/qam_qonly_smoke_20260731_v1/`，含 driver log、resolved config、精确命令、
+资源 CSV/summary、sidecar validation 和 artifact inventory；不复制 11 GB
+checkpoint。服务器压缩包 SHA-256 为
+`27969cc30356825857a2b6e58c306cb9d64c0cd273640159c8fc73db855bb746`。
+
+本 smoke 的结论边界：真实
+`RoboTwin -> macro replay -> next-action fine ODE -> 10-Q -> target EMA -> DCP`
+已通；没有验证 hardened resume、AM、效果或涨点。
+
+## QAM-CLEANUP-0001：四组旧 smoke checkpoint 定向删除
+
+时间：2026-07-31 15:06:42–15:06:45 CST。用户只授权删除四组已经确认是 smoke
+的最大 checkpoint/DCP；为避免和 QAM smoke 的保存 I/O 叠加，实际删除等 smoke
+自然结束后才执行。完整可执行脚本新增为
+`qam_delete_old_smoke_checkpoints_20260731.sh`，完整 stdout/stderr 为
+`qam_old_smoke_checkpoint_cleanup_20260731.txt`。
+
+脚本先对每个 root/target 做 `readlink -f` 精确相等、目录存在、非 symlink、
+target 必须位于含 `smoke` 的 root 下且以 `checkpoints` 结尾的检查；四项全部通过后才逐项：
+
+```bash
+rm -rf -- "$target"
+test ! -e "$target"
+```
+
+删除量：
+
+| smoke | 仅删除的 checkpoints | bytes |
+|---|---|---:|
+| DSRL N20 fresh→resume | `.../robotwin_adjust_bottle_dsrl_openpi_a800_2gpu_smoke/checkpoints` | 67,186,950,144 |
+| Fast-WAM GRPO step1 | `.../robotwin_adjust_bottle_grpo_fastwam_a800_2gpu_smoke/checkpoints` | 28,912,402,432 |
+| Fast-WAM PPO step1 | `.../robotwin_move_stapler_pad_ppo_fastwam_a800_2gpu_smoke/checkpoints` | 28,935,348,224 |
+| RLT Stage-1 S1-A | `.../robotwin_adjust_bottle_rlt_stage1_s1a_2step_v1/checkpoints` | 22,076,280,832 |
+| 合计 |  | 147,110,981,632 B / 137.01 GiB |
+
+四个 smoke root 及 command/config/log/metrics/TensorBoard/resource/小型文档均保留；
+DSRL formal 和 RLT Stage-1 formal root 均再次验证存在。磁盘 available 从
+854,626,586,624 B 增至 1,001,737,560,064 B，使用率 57% 降到 50%。被删的四组
+smoke checkpoint 不可恢复，只能重跑；所有 formal DCP 未动。
+
+## QAM-DISK-0003：旧 WAM/PPO backup 的实验归属
+
+`RLinf_wamppo_backup_20260714_step57_lastdcp40` 是 7 月 13–14 日迁移前的标准
+π0 PPO `adjust_bottle` baseline 快照，不是 QAM/Fast-WAM。它使用 2×A800、
+3 相机、14D、H=50、PPO/GAE（$\gamma=0.99$、$\lambda=0.95$、clip 0.2、
+update epoch 2），16 env × rollout epoch 16，即每 outer step 约 256 episode。
+
+目标 60 step，完整完成到 step 57；step 58 的 256 个 rollout 已收完，但 update 前
+Ray 因 host memory 230.89/240 GiB 超过 95% 阈值杀掉 EnvWorker。两个 env worker
+当时约 84.44/82.38 GiB，属于 SAPIEN/renderer native memory 增长，不是 NaN。
+57 个完整 step 约 23.5 小时；没有固定 seed eval，不能称 step57 为 best 或证明涨点。
+
+真正可恢复的只有 DCP20/DCP40，各 10,402,308,096 B；DCP40 比最后完整训练落后 17
+次 update，且不含环境状态与 step58 rollout。整个 110.94 GiB backup 还混有四套
+重复 venv（58.93 GB）、其他 PPO/GRPO/Motus/LaWAM logs 和 101 个视频，所以本轮没有
+对它执行任何删除。若以后明确放弃旧协议，可先保留小型证据 capsule，再优先考虑被
+DCP40 支配的 DCP20 与重复 venv；DCP40 是否放弃仍需用户另行决定。
+
+## QAM-FORMAL-0001：18 小时阶段预算的当前结论
+
+正式训练尚未获批，也尚未启动。官方 QAM 没有我们的三段：
+
+```text
+官方：1,000,000 offline joint updates
+   -> online 500,000 primitive steps
+   -> 前 5,000 primitive 只 collect
+   -> 后 495,000 按 UTD=1 joint critic + FM + AM
+```
+
+因此官方 online 约为 1% collect、99% joint，`q_only=0`；我们的
+`collect -> q_only -> am_on` 是移除大规模 offline buffer 后，为冷启动视觉 Q 增加的
+在线安全适配，不能声称阶段比例复刻官方。
+
+首个 18 小时候选应按 transition/update 和证据门定，不先按 runner step 猜：
+
+| 阶段 | 候选目标 | 达标条件 | 时间上限/转移 |
+|---|---:|---|---|
+| collect | 512 global valid macro；0 update | replay 真实结果覆盖足够启动 | 暂留最多 3 h，提前完成则时间给 AM |
+| q_only | 先看 256，目标 512–1,024 critic updates | Q/梯度 finite、非零、对动作敏感，真实 `+dQ/da` 不劣于 `-dQ/da` | 最多约 4 h；不达标则整晚只能叫 Q pilot |
+| 诊断/阶段 DCP/eval | 约 1 h 总壳 | 明示 gate | 不能省略后静默开 AM |
+| am_on | 吃掉剩余约 10 h | fine version 增长、AM/adjoint finite、固定 seed 不退化并争取涨点 | 目标至少 512、争取不低于 1,024 fine updates |
+
+宏 transition 目标比例约 `512 : 512–1024 : >=1024`，即约 `1 : 1–2 : >=2`；
+这是端口稳定性预算，不是官方比例。fresh smoke 实测每 cycle 为 20 global macro，
+故 collect 512 理论约 26 cycles；但 smoke 是 batch 1/rank，只能说明一 cycle 的
+真实生命周期，不能外推正式 batch 32/rank 的 Q/AM update 吞吐。
+
+当前两卡并行保持 2×A800、2 env（每 actor rank 1 env）、global/local batch 64/32、
+每 rank 完整逻辑 10-Q、F1 FSDP full-shard、UTD1、每 cycle update cap 32。它按
+π0 计算图设计，不按官方小 MLP 的 batch256/作业拓扑照搬；现有显存证据宽裕，首要未知
+更可能是 batch32 的 Q/AM 计算时间、RoboTwin rollout 与 host memory。
+
+正式阶段不能忽略 resume：当前 phase 是显式 config，需
+`collect DCP -> q_only resume -> 诊断 -> am_on resume` 才能保留 replay、Q/target、
+optimizer 和 counters。fresh q-only smoke 可以不测 resume，但正式三段必须先补
+rank-local RNG/跨 rank completion，再做单独获批的 fresh→resume smoke。还需一个很短
+的 production-batch q-only throughput 点和一个 AM smoke，才能把 18 小时时间壳换算成
+可信 cycles。另一个正式前语义点是：当前 RoboTwin 只暴露 generic truncation，200-step
+样本保守地不 bootstrap；若不补可信 timeout/final-observation 类型，Q 会对超时样本偏低。
+
+## QAM-PRE-0011：RoboTwin truncation 与 true-final observation 现场定性
+
+时间：2026-07-31 15:34–15:36 CST。fresh smoke 显示每 rank 最后一条 generic
+truncation 被 v1 保守当作 terminal；正式前需判断能否安全 bootstrap。
+
+第一次只读搜索错误地假设服务器有 `rg`，并对
+`/root/autodl-tmp/RoboTwin_RLinf` 执行 `git status`。该目录实际受上层
+`/root/autodl-tmp/.git` 管理，因而输出了大量无关 sibling 状态；随后
+`rg: command not found`、远端 exit127。没有写文件、没有改进程。修复是按本机规则在
+`rg` 不存在时改用限定目录和 `--include='*.py'` 的 `grep`，并停止把该子目录的上层
+Git 状态当作 RoboTwin 自身状态。
+
+成功的只读链依次检查：
+
+```bash
+grep -R -n -E \
+  'def chunk_step|truncat|terminated|_elapsed_steps|max_episode_steps|final_observation' \
+  --include='*.py' \
+  /root/autodl-tmp/RoboTwin_RLinf/envs \
+  /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/envs/robotwin \
+  /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/workers/env
+
+sed -n '1735,1810p;1945,1990p;2295,2340p;2440,2490p' \
+  /root/autodl-tmp/RoboTwin_RLinf/envs/_base_task.py
+sed -n '280,435p' \
+  /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/envs/robotwin/robotwin_env.py
+sed -n '450,525p;1115,1150p' \
+  /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/workers/env/env_worker.py
+```
+
+证据闭环：
+
+1. RoboTwin sparse `gen_sparse_reward_data()` 只在成功时设
+   `termination=1`，只在 `take_action_cnt >= step_lim` 时设 `truncation=1`；
+2. RLinf `RoboTwinEnv.chunk_step()` 还显式执行
+   `_elapsed_steps += chunk_width` 和
+   `truncation |= (_elapsed_steps >= max_episode_steps)`；
+3. 当前 train resolved config 是 `auto_reset=false`、`ignore_terminations=false`；
+4. EnvWorker 在 `auto_reset=false` 时把 `env_output.obs`，也就是本 query 执行后的
+   `obs_list[-1]`，直接保存为 transition `next_obs`；不会混入 reset observation；
+5. 若 success 与 time limit 同槽，success termination 仍应优先且不 bootstrap。
+
+因此对当前锁定的 RoboTwin sparse route，`truncated && !terminated` 可以可靠标为
+`time_limit_truncated`，并用保存的 true query-final observation bootstrap；无需继续
+保守地降级成 `other_truncated`。这不是根据 episode 长度猜测，而是由环境源代码的
+truncation 定义和 `auto_reset=false` 的 payload 路线共同证明。补丁应只修改 QAM
+分类与现有聚焦测试，不改通用 EnvWorker/RoboTwin 行为；新的 fresh→resume smoke
+需验证最后一条 replay 的 `time_limit_truncated=1`、`next_state_valid=1`、
+`bootstrap_mask=1`。
+
+## QAM-RESUME-0001：exact-resume 窄加固与两次静态 P1 修正
+
+时间：2026-07-31 15:39–16:05 CST。授权：继续 QAM 实现与服务器前置测试；没有批准
+第二次 smoke、resume smoke、`am_on` 或正式训练。
+
+只修改四个已有文件：
+
+```text
+rlinf/data/qam_transition_replay.py
+rlinf/workers/actor/fsdp_qam_policy_worker.py
+tests/embodiment/test_robotwin_qam_contract.py
+tests/workers/test_qam_worker_helpers.py
+```
+
+最终职责限定为：
+
+1. replay/sidecar 使用临时文件、flush/fsync 和原子替换；
+2. rank 0 广播一个 snapshot ID，replay、sidecar、completion manifest 绑定同一代；
+3. 覆盖同一路径前先删除旧 completion manifest；若新 DCP/QAM sidecar 中途失败，旧
+   manifest 不会把“新 F1 + 旧 QAM state”误报为完整；
+4. 所有 rank 的 local write 和 load preflight 先汇总；compact signature 比较
+   phase、contract、prefix、critic shape、runner/fine/critic/global-insert/UTD counters，
+   防止 resume 后各 rank 进入不同 update 次数而 collective 死锁；
+5. 保存并在 load 最后恢复每 rank 的 Python/NumPy/Torch process RNG；replay 继续恢复
+   自己的 sampler generator；
+6. fresh `q_only` 的 warm-up rows 不形成旧 update debt，但 crossing batch 中超过
+   warm-up 阈值的 rows 正常获得 UTD credit；
+7. 仅对 QAM 分类函数应用 `QAM-PRE-0011` 结论：
+   `truncated && !terminated` 是可 bootstrap 的 time limit；success 同槽仍优先且不
+   bootstrap。
+
+第一次静态审查发现 warm-up crossing P1：若一次从 0 插入 20 条、warm-up=2，早期候选
+把 anchor 直接设成 20，导致 0 update。窄修为按本批前后 global total 计算越过阈值的
+增量；因此该例获得 18 条 credit，smoke cap=2 时仍执行 2 次 update。正式
+`500 -> 520`、warm-up=512 时只给后 8 条 credit。
+
+第二次静态审查发现两个 checkpoint P1：
+
+- compact signature 原先未比较 global insert/UTD/版本 counters，可能让两 rank resume
+  后执行不同次数的 collective update；
+- 同一路径重存若在新 QAM sidecar 前失败，旧 complete manifest 可能仍存在。
+
+两处均按上面的第 3、4 点窄修。为避免实现臃肿，随后删除 manifest 中重复的 rank/file-name
+列表和 15 字段展开状态，改为确定性文件名 + 一个 compact signature。没有 checksum
+大文件、incomplete marker、路径 step regex、旧 checkpoint 迁移器或额外测试框架。
+机械格式化后的最终实现提交相对基线为 4 files、`+475/-79`；两轮最终静态审查均为
+P0=0、P1=0。
+
+正式 v1 阶段也据此简化：fresh `q_only` 在同一进程内先收 512 条 warm-up macro，阈值前
+不更新；随后才按新 rows、UTD=1 更新 Q。因此默认不再需要
+`collect DCP -> q_only resume`，只保留诊断通过后的 `q_only -> am_on` 明示 resume。
+独立 `collect` phase 仍是可选的纯收数入口。
+
+## QAM-PRE-0012：现场刷新、代码同步与服务器集中回归
+
+15:44 的只读前检首先误用了 Windows Store 的 `python.exe` alias，报
+“系统无法访问此文件”；这一步没有建立 SSH 连接，也没有任何服务器变化。修复为使用
+Codex bundled Python：
+
+```text
+C:\Users\86136\.cache\codex-runtimes\codex-primary-runtime\
+dependencies\python\python.exe
+```
+
+随后通过新增的
+`evidence/qam_resume_hardening_preflight_20260731.sh` 执行完整只读探针。远端 payload：
+
+```bash
+hostname
+pwd
+id -u
+date '+%F %T %Z'
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin branch --show-current
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin rev-parse HEAD
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin status --short
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin \
+  rev-list --left-right --count '@{upstream}...HEAD'
+ps -eo pid,etimes,%cpu,%mem,rss,args --sort=-rss |
+  grep -E 'rlt_stage2|qam_|ray::|train_embodied_agent' |
+  grep -v grep | head -20 || true
+nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu,temperature.gpu \
+  --format=csv,noheader
+free -h
+df -h /root/autodl-tmp
+```
+
+结果：
+
+```text
+host/root uid     = autodl-container-nekaqbwt43-6ce5babb / 0
+time              = 2026-07-31 15:44:01 CST
+branch/HEAD       = codex/qam-pi0-robotwin
+                    de99f969975564c8fec53de09c595b6670e3a416
+dirty/ahead-behind= empty / 0 0
+QAM/RLT/Ray train = none
+GPU0/GPU1         = 0 MiB, 0%
+host available    = 977 GiB
+disk              = 933 GiB available, 50% used
+```
+
+代码先用以下远端命令检查再应用本机 QAM sparse worktree diff：
+
+```bash
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin apply --check -
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin apply -
+```
+
+静态 P1 修正后，只用 SFTP 覆盖同一独立 worktree 的两个精确文件：
+
+```text
+.qam-impl-worktree/rlinf/workers/actor/fsdp_qam_policy_worker.py
+ -> /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/workers/actor/fsdp_qam_policy_worker.py
+.qam-impl-worktree/tests/workers/test_qam_worker_helpers.py
+ -> /root/autodl-tmp/RLinf_qam_pi0_robotwin/tests/workers/test_qam_worker_helpers.py
+```
+
+服务器测试由新增的
+`evidence/qam_resume_hardening_server_tests_20260731.sh` 固定，完整命令为：
+
+```bash
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+export PYTHONPATH=$PWD
+git branch --show-current
+git rev-parse HEAD
+git status --short
+git diff --check
+/root/autodl-tmp/RLinf/.venv/bin/ruff check <4 changed files>
+/root/autodl-tmp/RLinf/.venv/bin/ruff format --check <4 changed files>
+/root/autodl-tmp/RLinf/.venv/bin/python -m py_compile <4 changed files>
+/root/autodl-tmp/RLinf/.venv/bin/python -m pytest -q \
+  tests/algorithms/qam/test_core.py \
+  tests/algorithms/qam/test_official_fixture.py \
+  tests/embodiment/test_qam_openpi_adapter.py \
+  tests/embodiment/test_robotwin_qam_contract.py \
+  tests/workers/test_qam_worker_helpers.py
+pgrep -af 'train_embodied_agent|qam_|rlt_stage2|raylet|gcs_server' || true
+nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu \
+  --format=csv,noheader
+```
+
+第一次执行在 `ruff format --check` 停下：worker 有一处会被重排，逻辑测试尚未开始。
+执行：
+
+```bash
+/root/autodl-tmp/RLinf/.venv/bin/ruff format \
+  /root/autodl-tmp/RLinf_qam_pi0_robotwin/rlinf/workers/actor/fsdp_qam_policy_worker.py
+```
+
+结果 `1 file reformatted`，并把机械格式化后的文件同步回本机副本。随后一次试图“重定向、
+cat、转交 exit code”的 PowerShell→remote 双层引号拼接失败，远端报
+`unexpected EOF while looking for matching '"'`；没有执行测试、没有写训练产物。解决是
+停止复杂 wrapper，直接执行：
+
+```bash
+bash /root/autodl-tmp/qam_resume_hardening_server_tests_20260731.sh
+```
+
+最终结果：
+
+```text
+git diff --check  = pass
+ruff check        = pass
+ruff format-check = 4 files already formatted
+py_compile        = pass
+pytest            = 39 passed, 3 dependency deprecation warnings, 8.35s
+QAM/RLT/Ray train = none（pgrep 只命中当前测试 shell）
+GPU0/GPU1         = 4 MiB / 4 MiB, utilization 0%
+```
+
+本批没有启动第二次 smoke。唯一正式 fresh `q_only` smoke 仍是
+`QAM-SMOKE-0001` 至 `0003` 的那一次；3 秒 monitor 假 driver 只验证脚本调用权限，也
+不是 smoke。旧 smoke checkpoint 清理、测试和文档整理均未触碰 DSRL/RLT worktree、
+formal checkpoint 或 shared π0 venv。
+
+同一路径 launcher 有两个可区分版本：实际执行 smoke 的 SHA-256 是
+`92a76d47615e34c02f6c33d33fb84d194a03e5310aaf4d3cb0550aeed18d79b4`；事后把 monitor
+调用改为显式 `bash` 的未来运行版 SHA-256 是
+`af554628da63e739c29c72b5a6574ade255ee25ab2866ff107b02361b1207572`。后者没有被用来
+重跑本次 smoke。
+
+## QAM-FORMAL-0002：对 18 小时阶段入口的简化修正
+
+`QAM-FORMAL-0001` 中“必须 collect DCP→q_only resume”和“generic truncation 不
+bootstrap”已被后续事实替代：
+
+```text
+fresh q_only process
+  -> 前 512 global macro：只 collect，0 update
+  -> 阈值后的新 macro：UTD=1 q_only
+  -> Q 动作梯度诊断门
+  -> 明示 q_only→am_on resume（仍需单独批准）
+```
+
+因此 18 小时时间壳仍是 collect 最多约 3 h、q_only 最多约 4 h、诊断/保存约 1 h、
+通过门后把余下约 10 h 给 am_on；但第一、二段可在同一 fresh process 内连续完成。
+锁定 sparse route 的 pure truncation 使用 true query-final observation bootstrap。
+正式 cycles 仍不能由 batch1 smoke 推断，必须等获批的 production-batch 短吞吐点。
+
+## QAM-GIT-0001：实现提交与第一次推送
+
+为把实现与运行附件分开，先只 stage 四个已经通过服务器回归的代码/测试文件：
+
+```bash
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin diff --check -- <4 files>
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin add -- <4 files>
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin diff --cached --check
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin diff --cached --stat
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin \
+  commit -m 'feat(qam): harden macro replay resume'
+```
+
+第一次 PowerShell inline wrapper 因 `$repo`/引号被本地解释，helper 在参数解析阶段报
+`unrecognized arguments`；没有建立 SSH 连接，也没有 stage/commit。改为 PowerShell
+single-quoted here-string 后成功：
+
+```text
+commit = 851db175fb8e9743585bbbdcd90298741fa910e0
+stat   = 4 files changed, 475 insertions(+), 79 deletions(-)
+```
+
+推送前执行最短网络检查：
+
+```bash
+env | grep -iE '^(http|https|all)_proxy=' || true
+git config --get http.version || printf 'DEFAULT\n'
+curl -L -sS -o /dev/null --connect-timeout 7 --max-time 10 \
+  -w 'main code=%{http_code} connect=%{time_connect} total=%{time_total}\n' \
+  https://github.com
+timeout 15 git ls-remote --heads personal codex/qam-pi0-robotwin
+git rev-list --left-right --count '@{upstream}...HEAD'
+GIT_TERMINAL_PROMPT=0 timeout 60 \
+  git push personal HEAD:codex/qam-pi0-robotwin
+git rev-list --left-right --count '@{upstream}...HEAD'
+git ls-remote --heads personal codex/qam-pi0-robotwin
+```
+
+结果：无 proxy、Git HTTP 默认、GitHub main HTTP 200（connect 0.118 s、total
+0.991 s）、`ls-remote` 成功；push 前 `0/1`，push 后 `0/0`，remote head 精确为
+`851db175fb8e9743585bbbdcd90298741fa910e0`。本次直连成功，没有启用学术加速，也没有
+修改持久 Git/proxy 配置。
+
+## QAM-GIT-0002：运行附件与文档提交前检查
+
+文档包只包含 HANDOFF/SSOT/账本、两个精确服务器脚本、定向清理脚本与 stdout，以及
+116 KiB 的 smoke runtime evidence；没有 checkpoint、视频或模型。对该 allowlist 搜索
+当前密码和 private-key header，结果为空。
+
+第一次对全部 staged 文件执行 `git diff --cached --check`，因不可变
+`driver.log` 保留上游日志本身的行尾空格而失败；这不是代码/Markdown 生成错误。没有为了
+通过 Git whitespace gate 改写原始运行证据。修复是保持原始 log 字节不变，只对
+HANDOFF、SSOT、账本、shell/JSON/YAML/CSV 等非原始日志执行 whitespace check，再提交
+完整附件。

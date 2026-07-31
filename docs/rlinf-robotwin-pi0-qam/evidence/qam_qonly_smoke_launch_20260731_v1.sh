@@ -15,8 +15,8 @@ norm_file="$model_dir/physical-intelligence/robotwin/norm_stats.json"
 model_index="$model_dir/model.safetensors.index.json"
 
 expected_branch=codex/qam-pi0-robotwin
-expected_head=7bc5f87086035087adf6d44ddda76eb5a9e54ee8
-expected_tree=6dc9124ba63b5712918ba2dbdcffde203cfb5eed
+expected_head=de99f969975564c8fec53de09c595b6670e3a416
+expected_tree=3a495f06cc79a5f00a7543b21e4a6953039f7ea9
 expected_source_yaml_sha=d3da1b66d24233300e2a5cebebdf9cb9bcb9e17db959c72e9efcf85dcff1cc6f
 expected_source_resolved_sha=ae1faf2e177f6ca5abce17a27056c191c11aaaf0c0d30a6063cb14f17f0dfdfd
 expected_smoke_resolved_sha=ce8661de889992357f473068e481ac5b6c56f44fb9eddeaee3e20858db9cefee
@@ -178,7 +178,7 @@ driver_pid=$!
 set -e
 printf '%s\n' "$driver_pid" >"$runtime_root/driver.pid"
 
-"$monitor" "$driver_pid" "$runtime_root/resources.csv" 2 \
+bash "$monitor" "$driver_pid" "$runtime_root/resources.csv" 2 \
   >"$runtime_root/monitor.log" 2>&1 &
 monitor_pid=$!
 printf '%s\n' "$monitor_pid" >"$runtime_root/monitor.pid"

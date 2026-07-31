@@ -9,7 +9,7 @@
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | formal250及250→480续训均自然完成、exit0；final eval 17/20，续训eval合计178/200，final checkpoint完整 |
-| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 主体实现、36项集中测试、真实π0/两卡资源门和fresh q-only批准包均完成；正式smoke待批准 |
+| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | fresh q-only smoke 已 exit0；exact-resume 加固与 39 项服务器回归已完成，后续 smoke/正式训练未批准 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
 
@@ -360,17 +360,15 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
 - 实现已覆盖官方 JAX fixture parity、`t_qam=1-t_pi0`/速度翻转、B1/F1、C1 四块
   prefix+proprio、10 个完整 Q、fixed-N20 macro replay、collect/q_only/am_on gate、
   target EMA、FSDP-compatible VJP/streaming AM、rank sidecar/replay resume 与 legacy
-  opt-in。replay 自身 RNG/world-size 与 phase/credit helper 已覆盖；worker 的
-  rank-local process RNG 和跨 rank QAM completion manifest 留到 fresh 后、resume
-  smoke 前补齐。实际 code files 和逐行流水只在 QAM SSOT/账本维护。
-- 当前本机 code 副本 commit 为 `c32d044bcb559aa9c618dcb74c23263592ee0b50`；服务器
-  runtime 实现 commit 为 `7bc5f87086035087adf6d44ddda76eb5a9e54ee8`，两者 code tree
-  均为 `6dc9124ba63b5712918ba2dbdcffde203cfb5eed`。2026-07-31 14:22 又在服务器
-  runtime commit 上增加 QAM SSOT/完整账本/resolved 配置与无凭据 SSH helper，形成
-  docs/tooling commit `3e7f26eb0cc38cc2f44e4145af480a71a2948262` 并推送
-  `personal/codex/qam-pi0-robotwin`；服务器 worktree clean、远端与服务器
-  ahead/behind `0/0`。两次默认 smart-HTTP 超时后均只在一次性
-  `/etc/network_turbo` 子 shell 内 push，父 shell 无残留 proxy。
+  opt-in。replay 自身 RNG/world-size 与 phase/credit helper 已覆盖；fresh 后正在补
+  worker rank-local process RNG、统一 snapshot ID 与跨 rank QAM completion manifest。
+  旧 fresh checkpoint 缺这些字段，只作 fresh 证据，不能追认为 exact-resume 起点。
+  实际 code files 和逐行流水只在 QAM SSOT/账本维护。
+- 本轮 exact-resume、warm-up credit 与 time-limit 分类实现提交为
+  `851db175fb8e9743585bbbdcd90298741fa910e0`，已直接推送
+  `personal/codex/qam-pi0-robotwin`；该次 GitHub main HTTP 200、`ls-remote`
+  成功，无需启用 `/etc/network_turbo`。最终动态 HEAD/dirty/ahead-behind 仍须在下次
+  操作前现场刷新。
 - 真实模型事实：F1 为 173 tensors / 314,713,120 参数；C1 block 长度
   `[256,256,256,48]`、valid `[256,256,256,5]`；raw active endpoint 越界
   `20/280=7.14%`，Q 与 env 已共用 canonical clamp；replay 4,096/rank，约
@@ -379,17 +377,33 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   Ruff/format/compile/diff 均通过。
   两卡真实 `FULL_SHARD + use_orig_params`、K=10、batch=32/rank probe 峰值
   14,148,494,848 bytes/卡，F1 173 个梯度 finite、10-Q/target 跨 rank 一致。
-- 13:38 CST 最终 smoke 前现场：两张 A800 均 0 MiB/0%，无训练/Ray，fresh smoke
-  run/runtime root 不存在。14:14 CST 磁盘复核仍为 1.9 TiB 总、1.1 TiB 已用、
-  807 GiB 可用（57%）；四个旧 smoke 合计约 137.01 GiB，旧 WAM/PPO backup
-  110.94 GiB，本轮没有删除。
-- 首个正式 smoke 只做 fresh `q_only`：2 GPU/2 env、1 outer cycle、2 episodes、
-  最多 400 requested action slots、预计 2–20 global macro inserts、恰好 2 次 critic
-  update、0 AM/fine update、0 eval、1 个 DCP；hard limit 2h/4 GPU-hours。
-- 完整 source/smoke resolved YAML、穷尽 diff、launch script、精确命令、资源监控、
-  预算和停止条件见 QAM 账本 `QAM-PRE-0006` 以后。正式 smoke 尚未执行，必须等待用户
-  明确批准；fresh 通过后，resume 和 `am_on` 继续分别审批。
-- 本轮没有改变 DSRL/RLT worktree、环境、checkpoint 或产物，也没有删除用户磁盘资产。
+- 2026-07-31 14:57–15:01 的 fresh `q_only` smoke 已自然 exit0：2 GPU/2 env、
+  2 trajectories、20 global macro、每 rank replay 10、恰好 2 次 critic update、
+  0 fine update、policy version 0；critic/target/optimizer 跨 rank 一致、10-Q 独立、
+  全 tensor finite，保存约 11.64 GB `global_step_1`。
+- 原资源 monitor 因 SFTP mode 644 被直接执行而 exit126；训练未受影响。launcher 已改为
+  `bash monitor.sh`，3 秒假 driver 窄复测 exit0。恢复 monitor 覆盖训练尾部 22 秒，
+  GPU 峰 23,486/23,677 MiB、cgroup anon 峰 34.34 GiB、OOM/OOM-kill 0/0；不把它
+  声称为初始化峰值。
+- 完整 source/smoke resolved、穷尽 diff、精确命令、driver log、资源 CSV/summary、
+  sidecar validation 和 inventory 见 QAM 账本 `QAM-SMOKE-0001` 至 `0003` 以及
+  `docs/rlinf-robotwin-pi0-qam/evidence/qam_qonly_smoke_20260731_v1/`。
+- 按用户精确授权，smoke 结束后只删除 DSRL N20、Fast-WAM GRPO/PPO、RLT Stage-1
+  四组旧 smoke 的 `checkpoints/`，回收 147,110,981,632 B / 137.01 GiB；小型证据与
+  所有 formal DCP 保留。磁盘 available 增至约 933 GiB、使用率 50%。完整清单见
+  `QAM-CLEANUP-0001`、`evidence/qam_delete_old_smoke_checkpoints_20260731.sh` 和
+  `evidence/qam_old_smoke_checkpoint_cleanup_20260731.txt`。旧 WAM/PPO backup
+  110.94 GiB 未动。
+- 18 小时正式候选暂按 collect 512 macro、q_only 512–1,024 critic update、约 1 h
+  诊断/阶段保存、通过 Q 动作梯度门后把余下约 10 h 给 am_on；这是 online-only
+  稳定化适配，不是官方阶段比例。正式 v1 可在 fresh `q_only` 进程内完成前 512 条
+  collect warm-up，不需要 collect→q_only resume；当前 batch1 smoke 不能给 batch32
+  正式吞吐。
+- 当前授权停点：可继续完成 exact-resume 代码与服务器前置测试；fresh→resume、
+  production-batch q-only 诊断、`am_on` smoke 和正式训练均需分别展示完整配置/命令/
+  预算并取得新批准。锁定的 sparse route 已证明 `truncated && !terminated` 是
+  time limit，且 `auto_reset=false` 保存 true query-final observation；当前只需验证
+  QAM-only 分类补丁，不再把 timeout 类型当开放设计分支。
 
 ## 共同执行边界
 

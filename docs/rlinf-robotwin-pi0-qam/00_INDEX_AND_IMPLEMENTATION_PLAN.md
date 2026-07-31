@@ -26,9 +26,10 @@ transition”，不依赖并不存在的 planned-action `realized L`。用户已
 授权开始实现并自行运行正式 smoke 前测试。当前代码已在独立
 `codex/qam-pi0-robotwin` worktree 落地；官方 JAX→PyTorch oracle、36 项集中测试、
 真实 π0 单卡 probe，以及两卡 `FULL_SHARD` 的完整 K=10 VJP/AM、10-Q/EMA 和
-每 rank batch=32 资源 probe 均通过。正式 smoke 仍须另行提交完整批准包。**
+每 rank batch=32 资源 probe 均通过；fresh `q_only` smoke 已 exit 0。尚未批准的是
+fresh→resume、production-batch q-only、`am_on` smoke 和正式训练。**
 
-QAM 专题只保留四份文档：
+QAM 专题只保留四个核心 Markdown/SSOT 入口：
 
 | 文档 | 唯一职责 | 默认是否读取 |
 |---|---|---|
@@ -36,6 +37,9 @@ QAM 专题只保留四份文档：
 | `01_CONTEXT_AND_SOURCE_MAP.md` | 精确来源、代码定位、动态资产和裁剪索引 | 发生来源争议时 |
 | `02_METHOD_AND_PORT_DECISION_GUIDE.md` | 术语教学、官方/计划调用链和用户决策解释 | 讨论方法选择时 |
 | `evidence/IMPLEMENTATION_LOG.md` | 命令、输出、问题、修复与复测流水 | 读最新批次 |
+
+`evidence/` 下的 resolved config、日志、CSV、脚本和清理输出都是由账本索引的不可变附件，
+不构成并行规范。
 
 来源分工只需记住一句：**算法离散语义抄锁定的官方 QAM；RoboTwin/π0 数据面抄现有
 PPO/GRPO 路径；可微 velocity 接口抄 OpenPI/NFT；replay、target、resume 与 opt-in
@@ -348,15 +352,16 @@ fixed-noise、投影和 VJP probe；只有 §4.4 的控制/credit 失败门被�
 | M1 primitive-faithful | 修改 env 接口，暴露每个 primitive step 的 obs/reward/end，再按官方 `sample_sequence` 重叠采样 | 最接近官方 Q-chunk 数据语义 | 改动面大，图像 replay 更重；须证明 reset/final obs 正确 |
 | M2 fixed-N macro-QAM | 每次 query 存一条 `(s, planned_N_chunk, R_macro, s', end)`，固定 $\Gamma_N=\gamma_{\rm slot}^{N}$ | 直接匹配现有 RoboTwin/π0 query；不需要伪造 L | 非重叠 query-level transition；slot 不是测得的 simulator primitive duration，是明确适配 |
 
-当前推荐 **M2 fixed-N**。若用户确认该路线，实施时验证：
+当前已实现 **M2 fixed-N**，并验证：
 
 - native 0/1 reward 如何无损收敛成一个 `R_macro`；
-- success、time-limit、other truncation 如何生成 `bootstrap_mask`；
-- nonterminal 下一 query 的 feature，以及 timeout 的 true final feature，能否无损进入 replay；
+- success、time-limit 如何生成 `bootstrap_mask`；
+- nonterminal 下一 query 的 feature，以及 time-limit 的 true query-final feature，可无损进入 replay；
 - planned normalized/env chunk 与 policy version 能否一一对齐。
 
-success termination 本身不 bootstrap，因此不要求 terminal next feature；timeout 若要
-bootstrap，首版优先关闭 auto-reset，若配置不支持才做 QAM-only final-feature payload 扩展。
+锁定的 sparse route 只把 `truncated && !terminated` 用作 time limit；当前
+`auto_reset=false`，保存的 `next_obs` 是 true query-final observation，因此可
+bootstrap。若 success 与 time limit 同槽，success 优先且不 bootstrap。
 
 ## 4. 第一版冻结主线与失败触发备选
 
@@ -506,7 +511,7 @@ train_embodied_agent.py
        │         └─ OpenPI use_qam route
        │              ├─ canonical 3-camera/language/state transform
        │              ├─ frozen shared prefix + active F1 fine expert
-       │              ├─ current C1 pooled view（若 P2 capture probe 通过）
+       │              ├─ current C1 pooled view
        │              ├─ t_qam -> t_pi=1-t_qam，velocity sign flip
        │              ├─ P_N -> normalized Q/replay action [N,14]
        │              └─ fine ODE -> existing output_transform -> env action [N,14]
@@ -542,10 +547,9 @@ train_embodied_agent.py
   新 worker 通过既有 parameter-name filter 限定同步集合；
 - critic、target、optimizer、replay 永远不进入 rollout，也不因普通 policy sync 被覆盖。
 - transition 必须同时有两套 observation view：
-  - **critic view**：优先让 rollout 从当前已算 prefix 做四块 position-block pooling；
+  - **critic view**：rollout 从当前已算 prefix 做四块 position-block pooling；
     nonterminal next view 可复用下一 query 的 current capture，边界/timeout 或 capture miss
-    由 actor 从 canonical raw observation 重算。P2 用吞吐与 round-trip parity 决定是否
-    保留 rollout capture，不为此预改通用 rollout worker；
+    由 actor 从 canonical raw observation 重算；
   - **policy-conditioning view**：可重建 frozen π0 prefix KV 的 canonical current/next
     observation。AM 的 $f_\theta/f_\beta$ 前向需要 current view，TD next action 的 fine
     ODE 需要 next view；pooled $\phi$ 不能替代这两条 conditioning。
@@ -554,7 +558,7 @@ train_embodied_agent.py
   transition 以 `obs_id/next_obs_id` 引用；actor worker 采样后用 frozen VLM 重算 prefix
   KV。相邻 live transition 复用同一个 next/current ID，success terminal 不需要 next
   policy view，timeout bootstrap 必须保存 true-final view。不存 full prefix token/KV；
-  exact image shape、单 state bytes 与 prefix-recompute 吞吐在 P2 实测。
+  image shape、单 state bytes 与 prefix-recompute 已在 P2/真实 smoke 验证。
 - 两卡上的 10-Q ensemble 与 data-parallel replica 是两件事。v1 复用已验证的 DSRL
   所有权模式：每个 actor rank 持有一个 local replay shard、各采 global batch 的一半，
   并对本地 batch 计算完整**逻辑** 10-head ensemble；FSDP 可以物理分片权重。
@@ -571,8 +575,9 @@ train_embodied_agent.py
   初始 frozen behavior 保持 bitwise 相同；
 - `am_on`：critic 与 fine 从同一 pre-update online/target snapshot 计算 loss，随后分别
   step；target critic 仍读取 pre-update critic；
-- `collect→q_only` 可在 global valid replay 达到批准阈值后自动、单调切换；collect
-  累积样本不默认补算成一轮突发 update；
+- 正式 v1 优先 fresh `q_only` 启动：前 512 条 global macro 在同一进程内只 collect，
+  达到 warm-up 后仅对阈值后的新插入按 UTD 计 credit，因此不需要
+  `collect→q_only` resume；独立 `collect` phase 仍保留为只收数入口；
 - `q_only→am_on` 不按 runner step 静默打开。只有获批的 q-only 诊断证明 Q finite、
   具有动作敏感性且真实 `±dQ/da` 排序不反向后，才通过明示 config/resume 切换；
 - runner/query step、critic update step、fine update step 和 policy version 分开计数。
@@ -667,8 +672,8 @@ $$
 `N=20` 在决策前固定；不使用 $\gamma^L$。当前 v1 bootstrap 规则固定为：
 
 - success termination：不 bootstrap；
-- 现有 payload 无法可靠区分 time-limit 与其他 truncation，因此所有非 success
-  truncation 首版均保守地不 bootstrap；
+- 锁定 sparse route 的 `truncated && !terminated` 是 time limit，使用 true
+  query-final observation bootstrap；
 - 仍存活：以固定 $\Gamma_N$ bootstrap。
 
 生产 v1 不做参数网格；launch-closed source config 已固定为：
@@ -704,8 +709,8 @@ consume 1 update_credit
 
 critic 与 fine 使用分离 optimizer，便于不同 LR/FSDP 所有权；两份 loss 必须从同一
 pre-update online/target snapshot 计算，随后各自 step。target EMA 读取 pre-update
-online 参数，顺序由 P1 oracle 锁死。表中数值仍须出现在 formal smoke 的完整批准包中，
-但不再作为六个开放方法分支反复讨论。
+online 参数，顺序由 P1 oracle 锁死。表中数值仍须出现在后续 production-batch、
+`am_on` 和正式训练批准包中，但不再作为开放方法分支反复讨论。
 
 ### 6.3 resume 必须保存
 
@@ -829,8 +834,9 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 
 ### P3：critic、transition replay 与 QAM trainer
 
-状态：**代码与 synthetic/两卡核心验证已完成；完整 runner/checkpoint lifecycle 留给
-获批 smoke**。
+状态：**代码、synthetic/两卡核心验证、fresh runner/checkpoint lifecycle 与
+exact-resume 加固/39 项服务器回归已完成；fresh→resume lifecycle 待另行批准的下一轮
+smoke**。
 
 - 已实现 C1 的 10-Q/target pessimistic backup；
 - 已按推荐 M2 实现 macro reward/end/bootstrap；未物化 M1；
@@ -840,8 +846,9 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 - AM 在完整 `[50,32]` flow state 上计算，`[N,14]` 只作为 terminal-Q action 域；
 - sync 只传 active inference route，critic/target/optimizer/replay 留在 actor worker；
 - replay ring 自身的 RNG/world-size round-trip 和 phase/credit resume helper 已有服务器
-  测试；worker 的 Python/NumPy/Torch rank-local RNG 与跨 rank QAM completion manifest
-  尚未实现，因此本批准包明确只做 fresh，不声称 exact resume；
+  测试；fresh smoke 后开始补 worker 的 Python/NumPy/Torch rank-local RNG、统一
+  snapshot ID 与跨 rank QAM completion manifest。旧 fresh smoke checkpoint 没有这些
+  字段，只保留为 fresh 证据，不能追认为 exact-resume 起点；
 - `use_qam=false` 的 legacy compose/validator 路径保持不变。
 
 通过门：固定 transition target exact、一次真实 update 参数隔离正确；fresh runner/DCP
@@ -863,11 +870,11 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 
 所有命令、输出、失败、单一原因、窄修复和复测逐项写账本。测试全部在服务器执行。
 
-### P5：smoke 批准包
+### P5：fresh q_only smoke
 
-状态：**正在形成；首个 smoke 只到 q_only，不预授权 am_on**。
+状态：**已完成；首个 smoke 只到 q_only，未运行 am_on**。
 
-提交后必须停下，向用户展示：
+运行前已向用户展示：
 
 - launch-closed source 与 fresh `q_only` smoke 的完整 post-validation resolved config
   及 SHA-256；
@@ -881,8 +888,14 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 - NaN/Inf、OOM、无进度、冻结参数变化、QAM 合同破坏、DCP 不完整等停止条件；
 - 最低通过结论及“这不是效果结论”。
 
-首包只运行 fresh `q_only`；resume 与 `am_on` 分别另行提交批准包。只有用户明确批准后
-才执行 smoke。
+首包已按批准只运行 fresh `q_only`：20 条 global macro、每 rank 10 条 replay、
+恰好 2 次 critic update、0 fine update，driver exit 0；critic/target/optimizer
+跨 rank 一致、10 个 head 独立、全 tensor finite，DCP/sidecar/replay 完整。资源 monitor
+因 SFTP mode 644 首次 exit126，但训练未受影响；launcher 已改为显式 `bash` 并通过
+3 秒窄复测。完整结果见实施账本 `QAM-SMOKE-0001` 至 `0003`。resume 与 `am_on`
+仍需分别展示批准包。本次使用旧 warm-up credit 合同的 smoke-only overrides：
+`warmup_global_inserts=2`、`min_replay_per_rank=1`、update cap=2；它不代表正式协议会
+追补 warm-up rows。
 
 ## 9. 实际改动面与隔离边界
 
@@ -937,19 +950,24 @@ replay 为 4,096/rank（约 11.3 GB raw observation/rank）；两卡 K=10、batc
 
 正式运行前只剩顺序门，不再是并行设计分支：
 
-1. 获批并完成 fresh `q_only` smoke，验证真实 RoboTwin payload、两次 critic update、
+1. fresh `q_only` smoke 已验证真实 RoboTwin payload、两次 critic update、
    target EMA、DCP 与 rank sidecar/replay；
-2. 先补 rank-local process RNG 和跨 rank QAM completion manifest，再另行做
-   fresh→resume 连续性 smoke；
-3. Q 的动作敏感性、有限非零 `dQ/da` 和真实 `+/-dQ/da` 排序通过后，再单独提交
+2. rank-local process RNG、统一 snapshot ID、跨 rank QAM completion manifest 与
+   服务器集中测试已完成；下一步另行批准 fresh→resume 连续性 smoke；
+3. 用 production batch 做短吞吐点；Q 的动作敏感性、有限非零 `dQ/da` 和真实
+   `+/-dQ/da` 排序通过后，再单独提交
    `am_on` 批准包；
-4. 任何收益结论必须来自之后的受控训练/评估，不能由 smoke 推出。
+4. timeout 已由 sparse env source 与 `auto_reset=false` payload 证明；QAM-only
+   分类补丁通过聚焦测试后，由新 smoke 验证 replay 字段；
+5. 任何收益结论必须来自之后的受控训练/评估，不能由 smoke 推出。
 
 ## 12. 当前授权与下一步
 
-P1–P4 实现与前置测试已获授权并完成。生产 shared π0 venv保持未修改，DSRL/RLT
-worktree、配置、环境、checkpoint 和产物保持未修改；本轮没有删除用户实验资产。
+P1–P5 fresh 实现、前置测试与首个 q-only smoke 已完成。生产 shared π0 venv 保持未修改；
+DSRL/RLT worktree 与所有 formal checkpoint/run artifacts 未改。按用户精确授权，仅删除
+四组旧 smoke 的 checkpoint 子目录，共回收 137.01 GiB；小型证据与所有 formal DCP 保留。
 
-当前停点是 P5：本专题账本给出 fresh `q_only` smoke 的完整 resolved config、精确命令、
-输出、预算、监控和停止条件。未得到用户明确批准前，不启动 RoboTwin/Ray 正式 smoke；
-resume、`am_on` 和训练继续分别审批。
+当前停点是重新生成一个带 completion manifest 的 fresh checkpoint；需另行批准
+fresh→resume、production-batch q-only 吞吐/诊断与 `am_on` smoke。18 小时正式候选
+预算和官方阶段比例差异见实施账本
+`QAM-FORMAL-0001`；未得到新的完整批准前不启动这些运行或正式训练。
