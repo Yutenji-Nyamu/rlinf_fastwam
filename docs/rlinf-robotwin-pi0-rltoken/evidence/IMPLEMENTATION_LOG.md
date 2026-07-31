@@ -3741,3 +3741,2305 @@ d7c3ca7e2ddfc8d0b3c376ec6d30ba89b965a5dc
   - 标记 `RLT_STAGE2_FRESH_FINAL_CLOSEOUT_AUDIT_OK`。
 - 本节和 HANDOFF 中的主提交身份将形成一次终端 ledger-only closeout；该 closeout
   commit 自身 SHA 只在聊天交接，不再为记录自身制造第三个递归提交。
+
+### A086 — RoboTwin Stage 2 formal 100-cycle 授权与方法边界
+
+- 用户于2026-07-30明确授权启动100-cycle正式 pilot，要求：
+  - 确认正式训练健康启动后即返回；
+  - 不持续轮询；
+  - 记录精确命令、配置、问题、产物与资源监控位置；
+  - 次日再按用户请求刷新实验。
+- 用户随后追问“为什么是 ManiSkill”。执行侧明确澄清：
+  - 本次训练始终是 RoboTwin `adjust_bottle`；
+  - ManiSkill 只因用户问“官方训多少步”而做只读来源核实，不进入运行配置；
+  - 当前锁定 RLinf ManiSkill YAML 是
+    `max_epochs=5000/max_steps=-1`，EmbodiedRunner 每 epoch 为一个 outer step，
+    即5000 cycles；它还有64 train env、500 primitive/cycle和不同任务，不能把规模
+    直接当成本项目预算；
+  - 本项目只 compose/run
+    `robotwin_adjust_bottle_rlt_stage2_ac_mlp`，并显式覆盖
+    `runner.max_steps=100`。
+- RoboTwin formal 冻结项不变：2 GPU、4 train/eval env、H50/C10/D14、accepted
+  clean-50 Stage1 artifact、RoboTwin π0 stats、full-task route、compact replay、
+  batch512/128、UTD5、critic:actor=2、500 rows/rank、5k critic floor、cap400、
+  eval/save每10 cycles。
+- 100 cycles 的解释：约第26个满长 cycle 才开始 student control；约第51个 cycle
+  越过15k update 的完整 BC/Q ramp。100-cycle pilot 因而比30/60更能观察稳定
+  student阶段，但仍远小于 ManiSkill 5000-cycle参考，不能称等规模复刻。
+- 当前尚未做服务器写操作；下一步先刷新 branch/dirty/upstream、进程、GPU/RAM/disk、
+  Stage1 binding与目标路径，再生成唯一 RoboTwin resolved config和启动包。
+
+### A087 — formal100 启动前服务器现场
+
+- 执行
+  `local_scripts/remote_rlt_20260730_formal100_live_audit.sh`；现场时间
+  `2026-07-30T01:09:02+08:00`。
+- Git：
+  - branch `codex/rlt-pi0-robotwin`；
+  - HEAD `2df23e7f4b3d19d4f0dedab32168767a32845a58`；
+  - worktree clean；
+  - upstream-only/head-only `0/1`；
+  - 唯一 ahead commit 只改 `docs/**`/`HANDOFF.md`；相对 Stage2 code commit
+    `3b610cb4...` 没有任何 code/config diff。
+- 进程/资源：
+  - 无 RLT/Ray/目标 formal 进程；
+  - 两卡 A800均 `0MiB/0%`；
+  - host available `1,029,219,316 KiB`；
+  - cgroup current/anon/file
+    `211,436,257,280 / 310,644,736 / 209,387,597,824 bytes`，raw总量主要是
+    可回收 file cache；
+  - `oom=0`、`oom_kill=0`；
+  - `/root/autodl-tmp` available `886,792,167,424 bytes`。
+- 新目标 run/evidence root 均不存在，不会覆盖 smoke、Stage1、DSRL 或其他实验。
+- source identity：
+  - RoboTwin formal config SHA
+    `f089f333839c99b87d546e8bcf0d5bddbb7da380e8cc1597e1de4c4450592850`；
+  - RLT worker SHA
+    `71cccde9b7f18ab63a10817f75b7d5a4d5f5c8d9cadfef99da20690d327c4766`；
+  - artifact preflight SHA
+    `3278a8cbdf766d30309856eac2a4eb5f8cc3c792986e230c2ef022b615553bb6`；
+  - monitor SHA
+    `925cb515a4ecd6dbfcb192168c63644e1b2b2d691f6a4d50fdc3ddd8a5bbd96b`；
+  - Stage1 manifest/stats SHA仍为
+    `6ca58f26...12433` / `649ed92b...ce4f6a`。
+- source formal 继续 `max_steps=0` fail closed；只有本次命令显式覆盖100。
+
+### A088 — formal100 resolved config与启动包
+
+- 执行
+  `local_scripts/remote_rlt_20260730_prepare_formal100.sh`，只创建新的 runtime
+  evidence，不启动 Ray/训练。
+- artifact preflight重新通过；compose使用唯一配置：
+  `robotwin_adjust_bottle_rlt_stage2_ac_mlp` 加四个显式 override：
+  - `runner.max_steps=100`；
+  - 新 run root；
+  - 新 experiment name；
+  - `runner.resume_dir=null`。
+- 完整 resolved config SHA：
+  `efff00b71d8ab618f4a77c082cbec8fd65fda9abe2573def31e0aca980e50178`。
+- 机器断言：
+  - `env_type=robotwin`、task=`adjust_bottle`、Aloha；
+  - resolved文本不存在 `UNRESOLVED`，本地副本也不存在 `maniskill`；
+  - 100 cycles、eval/save 10、4 train/eval env、200 primitive/cycle；
+  - H/C/D=`50/10/14`、z=2048、batch512/128、fp32；
+  - UTD5、ratio2、500 rows/rank、5k critic floor、cap400、15k replay/rank；
+  - Stage1 model/manifest/stats精确绑定。
+- 路径：
+  - run：
+    `/root/autodl-tmp/experiments/rlt_stage2_formal_100c_20260730_v1`；
+  - runtime：
+    `/root/autodl-tmp/experiment_exports/rlt_stage2_formal_100c_20260730_v1/runtime`；
+  - experiment：
+    `robotwin_adjust_bottle_rlt_stage2_formal_100c_v1`；
+  - hard timeout `50,400s`（14小时）。
+- Windows 下载6个小型 prelaunch 文件后，第一次本地解析因 Windows Python 无
+  `omegaconf` 报 `ModuleNotFoundError`；文件下载本身已完成。改用现有 PyYAML复核
+  同一字段并通过，没有安装依赖或改服务器包。
+
+### A089 — launcher 自匹配失败、窄修复与 driver 启动
+
+- 首次执行
+  `bash .../runtime/launch_background.sh` 静默 exit1；只读 inspector确认：
+  - run root未创建；
+  - 无 driver/monitor PID、start/exit/log/resources文件；
+  - 无相关进程，两卡仍0；
+  - 所以训练没有短暂启动，也没有需要终止的后代。
+- 原因：进程 gate 的 pattern 包含 `rlt_stage2_formal_100c`，而 launcher 自己的 argv
+  路径也含这段文本，故把自己计为 active process。
+- 窄修复只删除 pattern中的实验路径词，保留
+  `train_embodied_agent.py|raylet|gcs_server`：
+  - old SHA
+    `a71c36d46ab8d99b47956efc79400ad4dc8c6cb0c98ec6dc7ac4b79134f89509`；
+  - fixed SHA
+    `a54c70c2c4691836d50f8663cf29e524ae9f2a57c1aefe80938d4e42c86c8537`；
+  - `bash -n`通过，Python逐行比较确认只有第14行变化；
+  - old script归档为
+    `launch_background.failed_self_match.sh`，另存 failure说明；
+  - resolved config、formal command、算法和预算均未改。
+- 重跑同一 launcher成功：
+  - driver PID `744880`；
+  - monitor PID `744881`；
+  - started at `2026-07-30T01:15:54+08:00`。
+- 43秒首次状态：
+  - driver/monitor均alive，Actor/Env/Rollout两 rank均已创建；
+  - fatal scan 0、OOM增量0；
+  - GPU尚在加载期，峰值 `1,020/995MiB`；
+  - host available最低约954GiB，cgroup anon峰约26.6GiB；
+  - Curobo/Vulkan提示与已通过的 fresh smoke相同；resolved实际使用MPLib。
+- 73秒复核仍在 frozen π0初始化：driver/monitor alive、fatal0、OOM0，anon/RSS继续
+  上升说明模型正在装载；尚未把“进程存在”夸大为已进入第一轮 rollout。
+
+### A090 — formal100 健康启动门与停止轮询
+
+- `2026-07-30T01:18:07+08:00`，启动后约132秒再次做一次有界只读检查：
+  - driver PID `744880` 与 monitor PID `744881` 均存活；
+  - 没有 `finished_at.txt` 或 `exit_code.txt`；
+  - log `28,255 bytes / 523 lines`，fatal scan为0；
+  - 两个 rollout rank 均加载 RoboTwin stats；
+  - 两个 actor rank 的FSDP初始化完成，per-rank replay size 15,000生效；
+  - 出现 `Generating Rollout Epochs: 0%`，第一个真实 RoboTwin formal rollout已经开始。
+- 该观察窗内资源：
+  - 两卡显存样本约 `15,208/15,291MiB`，GPU util峰 `31%/28%`；
+  - cgroup anon峰 `50,966,687,744 bytes`（约47.47GiB）；
+  - matched RSS峰 `54,293,092KiB`（约51.78GiB）；
+  - host available最低 `1,002,230,000,000 bytes`（约933.4GiB）；
+  - disk available最低 `886,792,028,160 bytes`（约825.9GiB）；
+  - cgroup OOM/oom_kill增量 `0/0`。
+- Curobo/Vulkan提示与fresh smoke相同；resolved planner为MPLib，且本次已经越过模型初始化
+  进入rollout，不将其视为fatal。
+- 通过SFTP只下载启动时间、driver/monitor PID和launcher失败说明；密码只注入当前
+  PowerShell进程并在 `finally` 清除。增长中的driver log/resources CSV继续留在服务器，
+  避免把早期快照误作最终结果。
+- 启动记录与小型证据索引：
+  - `docs/rlinf-robotwin-pi0-rltoken/07_STAGE2_FORMAL_100C_LAUNCH_20260730.md`；
+  - `docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_100c_20260730/`。
+- 按用户要求，健康启动门通过后停止持续轮询；下一次仅在用户请求时刷新现场。
+
+### A091 — formal100 本地证据QA与交接收口
+
+- 第一次PyYAML合同检查错误地把嵌套字段写成 `env.env_type`，只读检查报
+  `KeyError: env_type`；查看resolved结构后改为权威路径
+  `env.train.env_type` 与 `env.train.task_config.task_name`，未修改配置本身。
+- 修正后的本地QA：
+  - `launch_health_summary.json` 与 `stage1_binding_preflight.json` 均可解析；
+  - resolved为 `runner.max_steps=100`、RoboTwin、`adjust_bottle`；
+  - resolved不存在 `UNRESOLVED` 或 `maniskill`；
+  - `SHA256SUMS.txt` 的10个服务器原始/下载文件逐一复算通过；
+  - HANDOFF、专题索引和formal启动记录的相对Markdown链接全部存在；
+  - 5个新增/更新的交接Markdown均为UTF-8、无BOM、无行尾空白。
+- 本地Git由不同Windows SID拥有；第一次 `-c safe.directory` 使用反斜杠未匹配，
+  改用 `C:/Users/86136/Documents/rl` 后只读命令正常。该本地文档树在当前Git视图中为
+  untracked，因此没有把空的 `git diff --check` 当作新文件文本QA，改用上述显式逐文件检查。
+- 未stage、commit或push本地文档；未再访问增长中的服务器日志，也未停止/改变正式进程。
+
+### A092 — formal100 完成态刷新授权与上下文重载
+
+- 用户于 2026-07-30 要求只读查看 formal100 的实验进展/产物/训练指标/资源指标与
+  可视化，并追问：
+  - 两卡并行是否顶满；
+  - RLinf ManiSkill 训练量换算到本项目约多少；
+  - 100 cycles 是否太少，或 RLT 的采样效率是否已足够；
+  - 是否有成功率指标，训练效果如何。
+- 按根 `AGENTS.md`，重新完整读取 `PROJECT_CONTEXT.md`、`HANDOFF.md` 和当前 RLT
+  单一事实源 `00_INDEX_AND_IMPLEMENTATION_PLAN.md`；按需读取 ledger 的 formal
+  A086–A091、正式 resolved config、RLinf 锁定的 ManiSkill YAML 和 worker schedule。
+- 同时核对官方 RLT 方法页、论文摘要和 RLinf RLT 文档。外部来源只用于方法语义和公开
+  参考量级；本次动态状态、实际 counters 与资源仍以服务器现场和日志为准。
+- 本轮授权是只读审计和本地文档/图表整理；没有授权启动 eval、续训、resume、删除产物
+  或修改服务器 Git，因此这些动作均未执行。
+
+### A093 — 服务器完成态只读审计
+
+- 新增只读脚本
+  `local_scripts/remote_rlt_20260730_formal100_status_audit.sh`，通过既有
+  `local_scripts/remote_exec_autodl.py` 执行。密码仍只注入当前 PowerShell 进程的
+  `SEETA_SSH_PASSWORD`，Paramiko 使用固定 host key、`look_for_keys=False`、
+  `allow_agent=False`，并在 `finally` 清除环境变量。
+- 精确调用结构：
+  ```powershell
+  python local_scripts/remote_exec_autodl.py `
+    --script local_scripts/remote_rlt_20260730_formal100_status_audit.sh
+  ```
+- 观察时间 `2026-07-30T09:54:24+08:00`。现场结果：
+  - started `01:15:54+08:00`、finished `03:47:38+08:00`、`exit_code=0`；
+  - driver/monitor PID已正常退出，无目标RLT/Ray进程，两卡均 `0MiB/0%`；
+  - log `923,824 bytes / 6,049 lines`，进度 `Global Step 100/100`；
+  - CUDA OOM、NCCL fatal、Ray actor death、NaN metric均为0；
+  - 两条Curobo/Vulkan traceback来自既知非致命初始化探测，实际MPLib run已完成；
+  - branch `codex/rlt-pi0-robotwin`，HEAD
+    `2df23e7f4b3d19d4f0dedab32168767a32845a58`，worktree clean，
+    upstream/head-only为 `0/1`，领先项仍为既有docs-only commit；
+  - 10个 `global_step_{10,20,...,100}` completion manifest全部
+    `complete=true`、world size 2；
+  - 最终 rank replay为3,921/3,900 rows，合计7,821；
+  - 最终 trainer state为400 train episodes、`update_step=34,800`，
+    warm-up anchor为56 episodes/1,043 transitions。
+- checkpoint completion中的 `update_step` 序列为
+  `0, 2,800, 6,800, ..., 34,800`；student首次在cycle27接管，完整BC/Q ramp在
+  cycle52结束。
+
+### A094 — 产物枚举第一次过宽、窄化复查与cgroup查询
+
+- 第一次只读 artifact inspector 递归枚举整个 checkpoint，意外打印了数千个 trajectory
+  文件并尝试展开很大的 replay metadata；终端输出被截断，末尾一个 `awk` 片段语法错误
+  exit2。该命令没有写服务器、没有改变run或进程，但信息密度差，不能作为最终证据。
+- 修复方法：改用窄 Python inspector：
+  - 排除 trajectory payload 的逐文件打印；
+  - 只统计文件数、字节数和扩展名；
+  - 对每个 checkpoint 只读取小型 completion manifest；
+  - 对step100只打印非trajectory文件和两rank metadata/state摘要。
+- 窄化结果：
+  - run总计 `1,541,864,422 bytes`；
+  - 最终checkpoint `237,293,208 bytes`；
+  - 最终trajectory/replay `184,948,025 bytes / 7,823 files`；
+  - 全run `.pt` 共42,931个，主要是各checkpoint replay snapshot；
+  - media image/video文件数0。
+- 第一次单独查询 `memory.max` 时，PowerShell 到远端CLI的引号传递导致参数被拆开，
+  helper报 `unrecognized arguments`，没有产生远端状态变化。改用 PowerShell
+  here-string 传脚本文本后查询通过，`memory.max=257698037760 bytes=240GiB`。
+
+### A095 — 有界证据下载、TensorBoard/资源解析和统计结果
+
+- 新增
+  `local_scripts/download_rlt_formal100_status.py`，通过同一受控SFTP连接只下载：
+  完整driver/metrics日志、TensorBoard event、2秒资源CSV、exit/finish、10份completion
+  manifest、step100两rank trainer state和replay metadata。没有下载checkpoint权重或
+  7,823个trajectory文件。
+- 下载目标：
+  `docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_100c_20260730/status_20260730_0954/`。
+- 新增并执行：
+  ```powershell
+  python local_scripts/analyze_rlt_formal100_status.py
+  ```
+  脚本使用TensorBoard event和资源CSV生成：
+  - `status_summary.json`；
+  - `selected_scalars.csv`；
+  - `resources_30s.csv`；
+  - `visual_data.json`；
+  - 四张PNG：success/schedule、optimization、resource、checkpoint growth。
+- 成功率统计：
+  - train `30/400=7.5%`；
+  - reference控制阶段 `10/104=9.62%`；
+  - student阶段 `20/296=6.76%`；
+  - student前/后20 cycles为 `3/80=3.75%` / `10/80=12.5%`；
+  - deterministic eval十次依次为
+    `0,0,0,0,0,1/4,2/4,0,0,0`，合计 `3/40=7.5%`。
+- 优化统计：
+  - actor loss首/末 `0.5913/0.00320`；
+  - critic loss首/末 `0.002409/0.000502`；
+  - BC loss首/末 `0.08452/0.009321`；
+  - actor/critic grad峰值 `3.456/0.942`，均低于clip10；
+  - 全部87个更新点finite。
+- 资源CSV共4,004个样本，覆盖9,104秒：
+  - GPU显存峰17,543/17,626MiB；
+  - active mean util 25.59%/26.17%，两卡峰值均100%；
+  - matched RSS峰51.78GiB，env-worker RSS峰23.59GiB；
+  - cgroup anon/file/current峰47.47/195.05/约240GiB；
+  - `memory.events` 的max增量23,372，high/OOM/OOM-kill增量0/0/0；
+  - host available最低933.40GiB；
+  - disk available减少约1.483GiB，与run产物量一致。
+- 判断：两卡使用对称但GPU没有顶满，主要等待rollout/simulator；同时cgroup曾被可回收
+  file cache顶到240GiB上限，因此不能仅凭显存余量直接增加env并行。
+
+### A096 — ManiSkill量级对照与效果解释
+
+- 重新读取锁定源码
+  `.research-rlinf/examples/embodiment/config/maniskill_rlt_stage2_ac_mlp.yaml`：
+  5,000 outer cycles、64 train env、256 eval env、500 primitive steps/env/cycle、
+  C=10、10k replay rows/rank、30k critic floor、cap400。
+- 不同口径的只读量级计算：
+  - outer cycles：ManiSkill为本次50倍；
+  - train env-cycles：`5000*64 / (100*4)=800`倍；
+  - 最大primitive/action slots和macro chunks约2,000倍；
+  - 仅按cap推导的critic/actor update上界相对本次约57.5/28.7倍。
+- 这些不是等价训练预算：ManiSkill是64-way GPU simulator、不同任务、critical-phase
+  route和macro-UTD1；本项目是4 env RoboTwin、full-task route和macro-UTD5。
+- 效果结论保持两层：
+  - 工程/数值：健康，且已有学习信号；
+  - 科学效果：未验收。cycle70的2/4和endpoint100的0/4都只有4条，不能选best或判断
+    稳定退化；train与eval也不是严格A/B。
+- 建议的下一道门是同一组至少20个固定seeds，独立评估frozen reference、
+  checkpoint70和checkpoint100。该建议没有在本轮执行。
+
+### A097 — 可视化、报告、索引与证据收口
+
+- 使用visualization工作流生成一个自包含的内联结果面板：
+  `E:/Codex/home/visualizations/2026/07/28/019fa752-79fd-7de3-b66f-5ac4f0a72bfc/rlt-formal100-overview.html`。
+- 新增正式完成报告：
+  `docs/rlinf-robotwin-pi0-rltoken/08_STAGE2_FORMAL_100C_RESULT_20260730.md`。
+  报告逐项回答成功率、训练健康、并行利用、RAM/cgroup、产物、ManiSkill量级与
+  “100 cycles是否足够”。
+- evidence目录新增 `README.md` 与 `SHA256SUMS.txt`；后者固定29个下载/派生文件的
+  SHA-256，README和SHA文件自身不递归写入清单。
+- 根 `HANDOFF.md` 与RLT唯一索引更新为完成态：formal100 exit0；下一道门为
+  reference/ckpt70/ckpt100固定种子复评，尚未授权或启动。
+- 本轮没有stage、commit或push这些本地文档，也没有向服务器写入新文件。
+
+### A098 — 图表目视检查与最终本地QA
+
+- 逐张使用本地图片查看器检查四张PNG：
+  - 成功率图的reference/student边界、cycle27切换、cycle52 ramp结束和10个eval点可读；
+  - 优化图的log loss、Q值和clip10梯度线可读；
+  - 资源图能同时看出两卡对称、GPU间歇利用、RSS阶梯和240GiB cgroup上限；
+  - checkpoint图能看出10个点线性增长且由replay主导。
+- visualization render第一次把standalone目标写到 `C:/tmp`，当前Windows ACL返回
+  `PermissionError`；只影响本地预览文件，没有影响fragment或项目文件。改写到获准的
+  visualization目录后成功生成46,269-byte standalone包装，并确认fragment只有一个根节点、
+  无外层`html`标签、script开闭匹配。
+- 第一次Markdown文本QA发现完成报告首个blockquote行保留两个hard-break空格；
+  `TRAILING_WHITESPACE` gate正确拦截。使用 `apply_patch` 去除该非必要空格后复跑。
+- 最终命令级QA结果：
+  ```text
+  RLT_FORMAL100_LOCAL_QA_OK files=5 hashes=29 report_links=5 json=ok html_render=ok
+  ```
+  覆盖UTF-8无BOM、无行尾空白、29个SHA逐一复算、summary JSON、报告5个相对链接、
+  `git diff --check` 和内联可视化render。
+- 没有stage、commit或push；服务器run、checkpoint和进程状态保持只读。
+
+### A099 — 2026-07-30 formal规模纠正与本轮授权边界
+
+- 用户指出：上次把100-cycle运行作为正式训练批准时，没有完整对齐论文、ManiSkill示例
+  和RoboTwin实际训练规模，属于必须纠正的工作失误；后续formal应尽量一次拿到完整结果，
+  checkpoint间隔也必须随总预算缩放，不能撑爆存储。
+- 用户同时要求解释：
+  - 成功率图每个元素；
+  - 每cycle的rollout数量；
+  - env并行能否从4增到8；
+  - 195GiB file cache是否虚高/可清；
+  - 每50 cycles评20条是否合理；
+  - cycle和既有step口径的区别。
+- 本轮授权是本地文档设计与只读来源复核；没有授权服务器代码修改、资源smoke、新formal、
+  resume、删除或覆盖产物，因此未访问或改变服务器动态状态。
+- 纠正规则写入根 `PROJECT_CONTEXT.md`：任何formal启动前必须批准cycles、episodes、
+  action slots、transitions、updates、eval、checkpoint、wall-clock和GPU-hours多轴表；
+  否则只能叫pilot，不能用“睡一晚”定义训练量。
+
+### A100 — 上下文、图表和调用链只读复核
+
+- 按工作区规则完整读取根 `PROJECT_CONTEXT.md`、`HANDOFF.md` 和RLT唯一事实源
+  `00_INDEX_AND_IMPLEMENTATION_PLAN.md`，再按需读取：
+  - `08_STAGE2_FORMAL_100C_RESULT_20260730.md`；
+  - `evidence/IMPLEMENTATION_LOG.md` 的A086–A098；
+  - Stage2 source config；
+  - 锁定的RLinf ManiSkill YAML、runner、env worker和RLT policy worker。
+- 使用本地图片查看器检查用户附图
+  `C:/Users/86136/AppData/Local/Temp/codex-clipboard-2531812a-a330-40c2-b9d2-28c7238a060f.png`。
+- 源码结论：
+  - `cycle`就是runner一次`global_step`，顺序为sync→collect→replay ingest→train→
+    optional eval/save；
+  - formal100每cycle发起一次4-env batched rollout，每env一条episode，共4条；
+  - 每env最多200 action slots、C10，因此最多20 macro rows/env、80 rows/cycle；
+  - 实际100 cycles为7,821 rows，低于8,000上限是episode提前done；
+  - eval每10 cycles做4条deterministic episodes，红色stem不是误差条；
+  - 蓝线10-cycle rolling完整窗口是40条train episodes；
+  - 紫/橙虚线分别是cycle27 student接管和cycle52 BC/Q ramp完成。
+
+### A101 — 论文、RLinf ManiSkill和RoboTwin预算口径纠正
+
+- 复核官方一手来源：
+  - RLT论文HTML：`https://arxiv.org/html/2604.23073`；
+  - RLinf RLT文档：
+    `https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html`；
+  - Physical Intelligence项目页：`https://www.pi.website/research/rlt`。
+- 关键更正：
+  - 论文公开训练量是每任务约400–1000 episodes、macro-UTD5、critic:actor=2；
+  - formal100有400条train episodes，处在论文episode范围下界，不能仅凭
+    `5000/100=50`说它科学上少50倍或完全无效；
+  - 但旧run的长期schedule被压缩、稳定student段很短、每点eval仅4条，并且启动前没有
+    完成多轴规模审批，所以永久降级为pilot。
+- 锁定ManiSkill YAML的5000是runner outer cycles，且每cycle为64 env×最多500 control
+  slots；它还有critical-phase gate、可能expert takeover、macro-UTD约1和ratio4。
+  当前RoboTwin是full-task、无人/无expert、UTD5、ratio2，不能机械按一个字段等价。
+- 字面串行对齐是RoboTwin `max_steps=5000`，但4/8 env会产生20k/40k train episodes，
+  预计约5天或6–8天；匹配ManiSkill episode/action容量还会分别需要80k/200k cycles。
+  这些互相冲突，证明不存在唯一“等价step”。
+
+### A102 — 下一次完整formal预算与并行设计
+
+- 独立做三路只读复核：
+  - ManiSkill outer-cycle/episode/macro/update/eval精确语义；
+  - RoboTwin formal100真实采样、并行、资源和checkpoint线性外推；
+  - 完整phase覆盖所需的schedule/cycle预算。
+- 冻结为同一2,000-episode科学预算的两个实现：
+  - 首选：8 env×250 cycles、cap1600、eval/save interval25；
+  - 资源门失败回退：4 env×500 cycles、cap800、eval/save interval50。
+- 两者共同预计：
+  - 最大400k action slots；
+  - 约39.1k full-task macro rows；
+  - 约125k/62.5k critic/actor updates；
+  - 约820条student-controlled episodes；
+  - 10个periodic eval点×20条；
+  - 10个full checkpoints。
+- 长schedule恢复为10k replay rows/rank、30k post-collect update floor和20k/50k
+  actor weight warm-up/ramp；保持论文UTD5/ratio2及既有H50/C10/D14。
+- cap选择依据：
+  - 4 env稳态约391 desired updates/cycle，cap800同时维持UTD5并清理30k floor debt；
+  - 8 env稳态约782，cap400会把有效UTD降到约2.56，cap800只维持稳态，cap1600才同时
+    清理启动debt。
+- “从头”定义为Stage2 actor/Q fresh、empty replay、counter/anchor归零和
+  `resume_dir=null`；继续复用已验收Stage1 step2000 artifact/stats/adapter，不重训Stage1。
+
+### A103 — 评估、checkpoint与内存设计
+
+- 用户建议的“降低频率、每点20条”被采用：
+  - 4 env每50 cycles或8 env每25 cycles，均为每200条train episodes评一次；
+  - 10个监控点共200条；
+  - 正式效果另做reference/endpoint相同52个held-out seeds的paired eval；
+  - periodic结果不用于挑primary endpoint。
+- 发现当前fixed-reset机制不能仅靠`rollout_epoch=5`保证20个不同seeds；正式前需增加
+  config-opt-in的4 env×5 epochs seed-bank/epoch-offset，并验证20 unique IDs、分母20和
+  seed-bank SHA。长期常驻20个eval env因RAM风险不作为首选。
+- checkpoint保存固定为总cycle的1/10：4env方案每50、8env方案每25，恰好10个。
+  按formal100 replay大小外推，相同39.1k rows的最终full checkpoint约0.9GiB、10个累计
+  约5.2GiB、约21.5万replay小文件。预计每rank19.5k rows低于50k窗口，不依赖hard
+  eviction；禁止临时延长预算。
+- 195GiB file cache是真实cgroup page cache但多数可回收，不等于进程RSS；anon/RSS峰为
+  47.5/51.8GiB，host available最低933GiB且OOM0。`memory.events:max +23372`说明确实
+  触达240GiB并发生回收，不能完全忽略，也不应手工`drop_caches`。
+- 8-env只通过资源smoke决定：监控GPU、env RSS、anon斜率、PSI、memory events、
+  macros/s、updates/s、cycle wall-clock、20-seed eval峰值和save成本。
+
+### A104 — 文档、长期记忆与当前停点
+
+- 新增
+  `09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md`，集中记录本轮所有解释、来源和下一次
+  formal候选，不把新计划散落进旧100-cycle报告。
+- 更新：
+  - 根 `PROJECT_CONTEXT.md`：formal多轴规模审批稳定规则；
+  - 根 `HANDOFF.md`：100-cycle降级为pilot、新formal候选和未授权停点；
+  - RLT `00_INDEX_AND_IMPLEMENTATION_PLAN.md`：v14路由、批准门和当前停点；
+  - `08_STAGE2_FORMAL_100C_RESULT_20260730.md`：标题/预算口径勘误与新设计链接。
+- 按用户“精简记住”要求新增Memory扩展注记：
+  `extensions/ad_hoc/notes/20260730-104619-formal-scale-approval-gate.md`；只记录跨项目
+  formal规模硬门和本run永久归类为pilot，不保存动态服务器事实。
+- 当前没有服务器写操作，没有启动8-env smoke或训练，没有stage/commit/push。
+
+### A105 — 本地文本与链接QA
+
+- 第一次QA发现新设计文档第3行保留Markdown hard-break的两个尾随空格；gate输出
+  `QA_BAD ...:3`。使用`apply_patch`去掉尾随空格，并把RLT索引中两条历史入口从
+  “formal 100-cycle”改为“历史100-cycle pilot”；没有改变历史服务器目录名。
+- 复跑PowerShell QA，覆盖6个变更文档：
+  - UTF-8无BOM；
+  - 无行尾空白；
+  - 相对Markdown `.md` 链接全部存在；
+  - 新设计、旧pilot勘误、索引、HANDOFF和账本关键词一致；
+  - `git diff --check`没有报告错误。
+- 最终输出：
+  ```text
+  RLT_NEXT_FORMAL_LOCAL_QA_OK
+  NEW_DOC_LINES=300
+  ```
+- 根文档树在当前Git视图中仍为用户既有untracked结构；本轮没有stage、commit或push。
+
+### A106 — 8-env × 250-cycle formal授权与边界
+
+- 用户明确选择首选方案 `8 train env × 250 cycles`，其余已冻结设计由实现者按现有
+  09号设计文档执行，并授权：
+  - 实现20条周期评估的最小适配；
+  - 运行一次克制的8-env资源门；
+  - 资源门通过后启动fresh Stage 2 formal；
+  - 健康启动后停止轮询，等待用户下一次主动检查。
+- 仍然不授权删除/覆盖既有实验，也不把8-env失败静默改成4-env；资源门失败时必须停住
+  报告。
+- 用户重新提供AutoDL登录口令。口令只注入当前受控Paramiko进程，设置
+  `look_for_keys=False`、`allow_agent=False`；未写入脚本、文档、Git、日志、Memory或
+  命令行。本账本只记录凭据治理，不记录秘密本身。
+
+### A107 — 上下文恢复、计划与并行只读审阅
+
+- 按工作区规则完整恢复根 `PROJECT_CONTEXT.md`、`HANDOFF.md`、RLT唯一事实源和实施账本，
+  并读取09号正式规模设计；历史100-cycle只作为pilot测量依据。
+- 工作计划冻结为六步：
+  1. 服务器现场刷新；
+  2. 20条固定评估适配与测试；
+  3. 8-env资源smoke；
+  4. 冻结正式resolved packet；
+  5. 启动并观察至少一个完整cycle；
+  6. 更新账本、交接与启动报告。
+- 两路并行只读源码审阅得到一致结论：
+  - formal预算算术闭合；
+  - 现有 `4 env × rollout_epoch=1 × fixed=true` 只能真实评4条；
+  - 不能只把epoch改成5，否则同4个reset ID重复5次；
+  - 无需修改通用EnvWorker/RoboTwinEnv，使用RLT专属exact-20 seed bank和现有游标轮转
+    即可保持legacy调用不变。
+
+### A108 — 凭据环境缺失与进程内恢复
+
+- 第一次连接准备检查发现本地当前进程没有上轮临时SSH口令；没有尝试猜测、读取磁盘或把
+  口令写进文件，因而先向用户报告阻点。
+- 用户重新提供后，在持久Node子进程环境对象中设置临时
+  `SEETA_SSH_PASSWORD`，所有远端调用继续走：
+  ```text
+  python local_scripts/remote_exec_autodl.py run --command-file <script>
+  python local_scripts/remote_exec_autodl.py put <local> <remote>
+  ```
+  口令没有出现在这些命令参数中；任务结束前清空进程内变量。
+
+### A109 — 2026-07-30 11:02服务器只读刷新
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_formal250_readonly_refresh.sh
+  ```
+- 现场结果：
+  - repo `/root/autodl-tmp/RLinf_rlt_pi0_robotwin`；
+  - branch `codex/rlt-pi0-robotwin`；
+  - HEAD `2df23e7f4b3d19d4f0dedab32168767a32845a58`，相对upstream
+    left/right=`0/1`，多出的提交只含文档；
+  - worktree clean，无真实RLT/Ray训练进程，两卡 `0 MiB/0%`；
+  - cgroup current约193.97GiB，其中anon约0.29GiB、file cache约191.98GiB，
+    PSI为0、OOM为0；
+  - `/root/autodl-tmp` 可用约824GiB；
+  - Stage 1 endpoint与manifest存在，manifest SHA仍为
+    `6ca58f26...12433`；
+  - 新smoke/formal目标目录均不存在。
+- 服务器原文件hash也被固定，后续写入均以hash和clean-tree双重guard拒绝漂移。
+
+### A110 — canonical服务器快照、检索小问题与评估方案
+
+- 通过SFTP只读下载服务器canonical快照到：
+  `.tmp/formal250_server_snapshot/`，包括source config、RoboTwin env和seed test；没有用
+  本地较旧worktree文件覆盖服务器。
+- 第一次本地Git检查把 `safe.directory` 参数按PowerShell错误组合，命令没有修改文件；
+  改成正确参数形式后取得A109的HEAD/clean结论。
+- 第一次 `rg` 使用PowerShell不支持的路径glob，返回Windows路径语法错误；改为
+  `rg --glob ... local_scripts` 后正常定位既有compose/test/launch脚本。
+- 源码事实：
+  - PPO配置使用官方 `eval_seeds.json`、128个固定eval env，一次已覆盖大量独立seed；
+  - Fast-WAM GRPO专属配置为2 eval env、`fixed=false`，评估口径不同；
+  - 本formal要求每点20条但只开4 eval env，因此使用
+    `auto_reset=false/use_fixed_reset_state_ids=false/rollout_epoch=5`，让每个epoch显式
+    reset并推进seed游标；
+  - 两个EnvWorker各分得10个互不重叠seed，5个epoch后游标恰好回绕，下一评估点复用同一
+    20条paired bank。
+- 该变更只影响新RLT overlay的评估；训练仍使用原 `train_seeds.json`，没有改变RL采样。
+
+### A111 — exact-20 seed bank与两份opt-in配置
+
+- 使用 `apply_patch` 新增本地上传材料：
+  - `eval_seeds_adjust_bottle_rlt_periodic20_v1.json`；
+  - `robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250.yaml`；
+  - `robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_resource_smoke.yaml`。
+- seed bank的20个ID严格来自官方 `adjust_bottle` eval bank前20个：
+  `Count=20`、`Unique=20`、`MatchesOfficialFirst20=True`；SHA-256为
+  `fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7`。
+- formal overlay只覆盖已批准差异：
+  `250/25/25` cycles/eval/save、8 train env、cap1600、10k rows/rank、30k critic
+  floor、20k/50k actor schedule、50k replay window/rank和20-seed eval。
+- smoke overlay继承formal完整拓扑、batch、replay、模型和评估，仅把串行门禁缩为3 cycles、
+  readiness 1 row/rank、floor/cap1600、末轮eval/save。
+- 第一次PowerShell把不同对象类型连续送入默认table formatter，导致hash行显示为空；
+  文件未受影响。改为逐行字符串输出后取得四个明确hash。
+
+### A112 — 服务器guarded安装与连续seed游标测试收紧
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_formal250_prepare_upload_dir.sh
+  local_scripts/remote_rlt_20260730_formal250_apply_seed_eval_config.sh
+  ```
+- 四个文件先SFTP到
+  `/root/autodl-tmp/tmp/rlt_formal250_upload_20260730`；安装脚本逐项断言：
+  branch/HEAD、clean tree、原test/base config hash、新目标不存在和上传件hash，然后才用
+  `install -m 0644` 写入RLT worktree。
+- 初版测试已覆盖20 unique、worker不重叠和两事件相同；审阅时发现“两事件相同”是两次
+  重建helper，尚未直接证明游标跨事件回绕。随即用 `apply_patch` 把helper改成让同一
+  `current_seed_index` 连续运行两个event，再经SFTP和双hash guard更新服务器test。
+- 最终test SHA-256：
+  `4d764fc0a0e042e1b71a93d98d5e9a2627e6ed8a899c9dee8a92528303ad3c0f`。
+
+### A113 — 集中单测、compose与legacy不变验证
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_formal250_validate_configs.sh
+  ```
+- 脚本实际运行：
+  - `py_compile` 新seed test；
+  - `ruff check` 新seed test；
+  - `pytest -q test_robotwin_seed_partition.py test_robotwin_rlt_contract.py`；
+  - 原生compose/resolve legacy base、formal 8×250和resource smoke；
+  - OmegaConf逐项断言预算、H/C/D、UTD、ratio、schedule、replay、batch、Stage 1绑定、
+    20-seed路径/数量/hash和legacy默认；
+  - `git diff --check`。
+- 结果：
+  - `27 passed in 8.90s`；
+  - seed bank `20/20 unique`；
+  - legacy/formal/smoke resolved SHA-256分别为
+    `c0ae5510...9dcd61`、`4fd111af...9dd8d`、`eb38e0bf...32ce5`；
+  - `FORMAL250_CONFIG_VALIDATION_OK`。
+- stderr仅有既有Ruff preview提示、TensorFlow/oneDNN信息和本地Paramiko旧Blowfish弃用提示，
+  无测试/compose错误。此时服务器只有预期四项diff，正式训练尚未启动。
+
+### A114 — 服务器提交与有界Git网络处理
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_formal250_commit_eval_config.sh
+  local_scripts/remote_rlt_20260730_formal250_bounded_push.sh
+  ```
+- 服务器提交成功：
+  ```text
+  46a2d19b feat(rlt): add 8-env formal evaluation protocol
+  ```
+  完整HEAD为`46a2d19bae629eaa57830f5faeac71ac81a1a494`，worktree clean。提交仅含
+  两份RLT专属overlay、独立20-seed bank和seed游标单测，没有修改通用运行时代码。
+- push严格遵循大陆网络短探针：先探测`github.com`，9秒后HTTP000、curl exit28；
+  脚本在真正push前有界退出，没有反复重试。结论只是当时GitHub线路不可达，不归因为仓库、
+  认证或pack。服务器分支相对upstream ahead2；本次formal精确使用上述clean本地HEAD，
+  远端push延后。
+
+### A115 — 8-env资源门packet与进程gate窄修复
+
+- 新增并依次执行：
+  ```text
+  local_scripts/remote_rlt_20260730_resource_smoke_8env_prepare.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_prepare_diagnose.sh
+  local_scripts/remote_rlt_20260730_process_gate_probe.sh
+  ```
+- prepare在创建evidence前连续三次fail closed。原因不是已有训练，而是Paramiko远端
+  `bash -c`命令文本本身包含`train_embodied_agent.py`，最初的`pgrep/ps`模式把当前
+  准备shell误认为训练进程；加入self-PID过滤后，process-substitution子shell仍会命中。
+- 最终gate改为：
+  ```text
+  ps -eo pid,comm,args |
+    awk '$2 ~ /^python/ && $0 ~ /train_embodied_agent[.]py/'
+  pgrep -ax raylet
+  pgrep -ax gcs_server
+  ```
+  只把Python训练进程或exact-name Ray服务视为冲突。探针证明自身shell不再命中；
+  三次失败均在写evidence和启动Ray前发生，没有残留run。
+
+### A116 — 首次smoke launcher exit127与保留证据
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_resource_smoke_8env_launch.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_failed_launch_audit.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_archive_failed_launcher.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_launcher_syntax_check.sh
+  ```
+- 第一次launcher在训练程序启动前exit127，run root不存在。原因是Bash数组在heredoc中
+  被扩展成一个带空格的单一“可执行文件名”，不是模型、配置或资源故障。
+- 失败evidence保留到：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_resource_smoke_8env3c_20260730_v1_failed_launcher_127`。
+- 窄修复为把每个argv逐项写入`exact_command`与运行脚本；随后`bash -n`和命令段检查
+  通过。算法、resolved config、预算与hash均未改变。
+
+### A117 — 8-env资源smoke正式执行
+
+- 修复后重新执行同一launcher，并用以下只读脚本检查：
+  ```text
+  local_scripts/remote_rlt_20260730_resource_smoke_live_audit.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_tensorboard_progress.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_tb_selected.sh
+  local_scripts/remote_rlt_20260730_resource_smoke_artifact_probe.sh
+  ```
+- run root：
+  `/root/autodl-tmp/experiments/rlt_stage2_resource_smoke_8env3c_20260730_v1`；
+  runtime：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_resource_smoke_8env3c_20260730_v1/runtime`；
+  resolved SHA-256：
+  `bbcdcdcb22ca93f106dea0786a57086a2e8317caaefd610d18cabe6c4e2ff6aa`。
+- 运行从11:17:27到11:33:33，共966秒，exit0；完成3 cycles、24 train episodes、
+  472 macro transitions、3200/1600 critic/actor updates。末轮exact-20
+  deterministic eval为`2/20=10%`。
+- `global_step_3` checkpoint completion=true、world size2、两rank
+  `update_step=3200`。actor loss为`0.244/0.102/0.0425`，critic loss为
+  `9.33e-4/1.89e-4/3.31e-4`；actor/critic grad峰3.048/1.022，均finite且低于clip10。
+- console出现既有可选Curobo导入`curobo.types.math`提示；env worker、真实train/eval、
+  optimizer和save均成功，因此记录为非阻塞环境提示，不为它扩大依赖或修改算法。
+
+### A118 — 资源门postflight与8-env放行
+
+- 执行：
+  ```text
+  local_scripts/remote_rlt_20260730_resource_smoke_postflight.sh
+  ```
+  生成
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_resource_smoke_8env3c_20260730_v1/runtime/postflight_summary.json`；
+  其正式packet副本SHA-256为
+  `26c0152e4c31cfa902b28ff262ef791477ff963f07692a966960448dc364f8b9`。
+- 两卡显存峰17,169/17,252MiB、利用率峰均100%；matched RSS峰51.88GiB、
+  env RSS峰15.07GiB、cgroup anon峰47.47GiB、file峰192.19GiB、
+  current峰240.00GiB，host available最低934.03GiB。
+- `memory.events:max`增加7,867，说明file cache确实触发回收；但high/OOM/OOM-kill增量
+  均为0、最终PSI为0，anon与RSS没有失控。没有手工`drop_caches`。根据预先冻结的门禁，
+  8-env通过，不触发4-env回退。
+- run总大小63,548,290 bytes。静态机器合同和运行时`num_trajectories=20`共同证明每次
+  周期评估使用20条，不把`2/20`当作正式性能结论。
+
+### A119 — 250-cycle formal packet、启动与首周期健康门
+
+- 新增并执行：
+  ```text
+  local_scripts/remote_rlt_20260730_formal_8env250_prepare.sh
+  local_scripts/remote_rlt_20260730_formal_8env250_launch.sh
+  local_scripts/remote_rlt_20260730_formal_8env250_live_audit.sh
+  ```
+- packet逐项锁定clean HEAD、accepted Stage 1 artifact、8-env smoke postflight SHA、
+  250 cycles、8 env、2,000 train episodes、最大400k primitive slots、
+  预计39,105 macro rows、约125,525/62,762 critic/actor updates、每25 cycles
+  20条eval与1个checkpoint，共10点/200条eval/10个checkpoint。
+- 正式resolved SHA-256为
+  `586644cd69461016c1dd8c653da0eea12b01c61f2d0a9b4901654d90800f2a3e`。
+  run root：
+  `/root/autodl-tmp/experiments/rlt_stage2_formal_8env_250c_20260730_v1`；
+  experiment：
+  `robotwin_adjust_bottle_rlt_stage2_formal_8env_250c_v1`；
+  runtime：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime`。
+- 2026-07-30T11:37:25+08:00成功启动，driver/monitor PID为`154857/154858`；
+  正常停止由250 cycles控制，外层64,800秒timeout只作18小时故障保险。
+- 2026-07-30T11:41:49+08:00首个完整cycle健康闭合：8条trajectory均
+  `episode_len=200`，总return1.25；新增151 macro transitions，两rank replay
+  平均75.5、最慢rank71。10k rows/rank warm-up尚未满足，故reference route、
+  `update_step=0`、本轮updates=0均符合冻结合同。
+- 同一快照两卡约17,111/17,194MiB，cgroup anon约32.4GiB，
+  OOM/OOM-kill为0、PSI为0；没有CUDA OOM、NCCL fatal、NaN或rank death。
+  达到用户要求的“确认正常启动”门后停止Codex主动轮询；服务器2秒资源monitor随driver
+  继续运行并在driver结束时退出。
+
+### A120 — 启动记录、交接与本地QA收口
+
+- 新增
+  `docs/rlinf-robotwin-pi0-rltoken/10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md`，
+  集中记录exact-20适配、资源门、两次准备问题、正式预算、resolved SHA、精确命令、
+  运行路径、首周期和下次检查口径。
+- 更新RLT唯一索引与根`HANDOFF.md`：历史100-cycle仍为pilot；当前动态停点改为
+  8-env formal已健康启动、停止主动轮询。没有把动态状态写回`PROJECT_CONTEXT.md`。
+- 本地QA逐文件检查UTF-8严格解码、无BOM、无行尾空白和相对Markdown链接存在，四份文档
+  全部通过。第一次直接运行Git QA因Codex sandbox用户与仓库owner不同而触发
+  `dubious ownership`，没有修改仓库；改为单次命令参数
+  `git -c safe.directory=C:/Users/86136/Documents/rl -C ... diff --check`
+  后exit0，没有写全局Git配置。
+- 根文档树在当前本地Git视图中本来就是用户既有untracked结构，本轮不stage、不commit、
+  不push；因此未跟踪文件的空白与链接由上述显式逐文件gate覆盖。没有改动或清理用户其他
+  dirty/untracked内容。
+
+### A121 — 2026-07-30 formal250运行中只读刷新
+
+- 用户要求简要查看当前实验、产物、训练指标和资源指标；本轮授权仅为只读服务器检查与
+  本地报告/可视化，不停止进程、不修改配置、不启动第二个run。
+- 按工作区规则完整重读根`PROJECT_CONTEXT.md`、`HANDOFF.md`和RLT唯一事实源，再读
+  10号启动记录与账本A114–A120。
+- 首次无口令OpenSSH身份探针：
+  ```text
+  ssh -p 36406 -o BatchMode=yes -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=NUL -o ConnectTimeout=10 \
+    root@connect.bjb1.seetacloud.com "hostname; pwd; id -u"
+  ```
+  返回`Permission denied (publickey,password)`；这只证明BatchMode不能回答password，
+  没有把它误诊为服务器、网络或认证配置故障。随后把用户已提供的口令重新注入当前受控
+  Node/Paramiko子进程，继续使用`look_for_keys=False/allow_agent=False`等价的既有helper；
+  口令不写入脚本、文档、Git或输出，任务结束前再次清空。
+- 使用`apply_patch`新增只读审计脚本：
+  `local_scripts/remote_rlt_20260730_formal_8env250_status_audit.sh`。通过
+  ```text
+  python local_scripts/remote_exec_autodl.py run \
+    --command-file local_scripts/remote_rlt_20260730_formal_8env250_status_audit.sh
+  ```
+  在服务器执行；exit0、stdout 116,069 bytes，结束标记存在。TensorFlow oneDNN信息只来自
+  只读EventAccumulator加载，没有训练错误。
+- 服务器审计时间为2026-07-30 12:53:54+08:00：
+  - branch/HEAD=`codex/rlt-pi0-robotwin@46a2d19b...a494`，worktree clean，
+    upstream left/right=`0/2`；
+  - driver/monitor/唯一训练进程均存活，Ray `raylet/gcs_server`存在；
+  - `finished_at.txt`和`exit_code.txt`不存在，符合运行中状态；
+  - resolved SHA仍为
+    `586644cd69461016c1dd8c653da0eea12b01c61f2d0a9b4901654d90800f2a3e`；
+  - console完成cycle34并开始35；后续下载时console已到36、TensorBoard落盘到35；
+  - CUDA OOM、NCCL fatal、Ray death和NaN metric均为0。
+- 两个日志traceback用单独只读grep复核，均是两EnvWorker初始化时可选Curobo
+  `curobo.types.math`缺失；后续真实rollout、eval和checkpoint正常，故仍是已知非阻塞提示。
+
+### A122 — 高信息量证据下载、指标分析与可视化
+
+- 使用`apply_patch`新增：
+  ```text
+  local_scripts/download_rlt_formal250_status.py
+  local_scripts/analyze_rlt_formal250_status.py
+  ```
+- 下载器通过一次Paramiko/SFTP连接只读取得runtime小文件、metrics、唯一TensorBoard
+  event、step25 completion、双rank replay metadata和双rank trainer state：
+  ```text
+  python local_scripts/download_rlt_formal250_status.py \
+    docs/rlinf-robotwin-pi0-rltoken/evidence/
+    stage2_formal_8env250_20260730/status_20260730_1254
+  ```
+  结果为18个文件、962,772 bytes；没有下载trajectory replay payload或大checkpoint。
+- 本地执行：
+  ```text
+  python local_scripts/analyze_rlt_formal250_status.py \
+    docs/rlinf-robotwin-pi0-rltoken/evidence/
+    stage2_formal_8env250_20260730/status_20260730_1254
+  ```
+  生成`status_summary.json`及三张PNG：
+  `success_and_phase.png`、`replay_and_timing.png`、`resource_profile.png`。
+  第一次成功率图使用完整250-cycle横轴，当前35点过于拥挤；目视检查后窄改为当前50-cycle
+  视窗，并把预计replay门写入图内，再次生成。没有改变任何原始证据或服务器状态。
+- 冻结证据时间12:56:18：
+  - TensorBoard最新完整cycle35，console最新完整cycle36；差1个正常flush；
+  - 280 train episodes、20 eval episodes、5,237 global macros；
+  - min replay/rank 2,599，约26%，当前斜率预计cycle135过10k门；
+  - train reference 42/280=15.0%，最近10 cycles 8/80=10.0%；
+  - cycle25 deterministic untrained-student eval 0/20；尚无优化tags，因为critic/actor
+    updates均为0；
+  - 最近10 cycle总耗时120.68s，rollout120.22s；cycle25 eval+save总耗时397.52s，
+    eval本身272.81s。
+- 2,085个资源样本、median间隔2秒：
+  - GPU峰19,641/19,976MiB，active mean util30.1%/31.2%；
+  - matched RSS/env RSS峰50.02/21.43GiB；
+  - cgroup current/anon/file峰237.91/45.32/190.76GiB；
+  - 本run high/max/OOM/OOM-kill增量均为0，审计时memory PSI为0；
+  - host available最低936.22GiB，数据盘available 824.21GiB。
+- cycle25 exact-20 eval后env/matched RSS出现约5GiB永久阶梯；最近300个样本分别在
+  19.41–21.26/43.52–45.37GiB内周期波动而非继续上升。只经历一次eval，故把cycle50后
+  是否再次阶梯列为后续观察项，不提前宣称泄漏或完全稳定。
+- step25 checkpoint为140,307,188 bytes、3,722文件，completion=true、world size2、
+  update0；双rank state存在，replay size为1,874/1,835。12:53 run root总计
+  140,630,856 bytes。
+
+### A123 — 运行中报告、路由更新与本地QA
+
+- 使用`apply_patch`新增
+  `docs/rlinf-robotwin-pi0-rltoken/11_STAGE2_FORMAL_8ENV250_STATUS_20260730.md`，
+  汇总冻结时点、阶段解释、成功率、replay/耗时、资源、checkpoint和后续判读门；更新根
+  `HANDOFF.md`、RLT唯一索引和本账本。索引从v15升到v16，并只路由动态报告，不在设计文档
+  固化过时cycle数字。
+- 本地QA实际执行：
+  ```text
+  python -               # compile()检查两个分析/下载脚本，不落pyc
+  python -               # UTF-8/BOM/尾空白/冲突标记/fence/相对链接/JSON/PNG/hash
+  git -c safe.directory=C:/Users/86136/Documents/rl diff --check
+  ```
+- 第一次JSON检查误按服务器checkpoint目录层级查找
+  `checkpoints/global_step_25/checkpoint_completion.json`，返回`FileNotFoundError`。
+  原因是下载器有意把18个小证据文件平铺并重命名；用`rg --files`核对真实目录后，改查
+  `rlt_completion_step25.json`和两个`replay_rank_*_metadata_step25.json`，不是证据缺失。
+- 最终QA全部通过：两个Python脚本可编译；7个本轮文本文件严格UTF-8、无BOM、无尾空白、
+  无冲突标记，Markdown fence与相对链接闭合；5个JSON可解析；3张PNG存在且非空；
+  `download_manifest.json`所列18个文件的字节数与SHA-256逐项匹配，总计962,772 bytes；
+  `git diff --check` exit0。三张图均已目视检查。
+- 本轮服务器动作始终只读：没有改配置、停止/重启进程、清cache、创建额外run或下载大权重。
+
+### A124 — 2026-07-30 14:05 formal250第二次只读刷新
+
+- 用户再次要求按同一口径查看实验。本轮完整重读`PROJECT_CONTEXT.md`、根`HANDOFF.md`和
+  RLT唯一事实源，再读取上一份状态报告与本账本相关批次；授权仍为只读现场检查、本地证据/
+  报告，不含进程控制、配置修改或第二个run。
+- 登录口令只由当前PowerShell进程从本任务已有的用户消息动态取得，注入
+  `SEETA_SSH_PASSWORD`后立即清除；没有写入脚本、文档、Memory、Git或输出。最初尝试用
+  `read_thread(turnLimit=50)`恢复当前任务消息，工具明确限制`turnLimit<=10`；改用分页后，
+  当前API只返回压缩后的两页且未含授权消息。随后只读使用本任务现有rollout日志中的原始
+  用户消息完成process-only注入，没有人工复制或新建凭据文件。
+- 执行：
+  ```text
+  python local_scripts/remote_exec_autodl.py run \
+    --command-file \
+    local_scripts/remote_rlt_20260730_formal_8env250_status_audit.sh
+  ```
+  服务器审计时间`2026-07-30T14:05:16+08:00`，exit0。driver/monitor
+  `154857/154858`、唯一训练进程及Ray仍存活；`finished_at.txt`/`exit_code.txt`不存在。
+  branch/HEAD仍为
+  `codex/rlt-pi0-robotwin@46a2d19bae629eaa57830f5faeac71ac81a1a494`，
+  worktree clean，upstream计数`0 behind/2 ahead`。
+- 日志检查：CUDA OOM、NCCL fatal、Ray death和NaN均0；两个traceback仍只是两EnvWorker
+  的已知可选Curobo导入提示。审计开始时console到cycle66/67附近；后续SFTP冻结的
+  TensorBoard和console均闭合到cycle68。
+
+### A125 — cycle68小证据、图与补充内存探针
+
+- 通过一次只读SFTP执行：
+  ```text
+  python local_scripts/download_rlt_formal250_status.py \
+    docs/rlinf-robotwin-pi0-rltoken/evidence/
+    stage2_formal_8env250_20260730/status_20260730_1405
+  ```
+  得到23个文件、1,779,880 bytes：runtime日志/资源、唯一TensorBoard event、cycle25/50
+  completion、双rank replay metadata和trainer state；没有大模型权重或replay payload。
+- 执行：
+  ```text
+  python local_scripts/analyze_rlt_formal250_status.py \
+    docs/rlinf-robotwin-pi0-rltoken/evidence/
+    stage2_formal_8env250_20260730/status_20260730_1405
+  ```
+  生成`status_summary.json`与三张PNG。目视检查发现replay图标题仍硬写“cycle25”，而图中
+  已有cycle25/50两个红色点；用`apply_patch`改为通用
+  `red diamonds mark 20-episode eval + checkpoint`并重新生成，数据与原证据未改。
+- 冻结结果：cycle68/250、544条train、40条eval、10,153条global macros；train
+  `84/544=15.44%`，最近10 cycles `11/80=13.75%`；cycle25/50 student eval均
+  `0/20`。min replay/rank `5,067/10,000`，critic/actor/update_step仍全0，无优化tag。
+  cycle25/50 checkpoint均complete；cycle50大小229,067,493 bytes、7,463文件、
+  replay rank0/rank1为3,704/3,746。
+- 资源CSV共3,920行，覆盖11:37:25–14:05:48，median/max间隔2/3秒。GPU峰
+  19,776/19,976MiB、active mean31.14%/30.91%；磁盘剩823.99GiB。与12:56末值相比，
+  env RSS、matched RSS、cgroup anon分别从19.70/43.83/38.20GiB升到
+  29.47/53.76/48.11GiB；约69.5分钟净增9.77/9.92/9.91GiB，呈EnvWorker主导阶梯。
+- 为避免把冻结CSV外的PSI猜成0，追加一次只读现场探针：
+  ```text
+  date --iso-8601=seconds
+  cat /sys/fs/cgroup/memory.current
+  grep 'anon|file|inactive_file|active_file|slab' /sys/fs/cgroup/memory.stat
+  cat /sys/fs/cgroup/memory.events
+  cat /sys/fs/cgroup/memory.pressure
+  grep 'MemAvailable|SwapTotal|SwapFree' /proc/meminfo
+  nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu ...
+  ```
+  14:08结果为current239.97GiB、anon49.37GiB、file188.30GiB；
+  PSI some/full avg60均0.09%；OOM/OOM-kill仍0。相对run首行的`memory.max`新增5,911，
+  全部集中在14:03–14:05，证明已开始触发240GiB限额回收，不能继续称为“无回收压力”。
+
+### A126 — cycle68判断与文档收口
+
+- 新增
+  `12_STAGE2_FORMAL_8ENV250_STATUS_CYCLE68_20260730.md`，更新RLT索引和根`HANDOFF.md`。
+  报告把数值/显存/磁盘健康与内存风险分开：当前无OOM、吞吐未恶化，但anon/RSS不只在
+  eval时增长，风险升级为“疑似EnvWorker retained allocation/泄漏”的橙色观察项。
+- cycle25评估前后5分钟中位数出现约5.1–5.3GiB阶梯；cycle50即时只约0.5GiB，但随后
+  普通cycle仍继续增长。因此不把每次eval固定解释为5GiB，也不提前断言已证明泄漏。
+- 本轮没有越过只读边界停止进程。下一高信息量节点为cycle75后的anon、`memory.max`、
+  PSI和cycle time；若持续同步恶化，则已接近批准的
+  `sustained memory pressure/anon growth`停止条件，不能等到OOM后才处理。
+
+### A127 — cycle68本地QA
+
+- 本地执行只读QA：两个Python工具使用内存内`compile()`检查；7个本轮相关文本逐个检查
+  严格UTF-8、无BOM、无尾空白、无冲突标记、Markdown fence与相对链接；6个JSON解析；
+  23项下载manifest逐文件复核字节数与SHA-256；三张PNG存在且逐张目视检查。
+- 结果：全部通过，manifest总计1,779,880 bytes；三张PNG大小分别
+  134,682/179,262/533,811 bytes。最后执行
+  `git -c safe.directory=C:/Users/86136/Documents/rl diff --check`，exit0。
+
+### A128 — 2026-07-30 cycle100任务恢复与只读边界
+
+- 用户连续要求按同一口径再次查看formal250，并追加“找问题、成功率是否下降、训练细指标
+  是否正常、为什么还没有critic/actor优化、训练量是否太少”；同时再次要求流水账保存
+  **完整命令**，不能只写命令名。
+- 按工作区规则完整读取根`PROJECT_CONTEXT.md`、根`HANDOFF.md`和RLT唯一事实源
+  `00_INDEX_AND_IMPLEMENTATION_PLAN.md`，再读取12号报告和账本A120–A127。服务器动作
+  授权仍仅为只读状态、日志、资源和产物检查；不停止进程、不改配置、不清cache、不启动
+  第二个run。
+- 本轮先复核现有cycle68路由、账本尾部和证据目录。完整本地只读命令为：
+
+  ```powershell
+  Get-Date -Format o
+  Get-ChildItem -LiteralPath `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1514' |
+    Select-Object Name,Length,LastWriteTime
+  Get-Content -Raw -Encoding utf8 -LiteralPath `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1514/status_summary.json'
+  Get-ChildItem -LiteralPath 'docs/rlinf-robotwin-pi0-rltoken' |
+    Sort-Object Name | Select-Object Name,Length,LastWriteTime
+  rg -n "cycle68|status_20260730_1405|A12[0-9]|实施账本|Formal 8-env" `
+    'docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md' `
+    'HANDOFF.md' 'docs/rlinf-robotwin-pi0-rltoken' -g '*.md'
+  Get-Content -Raw -Encoding utf8 -LiteralPath `
+    'docs/rlinf-robotwin-pi0-rltoken/12_STAGE2_FORMAL_8ENV250_STATUS_CYCLE68_20260730.md'
+  Get-Content -Encoding utf8 -LiteralPath 'HANDOFF.md' | Select-Object -First 190
+  Get-Content -Encoding utf8 -LiteralPath `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md' |
+    Select-Object -Last 240
+  ```
+
+- 为缩短服务器输出并使后续状态刷新可复用，使用`apply_patch`新增只读脚本
+  `local_scripts/remote_rlt_20260730_formal_8env250_compact_status.sh`。脚本只执行
+  identity/Git/process/runtime/error计数、最后三条Global Step、GPU/cgroup/PSI/disk和
+  checkpoint metadata读取，不执行任何写操作。
+
+### A129 — 15:14/15:18 cycle99冻结现场与第一轮问题定位
+
+- AutoDL口令只从当前任务已有用户消息的rollout日志动态提取，注入当前PowerShell子进程
+  的`SEETA_SSH_PASSWORD`，Paramiko helper完成固定host-key校验和password auth，命令结束
+  立即删除环境变量。没有把口令写入脚本、文档、Memory、Git或输出。
+- 15:18复核使用的完整命令如下；15:14首次调用使用同一命令和同一只读脚本：
+
+  ```powershell
+  $rollout = 'E:\Codex\home\sessions\2026\07\28\rollout-2026-07-28T14-03-48-019fa752-79fd-7de3-b66f-5ac4f0a72bfc.jsonl'
+  $raw = Get-Content -Raw -Encoding utf8 -LiteralPath $rollout
+  $match = [regex]::Match(
+    $raw,
+    'ssh -p 36406[^\r\n]{0,1000}?】\u3010?([A-Za-z0-9]{8,64})】'
+  )
+  if (-not $match.Success) {
+    throw 'Authorized credential was not found in the current rollout log.'
+  }
+  $env:SEETA_SSH_PASSWORD = $match.Groups[1].Value
+  try {
+    python 'local_scripts/remote_exec_autodl.py' run `
+      --command-file `
+      'local_scripts/remote_rlt_20260730_formal_8env250_compact_status.sh'
+  }
+  finally {
+    Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+    $raw = $null
+    $match = $null
+  }
+  ```
+
+- 15:14冻结目录的完整下载与分析命令：
+
+  ```powershell
+  python 'local_scripts/download_rlt_formal250_status.py' `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1514'
+  python 'local_scripts/analyze_rlt_formal250_status.py' `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1514'
+  ```
+
+  下载结果为28个小型文件、2,574,944 bytes，包含cycle25/50/75三个checkpoint的小
+  metadata/state，不含大replay/model payload。分析生成`status_summary.json`和三张PNG。
+- 冻结到cycle99/250：792条train、14,865条macro、min replay/rank
+  `7,353/10,000`，train `112/792=14.14%`，最近10 cycles `12/80=15%`，
+  cycle25/50/75 eval均0/20；critic/actor/update_step均0。driver、monitor、唯一训练
+  进程和Ray均存活；CUDA OOM/NCCL fatal/Ray death/NaN均0。
+- cycle68→99的68.8分钟内Env RSS、matched RSS、anon分别增加
+  8.58/8.25/9.01GiB；但15:14前最近30分钟暂时平台，故当时没有抢先断言停止条件已经
+  确定触发，而是等待cycle100这个下一次exact-20自然节点。
+
+### A130 — TensorBoard 57-tag全量审计与成功率统计
+
+- 使用两个并行只读审计交叉检查：一个枚举全部TensorBoard tags和finite/step合同，一个
+  专门做成功率分段、Wilson区间、Fisher/线性趋势、reward/transition/timing相关。主任务
+  又用以下完整命令独立复算全量scalar摘要：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  import math
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+  root = Path(
+      r"docs/rlinf-robotwin-pi0-rltoken/evidence/"
+      r"stage2_formal_8env250_20260730/status_20260730_1514"
+  )
+  event = next(root.glob("events.out.tfevents.*"))
+  acc = EventAccumulator(str(event), size_guidance={"scalars": 0})
+  acc.Reload()
+  print(f"event={event.name}")
+  for tag in sorted(acc.Tags().get("scalars", [])):
+      values = [float(e.value) for e in acc.Scalars(tag)]
+      finite = sum(math.isfinite(v) for v in values)
+      print(
+          f"{tag}\tn={len(values)}\tfinite={finite}"
+          f"\tfirst={values[0]:.8g}\tlast={values[-1]:.8g}"
+          f"\tmin={min(values):.8g}\tmax={max(values):.8g}"
+          f"\tmean={sum(values)/len(values):.8g}"
+      )
+  '@ | python -
+  ```
+
+- cycle99成功率独立统计的完整命令：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  import math
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+  from scipy.stats import linregress, fisher_exact
+
+  root = Path(
+      r"docs/rlinf-robotwin-pi0-rltoken/evidence/"
+      r"stage2_formal_8env250_20260730/status_20260730_1514"
+  )
+  event = next(root.glob("events.out.tfevents.*"))
+  acc = EventAccumulator(str(event), size_guidance={"scalars": 0})
+  acc.Reload()
+  vals = [float(e.value) for e in acc.Scalars("env/success_once")]
+  counts = [round(v * 8) for v in vals]
+
+  def wilson(k, n, z=1.96):
+      p = k / n
+      d = 1 + z * z / n
+      c = (p + z * z / (2 * n)) / d
+      h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+      return c - h, c + h
+
+  for a, b in [
+      (1, 25), (26, 50), (51, 75), (76, 99),
+      (1, 49), (50, 99), (1, 68), (69, 99), (90, 99),
+  ]:
+      k = sum(counts[a - 1:b])
+      n = (b - a + 1) * 8
+      lo, hi = wilson(k, n)
+      print(
+          f"cycles={a:02d}-{b:02d}\tsuccess={k}/{n}"
+          f"\trate={k/n:.4%}\twilson95=[{lo:.4%},{hi:.4%}]"
+      )
+  first_k = sum(counts[:49])
+  last_k = sum(counts[49:])
+  odds, p = fisher_exact(
+      [[first_k, 49 * 8 - first_k], [last_k, 50 * 8 - last_k]]
+  )
+  print(f"Fisher first49_vs_last50 odds={odds:.4f} p_two_sided={p:.4f}")
+  reg = linregress(range(1, len(vals) + 1), vals)
+  print(
+      f"cycle_rate_linear_slope={reg.slope:.8f}"
+      f"_fraction_per_cycle p={reg.pvalue:.4f} r={reg.rvalue:.4f}"
+  )
+  print("per_cycle_counts=" + ",".join(map(str, counts)))
+  '@ | python -
+  ```
+
+- cycle99有57个scalar tags，非eval每项99点、eval每项3点，全部finite。分段成功率
+  17.0%/14.5%/13.5%/11.46%名义下降，但逐cycle趋势`p=0.1825`、前49对后50
+  Fisher `p=0.2637`，rolling-10又回到15%；不足以证明真实下降。
+- 并行审计最初把临时JSON写到`C:\tmp`时得到`PermissionError`；原因是该子任务的受控
+  写权限不包含目标。它改为工作区`.tmp`后成功，分析结束删除临时JSON和临时脚本。随后
+  直接`git status`又遇到仓库owner导致的`dubious ownership`；没有改全局配置，改用
+  `git -c safe.directory=C:/Users/86136/Documents/rl ...`后成功。
+
+### A131 — 调度源码复核与“critic-only”措辞纠正
+
+- 为回答“为什么还不优化、何时开始SAC”，执行以下完整只读命令：
+
+  ```powershell
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py' |
+    Select-Object -Skip 1400 -First 190
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py' |
+    Select-Object -Skip 240 -First 175
+  rg -n "def update_one_epoch|critic_actor_ratio|update_actor" `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_sac_policy_worker.py' `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py'
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_sac_policy_worker.py' |
+    Select-Object -Skip 700 -First 135
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py' |
+    Select-Object -Skip 1550 -First 250
+  rg -n -C 4 `
+    "min_replay_buffer_size|warmup_required_updates|max_updates_per_train_step|bc_weight|q_weight|reference_dropout|actor_update|critic.*actor|actor.*critic" `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1514/resolved.yaml'
+  ```
+
+- 源码确认：min rank低于10k时`skip_reason=1`且optimizer完全不动；过门后
+  `run_training()`立即调用`update_one_epoch(train_actor=True)`，每步critic、每2步actor。
+  `ready_for_online`只控制30k update后是否把rollout交给student。因此早先口头使用的
+  “30k critic-only warm-up”不精确，已经在聊天中主动纠正为：
+  **约cycle135开始critic+actor离线更新，约cycle154达到30k后student接管。**
+- 同一轮读取train seed实现：
+
+  ```powershell
+  rg -n "use_fixed_reset_state_ids|seed|reset|success_once|episode_len" `
+    '.rlt-impl-worktree/rlinf/envs/robotwin' `
+    '.rlt-impl-worktree/rlinf/workers/env' -g '*.py'
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/envs/robotwin/robotwin_env.py' |
+    Select-Object -Skip 410 -First 105
+  Get-Content -Encoding utf8 -LiteralPath `
+    '.rlt-impl-worktree/rlinf/workers/env/env_worker.py' |
+    Select-Object -Skip 720 -First 40
+  ```
+
+  一次直接`Get-Content train_seeds.json`打印了极大的多任务seed bank，工具输出被截断；
+  没有修改文件。有效结论仍由局部源码得到：seed bank先确定性shuffle/分rank，随后每个
+  EnvWorker顺序推进；当前指标不记录逐episode seed ID，所以不能做seed-conditioned归因。
+
+### A132 — cycle100自然节点、第四个checkpoint与最新版冻结
+
+- 15:22:14再次执行A129的完整process-only Paramiko命令；服务器现场已经完成cycle101，
+  cycle100 checkpoint完整。CUDA OOM/NCCL/Ray death/NaN仍0。
+- 使用以下完整命令冻结最新版：
+
+  ```powershell
+  $rollout = 'E:\Codex\home\sessions\2026\07\28\rollout-2026-07-28T14-03-48-019fa752-79fd-7de3-b66f-5ac4f0a72bfc.jsonl'
+  $raw = Get-Content -Raw -Encoding utf8 -LiteralPath $rollout
+  $match = [regex]::Match(
+    $raw,
+    'ssh -p 36406[^\r\n]{0,1000}?】\u3010?([A-Za-z0-9]{8,64})】'
+  )
+  if (-not $match.Success) {
+    throw 'Authorized credential was not found in the current rollout log.'
+  }
+  $env:SEETA_SSH_PASSWORD = $match.Groups[1].Value
+  try {
+    python 'local_scripts/download_rlt_formal250_status.py' `
+      'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1522'
+  }
+  finally {
+    Remove-Item Env:SEETA_SSH_PASSWORD -ErrorAction SilentlyContinue
+    $raw = $null
+    $match = $null
+  }
+
+  python 'local_scripts/analyze_rlt_formal250_status.py' `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1522'
+  ```
+
+- SFTP得到33个小型文件、2,652,489 bytes和manifest；本地分析生成三张图及summary。
+  最新TensorBoard完整到cycle100：800条train、80条eval、15,025条macro，min replay
+  7,433/10,000；train112/800，最近10为11/80，四次eval均0/20；仍无optimizer update。
+- cycle100 checkpoint为408,791,932 bytes、15,038文件，completion=true、world size2、
+  contract SHA一致、双rank trainer state完整、replay 7,433/7,592。run root为
+  1,097,692,292 bytes。process/Git未变化，训练仍运行。
+
+### A133 — cycle100成功率复算与内存停止门判断
+
+- 对最新版事件文件执行以下完整finite和趋势复算：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  import math
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+  from scipy.stats import fisher_exact, linregress
+
+  root = Path(
+      r"docs/rlinf-robotwin-pi0-rltoken/evidence/"
+      r"stage2_formal_8env250_20260730/status_20260730_1522"
+  )
+  event = next(root.glob("events.out.tfevents.*"))
+  acc = EventAccumulator(str(event), size_guidance={"scalars": 0})
+  acc.Reload()
+  tags = sorted(acc.Tags().get("scalars", []))
+  bad = []
+  points = 0
+  for tag in tags:
+      events = acc.Scalars(tag)
+      points += len(events)
+      for event_item in events:
+          if not math.isfinite(float(event_item.value)):
+              bad.append((tag, event_item.step, event_item.value))
+  print(f"tags={len(tags)} points={points} bad_nonfinite={len(bad)}")
+  vals = [float(e.value) for e in acc.Scalars("env/success_once")]
+  counts = [round(v * 8) for v in vals]
+
+  def wilson(k, n, z=1.96):
+      p = k / n
+      d = 1 + z * z / n
+      c = (p + z * z / (2 * n)) / d
+      h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+      return c - h, c + h
+
+  for a, b in [
+      (1, 25), (26, 50), (51, 75), (76, 100),
+      (1, 50), (51, 100), (91, 100),
+  ]:
+      k = sum(counts[a - 1:b])
+      n = (b - a + 1) * 8
+      lo, hi = wilson(k, n)
+      print(
+          f"cycles={a}-{b} success={k}/{n} rate={k/n:.4%}"
+          f" wilson95=[{lo:.4%},{hi:.4%}]"
+      )
+  first = sum(counts[:50])
+  last = sum(counts[50:])
+  odds, p = fisher_exact([[first, 400 - first], [last, 400 - last]])
+  reg = linregress(range(1, 101), vals)
+  print(f"first50_vs_last50 fisher_odds={odds:.4f} p={p:.4f}")
+  print(
+      f"linear_slope_fraction_per_cycle={reg.slope:.8f}"
+      f" p={reg.pvalue:.4f} r={reg.rvalue:.4f}"
+  )
+  print(
+      "eval=" + ",".join(
+          f"cycle{e.step + 1}:{float(e.value):.4f}"
+          for e in acc.Scalars("eval/success_once")
+      )
+  )
+  '@ | python -
+  ```
+
+  结果为57 tags、5,028点、非finite 0；四段为17.0%/14.5%/13.5%/11.0%，
+  前50对后50 Fisher `p=.1851`、线性趋势`p=.1270`，仍不足以称真实下降。
+- 评估后内存阶梯使用以下完整命令复算；列名先统一换算GiB，评估结束时间来自
+  `time/step`的TensorBoard wall time：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  import pandas as pd
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+  root = Path(
+      r"docs/rlinf-robotwin-pi0-rltoken/evidence/"
+      r"stage2_formal_8env250_20260730/status_20260730_1522"
+  )
+  resource = pd.read_csv(root / "resources.csv")
+  for column in [
+      "cgroup_anon_bytes", "cgroup_file_bytes", "cgroup_current_bytes"
+  ]:
+      resource[column] /= 1024 ** 3
+  for column in ["env_rss_kib", "matched_total_rss_kib"]:
+      resource[column] /= 1024 ** 2
+  accumulator = EventAccumulator(
+      str(next(root.glob("events.out.tfevents.*"))),
+      size_guidance={"scalars": 0},
+  )
+  accumulator.Reload()
+  times = {e.step + 1: e.wall_time for e in accumulator.Scalars("time/step")}
+  columns = [
+      "env_rss_kib", "matched_total_rss_kib", "cgroup_anon_bytes",
+      "cgroup_file_bytes", "cgroup_current_bytes", "cgroup_max_events",
+  ]
+  for cycle in [25, 50, 75, 100]:
+      event_time = times[cycle]
+      pre = resource[
+          (resource.unix_time >= event_time - 300)
+          & (resource.unix_time <= event_time - 60)
+      ]
+      post = resource[
+          (resource.unix_time >= event_time + 60)
+          & (
+              resource.unix_time
+              <= min(event_time + 360, resource.unix_time.iloc[-1])
+          )
+      ]
+      print(
+          f"cycle={cycle} pre_n={len(pre)} post_n={len(post)}"
+          f" post_span_s={0 if post.empty else int(post.unix_time.iloc[-1] - post.unix_time.iloc[0])}"
+      )
+      for column in columns:
+          before = pre[column].median()
+          after = post[column].median()
+          print(
+              f"  {column}: pre={before:.3f}"
+              f" post={after:.3f} delta={after-before:+.3f}"
+          )
+  '@ | python -
+  ```
+
+- 四个eval后的Env RSS/matched/anon中位阶梯分别约
+  `+5.75/+5.97/+5.96`、`+1.22/+1.25/+1.25`、
+  `+3.92/+3.52/+4.22`和`+2.21/+2.21/+2.22`GiB。cycle75/100同时发生
+  file cache回收和`memory.max`增加24,149/13,146。
+- 15:22冻结current/peak：Env RSS40.21/40.24GiB、matched64.17/64.20GiB、
+  anon59.29/59.68GiB、file177.96/191.01GiB、cgroup239.60/240GiB；
+  本run max事件累计95,824，OOM/OOM-kill为0。cycle100现场PSI some/full avg60均0.04%。
+  GPU峰19,776/19,976MiB、disk余823.28GiB。
+- 与cycle99前30分钟暂时平台的反证相比，cycle100又重现完整阶梯。因此本轮把风险从
+  “接近”升级为 **已经满足冻结的`sustained memory pressure/anon growth`停止定义**。
+  但用户本轮只授权只读检查，故没有擅自TERM；建议用完整checkpoint100作安全停点，
+  等待用户明确授权。
+
+### A134 — cycle100报告、路由与待QA
+
+- 使用`apply_patch`新增
+  `13_STAGE2_FORMAL_8ENV250_STATUS_CYCLE100_20260730.md`，集中回答：
+  成功率名义下降及统计不确定性、57-tag细指标、哪些正常/异常、为什么无loss/Q/grad、
+  精确SAC开始和student切换时点、250-cycle量级限制、资源停止判断和checkpoint100产物。
+- 更新RLT唯一索引到v17并把12号报告降为cycle68历史追溯，13号成为最新状态入口；更新根
+  `HANDOFF.md`的RLT专题行和动态状态。没有把动态实验数字写入`PROJECT_CONTEXT.md`。
+- 本轮所有服务器调用均只读；没有修改server worktree/run、停止或重启进程、删除文件、
+  清cache、下载大权重或启动额外实验。
+
+### A135 — cycle100图形复核与本地QA
+
+- 逐张使用原分辨率目视检查最新版
+  `success_and_phase.png`、`replay_and_timing.png`和`resource_profile.png`。前两张文字、
+  图例、点线和四个eval节点清晰。第一次资源图检查发现底部子图左上角的事件增量文字与
+  图例重叠；数据没有错误，但影响阅读。
+- 使用`apply_patch`把
+  `local_scripts/analyze_rlt_formal250_status.py::plot_resources`中的事件文字从axes坐标
+  `(0.01, 0.96), va=top`移动到`(0.01, 0.02), va=bottom`，然后完整重跑：
+
+  ```powershell
+  python 'local_scripts/analyze_rlt_formal250_status.py' `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/stage2_formal_8env250_20260730/status_20260730_1522'
+  ```
+
+  再次目视检查确认图例和事件文字不再重叠；原始日志、CSV、TensorBoard和下载manifest
+  未改动。
+- 最终本地QA完整命令：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  import hashlib
+  import json
+  import re
+
+  root = Path.cwd()
+  text_files = [
+      root / "HANDOFF.md",
+      root / "docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md",
+      root / "docs/rlinf-robotwin-pi0-rltoken/13_STAGE2_FORMAL_8ENV250_STATUS_CYCLE100_20260730.md",
+      root / "docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md",
+      root / "local_scripts/analyze_rlt_formal250_status.py",
+      root / "local_scripts/remote_rlt_20260730_formal_8env250_compact_status.sh",
+  ]
+  errors = []
+  for path in text_files:
+      raw = path.read_bytes()
+      try:
+          text = raw.decode("utf-8", errors="strict")
+      except UnicodeDecodeError as exc:
+          errors.append(f"{path}: utf8 {exc}")
+          continue
+      if raw.startswith(b"\xef\xbb\xbf"):
+          errors.append(f"{path}: BOM")
+      for number, line in enumerate(text.splitlines(), 1):
+          if line.rstrip(" \t") != line:
+              errors.append(f"{path}:{number}: trailing whitespace")
+      if any(marker in text for marker in ("<" * 7, "=" * 7, ">" * 7)):
+          errors.append(f"{path}: conflict marker")
+      if path.suffix == ".md" and text.count("`" * 3) % 2:
+          errors.append(f"{path}: unbalanced fenced code")
+
+  link_pattern = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+  for path in text_files[:4]:
+      text = path.read_text(encoding="utf-8")
+      for target in link_pattern.findall(text):
+          target = target.strip().strip("<>")
+          if target.startswith(("http://", "https://", "#", "mailto:")):
+              continue
+          target = target.split("#", 1)[0]
+          if target and not (path.parent / target).resolve().exists():
+              errors.append(f"{path}: missing link {target}")
+
+  evidence = (
+      root
+      / "docs/rlinf-robotwin-pi0-rltoken/evidence/"
+      / "stage2_formal_8env250_20260730/status_20260730_1522"
+  )
+  for path in evidence.glob("*.json"):
+      json.loads(path.read_text(encoding="utf-8"))
+  manifest = json.loads(
+      (evidence / "download_manifest.json").read_text(encoding="utf-8")
+  )
+  total = 0
+  for item in manifest:
+      path = evidence / item["local_name"]
+      raw = path.read_bytes()
+      total += len(raw)
+      if len(raw) != item["bytes"]:
+          errors.append(f"{path}: bytes mismatch")
+      if hashlib.sha256(raw).hexdigest() != item["sha256"]:
+          errors.append(f"{path}: sha mismatch")
+  for name in (
+      "success_and_phase.png", "replay_and_timing.png", "resource_profile.png"
+  ):
+      path = evidence / name
+      if not path.exists() or path.stat().st_size <= 0:
+          errors.append(f"{path}: missing/empty")
+  for script in (
+      "local_scripts/analyze_rlt_formal250_status.py",
+      "local_scripts/download_rlt_formal250_status.py",
+      "local_scripts/remote_exec_autodl.py",
+  ):
+      source = (root / script).read_text(encoding="utf-8")
+      compile(source, script, "exec")
+  print(
+      json.dumps(
+          {
+              "text_files": len(text_files),
+              "manifest_entries": len(manifest),
+              "manifest_bytes": total,
+              "json_files": len(list(evidence.glob("*.json"))),
+              "errors": errors,
+          },
+          ensure_ascii=False,
+      )
+  )
+  if errors:
+      raise SystemExit(1)
+  '@ | python -
+
+  git -c safe.directory='C:/Users/86136/Documents/rl' diff --check
+  ```
+
+- 结果：6个本轮文本文件严格UTF-8、无BOM/尾空白/冲突标记，Markdown fence和相对链接
+  闭合；15个JSON可解析；33项manifest逐项字节数和SHA-256一致，总计2,652,489 bytes；
+  三张PNG非空且已目视检查；三个Python工具内存编译通过；`git diff --check` exit0。
+
+### A136 — 流水账自检误报与最终复测
+
+- A135把QA程序本身完整写入Markdown后，第一次最终复测报告本账本含“conflict”和
+  “unbalanced fence”。只读定位命令最初尝试用带PowerShell backtick的`rg`正则，因shell
+  预处理得到`unclosed group`；改用以下无歧义命令定位：
+
+  ```powershell
+  Select-String -LiteralPath `
+    'docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md' `
+    -SimpleMatch `
+    -Pattern '<<<<<<<','=======','>>>>>>>','text.count("```")' |
+    Select-Object LineNumber,Line
+  ```
+
+- 原因不是实际冲突或fence缺失，而是账本内嵌的QA源码恰好逐字包含自己要搜索的七字符
+  conflict marker与三个backtick，形成自指误报。使用`apply_patch`把等价检查改为
+  `("<" * 7, "=" * 7, ">" * 7)`和`text.count("`" * 3)`，命令语义不变。
+- 最终复测把冲突检查限定为“行首真实marker”、fence检查限定为“行首fence delimiter”，
+  从而允许流水账忠实保存失败命令本身。6个文本、33项manifest、2,652,489 bytes、JSON、
+  PNG、Python compile和`git diff --check`全部通过，`errors=[]`。
+
+### A137 — cycle200只读刷新、下载中断修复与可视化重做
+
+- 重新完整读取根`PROJECT_CONTEXT.md`、`HANDOFF.md`和RLT唯一专题计划后，按授权仅做
+  服务器只读检查。密码仍只从当前任务进程注入`SEETA_SSH_PASSWORD`，命令结束立即移除；
+  没有写入脚本、账本、Memory或输出。身份探针完整命令为：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run whoami
+  ```
+
+  返回`root`，同时由helper验证既有SSH host-key SHA256。
+- 第一次现场命令误把远端命令直接放在主parser后、遗漏`run`子命令，返回
+  `invalid choice`；第二次又因PowerShell把带空格的远端`printf`拆成多个参数而返回
+  `unrecognized arguments`。没有连接后写操作。修复为无空格身份探针，以及把复杂远端
+  只读命令完整保存到`.tmp/remote_rlt_formal250_status_query.sh`后执行：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file '.\.tmp\remote_rlt_formal250_status_query.sh'
+  ```
+
+  该脚本只执行`date/ps/grep/nvidia-smi/cat/find/du/df`，不修改服务器。
+- 原有完整证据下载命令为：
+
+  ```powershell
+  python '.\local_scripts\download_rlt_formal250_status.py' `
+    '.\.tmp\formal250_live_20260730_195508'
+  ```
+
+  大陆线路下120秒超时，driver/resources等文件已下载但TensorBoard未完成；进程没有
+  留存。另一个并行只读快照
+  `.tmp/formal250_live_subagent_20260730_195741`成功取得完整TensorBoard和resources，
+  用于cycle196预检查。
+- 20:16服务器自然完成cycle200：20条fixed-seed deterministic eval为`16/20=80%`，
+  train为`4/8`，并开始保存checkpoint200。只读tail命令为：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file '.\.tmp\remote_rlt_formal250_tail_query.sh'
+  ```
+
+  返回`global_step_200`、eval五个epoch全部完成、`Saving checkpoint at step 200`和
+  completion marker存在。
+- 为冻结cycle200，先用SFTP分别下载TensorBoard和resources：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root get `
+    '/root/autodl-tmp/experiments/rlt_stage2_formal_8env_250c_20260730_v1/tensorboard/events.out.tfevents.1785382662.autodl-container-nekaqbwt43-6ce5babb.154864.0' `
+    '.\.tmp\formal250_live_cycle200_20260730_201644\events.out.tfevents.1785382662.autodl-container-nekaqbwt43-6ce5babb.154864.0'
+
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root get `
+    '/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime/resources.csv' `
+    '.\.tmp\formal250_live_cycle200_20260730_201644\resources.csv'
+  ```
+
+  event文件788,379 bytes完成，但未压缩resources在120秒时仅1,146,880 bytes，故不能
+  使用。原因是小带宽SFTP，不是训练或CSV错误。
+- 使用`apply_patch`新增`.tmp/download_remote_gzip.py`，通过同一已校验Paramiko连接在
+  远端只读执行`gzip -c`，只把压缩stdout写到本地；没有创建远端临时文件。复测命令：
+
+  ```powershell
+  python '.\.tmp\download_remote_gzip.py' `
+    '/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime/resources.csv' `
+    '.\.tmp\formal250_live_cycle200_20260730_201644\resources.csv'
+  ```
+
+  30.8秒取得495,063-byte压缩流并恢复为2,271,685-byte完整CSV。
+- 通用`analyze_rlt_formal250_status.py`要求driver等全套文件，直接用于最小快照时报
+  `FileNotFoundError: driver.log`；该失败未改数据。改用本轮新增的动态边界复算脚本：
+
+  ```powershell
+  python '.\.tmp\plot_rlt_formal250_verified.py' `
+    '.\.tmp\formal250_live_cycle200_20260730_201644' `
+    'E:\Codex\home\visualizations\2026\07\28\019fa752-79fd-7de3-b66f-5ac4f0a72bfc' `
+    --label cycle200-verified
+  ```
+
+  脚本从真实tag推导P2/P3/P4起点为136/155/192，不再硬编码预测边界；严格使用完整cycle
+  `step+1`、train每cycle 8条、eval每点20条，并输出success/optimization/resources三张
+  PNG和JSON。
+- cycle200复算结果：
+  - P1/P2/P3/P4成功率为
+    `156/1080`、`22/152`、`94/296`、`55/72`；
+  - deterministic eval cycle150/175/200为`1/20`、`6/20`、`16/20`；
+  - critic/actor累计`75,215/37,608`，pending 0；
+  - actor/critic loss`-0.0661/0.00149`，grad`3.189/0.189`；
+  - Q0/Q1/Q(data)`0.214/0.206/0.181`，BC/Q权重`2.5/0.45`。
+- 重做inline图时先用`render.py`包装，再用系统Chrome headless分别按736px和360px宽度
+  实际打开。第一次视觉QA发现phase table的Unicode en dash在既有shell编码链中变成
+  `鈥?`并吞掉第二个模板变量；使用`apply_patch`改成ASCII`-`，重新生成并复测：
+
+  ```powershell
+  python 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' `
+    'E:\Codex\home\visualizations\2026\07\28\019fa752-79fd-7de3-b66f-5ac4f0a72bfc\rlt-formal250-cycle200-verified.html' `
+    '.\.tmp\rlt-formal250-cycle200-standalone.html'
+  ```
+
+  最终两种宽度均无JS error、无水平溢出；四行table为
+  `1-135/136-154/155-191/192-200`，success、eval和updates均可见。三张PNG也逐张用原分辨率
+  目视确认图例、阶段线、eval标签和资源双轴无重叠。
+- 20:23:28最终服务器只读现场：driver仍存活，console到cycle202；
+  checkpoint25–200共8个，step200约747MiB且completion完整；磁盘余约821GiB。
+  fatal扫描为空，OOM/OOM-kill为0。两卡历史显存峰19.37/19.51GiB，平均利用率
+  30.3%/27.5%。但anon峰77.44GiB、matched RSS峰82.41GiB、Env RSS峰57.18GiB，
+  相对cycle162继续增加约7.4GiB并依靠file cache回收维持240GiB上限，所以原停止定义
+  仍成立。本轮没有停止、重启、resume、删文件、清cache或启动第二个run。
+- 第一次本地文档QA又使用了整文件`text.count("```")`，被A136内嵌的旧QA源码触发
+  `unbalanced fences`误报；改为只计数匹配`^\s*```(?:\w+)?\s*$`的真实行首fence后为
+  404个、偶数。最终四个UTF-8文档无BOM/尾空白、line-start fences闭合，五个图/JSON/HTML
+  产物非空且summary JSON可解析，`git diff --check` exit0。
+
+### A138 — 250/250自然完成、最终证据冻结与双宽度可视化QA
+
+- 按根`HANDOFF.md`授权只做服务器只读刷新。身份凭据仍只注入当前进程环境变量，
+  `look_for_keys=False`、`allow_agent=False`，命令结束后移除；没有写入脚本、账本、
+  Memory或输出。
+- 第一轮状态脚本执行`ps -p 154857`时，因为训练进程已经自然退出且脚本使用`set -e`，
+  在后续完成标记前提前exit1。该失败没有写服务器。窄修复是在只读查询中的非零探针后加
+  `|| true`，并以`finished_at/exit_code/Global Step/checkpoint completion`共同判断：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file '.\.tmp\remote_rlt_formal250_final_query.sh'
+  ```
+
+  23:03+08:00返回`250/250`、`exit_code=0`、finished
+  `2026-07-30T22:23:41+08:00`，driver不存在、两卡现场显存约5MiB。最后一次`pgrep`
+  命中了查询命令自身，因为正则包含run路径；结合PID命令行、driver PID缺失、GPU为0和
+  finished/exit证据，确认没有残留训练/Ray进程。
+- 最终只读下载优先沿用压缩stdout办法，避免大陆小带宽SFTP对2–3MB文本反复超时：
+
+  ```powershell
+  python '.\.tmp\download_remote_gzip.py' `
+    '/root/autodl-tmp/experiments/rlt_stage2_formal_8env_250c_20260730_v1/tensorboard/events.out.tfevents.1785382662.autodl-container-nekaqbwt43-6ce5babb.154864.0' `
+    '.\.tmp\formal250_final_20260730_230104\events.out.tfevents.1785382662.autodl-container-nekaqbwt43-6ce5babb.154864.0'
+
+  python '.\.tmp\download_remote_gzip.py' `
+    '/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime/resources.csv' `
+    '.\.tmp\formal250_final_20260730_230104\resources.csv'
+
+  python '.\.tmp\download_remote_gzip.py' `
+    '/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime/driver.log' `
+    '.\.tmp\formal250_final_20260730_230104\driver.log'
+  ```
+
+  原始/压缩字节分别为event `1,054,383/246,728`、resources
+  `2,810,818/613,037`、driver `1,947,559/83,174`。三个最终文件SHA-256分别为
+  `4dea11b3...17e2`、`b7f0862d...ded2`、`e829d2ce...792d`。
+- 使用与cycle200相同、从真实tag动态推导阶段的复算脚本：
+
+  ```powershell
+  python '.\.tmp\plot_rlt_formal250_verified.py' `
+    '.\.tmp\formal250_final_20260730_230104' `
+    'E:\Codex\home\visualizations\2026\07\28\019fa752-79fd-7de3-b66f-5ac4f0a72bfc' `
+    --label cycle250-final
+  ```
+
+  返回P2/P3/P4边界`136/155/192`。P1/P2/P3/P4 train成功率为
+  `156/1080`、`22/152`、`94/296`、`375/472`；final eval为
+  `18/20`，最后20/10/5 train cycles为83.75%/85%/90%。
+- 最终 critic/actor updates为`102,260/51,130`，pending 0；actor/critic loss
+  `-0.08119/0.001286`，grad `2.821/0.170`，Q0/Q1/Q(data)
+  `0.2515/0.2383/0.2123`，BC/Q权重`2.5/0.45`。全量finite、fatal扫描为空。
+- 资源峰值为GPU显存19.37/19.51GiB、matched RSS87.42GiB、Env RSS62.05GiB、
+  anon82.43GiB、file191.01GiB、cgroup current240GiB；OOM/OOM-kill为0。
+  退出后matched RSS归零、Env RSS近零、anon约0.3–0.6GiB，证明大部分retained
+  anonymous memory由worker持有并在退出时释放，但不撤销运行期内存压力风险判定。
+- 交互片段通过官方visualization render helper包装：
+
+  ```powershell
+  python 'E:\Codex\home\plugins\cache\openai-bundled\visualize\1.0.14\skills\visualize\scripts\render.py' `
+    'E:\Codex\home\visualizations\2026\07\28\019fa752-79fd-7de3-b66f-5ac4f0a72bfc\rlt-formal250-cycle250-final.html' `
+    '.\.tmp\rlt-formal250-cycle250-final-standalone.html'
+  ```
+
+  再用系统Chrome headless分别按736px和360px实际打开。两种宽度均无JS error、无水平
+  溢出、四行阶段表完整；右侧cycle250、18/20标签未裁切。三张静态PNG也按原分辨率目视
+  检查，阶段、eval、优化和资源释放曲线均与同一summary JSON一致。
+- 最终checkpoint25–250共10个、总计约5.2GiB；`global_step_250`约876MiB，
+  completion marker和两个rank trainer state均完整，`update_step=102260`。本轮没有
+  停止、启动、resume、删除、覆盖、清cache或发起新实验。
+
+### A139 — Stage 2 final高信息量材料包
+
+- 用户在Stage 2 `250/250`顺利结束后，明确要求收集训练日志、指标、资源、规划文档等
+  高信息量产物并在本机打包；这授权只读下载服务器小文件和创建本地交付包，不授权删除、
+  覆盖远端产物或搬运大checkpoint。
+- 新任务开始先完整读取根`PROJECT_CONTEXT.md`、`HANDOFF.md`和RLT唯一专题计划；确认
+  当前停点仍是formal自然完成，final checkpoint保留服务器，不启动第二个run或resume。
+- 首轮本地盘点命令：
+
+  ```powershell
+  Get-ChildItem -LiteralPath 'exports' -Force |
+    Sort-Object LastWriteTime |
+    Select-Object Name,Length,LastWriteTime
+
+  Get-ChildItem -Recurse -File `
+    -LiteralPath 'exports\rlt_stage1_formal_high_info_20260729_v2' |
+    Select-Object FullName,Length
+
+  rg --files .tmp |
+    rg 'formal250|rlt_stage2_formal_8env250|source_config|resolved|provenance|runtime'
+  ```
+
+  结果确认可沿用Stage 1包的`README + runtime + TensorBoard + config/provenance +
+  visuals + SHA256`结构；本地已经有final event、完整driver和resources，以及已冻结
+  resolved config、预算、精确命令和provenance。
+- 本包冻结为“非模型高信息量包”：包含完整训练日志、TensorBoard event、资源CSV、
+  source/resolved config、budget/provenance/command/stop条件、final checkpoint的小型
+  completion/trainer-state元数据、最终统计与三张图、专题计划/参数依据/启动/最终报告和
+  本流水账。明确排除十个checkpoint权重、replay payload、数据集、Stage 1大模型和重复
+  中间状态快照，以控制体积并避免把恢复材料误当作可独立resume包。
+- 使用全新、不覆盖的本地staging目录：
+
+  ```text
+  exports/rlt_stage2_formal_8env250_high_info_20260730_v1/
+  ```
+
+  创建`runtime/tensorboard`、`config`、`dependencies`、`results`、`visuals`、
+  `docs/evidence`和`tools`子目录后，使用`Copy-Item -LiteralPath`逐项复制：
+  - final `.tmp/formal250_final_20260730_230104`中的完整driver、resources和event；
+  - `.tmp/formal250_live_20260730_195508`中的resolved、exact command、provenance、
+    budget、stop conditions和started-at；
+  - formal source overlay与独立20-seed bank；
+  - Stage 1高信息包中的accepted artifact manifest；
+  - cycle250 summary JSON、三张PNG和交互HTML；
+  - `00/04/05/09/10/15`六份关键文档、完整实施账本和两份分析脚本。
+
+  第一轮26个复制文件合计7,455,594 bytes。随后用`apply_patch`新增包内`README.md`、
+  `METRIC_GLOSSARY.md`和不含checkpoint payload的
+  `results/final_run_and_checkpoint_audit.json`；最终payload为29个文件、
+  7,469,394 bytes。
+- 第一轮secret/text QA命令使用以下类别：
+
+  ```powershell
+  Get-ChildItem -Recurse -File -LiteralPath $root |
+    Select-String -Pattern `
+      'BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|SEETA_SSH_PASSWORD\s*=\s*[''"][^$<]'
+
+  Get-ChildItem -Recurse -File -LiteralPath $root -Filter '*.json' |
+    ForEach-Object {
+      Get-Content -Raw -Encoding utf8 -LiteralPath $_.FullName |
+        ConvertFrom-Json | Out-Null
+    }
+  ```
+
+  最初过宽的`SEETA_SSH_PASSWORD\s*=\s*[^$<]`误报账本内两处安全的
+  `$env:SEETA_SSH_PASSWORD = $match.Groups[1].Value`示例；收紧为只检查带引号的静态
+  赋值后secret hits为0。text QA又发现服务器原始`config/exact_command.txt`有一处行尾
+  空格；这是原始证据字节，不修写，只精确白名单该一个文件/一处，其他23个文本均UTF-8
+  无BOM且无行尾空白。6个JSON全部可解析。
+- 使用PowerShell逐项生成`PACKAGE_MANIFEST.json`和`CONTENTS_SHA256.txt`：
+
+  ```powershell
+  $payloadFiles = Get-ChildItem -Recurse -File -LiteralPath $root |
+    Where-Object { $_.Name -notin @('PACKAGE_MANIFEST.json','CONTENTS_SHA256.txt') } |
+    Sort-Object FullName
+
+  $payload = foreach ($file in $payloadFiles) {
+    [ordered]@{
+      path = $file.FullName.Substring($root.Length + 1).Replace('\','/')
+      bytes = $file.Length
+      sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).
+        Hash.ToLower()
+    }
+  }
+  ```
+
+  由于Windows PowerShell的`Set-Content -Encoding utf8`给manifest加了BOM，立即使用
+  `.NET UTF8Encoding($false)`做等内容无BOM机械重写，再重新生成contents hashes。
+  最终manifest校验29个payload/7,469,394 bytes，contents校验30个文件；逐项存在性、
+  byte count和SHA-256均一致，errors=0。
+- 压缩命令：
+
+  ```powershell
+  Compress-Archive `
+    -LiteralPath `
+      'exports\rlt_stage2_formal_8env250_high_info_20260730_v1' `
+    -DestinationPath `
+      'exports\rlt_stage2_formal_8env250_high_info_20260730_v1.zip' `
+    -CompressionLevel Optimal
+
+  Get-FileHash -Algorithm SHA256 -LiteralPath `
+    'exports\rlt_stage2_formal_8env250_high_info_20260730_v1.zip'
+  ```
+
+  在同步更新专题计划第12节的final停点后，对staging中的该计划做`Copy-Item -Force`，
+  重新生成manifest/contents，并用`Compress-Archive -Update`更新同一新建交付ZIP。
+  最终ZIP大小2,286,757 bytes，SHA-256为
+  `158282a1e38151b39d4e9ba1f6d173855c0bade413c803c29827d325e2771b96`；同名
+  `.zip.sha256`已写入。
+- 为让包内账本payload字节数与最终manifest一致，最后只在staging账本副本中做等长度数字
+  更正并再次更新ZIP。
+- 最后用全新`.tmp/rlt_stage2_formal_8env250_high_info_20260730_v1_zipqa3`目录执行
+  `Expand-Archive`，从解压副本重新检查manifest逐文件byte/SHA和contents逐文件SHA：
+  31个总文件、29个payload、30条内部hash，外部ZIP hash一致，errors=0。包内账本记录到
+  压缩前完整QA；ZIP自身hash由本工作区权威账本和包外`.sha256`保存，避免自引用循环。
+
+### A140 — 从global_step_250继续约10小时的只读可行性审查
+
+- 用户追加询问能否“什么都不改”从250断点继续到次日、约10小时。本轮把它解释为：
+  模型、算法、环境、batch、UTD、schedule、eval/save cadence等训练语义不变；只允许
+  改变继续训练必需的`resume_dir`、绝对总终点`runner.max_steps`和新的输出目录。该问题
+  先做只读审查，尚未取得启动续训的明确授权。
+- runner源码核对命令：
+
+  ```powershell
+  rg -n "max_steps|resume_dir|global_step|start_step|load_checkpoint|resume" `
+    '.rlt-impl-worktree\rlinf\runners\embodied_runner.py'
+
+  Get-Content -Encoding utf8 `
+    '.rlt-impl-worktree\rlinf\runners\embodied_runner.py' |
+    Select-Object -Skip 160 -First 35
+
+  Get-Content -Encoding utf8 `
+    '.rlt-impl-worktree\rlinf\runners\embodied_runner.py' |
+    Select-Object -Skip 470 -First 105
+  ```
+
+  结果：worker初始化后先从`resume_dir/actor`加载checkpoint，再从目录名
+  `global_step_250`恢复`global_step=250`；训练循环是
+  `range(start_step, max_steps)`，所以`max_steps`是绝对总cycle，不是新增cycle数。
+  继续时不能仍填250，否则循环为空。
+- RLT resume源码核对确认load前会fail-closed验证：completion=true、schema、两actor
+  ranks/world size、目录step、rank state存在及SHA、Stage 1 manifest/model、norm stats、
+  H/C/D/z、route/replay/bootstrap、优化器/schedule/batch和weight-sync fingerprint。
+  随后SAC基类恢复model/optimizer/scheduler/target/replay，RLT层恢复
+  `update_step=102260`、lifetime totals和warm-up anchors，再重算ready/ramp/pending。
+  `max_steps`、eval/save interval和输出路径没有放进算法resume fingerprint，因此只改总
+  终点/输出不会伪造合同不匹配。
+- 从最终TensorBoard读取真实稳定阶段用时：
+
+  ```powershell
+  @'
+  from pathlib import Path
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+  import numpy as np
+  p = next(Path(".tmp/formal250_final_20260730_230104").glob("events.out.tfevents.*"))
+  ea = EventAccumulator(str(p), size_guidance={"scalars": 0})
+  ea.Reload()
+  rows = [(v.step + 1, v.value) for v in ea.Scalars("time/step")]
+  for start, end in [(192, 250), (201, 250), (226, 249)]:
+      values = np.array([value for cycle, value in rows if start <= cycle <= end])
+      print(start, end, len(values), values.mean(), np.median(values), values.sum() / 3600)
+  '@ | python -
+  ```
+
+  P4 cycle192–250平均156.48秒；最近50个含cycle225/250评估与保存的平均为152.25秒；
+  最近24个普通cycle平均139.71秒。评估/保存cycle约427–449秒。按相同每25-cycle
+  eval/save cadence，新增230 cycles约9.7小时，加checkpoint加载与启动约为10小时。
+  因而建议绝对总终点`max_steps=480`，即从250再跑230 cycles，而不是500。
+- 新增230 cycles对应约1,840 train episodes、最多368,000 primitive action slots；
+  按P4实测约109 macro transitions/cycle，预计新增约25k transitions、
+  约125k critic与62.5k actor updates。global step 275–475每25步评估/保存，480作为
+  train-end再评估和保存，总计新增10个评估点与10个checkpoint。
+- 主要风险不是显存，而是resume主链此前按用户要求被省略，未真实执行过
+  save→load→continue；以及前一run的EnvWorker/anon在10.8小时中持续增长并触及cgroup
+  240GiB。若后续获准启动，应把正式续训进程的首个完整cycle设为健康门，必须看到
+  checkpoint preflight通过、replay/`update_step=102260`连续、ready=1、ramp=1、
+  student控制、首轮更新与sync正常，再让同一进程继续；不另造改变定义的smoke。
+
+### A141 — 最终交付元数据回填与工作区QA
+
+- 包内manifest自检完成后，最终ZIP因staging账本副本的一处等长度数字更正而发生最后一次
+  hash变化；用`apply_patch`把工作区`HANDOFF.md`与本账本中的旧大小/hash统一改为最终值，
+  未再修改或重压交付包。
+- 最终核验命令：
+
+  ```powershell
+  $zip = Resolve-Path `
+    'exports/rlt_stage2_formal_8env250_high_info_20260730_v1.zip'
+  $shaFile = Resolve-Path `
+    'exports/rlt_stage2_formal_8env250_high_info_20260730_v1.zip.sha256'
+  $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $zip
+  [pscustomobject]@{
+    Zip = $zip.Path
+    Bytes = (Get-Item -LiteralPath $zip).Length
+    SHA256 = $hash.Hash.ToLower()
+    Recorded = (Get-Content -Raw -LiteralPath $shaFile).Trim()
+  }
+  ```
+
+  结果：`Bytes=2286757`，计算值与包外记录均为
+  `158282a1e38151b39d4e9ba1f6d173855c0bade413c803c29827d325e2771b96`。
+- 同一批QA尝试在文档根目录执行`git diff --check`，返回
+  `Not a git repository`。原因是该根目录是交接/文档工作区而不是RLT实现worktree；
+  这不是内容校验失败，也没有因此切换、初始化或修改任何Git仓库。RLT实现仍由独立
+  `.rlt-impl-worktree`维护。
+- 首次把`foreach (...) { ... } | Format-Table`直接写入一行QA命令时，PowerShell解析为
+  `EmptyPipeElement`，整行在执行任何检查前即退出。修复为先把循环结果赋给`$docRows`，
+  再单独执行`$docRows | Format-Table`；复测得到ZIP实际/记录hash一致，三个修改文档均为
+  UTF-8无BOM且尾随空白行数为0。
+
+### A142 — formal `global_step_250 → 480` 续训授权、准备、启动与首cycle健康门
+
+- 用户明确批准：保持模型、算法、环境、UTD、batch、BC/Q schedule和评估/保存频率不变，
+  从`global_step_250`继续到绝对总终点`runner.max_steps=480`，使用新输出目录；启动后只
+  观察到正常开始便停止轮询。该授权包含服务器prepare、启动和必要健康检查，不包含删除、
+  覆盖原formal250产物或后续持续监控。
+- 密码仍只注入每次Paramiko helper的当前进程环境；helper固定host-key并关闭key/agent
+  自动尝试。密码未写入本账本、脚本、Git、Memory或服务器文件。所有远程调用统一为：
+
+  ```powershell
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file '<本条对应脚本>'
+  ```
+
+- 首先执行只读脚本
+  `local_scripts/remote_rlt_20260730_resume480_readonly_preflight.sh`。2026-07-30
+  23:44:00+08:00现场：
+  - repo为`codex/rlt-pi0-robotwin`，HEAD
+    `46a2d19bae629eaa57830f5faeac71ac81a1a494`，worktree clean，ahead upstream 2；
+  - 原formal为`exit_code=0`、22:23:41完成；`global_step_250`为879,468,486 bytes、
+    34,864 files，completion SHA
+    `5d4185b3782aa227c22be257328302fbe6a05f7bc0aede54114f1303b444ae15`；
+  - completion为`complete=true`、world-size2、saved runner step250、
+    `update_step=102260`、contract SHA
+    `82cd409bef1549afb3feb41fa5a80ed08d207d112e4dfe8020af14f49cad1fc9`；
+  - rank0/1 state SHA与manifest一致，replay分别17,170/17,681条；
+  - 无train/Ray/GPU进程；两卡0MiB，cgroup anon约0.29GiB、OOM/OOM-kill为0，
+    数据盘可用879,603,601,408 bytes。cgroup current约158GiB主要是可回收file cache，
+    host MemAvailable约979GiB，不清cache。
+- 新运行固定为：
+
+  ```text
+  source checkpoint:
+    /root/autodl-tmp/experiments/rlt_stage2_formal_8env_250c_20260730_v1/
+    robotwin_adjust_bottle_rlt_stage2_formal_8env_250c_v1/checkpoints/global_step_250
+  run root:
+    /root/autodl-tmp/experiments/rlt_stage2_formal_resume250_to480_20260730_v1
+  experiment:
+    robotwin_adjust_bottle_rlt_stage2_formal_resume250_to480_v1
+  runtime/evidence:
+    /root/autodl-tmp/experiment_exports/
+    rlt_stage2_formal_resume250_to480_20260730_v1/runtime
+  ```
+
+  复用`robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250`，CLI仅显式覆盖新log root/name、
+  `runner.max_steps=480`和`runner.resume_dir=<上述checkpoint>`。resolved SHA-256为
+  `cbbfffda43a6ca17ee938da21d7f71ccb70ba394d1247b8e5ae8d3f48dda5787`。
+  新旧resolved机器diff只包含这四项和由新`RLT_LOG_ROOT`派生的train/eval
+  `video_base_dir`两项；algorithm/actor/env控制语义/rollout/weight-sync均完全相同。
+- `local_scripts/remote_rlt_20260730_resume250_to480_prepare.sh`逐次问题与窄修复：
+  1. 第一次prepare在resolved diff处fail closed：除预期四项外还发现两个派生视频输出
+     目录。它们必须随新run root隔离，否则会写回原formal目录；将精确允许集合扩为这六项，
+     没有放宽算法字段。
+  2. 第二次prepare到Stage 1 binding preflight时，工具按设计拒绝覆盖第一次已成功生成的
+     JSON。一次把多行远程检查直接放入`run '<command>'`的本地调用又因PowerShell/argparse
+     引号拆分失败，未建立远程命令、未改服务器；随后改用
+     `.tmp/remote_rlt_resume480_partial_preflight_inspect.sh`，确认JSON
+     `passed=true`、SHA
+     `9085afbc1d6046a78df3d0bec532854fbf2e66ef251821ce2939323d03511cd7`。
+     prepare改为存在时逐字段验证并复用，不删除或覆盖。
+  3. 第三次prepare语义校验通过，但脚本末尾回显发现`${formal_cmd[@]}`在生成的heredoc中
+     被折叠成一个带空格的“可执行文件名”。这时尚未调用launcher；改成逐参数显式命令，
+     同时只允许复用本次已知pre-launch文件，拒绝driver/PID/start/exit/resources等启动
+     痕迹。
+  4. 第四次prepare全部通过：source checkpoint/state/replay、Stage 1 artifact、
+     config parity、`bash -n`和foreground命令回显均成功，23:50:51标记
+     `RLT_STAGE2_RESUME250_TO480_PREPARED`。前三次均在启动前退出，未产生训练进程。
+- 续训增量预算：230 cycles、1,840 train episodes、最多368,000 primitive action
+  slots、预计约25,070 macro transitions、约125,350 critic/62,675 actor updates；
+  275–475每25 cycles以及最终480共10次fixed-20评估和10个checkpoint。12小时
+  `timeout --signal=TERM --kill-after=180s 43200s`只是故障保险，预计约10小时完成。
+- 用
+  `local_scripts/remote_rlt_20260730_resume250_to480_launch.sh`执行唯一launcher。
+  2026-07-30 23:51:08+08:00启动成功：
+
+  ```text
+  driver PID   657385
+  monitor PID  657386
+  target       480
+  ```
+
+  第一次状态刷新时driver/Ray正在初始化；23:52:48日志明确出现
+  `Resuming training from checkpoint directory .../global_step_250`。RoboTwin可选
+  Curobo planner的导入traceback与原formal250启动日志逐字同类，随后环境/rollout继续，
+  不是fatal；resume行之后没有fingerprint、trainer-state、CUDA/NCCL/Ray fatal。
+- 首个完整续训cycle在日志中显示`Global Step: 251/480`，step time144.16秒，
+  ETA约9h10m；8条student rollout成功7条。首cycle TensorBoard step为250（runner
+  zero-based记录），精确值：
+
+  | 指标 | 值 |
+  |---|---:|
+  | 恢复后的pre-update `rlt/update_step` | 102,260 |
+  | 本cycle critic / actor updates | 510 / 255 |
+  | ready / ramp / actor switch | 1 / 1 / 1 |
+  | BC / Q weight | 2.5 / 0.45 |
+  | pending debt | 0 |
+  | actor / critic loss | -0.08148 / 0.001327 |
+  | actor / critic grad norm | 2.8280 / 0.16977 |
+  | train success | 7/8 |
+
+  这证明模型/optimizer/target/replay/schedule与`update_step`从250状态继续，并在同一进程
+  执行新更新；不声称RNG bitwise continuation，因首版合同明确不保存逐位RNG状态。
+- `local_scripts/remote_rlt_20260730_resume250_to480_health_gate.sh`的第一次精确
+  TensorBoard读取发生在异步logger尚未flush后半组tag时，因找不到`rlt/update_step`
+  fail closed；训练不受影响。用`.tmp/remote_rlt_resume480_tb_tags.sh`只读列出tag，
+  一次过早复测仍因同一异步flush顺序空匹配退出；继续等待后发现第二cycle部分tag已写入。
+  健康脚本改为选择**精确step250**而不是latest，并对float32 `q_weight`使用`1e-6`
+  容差；23:58:44返回
+  `RLT_RESUME250_TO480_FIRST_CYCLE_HEALTH_PASS`。
+- 健康门终态：driver/monitor仍存活，resource monitor已有201行；两卡现场约
+  17.0/17.1GiB，cgroup anon约35.0GiB，OOM/OOM-kill仍为0。原250 checkpoint只作load
+  source；新TensorBoard从step250记录，后续完整曲线必须拼接旧run 0–249和新run
+  250–479。按用户要求到此停止主动轮询，进程继续后台运行。
+- 本地交接QA首次又把`foreach {...}`结果直接接到管道，PowerShell在执行任何检查前报
+  `EmptyPipeElement`；没有改文件。改为先赋值`$fenceRows`再格式化后，4份Markdown和5份
+  本轮shell脚本均为UTF-8无BOM、LF、尾随空白0；Markdown fence计数均为偶数，当前
+  HANDOFF/专题计划不再含“续训尚未启动”的旧状态。
+
+### A143 — formal续训480终态只读验收、指标/资源分析与制图
+
+- 用户要求“同样地”查看当前训练。本轮授权解释为：服务器只读刷新进程、完成状态、日志、
+  TensorBoard、resources和checkpoint；允许在本地下载小型高信息量证据、分析、制图和更新
+  文档；不启动/停止进程，不删除、覆盖、清cache或修改服务器产物。
+- 第一轮现场状态命令：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260730_resume250_to480_status.sh'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  `2026-07-31T09:22:05+08:00`现场已显示：driver/monitor退出、`exit_code=0`、最终
+  `480/480`、GPU归零、10个checkpoint存在。该状态脚本输出较长，因此随后增加窄的
+  final audit 和 export index，不依赖被截断的console做最终统计。
+- 使用`apply_patch`新增完整只读脚本：
+
+  ```text
+  local_scripts/remote_rlt_20260731_resume480_final_audit.sh
+  local_scripts/remote_rlt_20260731_resume480_export_index.sh
+  ```
+
+  final audit 精确读取identity、Git/dirty/upstream、resolved及provenance hash、
+  start/finish/exit、进程/Ray/GPU、fatal、TensorBoard tags/stats/eval、resource CSV、
+  10个checkpoint的completion/state/replay、总字节/文件数、live cgroup和磁盘；
+  export index只枚举小文件并展示traceback上下文与final completion。
+- 第一次调用final audit时误用了旧环境变量名：
+
+  ```powershell
+  $env:AUTODL_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_resume480_final_audit.sh'
+  Remove-Item Env:AUTODL_PASSWORD
+  ```
+
+  helper在建立任何SSH连接前返回
+  `SEETA_SSH_PASSWORD is required in the current process`；因此没有远程操作或状态变化。
+  修复为正确的进程变量后原样重试：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_resume480_final_audit.sh'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  `2026-07-31T09:24:59+08:00`精确终态：
+  - `23:51:08 → 09:17:41`，`9h26m33s`，`exit_code=0`；
+  - driver/monitor/Ray/train进程均不存在，两卡0MiB；
+  - final completion为`complete=true`、world-size2、step480、
+    `update_step=215055`，rank0/1 state SHA分别为
+    `193dfa8d...28e87c1`和`ebd426d9...90af444`；
+  - 10个checkpoint为275–475每25步加480，总计
+    11,967,404,588 bytes / 482,255 files；final480为
+    1,415,135,834 bytes；
+  - 新run root共11,970,639,364 bytes / 482,258 files；数据盘可用
+    867,102,216,192 bytes；
+  - OOM/OOM-kill为0。cgroup live current约180.3GB，其中file约177.2GB十进制、
+    anon约0.31GB；进程已退出，说明主要是page cache。
+- 为区分两个启动traceback是否fatal，执行：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_resume480_export_index.sh'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  traceback只来自两rank导入未使用的可选Curobo planner失败，随后立即加载norm stats、
+  恢复250 checkpoint并完整训练到480。CUDA OOM、NCCL、Ray death、NaN/Inf、训练
+  ERROR均为0；故记录为非阻塞告警，不安装额外依赖。
+- 使用`apply_patch`新增
+  `local_scripts/download_rlt_resume480_status.py`，只下载driver、resources、TensorBoard、
+  config/provenance、runtime状态和10组completion/replay metadata。实际命令：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\download_rlt_resume480_status.py' `
+    '.\exports\rlt_stage2_formal_resume250_to480_high_info_20260731_v1'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  结果为50个远端文件、5,874,658 bytes；SFTP只建立一次连接。脚本生成
+  `download_manifest.json`，逐项保存remote path、local name、byte count和SHA-256。
+  本地复核为0 missing/0 mismatch；加manifest自身后文件夹51个文件、约5.62MiB。
+  不下载checkpoint权重或replay trajectory `.pt`。
+- TensorBoard tag与step口径检查：
+
+  ```powershell
+  @'
+  from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+  from pathlib import Path
+  for p in [
+      Path("exports/rlt_stage2_formal_8env250_high_info_20260730_v1/runtime/tensorboard"),
+      Path("exports/rlt_stage2_formal_resume250_to480_high_info_20260731_v1"),
+  ]:
+      event = next(p.glob("events.out.tfevents.*"))
+      ea = EventAccumulator(str(event), size_guidance={"scalars": 0})
+      ea.Reload()
+      print(event)
+      print("\n".join(sorted(ea.Tags().get("scalars", []))))
+  '@ | python -
+  ```
+
+  两段各89个相同scalar tags，分别覆盖step0–249和250–479；按cycle=step+1，无缺口、
+  无重叠覆盖1–480。优化tag从cycle136出现是SAC阶段边界，不是日志缺失。
+- 使用`apply_patch`新增可复现绘图脚本
+  `exports/rlt_stage2_formal_resume250_to480_high_info_20260731_v1/tools/`
+  `plot_rlt_complete480.py`。执行：
+
+  ```powershell
+  python `
+    '.\exports\rlt_stage2_formal_resume250_to480_high_info_20260731_v1\tools\plot_rlt_complete480.py' `
+    '.\exports\rlt_stage2_formal_8env250_high_info_20260730_v1' `
+    '.\exports\rlt_stage2_formal_resume250_to480_high_info_20260731_v1' `
+    '.\exports\rlt_stage2_formal_resume250_to480_high_info_20260731_v1\visuals'
+  ```
+
+  生成success/update、optimization和resource三张全程图，以及
+  `rlt-summary-complete480.json`。图只使用真实TensorBoard/CSV，不制造cycle0或插值成功率。
+- 第一次图QA发现两个表达问题：
+  1. success图把final TensorBoard的pre-update `update_step=214580`标成终值；而final
+     cycle随后执行475 updates，checkpoint终值是215055。修复为同cycle
+     `update_step + critic_updates_run`，并加cycle-grid一致性断言；
+  2. 狭窄P2/P3阶段标题横向重叠，final480 eval标签贴右边界。修复为缩短阶段名、P3纵向
+     错层和final标签左移。
+
+  每次窄修复后均原样重跑绘图，并用本地图片查看工具分别按original/high检查三张PNG。
+  最终success图显示完整20个eval点、P1–P4、resume虚线和精确215055；optimization图
+  无断线或轴误导；resource图明确显示进程重启处RSS归零与file cache保留。
+- 指标终审：
+  - train P1/P2/P3/P4为`14.44%/14.47%/31.76%/89.32%`；
+    续训251–480为`1690/1840=91.85%`，最后50/20/10 cycles为
+    `92.50%/93.75%/91.25%`；
+  - 续训10个fixed-20 eval合计`178/200=89%`，前后5点为90%/88%，final
+    `17/20=85%`；相对cycle250只少1条，判定高位平台波动，不判定明确退化；
+  - critic/actor updates从102260/51130连续到215055/107528；新增global replay
+    22559条，新增critic112795，严格满足UTD5，pending0；
+  - final actor/critic loss为`-0.132776/0.000813`，grad为`2.160/0.133`；
+    Q0/Q1/Qdata为`0.3683/0.3489/0.3306`。grad远低于clip10、critic loss稳定，
+    Q缓升但eval平台化，提示收益递减而非当前数值故障。
+- 资源终审基于续训14,936行、原run17,032行2秒CSV：
+  - 续训GPU active mean为29.0%/30.1%，P95/peak均100%，显存峰19.37/19.56GiB；
+  - matched/Env RSS峰78.75/52.46GiB，cgroup anon/file/current峰
+    73.03/165.89/240.00GiB；
+  - `memory.max`增量11,485，但OOM/OOM-kill为0，PSI当前均0；
+  - 训练结束后matched RSS归零、anon约0.29GiB，约165GiB file cache不是活进程泄漏；
+  - 磁盘可用减少11.64GiB至807.55GiB；230 cycles粗均值147.8秒，未见整体减速。
+- 阅读文档时第一次误用旧的短目录名
+  `docs/rlt-pi0-robotwin`，三个`Get-Content/Get-ChildItem`只在本地返回
+  `PathNotFound`，没有写操作。根据`HANDOFF.md`路由修正为
+  `docs/rlinf-robotwin-pi0-rltoken`并显式`-Encoding utf8`后成功读取。
+- 使用`apply_patch`创建
+  `17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`，并更新本账本、专题索引和
+  根交接。完整结果、图、服务器/本地产物路径和当前停点均写入17号报告。本轮没有执行
+  stop/start/delete/cache-drop、服务器代码修改、Git commit或push。
+- 最终本地QA命令对`download_manifest.json`的50个条目逐项重算byte/SHA，errors=0；
+  HANDOFF、专题索引、17号报告、本账本和快照README均为UTF-8无BOM、Markdown fence为
+  偶数、尾随空白为0并以换行结束。credential字符串全文搜索无匹配；`rg`因此按设计返回
+  exit1，不是QA失败。加入绘图脚本、summary、README和三张PNG后，快照最终为57个文件、
+  7,654,908 bytes。首次QA时17号报告仍把“下载核心51文件”与“完整文件夹含图”写成同一
+  口径；根据实测数字窄修正为下载核心51文件约5.62MiB、完整文件夹57文件约7.30MiB，
+  未修改服务器或重新下载。
+- 文档和图QA后，为保证“当前”结论不依赖09:24快照，新增并执行只读最小复核：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_resume480_final_live_check.sh'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  `2026-07-31T09:44:57+08:00`仍为exit0、finish09:17:41、driver/monitor/train/Ray全0、
+  两卡0MiB/0%，final completion=true/step480/update215055/world-size2、OOM/OOM-kill0，
+  数据盘可用867,102,216,192 bytes；故最终聊天结论使用该时点。
+- 最小live复核写入文档后再次跑Markdown终态QA时，一次又把PowerShell
+  `foreach {...}`直接接管道，parser在执行任何检查前返回`EmptyPipeElement`；没有文件
+  或服务器操作。立即改为`$finalQaRows = foreach (...) {...}`再单独
+  `$finalQaRows | ConvertTo-Json`，复测5份文档仍全部BOM=false、trailing=0、
+  newline=true且fence计数为0/26/8/308/2（均为偶数）。
+
+### A144 — 480终态后的Git/云端同步
+
+- 用户明确要求检查未推送内容并与云端Git简要同步；该授权包含只读审计、把当前RLT
+  最终文档形成docs-only提交、把已有RLT提交推送到既有`personal`远端，以及push后
+  ahead/behind复核。不包含清理本地dirty镜像、改remote、安装代理、force push、删除或
+  重写历史。
+- 新任务先完整读取`PROJECT_CONTEXT.md`、`HANDOFF.md`和RLT专题SSOT，再读取
+  `06_AUTODL_NETWORK_PLAYBOOK.md`。大陆网络沿用无proxy、默认Git HTTP、HTTPS
+  `personal` remote、短探针和有界push，不因一次超时改网络配置。
+- 本地Git审计：
+
+  ```powershell
+  Get-ChildItem -Force -LiteralPath .
+  git -C '.\.rlt-impl-worktree' branch --show-current
+  git -C '.\.rlt-impl-worktree' rev-parse HEAD
+  git -C '.\.rlt-impl-worktree' status --short --branch
+  git -C '.\.rlt-impl-worktree' remote -v
+  git -C '.\.rlt-impl-worktree' rev-list --left-right --count `
+    '@{upstream}...HEAD'
+  ```
+
+  根文档目录第一次直接调用Git被`dubious ownership`拒绝；没有写配置。按既有安全做法
+  使用单命令`git -c safe.directory=<当前绝对路径> -C . ...`复核，确认根`.git`只是
+  `master`无任何commit、无remote、全部文件未跟踪，不能从这里push。
+  `.rlt-impl-worktree`是从本地bundle建立的旧开发镜像：
+  `codex/rlt-pi0-robotwin@48a775db...`，origin指向本地bundle，ahead/behind 0/0；
+  它仍保留实施期dirty/untracked代码与配置，但服务器权威分支已经把这些实现形成提交并
+  继续演进。因此本轮不提交、不清理、不覆盖该镜像，也不把它误称为待推送云端提交。
+- 使用`apply_patch`新增只读
+  `local_scripts/remote_rlt_20260731_git_sync_audit.sh`，精确远端调用为：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_git_sync_audit.sh'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  `2026-07-31T09:57:21+08:00`服务器真值：
+  - repo `/root/autodl-tmp/RLinf_rlt_pi0_robotwin`；
+  - branch `codex/rlt-pi0-robotwin`，HEAD
+    `46a2d19bae629eaa57830f5faeac71ac81a1a494`，worktree clean；
+  - upstream `personal/codex/rlt-pi0-robotwin`，left/right `0/2`；
+  - 未推送提交为`2df23e7f docs(rlt): close Stage 2 fresh handoff`和
+    `46a2d19b feat(rlt): add 8-env formal evaluation protocol`；
+  - 两提交共改6个允许文件、210 insertions/1 deletion，包含8-env250/resource-smoke
+    config、20-seed bank、seed分区测试、HANDOFF和RLT账本，没有实验产物或checkpoint。
+- 同次网络诊断：无proxy环境变量，Git HTTP为DEFAULT；GitHub main在10秒内
+  HTTP000 timeout，API为HTTP200，raw收到数据但10秒timeout，`timeout 15 git
+  ls-remote`返回124。按网络手册这是主站smart-HTTP链路暂不可用，不是认证、仓库或提交
+  失败；因此没有立即盲push或改proxy/remote。
+- 为纳入刚完成的cycle480终态，新增服务器暂存目录
+  `/root/autodl-tmp/experiment_exports/rlt_git_sync_20260731_0957_v1/staging`。命令：
+
+  ```powershell
+  $env:SEETA_SSH_PASSWORD='<process-only secret>'
+  python '.\local_scripts\remote_exec_autodl.py' `
+    --host connect.bjb1.seetacloud.com --port 36406 --user root `
+    run --command-file `
+    '.\local_scripts\remote_rlt_20260731_git_sync_prepare_staging.sh'
+
+  python '.\local_scripts\remote_exec_autodl.py' ... put `
+    '.\HANDOFF.md' `
+    '/root/autodl-tmp/experiment_exports/rlt_git_sync_20260731_0957_v1/staging/HANDOFF.md'
+  python '.\local_scripts\remote_exec_autodl.py' ... put `
+    '.\docs\rlinf-robotwin-pi0-rltoken\00_INDEX_AND_IMPLEMENTATION_PLAN.md' `
+    '<staging>/docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md'
+  python '.\local_scripts\remote_exec_autodl.py' ... put `
+    '.\docs\rlinf-robotwin-pi0-rltoken\evidence\IMPLEMENTATION_LOG.md' `
+    '<staging>/docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md'
+  python '.\local_scripts\remote_exec_autodl.py' ... put `
+    '.\docs\rlinf-robotwin-pi0-rltoken\17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md' `
+    '<staging>/docs/rlinf-robotwin-pi0-rltoken/17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md'
+  Remove-Item Env:SEETA_SSH_PASSWORD
+  ```
+
+  目录是新建且fail-if-exists；四次SFTP只写隔离staging，没有直接覆盖repo。密码仅在当前
+  PowerShell进程环境中，未写入脚本、账本或staging。
+- 第一次apply/commit脚本先通过四文件SHA和UTF-8/BOM/final-newline/trailing-whitespace，
+  但Markdown fence检查错误地使用`text.count("```")`，把正文内联提到的三个反引号也
+  当成围栏，因账本总计为奇数而fail closed。失败发生在`git add/commit`之前；repo只留下
+  四个允许docs文件的未暂存工作树版本，没有提交、push或代码/config变化。修复为只统计
+  正则`(?m)^````匹配的行首围栏，并把重入门从“必须完全clean”收紧为“允许且只允许这四个
+  已验证docs路径”，以便在不reset用户内容的情况下继续同一事务。

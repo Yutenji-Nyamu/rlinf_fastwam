@@ -1,7 +1,12 @@
 # π0 × RoboTwin × RLToken / RLT：上下文索引与实施主计划
 
-> 状态：2026-07-30 实现候选版 v11（Stage 1 artifact 已验收；Stage 2 fresh smoke
-> 已通过，resume 按用户要求省略；formal pilot 待预算批准）
+> 状态：2026-07-31 实现候选版 v21（Stage 1 artifact 已验收；Stage 2 fresh smoke
+> 已通过；历史100-cycle run已永久归类为pilot；source-aligned
+> RoboTwin `8×250` formal已于250/250、exit0自然完成，最终20-seed deterministic eval
+> 为18/20、P4 train为79.45%；随后从完整`global_step_250`续到绝对终点480的正式进程
+> 已于480/480、exit0自然完成；续训fixed-20 eval合计178/200、final17/20，续训train
+> 1690/1840，final checkpoint与资源均验收通过；最新现场由根`HANDOFF.md`、16号启动
+> 记录和17号最终报告刷新）
 > 本文件是 RLToken / RLT × π0 × RoboTwin 的唯一专题设计与实施计划。
 > 动态服务器状态、命令和结果只写入 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 与根 [`HANDOFF.md`](../../HANDOFF.md)，不在本文件复制成第二份真相。
 > DSRL、QAM、Fast-WAM 和旧附件均不进入 RLT 默认上下文；其历史只在明确追溯时按索引读取。
@@ -41,7 +46,18 @@ Stage 1、Stage 2 smoke 和 formal run 均以当次展示的完整 resolved conf
 | 查看 Stage 1 smoke、专家数据解释、参数来源与磁盘审计 | [`02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md`](02_STAGE1_SMOKE_AND_METHOD_ALIGNMENT_20260729.md) | 本轮结论与 evidence 索引；不替代本文件的规范 |
 | 查看 full clean-50、正式 Stage 1 指标、endpoint 与 artifact 验收 | [`03_STAGE1_FORMAL_TRAINING_20260729.md`](03_STAGE1_FORMAL_TRAINING_20260729.md) | Stage 1 完成、资源、重建对照与交付包 |
 | 追溯 Stage 2 参数与运行前配置 | [`04_STAGE2_PRE_SMOKE_PACKET_20260729.md`](04_STAGE2_PRE_SMOKE_PACKET_20260729.md) | 历史批准包、参数来源、resolved config 与预期合同 |
-| 查看 Stage 2 fresh smoke、资源或选择 formal 预算 | [`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md) | 当前结果、产物、限制与30/60-cycle决策 |
+| 查看 Stage 2 fresh smoke 与资源 | [`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md) | fresh结果、产物与限制 |
+| 查看历史 100-cycle pilot 启动 | [`07_STAGE2_FORMAL_100C_LAUNCH_20260730.md`](07_STAGE2_FORMAL_100C_LAUNCH_20260730.md) | 历史目录名保留formal100；resolved config、精确命令、进程、资源与产物入口 |
+| 查看历史 100-cycle pilot 完成结果 | [`08_STAGE2_FORMAL_100C_RESULT_20260730.md`](08_STAGE2_FORMAL_100C_RESULT_20260730.md) | 成功率、优化/资源曲线、checkpoint、量级口径更正与下一道门 |
+| 讨论下一次完整 Stage 2 formal | [`09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md`](09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md) | 100-cycle口径更正、cycle/rollout解释、4/8-env等交互预算、长期schedule、20-seed eval和10-checkpoint设计 |
+| 查看8-env资源门与250-cycle formal启动 | [`10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md`](10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md) | exact-20评估适配、3-cycle资源实测、完整预算、resolved SHA、进程、路径与后续检查口径 |
+| 查看250-cycle formal早期运行状态 | [`11_STAGE2_FORMAL_8ENV250_STATUS_20260730.md`](11_STAGE2_FORMAL_8ENV250_STATUS_20260730.md) | cycle35早期快照、reference/eval成功率、首次资源曲线与checkpoint |
+| 追溯250-cycle formal cycle68状态 | [`12_STAGE2_FORMAL_8ENV250_STATUS_CYCLE68_20260730.md`](12_STAGE2_FORMAL_8ENV250_STATUS_CYCLE68_20260730.md) | cycle68进度、第二次eval/checkpoint、replay门与新增内存压力 |
+| 追溯250-cycle formal cycle100状态与问题 | [`13_STAGE2_FORMAL_8ENV250_STATUS_CYCLE100_20260730.md`](13_STAGE2_FORMAL_8ENV250_STATUS_CYCLE100_20260730.md) | cycle100全量指标、成功率趋势、精确SAC阶段、第四次eval/checkpoint与内存停止判断 |
+| 追溯250-cycle formal cycle200运行状态与问题 | [`14_STAGE2_FORMAL_8ENV250_STATUS_CYCLE200_20260730.md`](14_STAGE2_FORMAL_8ENV250_STATUS_CYCLE200_20260730.md) | cycle200四阶段实测、20-seed eval 16/20、SAC数值、checkpoint200与持续内存风险 |
+| 查看250-cycle formal最终结果 | [`15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md`](15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md) | 250/250自然完成、四阶段成功率、最终20-seed eval 18/20、SAC/资源健康度、final checkpoint与结论边界 |
+| 追溯250→480续训启动与首cycle | [`16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md`](16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md) | resume source、配置parity、精确命令、首个真实load→continue健康门 |
+| 查看480-cycle完整最终结果 | [`17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`](17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md) | 480/480自然完成、完整成功率/eval、优化与资源曲线、10个续训checkpoint和结论边界 |
 | 处理 AutoDL Git/GitHub 网络 | [`06_AUTODL_NETWORK_PLAYBOOK.md`](06_AUTODL_NETWORK_PLAYBOOK.md) | 大陆线路短探针、有界 push 与故障分流 |
 | 改方法语义或判断是否忠于论文 | [RLT 论文 v2](https://arxiv.org/html/2604.23073)、[Physical Intelligence 项目页](https://www.pi.website/research/rlt/) | 方法不变量、作者实验和公开限制 |
 | 改 Stage 1/Stage 2 算法代码 | [RLinf RLT 文档](https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html) 与第 1.3 节锁定源码 | 可执行复现、真实 config 和 symbol |
@@ -101,7 +117,7 @@ config opt-in 和 legacy 回归隔离，而不能把它描述成纯官方 π0 co
 | feature | image-only prefix、mask 开启、真实 image prefix `[B,768,2048]`、`z_rl=2048` | 冻结；已由现有 RoboTwin π0 checkpoint 探针验证 |
 | VLA horizon | `H=50` | 冻结 |
 | actor/env chunk | `C=10`、14D canonical action | 冻结为实现主线；运行前批准成本解释 |
-| Stage 2 | 同步 worker、4 train env、`rollout_epoch=1` | 实现主线；运行 packet 再确认 |
+| Stage 2 | 同步 worker、base为4 train env；本次formal专属overlay为8 env、`rollout_epoch=1` | 冻结并已启动 |
 | route | train 全任务 reference warm-up → student；全程记录 compact transition | 冻结 |
 | eval | deterministic student mean，不受 train-ready gate 替换成 reference；不写 replay | 冻结 |
 | expert/human | 不接 intervention、人工 phase 或人工 reward | 冻结 |
@@ -676,7 +692,9 @@ route、loss、sync 或 DCP 主链。resume 未运行。
 2. 接受 full-task 相对论文 critical-phase 的方法偏离；
 3. primitive `gamma`、per-rank collect threshold、post-collect critic updates；
 4. batch、sample window、actor/Q LR、tau、fixed std、BC/Q 权重；
-5. 总 transitions、episodes/resets、updates、eval seeds/episodes、GPU-hours 与 stop condition。
+5. `cycles / train episodes / action slots / replay transitions / critic-actor updates /
+   eval episodes / checkpoints / wall-clock / GPU-hours` 完整规模表与 stop condition；
+6. 运行名称只有在上述多轴规模明确批准后才能使用 formal；否则统一叫 pilot。
 
 这里只批准一组推荐值，不先做超参 sweep。先做小规模 frozen-reference C10 sanity；只有出现
 灾难性控制退化，才重开 C10/C50。
@@ -709,9 +727,65 @@ batch 得到 fresh/endpoint/shuffled/zero loss
 `5.1977/0.5338/1.7118/2.1027`，非RLT tensor变化数0，manifest与full-weights SHA已固定。
 Stage 2 三份 bound config 已替换所有 `UNRESOLVED` 并通过 hard audit。
 
-当前精确停点是：**fresh smoke 已通过；resume 按用户要求省略；不启动 formal pilot，
-等待用户在30-cycle phase-transition pilot 与60-cycle初步趋势 pilot之间批准总预算。**
-formal source `max_steps=0`，因此预算决定前继续 fail closed。结果、资源和限制见
+当前精确停点是：**fresh smoke 已通过；历史100-cycle run永久归类为pilot；8-env资源门
+exit0；获批的RoboTwin `adjust_bottle` `8 env × 250 cycles` formal已250/250自然完成；
+从其完整checkpoint续到绝对终点480的正式续训也已480/480自然完成、exit0，final
+checkpoint、成功率、优化指标、资源和resume连续性均已验收。**
+
+资源门实测3 cycles、24 train episodes、472 macro transitions和
+3200/1600 critic/actor updates；20条deterministic eval为2/20。两卡显存峰
+17,169/17,252MiB，matched RSS峰51.88GiB、cgroup anon峰47.47GiB，
+high/OOM/OOM-kill增量均为0，因此没有触发4-env回退。exact-20评估只由RLT专属overlay和
+独立官方seed bank启用；没有修改通用EnvWorker/RoboTwinEnv，legacy/formal/smoke原生
+compose与27个集中测试均通过。
+
+formal于2026-07-30 11:37:25+08:00启动、22:23:41自然结束，总时长10h46m16s。
+实际四阶段为P1 `1–135`、P2 `136–154`、P3 `155–191`、P4 `192–250`；P4 train为
+`375/472=79.45%`，final fixed-20 deterministic eval为`18/20=90%`。最终
+critic/actor updates为`102260/51130`，pending为0，全部finite且无fatal/OOM。
+两卡显存峰19.37/19.51GiB；运行中EnvWorker/anon持续增长并触及240GiB cgroup风险线，
+但进程退出后worker RSS/anon释放。resolved SHA-256为
+`586644cd69461016c1dd8c653da0eea12b01c61f2d0a9b4901654d90800f2a3e`。
+`global_step_250` completion、两rank trainer state与10个checkpoint完整；最终结果见
+[`15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md`](15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md)。
+
+非模型高信息量交付包位于
+`exports/rlt_stage2_formal_8env250_high_info_20260730_v1.zip`，包含完整日志、
+TensorBoard、资源、配置/provenance、最终统计/图、关键规划和流水账，不含checkpoint/replay，
+不能独立resume。
+
+用户批准的`global_step_250`到绝对总终点480续训使用独立输出目录，resolved
+SHA-256为
+`cbbfffda43a6ca17ee938da21d7f71ccb70ba394d1247b8e5ae8d3f48dda5787`；
+新旧resolved除resume/终点/新输出及其两个派生视频目录外完全相同。2026-07-30
+23:51:08+08:00启动，于2026-07-31 09:17:41自然结束，总时长9h26m33s、exit0。
+续训train为`1690/1840=91.85%`，最后50 cycles为92.5%；10个fixed-20 eval合计
+`178/200=89%`，final为`17/20=85%`，属于高位平台波动。critic/actor终值为
+`215055/107528`，pending0；新增global replay22559与critic112795严格满足UTD5。
+两卡显存峰19.37/19.56GiB，matched/Env/anon峰78.75/52.46/73.03GiB；cgroup触及
+240GiB但无OOM。10个续训checkpoint完整，final480约1.32GiB。真实load→continue合同因此
+首次得到完整运行证据；RNG bitwise恢复仍不在合同内。启动与健康门见
+[`16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md`](16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md)。
+最终验收见
+[`17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`](17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md)。
+
+100-cycle run启动前没有完成多轴规模审批，故仍永久降级为pilot。当前完整formal链跨两个
+隔离进程覆盖480 cycles、3,840 train episodes、57,410 global replay rows、
+215,055/107,528 critic/actor updates；共20个fixed-20 eval点和20个checkpoint
+（原run10个、续训run10个）。
+完成结果、资源、ManiSkill量级对照和产物见
+[`08_STAGE2_FORMAL_100C_RESULT_20260730.md`](08_STAGE2_FORMAL_100C_RESULT_20260730.md)；
+下一次完整规模设计见
+[`09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md`](09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md)；
+当前资源门、resolved config、精确命令、路径与启动见
+[`10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md`](10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md)；
+250→480续训启动见
+[`16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md`](16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md)；
+完整480结果见
+[`17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`](17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md)；
+resolved config、精确命令、启动问题处理见
+[`07_STAGE2_FORMAL_100C_LAUNCH_20260730.md`](07_STAGE2_FORMAL_100C_LAUNCH_20260730.md)；
+fresh基线见
 [`05_STAGE2_FRESH_SMOKE_RESULT_20260730.md`](05_STAGE2_FRESH_SMOKE_RESULT_20260730.md)。
 最新现场状态和具体授权以根 [`HANDOFF.md`](../../HANDOFF.md) 与
 [`evidence/IMPLEMENTATION_LOG.md`](evidence/IMPLEMENTATION_LOG.md) 为准。

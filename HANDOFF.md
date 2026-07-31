@@ -1,6 +1,6 @@
 # AutoDL / RLinf 当前交接入口
 
-最后更新：2026-07-30。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
+最后更新：2026-07-31。本文只保留并行专题路由、当前停点和授权边界；旧时间线见
 `docs/project-history/00_INDEX.md`。进入某个窗口时只选择对应专题，不默认加载另一专题正文。
 
 ## 并行专题路由
@@ -8,7 +8,7 @@
 | 专题 | 唯一事实源 | 实施账本 | 当前停点 |
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
-| RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/03_STAGE1_FORMAL_TRAINING_20260729.md` | full clean-50 Stage 1 2k 已启动；19:38 固定快照 step172、运行健康 |
+| RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | formal250及250→480续训均自然完成、exit0；final eval 17/20，续训eval合计178/200，final checkpoint完整 |
 | QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 已确认 Plain/action/B1+F1；C1 工程细节已委托；fixed-N M2+N20+online-only 待协议确认；服务器只读接口/资源已刷新 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
@@ -134,6 +134,74 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `codex/rlt-pi0-robotwin`。Stage 2 artifact/预算加固代码提交为
   `3b610cb4685a1d41c97da64df67ab86561697dfd`；没有切换 DSRL worktree，也没有
   复制/安装环境。
+- 2026-07-30 23:03+08:00 最终动态快照：source-aligned
+  `8 env × 250 cycles` formal已自然完成，`250/250`、`exit_code=0`；
+  `11:37:25–22:23:41`，wall-clock `10h46m16s`。driver/Ray/训练进程均已退出。
+  实际阶段为P1 `1–135` reference collect、P2 `136–154` reference+SAC、
+  P3 `155–191` student+ramp、P4 `192–250` stable student。
+- train成功率P1/P2/P3/P4分别为
+  `156/1080=14.44%`、`22/152=14.47%`、`94/296=31.76%`和
+  `375/472=79.45%`；最后20/10/5 cycles为83.75%/85%/90%。同一20-seed
+  deterministic eval在cycle200/225/250为`16/20`、`11/20`、`18/20`；
+  endpoint明显改善，但结论只限单任务与该固定seed协议。
+- 最终 critic/actor累计updates为`102,260/51,130`，pending debt为0；actor/critic
+  loss为`-0.08119/0.001286`，grad为`2.821/0.170`，Q0/Q1/Q(data)为
+  `0.2515/0.2383/0.2123`，BC/Q权重为`2.5/0.45`。全部finite且fatal扫描为空。
+- 两卡显存峰19.37/19.51GiB、全程平均利用率30.0%/27.7%；matched RSS、Env RSS、
+  cgroup anon峰为87.42/62.05/82.43GiB。运行期间cgroup current触及240GiB且
+  `sustained memory pressure/anon growth`风险成立，但OOM/OOM-kill均为0；进程退出后
+  matched RSS归零、Env RSS近零、anon降到约0.3–0.6GiB。
+- `global_step_250` completion与两个rank trainer state完整；25到250共10个checkpoint，
+  总计约5.2GiB，final约876MiB。最终报告见
+  `docs/rlinf-robotwin-pi0-rltoken/15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md`。
+- Stage 2 final高信息量非模型包：
+  `exports/rlt_stage2_formal_8env250_high_info_20260730_v1.zip`，大小2,286,757 bytes，
+  SHA-256
+  `158282a1e38151b39d4e9ba1f6d173855c0bade413c803c29827d325e2771b96`；
+  包含完整driver/TensorBoard/resources、source/resolved config、预算/provenance、
+  Stage 1 manifest、最终统计/图、关键规划和流水账，不含checkpoint/replay，不能独立resume。
+- 当前formal run root：
+  `/root/autodl-tmp/experiments/rlt_stage2_formal_8env_250c_20260730_v1`；
+  runtime evidence：
+  `/root/autodl-tmp/experiment_exports/rlt_stage2_formal_8env_250c_20260730_v1/runtime`；
+  resolved SHA-256：
+  `586644cd69461016c1dd8c653da0eea12b01c61f2d0a9b4901654d90800f2a3e`。
+  正常停止为250 cycles，18小时timeout只作故障保险；运行已自然结束。
+- 用户随后明确授权保持训练语义不变，从`global_step_250`续到绝对总终点480。
+  新进程于2026-07-30 23:51:08+08:00启动，并于2026-07-31 09:17:41自然结束，
+  `480/480`、`exit_code=0`、wall-clock `9h26m33s`：
+  - run root：
+    `/root/autodl-tmp/experiments/rlt_stage2_formal_resume250_to480_20260730_v1`；
+  - runtime：
+    `/root/autodl-tmp/experiment_exports/rlt_stage2_formal_resume250_to480_20260730_v1/runtime`；
+  - experiment：`robotwin_adjust_bottle_rlt_stage2_formal_resume250_to480_v1`；
+  - driver/monitor PID：`657385/657386`，现均已退出；
+  - resolved SHA：
+    `cbbfffda43a6ca17ee938da21d7f71ccb70ba394d1247b8e5ae8d3f48dda5787`；
+  - 12小时hard timeout未触发；275–475每25 cycles以及最终480完成fixed-20
+    eval并保存，共新增10个checkpoint。
+- 续训train为`1690/1840=91.85%`，最后50/20/10 cycles为
+  `92.50%/93.75%/91.25%`。10个fixed-20 eval合计`178/200=89%`，前后5点为
+  90%/88%，final为`17/20=85%`；相对cycle250的18/20只差1条，属于高位平台波动，
+  不能判定明确退化，也没有继续上升证据。
+- final critic/actor updates为`215055/107528`，pending0；新增global replay22559、
+  critic112795，严格满足UTD5。actor/critic loss为`-0.132776/0.000813`，grad为
+  `2.160/0.133`，Q0/Q1/Q(data)为`0.3683/0.3489/0.3306`；全部finite。
+- 续训GPU显存峰19.37/19.56GiB，active mean util29.0%/30.1%；matched/Env/anon峰
+  78.75/52.46/73.03GiB。cgroup current触及240GiB且`memory.max`增加11,485，但
+  OOM/OOM-kill为0；训练结束后matched RSS归零、anon约0.29GiB，live约165GiB file
+  cache不是活进程泄漏。
+- 新run 10个checkpoint为275–475每25步加480，全部completion=true；总计约11.15GiB，
+  final480约1.32GiB、`update_step=215055`。完整启动/健康门见
+  `docs/rlinf-robotwin-pi0-rltoken/16_STAGE2_FORMAL_RESUME250_TO480_LAUNCH_20260730.md`，
+  最终验收见
+  `docs/rlinf-robotwin-pi0-rltoken/17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`。
+- 本地高信息量快照位于
+  `exports/rlt_stage2_formal_resume250_to480_high_info_20260731_v1`；远端下载核心加
+  manifest为51个文件、约5.62MiB，加入分析/图/README后的完整文件夹为57个文件、
+  7,654,908 bytes（约7.30MiB）；
+  包含完整driver/TensorBoard/resources、config/provenance、completion/replay
+  metadata、分析JSON和三张图，不含checkpoint权重，不能独立resume。
 - full clean-50 已从
   `TianxingChen/RoboTwin2.0@9dc9299c163db059931898a9f0852098a61155a1`
   转为 50 episodes / 7,188 frames / 50FPS：
@@ -170,9 +238,9 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `exports/rlt_stage1_formal_high_info_20260729_v2.zip`，SHA-256
   `9d9e2c38789897479a27cc04ed15034a9d65175284c837f3c1c6f54ca0c2daa8`；
   不含20.56GiB checkpoint。
-- Stage 2 formal source 现在 `max_steps=0` fail closed。正式 candidate 保持2GPU/4env、
-  H50/C10/D14、batch512/128、UTD5/ratio2、500 rows/rank、5k critic floor、
-  cap400、15k replay/rank；这些相对 ManiSkill/论文/RoboTwin 的来源与风险见
+- Stage 2 formal source 现在 `max_steps=0` fail closed。已完成的100-cycle pilot使用
+  2GPU/4env、H50/C10/D14、batch512/128、UTD5/ratio2、500 rows/rank、5k critic
+  floor、cap400、15k replay/rank；这些历史参数相对 ManiSkill/论文/RoboTwin 的来源与风险见
   `docs/rlinf-robotwin-pi0-rltoken/04_STAGE2_PRE_SMOKE_PACKET_20260729.md`。
 - Stage 2 artifact preflight、formal/fresh/resume compose/audit、Ruff、py_compile和
   19个集中单测已通过；MLP仅2,162,202参数。fresh/resume launch script 服务器
@@ -210,10 +278,66 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
 - 启动前按授权精确删除12个旧 RLinf DCP和51个 Motus OPD实验`.pt`，回收约177.85GiB；
   PPO step20、GRPO step100、轻量日志/配置/指标与Motus官方/base权重均保留。删除清单位于
   `/root/autodl-tmp/experiment_exports/rlt_pre_stage1_cleanup_20260729`，被删权重不可恢复。
-- 当前授权停点：fresh 已完成、resume 已省略；formal source 仍 `max_steps=0`
-  fail closed。formal pilot 总预算未批准，不得启动；下一步只需在约30-cycle
-  phase-transition pilot 与约60-cycle初步趋势 pilot之间决定，随后重新展示绑定后的
-  resolved config、精确命令、输出目录、资源和停止条件。
+- 用户曾批准并已完成 **RoboTwin `adjust_bottle`** Stage 2 100-cycle pilot；ManiSkill
+  只作参考实现/量级核对，没有进入 resolved config。RLinf ManiSkill 可执行参考是
+  5,000 outer cycles、64 train env、500 primitive/cycle和不同任务，不能把它当成本次
+  RoboTwin预算。
+- formal source 继续 `max_steps=0` fail closed；批准命令显式覆盖
+  `runner.max_steps=100`，resolved SHA为
+  `efff00b71d8ab618f4a77c082cbec8fd65fda9abe2573def31e0aca980e50178`。
+- 100-cycle run于 `2026-07-30T01:15:54+08:00` 启动，并于
+  `2026-07-30T03:47:38+08:00` 正常结束：
+  - `100/100` cycles，`exit_code=0`，wall-clock `9,104s=2h31m44s`；
+  - run root
+    `/root/autodl-tmp/experiments/rlt_stage2_formal_100c_20260730_v1`；
+  - runtime
+    `/root/autodl-tmp/experiment_exports/rlt_stage2_formal_100c_20260730_v1/runtime`；
+  - 400 train episodes、40 deterministic eval episodes、7,821 macro transitions；
+  - student 于 cycle 27 接管，BC/Q ramp 于 cycle 52 完成；critic/actor updates
+    `34,800/17,400`；
+  - train 全部 `30/400=7.5%`；student 前/后20 cycles为
+    `3/80=3.75%` / `10/80=12.5%`；
+  - deterministic eval 在 cycle 60/70 为 `1/4`、`2/4`，cycle 80/90/100
+    均为 `0/4`，合计 `3/40=7.5%`；每点仅4条，不能据此选 best 或声称稳定改善；
+  - 两卡显存峰值17,543/17,626MiB，active mean util 25.6%/26.2%，负载对称但未顶满；
+  - cgroup anon峰值47.47GiB、file cache峰值195.05GiB、memory.max 240GiB；
+    OOM/OOM-kill/fatal/NaN均为0，但扩大env并发前需单独验证cgroup压力；
+  - 10个 checkpoint completion均完整；最终checkpoint约226.3MiB，run约1.44GiB，
+    无视频/图片。
+- 首次 launcher 因进程gate匹配自身路径而在训练启动前exit1；只删除该自匹配词后
+  `bash -n`与逐行diff通过，算法、config、预算均未改，旧script和失败说明已归档。
+- 预算口径已更正：旧100-cycle run永久归类为pilot。它的400条train episodes位于论文
+  公开400–1000 episodes的下界，因此不是简单“少50倍”；真正缺陷是启动前没有完成
+  多轴规模审批、长期schedule覆盖不足且每个eval点仅4条。完整formal审批不得再用
+  “跑一晚”代替cycles/episodes/transitions/updates/eval/checkpoint预算。
+- 首段完整2,000-episode预算已按首选方案执行：
+  - `8 env × 250 cycles`、cap1600、eval/save每25 cycles；
+  - 10k replay rows/rank、30k update floor、20k/50k actor schedule；
+  - 预计约39.1k macro rows、125.5k/62.8k critic/actor updates；
+  - 周期监控每点20个唯一fixed seeds，共10点；恰好10个full checkpoints。
+- exact-20评估只通过RLT专属overlay和独立官方seed bank启用，没有修改通用
+  EnvWorker/RoboTwinEnv，也不影响PPO、GRPO或旧RLT。集中测试为27 passed。
+- 8-env资源门完成3 cycles、24 train episodes、472 macro transitions、
+  3200/1600 critic/actor updates和20条deterministic eval；两卡显存峰
+  `17,169/17,252MiB`，matched RSS峰51.88GiB、cgroup anon峰47.47GiB，
+  high/OOM/OOM-kill增量均为0。完整资源门与formal启动记录见
+  `docs/rlinf-robotwin-pi0-rltoken/10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md`。
+- `global_step_250`的结构resume已经由本次真实load→continue补齐：runner绝对总终点480，
+  新旧resolved只变化resume/终点/新输出及两个派生视频目录；原formal250 checkpoint未覆盖。
+- 当前授权停点：续训已自然完成，当前没有RLT训练/Ray进程，两卡空闲。本轮只读验收没有
+  启动、停止、重启、删除、覆盖或清cache。独立held-out评估、EnvWorker内存定位、
+  继续延长或扩展实验仍须另行明确授权。480最终报告见
+  `docs/rlinf-robotwin-pi0-rltoken/17_STAGE2_FORMAL_RESUME250_TO480_FINAL_RESULT_20260731.md`；
+  首段250最终报告见
+  `docs/rlinf-robotwin-pi0-rltoken/15_STAGE2_FORMAL_8ENV250_FINAL_RESULT_20260730.md`；
+  cycle200历史报告见
+  `docs/rlinf-robotwin-pi0-rltoken/14_STAGE2_FORMAL_8ENV250_STATUS_CYCLE200_20260730.md`；
+  完整旧pilot结果见
+  `docs/rlinf-robotwin-pi0-rltoken/08_STAGE2_FORMAL_100C_RESULT_20260730.md`；启动记录见
+  `docs/rlinf-robotwin-pi0-rltoken/07_STAGE2_FORMAL_100C_LAUNCH_20260730.md`；下一次设计见
+  `docs/rlinf-robotwin-pi0-rltoken/09_STAGE2_NEXT_FORMAL_SCALE_DESIGN_20260730.md`；
+  当前formal启动记录见
+  `docs/rlinf-robotwin-pi0-rltoken/10_STAGE2_FORMAL_8ENV250_LAUNCH_20260730.md`。
 
 ## QAM 当前状态与授权
 
