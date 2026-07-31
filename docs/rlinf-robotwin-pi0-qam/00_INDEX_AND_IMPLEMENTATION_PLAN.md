@@ -19,7 +19,8 @@
 以及 `fixed-N M2 + N20 + online replay only`，并把 C1 critic 表示与两卡 ownership
 的具体工程取舍交由实施侧按事实门落定。SFT π0 提供 frozen
 behavior prior；RoboTwin 在线执行提供 critic transition；先 `collect`，再 `q_only`，
-Q 有基本动作区分后才 `am_on`。clean-50 默认不进 v1 Q loss。C1 与 M2 均须通过实施
+再按固定计数自动进入 `am_on`；Q/TD/动作梯度诊断只记录。clean-50 默认不进 v1 Q loss。
+C1 与 M2 均须通过实施
 事实门。M2 已按服务器现场修正为
 “每次 query 一条固定 N macro
 transition”，不依赖并不存在的 planned-action `realized L`。用户已于 2026-07-31
@@ -838,9 +839,9 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 
 ### P3：critic、transition replay 与 QAM trainer
 
-状态：**代码、synthetic/两卡核心验证、fresh runner/checkpoint lifecycle 与
-exact-resume 加固/39 项服务器回归已完成；fresh→resume lifecycle 待另行批准的下一轮
-smoke**。
+状态：**代码、synthetic/两卡核心验证、fresh runner/checkpoint lifecycle、
+exact-resume 加固/39 项服务器回归，以及连续阶段计数/30 项定向回归均已完成。
+fresh→resume lifecycle 仍未 live 验证，但用户已明确批准本次 fresh formal**。
 
 - 已实现 C1 的 10-Q/target pessimistic backup；
 - 已按推荐 M2 实现 macro reward/end/bootstrap；未物化 M1；
@@ -869,8 +870,8 @@ smoke**。
 - validator 的既有 `Cluster()` 会短暂创建 local Ray，但脚本退出后无残留进程；
 - 真实 RoboTwin payload、runner lifecycle 和 actor sidecar checkpoint 是本次
   q-only smoke 的首要通过门，不在 smoke 前另偷跑一次等价环境运行。
-- 在后续单独获批的 q-only 诊断中，从同一 seeded/snapshotted state 实际执行 base 与小幅
-  `+dQ/da/-dQ/da` action；Q finite、动作敏感且真实排序不反向，才允许切到 `am_on`。
+- formal 继续记录 Q finite、动作敏感性和 `dQ/da`；用户已明确选择不让这些诊断阻塞
+  自动切换，只有 NaN/Inf、OOM、NCCL/Ray fatal 等数值/进程错误 fail-fast。
 
 所有命令、输出、失败、单一原因、窄修复和复测逐项写账本。测试全部在服务器执行。
 
