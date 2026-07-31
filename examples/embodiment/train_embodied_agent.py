@@ -45,7 +45,16 @@ def main(cfg) -> None:
     actor_placement = component_placement.get_strategy("actor")
     use_training_pipeline = bool(cfg.runner.get("use_training_pipeline", False))
 
-    if cfg.algorithm.loss_type == "embodied_sac":
+    if cfg.algorithm.loss_type == "embodied_qam":
+        if use_training_pipeline:
+            raise ValueError(
+                "runner.use_training_pipeline=True is not supported for "
+                "embodied_qam."
+            )
+        from rlinf.workers.actor.fsdp_qam_policy_worker import QAMFSDPPolicy
+
+        actor_worker_cls = QAMFSDPPolicy
+    elif cfg.algorithm.loss_type == "embodied_sac":
         if use_training_pipeline:
             raise ValueError(
                 "runner.use_training_pipeline=True is not supported for embodied_sac."

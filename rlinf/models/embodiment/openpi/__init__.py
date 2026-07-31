@@ -13,6 +13,7 @@
 # limitations under the License.
 # openpi model configs
 
+import hashlib
 import os
 import pathlib
 
@@ -68,14 +69,17 @@ def get_model(cfg: DictConfig, torch_dtype=None):
         model.freeze_vlm()
 
     # Load weights from checkpoint if it's a checkpoint directory, otherwise load from safetensors
+    loaded_state_keys: set[str] = set()
     if os.path.exists(full_weights_path):
         # Direct checkpoint directory
         model_state_dict = torch.load(full_weights_path, map_location="cpu")
         model.load_state_dict(model_state_dict, strict=False)
+        loaded_state_keys = set(model_state_dict)
     elif os.path.exists(actor_full_weights_path):
         # Checkpoint directory from runner
         model_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
         model.load_state_dict(model_state_dict, strict=False)
+        loaded_state_keys = set(model_state_dict)
     else:
         # Original model directory with safetensors files
         weight_paths = sorted(glob.glob(os.path.join(checkpoint_dir, "*.safetensors")))
@@ -86,8 +90,26 @@ def get_model(cfg: DictConfig, torch_dtype=None):
             state_dict = safetensors.torch.load_file(weight_path, device="cpu")
             all_state_dict.update(state_dict)
         model.load_state_dict(all_state_dict, strict=False)
+        loaded_state_keys = set(all_state_dict)
 
     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+    if actor_model_config.use_qam:
+        expected_fine_keys = {
+            f"qam_fine.{name}" for name in model.qam_fine.state_dict()
+        }
+        loaded_fine_keys = expected_fine_keys.intersection(loaded_state_keys)
+        if loaded_fine_keys and loaded_fine_keys != expected_fine_keys:
+            missing = sorted(expected_fine_keys - loaded_fine_keys)
+            raise ValueError(
+                "QAM checkpoint contains a partial F1 state; first missing keys: "
+                + ", ".join(missing[:5])
+            )
+        if loaded_fine_keys:
+            model._qam_fine_initialized = True  # noqa: SLF001
+        else:
+            # Plain SFT checkpoints have no F1 keys. Initialize only after the
+            # behavior expert and projections contain their checkpoint values.
+            model.initialize_qam_fine_from_behavior_()
     # fsdp replace
     # model.paligemma_with_expert.replace_gemma_decoder_layers()
     # load data stats
@@ -132,5 +154,29 @@ def get_model(cfg: DictConfig, torch_dtype=None):
             *repack_transforms.outputs,
         ],
     )
+
+    if actor_model_config.use_qam:
+        output_transform_types = [
+            type(transform).__qualname__
+            for transform in [
+                *data_config.model_transforms.outputs,
+                transforms.Unnormalize(
+                    norm_stats, use_quantiles=data_config.use_quantile_norm
+                ),
+                *data_config.data_transforms.outputs,
+                *repack_transforms.outputs,
+            ]
+        ]
+        fingerprint_payload = "|".join(
+            [
+                str(data_config.asset_id),
+                str(bool(data_config.use_quantile_norm)),
+                repr(norm_stats),
+                ",".join(output_transform_types),
+            ]
+        )
+        model.set_qam_data_fingerprint(
+            hashlib.sha256(fingerprint_payload.encode("utf-8")).hexdigest()
+        )
 
     return model

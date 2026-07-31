@@ -102,6 +102,14 @@ class OpenPi0Config(Pi0Config):
     rlt_use_mask: bool = False
     state_indices: list[int] | None = None
 
+    # ===== QAM parameters =====
+    # The second opt-in is algorithm.loss_type=embodied_qam, validated outside
+    # the model. Keeping this false leaves the legacy π0 module graph unchanged.
+    use_qam: bool = False
+    qam_num_image_blocks: int = 3
+    qam_projection_version: str = "pi0-fixed-prefix-active-v1"
+    qam_data_fingerprint: str = ""
+
 
 class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
     """
@@ -161,6 +169,27 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         assert not (self.config.double_layer and self.config.joint_logprob), (
             "double_layer and joint_logprob can not be set at the same time"
         )
+
+        if self.config.use_qam:
+            self._validate_qam_model_config()
+            from rlinf.models.embodiment.modules.qam_modules import (
+                QAMFineActionExpert,
+                build_qam_projection_fingerprint,
+            )
+
+            # This copy establishes actor/rollout state_dict schema at model
+            # construction time. get_model() refreshes it from the loaded SFT
+            # behavior checkpoint, rather than retaining these initial values.
+            self.qam_fine = QAMFineActionExpert(self)
+            self._qam_fine_initialized = False
+            self._qam_projection_fingerprint = build_qam_projection_fingerprint(
+                model_horizon=self.config.action_horizon,
+                planned_horizon=self.config.action_chunk,
+                model_action_dim=self.config.action_dim,
+                active_action_dim=self.config.action_env_dim,
+                projection_version=self.config.qam_projection_version,
+                data_fingerprint=self.config.qam_data_fingerprint,
+            )
 
         # rl model init
         if self.config.value_after_vlm:
@@ -277,10 +306,90 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             path_parts = name.split(".")
             setattr(module, "_fsdp_wrap_name", path_parts[-1] if path_parts else name)
 
+        if self.config.use_qam:
+            from rlinf.models.embodiment.modules.qam_modules import (
+                keep_tied_embedding_and_lm_head_in_root_fsdp_unit_,
+            )
+
+            keep_tied_embedding_and_lm_head_in_root_fsdp_unit_(
+                self.paligemma_with_expert.paligemma.model.language_model.embed_tokens,
+                self.paligemma_with_expert.paligemma.lm_head,
+            )
+
         self.torch_compile_enabled = False
+
+    def _validate_qam_model_config(self):
+        if not self.config.train_expert_only:
+            raise ValueError("openpi.use_qam=True requires train_expert_only=True")
+        if self.pi05:
+            raise ValueError("QAM v1 supports π0 only; π0.5 is not enabled")
+        incompatible = {
+            "use_dsrl": self.config.use_dsrl,
+            "use_rlt": self.config.use_rlt,
+            "is_nft": self.config.is_nft,
+            "add_value_head": self.config.add_value_head,
+        }
+        active = [name for name, enabled in incompatible.items() if enabled]
+        if active:
+            raise ValueError(
+                "QAM v1 cannot share a policy graph with legacy routes: "
+                + ", ".join(active)
+            )
+        if self.config.action_chunk <= 0:
+            raise ValueError("QAM planned action horizon must be positive")
+        if self.config.action_chunk > self.config.action_horizon:
+            raise ValueError(
+                "QAM action_chunk cannot exceed the π0 model horizon: "
+                f"{self.config.action_chunk} > {self.config.action_horizon}"
+            )
+        if self.config.action_env_dim <= 0:
+            raise ValueError("QAM active action dimension must be positive")
+        if self.config.action_env_dim > self.config.action_dim:
+            raise ValueError(
+                "QAM action_env_dim cannot exceed the π0 model action dimension: "
+                f"{self.config.action_env_dim} > {self.config.action_dim}"
+            )
+        if self.config.qam_num_image_blocks != 3:
+            raise ValueError(
+                "QAM C1 v1 requires exactly three image position blocks"
+            )
+
+    @torch.no_grad()
+    def initialize_qam_fine_from_behavior_(self):
+        """Copy F1 from the already-loaded SFT behavior action expert."""
+        if not self.config.use_qam:
+            raise ValueError("QAM fine initialization requires openpi.use_qam=True")
+        self.qam_fine.copy_from_behavior_(self)
+        self._qam_fine_initialized = True
+
+    def set_qam_data_fingerprint(self, data_fingerprint: str):
+        """Attach the resolved normalization/output-transform provenance."""
+        if not self.config.use_qam:
+            return
+        from rlinf.models.embodiment.modules.qam_modules import (
+            build_qam_projection_fingerprint,
+        )
+
+        self._qam_projection_fingerprint = build_qam_projection_fingerprint(
+            model_horizon=self.config.action_horizon,
+            planned_horizon=self.config.action_chunk,
+            model_action_dim=self.config.action_dim,
+            active_action_dim=self.config.action_env_dim,
+            projection_version=self.config.qam_projection_version,
+            data_fingerprint=data_fingerprint,
+        )
 
     def set_global_step(self, global_step):
         self.global_step = global_step
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        if self.config.use_qam and hasattr(self, "qam_fine"):
+            # Keep the frozen behavior/prefix route deterministic while the
+            # independent fine expert follows the requested training mode.
+            self.paligemma_with_expert.eval()
+            self.qam_fine.train(mode)
+        return self
 
     def setup_wrappers(
         self,
@@ -362,6 +471,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             return self.sac_forward(**kwargs)
         elif forward_type == ForwardType.SAC_Q:
             return self.sac_q_forward(**kwargs)
+        elif forward_type == ForwardType.QAM_FLOW:
+            return self.qam_flow_forward(**kwargs)
         else:
             raise NotImplementedError
 
@@ -828,6 +939,273 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     ).contiguous()
         return processed_obs
 
+    @torch.no_grad()
+    def _prepare_qam_conditioning(
+        self,
+        observation: _model.Observation | None = None,
+        *,
+        env_obs: dict[str, Any] | None = None,
+        forward_inputs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if not self.config.use_qam:
+            raise ValueError("QAM conditioning requires openpi.use_qam=True")
+        if not self._qam_fine_initialized:
+            raise RuntimeError(
+                "QAM F1 has not been initialized from a loaded behavior checkpoint"
+            )
+        supplied = sum(
+            item is not None for item in (observation, env_obs, forward_inputs)
+        )
+        if supplied != 1:
+            raise ValueError(
+                "QAM conditioning requires exactly one of observation, env_obs, "
+                "or forward_inputs"
+            )
+        if env_obs is not None:
+            to_process = self.obs_processor(env_obs)
+            processed = self.input_transform(to_process, transpose=False)
+            processed = self.precision_processor(processed)
+            observation = _model.Observation.from_dict(processed)
+        elif forward_inputs is not None:
+            processed = self.input_transform(forward_inputs, transpose=False)
+            processed = self.precision_processor(processed)
+            observation = _model.Observation.from_dict(processed)
+
+        assert observation is not None
+        images, img_masks, lang_tokens, lang_masks, state = (
+            self._preprocess_observation(observation, train=False)
+        )
+        if len(images) != self.config.qam_num_image_blocks:
+            raise ValueError(
+                "QAM C1 expected three OpenPI image position blocks, got "
+                f"{len(images)}"
+            )
+
+        device = next(self.parameters()).device
+        images = [image.to(device=device) for image in images]
+        img_masks = [mask.to(device=device) for mask in img_masks]
+        lang_tokens = lang_tokens.to(device=device)
+        lang_masks = lang_masks.to(device=device)
+        state = state.to(device=device)
+
+        prefix_output, prefix_pad_masks, past_key_values = (
+            self._build_prefix_cache(
+                images,
+                img_masks,
+                lang_tokens,
+                lang_masks,
+            )
+        )
+
+        from rlinf.models.embodiment.modules.qam_modules import (
+            pool_qam_prefix_blocks,
+        )
+
+        critic_feature, block_lengths = pool_qam_prefix_blocks(
+            prefix_output,
+            prefix_pad_masks,
+            language_token_count=lang_tokens.shape[1],
+            num_image_blocks=self.config.qam_num_image_blocks,
+        )
+        return {
+            "state": state,
+            "prefix_output": prefix_output,
+            "prefix_pad_masks": prefix_pad_masks,
+            "past_key_values": past_key_values,
+            "critic_feature": critic_feature.to(dtype=torch.bfloat16),
+            "block_lengths": block_lengths,
+        }
+
+    def _qam_velocity(
+        self,
+        *,
+        state: torch.Tensor,
+        x_t: torch.Tensor,
+        time_qam: torch.Tensor,
+        prefix_pad_masks: torch.Tensor,
+        past_key_values: Any,
+        route: Literal["behavior", "fine"],
+        return_suffix: bool = False,
+    ):
+        if not self.config.use_qam:
+            raise ValueError("QAM velocity requires openpi.use_qam=True")
+        if not self._qam_fine_initialized:
+            raise RuntimeError(
+                "QAM F1 has not been initialized from a loaded behavior checkpoint"
+            )
+
+        from rlinf.models.embodiment.modules.qam_modules import (
+            pi0_velocity_to_qam,
+            qam_time_to_pi0_time,
+        )
+
+        batch_size = x_t.shape[0]
+        if time_qam.numel() == 1:
+            time_qam = time_qam.reshape(1).expand(batch_size)
+        else:
+            time_qam = time_qam.reshape(batch_size)
+        time_qam = time_qam.to(device=x_t.device, dtype=torch.float32)
+        time_pi0 = qam_time_to_pi0_time(time_qam)
+
+        if route == "fine":
+            velocity_pi0, suffix_out = self.qam_fine(
+                state,
+                x_t,
+                time_pi0,
+                prefix_pad_masks,
+                past_key_values,
+            )
+        elif route == "behavior":
+            velocity_pi0, suffix_out = self.get_velocity(
+                state,
+                x_t,
+                time_pi0,
+                prefix_pad_masks,
+                past_key_values,
+            )
+        else:
+            raise ValueError(f"Unknown QAM velocity route: {route}")
+
+        velocity_qam = pi0_velocity_to_qam(velocity_pi0)
+        return (velocity_qam, suffix_out) if return_suffix else velocity_qam
+
+    @torch.no_grad()
+    def _sample_qam_actions_from_conditioning(
+        self,
+        conditioning: dict[str, Any],
+        *,
+        noise: torch.Tensor | None = None,
+        flow_steps: int | None = None,
+    ) -> dict[str, torch.Tensor]:
+        state = conditioning["state"]
+        batch_size = state.shape[0]
+        device = state.device
+        flow_steps = self.config.num_steps if flow_steps is None else int(flow_steps)
+        if flow_steps <= 0:
+            raise ValueError(f"QAM flow_steps must be positive, got {flow_steps}")
+
+        if noise is None:
+            noise = self.sample_noise(
+                (
+                    batch_size,
+                    self.config.action_horizon,
+                    self.config.action_dim,
+                ),
+                device,
+            )
+        else:
+            noise = noise.to(device=device, dtype=self.action_in_proj.weight.dtype)
+
+        step_size = 1.0 / flow_steps
+        action = noise
+        chains = [action]
+        for index in range(flow_steps):
+            time_qam = torch.full(
+                (batch_size,),
+                index * step_size,
+                device=device,
+                dtype=torch.float32,
+            )
+            velocity_qam = self._qam_velocity(
+                state=state,
+                x_t=action,
+                time_qam=time_qam,
+                prefix_pad_masks=conditioning["prefix_pad_masks"],
+                past_key_values=conditioning["past_key_values"],
+                route="fine",
+            )
+            action = action + step_size * velocity_qam
+            chains.append(action)
+
+        from rlinf.models.embodiment.modules.qam_modules import (
+            canonicalize_qam_rollout_action,
+        )
+
+        raw_endpoint = action
+        canonical_action, canonical_planned_action = (
+            canonicalize_qam_rollout_action(
+                raw_endpoint,
+                planned_horizon=self.config.action_chunk,
+                active_action_dim=self.config.action_env_dim,
+            )
+        )
+        prev_logprobs = torch.zeros(
+            (
+                batch_size,
+                self.config.action_chunk,
+                self.config.action_env_dim,
+            ),
+            device=device,
+            dtype=torch.float32,
+        )
+        return {
+            # The active policy action is canonical for both environment
+            # execution and TD-Q. The raw endpoint remains available in the
+            # detached generation chain for flow/AM diagnostics.
+            "actions": canonical_action,
+            "qam_raw_endpoint": raw_endpoint,
+            "qam_planned_action_normalized": canonical_planned_action,
+            "chains": torch.stack(chains, dim=1),
+            "denoise_inds": torch.full(
+                (batch_size, flow_steps),
+                -1,
+                device=device,
+                dtype=torch.long,
+            ),
+            "prev_logprobs": prev_logprobs,
+            "prev_values": torch.zeros(
+                (batch_size, 1),
+                device=device,
+                dtype=torch.float32,
+            ),
+            "qam_obs_feature": conditioning["critic_feature"],
+            "qam_prefix_block_lengths": torch.tensor(
+                conditioning["block_lengths"],
+                device=device,
+                dtype=torch.long,
+            )
+            .unsqueeze(0)
+            .expand(batch_size, -1)
+            .clone(),
+            "qam_proprio_normalized": state[
+                :, : self.config.action_env_dim
+            ].to(dtype=torch.float32),
+        }
+
+    @torch.no_grad()
+    def sample_qam_actions(
+        self,
+        observation: _model.Observation | None = None,
+        *,
+        env_obs: dict[str, Any] | None = None,
+        forward_inputs: dict[str, Any] | None = None,
+        noise: torch.Tensor | None = None,
+        flow_steps: int | None = None,
+    ) -> dict[str, torch.Tensor]:
+        """Sample the active F1 policy with a deterministic Euler ODE."""
+        conditioning = self._prepare_qam_conditioning(
+            observation,
+            env_obs=env_obs,
+            forward_inputs=forward_inputs,
+        )
+        return self._sample_qam_actions_from_conditioning(
+            conditioning,
+            noise=noise,
+            flow_steps=flow_steps,
+        )
+
+    def qam_flow_forward(self, operation: str, **kwargs):
+        """Root-FSDP-safe entry point for all differentiable QAM flow calls."""
+        if not self.config.use_qam:
+            raise ValueError("QAM flow forward requires openpi.use_qam=True")
+        if operation == "velocity":
+            return self._qam_velocity(**kwargs)
+        if operation == "conditioning":
+            return self._prepare_qam_conditioning(**kwargs)
+        if operation == "sample_ode":
+            return self.sample_qam_actions(**kwargs)
+        raise ValueError(f"Unknown QAM flow operation: {operation}")
+
     def predict_action_batch(
         self,
         env_obs,
@@ -844,8 +1222,26 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         )  # obs precision processor
         observation = _model.Observation.from_dict(processed_obs)
 
+        is_qam_active = self.config.use_qam
         is_dsrl_active = self.config.use_dsrl
-        if is_dsrl_active:
+        canonical_model_action = None
+        canonical_planned_action = None
+        if is_qam_active:
+            outputs = self.sample_qam_actions(observation)
+            canonical_model_action = outputs["actions"]
+            canonical_planned_action = outputs[
+                "qam_planned_action_normalized"
+            ]
+            actions = self.output_transform(
+                {
+                    "actions": canonical_model_action,
+                    "state": observation.state,
+                }
+            )["actions"]
+            prev_logprobs = outputs["prev_logprobs"]
+            prev_values = outputs["prev_values"]
+            forward_action = None
+        elif is_dsrl_active:
             # DSRL mode (both train and eval)
 
             # Step 1: SAC agent outputs noise
@@ -894,13 +1290,57 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # "action" is the env-executed action, and "model_action" is the original output by the model.
             # For small models, they are consistent. For large models (like pi), "action" is the result after output_transform.
             # For realworld human-in-the-loop training, only "action" can be provided by human.
+            # QAM stores its canonical clamped model action here; its raw endpoint remains in "chains".
             "action": actions.reshape(actions.shape[0], -1).contiguous(),
-            "model_action": outputs["actions"]
+            "model_action": (
+                canonical_model_action
+                if canonical_model_action is not None
+                else outputs["actions"]
+            )
             .reshape(outputs["actions"].shape[0], -1)
             .contiguous(),
         }
         if forward_action is not None:
             forward_inputs["action"] = forward_action
+
+        if is_qam_active:
+            from rlinf.models.embodiment.modules.qam_modules import (
+                projection_fingerprint_tensor,
+            )
+
+            assert canonical_planned_action is not None
+            planned_action = canonical_planned_action.to(dtype=torch.float32)
+            batch_size = planned_action.shape[0]
+            forward_inputs.update(
+                {
+                    "qam_planned_action_normalized": planned_action.contiguous(),
+                    "qam_obs_feature": outputs["qam_obs_feature"].contiguous(),
+                    "qam_proprio_normalized": outputs[
+                        "qam_proprio_normalized"
+                    ].contiguous(),
+                    "qam_prefix_block_lengths": outputs[
+                        "qam_prefix_block_lengths"
+                    ].contiguous(),
+                    "qam_projection_contract": torch.tensor(
+                        [
+                            self.config.action_horizon,
+                            self.config.action_chunk,
+                            self.config.action_dim,
+                            self.config.action_env_dim,
+                        ],
+                        device=planned_action.device,
+                        dtype=torch.long,
+                    )
+                    .unsqueeze(0)
+                    .expand(batch_size, -1)
+                    .clone(),
+                    "qam_projection_fingerprint": projection_fingerprint_tensor(
+                        self._qam_projection_fingerprint,
+                        batch_size=batch_size,
+                        device=planned_action.device,
+                    ),
+                }
+            )
 
         if self.config.is_nft:
             nft_outputs = {
@@ -1362,6 +1802,24 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             self.paligemma_with_expert.paligemma.eval()
             for params in self.paligemma_with_expert.paligemma.parameters():
                 params.requires_grad = False
+
+            if self.config.use_qam:
+                # B1 ownership: every original π0 parameter is the frozen
+                # behavior field; only the registered F1 copy is trainable.
+                for name, parameter in self.named_parameters():
+                    parameter.requires_grad = name.startswith("qam_fine.")
+                self.paligemma_with_expert.eval()
+                self.qam_fine.train()
+                trainable = sum(
+                    parameter.numel()
+                    for parameter in self.qam_fine.parameters()
+                    if parameter.requires_grad
+                )
+                self.logger.info(
+                    "[FREEZE_VLM] QAM B1 mode: froze the complete base π0; "
+                    f"F1 trainable parameters={trainable:,}"
+                )
+                return
 
             # ========== DSRL additional freezing ==========
             if self.config.use_dsrl:

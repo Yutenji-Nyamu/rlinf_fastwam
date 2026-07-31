@@ -15,6 +15,7 @@
 import dataclasses
 import importlib.util
 import logging
+import math
 import os
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
@@ -820,6 +821,164 @@ def validate_megatron_cfg(cfg: DictConfig) -> DictConfig:
     return cfg
 
 
+def _validate_embodied_qam_contract(cfg: DictConfig, *, only_eval: bool) -> None:
+    """Fail closed unless both QAM opt-ins and all v1 causal contracts agree."""
+    loss_is_qam = cfg.algorithm.loss_type == "embodied_qam"
+    model_uses_qam = bool(
+        OmegaConf.select(
+            cfg,
+            "actor.model.openpi.use_qam",
+            default=False,
+        )
+    )
+    if loss_is_qam != model_uses_qam:
+        raise ValueError(
+            "QAM requires both algorithm.loss_type=embodied_qam and "
+            "actor.model.openpi.use_qam=true; setting only one is invalid."
+        )
+    if not loss_is_qam:
+        return
+    if cfg.actor.model.model_type != "openpi":
+        raise ValueError("embodied_qam v1 supports only model_type=openpi")
+    if cfg.actor.training_backend != "fsdp":
+        raise ValueError("embodied_qam requires the FSDP actor backend")
+    if bool(cfg.runner.get("use_training_pipeline", False)):
+        raise ValueError(
+            "runner.use_training_pipeline=True is not supported for embodied_qam"
+        )
+    if not bool(cfg.actor.fsdp_config.get("use_orig_params", False)):
+        raise ValueError(
+            "embodied_qam requires actor.fsdp_config.use_orig_params=true "
+            "for the frozen/trainable B1+F1 parameter mix"
+        )
+    if bool(cfg.actor.get("enable_offload", False)) or bool(
+        cfg.rollout.get("enable_offload", False)
+    ):
+        raise ValueError(
+            "embodied_qam v1 keeps policy conditioning available during replay "
+            "ingestion and therefore requires actor/rollout offload=false"
+        )
+    if (
+        not only_eval
+        and not bool(cfg.rollout.get("collect_transitions", False))
+    ):
+        raise ValueError(
+            "embodied_qam requires rollout.collect_transitions=true so "
+            "online replay receives current and next raw observations"
+        )
+
+    if int(cfg.env.train.rollout_epoch) != 1:
+        raise ValueError("embodied_qam requires env.train.rollout_epoch=1")
+    if bool(cfg.env.train.get("auto_reset", False)):
+        raise ValueError("embodied_qam requires env.train.auto_reset=false")
+    if bool(cfg.env.train.get("ignore_terminations", False)):
+        raise ValueError(
+            "embodied_qam requires env.train.ignore_terminations=false"
+        )
+    if int(cfg.actor.model.num_action_chunks) != 20:
+        raise ValueError("embodied_qam fixed-N v1 requires num_action_chunks=20")
+    if int(cfg.actor.model.action_dim) != 14:
+        raise ValueError("embodied_qam fixed-N v1 requires action_dim=14")
+    if bool(cfg.actor.model.get("add_value_head", False)):
+        raise ValueError("embodied_qam uses a separate Q critic, not a value head")
+
+    openpi_cfg = cfg.actor.model.openpi
+    if not bool(openpi_cfg.get("train_expert_only", False)):
+        raise ValueError(
+            "embodied_qam B1+F1 requires openpi.train_expert_only=true"
+        )
+    if bool(openpi_cfg.get("use_dsrl", False)) or bool(
+        openpi_cfg.get("use_rlt", False)
+    ):
+        raise ValueError("embodied_qam cannot be combined with DSRL or RLT")
+    qam_cfg = cfg.algorithm.get("qam", None)
+    if qam_cfg is None:
+        raise ValueError("algorithm.qam configuration is required")
+    prompt = str(qam_cfg.get("task_prompt", "")).strip()
+    if not prompt:
+        raise ValueError(
+            "embodied_qam raw replay requires algorithm.qam.task_prompt"
+        )
+    openpi_prompt = OmegaConf.select(
+        cfg,
+        "actor.model.openpi_data.default_prompt",
+        default=None,
+    )
+    if openpi_prompt is not None and str(openpi_prompt).strip() != prompt:
+        raise ValueError(
+            "algorithm.qam.task_prompt must match "
+            "actor.model.openpi_data.default_prompt when both are set"
+        )
+    phase = str(qam_cfg.get("phase", ""))
+    if phase not in {"collect", "q_only", "am_on"}:
+        raise ValueError(
+            "algorithm.qam.phase must be collect, q_only, or am_on"
+        )
+    if not bool(qam_cfg.get("online_only", False)):
+        raise ValueError("embodied_qam v1 requires online_only=true")
+    if int(qam_cfg.get("num_q_heads", 0)) != 10:
+        raise ValueError("Plain-QAM v1 requires exactly 10 independent Q heads")
+    if int(qam_cfg.get("flow_steps", 0)) <= 0:
+        raise ValueError("algorithm.qam.flow_steps must be positive")
+    if int(cfg.actor.model.get("num_steps", 0)) != int(qam_cfg.flow_steps):
+        raise ValueError(
+            "actor.model.num_steps and algorithm.qam.flow_steps must match "
+            "so rollout and TD-next use the same fine ODE"
+        )
+    if not 0.0 <= float(qam_cfg.get("gamma_slot", -1.0)) <= 1.0:
+        raise ValueError("algorithm.qam.gamma_slot must be in [0, 1]")
+    if abs(float(qam_cfg.gamma_slot) - float(cfg.algorithm.gamma)) > 1e-12:
+        raise ValueError(
+            "algorithm.qam.gamma_slot must equal algorithm.gamma in fixed-slot v1"
+        )
+    for key in (
+        # replay_capacity is a per-actor-rank capacity, not a global total.
+        "replay_capacity",
+        "min_replay_per_rank",
+        "warmup_global_inserts",
+        "max_updates_per_step",
+        "critic_init_seed",
+    ):
+        if int(qam_cfg.get(key, 0)) <= 0:
+            raise ValueError(f"algorithm.qam.{key} must be positive")
+    for key in (
+        "utd_ratio",
+        "critic_lr",
+        "critic_adam_eps",
+        "critic_grad_clip",
+        "target_tau",
+    ):
+        value = float(qam_cfg.get(key, -1.0))
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(f"algorithm.qam.{key} must be finite and positive")
+    if not 0.0 < float(qam_cfg.target_tau) <= 1.0:
+        raise ValueError("algorithm.qam.target_tau must be in (0, 1]")
+    if float(qam_cfg.get("rho", -1.0)) < 0:
+        raise ValueError("algorithm.qam.rho must be non-negative")
+    hidden_dims = tuple(
+        int(width) for width in qam_cfg.get("critic_hidden_dims", ())
+    )
+    if hidden_dims != (512, 512, 512, 512):
+        raise ValueError(
+            "Plain-QAM v1 requires critic_hidden_dims=[512,512,512,512]"
+        )
+
+    inv_temp = float(qam_cfg.get("inv_temp", -1.0))
+    if not math.isfinite(inv_temp) or inv_temp < 0:
+        raise ValueError("algorithm.qam.inv_temp must be finite and non-negative")
+    if phase in {"collect", "q_only"} and inv_temp != 0.0:
+        raise ValueError(
+            "collect/q_only require algorithm.qam.inv_temp=0 (tau=0 gate)"
+        )
+    if phase == "am_on":
+        if inv_temp <= 0:
+            raise ValueError("am_on requires a positive algorithm.qam.inv_temp")
+        if not bool(qam_cfg.get("am_evidence_passed", False)):
+            raise ValueError(
+                "am_on requires explicit algorithm.qam.am_evidence_passed=true"
+            )
+
+
 def validate_embodied_cfg(cfg):
     only_eval = (
         cfg.runner.get("only_eval", False)
@@ -905,6 +1064,8 @@ def validate_embodied_cfg(cfg):
                 sampling_params.max_new_tokens = algorithm_cfg.length_params.get(
                     "max_new_token", None
                 )
+
+    _validate_embodied_qam_contract(cfg, only_eval=only_eval)
 
     if not only_eval and cfg.runner.get("use_training_pipeline", False):
         assert cfg.algorithm.adv_type == "gae", (
