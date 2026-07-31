@@ -27,7 +27,10 @@ transition”，不依赖并不存在的 planned-action `realized L`。用户已
 `codex/qam-pi0-robotwin` worktree 落地；官方 JAX→PyTorch oracle、36 项集中测试、
 真实 π0 单卡 probe，以及两卡 `FULL_SHARD` 的完整 K=10 VJP/AM、10-Q/EMA 和
 每 rank batch=32 资源 probe 均通过；fresh `q_only` smoke 已 exit 0。尚未批准的是
-fresh→resume、production-batch q-only、`am_on` smoke 和正式训练。**
+fresh→resume 的独立 live 连续性 smoke；用户已批准连续阶段正式训练，正式进程于
+2026-07-31 17:32 CST 启动。17:35 的启动健康门已看到至少 3 个真实 rollout cycle、
+60 条 global macro transition，仍处于 512 条纯收集 warm-up，critic/fine update 均为
+0；当前不据此声称学习效果。**
 
 QAM 专题只保留四个核心 Markdown/SSOT 入口：
 
@@ -575,11 +578,12 @@ train_embodied_agent.py
   初始 frozen behavior 保持 bitwise 相同；
 - `am_on`：critic 与 fine 从同一 pre-update online/target snapshot 计算 loss，随后分别
   step；target critic 仍读取 pre-update critic；
-- 正式 v1 优先 fresh `q_only` 启动：前 512 条 global macro 在同一进程内只 collect，
-  达到 warm-up 后仅对阈值后的新插入按 UTD 计 credit，因此不需要
+- 正式 v1 以 resolved `phase=am_on` fresh 启动，但 worker 内部先完成 512 条 global
+  macro 的纯 collect；达到 warm-up 后仅对阈值后的新插入按 UTD 计 credit，因此不需要
   `collect→q_only` resume；独立 `collect` phase 仍保留为只收数入口；
-- `q_only→am_on` 不按 runner step 静默打开。只有获批的 q-only 诊断证明 Q finite、
-  具有动作敏感性且真实 `±dQ/da` 排序不反向后，才通过明示 config/resume 切换；
+- warm-up 后精确执行 512 次 critic-only update；以 **pre-update**
+  `critic_updates` 计数，第 513 个 logical update 才开始 joint critic+AM。Q/TD/
+  `dQ/da` 诊断继续记录但不作睡眠期间的阻塞门；NaN/Inf、OOM 和进程 fatal 仍 fail-fast；
 - runner/query step、critic update step、fine update step 和 policy version 分开计数。
   `policy_version` 表示 active F1 权重版本，只在 fine 参数实际更新并完成同步时增长；
   collect/q_only 期间不能把未变化的策略伪装成新版本。
@@ -688,7 +692,7 @@ $$
 | global/local batch | 64 / 32 per rank | 已通过真实两卡资源 probe |
 | replay / collect warm-up | 4,096/rank / 512 global macro transitions | raw 三视角约 11.3 GB/rank；正式配置值 |
 | UTD | 1 logical update/new macro | 不放大早期 replay 过拟合 |
-| QAM `inv_temp` | `q_only=0`；`am_on=0.5` | 先学 Q，再保守打开 AM |
+| QAM `inv_temp` | warm-up/q-only 不执行 AM；`am_on=1.0` | 官方正式任务使用的最低档；0.5 无直接来源，首跑采用 1.0 |
 
 `UTD=1` 的可执行含义固定为：
 
@@ -948,17 +952,17 @@ active normalized action 的 raw 越界率为 `20/280=7.14%`，所以 Q 与 env 
 replay 为 4,096/rank（约 11.3 GB raw observation/rank）；两卡 K=10、batch=32/rank
 峰值约 14.15 GB/卡。F2、C2、M1 均未触发。
 
-正式运行前只剩顺序门，不再是并行设计分支：
+正式运行采用的顺序已经冻结，不再是并行设计分支：
 
 1. fresh `q_only` smoke 已验证真实 RoboTwin payload、两次 critic update、
    target EMA、DCP 与 rank sidecar/replay；
-2. rank-local process RNG、统一 snapshot ID、跨 rank QAM completion manifest 与
-   服务器集中测试已完成；下一步另行批准 fresh→resume 连续性 smoke；
-3. 用 production batch 做短吞吐点；Q 的动作敏感性、有限非零 `dQ/da` 和真实
-   `+/-dQ/da` 排序通过后，再单独提交
-   `am_on` 批准包；
+2. rank-local process RNG、统一 snapshot ID、跨 rank QAM completion manifest、
+   schedule contract 与服务器集中测试已完成；独立 fresh→resume live smoke 仍未做，
+   因而当前 formal 的恢复能力只由静态/单测合同支持，不作 live exact-resume 声明；
+3. 用户已批准取消 outcome/action-sensitivity 硬门：512 warm-up 后执行 512 次
+   critic-only update，第 513 次开始 joint critic+AM；这些诊断只记录；
 4. timeout 已由 sparse env source 与 `auto_reset=false` payload 证明；QAM-only
-   分类补丁通过聚焦测试后，由新 smoke 验证 replay 字段；
+   分类补丁已通过聚焦测试与 fresh smoke replay 字段验证；
 5. 任何收益结论必须来自之后的受控训练/评估，不能由 smoke 推出。
 
 ## 12. 当前授权与下一步
@@ -967,7 +971,23 @@ P1–P5 fresh 实现、前置测试与首个 q-only smoke 已完成。生产 sha
 DSRL/RLT worktree 与所有 formal checkpoint/run artifacts 未改。按用户精确授权，仅删除
 四组旧 smoke 的 checkpoint 子目录，共回收 137.01 GiB；小型证据与所有 formal DCP 保留。
 
-当前停点是重新生成一个带 completion manifest 的 fresh checkpoint；需另行批准
-fresh→resume、production-batch q-only 吞吐/诊断与 `am_on` smoke。18 小时正式候选
-预算和官方阶段比例差异见实施账本
-`QAM-FORMAL-0001`；未得到新的完整批准前不启动这些运行或正式训练。
+用户已批准并启动一次连续阶段 formal：
+
+```text
+512 global macro warm-up，0 update
+  -> exactly 512 critic-only updates，UTD=1
+  -> 第 513 个 logical update 起 joint critic + AM
+```
+
+正式代码快照为 `4a15699e10971e306ed756dcbbf8aa65632553d5`，run root 为
+`/root/autodl-tmp/experiments/qam_formal_20260731_v1`，runtime evidence 为
+`/root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime`，hard deadline
+为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。17:35 CST 的一次性启动门：
+supervisor/driver/Ray/两 rank actor-rollout-env 全存活，至少 3 cycles、60 条 global
+macro 已写 replay，仍处于 warm-up，Q/AM update 均为 0；GPU 为
+23,259/23,781 MiB，cgroup OOM/OOM-kill 为 0/0。Curobo/pytorch3d 的可选 planner
+import traceback 与既有 smoke 相同，TOPP 路径继续完成 rollout，非本次 fatal。
+
+按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、
+global inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，
+再把快照称为当前；独立 live fresh→resume 仍不是本次 formal 已验证结论。

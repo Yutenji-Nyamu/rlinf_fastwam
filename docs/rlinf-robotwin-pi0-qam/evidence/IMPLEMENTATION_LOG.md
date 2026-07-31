@@ -4534,3 +4534,360 @@ git ls-remote --heads personal codex/qam-pi0-robotwin
 通过 Git whitespace gate 改写原始运行证据。修复是保持原始 log 字节不变，只对
 HANDOFF、SSOT、账本、shell/JSON/YAML/CSV 等非原始日志执行 whitespace check，再提交
 完整附件。
+
+## QAM-FORMAL-0003：连续阶段方案获批与实施起点
+
+时间：2026-07-31 16:43 CST 起。用户明确授权启动正式训练，并要求只确认健康启动后
+退出，不持续监控。获批的方法级入口为：
+
+```text
+fresh one-process formal
+  -> 512 global macro warm-up；0 update
+  -> exactly 512 critic-only updates；继续按 UTD=1 收集
+  -> 第 513 个 logical update 起 joint critic + AM
+  -> outcome coverage/action sensitivity 只记录，不阻塞切换
+  -> NaN/Inf/OOM/fatal 仍 fail-fast
+  -> inv_temp=1.0
+```
+
+`inv_temp=1.0` 是官方 Plain-QAM 正式任务使用的最低档；官方源码 fallback 是 0.3，
+而此前 0.5 只是无直接来源的插值。首跑选 1.0 的同时保留 target-Q mean、10-Q、
+fine grad clip 1.0 和 fine LR 2e-5。
+
+本轮开始前的本机镜像事实：
+
+```text
+local QAM HEAD = c32d044b
+local dirty    = exact-resume 四文件，475 insertions / 79 deletions
+server/cloud expected HEAD from prior ledger = 851db175
+```
+
+这些 dirty 修改是上一批已在服务器提交和推送的 exact-resume 内容，不是本轮未识别的
+用户改动。下一步先通过已验证 Paramiko helper 做身份、server HEAD/tree、进程/GPU/RAM/
+磁盘只读探针；再让本机镜像与 `851db175...` 对齐，之后才实施自动 AM 边界。密码只在
+当前 helper 进程环境中注入，不写入命令、文件或本账本。
+
+17:11 CST 身份与现场只读探针：
+
+```bash
+hostname; pwd; id -u; date '+%F %T %Z'
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin status --short --branch
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin log -8 --oneline --decorate
+pgrep -af 'python.*(main|train)|ray::|qam|rlt' || true
+nvidia-smi --query-gpu=index,name,memory.used,memory.total,utilization.gpu \
+  --format=csv,noheader,nounits
+awk '/MemTotal|MemAvailable/ {print}' /proc/meminfo
+df -h /root/autodl-tmp
+cat /sys/fs/cgroup/memory.{current,max}
+```
+
+结果：
+
+```text
+host/uid       = autodl-container-nekaqbwt43-6ce5babb / 0
+server branch  = codex/qam-pi0-robotwin
+server HEAD    = ced8672f322187b71939bd2859842619c6284d05
+server tree    = clean
+QAM/RLT/Ray    = none
+GPU0/GPU1      = 0 MiB / 0 MiB；utilization 0%
+MemAvailable   = 1,023,924,948 kB
+cgroup current/max = 166,121,512,960 / 257,698,037,760 B
+disk           = 1.9T total；912G used；933G free；50%
+```
+
+本机第一次调用 helper 使用 PATH 中不可执行的 `python.exe`，在建立 SSH 连接前报
+“系统无法访问此文件”；改用 Codex workspace dependency 的 Python，不安装任何依赖，
+随后同一 Paramiko Transport/password/host-key 路线成功。
+
+服务器 HEAD 已包含上一批完整序列：
+`7bc5f870 implementation -> 851db175 exact resume -> c2800669 smoke evidence ->
+e5323c91 handoff -> ced8672f ledger fix`。本机四个 exact-resume 文件与服务器逐文件
+SHA-256 完全一致，因此可在其上做窄增量，不覆盖未知改动。
+
+### 自动 AM 边界代码修改
+
+本轮只改四个服务器代码文件：
+
+| 文件 | 修改 |
+|---|---|
+| `rlinf/config.py` | 新增正整数 `q_only_updates_before_am` 合同；移除静态 `am_evidence_passed` 阻塞 |
+| `fsdp_qam_policy_worker.py` | 用 pre-update `critic_updates` 判定；1–512 只 Q，第 513 次起 joint；记录 configured/effective phase；checkpoint schema 2 固定该阈值 |
+| QAM source YAML | 新增 `q_only_updates_before_am: 512`，移除旧 evidence gate；仍保持 launch-closed `phase=collect, inv_temp=0` |
+| worker helper tests | 增加 511/512 边界、负计数和无人工 evidence gate 的 config 合同；checkpoint fixture 携带阈值 |
+
+四文件先 SFTP 到
+`/root/autodl-tmp/qam_formal_patch_20260731/`，逐文件 SHA-256 验证后才 `install`
+覆盖 repo 目标。第一次 inline PowerShell 把远程 `$repo` 和引号在本机拆开，helper 在
+参数解析阶段报 `unrecognized arguments`，没有建立 SSH 连接、没有服务器改动。随后改用
+新增的精确脚本 `qam_formal_patch_apply_20260731.sh`。该脚本第一版误把八位 HEAD
+补成了未经验证的完整 SHA，远程 `test` 立即失败、仍无 repo 改动；用
+`git rev-parse HEAD` 取得真实完整 SHA 后修正并复跑。
+
+最终应用结果：
+
+```text
+4 staged-upload SHA-256 = OK
+server diff --check     = pass
+server diff stat        = 4 files changed, 86 insertions(+), 8 deletions(-)
+```
+
+### 自动阶段切换的服务器验证
+
+新增并执行
+[`qam_formal_schedule_server_tests_20260731.sh`](qam_formal_schedule_server_tests_20260731.sh)。
+完整远端入口为：
+
+```bash
+bash /root/autodl-tmp/qam_formal_schedule_server_tests_20260731.sh
+```
+
+脚本内依次执行：
+
+```bash
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+export PYTHONPATH="$PWD:/root/autodl-tmp/RoboTwin_RLinf"
+git diff --check
+/root/autodl-tmp/RLinf/.venv/bin/python -m compileall -q \
+  rlinf/config.py \
+  rlinf/workers/actor/fsdp_qam_policy_worker.py
+/root/autodl-tmp/RLinf/.venv/bin/python -m ruff check \
+  rlinf/config.py \
+  rlinf/workers/actor/fsdp_qam_policy_worker.py \
+  tests/workers/test_qam_worker_helpers.py
+/root/autodl-tmp/RLinf/.venv/bin/python -m ruff format --check \
+  rlinf/config.py \
+  rlinf/workers/actor/fsdp_qam_policy_worker.py \
+  tests/workers/test_qam_worker_helpers.py
+/root/autodl-tmp/RLinf/.venv/bin/python -m pytest -q \
+  tests/workers/test_qam_worker_helpers.py \
+  tests/algorithms/qam/test_core.py \
+  tests/algorithms/qam/test_official_fixture.py
+```
+
+结果：
+
+```text
+git diff --check = pass
+compileall       = pass
+ruff check       = pass
+ruff format      = pass
+pytest           = 30 passed, 1 dependency deprecation warning
+```
+
+随后同一脚本分别 compose launch-closed source 与 formal overrides，运行
+`validate_cfg(OmegaConf.load(...))`，机器断言输出：
+
+```text
+QAM_FORMAL_CONFIG_OK 500 am_on 512 512 1.0 64 32
+```
+
+该 validator 沿用项目 `Cluster()`，因此短暂创建 local Ray；脚本结束后再次 `pgrep`
+确认 raylet/gcs/training 均已退出。这里没有启动 RoboTwin rollout，不是第二次 smoke。
+
+### resolved config 与代码提交
+
+formal 附件：
+
+| 文件 | SHA-256 |
+|---|---|
+| QAM source YAML | `0aca13bfd8b24c4f08dc867599c9cedc55f0be7c379f822a661ab71a626b112d` |
+| [`qam_source_resolved_20260731_formal_v1.yaml`](qam_source_resolved_20260731_formal_v1.yaml) | `45bea3edcd28d9b7d8475ce66fe7ef1cf9533dcbc795a78aa94fd210ad4310b4` |
+| [`qam_formal_resolved_20260731_v1.yaml`](qam_formal_resolved_20260731_v1.yaml) | `c26133cd7462d7c30d5779b9a6bba224209ec0781ea003fb99cc1d74e7644915` |
+| [`qam_source_to_formal_20260731_v1.diff`](qam_source_to_formal_20260731_v1.diff) | `851dd01876ce4cfbc4893981a360eba9c11fd02bfed504791da91fcf3fb0a07c` |
+| [`qam_formal_launch_20260731_v1.sh`](qam_formal_launch_20260731_v1.sh) | `c6c772ea0624a6152896a5704f02ae84f24d00cf2a21d6f0eb2a3206062c9901` |
+
+source→formal 的算法/预算变化只有：
+
+```text
+max_steps                 0 -> 500
+phase               collect -> am_on
+inv_temp                0.0 -> 1.0
+save_full_model_weights default -> false
+run/experiment/video paths -> 唯一 formal 路径
+```
+
+`warmup_global_inserts=512`、`q_only_updates_before_am=512`、UTD1、
+batch64/32、2 GPU/2 env、N20、K10、10-Q、F1/C1/M2 已在 source 中一致。
+
+用
+[`qam_formal_code_commit_push_20260731.sh`](qam_formal_code_commit_push_20260731.sh)
+固定 stage allowlist、commit 和有界网络流程。核心命令：
+
+```bash
+git add -- \
+  examples/embodiment/config/robotwin_adjust_bottle_qam_openpi.yaml \
+  rlinf/config.py \
+  rlinf/workers/actor/fsdp_qam_policy_worker.py \
+  tests/workers/test_qam_worker_helpers.py
+git diff --cached --check
+git commit -m 'feat(qam): schedule in-process AM activation'
+```
+
+结果：
+
+```text
+commit = 4a15699e10971e306ed756dcbbf8aa65632553d5
+tree   = d86082209c07866c13fef7e9051355cf54e6511c
+```
+
+Git 网络事件：默认直连的 GitHub homepage 返回 HTTP 200，但在 10 秒总时限处超时；
+紧接的 direct `git ls-remote` 也在 15 秒内超时。这证明当时 smart-HTTP 链路不稳定，
+不是 branch/commit 错误，也没有循环盲试。按既有授权只在一个子 shell 内执行：
+
+```bash
+source /etc/network_turbo
+GIT_TERMINAL_PROMPT=0 timeout 60 \
+  git push personal HEAD:codex/qam-pi0-robotwin
+git rev-list --left-right --count '@{upstream}...HEAD'
+git ls-remote --heads personal codex/qam-pi0-robotwin
+```
+
+push 成功；本地/上游 `0/0`，remote branch 精确指向 `4a15699e...`。子 shell 退出后未保留
+proxy、未改 remote 或 Git config。
+
+## QAM-FORMAL-0004：正式启动与一次性健康门
+
+时间：2026-07-31 17:32–17:35 CST。启动前 launcher 自行 fail-closed 检查：
+
+```text
+branch/HEAD/tree = codex/qam-pi0-robotwin /
+                   4a15699e10971e306ed756dcbbf8aa65632553d5 /
+                   d86082209c07866c13fef7e9051355cf54e6511c
+worktree         = clean
+existing Ray/train = none
+GPU0/GPU1        = idle
+disk available   = 1,001,735,888,896 B，约 933 GiB
+run/runtime root = both absent
+all pinned hashes = pass
+```
+
+正式 detached 启动命令：
+
+```bash
+nohup bash /root/autodl-tmp/qam_formal_launch_20260731_v1.sh \
+  >/root/autodl-tmp/qam_formal_supervisor_20260731_v1.log 2>&1 &
+echo $! >/root/autodl-tmp/qam_formal_supervisor_20260731_v1.pid
+```
+
+launcher 内部的精确训练命令已原样写入
+`/root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime/exact_command.txt`；
+其等价入口是：
+
+```bash
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+export PYTHONPATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin:/root/autodl-tmp/RoboTwin_RLinf
+export EMBODIED_PATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin/examples/embodiment
+export REPO_PATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin
+export CUDA_VISIBLE_DEVICES=0,1
+export OMP_NUM_THREADS=1
+export PYTHONUNBUFFERED=1
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
+
+timeout --signal=TERM --kill-after=180s 55677s \
+  /root/autodl-tmp/RLinf/.venv/bin/python -B \
+  examples/embodiment/train_embodied_agent.py \
+  --config-path /root/autodl-tmp/RLinf_qam_pi0_robotwin/examples/embodiment/config \
+  --config-name robotwin_adjust_bottle_qam_openpi \
+  runner.logger.log_path=/root/autodl-tmp/experiments/qam_formal_20260731_v1 \
+  runner.logger.experiment_name=robotwin_adjust_bottle_qam_formal_20260731_v1 \
+  runner.max_steps=500 \
+  runner.save_interval=25 \
+  runner.resume_dir=null \
+  runner.ckpt_path=null \
+  algorithm.qam.phase=am_on \
+  algorithm.qam.inv_temp=1.0 \
+  algorithm.qam.warmup_global_inserts=512 \
+  algorithm.qam.q_only_updates_before_am=512 \
+  algorithm.qam.min_replay_per_rank=32 \
+  algorithm.qam.max_updates_per_step=32 \
+  actor.global_batch_size=64 \
+  actor.micro_batch_size=32 \
+  +actor.fsdp_config.save_full_model_weights=false
+```
+
+启动身份：
+
+```text
+supervisor PID = 103802
+timeout PID    = 103857
+inner Python   = 103859
+run root       = /root/autodl-tmp/experiments/qam_formal_20260731_v1
+runtime        = /root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime
+hard deadline  = 2026-08-01 09:00 CST
+```
+
+17:35:53 CST 只做一次健康探针，命令类别为：
+
+```bash
+ps -o pid,ppid,stat,etime,rss,cmd -p <supervisor/driver>
+pgrep -af 'train_embodied_agent.py|raylet|gcs_server|QAMPolicyWorker|EnvWorker|RolloutWorker'
+tail -n 180 <runtime>/driver.log
+grep -E 'global_step|rollout|trajectory|success|critic|qam/|checkpoint|saved' \
+  <runtime>/driver.log | tail -n 80
+grep -E 'Traceback|CUDA out of memory|OutOfMemory|NCCL|NaN|Inf|SIGTERM|Killed' \
+  <runtime>/driver.log | tail -n 60
+nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu,temperature.gpu \
+  --format=csv,noheader,nounits
+cat /sys/fs/cgroup/memory.current
+cat /sys/fs/cgroup/memory.events
+df -h /root/autodl-tmp
+```
+
+健康结果：
+
+```text
+supervisor/driver/Ray        = alive
+actor/rollout/env ranks      = 2/2/2 alive
+真实完成 rollout cycles      >= 3
+global total inserts         = 60
+local replay size/rank       = 30
+effective phase              = collect/warm-up
+critic/fine/AM updates       = 0 / 0 / 0
+fine policy version          = 0
+GPU memory                   = 23,259 / 23,781 MiB
+GPU util（瞬时）             = 0% / 99%
+cgroup current               = 198,789,279,744 B
+cgroup OOM / OOM-kill        = 0 / 0
+disk available               = 933 GiB
+```
+
+日志中的 Curobo/pytorch3d import traceback 是 RoboTwin 可选 planner 探测；与 fresh smoke
+相同，实际 TOPP 路径随后连续完成 rollout，因此不归类为本次 fatal。Hydra future warning
+和 SAPIEN Vulkan ICD warning 同样没有阻止环境交互。当前只有 60/512 warm-up transition，
+所以 `critic_updates=0`、`fine_updates=0` 正是批准配置的预期，不是空转或训练故障；
+尚无 Q 学习、AM、生效涨点或 checkpoint 结论。
+
+按用户要求，确认健康启动后不持续在线盯盘，也不发送停止信号。下一次只有在用户要求时
+才重新连接，届时必须 live 刷新进程、最新完整 cycle、global inserts、critic/fine update、
+effective phase、success、checkpoint、GPU/cgroup 和 fatal 扫描。
+
+## QAM-GIT-0006：formal 启动材料同步
+
+只同步 HANDOFF、QAM SSOT/账本和 7 个 formal 脚本/resolved/diff 附件；不触碰运行代码、
+shared venv、DSRL/RLT worktree 或活进程。第一次把含 shell `for`/`$file` 的多行命令
+作为 PowerShell 普通参数传给 helper，`argparse` 在本机报
+`unrecognized arguments: $f; fi; done`；没有建立 SSH 连接、没有服务器改动。改用
+`remote_exec_autodl.py run --command-file` 后只读预检成功：
+
+```text
+HEAD/upstream = 4a15699e10971e306ed756dcbbf8aa65632553d5 / same
+server tree   = clean
+formal PIDs   = 103802 / 103857 / 103859 alive
+```
+
+本机将精确 allowlist 打成 323,584 B tar，SHA-256 为
+`e2531aa63ae12a01b6dc334c9d196b04b7c2d434d2eafa2dc826a9a8eee55ca1`，用一次 SFTP
+上传到 `/root/autodl-tmp/qam_formal_docs_sync_20260731_v1.tar`。远端先验证 archive
+及内部 10 个文件逐文件 SHA，再从独立 staging `qam_formal_docs_sync_20260731_v1/`
+用 `install -D -m 0644` 覆盖精确目标。结果：
+
+```text
+archive SHA + 10 file SHA = pass
+Markdown/script/YAML diff --check = pass
+password/private-key scan         = empty
+Git status                        = 3 modified docs + 7 new evidence files
+unexpected code/config changes    = none
+```
+
+提交前只 stage 这 10 个路径并复核 cached allowlist；push 仍沿用“直连短探针，明确超时才
+在单个 child shell 临时 `source /etc/network_turbo`”的既有有界流程。

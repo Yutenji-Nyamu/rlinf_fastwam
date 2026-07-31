@@ -9,7 +9,7 @@
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | formal250及250→480续训均自然完成、exit0；final eval 17/20，续训eval合计178/200，final checkpoint完整 |
-| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | fresh q-only smoke 已 exit0；exact-resume 加固与 39 项服务器回归已完成，后续 smoke/正式训练未批准 |
+| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 连续阶段 formal 已启动；17:35 启动门为 3 cycles/60 macro，仍在纯 collect warm-up |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
 
@@ -394,16 +394,26 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   `QAM-CLEANUP-0001`、`evidence/qam_delete_old_smoke_checkpoints_20260731.sh` 和
   `evidence/qam_old_smoke_checkpoint_cleanup_20260731.txt`。旧 WAM/PPO backup
   110.94 GiB 未动。
-- 18 小时正式候选暂按 collect 512 macro、q_only 512–1,024 critic update、约 1 h
-  诊断/阶段保存、通过 Q 动作梯度门后把余下约 10 h 给 am_on；这是 online-only
-  稳定化适配，不是官方阶段比例。正式 v1 可在 fresh `q_only` 进程内完成前 512 条
-  collect warm-up，不需要 collect→q_only resume；当前 batch1 smoke 不能给 batch32
-  正式吞吐。
-- 当前授权停点：exact-resume 代码与服务器前置测试已完成；fresh→resume、
-  production-batch q-only 诊断、`am_on` smoke 和正式训练均需分别展示完整配置/命令/
-  预算并取得新批准。锁定的 sparse route 已证明 `truncated && !terminated` 是
-  time limit，且 `auto_reset=false` 保存 true query-final observation；当前只需验证
-  QAM-only 分类补丁，不再把 timeout 类型当开放设计分支。
+- 自动阶段切换实现与 30 项定向服务器回归已通过并推送；正式代码 commit 为
+  `4a15699e10971e306ed756dcbbf8aa65632553d5`。schedule 固定为：先 512 条 global
+  macro 纯 collect，再 512 次 critic-only update，第 513 次 logical update 起 joint
+  critic+AM；UTD=1、global/local batch=64/32、`inv_temp=1.0`。outcome/Q-gradient
+  诊断只记录，不阻塞切换；NaN/Inf、OOM、NCCL/Ray fatal 仍停止。
+- 用户已授权正式训练；2026-07-31 17:32 CST detached 启动，run root
+  `/root/autodl-tmp/experiments/qam_formal_20260731_v1`，runtime evidence
+  `/root/autodl-tmp/experiment_exports/qam_formal_20260731_v1/runtime`，supervisor
+  PID `103802`，timeout driver PID `103857`，hard deadline 为
+  2026-08-01 09:00 CST，runner `max_steps=500` 只是安全上限。
+- 17:35 CST 一次性健康门：supervisor/driver/Ray 与两 rank actor/rollout/env 均存活；
+  至少完成 3 个真实 rollout cycle，累计 60 global macro、每 rank replay 30，仍在
+  warm-up，所以 critic/fine update 与 policy version 都为 0；GPU 使用
+  23,259/23,781 MiB，其中 GPU1 采样点利用率 99%；cgroup current 约 198.8 GB，
+  OOM/OOM-kill 0/0，磁盘仍有 933 GiB。可选 Curobo/pytorch3d import traceback 与
+  smoke 相同，TOPP 已继续完成 rollout，不是 fatal。
+- 当前停点：按用户要求不持续监控，也不启动第二个进程。下次请求时先 live 刷新
+  driver/Ray、cycle/global inserts、critic/fine update、实际 phase、success、
+  checkpoint、GPU/cgroup 与 fatal。独立 fresh→resume live smoke 仍未做，不能把静态
+  resume 回归等同于已验证的中断恢复。
 
 ## 共同执行边界
 
