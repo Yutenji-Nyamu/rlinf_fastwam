@@ -5039,3 +5039,57 @@ disk available    = 967,284,490,240 B
 cgroup anon 约 27.8 GiB，OOM/OOM-kill 为 0/0，fatal 扫描为空。Curobo/pytorch3d 是既有
 可选 planner 探测，实际 mplib/TOPP rollout 已完成。按用户要求，此后不持续监控；下一次
 只有收到请求才重新连接并刷新当前状态。
+
+## QAM-FORMAL-0005：非阻断诊断与无超时 step25→100 续训（2026-08-01 00:57–01:10 CST）
+
+用户澄清 09:00 是按步数估算的完成时间，不是 hard cutoff；并把此前无官方依据的
+relative-L2/cosine 经验阈值阻断正式训练定性为严重事故。长期规则：结构/字段/shape
+错误和 NaN/Inf 可 fail-fast；经验数值诊断默认只记录/告警，不得擅自成为 formal gate。
+
+Paramiko 只读审查确认 v2 `global_step_25` 完整：DCP 两 shard 各约4.99GB、两 rank
+sidecar/replay 均存在，manifest 为 `complete=true`、schema2、world_size2、snapshot ID
+一致且无 tmp。随后按 `driver.pid` 精确核对命令和 PGID，执行：
+
+```bash
+kill -TERM -- -183159
+```
+
+首版停止脚本因错误假设命令字符串顺序而自行拒绝，未发信号、训练未受影响；拆成两个独立
+标识匹配后成功。v2 driver exit134、monitor exit0；这是预算语义纠正，不是训练异常。
+
+代码只改 `rlinf/workers/actor/fsdp_qam_policy_worker.py`：shape 与非有限诊断仍抛错；
+`max_relative_l2>0.1` 或 `min_cosine<0.995` 仅每 rank 首次 warning，原 metrics 持续记录，
+不中断、不跳过 AM、不改变 loss。服务器测试：
+
+```bash
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+PYTHONPATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin \
+  /root/autodl-tmp/RLinf/.venv/bin/python -m pytest -q \
+  tests/embodiment/test_robotwin_qam_contract.py \
+  tests/workers/test_qam_worker_helpers.py \
+  tests/embodiment/test_qam_openpi_adapter.py
+# 31 passed, 3 warnings in 8.23s
+```
+
+提交 `9e2abc04e8c178575d9b800154d69b9123e73ecb` 已经临时
+`/etc/network_turbo` 子 shell fast-forward 推送并复核 remote HEAD；没有持久化 proxy。
+
+新增精确 launcher：`evidence/qam_formal_resume25_to100_launch_20260801_v3.sh`。核心覆盖：
+
+```text
+resume_dir = v2/.../checkpoints/global_step_25
+runner.max_steps = 100（绝对终点）
+runner.save_interval = 25
+warmup_global_inserts / q_only_updates_before_am = 512 / 512
+UTD = 1；global/local batch = 64/32；inv_temp = 1.0
+无 timeout / wall-clock kill
+```
+
+cycle100 的依据：collect 25 cycles 实测约14分钟；collect+q_only 约30–45分钟；一次真实
+joint update 约25–30秒，AM 时每 cycle 通常约20 updates。因此 step25→100 估计约
+7.5–9小时，接近09:00但允许吞吐误差；各阶段计数未改。
+
+01:06:02 supervisor PID209536 启动。01:09:48 首个恢复 cycle 完成：step26/100、
+replay256/rank、global total inserts512、q-only anchor512、critic/fine/policy version均0；
+GPU30,497/30,437MiB、util48%/42%，OOM/OOM-kill0/0，进程无 exit。该证据确认 replay/
+counters live resume 连续；环境进程重新初始化，不声称轨迹 bitwise 连续。按用户要求不再盯。

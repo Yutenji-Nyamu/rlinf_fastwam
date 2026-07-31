@@ -1,6 +1,6 @@
 # QAM × π0 × RoboTwin：索引与实施主计划
 
-最后更新：2026-07-31。
+最后更新：2026-08-01。
 
 本文是 **QAM × π0 × RoboTwin** 专题唯一当前事实源（SSOT）。它只保留已经锁定的
 方法事实、项目合同、实施主线、未决选择、验收门和授权边界；长命令、逐次输出和失败修复
@@ -15,23 +15,15 @@
 
 ## 0. 当前状态与一屏结论
 
-状态：**用户已确认 `Plain + action-space + B1 frozen behavior + F1 full fine expert`
-以及 `fixed-N M2 + N20 + online replay only`，并把 C1 critic 表示与两卡 ownership
-的具体工程取舍交由实施侧按事实门落定。SFT π0 提供 frozen
-behavior prior；RoboTwin 在线执行提供 critic transition；先 `collect`，再 `q_only`，
-再按固定计数自动进入 `am_on`；Q/TD/动作梯度诊断只记录。clean-50 默认不进 v1 Q loss。
-C1 与 M2 均须通过实施
-事实门。M2 已按服务器现场修正为
-“每次 query 一条固定 N macro
-transition”，不依赖并不存在的 planned-action `realized L`。用户已于 2026-07-31
-授权开始实现并自行运行正式 smoke 前测试。当前代码已在独立
-`codex/qam-pi0-robotwin` worktree 落地；官方 JAX→PyTorch oracle、36 项集中测试、
-真实 π0 单卡 probe，以及两卡 `FULL_SHARD` 的完整 K=10 VJP/AM、10-Q/EMA 和
-每 rank batch=32 资源 probe 均通过；fresh `q_only` smoke 已 exit 0。尚未批准的是
-fresh→resume 的独立 live 连续性 smoke；用户已批准连续阶段正式训练，正式进程于
-2026-07-31 17:32 CST 启动。17:35 的启动健康门已看到至少 3 个真实 rollout cycle、
-60 条 global macro transition，仍处于 512 条纯收集 warm-up，critic/fine update 均为
-0；当前不据此声称学习效果。**
+状态：**方法锁定为 `Plain + action-space + B1 frozen behavior + F1 full fine expert +
+C1 + fixed-N20 M2 + online replay only`。SFT π0 提供 frozen behavior prior，RoboTwin
+在线执行提供 critic transition；固定 schedule 为 512 条 global macro collect、512 次
+critic-only update，第 513 次 logical update 起 joint critic+AM。Q/TD/动作梯度及
+prefix relative-L2/cosine 都只记录，不作为阶段硬门；clean-50 不进 v1 Q loss。
+正式续训 v3 已于 2026-08-01 01:06:02 CST 从完整 step 25 启动，无 wall-clock kill，
+绝对终点 cycle100。01:09:48 已完成 live resume 首个 cycle：step26、replay256/rank、
+global total inserts512、q-only anchor512，critic/fine/policy version 均为0，OOM/OOM-kill0。
+当前不据此声称学习效果；按用户要求不持续监控。**
 
 QAM 专题只保留四个核心 Markdown/SSOT 入口：
 
@@ -840,8 +832,9 @@ pre-update-parameter EMA 在声明容差内；梯度仅落在预期参数。
 ### P3：critic、transition replay 与 QAM trainer
 
 状态：**代码、synthetic/两卡核心验证、fresh runner/checkpoint lifecycle、
-exact-resume 加固/39 项服务器回归，以及连续阶段计数/30 项定向回归均已完成。
-fresh→resume lifecycle 仍未 live 验证，但用户已明确批准本次 fresh formal**。
+exact-resume 加固/39 项服务器回归、连续阶段计数/30 项定向回归，以及 formal
+step25→26 的首次 live resume 均已完成。该 live 证据确认 replay/counter 连续，不声称
+环境轨迹或浮点结果 bitwise 连续。**
 
 - 已实现 C1 的 10-Q/target pessimistic backup；
 - 已按推荐 M2 实现 macro reward/end/bootstrap；未物化 M1；
@@ -958,8 +951,8 @@ replay 为 4,096/rank（约 11.3 GB raw observation/rank）；两卡 K=10、batc
 1. fresh `q_only` smoke 已验证真实 RoboTwin payload、两次 critic update、
    target EMA、DCP 与 rank sidecar/replay；
 2. rank-local process RNG、统一 snapshot ID、跨 rank QAM completion manifest、
-   schedule contract 与服务器集中测试已完成；独立 fresh→resume live smoke 仍未做，
-   因而当前 formal 的恢复能力只由静态/单测合同支持，不作 live exact-resume 声明；
+   schedule contract 与服务器集中测试已完成；formal step25→26 已 live 恢复 replay、
+   counters 与 q-only anchor，但环境进程重新初始化，不作 bitwise trajectory continuation 声明；
 3. 用户已批准取消 outcome/action-sensitivity 硬门：512 warm-up 后执行 512 次
    critic-only update，第 513 次开始 joint critic+AM；这些诊断只记录；
 4. timeout 已由 sparse env source 与 `auto_reset=false` payload 证明；QAM-only
@@ -980,23 +973,22 @@ DSRL/RLT worktree 与所有 formal checkpoint/run artifacts 未改。按用户�
   -> 第 513 个 logical update 起 joint critic + AM
 ```
 
-首轮 formal 在第一次 AM 前暴露了 observation 适配 bug：rollout 使用 RoboTwin 当次随机
-语言指令，replay 却用固定 prompt 重建；此外逐元素 `allclose` 不适合跨 rollout-single/
-actor-batch32 的 BF16/FSDP prefix。修复只发生在 QAM payload/parity 层：实际 prompt
-无损随 tensor payload 传递；parity 改为逐 sample/block relative-L2+cosine 并记录指标。
-Plain-QAM 的 critic、endpoint gradient、behavior VJP、AM、schedule 和正式超参均未改。
-两个修复提交 `e49bba1d...`、`d5f6d7d1...` 已推送；服务器回归 `31 passed`，最小
-4-cycle 路径只执行 1 次 AM，fine version `0→1` 且自然 exit0。旧 step50 缺实际 prompt，
-不作有损 resume。
+首轮 formal 在第一次 AM 前暴露 observation 适配 bug：rollout 的实际随机 prompt 未进入
+replay；修复 `e49bba1d...` 已无损传递它。随后逐元素 parity 硬门又把 BF16/FSDP 正常
+批处理差异当 fatal；`d5f6d7d1...` 改为 relative-L2/cosine 指标并通过一次真实 AM。
+继续把这组无官方依据的经验阈值设为 formal 硬中断仍然不当，属于严重工程事故。
+`9e2abc04...` 已将越界行为改为一次 warning + 持续 metrics，不停止、不跳过 AM；只有
+结构合同错误和 NaN/Inf 等确定性无效状态 fail-fast。31 项服务器回归通过并已推云端。
+Plain-QAM 的 critic、endpoint gradient、behavior VJP、AM、schedule 和正式超参未改。
 
-fresh formal v2 已于 2026-08-01 00:43:47 CST 启动，代码快照为
-`d5f6d7d1da0fc355a71ca653be027282cad040d2`，run root 为
-`/root/autodl-tmp/experiments/qam_formal_20260801_v2`，runtime evidence 为
-`/root/autodl-tmp/experiment_exports/qam_formal_20260801_v2/runtime`，hard deadline
-仍为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。00:46:39 一次性启动门：
-supervisor/driver/Ray/两 rank actor-rollout-env 全存活，首个真实 rollout 18.72 s 完成；
-GPU 24,628/24,165 MiB、util 55%/74%，cgroup anon 约27.8GiB，OOM/OOM-kill 0/0，
-fatal 扫描为空。
+用户澄清 09:00 只是估算目标。v2 写完结构完整 step25 后被定向停止；v3 于
+2026-08-01 01:06:02 CST 从该 checkpoint 无超时恢复，HEAD `9e2abc04...`，绝对终点
+cycle100，阶段门槛保持 512/512。运行根为
+`/root/autodl-tmp/experiments/qam_formal_resume25_to100_20260801_v3`，runtime evidence 为
+`/root/autodl-tmp/experiment_exports/qam_formal_resume25_to100_20260801_v3/runtime`。
+01:09:48 的 step26 已确认 replay256/rank、global inserts512、q-only anchor512、计数未归零，
+GPU 30,497/30,437 MiB，OOM/OOM-kill0/0。cycle100 根据已测 collect/q-only 与 AM 吞吐
+估算约在 09:00 前后自然结束，不是 deadline。
 
 按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、
 global inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，

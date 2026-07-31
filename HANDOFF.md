@@ -9,7 +9,7 @@
 |---|---|---|---|
 | π0 × RoboTwin × DSRL | `docs/rlinf-robotwin-pi0-traditional-rl/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-traditional-rl/evidence/FORMAL_TRAINING_LOG_20260728.md` | 正式训练已在 step 198 收尾；可恢复 DCP 为 step 195 |
 | RLToken / RLT × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-rltoken/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md` | formal250及250→480续训均自然完成、exit0；final eval 17/20，续训eval合计178/200，final checkpoint完整 |
-| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | 连续阶段 formal 已启动；17:35 启动门为 3 cycles/60 macro，仍在纯 collect warm-up |
+| QAM × π0 × RoboTwin | `docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md` | `docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md` | formal 从完整 step 25 无超时续训；step 26 已恢复 replay 并进入 q_only，终点约 cycle 100 |
 | Fast-WAM × RoboTwin × RLinf | `docs/fastwam-robotwin-rlinf-grpo/00_INDEX.md` | 由该索引路由 | 非本窗口默认上下文 |
 | 根历史 | `docs/project-history/00_INDEX.md` | — | 只作追溯 |
 
@@ -403,20 +403,27 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   π0/RoboTwin 适配层用固定 prompt 重建 replay observation，和 rollout 的实际随机语言
   指令不一致，随后又被过严的逐元素 prefix parity 门拦截。旧 `global_step_50` 虽结构完整，
   但缺少实际 prompt，未作有损 resume。
-- 两个最小修复已测试并推送：`e49bba1d...` 无损传递实际 prompt，`d5f6d7d1...` 把
-  BF16/FSDP 跨 batch 的逐元素门改为逐 sample/block relative-L2+cosine，并记录指标；
-  Plain-QAM 的 10-Q、endpoint gradient、VJP、AM 和正式超参未改。服务器集中回归两次均
-  `31 passed`；4-cycle 最小真实路径恰好完成 1 次 AM，fine version `0→1`，自然 exit0。
-- 用户已授权 fresh formal v2。2026-08-01 00:43:47 CST detached 启动，代码 HEAD
-  `d5f6d7d1da0fc355a71ca653be027282cad040d2`；run root
-  `/root/autodl-tmp/experiments/qam_formal_20260801_v2`，runtime evidence
-  `/root/autodl-tmp/experiment_exports/qam_formal_20260801_v2/runtime`，supervisor PID
-  `183126`，hard deadline 仍为 2026-08-01 09:00 CST，`max_steps=500` 只是安全上限。
-- 00:46:39 一次性健康门：supervisor/driver/Ray 与两 rank actor/rollout/env 均存活，
-  首个真实 rollout 18.72 s 完成；GPU 24,628/24,165 MiB、util 55%/74%，cgroup anon
-  约27.8GiB，OOM/OOM-kill 0/0，fatal 扫描为空。按用户要求不持续监控。下次请求时先
-  live 刷新 driver/Ray、cycle/global inserts、critic/fine update、actual phase、success、
-  checkpoint、GPU/cgroup 和 fatal，再把状态称为当前。
+- prompt 合同修复 `e49bba1d...` 和 BF16/FSDP semantic-parity 指标提交
+  `d5f6d7d1...` 已通过服务器集中回归；4-cycle 最小真实路径完成 1 次 AM，fine version
+  `0→1`，自然 exit0。随后确认把 relative-L2/cosine 经验阈值作为 formal 硬中断没有
+  官方/论文依据，并已实际造成首轮训练停机，属于严重工程事故。提交 `9e2abc04...` 已把
+  该阈值收束为一次 warning + 持续 metrics；越界不停止、不跳过 AM、不改变 loss。只有
+  缺字段/shape/合同错和 NaN/Inf 等确定性无效状态仍 fail-fast；31 项服务器回归通过，
+  commit 已推送云端。该长期规则同步写入 `PROJECT_CONTEXT.md`。
+- 用户澄清 2026-08-01 09:00 只是按步数估算的完成时间，不是 hard deadline。fresh v2
+  已先写完结构完整的 `global_step_25`，随后于 00:58:56 CST 定向 TERM 原 timeout 进程组；
+  driver exit134、monitor exit0，属于预算语义纠正，不是训练异常。阶段合同保持 512 global
+  macro collect → 512 critic-only updates → 第 513 次 logical update 起 joint critic+AM。
+- 无超时续训 v3 于 01:06:02 CST 启动：HEAD `9e2abc04...`，从 v2 `global_step_25`
+  恢复，绝对终点 `runner.max_steps=100`、save interval25；run root 为
+  `/root/autodl-tmp/experiments/qam_formal_resume25_to100_20260801_v3`，runtime evidence 为
+  `/root/autodl-tmp/experiment_exports/qam_formal_resume25_to100_20260801_v3/runtime`，
+  supervisor PID `209536`。cycle100 依据 collect/q_only 实测约 30–45 分钟及 AM update
+  实测约 25–30 秒估算在 09:00 前后自然结束，没有 wall-clock kill。
+- 01:09:48 一次性恢复门：global step `26/100`，replay `256/rank`、global total inserts
+  `512`、q-only anchor `512`，critic/fine/policy version 均为0，说明 replay/counter 未归零且
+  已按原 schedule 进入 q_only；GPU 30,497/30,437 MiB、util48%/42%，OOM/OOM-kill0/0，
+  进程无 exit。按用户要求此后不持续监控；下次请求时再 live 刷新。
 
 ## 共同执行边界
 
