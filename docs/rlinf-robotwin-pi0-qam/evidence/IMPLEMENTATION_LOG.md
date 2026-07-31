@@ -3943,3 +3943,29 @@ parent proxy before/after: 0/0
 
 没有改 remote、Git HTTP 配置、shell 配置或历史，也没有启动 smoke。随后只再提交这段
 自描述流水和对应 HANDOFF 更新；该最后 docs-only commit 本身由 Git 历史记录。
+
+## QAM-PRE-0010：讨论前最终未启动快照
+
+时间：2026-07-31 14:26:45 CST。执行：
+
+```bash
+repo=/root/autodl-tmp/RLinf_qam_pi0_robotwin
+git -C "$repo" branch --show-current
+git -C "$repo" rev-parse HEAD
+git -C "$repo" status --short
+git -C "$repo" rev-list --left-right --count '@{upstream}...HEAD'
+pgrep -af 'train_embodied_agent.py|ray::|raylet|gcs_server' || true
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu \
+  --format=csv,noheader,nounits
+for path in \
+  /root/autodl-tmp/experiments/qam_qonly_smoke_20260731_v1 \
+  /root/autodl-tmp/experiment_exports/qam_qonly_smoke_20260731_v1; do
+  test -e "$path" && echo "PRESENT $path" || echo "ABSENT $path"
+done
+df -h /root/autodl-tmp
+```
+
+结果：branch `codex/qam-pi0-robotwin`、HEAD `3fc1acdede14...`、clean、
+ahead/behind `0/0`；`pgrep` 只匹配到包含搜索字符串的本次只读 shell 自身，没有真实
+training/Ray 进程；GPU0/1 均 0 MiB、0%；两个 smoke 目标目录均不存在；磁盘
+1.9 TiB / 1.1 TiB / 807 GiB / 57%。正式 smoke 仍未启动。
