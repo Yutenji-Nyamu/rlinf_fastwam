@@ -423,7 +423,20 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
 - 01:09:48 一次性恢复门：global step `26/100`，replay `256/rank`、global total inserts
   `512`、q-only anchor `512`，critic/fine/policy version 均为0，说明 replay/counter 未归零且
   已按原 schedule 进入 q_only；GPU 30,497/30,437 MiB、util48%/42%，OOM/OOM-kill0/0，
-  进程无 exit。按用户要求此后不持续监控；下次请求时再 live 刷新。
+  进程无 exit。v3 随后于 03:39 CST 自然完成 `100/100`、exit0；最终 global inserts
+  `1974`、critic updates `1462`、fine/policy version `950/950`、pending credit0，严格满足
+  `1974-512=1462`、`1462-512=950`。`global_step_100` 为 complete/schema2/world2，约
+  12.25 GiB；两卡显存峰 43,083/43,251 MiB，OOM/OOM-kill0/0。
+- 用户于 10:47 左右授权继续约12小时且只改训练终点。按 v3 成熟 AM 段实测
+  `2.53–2.68 min/cycle`，选择从 cycle100 恢复到绝对终点 `380`（新增280 cycles，估计
+  11.8–12.5小时）；`300` 只会新增200 cycles，约8.5小时。v4 于 10:50:38 CST 启动，
+  HEAD `24cbc8d...`，无 wall-clock kill；run root 为
+  `/root/autodl-tmp/experiments/qam_formal_resume100_to380_20260801_v4`，runtime 为
+  `/root/autodl-tmp/experiment_exports/qam_formal_resume100_to380_20260801_v4/runtime`。
+  10:56:56 的一次性健康门已完成 `101/380`：global inserts `1994`、critic `1482`、
+  fine/policy version `970/970`、phase2、pending0，均从 step100 连续；GPU
+  36,089/36,265 MiB、util76%/76%，OOM/OOM-kill0/0，无 exit/fatal。按用户要求不再监控；
+  下次请求时再 live 刷新。
 
 ## 共同执行边界
 

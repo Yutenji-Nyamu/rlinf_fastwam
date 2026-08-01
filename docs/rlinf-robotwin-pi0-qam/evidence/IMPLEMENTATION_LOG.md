@@ -5093,3 +5093,73 @@ joint update 约25–30秒，AM 时每 cycle 通常约20 updates。因此 step25
 replay256/rank、global total inserts512、q-only anchor512、critic/fine/policy version均0；
 GPU30,497/30,437MiB、util48%/42%，OOM/OOM-kill0/0，进程无 exit。该证据确认 replay/
 counters live resume 连续；环境进程重新初始化，不声称轨迹 bitwise 连续。按用户要求不再盯。
+
+## QAM-FORMAL-0006：step100→380 约12小时续训（2026-08-01 10:33–10:57 CST）
+
+### 1. v3 完成事实与预算依据
+
+10:33 现场只读审查确认 v3 已于03:39自然完成 `100/100`，driver/monitor exit0。最终计数为
+global inserts `1974`、critic updates `1462`、fine updates/policy version `950/950`、
+pending0，满足 `1974-512=1462` 与 `1462-512=950`。step100 checkpoint
+complete/schema2/world2，大小13,154,614,481 B（12.25 GiB）；GPU峰43,083/43,251 MiB，
+OOM/OOM-kill0/0。
+
+成熟 AM 段 step50→75 用时63.3分钟、step75→100用时67.0分钟，即
+`2.53–2.68 min/cycle`。约12小时对应新增269–285 cycles，取中间且对齐 checkpoint 间隔的
+280 cycles，因此绝对终点为380；`max_steps=300` 只会从100新增200 cycles，约8.5小时。
+这只是基于实测吞吐的步数估计，不是 wall-clock deadline。
+
+### 2. 只读前检
+
+通过进程内密码 Paramiko 和固定 host-key，于10:49:24执行：
+
+```bash
+hostname
+pwd
+id -u
+git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin rev-parse HEAD
+test -z "$(git -C /root/autodl-tmp/RLinf_qam_pi0_robotwin status --short)"
+pgrep -af '[t]rain_embodied_agent.py|[r]aylet|[g]cs_server' || true
+tr -d '\n' < .../global_step_100/actor/qam_components/complete.json
+test -f .../global_step_100/actor/dcp_checkpoint/.metadata
+test -z "$(find .../global_step_100 -name '.tmp-*' -o -name '*.tmp')"
+nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu \
+  --format=csv,noheader,nounits
+df -B1 --output=avail /root/autodl-tmp
+awk '/oom |oom_kill / {print}' /sys/fs/cgroup/memory.events
+```
+
+结果：hostname `autodl-container-nekaqbwt43-6ce5babb`、pwd `/root`、uid0；QAM worktree
+HEAD `24cbc8d20d19161c46da9940b5731127530e911d` 且 clean；无训练/Ray；step100 manifest
+complete/schema2/world2；两卡0 MiB/0%；磁盘 available918,612,430,848 B；OOM/OOM-kill0/0。
+
+### 3. 新增文件与精确启动
+
+新增 `evidence/qam_formal_resume100_to380_launch_20260801_v4.sh`。相对 v3 只改变恢复起点、
+独立输出名和绝对终点 `runner.max_steps=380`；阶段门槛512/512、UTD1、N20、2 GPU/2 env、
+global/local batch64/32、`inv_temp=1.0`、save interval25、update cap32、无 full weights 与无
+wall-clock kill 均保持不变。脚本保存完整 resolved command、budget 和 provenance。
+
+启动命令：
+
+```bash
+bash -n /root/autodl-tmp/qam_formal_resume100_to380_launch_20260801_v4.sh
+nohup bash /root/autodl-tmp/qam_formal_resume100_to380_launch_20260801_v4.sh \
+  >/root/autodl-tmp/qam_formal_resume100_to380_supervisor_20260801_v4.log \
+  2>&1 </dev/null &
+```
+
+10:50:38启动：supervisor PID380815、driver PID380841。运行根为
+`/root/autodl-tmp/experiments/qam_formal_resume100_to380_20260801_v4`；runtime 为
+`/root/autodl-tmp/experiment_exports/qam_formal_resume100_to380_20260801_v4/runtime`。
+
+### 4. 一次性启动健康门与问题记录
+
+10:53:08 log 确认从完整 step100 resume。10:56:56首个新 cycle 完成：`101/380`、global
+inserts `1994`、critic `1482`、fine/policy version `970/970`、phase2、pending0；相对 step100
+分别精确增加20/20/20，未重置或追补。GPU36,089/36,265 MiB、util76%/76%，
+OOM/OOM-kill0/0，无 exit/fatal。按用户要求至此停止查看。
+
+一次本机状态调用因默认 `python.exe` 不可访问而在建立 SSH 前失败；未向服务器发送命令。
+随后改用 Codex bundled Python 与既有 Paramiko 依赖目录，沿用同一固定 host-key helper，
+只读探针成功。没有修改服务器训练、配置或依赖。

@@ -981,15 +981,18 @@ replay；修复 `e49bba1d...` 已无损传递它。随后逐元素 parity 硬门
 结构合同错误和 NaN/Inf 等确定性无效状态 fail-fast。31 项服务器回归通过并已推云端。
 Plain-QAM 的 critic、endpoint gradient、behavior VJP、AM、schedule 和正式超参未改。
 
-用户澄清 09:00 只是估算目标。v2 写完结构完整 step25 后被定向停止；v3 于
-2026-08-01 01:06:02 CST 从该 checkpoint 无超时恢复，HEAD `9e2abc04...`，绝对终点
-cycle100，阶段门槛保持 512/512。运行根为
-`/root/autodl-tmp/experiments/qam_formal_resume25_to100_20260801_v3`，runtime evidence 为
-`/root/autodl-tmp/experiment_exports/qam_formal_resume25_to100_20260801_v3/runtime`。
-01:09:48 的 step26 已确认 replay256/rank、global inserts512、q-only anchor512、计数未归零，
-GPU 30,497/30,437 MiB，OOM/OOM-kill0/0。cycle100 根据已测 collect/q-only 与 AM 吞吐
-估算约在 09:00 前后自然结束，不是 deadline。
+用户澄清 09:00 只是估算目标。v2 写完结构完整 step25 后被定向停止；v3 从该 checkpoint
+无超时恢复并于 03:39 CST 自然完成 `100/100`、exit0。最终 global inserts `1974`、
+critic `1462`、fine/policy version `950/950`、pending0；step100 checkpoint
+complete/schema2/world2，约12.25 GiB，OOM/OOM-kill0/0。
 
-按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、
-global inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，
-再把快照称为当前。
+用户随后授权继续约12小时且只改变训练终点。成熟 AM 段实测 `2.53–2.68 min/cycle`，故从
+100 增加280 cycles，绝对终点设为 `380`，估计11.8–12.5小时；若设300只约8.5小时。
+v4 于 2026-08-01 10:50:38 CST 从完整 step100 无超时恢复；新增 launcher 为
+`evidence/qam_formal_resume100_to380_launch_20260801_v4.sh`。10:56:56 已完成 `101/380`，
+global inserts `1994`、critic `1482`、fine/policy `970/970`、phase2、pending0，计数严格连续；
+GPU 36,089/36,265 MiB、util76%/76%，OOM/OOM-kill0/0，无 exit/fatal。阶段、算法、batch、
+`inv_temp`、save interval 和所有其他正式配置未改。
+
+按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、global
+inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，再称为当前。
