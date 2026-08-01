@@ -5163,3 +5163,21 @@ OOM/OOM-kill0/0，无 exit/fatal。按用户要求至此停止查看。
 一次本机状态调用因默认 `python.exe` 不可访问而在建立 SSH 前失败；未向服务器发送命令。
 随后改用 Codex bundled Python 与既有 Paramiko 依赖目录，沿用同一固定 host-key helper，
 只读探针成功。没有修改服务器训练、配置或依赖。
+
+### 5. Git 发布
+
+四个精确文件以提交 `6aa4ec95d51cab3a5f890317386d941a83bd70db` 发布。命令为：
+
+```bash
+git add -- HANDOFF.md \
+  docs/rlinf-robotwin-pi0-qam/00_INDEX_AND_IMPLEMENTATION_PLAN.md \
+  docs/rlinf-robotwin-pi0-qam/evidence/IMPLEMENTATION_LOG.md \
+  docs/rlinf-robotwin-pi0-qam/evidence/qam_formal_resume100_to380_launch_20260801_v4.sh
+git diff --cached --check
+git commit -m "docs(qam): record resume to cycle 380"
+GIT_TERMINAL_PROMPT=0 timeout 60 git push personal HEAD:codex/qam-pi0-robotwin
+```
+
+默认直连在60秒有界窗口内未完成；随后只在子 shell 临时
+`source /etc/network_turbo` 并重试一次，push 成功，未持久化 proxy/Git 配置。远端
+`personal/codex/qam-pi0-robotwin` 与本地均为 `6aa4ec95...`，server tree clean。
