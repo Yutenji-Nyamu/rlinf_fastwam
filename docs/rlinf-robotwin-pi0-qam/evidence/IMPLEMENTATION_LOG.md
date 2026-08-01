@@ -5312,3 +5312,36 @@ Windows 副本：
 `exports/qam_pi0_robotwin_formal_stop247_runtime_20260801.tar.gz`
 
 下载后重新计算 hash，`match=True`。该包用于审计、复盘和重画曲线，不能独立 resume。
+
+Windows 另生成 high-info work-materials 包，包含最终报告、机器可读指标 JSON、cycle247
+曲线 PNG 与 runtime hash，不包含大 checkpoint：
+
+```text
+exports/qam_pi0_robotwin_formal_stop247_high_info_20260801_v1.zip
+SHA-256 28fa0708f6bee368928dbc365e4267a23ac25767b85dcab8e671d89082be20c2
+```
+
+ZIP 共5个文件、103,673 bytes；重新打开归档列出5个 entry，JSON 可解析，hash
+`match=True`。
+
+### 6. 文档发布
+
+服务器 worktree 操作前为 `codex/qam-pi0-robotwin@e964b44c...`、clean、upstream `0/0`。
+只同步并暂存 `HANDOFF.md`、SSOT、实施账本和本次新增收尾报告，`git diff --cached --check`
+通过；首个提交为：
+
+```text
+f587f1cfa9d90d53c185226c502913ff6eb27c0e
+docs(qam): close formal run at cycle 247
+```
+
+默认直连 `ls-remote/push` 在有界窗口内无输出并留下 ahead1，没有循环重试。随后仅在一次
+子 shell 内 `source /etc/network_turbo`，执行同一 fast-forward push 并复核：
+
+```text
+LOCAL_HEAD=f587f1cfa9d90d53c185226c502913ff6eb27c0e
+REMOTE_HEAD=f587f1cfa9d90d53c185226c502913ff6eb27c0e
+ahead/behind=0/0
+```
+
+子 shell 退出后未持久化 proxy、Git config 或 remote；没有 force push。

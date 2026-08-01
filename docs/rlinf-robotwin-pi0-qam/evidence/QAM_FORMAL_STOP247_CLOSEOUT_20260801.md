@@ -86,6 +86,12 @@ SHA-256：
 
 `6740c3e71f6b963940498cec214b7448cd483b847baa4e303d869548b44d14ab`
 
+Windows 轻量副本：
+
+- `exports/qam_pi0_robotwin_formal_stop247_runtime_20260801.tar.gz`；SHA-256 同上；
+- `exports/qam_pi0_robotwin_formal_stop247_high_info_20260801_v1.zip`；最终 SHA-256
+  记录在同名 `.sha256` sidecar，避免归档内报告自引用归档 hash。
+
 包内包含 v1–v4 runtime、完整 driver/resource/config/command/provenance、四份 launcher、
 checkpoint 文件清单和每个 QAM completion JSON。checkpoint tensor、DCP shard、rank
 sidecar/replay、视频、模型、venv 和数据集均只留服务器；该包可审计和重画曲线，不能独立
