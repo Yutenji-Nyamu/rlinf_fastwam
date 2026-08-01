@@ -437,6 +437,21 @@ DSRL / RLT / QAM 的旧调查和七份历史材料保存在
   fine/policy version `970/970`、phase2、pending0，均从 step100 连续；GPU
   36,089/36,265 MiB、util76%/76%，OOM/OOM-kill0/0，无 exit/fatal。按用户要求不再监控；
   下次请求时再 live 刷新。
+- 用户于 17:28 CST 明确要求停止；17:28:58 对精确核对的 v4 driver PID `380841` 发送
+  `SIGTERM`。最后完整 cycle 为247；driver、monitor、Ray/QAM 后代均已退出，两卡显存归零。
+  driver exit134 是该显式信号路径，不是训练自行崩溃。最终 global inserts/critic/fine 为
+  `4861/4349/3837`，fine policy version3837、pending0；online train success
+  `86/494=17.41%`，collect/q_only/am_on 为 `16.00%/11.54%/18.37%`，最近10/20/50 cycles
+  为 `35.0%/22.5%/24.0%`。末段有回升，但无同 seed baseline/held-out eval，不能声称稳定
+  涨点或确定失败。
+- 最新可恢复点为 `global_step_225`，complete/schema2/world2，约14.00 GiB；cycle226–247
+  只有日志、没有最终参数 checkpoint。约67 GiB v4 run/checkpoint 正文留服务器。轻量 v1–v4
+  runtime/config/log/resource/checkpoint-manifest 包在
+  `/root/autodl-tmp/experiment_exports/qam_pi0_robotwin_formal_stop247_20260801`；归档 SHA-256
+  `6740c3e71f6b963940498cec214b7448cd483b847baa4e303d869548b44d14ab`。完整结论见
+  `docs/rlinf-robotwin-pi0-qam/evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md`。
+- 当前没有 QAM 训练进程。恢复、额外评估、删除 checkpoint 或启动动作扰动/C1 可分性/
+  fine-vs-base 漂移诊断均需新的明确授权。
 
 ## 共同执行边界
 

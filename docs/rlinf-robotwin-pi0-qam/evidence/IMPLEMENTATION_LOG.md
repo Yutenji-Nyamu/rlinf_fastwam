@@ -5181,3 +5181,134 @@ GIT_TERMINAL_PROMPT=0 timeout 60 git push personal HEAD:codex/qam-pi0-robotwin
 默认直连在60秒有界窗口内未完成；随后只在子 shell 临时
 `source /etc/network_turbo` 并重试一次，push 成功，未持久化 proxy/Git 配置。远端
 `personal/codex/qam-pi0-robotwin` 与本地均为 `6aa4ec95...`，server tree clean。
+
+## QAM-FORMAL-0007：用户停止、cycle247 收尾与轻量产物（2026-08-01 17:28–17:35 CST）
+
+### 1. 授权与停止前快照
+
+用户明确要求“停止训练，总结可能不 work 的原因，简要收集产物”。本轮授权包含精确停止
+当前 QAM formal，未授权删除 checkpoint、清 cache、恢复或运行新实验。
+
+先通过进程内密码 Paramiko 做身份与 PID/命令只读核对：
+
+```bash
+hostname
+pwd
+id -u
+date '+%F %T %Z'
+ps -o pid,ppid,pgid,sid,etime,cmd -p 380841
+grep -a 'Global Step:' \
+  /root/autodl-tmp/experiment_exports/qam_formal_resume100_to380_20260801_v4/runtime/driver.log \
+  | tail -n 1
+```
+
+17:28:22 结果为 hostname `autodl-container-nekaqbwt43-6ce5babb`、pwd `/root`、uid0；
+PID380841 的完整命令明确包含
+`qam_formal_resume100_to380_20260801_v4`、`runner.max_steps=380`、resume step100、
+512/512 schedule、batch64/32 和 `inv_temp=1.0`。停止前最后完整记录为 `247/380`。
+
+### 2. 精确优雅停止
+
+远端执行的核心脚本如下；它先验证目标命令再只向该 driver 发 TERM，没有发送 broad
+`pkill`、没有碰其他 worktree 或训练：
+
+```bash
+runtime=/root/autodl-tmp/experiment_exports/qam_formal_resume100_to380_20260801_v4/runtime
+pid=$(cat "$runtime/driver.pid")
+cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+case "$cmd" in
+  *qam_formal_resume100_to380_20260801_v4*) ;;
+  *) echo TARGET_MISMATCH; exit 42 ;;
+esac
+kill -TERM "$pid"
+for _ in $(seq 1 30); do
+  if ! kill -0 "$pid" 2>/dev/null; then break; fi
+  sleep 2
+done
+```
+
+精确结果：
+
+```text
+STOP_REQUEST_TIME=2026-08-01 17:28:58 CST
+TARGET_PID=380841
+TERM_SENT=yes
+DRIVER_EXITED=yes
+STOP_CHECK_TIME=2026-08-01 17:29:02 CST
+GPU0/GPU1=0/0 MiB
+```
+
+17:29:55 二次只读复核：driver 与 monitor 均不存活；run-specific/Ray 过滤只命中正在执行
+检查的 shell 自身；两卡0MiB/0%。monitor exit code 为0。driver runtime exit code 为134，
+日志末尾同一时刻明确记录 `SIGTERM received`；因此它是用户授权停止的信号退出，不是训练
+自行 fatal。没有调用 KILL，也没有删除、覆盖或另存 checkpoint。
+
+### 3. 最终指标与恢复边界
+
+停止后重新下载完整 v4 `driver.log/resources.csv`，与已有 v2/v3 日志合并解析。最终为：
+
+```text
+last complete cycle       247/380
+success                   86/494 = 17.41%
+collect/q_only/am_on      16.00% / 11.54% / 18.37%
+last 10/20/50 cycles      35.0% / 22.5% / 24.0%
+global inserts            4861
+critic/fine/policy        4349 / 3837 / 3837
+pending credit            0
+recent20 critic loss      0.00376
+recent20 Q/TD/std         0.03065 / 0.03090 / 0.01815
+recent10 AM/adjoint/grad  7.2708 / 0.00474 / 3356.71 pre-clip
+GPU peak MiB              43567 / 43693
+host anon peak            44.99 GiB
+OOM/OOM-kill              0/0
+```
+
+schedule 算术严格满足 `4861-512=4349`、`4349-512=3837`。最新可恢复点为
+`global_step_225`：completion `complete=true`、schema2、world2、snapshot
+`29fad04b897a403891289193ef20bd3c`；大小15,030,394,539 bytes，completion SHA-256
+`6fda6d37543194988ed6a0f49e31118774e90c822b7316d040c6e7dc261cd5e7`。cycle226–247
+日志保留，但其参数更新不在 checkpoint225。
+
+### 4. 不 work 风险的证据分层
+
+直接证据是 critic 已 TD 自洽，但 action gradient 尚未被真实反事实验证：低 loss、Q≈TD、
+head std 小不能证明 $\nabla_aQ$ 指向更高成功率；terminal adjoint 从 AM 前10轮均值0.0097
+降到末10轮0.00474；fine pre-clip grad 仍远大于 clip1.0。资源和数值稳定，不是直接原因。
+
+主要强推断依次为：online-only replay 在当前策略附近覆盖不足；N20 的280D macro action 与
+末端 sparse reward 造成粗信用；C1 frozen pooled feature 可能共同丢失姿态/接触信息；长期
+强裁剪可能压平 reward 强弱；B1 frozen behavior 缺少官方 B2 的 FM/slow EMA update。
+仍未验证的是动作扰动 Q 排序与真实执行、C1 success/failure 可分性，以及 fine 相对 base
+的动作漂移。
+
+最终 online train curve 也不是纯失败：am_on 18.37% 高于 collect16.00%，末50轮24%。但
+每 cycle 仅2个非独立 train episode，且没有同 seed frozen-base/held-out eval，所以这些
+末段数字既不能证明稳定涨点，也不能推翻上述风险。完整简报新增为
+`evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md`。
+
+### 5. 轻量产物收集
+
+先只读盘点：v4 runtime约1.3MiB，v4 run/checkpoint约67GiB；checkpoint正文不下载。随后
+在新目录生成不可变轻量包：
+
+```text
+/root/autodl-tmp/experiment_exports/qam_pi0_robotwin_formal_stop247_20260801
+/root/autodl-tmp/experiment_exports/qam_pi0_robotwin_formal_stop247_runtime_20260801.tar.gz
+```
+
+包内包含 v1–v4 runtime、四份 launcher、resolved/source diff、checkpoint 文件大小清单、
+各 checkpoint completion JSON、post-stop snapshot 和逐文件 SHA-256。明确排除 DCP shard、
+rank sidecar、replay tensor、视频、SFT 模型、venv、数据集和 cache。服务器目录2.7MiB，
+压缩包231,672 bytes。
+
+服务器与 Windows 下载副本 SHA-256 均为：
+
+```text
+6740c3e71f6b963940498cec214b7448cd483b847baa4e303d869548b44d14ab
+```
+
+Windows 副本：
+
+`exports/qam_pi0_robotwin_formal_stop247_runtime_20260801.tar.gz`
+
+下载后重新计算 hash，`match=True`。该包用于审计、复盘和重画曲线，不能独立 resume。

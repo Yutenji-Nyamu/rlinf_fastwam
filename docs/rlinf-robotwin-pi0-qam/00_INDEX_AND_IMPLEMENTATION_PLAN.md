@@ -20,10 +20,12 @@ C1 + fixed-N20 M2 + online replay only`。SFT π0 提供 frozen behavior prior�
 在线执行提供 critic transition；固定 schedule 为 512 条 global macro collect、512 次
 critic-only update，第 513 次 logical update 起 joint critic+AM。Q/TD/动作梯度及
 prefix relative-L2/cosine 都只记录，不作为阶段硬门；clean-50 不进 v1 Q loss。
-正式续训 v3 已于 2026-08-01 01:06:02 CST 从完整 step 25 启动，无 wall-clock kill，
-绝对终点 cycle100。01:09:48 已完成 live resume 首个 cycle：step26、replay256/rank、
-global total inserts512、q-only anchor512，critic/fine/policy version 均为0，OOM/OOM-kill0。
-当前不据此声称学习效果；按用户要求不持续监控。**
+formal 链最终由用户于 2026-08-01 17:28:58 CST 在完整 cycle247 后显式停止；driver、
+monitor 与 Ray 后代均已退出，两卡显存归零。最终 online train success 为
+`86/494=17.41%`，collect/q_only/am_on 分别为 `16.00%/11.54%/18.37%`；末段虽有回升，
+但没有同 seed baseline 或 held-out eval，不能声称稳定涨点。最后可恢复 checkpoint 为
+step225 complete/schema2/world2；完整结论与轻量产物见
+[`evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md`](evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md)。**
 
 QAM 专题只保留四个核心 Markdown/SSOT 入口：
 
@@ -994,5 +996,22 @@ global inserts `1994`、critic `1482`、fine/policy `970/970`、phase2、pending
 GPU 36,089/36,265 MiB、util76%/76%，OOM/OOM-kill0/0，无 exit/fatal。阶段、算法、batch、
 `inv_temp`、save interval 和所有其他正式配置未改。
 
-按用户要求不持续监控。下次被要求查看时，先 live 刷新 driver/Ray、最新完整 cycle、global
-inserts、critic/fine update、phase、success、checkpoint、GPU/cgroup 和 fatal，再称为当前。
+用户于 17:28 CST 明确要求停止。17:28:58 对已核对 run 名的 driver PID `380841` 发送
+`SIGTERM`；最后完整 cycle 为247。driver 于4秒内退出，monitor exit0，Ray/QAM 后代清空，
+两卡显存归零。driver exit134 来自该显式 SIGTERM 路径，不是训练自行崩溃。最终计数为
+global inserts `4861`、critic `4349`、fine/policy `3837/3837`、pending0；online train
+success 为 `86/494=17.41%`，am_on 为 `72/392=18.37%`。最新可恢复点为 step225，
+`complete=true`、schema2、world2，约14.00 GiB；cycle226–247 只有日志证据，不在该恢复点。
+
+本轮最重要的未决问题是 critic 的 TD 自洽是否对应有用的 action gradient。低 critic loss、
+低 Q-head std 和 finite adjoint 不能排除 Q 近似为 $V(s)$；online-only 稀疏 macro replay、
+N20/280D 粗信用、C1 frozen pooled feature、持续强梯度裁剪和 B1 frozen behavior 都是可能
+原因，但尚未由受控诊断区分。末段 10/20/50-cycle success 为
+`35.0%/22.5%/24.0%`，所以也不能把本轮定性为已证明失败。下一步若继续，应先做动作扰动
+排序与真实执行、C1 可分性和 fine-vs-base 动作漂移三个小诊断，而不是直接延长同一训练。
+
+轻量 runtime/config/log/resource/checkpoint-manifest 包已保存到服务器
+`/root/autodl-tmp/experiment_exports/qam_pi0_robotwin_formal_stop247_20260801`，归档 SHA-256
+为 `6740c3e7...14ab`；约67 GiB run/checkpoint 正文只留服务器。完整收尾见
+[`evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md`](evidence/QAM_FORMAL_STOP247_CLOSEOUT_20260801.md)。
+当前没有 QAM 训练进程；恢复、评估、删除 checkpoint 或启动新诊断均需新的明确授权。
