@@ -74,6 +74,18 @@ class EmbodiedRunner:
         self.overlap_env_bootstrap = bool(
             self.cfg.runner.get("overlap_env_bootstrap", False)
         )
+        self.enable_ogpo = self.cfg.algorithm.get("loss_type", "") == "embodied_ogpo"
+        if self.enable_ogpo:
+            self._ogpo_next_eval_rows = int(
+                self.cfg.algorithm.ogpo.eval_interval_rows
+            )
+            self._ogpo_next_checkpoint_rows = int(
+                self.cfg.algorithm.ogpo.checkpoint_interval_rows
+            )
+            self._ogpo_row_schedule_initialized = False
+            self._ogpo_last_eval_rows = 0
+            self._ogpo_last_checkpoint_rows = 0
+            self._ogpo_run_start_rows = 0
 
         # Step-gated profiling: ``cluster.profiling.steps`` lists the global step
         profiling_raw = self.cfg.cluster.get("profiling", None)
@@ -328,6 +340,97 @@ class EmbodiedRunner:
 
         return eval_metrics
 
+    @staticmethod
+    def _ogpo_rows_from_metrics(metrics: list[dict] | dict) -> int:
+        if isinstance(metrics, dict):
+            metrics = [metrics]
+        values = [
+            int(item["ogpo/total_online_rows"])
+            for item in metrics
+            if "ogpo/total_online_rows" in item
+        ]
+        if not values:
+            raise ValueError("OGPO actor metrics omitted total_online_rows")
+        return max(values)
+
+    @staticmethod
+    def _ogpo_previous_rows_from_metrics(metrics: list[dict] | dict) -> int:
+        if isinstance(metrics, dict):
+            metrics = [metrics]
+        values = [
+            int(item["ogpo/previous_online_rows"])
+            for item in metrics
+            if "ogpo/previous_online_rows" in item
+        ]
+        if not values:
+            raise ValueError("OGPO actor metrics omitted previous_online_rows")
+        return max(values)
+
+    def _maybe_ogpo_eval_and_checkpoint(
+        self, online_rows: int, previous_online_rows: int
+    ) -> dict:
+        eval_metrics = {}
+        eval_interval = int(self.cfg.algorithm.ogpo.eval_interval_rows)
+        checkpoint_interval = int(
+            self.cfg.algorithm.ogpo.checkpoint_interval_rows
+        )
+        if not self._ogpo_row_schedule_initialized:
+            self._ogpo_run_start_rows = previous_online_rows
+            if eval_interval > 0:
+                self._ogpo_next_eval_rows = (
+                    previous_online_rows // eval_interval + 1
+                ) * eval_interval
+                self._ogpo_last_eval_rows = (
+                    previous_online_rows // eval_interval
+                ) * eval_interval
+            if checkpoint_interval > 0:
+                self._ogpo_next_checkpoint_rows = (
+                    previous_online_rows // checkpoint_interval + 1
+                ) * checkpoint_interval
+                self._ogpo_last_checkpoint_rows = (
+                    previous_online_rows // checkpoint_interval
+                ) * checkpoint_interval
+            self._ogpo_row_schedule_initialized = True
+
+        if eval_interval > 0 and online_rows >= self._ogpo_next_eval_rows:
+            with self.timer("eval"):
+                self.update_rollout_weights()
+                eval_metrics = self.evaluate()
+                eval_metrics = {f"eval/{key}": value for key, value in eval_metrics.items()}
+                self.metric_logger.log(data=eval_metrics, step=online_rows)
+                self._ogpo_last_eval_rows = online_rows
+            while self._ogpo_next_eval_rows <= online_rows:
+                self._ogpo_next_eval_rows += eval_interval
+
+        is_final = online_rows >= int(self.cfg.algorithm.ogpo.total_online_rows)
+        if (
+            is_final
+            and self.cfg.algorithm.ogpo.get("final_eval", True)
+            and self._ogpo_last_eval_rows != online_rows
+        ):
+            with self.timer("eval"):
+                self.update_rollout_weights()
+                eval_metrics = self.evaluate()
+                eval_metrics = {f"eval/{key}": value for key, value in eval_metrics.items()}
+                self.metric_logger.log(data=eval_metrics, step=online_rows)
+                self._ogpo_last_eval_rows = online_rows
+
+        checkpoint_due = (
+            checkpoint_interval > 0
+            and online_rows >= self._ogpo_next_checkpoint_rows
+        )
+        final_checkpoint_due = (
+            checkpoint_interval > 0
+            and is_final
+            and self._ogpo_last_checkpoint_rows != online_rows
+        )
+        if checkpoint_due or final_checkpoint_due:
+            self._save_checkpoint()
+            self._ogpo_last_checkpoint_rows = online_rows
+            while self._ogpo_next_checkpoint_rows <= online_rows:
+                self._ogpo_next_checkpoint_rows += checkpoint_interval
+        return eval_metrics
+
     def _log_step_metrics(
         self,
         step: int,
@@ -444,9 +547,18 @@ class EmbodiedRunner:
         logging_metrics.update(rollout_metrics)
         logging_metrics.update(training_metrics)
 
-        self.print_metrics_table_async(
-            step, self.max_steps, start_time, logging_metrics, start_step
-        )
+        if self.enable_ogpo:
+            self.print_metrics_table_async(
+                max(step - 1, 0),
+                int(self.cfg.algorithm.ogpo.total_online_rows),
+                start_time,
+                logging_metrics,
+                int(self._ogpo_run_start_rows),
+            )
+        else:
+            self.print_metrics_table_async(
+                step, self.max_steps, start_time, logging_metrics, start_step
+            )
 
     def _finish_run(self) -> None:
         self.metric_logger.finish()
@@ -481,6 +593,16 @@ class EmbodiedRunner:
 
         start_step = self.global_step
         start_time = time.time()
+        if (
+            self.enable_ogpo
+            and start_step == 0
+            and self.cfg.algorithm.ogpo.get("baseline_eval", False)
+        ):
+            self.update_rollout_weights()
+            baseline_metrics = {
+                f"eval/{key}": value for key, value in self.evaluate().items()
+            }
+            self.metric_logger.log(data=baseline_metrics, step=0)
         for _step in range(start_step, self.max_steps):
             # set global step
             self.actor.set_global_step(self.global_step)
@@ -541,13 +663,24 @@ class EmbodiedRunner:
                     env_bootstrap_handle.wait()
 
                 self.global_step += 1
-                eval_metrics = self._maybe_eval_and_checkpoint(_step)
+                if self.enable_ogpo:
+                    online_rows = self._ogpo_rows_from_metrics(
+                        actor_training_metrics
+                    )
+                    previous_online_rows = self._ogpo_previous_rows_from_metrics(
+                        actor_training_metrics
+                    )
+                    eval_metrics = self._maybe_ogpo_eval_and_checkpoint(
+                        online_rows, previous_online_rows
+                    )
+                else:
+                    eval_metrics = self._maybe_eval_and_checkpoint(_step)
 
             if profiled_step is not None:
                 self._close_profiling_window(profiled_step)
 
             self._log_step_metrics(
-                step=_step,
+                step=online_rows if self.enable_ogpo else _step,
                 start_time=start_time,
                 start_step=start_step,
                 env_handle=env_handle,
@@ -558,6 +691,12 @@ class EmbodiedRunner:
                 actor_training_metrics=actor_training_metrics,
                 eval_metrics=eval_metrics,
             )
+
+            if (
+                self.enable_ogpo
+                and online_rows >= int(self.cfg.algorithm.ogpo.total_online_rows)
+            ):
+                break
 
         self._finish_run()
 

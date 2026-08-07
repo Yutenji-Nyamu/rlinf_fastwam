@@ -69,7 +69,15 @@ class MultiStepRolloutWorker(Worker):
         eval_env_cfg = cfg.env.get("eval", None)
         self.enable_train = not self.only_eval and train_env_cfg is not None
         self.enable_eval = (
-            cfg.runner.get("val_check_interval", -1) > 0 or self.only_eval
+            cfg.runner.get("val_check_interval", -1) > 0
+            or self.only_eval
+            or (
+                self.algorithm_cfg.get("loss_type", "") == "embodied_ogpo"
+                and self.algorithm_cfg.get("ogpo", {}).get(
+                    "eval_interval_rows", 0
+                )
+                > 0
+            )
         )
         self.rollout_epoch = (
             train_env_cfg.rollout_epoch if train_env_cfg is not None else 1
@@ -113,6 +121,9 @@ class MultiStepRolloutWorker(Worker):
                 // self.model_cfg.num_action_chunks
             )
         self.collect_prev_infos = self.cfg.rollout.get("collect_prev_infos", True)
+        self.enable_ogpo = (
+            self.algorithm_cfg.get("loss_type", "") == "embodied_ogpo"
+        )
         self.version = 0
         self.finished_episodes = None
 
@@ -589,21 +600,36 @@ class MultiStepRolloutWorker(Worker):
             )
         return RolloutResult(
             actions=actions,
-            prev_logprobs=result["prev_logprobs"] if self.collect_prev_infos else None,
-            prev_values=result["prev_values"] if self.collect_prev_infos else None,
+            prev_logprobs=(
+                result.get("prev_logprobs") if self.collect_prev_infos else None
+            ),
+            prev_values=(
+                result.get("prev_values") if self.collect_prev_infos else None
+            ),
             bootstrap_values=self.get_bootstrap_values(final_obs),
             intervene_flags=intervene_flags,
             forward_inputs=result["forward_inputs"],
-            versions=torch.full_like(
-                result["prev_logprobs"],
-                float(self.version),
-                dtype=torch.float32,
+            versions=(
+                torch.full(
+                    (actions.shape[0], 1),
+                    float(self.version),
+                    dtype=torch.float32,
+                    device=actions.device,
+                )
+                if self.enable_ogpo
+                else torch.full_like(
+                    result["prev_logprobs"],
+                    float(self.version),
+                    dtype=torch.float32,
+                )
             ),
         )
 
     def get_bootstrap_values(
         self, final_obs: dict[str, Any] | None
     ) -> torch.Tensor | None:
+        if self.enable_ogpo:
+            return None
         if final_obs is None:
             return None
         if not (
@@ -713,25 +739,41 @@ class MultiStepRolloutWorker(Worker):
                 merge_fn=self._merge_obs_batches,
                 infer_batch_size_fn=self._infer_env_batch_size,
             ).async_wait()
-            actions, result = self._predict_rollout_actions(
-                env_output["obs"],
-                final_obs=env_output.get("final_obs", None),
-                rlt_switch_flags=env_output.get("rlt_switch_flags", None),
-                intervene_requested=env_output.get("intervene_flags", None),
-            )
+            if self.enable_ogpo:
+                # EnvWorker needs one final receive to close the trajectory, but
+                # OGPO has no value bootstrap and therefore needs no extra π0 call.
+                # A version-only payload preserves the batch dimension required
+                # by the routed channel.  EnvWorker deliberately does not append
+                # this final sentinel to trajectory versions or forward inputs.
+                rollout_result = RolloutResult(
+                    versions=torch.full(
+                        (self._infer_env_batch_size(env_output), 1),
+                        float(self.version),
+                        dtype=torch.float32,
+                    )
+                )
+            else:
+                actions, result = self._predict_rollout_actions(
+                    env_output["obs"],
+                    final_obs=env_output.get("final_obs", None),
+                    rlt_switch_flags=env_output.get("rlt_switch_flags", None),
+                    intervene_requested=env_output.get("intervene_flags", None),
+                )
 
-            rollout_result = RolloutResult(
-                actions=actions,
-                prev_values=result["prev_values"] if self.collect_prev_infos else None,
-                bootstrap_values=self.get_bootstrap_values(
-                    env_output.get("final_obs", None)
-                ),
-                forward_inputs=(
-                    result["forward_inputs"]
-                    if self.rlt_feature_model is not None
-                    else {}
-                ),
-            )
+                rollout_result = RolloutResult(
+                    actions=actions,
+                    prev_values=(
+                        result["prev_values"] if self.collect_prev_infos else None
+                    ),
+                    bootstrap_values=self.get_bootstrap_values(
+                        env_output.get("final_obs", None)
+                    ),
+                    forward_inputs=(
+                        result["forward_inputs"]
+                        if self.rlt_feature_model is not None
+                        else {}
+                    ),
+                )
             self.send_to(
                 group_name=self.cfg.env.group_name,
                 channel=output_channel,

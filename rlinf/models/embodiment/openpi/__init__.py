@@ -68,26 +68,50 @@ def get_model(cfg: DictConfig, torch_dtype=None):
         model.freeze_vlm()
 
     # Load weights from checkpoint if it's a checkpoint directory, otherwise load from safetensors
+    loaded_state_dict = None
     if os.path.exists(full_weights_path):
         # Direct checkpoint directory
-        model_state_dict = torch.load(full_weights_path, map_location="cpu")
-        model.load_state_dict(model_state_dict, strict=False)
+        loaded_state_dict = torch.load(full_weights_path, map_location="cpu")
+        model.load_state_dict(loaded_state_dict, strict=False)
     elif os.path.exists(actor_full_weights_path):
         # Checkpoint directory from runner
-        model_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
-        model.load_state_dict(model_state_dict, strict=False)
+        loaded_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
+        model.load_state_dict(loaded_state_dict, strict=False)
     else:
         # Original model directory with safetensors files
         weight_paths = sorted(glob.glob(os.path.join(checkpoint_dir, "*.safetensors")))
         if not weight_paths:
             weight_paths = [os.path.join(checkpoint_dir, "model.safetensors")]
-        all_state_dict = {}
+        loaded_state_dict = {}
         for weight_path in weight_paths:
             state_dict = safetensors.torch.load_file(weight_path, device="cpu")
-            all_state_dict.update(state_dict)
-        model.load_state_dict(all_state_dict, strict=False)
+            loaded_state_dict.update(state_dict)
+        model.load_state_dict(loaded_state_dict, strict=False)
+
+    has_ogpo_target_checkpoint = False
+    if actor_model_config.use_ogpo:
+        expected_target_keys = {
+            key for key in model.state_dict() if key.startswith("ogpo_target.")
+        }
+        checkpoint_target_keys = {
+            key for key in loaded_state_dict if key.startswith("ogpo_target.")
+        }
+        if checkpoint_target_keys and checkpoint_target_keys != expected_target_keys:
+            missing = sorted(expected_target_keys - checkpoint_target_keys)
+            unexpected = sorted(checkpoint_target_keys - expected_target_keys)
+            raise ValueError(
+                "Incomplete OGPO EMA target in checkpoint: "
+                f"missing={missing[:5]}, unexpected={unexpected[:5]}"
+            )
+        has_ogpo_target_checkpoint = bool(checkpoint_target_keys)
 
     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+    if actor_model_config.use_ogpo:
+        model.match_ogpo_target_dtypes_from_online_()
+        if has_ogpo_target_checkpoint:
+            model.mark_ogpo_target_initialized_()
+        else:
+            model.initialize_ogpo_target_from_online_()
     # fsdp replace
     # model.paligemma_with_expert.replace_gemma_decoder_layers()
     # load data stats

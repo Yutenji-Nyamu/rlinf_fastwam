@@ -78,6 +78,10 @@ class EnvWorker(Worker):
         self.enable_rlt = (
             OmegaConf.select(self.cfg, "algorithm.loss_type", default="") == "rlt_ac"
         )
+        self.enable_ogpo = (
+            OmegaConf.select(self.cfg, "algorithm.loss_type", default="")
+            == "embodied_ogpo"
+        )
 
         self.reward_mode = self.cfg.get("reward", {}).get("reward_mode", "per_step")
         self.history_reward_assign = self.cfg.get("reward", {}).get(
@@ -107,7 +111,12 @@ class EnvWorker(Worker):
         eval_env_cfg = self.cfg.env.get("eval", None)
         self.enable_train = not self.only_eval and train_env_cfg is not None
         self.enable_eval = (
-            self.cfg.runner.get("val_check_interval", -1) > 0 or self.only_eval
+            self.cfg.runner.get("val_check_interval", -1) > 0
+            or self.only_eval
+            or (
+                self.enable_ogpo
+                and self.cfg.algorithm.ogpo.get("eval_interval_rows", 0) > 0
+            )
         )
         self.rollout_epoch = (
             train_env_cfg.rollout_epoch if train_env_cfg is not None else 1
@@ -433,7 +442,10 @@ class EnvWorker(Worker):
 
     @Worker.timer("env_interact_step")
     def env_interact_step(
-        self, chunk_actions: torch.Tensor, stage_id: int
+        self,
+        chunk_actions: torch.Tensor,
+        stage_id: int,
+        current_obs: dict[str, Any] | None = None,
     ) -> tuple[EnvOutput, dict[str, Any], dict[str, Any]]:
         """
         This function is used to interact with the environment.
@@ -453,6 +465,17 @@ class EnvWorker(Worker):
             chunk_actions["actions"] = exec_actions
         else:
             chunk_actions = exec_actions
+
+        if self.enable_ogpo:
+            # ``prepare_actions`` returns a NumPy array for RoboTwin.  The
+            # primitive OGPO path keeps a tensor so it can mask inactive
+            # vector-env slots between waypoints; RoboTwinEnv.step converts it
+            # back to NumPy at its boundary.
+            chunk_actions = torch.as_tensor(exec_actions)
+            return self._ogpo_env_interact_step(
+                chunk_actions, stage_id, current_obs=current_obs
+            )
+
         env_info = {}
 
         obs_list, chunk_rewards, chunk_terminations, chunk_truncations, infos_list = (
@@ -521,6 +544,146 @@ class EnvWorker(Worker):
             "infos_list": infos_list,
         }
         return env_output, env_info, chunk_step_payload
+
+    @staticmethod
+    def _ogpo_stack_observation_sequence(
+        current_obs: dict[str, Any], next_observations: list[dict[str, Any]]
+    ) -> dict[str, torch.Tensor]:
+        trace: dict[str, torch.Tensor] = {}
+        for key in ("main_images", "wrist_images", "states"):
+            first = current_obs.get(key)
+            if first is None:
+                continue
+            values = [first, *(observation[key] for observation in next_observations)]
+            trace[f"ogpo_obs_{key}"] = torch.stack(values, dim=1)
+        return trace
+
+    @staticmethod
+    def _ogpo_first_terminal_observation(
+        next_observations: list[dict[str, Any]],
+        terminations: torch.Tensor,
+        truncations: torch.Tensor,
+    ) -> dict[str, Any] | None:
+        """Merge each env's first terminal observation into the final batch."""
+        if not next_observations or not isinstance(next_observations[-1], dict):
+            return None
+        done = terminations | truncations
+        if not done.any():
+            return None
+
+        merged = copy_dict_tensor(next_observations[-1])
+        captured = torch.zeros(done.shape[0], dtype=torch.bool)
+        for primitive_index, observation in enumerate(next_observations):
+            step_done = done[:, primitive_index].detach().cpu() & ~captured
+            if not step_done.any() or not isinstance(observation, dict):
+                continue
+            for key, destination in merged.items():
+                source = observation.get(key)
+                if isinstance(destination, torch.Tensor) and isinstance(
+                    source, torch.Tensor
+                ):
+                    destination_mask = step_done.to(device=destination.device)
+                    source_mask = destination_mask.to(device=source.device)
+                    merged[key][destination_mask] = source[source_mask]
+                elif isinstance(destination, np.ndarray) and isinstance(
+                    source, np.ndarray
+                ):
+                    mask = step_done.numpy()
+                    merged[key][mask] = source[mask]
+            captured |= step_done
+        return merged
+
+    @Worker.timer("env_interact_step_ogpo")
+    def _ogpo_env_interact_step(
+        self,
+        chunk_actions: torch.Tensor,
+        stage_id: int,
+        *,
+        current_obs: dict[str, Any] | None,
+    ) -> tuple[EnvOutput, dict[str, Any], dict[str, Any]]:
+        """Execute an OGPO action chunk one primitive waypoint at a time."""
+        if not isinstance(chunk_actions, torch.Tensor) or chunk_actions.ndim != 3:
+            raise ValueError(
+                "embodied_ogpo requires tensor actions shaped [batch, chunk, action]"
+            )
+        batch_size, chunk_size, _ = chunk_actions.shape
+        if chunk_size != self.model_cfg.num_action_chunks:
+            raise ValueError(
+                f"OGPO action chunk mismatch: {chunk_size} != "
+                f"{self.model_cfg.num_action_chunks}"
+            )
+
+        if current_obs is None:
+            raise ValueError("OGPO primitive execution requires its current observation")
+        active = ~self.train_prev_done[stage_id].to(chunk_actions.device)
+        valid = torch.zeros((batch_size, chunk_size), dtype=torch.bool)
+        rewards = torch.zeros((batch_size, chunk_size), dtype=torch.float32)
+        terminations = torch.zeros((batch_size, chunk_size), dtype=torch.bool)
+        truncations = torch.zeros((batch_size, chunk_size), dtype=torch.bool)
+        next_observations: list[dict[str, Any]] = []
+        infos_list: list[dict[str, Any]] = []
+        last_infos: dict[str, Any] = {}
+
+        for primitive_index in range(chunk_size):
+            valid[:, primitive_index] = active.cpu()
+            primitive_action = chunk_actions[:, primitive_index].clone()
+            primitive_action[~active] = 0
+            observation, reward, terminated, truncated, infos = self.env_list[
+                stage_id
+            ].step(primitive_action, auto_reset=False)
+            reward = reward.detach().cpu().to(dtype=torch.float32)
+            terminated = terminated.detach().cpu().to(dtype=torch.bool)
+            truncated = truncated.detach().cpu().to(dtype=torch.bool)
+            active_cpu = active.detach().cpu()
+            rewards[:, primitive_index] = torch.where(
+                active_cpu, reward, torch.zeros_like(reward)
+            )
+            terminations[:, primitive_index] = active_cpu & terminated
+            truncations[:, primitive_index] = active_cpu & truncated
+            next_observations.append(observation)
+            infos_list.append(infos)
+            last_infos = infos
+            newly_done = terminations[:, primitive_index] | truncations[:, primitive_index]
+            active = active & ~newly_done.to(active.device)
+
+        chunk_dones = terminations | truncations
+        self.train_prev_done[stage_id] |= chunk_dones.any(dim=1)
+        final_obs = self._ogpo_first_terminal_observation(
+            next_observations, terminations, truncations
+        )
+        env_info = {}
+        if isinstance(last_infos, dict) and "episode" in last_infos:
+            for key, value in last_infos["episode"].items():
+                env_info[key] = value.detach().cpu() if torch.is_tensor(value) else value
+
+        env_output = EnvOutput(
+            obs=next_observations[-1],
+            final_obs=final_obs,
+            rewards=rewards,
+            env_infos=last_infos,
+            dones=chunk_dones,
+            terminations=terminations,
+            truncations=truncations,
+        )
+        trace = self._ogpo_stack_observation_sequence(
+            current_obs, next_observations
+        )
+        trace.update(
+            {
+                "ogpo_rewards": rewards,
+                "ogpo_terminations": terminations,
+                "ogpo_truncations": truncations,
+                "ogpo_valid": valid,
+            }
+        )
+        return env_output, env_info, {
+            "chunk_actions": chunk_actions,
+            "obs_list": next_observations,
+            "terminations": terminations,
+            "truncations": truncations,
+            "infos_list": infos_list,
+            "ogpo_trace": trace,
+        }
 
     def env_evaluate_step(
         self, raw_actions: torch.Tensor, stage_id: int
@@ -876,6 +1039,8 @@ class EnvWorker(Worker):
             for stage_id in range(self.stage_num):
                 self.env_list[stage_id].is_start = True
                 extracted_obs, infos = self.env_list[stage_id].reset()
+                if self.enable_ogpo:
+                    self.train_prev_done[stage_id].zero_()
                 if self.enable_online_lerobot:
                     rollout_results = getattr(self, "rollout_results", None)
                     if rollout_results is not None:
@@ -1112,9 +1277,16 @@ class EnvWorker(Worker):
                         )
 
                     env_output, env_info, chunk_step_payload = self.env_interact_step(
-                        rollout_result.actions, stage_id
+                        rollout_result.actions, stage_id, current_obs=curr_obs
                     )
                     stage_rollout = self.rollout_results[stage_id]
+                    ogpo_trace = chunk_step_payload.pop("ogpo_trace", None)
+                    if ogpo_trace is not None:
+                        if not stage_rollout.forward_inputs:
+                            raise RuntimeError(
+                                "OGPO primitive trace has no matching rollout payload"
+                            )
+                        stage_rollout.forward_inputs[-1].update(ogpo_trace)
                     if isinstance(stage_rollout, EmbodiedLerobotRolloutResult):
                         stage_rollout.append_chunk_episode_data(
                             rollout_result=rollout_result,

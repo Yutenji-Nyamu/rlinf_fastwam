@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import math
 import random
 from collections.abc import Sequence
@@ -102,6 +103,14 @@ class OpenPi0Config(Pi0Config):
     rlt_use_mask: bool = False
     state_indices: list[int] | None = None
 
+    # ===== OGPO parameters =====
+    # The second opt-in is algorithm.loss_type=embodied_ogpo.  Keeping this
+    # false preserves the legacy pi0 module graph and rollout behavior.
+    use_ogpo: bool = False
+    ogpo_sigma_init: float = 0.01
+    ogpo_num_image_blocks: int = 3
+    ogpo_prompt_bytes: int = 256
+
 
 class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
     """
@@ -161,6 +170,15 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         assert not (self.config.double_layer and self.config.joint_logprob), (
             "double_layer and joint_logprob can not be set at the same time"
         )
+
+        if self.config.use_ogpo:
+            self._validate_ogpo_model_config()
+            from rlinf.models.embodiment.modules.ogpo_modules import (
+                OGPOEMAActionExpert,
+            )
+
+            self.ogpo_target = OGPOEMAActionExpert(self)
+            self._ogpo_target_initialized = False
 
         # rl model init
         if self.config.value_after_vlm:
@@ -277,7 +295,82 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             path_parts = name.split(".")
             setattr(module, "_fsdp_wrap_name", path_parts[-1] if path_parts else name)
 
+        if self.config.use_ogpo:
+            from rlinf.models.embodiment.modules.ogpo_modules import (
+                keep_tied_paligemma_weight_in_root_fsdp_unit_,
+            )
+
+            keep_tied_paligemma_weight_in_root_fsdp_unit_(
+                self.paligemma_with_expert.paligemma.model.language_model.embed_tokens,
+                self.paligemma_with_expert.paligemma.lm_head,
+            )
+
         self.torch_compile_enabled = False
+
+    def _validate_ogpo_model_config(self):
+        if not self.config.train_expert_only:
+            raise ValueError("openpi.use_ogpo=True requires train_expert_only=True")
+        if self.pi05:
+            raise ValueError("OGPO pi0 adapter does not enable pi0.5")
+        incompatible = {
+            "use_dsrl": self.config.use_dsrl,
+            "use_rlt": self.config.use_rlt,
+            "is_nft": self.config.is_nft,
+            "add_value_head": self.config.add_value_head,
+        }
+        active = [name for name, enabled in incompatible.items() if enabled]
+        if active:
+            raise ValueError(
+                "OGPO cannot share the policy graph with legacy routes: "
+                + ", ".join(active)
+            )
+        if (
+            self.config.action_horizon != 50
+            or self.config.action_dim != 32
+            or self.config.action_chunk != 10
+            or self.config.action_env_dim != 14
+        ):
+            raise ValueError(
+                "OGPO v1 requires H=50, model action dimension=32, "
+                "C=10, and active action dimension=14"
+            )
+        if self.config.num_steps != 4:
+            raise ValueError("OGPO v1 requires the resolved pi0 K=4 flow steps")
+        if self.config.ogpo_num_image_blocks != 3:
+            raise ValueError("OGPO critic conditioning requires three image blocks")
+
+    @torch.no_grad()
+    def initialize_ogpo_target_from_online_(self):
+        if not self.config.use_ogpo:
+            raise ValueError("OGPO target initialization requires use_ogpo=True")
+        self.ogpo_target.copy_from_online_(self)
+        self._ogpo_target_initialized = True
+
+    @torch.no_grad()
+    def match_ogpo_target_dtypes_from_online_(self):
+        if self.config.use_ogpo:
+            self.ogpo_target.match_online_dtypes_(self)
+
+    @torch.no_grad()
+    def mark_ogpo_target_initialized_(self):
+        if not self.config.use_ogpo:
+            return
+        self.ogpo_target.requires_grad_(False)
+        self.ogpo_target.eval()
+        self._ogpo_target_initialized = True
+
+    @torch.no_grad()
+    def update_ogpo_target_(self, tau: float):
+        if not self._ogpo_target_initialized:
+            raise RuntimeError("OGPO target is not initialized")
+        self.ogpo_target.polyak_update_from_online_(self, tau)
+
+    def train(self, mode: bool = True):
+        super().train(mode)
+        if self.config.use_ogpo:
+            self.paligemma_with_expert.paligemma.eval()
+            self.ogpo_target.eval()
+        return self
 
     def set_global_step(self, global_step):
         self.global_step = global_step
@@ -362,10 +455,18 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             return self.sac_forward(**kwargs)
         elif forward_type == ForwardType.SAC_Q:
             return self.sac_q_forward(**kwargs)
+        elif forward_type == ForwardType.OGPO_FLOW:
+            return self.ogpo_flow_forward(**kwargs)
         else:
             raise NotImplementedError
 
-    def sft_forward(self, data, use_action_chunk_loss: bool = False, **kwargs):
+    def sft_forward(
+        self,
+        data,
+        use_action_chunk_loss: bool = False,
+        use_model_action_chunk_loss: bool = False,
+        **kwargs,
+    ):
         if hasattr(self, "gradient_checkpointing_disable"):
             self.gradient_checkpointing_disable()
 
@@ -398,8 +499,17 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             )
         else:
             loss = super().forward(observation, actions)
+        if use_action_chunk_loss and use_model_action_chunk_loss:
+            raise ValueError(
+                "Select either active-action chunk loss or model-action chunk loss"
+            )
         if use_action_chunk_loss:
             loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
+        elif use_model_action_chunk_loss:
+            # OGPO success replay stores the sampled pi0 model coordinates.
+            # Supervise the executed C-step prefix while retaining all D_model
+            # coordinates, independently of the legacy C x D_env SFT route.
+            loss = loss[:, : self.config.action_chunk, :]
         vla_loss = loss.mean()
         if not self.config.use_rlt:
             return vla_loss
@@ -828,6 +938,328 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     ).contiguous()
         return processed_obs
 
+    def _prepare_ogpo_observation(self, env_obs: dict[str, Any]):
+        to_process_obs = self.obs_processor(env_obs)
+        processed_obs = self.input_transform(to_process_obs, transpose=False)
+        processed_obs = self.precision_processor(processed_obs)
+        return _model.Observation.from_dict(processed_obs), processed_obs
+
+    @staticmethod
+    def _repeat_ogpo_cache(past_key_values: Any, repeats: int):
+        if repeats == 1:
+            return past_key_values
+        cache = copy.deepcopy(past_key_values)
+        if hasattr(cache, "batch_repeat_interleave"):
+            repeated = cache.batch_repeat_interleave(repeats)
+            return cache if repeated is None else repeated
+        if torch.is_tensor(cache):
+            return cache.repeat_interleave(repeats, dim=0)
+        if isinstance(cache, tuple):
+            return tuple(
+                OpenPi0ForRLActionPrediction._repeat_ogpo_cache(value, repeats)
+                for value in cache
+            )
+        if isinstance(cache, list):
+            return [
+                OpenPi0ForRLActionPrediction._repeat_ogpo_cache(value, repeats)
+                for value in cache
+            ]
+        if isinstance(cache, dict):
+            return {
+                key: OpenPi0ForRLActionPrediction._repeat_ogpo_cache(value, repeats)
+                for key, value in cache.items()
+            }
+        raise TypeError(
+            "Unsupported OpenPI prefix cache type for OGPO candidate batching: "
+            f"{type(cache)!r}"
+        )
+
+    @torch.no_grad()
+    def _prepare_ogpo_conditioning(
+        self,
+        observation: _model.Observation | None = None,
+        *,
+        env_obs: dict[str, Any] | None = None,
+        train: bool = False,
+    ) -> dict[str, Any]:
+        if not self.config.use_ogpo or not self._ogpo_target_initialized:
+            raise RuntimeError("OGPO conditioning requires an initialized target")
+        if (observation is None) == (env_obs is None):
+            raise ValueError("Provide exactly one of observation or env_obs")
+        if env_obs is not None:
+            observation, _ = self._prepare_ogpo_observation(env_obs)
+        assert observation is not None
+        images, img_masks, lang_tokens, lang_masks, state = (
+            self._preprocess_observation(observation, train=train)
+        )
+        prefix_output, prefix_pad_masks, past_key_values = self._build_prefix_cache(
+            images, img_masks, lang_tokens, lang_masks
+        )
+        from rlinf.models.embodiment.modules.ogpo_critic import (
+            pool_ogpo_prefix_blocks,
+        )
+
+        critic_feature, block_lengths = pool_ogpo_prefix_blocks(
+            prefix_output,
+            prefix_pad_masks,
+            language_token_count=lang_tokens.shape[1],
+            num_image_blocks=self.config.ogpo_num_image_blocks,
+        )
+        return {
+            "state": state,
+            "prefix_pad_masks": prefix_pad_masks,
+            "past_key_values": past_key_values,
+            "critic_feature": critic_feature.detach(),
+            "block_lengths": block_lengths,
+        }
+
+    def _ogpo_velocity_callable(
+        self,
+        conditioning: dict[str, Any],
+        *,
+        route: Literal["online", "target"],
+        group_size: int,
+    ):
+        state = conditioning["state"].repeat_interleave(group_size, dim=0)
+        prefix_pad_masks = conditioning["prefix_pad_masks"].repeat_interleave(
+            group_size, dim=0
+        )
+        past_key_values = self._repeat_ogpo_cache(
+            conditioning["past_key_values"], group_size
+        )
+
+        def velocity(x_t: torch.Tensor, time_ogpo: torch.Tensor) -> torch.Tensor:
+            if x_t.ndim != 4 or x_t.shape[1] != group_size:
+                raise ValueError("OGPO velocity expects [B,G,H,D] candidate states")
+            flat_x = x_t.reshape(-1, x_t.shape[-2], x_t.shape[-1])
+            flat_time = time_ogpo.reshape(-1).to(dtype=torch.float32)
+            if route == "target":
+                velocity_ogpo, _ = self.ogpo_target(
+                    state,
+                    flat_x,
+                    flat_time,
+                    prefix_pad_masks,
+                    past_key_values,
+                )
+            elif route == "online":
+                from rlinf.models.embodiment.modules.ogpo_modules import (
+                    ogpo_time_to_pi0_time,
+                    pi0_velocity_to_ogpo,
+                )
+
+                velocity_pi0, _ = self.get_velocity(
+                    state,
+                    flat_x,
+                    ogpo_time_to_pi0_time(flat_time),
+                    prefix_pad_masks,
+                    past_key_values,
+                )
+                velocity_ogpo = pi0_velocity_to_ogpo(velocity_pi0)
+            else:
+                raise ValueError(f"Unknown OGPO route: {route}")
+            return velocity_ogpo.reshape_as(x_t)
+
+        return velocity
+
+    def _sample_ogpo_from_conditioning(
+        self,
+        conditioning: dict[str, Any],
+        *,
+        group_size: int,
+        route: Literal["online", "target"],
+        initial_noise: torch.Tensor | None = None,
+        transition_noise: torch.Tensor | None = None,
+    ):
+        from rlinf.models.embodiment.openpi.openpi_ogpo import sample_ogpo_chains
+
+        if group_size <= 0:
+            raise ValueError("OGPO group_size must be positive")
+        state = conditioning["state"]
+        shape = (
+            state.shape[0],
+            group_size,
+            self.config.action_horizon,
+            self.config.action_dim,
+        )
+        if initial_noise is None:
+            initial_noise = torch.randn(shape, device=state.device, dtype=torch.float32)
+        elif tuple(initial_noise.shape) != shape:
+            raise ValueError(
+                f"OGPO initial_noise must have shape {shape}, got "
+                f"{tuple(initial_noise.shape)}"
+            )
+        else:
+            initial_noise = initial_noise.to(device=state.device, dtype=torch.float32)
+        if transition_noise is not None:
+            expected_transition_shape = (
+                shape[0],
+                shape[1],
+                self.config.num_steps,
+                shape[2],
+                shape[3],
+            )
+            if tuple(transition_noise.shape) != expected_transition_shape:
+                raise ValueError(
+                    "OGPO transition_noise must have shape "
+                    f"{expected_transition_shape}, got "
+                    f"{tuple(transition_noise.shape)}"
+                )
+            transition_noise = transition_noise.to(
+                device=state.device, dtype=torch.float32
+            )
+        velocity = self._ogpo_velocity_callable(
+            conditioning, route=route, group_size=group_size
+        )
+        return sample_ogpo_chains(
+            velocity,
+            initial_noise=initial_noise,
+            transition_noise=transition_noise,
+            flow_steps=self.config.num_steps,
+            sigma_init=self.config.ogpo_sigma_init,
+            executed_horizon=self.config.action_chunk,
+            active_action_dim=self.config.action_env_dim,
+        )
+
+    def _ogpo_success_bc_loss(
+        self, env_obs: dict[str, Any], actions: torch.Tensor
+    ) -> torch.Tensor:
+        conditioning = self._prepare_ogpo_conditioning(
+            env_obs=env_obs, train=True
+        )
+        actions = actions.to(
+            device=conditioning["state"].device, dtype=torch.float32
+        )
+        expected_shape = (
+            conditioning["state"].shape[0],
+            self.config.action_horizon,
+            self.config.action_dim,
+        )
+        if tuple(actions.shape) != expected_shape:
+            raise ValueError(
+                f"OGPO success actions must have shape {expected_shape}, "
+                f"got {tuple(actions.shape)}"
+            )
+        noise = self.sample_noise(actions.shape, actions.device).to(torch.float32)
+        time_pi0 = self.sample_time(actions.shape[0], actions.device).to(torch.float32)
+        x_t = time_pi0[:, None, None] * noise + (
+            1.0 - time_pi0[:, None, None]
+        ) * actions
+        velocity = self._ogpo_velocity_callable(
+            conditioning, route="online", group_size=1
+        )
+        predicted_velocity_ogpo = velocity(
+            x_t[:, None], (1.0 - time_pi0)[:, None]
+        )[:, 0]
+        from rlinf.models.embodiment.openpi.openpi_ogpo import (
+            flow_matching_success_bc_loss,
+        )
+
+        return flow_matching_success_bc_loss(
+            predicted_velocity_ogpo,
+            actions,
+            noise,
+            execution_horizon=self.config.action_chunk,
+        )
+
+    def ogpo_flow_forward(self, operation: str, **kwargs):
+        if not self.config.use_ogpo:
+            raise ValueError("OGPO flow forward requires openpi.use_ogpo=True")
+        if operation == "conditioning":
+            return self._prepare_ogpo_conditioning(**kwargs)
+        if operation in {"target_action", "actor_batch"}:
+            conditioning = self._prepare_ogpo_conditioning(env_obs=kwargs["env_obs"])
+            group_size = int(kwargs.get("group_size", 1))
+            sample = self._sample_ogpo_from_conditioning(
+                conditioning,
+                group_size=group_size,
+                route="target",
+                initial_noise=kwargs.get("initial_noise"),
+                transition_noise=kwargs.get("transition_noise"),
+            )
+            result = {
+                "raw_chains": sample.raw_chains,
+                "old_chain_score": sample.old_chain_score,
+                "raw_final_action": sample.raw_final_action,
+                "canonical_action": sample.canonical_action,
+                "critic_feature": conditioning["critic_feature"],
+                "state": conditioning["state"],
+                "block_lengths": conditioning["block_lengths"],
+            }
+            if operation == "actor_batch":
+                from rlinf.models.embodiment.openpi.openpi_ogpo import (
+                    score_ogpo_chains,
+                )
+
+                online_velocity = self._ogpo_velocity_callable(
+                    conditioning, route="online", group_size=group_size
+                )
+                result["current_chain_score"] = score_ogpo_chains(
+                    online_velocity,
+                    sample.raw_chains,
+                    sigma_init=self.config.ogpo_sigma_init,
+                )
+            return result
+        if operation == "score_chains":
+            chains = kwargs["raw_chains"]
+            conditioning = self._prepare_ogpo_conditioning(env_obs=kwargs["env_obs"])
+            expected_chain_shape = (
+                conditioning["state"].shape[0],
+                chains.shape[1] if chains.ndim == 5 else -1,
+                self.config.num_steps + 1,
+                self.config.action_horizon,
+                self.config.action_dim,
+            )
+            if chains.ndim != 5 or tuple(chains.shape) != expected_chain_shape:
+                raise ValueError(
+                    f"OGPO raw_chains must have shape {expected_chain_shape}, "
+                    f"got {tuple(chains.shape)}"
+                )
+            if chains.shape[1] <= 0:
+                raise ValueError("OGPO raw_chains must contain at least one candidate")
+            chains = chains.to(
+                device=conditioning["state"].device, dtype=torch.float32
+            )
+            velocity = self._ogpo_velocity_callable(
+                conditioning, route="online", group_size=chains.shape[1]
+            )
+            from rlinf.models.embodiment.openpi.openpi_ogpo import score_ogpo_chains
+
+            return score_ogpo_chains(
+                velocity,
+                chains,
+                sigma_init=self.config.ogpo_sigma_init,
+            )
+        if operation == "bc_loss":
+            return self._ogpo_success_bc_loss(
+                kwargs["env_obs"], kwargs["actions"]
+            )
+        if operation == "ema_update":
+            self.update_ogpo_target_(float(kwargs["tau"]))
+            return None
+        if operation == "ema_shadow_state":
+            return self.ogpo_target.ema_shadow_state()
+        if operation == "load_ema_shadow_state":
+            self.ogpo_target.load_ema_shadow_state_(kwargs["state"], self)
+            return None
+        raise ValueError(f"Unknown OGPO flow operation: {operation}")
+
+    def _encode_ogpo_prompts(
+        self, prompts: Sequence[str], *, device: torch.device
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        width = int(self.config.ogpo_prompt_bytes)
+        encoded = torch.zeros((len(prompts), width), dtype=torch.uint8)
+        lengths = torch.zeros((len(prompts),), dtype=torch.long)
+        for index, prompt in enumerate(prompts):
+            raw = str(prompt).encode("utf-8")
+            if len(raw) > width:
+                raise ValueError(
+                    f"OGPO prompt needs {len(raw)} bytes, configured maximum is {width}"
+                )
+            if raw:
+                encoded[index, : len(raw)] = torch.tensor(list(raw), dtype=torch.uint8)
+            lengths[index] = len(raw)
+        return encoded.to(device), lengths.to(device)
+
     def predict_action_batch(
         self,
         env_obs,
@@ -844,8 +1276,27 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         )  # obs precision processor
         observation = _model.Observation.from_dict(processed_obs)
 
+        is_ogpo_active = self.config.use_ogpo
         is_dsrl_active = self.config.use_dsrl
-        if is_dsrl_active:
+        ogpo_canonical_action = None
+        if is_ogpo_active:
+            conditioning = self._prepare_ogpo_conditioning(observation)
+            route = "target" if mode == "train" else "online"
+            sample = self._sample_ogpo_from_conditioning(
+                conditioning,
+                group_size=1,
+                route=route,
+            )
+            model_action = sample.raw_final_action[:, 0]
+            ogpo_canonical_action = sample.canonical_action[:, 0]
+            actions = self.output_transform(
+                {"actions": model_action, "state": observation.state}
+            )["actions"]
+            outputs = {"actions": model_action}
+            prev_logprobs = None
+            prev_values = None
+            forward_action = None
+        elif is_dsrl_active:
             # DSRL mode (both train and eval)
 
             # Step 1: SAC agent outputs noise
@@ -886,19 +1337,34 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             prev_values = outputs["prev_values"]
             forward_action = None
 
-        forward_inputs = {
-            "chains": outputs["chains"],
-            "denoise_inds": outputs["denoise_inds"],
-            "tokenized_prompt": processed_obs["tokenized_prompt"],
-            "tokenized_prompt_mask": processed_obs["tokenized_prompt_mask"],
-            # "action" is the env-executed action, and "model_action" is the original output by the model.
-            # For small models, they are consistent. For large models (like pi), "action" is the result after output_transform.
-            # For realworld human-in-the-loop training, only "action" can be provided by human.
-            "action": actions.reshape(actions.shape[0], -1).contiguous(),
-            "model_action": outputs["actions"]
-            .reshape(outputs["actions"].shape[0], -1)
-            .contiguous(),
-        }
+        if is_ogpo_active:
+            prompt_utf8, prompt_length = self._encode_ogpo_prompts(
+                env_obs["task_descriptions"], device=actions.device
+            )
+            forward_inputs = {
+                "action": actions.reshape(actions.shape[0], -1).contiguous(),
+                "model_action": outputs["actions"]
+                .reshape(outputs["actions"].shape[0], -1)
+                .contiguous(),
+                "ogpo_action_model": outputs["actions"][
+                    :, : self.config.action_chunk
+                ].contiguous(),
+                "ogpo_action_q": ogpo_canonical_action.contiguous(),
+                "ogpo_prompt_utf8": prompt_utf8,
+                "ogpo_prompt_length": prompt_length,
+            }
+        else:
+            forward_inputs = {
+                "chains": outputs["chains"],
+                "denoise_inds": outputs["denoise_inds"],
+                "tokenized_prompt": processed_obs["tokenized_prompt"],
+                "tokenized_prompt_mask": processed_obs["tokenized_prompt_mask"],
+                # "action" is executed after transform; "model_action" is raw.
+                "action": actions.reshape(actions.shape[0], -1).contiguous(),
+                "model_action": outputs["actions"]
+                .reshape(outputs["actions"].shape[0], -1)
+                .contiguous(),
+            }
         if forward_action is not None:
             forward_inputs["action"] = forward_action
 

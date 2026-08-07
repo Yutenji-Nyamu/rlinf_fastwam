@@ -1,0 +1,235 @@
+defaults:
+  - env/robotwin_adjust_bottle@env.train
+  - env/robotwin_adjust_bottle@env.eval
+  - model/pi0@actor.model
+  - hybrid_engines/fsdp@actor.fsdp_config
+  - weight_syncer/patch_syncer@weight_syncer
+  - override hydra/job_logging: stdout
+  - _self_
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  searchpath:
+    - file://${oc.env:EMBODIED_PATH}/config/
+
+cluster:
+  num_nodes: 1
+  component_placement:
+    actor, env, rollout: 0-1
+
+runner:
+  task_type: embodied
+  logger:
+    log_path: "../results"
+    project_name: rlinf
+    experiment_name: "robotwin_ogpo_ca_openpi_2gpu"
+    logger_backends: ["tensorboard"]
+  max_epochs: 1000000
+  max_steps: -1
+  only_eval: false
+  val_check_interval: -1
+  save_interval: -1
+  resume_dir: null
+  ckpt_path: null
+  use_training_pipeline: false
+  overlap_env_bootstrap: false
+
+algorithm:
+  loss_type: embodied_ogpo
+  adv_type: ogpo
+  # Shared embodied-schema fields; OGPO consumes primitive trace rewards and
+  # its own whole-chain scorer rather than the PPO chunk/token reductions.
+  reward_type: chunk_level
+  logprob_type: chunk_level
+  entropy_type: token_level
+  group_size: 1
+  reward_coef: 1.0
+  gamma: 0.999
+  ogpo:
+    variant: ogpo_ca
+    model_horizon: 50
+    execution_horizon: 10
+    model_action_dim: 32
+    active_action_dim: 14
+    flow_steps: 4
+    sigma_init: 0.01
+    gaussian_clip: 3.0
+    normalize_denoising_horizon: true
+    normalize_act_space_dimension: true
+    candidate_group_size: 8
+    candidate_microbatch_per_rank: 32
+    clip_epsilon: 0.01
+    bc_coeff: 1.0
+    actor_tau: 0.005
+    critic_tau: 0.05
+    num_q_heads: 10
+    critic_hidden_dims: [512, 512, 512, 512, 512]
+    critic_lr: 3.0e-4
+    critic_adam_beta1: 0.9
+    critic_adam_beta2: 0.999
+    critic_adam_eps: 1.0e-8
+    critic_weight_decay: 1.0e-5
+    critic_grad_clip: 1.0
+    state_batch_size: 64
+    start_training_rows: 20000
+    total_online_rows: 250000
+    replay_capacity: 250000
+    source_fingerprint: "rlinf-pi0-robotwin-sft-adjust_bottle-649ed92b431bd706"
+    norm_fingerprint: "649ed92b431bd70627febdb00b2385e35fcab5088e72a4e4a4845585f8ce4f6a"
+    utd_q: 1.0
+    utd_pi: 1.0
+    offline_ratio: 0.0
+    use_success_buffer_q: false
+    best_of_n: 1
+    baseline_eval: true
+    final_eval: true
+    eval_interval_rows: 20000
+    checkpoint_interval_rows: 50000
+
+env:
+  group_name: "EnvGroup"
+  enable_offload: true
+  train:
+    enable_offload: true
+    rollout_epoch: 1
+    total_num_envs: 8
+    auto_reset: false
+    ignore_terminations: false
+    reward_coef: ${algorithm.reward_coef}
+    max_episode_steps: 200
+    max_steps_per_rollout_epoch: 200
+    group_size: 1
+    assets_path: "/root/autodl-tmp/RoboTwin_RLinf"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+    center_crop: false
+    task_config:
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+    video_cfg:
+      save_video: false
+  eval:
+    rollout_epoch: 5
+    total_num_envs: 4
+    auto_reset: true
+    ignore_terminations: true
+    max_episode_steps: 200
+    reward_coef: ${algorithm.reward_coef}
+    max_steps_per_rollout_epoch: 200
+    group_size: 1
+    use_fixed_reset_state_ids: false
+    is_eval: true
+    assets_path: "/root/autodl-tmp/RoboTwin_RLinf"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
+    video_cfg:
+      save_video: false
+      video_base_dir: ${runner.logger.log_path}/video/eval
+    center_crop: false
+    task_config:
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+
+rollout:
+  group_name: "RolloutGroup"
+  backend: "huggingface"
+  collect_prev_infos: false
+  collect_transitions: false
+  recompute_logprobs: false
+  enable_offload: false
+  pipeline_stage_num: 1
+  model:
+    model_path: ${actor.model.model_path}
+    precision: ${actor.model.precision}
+
+actor:
+  group_name: "ActorGroup"
+  training_backend: "fsdp"
+  micro_batch_size: 32
+  global_batch_size: ${algorithm.ogpo.state_batch_size}
+  seed: 1234
+  enable_offload: false
+  model:
+    precision: null
+    model_path: "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle"
+    num_action_chunks: ${algorithm.ogpo.execution_horizon}
+    num_steps: ${algorithm.ogpo.flow_steps}
+    add_value_head: false
+    action_dim: ${algorithm.ogpo.active_action_dim}
+    openpi_data:
+      repo_id: physical-intelligence/robotwin
+      default_prompt: adjust the bottle
+      norm_stats_path: "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json"
+    openpi:
+      config_name: "pi0_aloha_robotwin"
+      num_images_in_input: 3
+      action_horizon: ${algorithm.ogpo.model_horizon}
+      action_chunk: ${algorithm.ogpo.execution_horizon}
+      action_env_dim: ${algorithm.ogpo.active_action_dim}
+      num_steps: ${algorithm.ogpo.flow_steps}
+      noise_method: flow_ode
+      train_expert_only: true
+      add_value_head: false
+      use_ogpo: true
+      ogpo_sigma_init: ${algorithm.ogpo.sigma_init}
+      ogpo_num_image_blocks: 3
+      use_dsrl: false
+      use_rlt: false
+      is_nft: false
+  optim:
+    lr: 5.6e-6
+    # Shared optimizer-schema compatibility only. OGPO creates its Q optimizer
+    # from algorithm.ogpo.critic_* above and has no PPO value head.
+    value_lr: ${algorithm.ogpo.critic_lr}
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1.0e-8
+    weight_decay: 0.01
+    clip_grad: 1.0
+    critic_warmup_steps: 0
+    total_training_steps: 230000
+    lr_warmup_steps: 0
+    lr_scheduler: constant
+    num_cycles: 0.5
+    min_lr: 0.0
+  fsdp_config:
+    strategy: "fsdp"
+    sharding_strategy: "full_shard"
+    use_orig_params: true
+    gradient_checkpointing: false
+    save_full_model_weights: false
+    mixed_precision:
+      param_dtype: ${actor.model.precision}
+      reduce_dtype: ${actor.model.precision}
+      buffer_dtype: ${actor.model.precision}
+
+reward:
+  use_reward_model: false
+
+critic:
+  use_critic_model: false
+
+weight_syncer:
+  patch:
+    snapshot_device: cpu
+    transport_device: cpu
+    init_sync:
+      enabled: true

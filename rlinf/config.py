@@ -834,7 +834,14 @@ def validate_embodied_cfg(cfg):
     )
     with open_dict(cfg):
         cfg.runner.val_check_interval = cfg.runner.get("val_check_interval", -1)
-    enable_eval = cfg.runner.val_check_interval > 0 or only_eval
+    enable_eval = (
+        cfg.runner.val_check_interval > 0
+        or only_eval
+        or (
+            algorithm_cfg.get("loss_type", "") == "embodied_ogpo"
+            and algorithm_cfg.get("ogpo", {}).get("eval_interval_rows", 0) > 0
+        )
+    )
 
     with open_dict(cfg):
         if enable_eval:
@@ -925,6 +932,102 @@ def validate_embodied_cfg(cfg):
             f"actor.model.add_value_head must be True. "
             f"Current value: {add_value_head}"
         )
+
+    if not only_eval and cfg.algorithm.loss_type == "embodied_ogpo":
+        if model_type != SupportedModel.OPENPI:
+            raise ValueError("embodied_ogpo currently supports only model_type=openpi")
+        if cfg.runner.get("use_training_pipeline", False):
+            raise ValueError("embodied_ogpo does not support the training pipeline")
+        if cfg.actor.get("enable_offload", False):
+            raise ValueError("embodied_ogpo v1 requires actor.enable_offload=False")
+        openpi_cfg = cfg.actor.model.openpi
+        required_flags = {
+            "openpi.use_ogpo": openpi_cfg.get("use_ogpo", False),
+            "openpi.train_expert_only": openpi_cfg.get("train_expert_only", False),
+        }
+        disabled_flags = {
+            "actor.model.add_value_head": cfg.actor.model.get("add_value_head", False),
+            "openpi.add_value_head": openpi_cfg.get("add_value_head", False),
+            "openpi.use_dsrl": openpi_cfg.get("use_dsrl", False),
+            "openpi.use_rlt": openpi_cfg.get("use_rlt", False),
+            "openpi.is_nft": openpi_cfg.get("is_nft", False),
+        }
+        missing = [name for name, enabled in required_flags.items() if not enabled]
+        active = [name for name, enabled in disabled_flags.items() if enabled]
+        if missing or active:
+            raise ValueError(
+                "Invalid embodied_ogpo model graph: missing="
+                f"{missing}, incompatible={active}"
+            )
+        resolved_shape = (
+            int(cfg.actor.model.num_action_chunks),
+            int(openpi_cfg.action_chunk),
+            int(cfg.actor.model.action_dim),
+            int(openpi_cfg.action_env_dim),
+            int(cfg.actor.model.num_steps),
+        )
+        if resolved_shape != (10, 10, 14, 14, 4):
+            raise ValueError(
+                "embodied_ogpo v1 requires "
+                "(num_action_chunks, action_chunk, action_dim, action_env_dim, "
+                f"num_steps)=(10,10,14,14,4), got {resolved_shape}"
+            )
+        if cfg.env.train.auto_reset or cfg.env.train.ignore_terminations:
+            raise ValueError(
+                "embodied_ogpo primitive replay requires auto_reset=False and "
+                "ignore_terminations=False"
+            )
+        if cfg.rollout.get("collect_prev_infos", True):
+            raise ValueError("embodied_ogpo requires rollout.collect_prev_infos=False")
+        if cfg.algorithm.get("ogpo", None) is None:
+            raise ValueError("embodied_ogpo requires algorithm.ogpo configuration")
+        ogpo_cfg = cfg.algorithm.ogpo
+        locked_runtime_values = {
+            "variant": (str(ogpo_cfg.get("variant", "")), "ogpo_ca"),
+            "model_horizon": (int(ogpo_cfg.get("model_horizon", -1)), 50),
+            "execution_horizon": (
+                int(ogpo_cfg.get("execution_horizon", -1)),
+                10,
+            ),
+            "model_action_dim": (
+                int(ogpo_cfg.get("model_action_dim", -1)),
+                32,
+            ),
+            "active_action_dim": (
+                int(ogpo_cfg.get("active_action_dim", -1)),
+                14,
+            ),
+            "flow_steps": (int(ogpo_cfg.get("flow_steps", -1)), 4),
+            "gaussian_clip": (float(ogpo_cfg.get("gaussian_clip", -1.0)), 3.0),
+            "normalize_denoising_horizon": (
+                bool(ogpo_cfg.get("normalize_denoising_horizon", False)),
+                True,
+            ),
+            "normalize_act_space_dimension": (
+                bool(ogpo_cfg.get("normalize_act_space_dimension", False)),
+                True,
+            ),
+            "offline_ratio": (float(ogpo_cfg.get("offline_ratio", -1.0)), 0.0),
+            "use_success_buffer_q": (
+                bool(ogpo_cfg.get("use_success_buffer_q", True)),
+                False,
+            ),
+            "best_of_n": (int(ogpo_cfg.get("best_of_n", -1)), 1),
+        }
+        mismatches = {
+            name: {"configured": configured, "supported": supported}
+            for name, (configured, supported) in locked_runtime_values.items()
+            if configured != supported
+        }
+        if mismatches:
+            raise ValueError(
+                "embodied_ogpo v1 received unsupported locked values: "
+                f"{mismatches}"
+            )
+        if float(openpi_cfg.ogpo_sigma_init) != float(ogpo_cfg.sigma_init):
+            raise ValueError(
+                "openpi.ogpo_sigma_init must match algorithm.ogpo.sigma_init"
+            )
 
     # process num-envs
     component_placement = HybridComponentPlacement(cfg, Cluster())
