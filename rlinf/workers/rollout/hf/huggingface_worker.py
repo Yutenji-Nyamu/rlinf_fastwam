@@ -15,7 +15,9 @@
 import asyncio
 import copy
 import gc
+import socket
 import time
+from datetime import datetime, timezone
 from typing import Any, Callable, Literal, Optional
 
 import numpy as np
@@ -217,8 +219,12 @@ class MultiStepRolloutWorker(Worker):
             required_metadata = (
                 "run_id",
                 "source_commit",
+                "robotwin_commit",
                 "checkpoint_revision",
                 "norm_stats_sha256",
+                "seed_file_sha256",
+                "renderer",
+                "launch_command",
             )
             missing_metadata = [
                 key
@@ -241,18 +247,44 @@ class MultiStepRolloutWorker(Worker):
                         self.dvac_telemetry_cfg.common_base_commit
                     ),
                     "source_commit": str(self.dvac_telemetry_cfg.source_commit),
+                    "robotwin_commit": str(
+                        self.dvac_telemetry_cfg.robotwin_commit
+                    ),
                     "checkpoint_revision": str(
                         self.dvac_telemetry_cfg.checkpoint_revision
                     ),
                     "norm_stats_sha256": str(
                         self.dvac_telemetry_cfg.norm_stats_sha256
                     ),
+                    "seed_file_path": str(self.cfg.env.eval.seeds_path),
+                    "seed_file_sha256": str(
+                        self.dvac_telemetry_cfg.seed_file_sha256
+                    ),
+                    "launch_command": str(
+                        self.dvac_telemetry_cfg.launch_command
+                    ),
+                    "run_started_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "run_started_at_local": datetime.now().astimezone().isoformat(),
+                    "hostname": socket.gethostname(),
                     "model_path": str(self.model_cfg.model_path),
                     "model_type": str(self.model_cfg.model_type),
-                    "num_action_chunks": int(self.model_cfg.num_action_chunks),
-                    "action_dim": int(self.model_cfg.action_dim),
-                    "num_denoising_steps": int(self.model_cfg.num_steps),
-                    "action_env_dim": int(self.model_cfg.openpi.action_env_dim),
+                    "task_name": str(self.cfg.env.eval.task_config.task_name),
+                    "renderer": str(self.dvac_telemetry_cfg.renderer),
+                    "planner_backend": str(
+                        self.cfg.env.eval.task_config.planner_backend
+                    ),
+                    "model_action_horizon": int(self.hf_model.config.action_chunk),
+                    "model_action_dim": int(self.hf_model.config.action_dim),
+                    "active_action_dim": int(
+                        self.hf_model.config.action_env_dim
+                    ),
+                    "execution_chunk_length": int(
+                        self.model_cfg.num_action_chunks
+                    ),
+                    "denoising_steps": int(self.model_cfg.num_steps),
+                    "model_parameter_dtype": str(
+                        next(self.hf_model.parameters()).dtype
+                    ).removeprefix("torch."),
                     "eval_sampling_method": "flow_ode",
                     "rollout_world_size": int(
                         self.placement.get_world_size("rollout")

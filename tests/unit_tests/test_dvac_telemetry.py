@@ -124,6 +124,17 @@ def test_rank_local_writers_preserve_query_and_episode_joins(tmp_path):
         run_metadata={
             "run_id": "test",
             "source_commit": "test",
+            "robotwin_commit": "robotwin-test",
+            "seed_file_sha256": "seed-test",
+            "launch_command": "test launch",
+            "run_started_at_utc": "2026-08-20T00:00:00+00:00",
+            "hostname": "test-host",
+            "model_action_horizon": 3,
+            "model_action_dim": 32,
+            "active_action_dim": 2,
+            "execution_chunk_length": 50,
+            "denoising_steps": 4,
+            "model_parameter_dtype": "bfloat16",
             "rollout_world_size": 2,
             "env_world_size": 2,
         },
@@ -180,6 +191,11 @@ def test_rank_local_writers_preserve_query_and_episode_joins(tmp_path):
     assert len(list((tmp_path / "query_images").rglob("*.png"))) == 6
     run_manifest = json.loads((tmp_path / "run_manifest.json").read_text())
     assert run_manifest["run_id"] == "test"
+    assert run_manifest["robotwin_commit"] == "robotwin-test"
+    assert run_manifest["model_action_horizon"] == 3
+    assert run_manifest["model_action_dim"] == 32
+    assert run_manifest["active_action_dim"] == 2
+    assert run_manifest["model_parameter_dtype"] == "bfloat16"
     assert len(run_manifest["expected_rollout_shards"]) == 2
     assert len(run_manifest["expected_episode_shards"]) == 2
 
