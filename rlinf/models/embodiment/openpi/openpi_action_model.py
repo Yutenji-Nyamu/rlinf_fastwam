@@ -833,6 +833,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         env_obs,
         mode: Literal["train", "eval"] = "train",
         compute_values=True,
+        return_dvac_telemetry: bool = False,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         to_process_obs = self.obs_processor(env_obs)  # env obs -> policy input obs
@@ -861,6 +862,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 noise=noise_actions,
                 mode="eval",
                 compute_values=compute_values,
+                return_dvac_telemetry=return_dvac_telemetry,
             )
 
             # Step 3: Extract actual actions for environment interaction
@@ -877,7 +879,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             # Non-DSRL or eval mode
             outputs = self.sample_actions(
-                observation, mode=mode, compute_values=compute_values
+                observation,
+                mode=mode,
+                compute_values=compute_values,
+                return_dvac_telemetry=return_dvac_telemetry,
             )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -919,6 +924,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "prev_values": prev_values,
             "forward_inputs": forward_inputs,
         }
+        if return_dvac_telemetry:
+            result["dvac_telemetry"] = outputs["dvac_telemetry"]
         return actions, result
 
     @torch.no_grad()
@@ -928,6 +935,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        return_dvac_telemetry: bool = False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -955,6 +963,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             noise=noise,
             mode=mode,
             compute_values=compute_values,
+            return_dvac_telemetry=return_dvac_telemetry,
         )
 
     def _sample_actions_with_prefix_cache(
@@ -966,6 +975,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        return_dvac_telemetry: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
@@ -983,6 +993,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         log_probs = []
         values = []
         chains.append(x_t)
+        endpoint_trace = [] if return_dvac_telemetry else None
+        telemetry_timesteps = (
+            self._get_timesteps(num_steps, device)
+            if return_dvac_telemetry
+            else None
+        )
 
         # add value based on the vlm for pi05, expert for pi0
         if self.use_vlm_value:
@@ -1034,6 +1050,13 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 num_steps,
                 compute_values,
             )
+            if endpoint_trace is not None:
+                t_i = telemetry_timesteps[idx].to(dtype=x_t_prev.dtype)
+                endpoint_trace.append(
+                    (x_t_prev - v_t * t_i)[
+                        ..., : self.config.action_env_dim
+                    ].detach()
+                )
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
@@ -1070,6 +1093,17 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
+        if endpoint_trace is not None:
+            result["dvac_telemetry"] = {
+                "x_chain": chains[
+                    ..., : self.config.action_env_dim
+                ].detach(),
+                "z_endpoint": torch.stack(endpoint_trace, dim=1),
+                "timesteps": telemetry_timesteps[:-1].detach(),
+                "final_model_action": x_0[
+                    ..., : self.config.action_env_dim
+                ].detach(),
+            }
         return result
 
     def _get_timesteps(self, denoise_steps, device):

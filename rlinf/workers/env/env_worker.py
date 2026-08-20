@@ -39,6 +39,7 @@ from rlinf.envs.wrappers import RecordVideo
 from rlinf.scheduler import Channel, Cluster, CommMapper, Worker
 from rlinf.utils.data_iter_utils import split_list
 from rlinf.utils.distributed import masked_stats, normalize_from_stats
+from rlinf.utils.dvac_telemetry import DVACEpisodeWriter
 from rlinf.utils.metric_utils import compute_split_num
 from rlinf.utils.nested_dict_process import (
     clone_nested_to_cpu,
@@ -173,6 +174,24 @@ class EnvWorker(Worker):
             ]
         self.env_decoupled_mode = self.cfg.runner.get("enable_decoupled_mode", False)
 
+        self.dvac_telemetry_cfg = OmegaConf.select(
+            self.cfg, "rollout.dvac_telemetry", default=None
+        )
+        self.dvac_telemetry_enabled = bool(
+            self.dvac_telemetry_cfg is not None
+            and self.dvac_telemetry_cfg.get("enabled", False)
+        )
+        self.dvac_episode_writer: DVACEpisodeWriter | None = None
+        if self.dvac_telemetry_enabled:
+            if not self.only_eval:
+                raise ValueError("DVAC telemetry v1 only supports standalone evaluation.")
+            if self.env_decoupled_mode:
+                raise ValueError("DVAC telemetry v1 does not support decoupled mode.")
+            if self.eval_rollout_epoch != 1:
+                raise ValueError("DVAC telemetry v1 requires exactly one eval epoch.")
+            if self.cfg.env.eval.env_type != "robotwin":
+                raise ValueError("DVAC telemetry v1 metadata is defined for RoboTwin.")
+
         if self.env_decoupled_mode:
             # Init the batch_router for env decoupled mode
             # The batch_router is a dictionary that maps the tag to the list of batch_index.
@@ -246,6 +265,12 @@ class EnvWorker(Worker):
                 assert all(
                     callable(get_env_attr(env, "offload")) for env in self.eval_env_list
                 ), "eval envs must have an offload method to enable offload!"
+
+        if self.dvac_telemetry_enabled:
+            output_dir = self.dvac_telemetry_cfg.get("output_dir", None)
+            if not output_dir:
+                raise ValueError("rollout.dvac_telemetry.output_dir must be set.")
+            self.dvac_episode_writer = DVACEpisodeWriter(str(output_dir), self._rank)
 
         if self.enable_train:
             if self.reward_mode == "history_buffer":
@@ -524,7 +549,13 @@ class EnvWorker(Worker):
 
     def env_evaluate_step(
         self, raw_actions: torch.Tensor, stage_id: int
-    ) -> tuple[EnvOutput, dict[str, Any]]:
+    ) -> tuple[
+        EnvOutput,
+        dict[str, Any],
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         """
         This function is used to evaluate the environment.
         """
@@ -584,7 +615,13 @@ class EnvWorker(Worker):
             env_infos=infos if isinstance(infos, dict) else None,
             rlt_switch_flags=rlt_switch_flags,
         )
-        return env_output, env_info
+        return (
+            env_output,
+            env_info,
+            newly_done,
+            chunk_terminations.any(dim=1),
+            chunk_truncations.any(dim=1),
+        )
 
     def _build_chunk_final_obs(self, obs_list, infos_list):
         """Build per-env terminal observations for a whole chunk.
@@ -918,7 +955,11 @@ class EnvWorker(Worker):
 
         return env_outputs
 
-    def _build_rollout_input_data(self, env_batch: dict[str, Any]) -> dict[str, Any]:
+    def _build_rollout_input_data(
+        self,
+        env_batch: dict[str, Any],
+        dvac_query_metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         data = {
             "obs": env_batch["obs"],
             "final_obs": env_batch["final_obs"],
@@ -926,7 +967,60 @@ class EnvWorker(Worker):
         if self.enable_rlt:
             data["rlt_switch_flags"] = env_batch.get("rlt_switch_flags", None)
             data["intervene_flags"] = env_batch.get("intervene_flags", None)
+        if dvac_query_metadata is not None:
+            data["dvac_query_metadata"] = dvac_query_metadata
         return data
+
+    def _build_eval_query_metadata(
+        self,
+        *,
+        stage_id: int,
+        eval_epoch: int,
+        query_idx: int,
+    ) -> dict[str, Any]:
+        """Build truthful query coordinates from the wrapped RoboTwin env."""
+        env = self.eval_env_list[stage_id]
+        batch_size = self.eval_num_envs_per_stage
+        reset_ids = torch.as_tensor(get_env_attr(env, "reset_state_ids")).detach().cpu()
+        action_slot_start = torch.as_tensor(
+            get_env_attr(env, "elapsed_steps")
+        ).detach().cpu()
+        success_before = torch.as_tensor(
+            get_env_attr(env, "success_once")
+        ).detach().cpu()
+        local_env_slot = torch.arange(batch_size, dtype=torch.long)
+        logical_env_start = (
+            self._rank * self.stage_num + stage_id
+        ) * batch_size
+        episode_idx = (
+            eval_epoch * int(self.cfg.env.eval.total_num_envs)
+            + logical_env_start
+            + local_env_slot
+        )
+        video_worker_seed = int(get_env_attr(env, "seed"))
+        video_relpath = f"seed_{video_worker_seed}/{eval_epoch}.mp4"
+
+        def repeated(value: int, *, dtype=torch.long) -> torch.Tensor:
+            return torch.full((batch_size,), value, dtype=dtype)
+
+        return {
+            "episode_idx": episode_idx,
+            "eval_epoch": repeated(eval_epoch),
+            "query_idx": repeated(query_idx),
+            "action_slot_start": action_slot_start,
+            "action_chunk": repeated(int(self.model_cfg.num_action_chunks)),
+            "source_env_rank": repeated(self._rank),
+            "stage_id": repeated(stage_id),
+            "local_env_slot": local_env_slot,
+            "reset_id": reset_ids,
+            "video_worker_seed": repeated(video_worker_seed),
+            "video_index": repeated(eval_epoch),
+            "video_tile_index": local_env_slot.clone(),
+            "video_pre_frame": repeated(query_idx),
+            "video_post_frame": repeated(query_idx + 1),
+            "video_relpath": [video_relpath] * batch_size,
+            "success_before": success_before,
+        }
 
     def _send_train_bootstrap(
         self, rollout_channel: Channel, env_outputs: list[EnvOutput]
@@ -1278,10 +1372,21 @@ class EnvWorker(Worker):
                         env_infos=infos if isinstance(infos, dict) else None,
                     )
                     env_batch = env_output.to_dict()
+                    query_metadata = (
+                        self._build_eval_query_metadata(
+                            stage_id=stage_id,
+                            eval_epoch=eval_rollout_epoch,
+                            query_idx=0,
+                        )
+                        if self.dvac_telemetry_enabled
+                        else None
+                    )
                     self.send_to(
                         group_name=self.cfg.rollout.group_name,
                         channel=rollout_channel,
-                        data=self._build_rollout_input_data(env_batch),
+                        data=self._build_rollout_input_data(
+                            env_batch, query_metadata
+                        ),
                         mode="eval",
                         tag="rollout_results",
                         route_key=stage_id if not self.env_decoupled_mode else None,
@@ -1310,9 +1415,40 @@ class EnvWorker(Worker):
                         raw_chunk_actions = raw_chunk_actions.detach().cpu().numpy()
                     else:
                         raw_chunk_actions = np.asarray(raw_chunk_actions)
-                    env_output, env_info = self.env_evaluate_step(
-                        raw_chunk_actions, stage_id
+                    query_metadata = (
+                        self._build_eval_query_metadata(
+                            stage_id=stage_id,
+                            eval_epoch=eval_rollout_epoch,
+                            query_idx=eval_step,
+                        )
+                        if self.dvac_telemetry_enabled
+                        else None
                     )
+                    (
+                        env_output,
+                        env_info,
+                        newly_done,
+                        terminated,
+                        truncated,
+                    ) = self.env_evaluate_step(raw_chunk_actions, stage_id)
+
+                    if (
+                        self.dvac_telemetry_enabled
+                        and newly_done.any()
+                        and eval_step != self.n_eval_chunk_steps - 1
+                    ):
+                        raise RuntimeError(
+                            "DVAC telemetry v1 observed an early episode reset; "
+                            "stopping instead of emitting an ambiguous episode join."
+                        )
+                    if self.dvac_episode_writer is not None and newly_done.any():
+                        self.dvac_episode_writer.append(
+                            query_metadata=query_metadata,
+                            env_info=env_info,
+                            newly_done=newly_done,
+                            terminated=terminated,
+                            truncated=truncated,
+                        )
 
                     for key, value in env_info.items():
                         eval_metrics[key].append(value)
@@ -1327,10 +1463,29 @@ class EnvWorker(Worker):
                         if eval_step == self.n_eval_chunk_steps - 1:
                             continue
                     env_batch = env_output.to_dict()
+                    if self.dvac_telemetry_enabled:
+                        if (
+                            self.cfg.env.eval.auto_reset
+                            and eval_step == self.n_eval_chunk_steps - 1
+                        ):
+                            next_eval_epoch = eval_rollout_epoch + 1
+                            next_query_idx = 0
+                        else:
+                            next_eval_epoch = eval_rollout_epoch
+                            next_query_idx = eval_step + 1
+                        next_query_metadata = self._build_eval_query_metadata(
+                            stage_id=stage_id,
+                            eval_epoch=next_eval_epoch,
+                            query_idx=next_query_idx,
+                        )
+                    else:
+                        next_query_metadata = None
                     self.send_to(
                         group_name=self.cfg.rollout.group_name,
                         channel=rollout_channel,
-                        data=self._build_rollout_input_data(env_batch),
+                        data=self._build_rollout_input_data(
+                            env_batch, next_query_metadata
+                        ),
                         mode="eval",
                         tag="rollout_results",
                         route_key=stage_id if not self.env_decoupled_mode else None,
@@ -1338,6 +1493,8 @@ class EnvWorker(Worker):
                     )
 
             self.finish_rollout(mode="eval")
+        if self.dvac_episode_writer is not None:
+            self.dvac_episode_writer.finalize()
         for stage_id in range(self.stage_num):
             if self.eval_enable_offload:
                 get_env_attr(self.eval_env_list[stage_id], "offload")()

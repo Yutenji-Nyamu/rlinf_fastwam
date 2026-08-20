@@ -36,6 +36,7 @@ from rlinf.hybrid_engines.weight_syncer import WeightSyncer
 from rlinf.models import get_model
 from rlinf.models.embodiment.base_policy import BasePolicy
 from rlinf.scheduler import Channel, Cluster, Worker, split_channel_message
+from rlinf.utils.dvac_telemetry import DVACTelemetryWriter
 from rlinf.utils.placement import HybridComponentPlacement
 
 
@@ -128,6 +129,26 @@ class MultiStepRolloutWorker(Worker):
 
         self.env_decoupled_mode = self.cfg.runner.get("enable_decoupled_mode", False)
 
+        self.dvac_telemetry_cfg = OmegaConf.select(
+            self.cfg, "rollout.dvac_telemetry", default=None
+        )
+        self.dvac_telemetry_enabled = bool(
+            self.dvac_telemetry_cfg is not None
+            and self.dvac_telemetry_cfg.get("enabled", False)
+        )
+        self.dvac_telemetry_writer: DVACTelemetryWriter | None = None
+        if self.dvac_telemetry_enabled:
+            if not self.only_eval:
+                raise ValueError("DVAC telemetry v1 only supports standalone evaluation.")
+            if self.env_decoupled_mode:
+                raise ValueError("DVAC telemetry v1 does not support decoupled mode.")
+            if self.eval_rollout_epoch != 1:
+                raise ValueError("DVAC telemetry v1 requires exactly one eval epoch.")
+            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                raise ValueError("DVAC telemetry v1 requires an OpenPI rollout model.")
+            if self.cfg.runner.get("ckpt_path", None) is not None:
+                raise ValueError("DVAC telemetry v1 expects the original SFT model_path.")
+
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
             # The batch_router is a dictionary that maps the tag to the list of batch_index.
@@ -174,6 +195,79 @@ class MultiStepRolloutWorker(Worker):
             self.expert_model.eval()
         if self.rlt_feature_model is not None:
             self.rlt_feature_model.eval()
+
+        if self.dvac_telemetry_enabled:
+            if self.rlt_feature_model is not None:
+                raise ValueError("DVAC telemetry v1 records native OpenPI, not RLT.")
+            if self.expert_model is not None:
+                raise ValueError("DVAC telemetry v1 does not support an expert route.")
+            active_modes = [
+                name
+                for name in ("use_dsrl", "use_rlt", "is_nft")
+                if bool(getattr(self.hf_model.config, name, False))
+            ]
+            if active_modes:
+                raise ValueError(
+                    "DVAC telemetry v1 requires plain SFT OpenPI; active modes: "
+                    + ", ".join(active_modes)
+                )
+            output_dir = self.dvac_telemetry_cfg.get("output_dir", None)
+            if not output_dir:
+                raise ValueError("rollout.dvac_telemetry.output_dir must be set.")
+            required_metadata = (
+                "run_id",
+                "source_commit",
+                "checkpoint_revision",
+                "norm_stats_sha256",
+            )
+            missing_metadata = [
+                key
+                for key in required_metadata
+                if not self.dvac_telemetry_cfg.get(key, None)
+            ]
+            if missing_metadata:
+                raise ValueError(
+                    "Missing DVAC run metadata: " + ", ".join(missing_metadata)
+                )
+            self.dvac_telemetry_writer = DVACTelemetryWriter(
+                str(output_dir),
+                self._rank,
+                save_query_inputs=self.dvac_telemetry_cfg.get(
+                    "save_query_inputs", True
+                ),
+                run_metadata={
+                    "run_id": str(self.dvac_telemetry_cfg.run_id),
+                    "common_base_commit": str(
+                        self.dvac_telemetry_cfg.common_base_commit
+                    ),
+                    "source_commit": str(self.dvac_telemetry_cfg.source_commit),
+                    "checkpoint_revision": str(
+                        self.dvac_telemetry_cfg.checkpoint_revision
+                    ),
+                    "norm_stats_sha256": str(
+                        self.dvac_telemetry_cfg.norm_stats_sha256
+                    ),
+                    "model_path": str(self.model_cfg.model_path),
+                    "model_type": str(self.model_cfg.model_type),
+                    "num_action_chunks": int(self.model_cfg.num_action_chunks),
+                    "action_dim": int(self.model_cfg.action_dim),
+                    "num_denoising_steps": int(self.model_cfg.num_steps),
+                    "action_env_dim": int(self.model_cfg.openpi.action_env_dim),
+                    "eval_sampling_method": "flow_ode",
+                    "rollout_world_size": int(
+                        self.placement.get_world_size("rollout")
+                    ),
+                    "env_world_size": int(
+                        self.placement.get_world_size("env")
+                    ),
+                    "camera_mapping": {
+                        "main_images": "head",
+                        "wrist_images_0": "left_wrist",
+                        "wrist_images_1": "right_wrist",
+                    },
+                },
+                resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
+            )
 
         if self.cfg.rollout.get("enable_torch_compile", False):
             mode = self.cfg.rollout.get(
@@ -499,6 +593,13 @@ class MultiStepRolloutWorker(Worker):
         ]:
             kwargs["return_obs"] = not hasattr(self.hf_model, "q_head")
 
+        if (
+            self.dvac_telemetry_enabled
+            and mode == "eval"
+            and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
+        ):
+            kwargs["return_dvac_telemetry"] = True
+
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
             "only_save_expert", True
         )
@@ -814,7 +915,7 @@ class MultiStepRolloutWorker(Worker):
                             merge_fn=self._merge_obs_batches,
                             infer_batch_size_fn=self._infer_env_batch_size,
                         ).async_wait()
-                        actions, _ = self._predict_rollout_actions(
+                        actions, result = self._predict_rollout_actions(
                             env_output["obs"],
                             mode="eval",
                             final_obs=env_output.get("final_obs", None),
@@ -832,6 +933,16 @@ class MultiStepRolloutWorker(Worker):
                             async_op=True,
                             batch_size=self.eval_batch_size,
                         )
+                        if self.dvac_telemetry_writer is not None:
+                            self.dvac_telemetry_writer.append(
+                                telemetry=result["dvac_telemetry"],
+                                env_action=actions,
+                                env_obs=env_output["obs"],
+                                query_metadata=env_output["dvac_query_metadata"],
+                            )
+
+            if self.dvac_telemetry_writer is not None:
+                self.dvac_telemetry_writer.finalize()
 
             if self.enable_offload:
                 self.offload_model()
@@ -901,6 +1012,9 @@ class MultiStepRolloutWorker(Worker):
         intervene_flags_list = [
             obs_batch.get("intervene_flags", None) for obs_batch in obs_batches
         ]
+        query_metadata_list = [
+            obs_batch.get("dvac_query_metadata", None) for obs_batch in obs_batches
+        ]
 
         def _merge_obs_dicts(dicts: list[dict[str, Any]]) -> dict[str, Any]:
             merged: dict[str, Any] = {}
@@ -928,6 +1042,12 @@ class MultiStepRolloutWorker(Worker):
             ]
             merged_final_obs = _merge_obs_dicts(final_obs_or_obs)
 
+        merged_query_metadata = None
+        if any(metadata is not None for metadata in query_metadata_list):
+            if not all(metadata is not None for metadata in query_metadata_list):
+                raise ValueError("DVAC query metadata must align with every obs batch.")
+            merged_query_metadata = _merge_obs_dicts(query_metadata_list)
+
         return {
             "obs": merged_obs,
             "final_obs": merged_final_obs,
@@ -937,6 +1057,7 @@ class MultiStepRolloutWorker(Worker):
             "intervene_flags": self._merge_optional_flag_tensors(
                 obs_dicts, intervene_flags_list
             ),
+            "dvac_query_metadata": merged_query_metadata,
         }
 
     def _split_rollout_result(
