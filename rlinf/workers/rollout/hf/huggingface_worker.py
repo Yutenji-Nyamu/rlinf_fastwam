@@ -25,6 +25,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tqdm import tqdm
 
+from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variances
 from rlinf.algorithms.rlt import (
     build_expert_model_config,
     build_rlt_route,
@@ -150,6 +151,33 @@ class MultiStepRolloutWorker(Worker):
                 raise ValueError("DVAC telemetry v1 requires an OpenPI rollout model.")
             if self.cfg.runner.get("ckpt_path", None) is not None:
                 raise ValueError("DVAC telemetry v1 expects the original SFT model_path.")
+
+        self.dvac_train_cfg = OmegaConf.select(
+            self.cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_mode = (
+            str(self.dvac_train_cfg.get("mode", "off"))
+            if self.dvac_train_cfg is not None
+            else "off"
+        )
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be off or apply"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        if self.dvac_train_enabled:
+            if self.only_eval:
+                raise ValueError("DVAC train weighting requires a training run.")
+            if self.env_decoupled_mode:
+                raise ValueError("DVAC train weighting does not support decoupled mode.")
+            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                raise ValueError("DVAC train weighting requires an OpenPI rollout model.")
+            self.dvac_train_l_values = tuple(
+                int(value)
+                for value in self.dvac_train_cfg.get("l_values", [2, 3, 4])
+            )
+        else:
+            self.dvac_train_l_values = ()
 
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
@@ -300,6 +328,22 @@ class MultiStepRolloutWorker(Worker):
                 },
                 resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
             )
+
+        if self.dvac_train_enabled:
+            if self.rlt_feature_model is not None or self.expert_model is not None:
+                raise ValueError("DVAC train weighting v1 requires native OpenPI.")
+            active_modes = [
+                name
+                for name in ("use_dsrl", "use_rlt", "is_nft")
+                if bool(getattr(self.hf_model.config, name, False))
+            ]
+            if active_modes:
+                raise ValueError(
+                    "DVAC train weighting v1 does not support: "
+                    + ", ".join(active_modes)
+                )
+            if str(getattr(self.hf_model.config, "noise_method", "")) != "flow_sde":
+                raise ValueError("DVAC train weighting v1 expects train flow_sde.")
 
         if self.cfg.rollout.get("enable_torch_compile", False):
             mode = self.cfg.rollout.get(
@@ -631,6 +675,8 @@ class MultiStepRolloutWorker(Worker):
             and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
         ):
             kwargs["return_dvac_telemetry"] = True
+        if self.dvac_train_enabled and mode == "train":
+            kwargs["return_dvac_telemetry"] = True
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
             "only_save_expert", True
@@ -676,11 +722,37 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
 
+        if self.dvac_train_enabled and mode == "train":
+            telemetry = result.pop("dvac_telemetry")
+            variances = compute_endpoint_variances(
+                telemetry["z_endpoint"], self.dvac_train_l_values
+            )
+            for l_value, variance in variances.items():
+                result["forward_inputs"][f"dvac_v_l{l_value}"] = (
+                    variance.detach().float().cpu().contiguous()
+                )
+
         if isinstance(actions, np.ndarray):
             actions = torch.from_numpy(actions)
 
         result["expert_label_flag"] = bool(expert_label_flag)
         return actions, result
+
+    def _attach_dvac_train_query_metadata(
+        self,
+        result: dict[str, Any],
+        query_metadata: dict[str, Any] | None,
+    ) -> None:
+        if not self.dvac_train_enabled:
+            return
+        if query_metadata is None:
+            raise ValueError("DVAC train query metadata is missing.")
+        for key, value in query_metadata.items():
+            if not torch.is_tensor(value):
+                raise TypeError(f"DVAC train metadata {key} must be a tensor")
+            result["forward_inputs"][f"dvac_meta_{key}"] = (
+                value.detach().cpu().contiguous()
+            )
 
     def _predict_rollout_actions(
         self,
@@ -818,6 +890,9 @@ class MultiStepRolloutWorker(Worker):
                     final_obs=env_output.get("final_obs", None),
                     rlt_switch_flags=env_output.get("rlt_switch_flags", None),
                     intervene_requested=env_output.get("intervene_flags", None),
+                )
+                self._attach_dvac_train_query_metadata(
+                    result, env_output.get("dvac_query_metadata", None)
                 )
 
                 rollout_result = self._build_rollout_result(

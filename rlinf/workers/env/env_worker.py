@@ -192,6 +192,31 @@ class EnvWorker(Worker):
             if self.cfg.env.eval.env_type != "robotwin":
                 raise ValueError("DVAC telemetry v1 metadata is defined for RoboTwin.")
 
+        self.dvac_train_cfg = OmegaConf.select(
+            self.cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_mode = (
+            str(self.dvac_train_cfg.get("mode", "off"))
+            if self.dvac_train_cfg is not None
+            else "off"
+        )
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be off or apply"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        if self.dvac_train_enabled:
+            if not self.enable_train:
+                raise ValueError("DVAC train query metadata requires a training run.")
+            if self.env_decoupled_mode:
+                raise ValueError(
+                    "DVAC train query metadata does not support decoupled mode."
+                )
+            if self.cfg.env.train.env_type != "robotwin":
+                raise ValueError(
+                    "DVAC train query metadata is currently defined for RoboTwin."
+                )
+
         if self.env_decoupled_mode:
             # Init the batch_router for env decoupled mode
             # The batch_router is a dictionary that maps the tag to the list of batch_index.
@@ -1022,25 +1047,92 @@ class EnvWorker(Worker):
             "success_before": success_before,
         }
 
+    def _build_train_query_metadata(
+        self,
+        *,
+        stage_id: int,
+        rollout_epoch: int,
+        query_idx: int,
+    ) -> dict[str, torch.Tensor]:
+        """Attach environment coordinates to the train query sent to the policy."""
+        env = self.env_list[stage_id]
+        batch_size = self.train_num_envs_per_stage
+        reset_ids = (
+            torch.as_tensor(get_env_attr(env, "reset_state_ids"))
+            .detach()
+            .cpu()
+            .long()
+        )
+        action_slot_start = (
+            torch.as_tensor(get_env_attr(env, "elapsed_steps"))
+            .detach()
+            .cpu()
+            .long()
+        )
+        success_before = (
+            torch.as_tensor(get_env_attr(env, "success_once"))
+            .detach()
+            .cpu()
+            .bool()
+        )
+        local_env_slot = torch.arange(batch_size, dtype=torch.long)
+        logical_env_start = (
+            self._rank * self.stage_num + stage_id
+        ) * batch_size
+        episode_index_within_step = (
+            rollout_epoch * int(self.cfg.env.train.total_num_envs)
+            + logical_env_start
+            + local_env_slot
+        )
+
+        def repeated(value: int) -> torch.Tensor:
+            return torch.full((batch_size,), value, dtype=torch.long)
+
+        return {
+            "rollout_epoch": repeated(rollout_epoch),
+            "query_idx": repeated(query_idx),
+            "action_slot_start": action_slot_start,
+            "source_env_rank": repeated(self._rank),
+            "stage_id": repeated(stage_id),
+            "local_env_slot": local_env_slot,
+            "reset_id": reset_ids,
+            "success_before": success_before,
+            "episode_index_within_step": episode_index_within_step,
+        }
+
     def _send_train_bootstrap(
-        self, rollout_channel: Channel, env_outputs: list[EnvOutput]
+        self,
+        rollout_channel: Channel,
+        env_outputs: list[EnvOutput],
+        rollout_epoch: int = 0,
     ) -> None:
         for stage_id in range(self.stage_num):
             env_output: EnvOutput = env_outputs[stage_id]
             env_batch = env_output.to_dict()
+            query_metadata = (
+                self._build_train_query_metadata(
+                    stage_id=stage_id,
+                    rollout_epoch=rollout_epoch,
+                    query_idx=0,
+                )
+                if self.dvac_train_enabled
+                else None
+            )
             self.send_to(
                 group_name=self.cfg.rollout.group_name,
                 channel=rollout_channel,
-                data=self._build_rollout_input_data(env_batch),
+                data=self._build_rollout_input_data(env_batch, query_metadata),
                 mode="train",
                 tag="rollout_results",
                 route_key=stage_id if not self.env_decoupled_mode else None,
                 decoupled_mode=self.env_decoupled_mode,
             )
 
-    def _bootstrap_and_send_train(self, rollout_channel: Channel) -> list[EnvOutput]:
+    def _bootstrap_and_send_train(
+        self, rollout_channel: Channel, rollout_epoch: int = 0
+    ) -> list[EnvOutput]:
         env_outputs = self.bootstrap_step()
-        self._send_train_bootstrap(rollout_channel, env_outputs)
+        self._send_train_bootstrap(rollout_channel, env_outputs, rollout_epoch)
         return env_outputs
 
     def prefetch_train_bootstrap(self, rollout_channel: Channel) -> None:
@@ -1122,7 +1214,9 @@ class EnvWorker(Worker):
                 env_outputs = self._prefetched_train_bootstrap
                 self._prefetched_train_bootstrap = None
             else:
-                env_outputs = self._bootstrap_and_send_train(rollout_channel)
+                env_outputs = self._bootstrap_and_send_train(
+                    rollout_channel, rollout_epoch=epoch
+                )
 
             for chunk_step_idx in range(self.n_train_chunk_steps):
                 for stage_id in range(self.stage_num):
@@ -1215,10 +1309,21 @@ class EnvWorker(Worker):
                             **chunk_step_payload,
                         )
                     env_batch = env_output.to_dict()
+                    next_query_metadata = (
+                        self._build_train_query_metadata(
+                            stage_id=stage_id,
+                            rollout_epoch=epoch,
+                            query_idx=chunk_step_idx + 1,
+                        )
+                        if self.dvac_train_enabled
+                        else None
+                    )
                     self.send_to(
                         group_name=self.cfg.rollout.group_name,
                         channel=rollout_channel,
-                        data=self._build_rollout_input_data(env_batch),
+                        data=self._build_rollout_input_data(
+                            env_batch, next_query_metadata
+                        ),
                         mode="train",
                         tag="rollout_results",
                         route_key=stage_id if not self.env_decoupled_mode else None,

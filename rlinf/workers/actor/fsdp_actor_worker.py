@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import time
 from functools import partial
 from typing import Optional
@@ -24,6 +25,13 @@ from torch.distributed.tensor import DTensor
 from torch.multiprocessing.reductions import reduce_tensor
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.algorithms.dvac_train_weighting import (
+    DVACRecentStats,
+    DVACStepStats,
+    DVACTrainWriter,
+    local_log_v_sufficient_statistics,
+    straight_through_scale_logprobs,
+)
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.algorithms.utils import (
     kl_penalty,
@@ -1031,6 +1039,45 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         self.enable_sft_co_train = cfg.actor.get("enable_sft_co_train", False)
         self.version = 0
+
+        dvac_cfg = OmegaConf.select(
+            cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_cfg = (
+            {}
+            if dvac_cfg is None
+            else OmegaConf.to_container(dvac_cfg, resolve=True)
+        )
+        self.dvac_train_mode = str(self.dvac_train_cfg.get("mode", "off")).lower()
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be 'off' or "
+                f"'apply', got {self.dvac_train_mode!r}"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_recent_stats = None
+        self.dvac_train_writer = None
+        self._dvac_pending_step = None
+        if self.dvac_train_enabled:
+            self.dvac_l_values = tuple(
+                int(value) for value in self.dvac_train_cfg.get("l_values", (2, 3, 4))
+            )
+            self.dvac_selected_l = int(
+                self.dvac_train_cfg.get("selected_l", 3)
+            )
+            if self.dvac_selected_l not in self.dvac_l_values:
+                raise ValueError(
+                    "selected_l must be included in l_values, got "
+                    f"selected_l={self.dvac_selected_l}, l_values={self.dvac_l_values}"
+                )
+            self.dvac_recent_stats = DVACRecentStats(
+                window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
+                warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
+                log_eps=float(self.dvac_train_cfg.get("log_eps", 1e-12)),
+                std_floor=float(self.dvac_train_cfg.get("std_floor", 1e-6)),
+                z_clip=float(self.dvac_train_cfg.get("z_clip", 2.0)),
+                strength=float(self.dvac_train_cfg.get("strength", 0.1)),
+            )
         if self.enable_sft_co_train:
             self._build_sft_data_loader()
 
@@ -1065,6 +1112,29 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if needed, offload model parameters and optimizer states to CPU.
         """
         self.setup_model_and_optimizer()
+
+        if self.dvac_train_enabled:
+            if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
+                raise ValueError("DVAC train weighting v1 supports OpenPI only.")
+            if self.cfg.algorithm.logprob_type != "chunk_level":
+                raise ValueError(
+                    "DVAC train weighting v1 preserves the baseline chunk-level "
+                    "PPO ratio and clipping."
+                )
+            output_dir = self.dvac_train_cfg.get("output_dir", None)
+            if not output_dir:
+                raise ValueError(
+                    "algorithm.dvac_gradient_weighting.output_dir must be set "
+                    "when mode='apply'."
+                )
+            self.dvac_train_writer = DVACTrainWriter(
+                str(output_dir),
+                rank=self._rank,
+                world_size=self._world_size,
+                config=self.dvac_train_cfg,
+                repo_path=os.environ.get("REPO_PATH"),
+                robotwin_path=str(self.cfg.env.train.assets_path),
+            )
 
         if self.enable_offload:
             self.offload_param_and_grad()
@@ -1354,6 +1424,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             self.load_optimizer(self.device)
 
         self.model.train()
+        if self.dvac_train_enabled:
+            self._prepare_dvac_train_step()
         rollout_size = (
             self.rollout_batch["prev_logprobs"].shape[0]
             * self.rollout_batch["prev_logprobs"].shape[1]
@@ -1428,7 +1500,95 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             mean_metric_dict, op=torch.distributed.ReduceOp.AVG
         )
 
+        if self.dvac_train_enabled:
+            pending = self._dvac_pending_step
+            self.dvac_recent_stats.push(pending["current_stats"])
+            self.dvac_train_writer.write_step_summary(
+                pending["summary"],
+                mean_metric_dict,
+                self.dvac_recent_stats.state_dict(),
+            )
+            mean_metric_dict.update(
+                {
+                    "actor/dvac_warmup": float(pending["warmup"]),
+                    "actor/dvac_history_mean": float(
+                        pending["history"]["history_mean"]
+                    ),
+                    "actor/dvac_history_std": float(
+                        pending["history"]["history_std"]
+                    ),
+                    "actor/dvac_current_mean": pending["current_stats"].mean,
+                    "actor/dvac_current_std": pending["current_stats"].std,
+                    "actor/dvac_weight_mean_rank_local": float(
+                        pending["summary"]["weight_mean"]
+                    ),
+                }
+            )
+            self._dvac_pending_step = None
+
         return mean_metric_dict
+
+    def _prepare_dvac_train_step(self) -> None:
+        """Freeze one runner-step's weights and raw artifacts before replay."""
+
+        forward_inputs = self.rollout_batch.get("forward_inputs", None)
+        if not isinstance(forward_inputs, dict):
+            raise ValueError("DVAC train weighting requires rollout forward_inputs.")
+
+        variances = {}
+        for l_value in self.dvac_l_values:
+            key = f"dvac_v_l{l_value}"
+            if key not in forward_inputs:
+                raise ValueError(f"Missing train-time DVAC tensor: {key}")
+            variances[l_value] = forward_inputs.pop(key)
+
+        selected_variance = variances[self.dvac_selected_l]
+        local_stats = local_log_v_sufficient_statistics(
+            selected_variance,
+            None,
+            log_eps=self.dvac_recent_stats.log_eps,
+        ).to(self.device)
+        torch.distributed.all_reduce(local_stats, op=torch.distributed.ReduceOp.SUM)
+        count, value_sum, value_sq_sum = local_stats.detach().cpu().tolist()
+        current_stats = DVACStepStats(
+            runner_step=int(self.version),
+            count=int(round(count)),
+            value_sum=float(value_sum),
+            value_sq_sum=float(value_sq_sum),
+        )
+
+        weights, clipped_z, warmup, history = self.dvac_recent_stats.compute_weights(
+            selected_variance
+        )
+        summary = self.dvac_train_writer.write_rollout_step(
+            runner_step=int(self.version),
+            mode=self.dvac_train_mode,
+            warmup=warmup,
+            variances=variances,
+            weights=weights,
+            clipped_z=clipped_z,
+            forward_inputs=forward_inputs,
+            loss_mask=self.rollout_batch.get("loss_mask", None),
+            advantages=self.rollout_batch["advantages"],
+            rewards=self.rollout_batch["rewards"],
+            dones=self.rollout_batch["dones"],
+            prev_logprobs=self.rollout_batch["prev_logprobs"],
+            history=history,
+            current_stats=current_stats,
+        )
+
+        metadata_keys = [
+            key for key in forward_inputs if key.startswith("dvac_meta_")
+        ]
+        for key in metadata_keys:
+            forward_inputs.pop(key)
+        forward_inputs["dvac_weights"] = weights
+        self._dvac_pending_step = {
+            "current_stats": current_stats,
+            "history": history,
+            "summary": summary,
+            "warmup": warmup,
+        }
 
     def train_micro_batch(
         self,
@@ -1446,6 +1606,20 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         loss_mask = micro_batch.get("loss_mask", None)
         loss_mask_sum = micro_batch.get("loss_mask_sum", None)
         forward_inputs = micro_batch.get("forward_inputs", None)
+
+        dvac_weights = None
+        model_forward_inputs = forward_inputs
+        if self.dvac_train_enabled:
+            if forward_inputs is None or "dvac_weights" not in forward_inputs:
+                raise ValueError(
+                    "Missing frozen per-h DVAC weights during actor replay."
+                )
+            dvac_weights = forward_inputs["dvac_weights"]
+            model_forward_inputs = {
+                key: value
+                for key, value in forward_inputs.items()
+                if key != "dvac_weights"
+            }
 
         kwargs = {}
         if SupportedModel(self.cfg.actor.model.model_type) in [
@@ -1465,7 +1639,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         compute_values = self.cfg.algorithm.adv_type == "gae"
         with self.amp_context:
             output_dict = self.model(
-                forward_inputs=forward_inputs,
+                forward_inputs=model_forward_inputs,
                 compute_logprobs=True,
                 compute_entropy=self.cfg.algorithm.entropy_bonus > 0,
                 compute_values=compute_values,
@@ -1481,12 +1655,19 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         ]:
             prev_logprobs = output_dict["prev_logprobs"]
 
+        logprobs_for_loss = output_dict["logprobs"]
+        if self.dvac_train_enabled:
+            logprobs_for_loss = straight_through_scale_logprobs(
+                logprobs_for_loss,
+                dvac_weights,
+            )
+
         loss_kwargs = {
             "loss_type": self.cfg.algorithm.loss_type,
             "logprob_type": self.cfg.algorithm.logprob_type,
             "reward_type": self.cfg.algorithm.reward_type,
             "single_action_dim": self.cfg.actor.model.get("action_dim", 7),
-            "logprobs": output_dict["logprobs"],
+            "logprobs": logprobs_for_loss,
             "values": output_dict.get("values", None),
             "old_logprobs": prev_logprobs,
             "advantages": advantages,

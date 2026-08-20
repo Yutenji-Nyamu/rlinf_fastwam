@@ -84,9 +84,16 @@ class RoboTwinEnv(gym.Env):
         from robotwin.envs.vector_env import VectorEnv
 
         env_seeds = self.reset_state_ids.tolist()
+        task_config = OmegaConf.to_container(self.cfg.task_config, resolve=True)
+        control_trace = task_config.get("control_trace", {})
+        if bool(control_trace.get("enabled", False)):
+            # seed_offset is the stable RLinf env-worker/stage index used to
+            # select a single recorder without relying on simulator seeds.
+            task_config["control_trace"] = dict(control_trace)
+            task_config["control_trace"]["worker_index"] = int(self.seed_offset)
 
         self.venv = VectorEnv(
-            task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+            task_config=task_config,
             n_envs=self.num_envs,
             env_seeds=env_seeds,
         )
