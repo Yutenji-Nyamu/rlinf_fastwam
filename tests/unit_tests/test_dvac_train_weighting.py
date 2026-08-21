@@ -4,10 +4,12 @@ import torch
 import pytest
 
 from rlinf.algorithms.dvac_train_weighting import (
+    DVACPerHResidualStats,
     DVACRecentStats,
     DVACStepStats,
     compute_endpoint_variances,
     local_log_v_sufficient_statistics,
+    log_variance_by_h,
     straight_through_scale_logprobs,
 )
 
@@ -61,6 +63,78 @@ def test_weight_range_cannot_reverse_advantage_direction() -> None:
             z_clip=2.0,
             strength=0.6,
         )
+
+
+def test_per_h_residual_removes_position_baseline_and_maps_asymmetrically() -> None:
+    recent = DVACPerHResidualStats(
+        window_steps=2,
+        warmup_steps=1,
+        log_eps=1e-12,
+        scale_floor=1e-6,
+        mad_consistency=1.0,
+        residual_clip=2.0,
+        weight_min=0.5,
+        weight_max=1.2,
+    )
+    baseline = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0])
+    target_residual = torch.tensor([-2.0, -1.0, 0.0, 1.0, 2.0])
+    current_variance = torch.exp(
+        (baseline + target_residual).reshape(1, 1, -1)
+    )
+
+    weights, residual, warmup, _ = recent.compute_weights(current_variance)
+    assert warmup
+    assert torch.equal(weights, torch.ones_like(weights))
+    assert torch.equal(residual, torch.zeros_like(residual))
+
+    history = torch.stack((baseline - 1.0, baseline + 1.0), dim=0)
+    recent.push(0, history)
+    weights, residual, warmup, summary = recent.compute_weights(
+        current_variance
+    )
+    assert not warmup
+    assert torch.allclose(summary["history_center_h"], baseline)
+    assert torch.allclose(summary["history_scale_h"], torch.ones(5))
+    assert torch.allclose(residual.flatten(), target_residual, atol=1e-5)
+    assert torch.allclose(
+        weights.flatten(),
+        torch.tensor([0.5, 0.75, 1.0, 1.1, 1.2]),
+        atol=1e-5,
+    )
+
+
+def test_per_h_robust_history_handles_outlier_and_evicts_steps() -> None:
+    recent = DVACPerHResidualStats(
+        window_steps=2,
+        warmup_steps=1,
+        log_eps=1e-12,
+        scale_floor=1e-6,
+        mad_consistency=1.4826,
+        residual_clip=2.0,
+        weight_min=0.5,
+        weight_max=1.2,
+    )
+    step0 = torch.tensor(
+        [[-1.0, 9.0], [0.0, 10.0], [0.0, 10.0], [1.0, 11.0], [100.0, 110.0]]
+    )
+    recent.push(0, step0)
+    summary = recent.history_summary(2)
+    assert torch.allclose(summary["history_center_h"], torch.tensor([0.0, 10.0]))
+    assert torch.allclose(
+        summary["history_mad_h"], torch.tensor([1.0, 1.0])
+    )
+
+    recent.push(1, torch.zeros(2, 2))
+    recent.push(2, torch.ones(2, 2))
+    state = recent.state_dict()
+    assert [item["runner_step"] for item in state["steps"]] == [1, 2]
+
+
+def test_log_variance_by_h_retains_horizon_columns() -> None:
+    variance = torch.exp(torch.arange(12, dtype=torch.float32).reshape(2, 2, 3))
+    log_v = log_variance_by_h(variance, log_eps=1e-12)
+    assert log_v.shape == (4, 3)
+    assert torch.allclose(log_v, torch.arange(12).reshape(4, 3).float())
 
 
 def test_local_stats_respect_query_loss_mask() -> None:

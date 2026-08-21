@@ -137,6 +137,24 @@ def local_log_v_sufficient_statistics(
     )
 
 
+def log_variance_by_h(
+    variance: torch.Tensor,
+    *,
+    log_eps: float,
+) -> torch.Tensor:
+    """Flatten query axes while retaining the future-action axis ``h``."""
+
+    if variance.ndim != 3:
+        raise ValueError(
+            f"variance must have shape [T,B,H], got {tuple(variance.shape)}"
+        )
+    if not torch.isfinite(variance).all() or (variance < 0).any():
+        raise ValueError("DVAC variance must be finite and non-negative")
+    return torch.log(variance.float() + float(log_eps)).reshape(
+        -1, variance.shape[-1]
+    )
+
+
 class DVACRecentStats:
     """Rolling completed-runner-step statistics used by the next step."""
 
@@ -226,6 +244,188 @@ class DVACRecentStats:
         }
 
 
+@dataclass(frozen=True)
+class DVACPerHStepValues:
+    runner_step: int
+    log_v_by_h: torch.Tensor
+
+
+class DVACPerHResidualStats:
+    """Recent per-h median/MAD baseline for R-only gradient weighting."""
+
+    SIGNAL_MODE = "per_h_robust_residual"
+
+    def __init__(
+        self,
+        *,
+        window_steps: int,
+        warmup_steps: int,
+        log_eps: float,
+        scale_floor: float,
+        mad_consistency: float,
+        residual_clip: float,
+        weight_min: float,
+        weight_max: float,
+    ) -> None:
+        if window_steps < 1:
+            raise ValueError("window_steps must be >= 1")
+        if warmup_steps < 0:
+            raise ValueError("warmup_steps must be >= 0")
+        if log_eps <= 0 or scale_floor <= 0 or mad_consistency <= 0:
+            raise ValueError(
+                "log_eps, scale_floor, and mad_consistency must be positive"
+            )
+        if residual_clip <= 0:
+            raise ValueError("residual_clip must be positive")
+        if not 0.0 <= weight_min <= 1.0 <= weight_max:
+            raise ValueError(
+                "Expected 0 <= weight_min <= 1 <= weight_max, got "
+                f"[{weight_min}, {weight_max}]"
+            )
+        self.window_steps = int(window_steps)
+        self.warmup_steps = int(warmup_steps)
+        self.log_eps = float(log_eps)
+        self.scale_floor = float(scale_floor)
+        self.mad_consistency = float(mad_consistency)
+        self.residual_clip = float(residual_clip)
+        self.weight_min = float(weight_min)
+        self.weight_max = float(weight_max)
+        self._steps: deque[DVACPerHStepValues] = deque(
+            maxlen=self.window_steps
+        )
+
+    def _history_matrix(self, horizon: int) -> torch.Tensor | None:
+        if not self._steps:
+            return None
+        for item in self._steps:
+            if item.log_v_by_h.ndim != 2 or item.log_v_by_h.shape[1] != horizon:
+                raise ValueError(
+                    "Per-h DVAC history horizon changed: "
+                    f"expected H={horizon}, got {tuple(item.log_v_by_h.shape)}"
+                )
+        return torch.cat(
+            [item.log_v_by_h for item in self._steps], dim=0
+        ).double()
+
+    def history_summary(self, horizon: int) -> dict[str, Any]:
+        matrix = self._history_matrix(horizon)
+        if matrix is None:
+            missing = torch.full((horizon,), float("nan"), dtype=torch.float32)
+            return {
+                "history_steps": 0,
+                "history_count": 0,
+                "history_queries": 0,
+                "history_mean": 0.0,
+                "history_std": 0.0,
+                "history_center_h": missing.clone(),
+                "history_mad_h": missing.clone(),
+                "history_scale_h": missing.clone(),
+            }
+
+        center = torch.quantile(matrix, 0.5, dim=0)
+        mad = torch.quantile((matrix - center).abs(), 0.5, dim=0)
+        scale = torch.clamp(
+            self.mad_consistency * mad,
+            min=self.scale_floor,
+        )
+        return {
+            "history_steps": len(self._steps),
+            "history_count": int(matrix.numel()),
+            "history_queries": int(matrix.shape[0]),
+            "history_mean": float(matrix.mean().item()),
+            "history_std": float(matrix.std(unbiased=False).item()),
+            "history_center_h": center.float(),
+            "history_mad_h": mad.float(),
+            "history_scale_h": scale.float(),
+        }
+
+    def compute_weights(
+        self, variance: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, bool, dict[str, Any]]:
+        log_v = log_variance_by_h(variance, log_eps=self.log_eps).reshape_as(
+            variance
+        )
+        history = self.history_summary(variance.shape[-1])
+        warmup = (
+            len(self._steps) < self.warmup_steps
+            or int(history["history_count"]) == 0
+        )
+        if warmup:
+            return (
+                torch.ones_like(variance, dtype=torch.float32),
+                torch.zeros_like(variance, dtype=torch.float32),
+                True,
+                history,
+            )
+
+        center = history["history_center_h"].to(
+            device=variance.device, dtype=log_v.dtype
+        )
+        scale = history["history_scale_h"].to(
+            device=variance.device, dtype=log_v.dtype
+        )
+        residual = (log_v - center) / scale
+        clipped_residual = torch.clamp(
+            residual, -self.residual_clip, self.residual_clip
+        )
+        negative_slope = (1.0 - self.weight_min) / self.residual_clip
+        positive_slope = (self.weight_max - 1.0) / self.residual_clip
+        weights = (
+            1.0
+            + negative_slope * torch.minimum(
+                clipped_residual, torch.zeros_like(clipped_residual)
+            )
+            + positive_slope * torch.maximum(
+                clipped_residual, torch.zeros_like(clipped_residual)
+            )
+        )
+        if not torch.isfinite(weights).all():
+            raise ValueError("Computed DVAC residual weights contain NaN or Inf")
+        return weights.float(), clipped_residual.float(), False, history
+
+    def push(self, runner_step: int, log_v_by_h: torch.Tensor) -> None:
+        values = log_v_by_h.detach().float().cpu().contiguous()
+        if values.ndim != 2 or not torch.isfinite(values).all():
+            raise ValueError(
+                "log_v_by_h must be a finite [N,H] tensor, got "
+                f"{tuple(values.shape)}"
+            )
+        self._steps.append(
+            DVACPerHStepValues(
+                runner_step=int(runner_step),
+                log_v_by_h=values,
+            )
+        )
+
+    def state_dict(self) -> dict[str, Any]:
+        horizon = self._steps[0].log_v_by_h.shape[1] if self._steps else 0
+        history = self.history_summary(horizon)
+        serializable_history = {
+            key: (value.tolist() if torch.is_tensor(value) else value)
+            for key, value in history.items()
+        }
+        return {
+            "signal_mode": self.SIGNAL_MODE,
+            "window_steps": self.window_steps,
+            "warmup_steps": self.warmup_steps,
+            "log_eps": self.log_eps,
+            "scale_floor": self.scale_floor,
+            "mad_consistency": self.mad_consistency,
+            "residual_clip": self.residual_clip,
+            "weight_min": self.weight_min,
+            "weight_max": self.weight_max,
+            "steps": [
+                {
+                    "runner_step": item.runner_step,
+                    "queries": int(item.log_v_by_h.shape[0]),
+                    "horizon": int(item.log_v_by_h.shape[1]),
+                }
+                for item in self._steps
+            ],
+            "history": serializable_history,
+        }
+
+
 def _to_numpy(value: torch.Tensor | None) -> np.ndarray | None:
     if value is None:
         return None
@@ -267,11 +467,15 @@ class DVACTrainWriter:
         "runner_step",
         "actor_rank",
         "mode",
+        "signal_mode",
         "warmup",
         "history_steps",
         "history_count",
+        "history_queries",
         "history_mean",
         "history_std",
+        "position_center_median",
+        "position_scale_median",
         "current_count",
         "current_mean",
         "current_std",
@@ -282,6 +486,11 @@ class DVACTrainWriter:
         "weight_p50",
         "weight_p95",
         "weight_max",
+        "weight_below_one_fraction",
+        "weight_above_one_fraction",
+        "residual_p05",
+        "residual_p50",
+        "residual_p95",
         "z_low_clip_fraction",
         "z_high_clip_fraction",
         "positive_adv_weight_mean",
@@ -304,7 +513,10 @@ class DVACTrainWriter:
         robotwin_path: str | None,
     ) -> None:
         self.rank = int(rank)
-        self.z_clip = float(config.get("z_clip", 2.0))
+        self.signal_mode = str(config.get("signal_mode", "global_zscore"))
+        self.z_clip = float(
+            config.get("residual_clip", config.get("z_clip", 2.0))
+        )
         self.rank_dir = Path(output_dir) / f"actor_rank{self.rank:02d}"
         if self.rank_dir.exists() and any(self.rank_dir.iterdir()):
             raise FileExistsError(
@@ -314,7 +526,11 @@ class DVACTrainWriter:
         self.summary_path = self.rank_dir / "runner_step_metrics.csv"
         self.state_path = self.rank_dir / "rolling_stats_state.json"
         manifest = {
-            "schema_version": 1,
+            "schema_version": (
+                2
+                if self.signal_mode == DVACPerHResidualStats.SIGNAL_MODE
+                else 1
+            ),
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "hostname": socket.gethostname(),
             "actor_rank": self.rank,
@@ -354,7 +570,7 @@ class DVACTrainWriter:
         warmup: bool,
         variances: Mapping[int, torch.Tensor],
         weights: torch.Tensor,
-        clipped_z: torch.Tensor,
+        clipped_signal: torch.Tensor,
         forward_inputs: Mapping[str, torch.Tensor],
         loss_mask: torch.Tensor | None,
         advantages: torch.Tensor,
@@ -376,7 +592,6 @@ class DVACTrainWriter:
         arrays.update(
             {
                 "weights": _to_numpy(weights),
-                "clipped_z": _to_numpy(clipped_z),
                 "advantages": _to_numpy(advantages),
                 "rewards": _to_numpy(rewards),
                 "done_before": _to_numpy(dones[:-1]),
@@ -390,6 +605,18 @@ class DVACTrainWriter:
                 "denoise_inds": _to_numpy(forward_inputs["denoise_inds"]),
             }
         )
+        if self.signal_mode == DVACPerHResidualStats.SIGNAL_MODE:
+            arrays["residual_z"] = _to_numpy(clipped_signal)
+            for source_key, output_key in (
+                ("history_center_h", "position_center_log_v"),
+                ("history_mad_h", "position_mad_log_v"),
+                ("history_scale_h", "position_scale_log_v"),
+            ):
+                value = history.get(source_key)
+                if torch.is_tensor(value):
+                    arrays[output_key] = _to_numpy(value)
+        else:
+            arrays["clipped_z"] = _to_numpy(clipped_signal)
         for key, value in forward_inputs.items():
             if key.startswith("dvac_meta_"):
                 arrays[key] = _to_numpy(value)
@@ -401,7 +628,7 @@ class DVACTrainWriter:
         os.replace(temporary, path)
 
         valid_weights = self._masked_values(weights, loss_mask)
-        valid_z = self._masked_values(clipped_z, loss_mask)
+        valid_z = self._masked_values(clipped_signal, loss_mask)
         query_mask = (
             torch.ones(weights.shape[:2], dtype=torch.bool)
             if loss_mask is None
@@ -426,6 +653,16 @@ class DVACTrainWriter:
             weight_min = float(valid_weights.min().item())
             weight_mean = float(valid_weights.float().mean().item())
             weight_max = float(valid_weights.max().item())
+            below_one_fraction = float(
+                (valid_weights < 1.0).float().mean().item()
+            )
+            above_one_fraction = float(
+                (valid_weights > 1.0).float().mean().item()
+            )
+            residual_quantiles = torch.quantile(
+                valid_z.float(),
+                torch.tensor([0.05, 0.5, 0.95], device=valid_z.device),
+            )
             low_clip_fraction = float(
                 (valid_z <= -self.z_clip).float().mean().item()
             )
@@ -439,13 +676,38 @@ class DVACTrainWriter:
                 device=weights.device,
             )
             weight_min = weight_mean = weight_max = float("nan")
+            below_one_fraction = above_one_fraction = float("nan")
+            residual_quantiles = torch.full(
+                (3,), float("nan"), device=weights.device
+            )
             low_clip_fraction = high_clip_fraction = float("nan")
+        center_h = history.get("history_center_h")
+        scale_h = history.get("history_scale_h")
+        def finite_median_or_nan(value: Any) -> float:
+            if not torch.is_tensor(value) or not value.numel():
+                return float("nan")
+            finite = value.float()[torch.isfinite(value)]
+            return (
+                float(torch.quantile(finite, 0.5).item())
+                if finite.numel()
+                else float("nan")
+            )
+
+        center_median = finite_median_or_nan(center_h)
+        scale_median = finite_median_or_nan(scale_h)
         return {
             "runner_step": int(runner_step),
             "actor_rank": self.rank,
             "mode": mode,
+            "signal_mode": self.signal_mode,
             "warmup": int(warmup),
-            **history,
+            "history_steps": int(history["history_steps"]),
+            "history_count": int(history["history_count"]),
+            "history_queries": int(history.get("history_queries", 0)),
+            "history_mean": float(history["history_mean"]),
+            "history_std": float(history["history_std"]),
+            "position_center_median": center_median,
+            "position_scale_median": scale_median,
             "current_count": current_stats.count,
             "current_mean": current_stats.mean,
             "current_std": current_stats.std,
@@ -456,6 +718,11 @@ class DVACTrainWriter:
             "weight_p50": float(quantiles[1].item()),
             "weight_p95": float(quantiles[2].item()),
             "weight_max": weight_max,
+            "weight_below_one_fraction": below_one_fraction,
+            "weight_above_one_fraction": above_one_fraction,
+            "residual_p05": float(residual_quantiles[0].item()),
+            "residual_p50": float(residual_quantiles[1].item()),
+            "residual_p95": float(residual_quantiles[2].item()),
             "z_low_clip_fraction": low_clip_fraction,
             "z_high_clip_fraction": high_clip_fraction,
             "positive_adv_weight_mean": mean_or_nan(per_query_weight[positive]),

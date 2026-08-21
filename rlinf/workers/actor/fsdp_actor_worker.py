@@ -26,10 +26,12 @@ from torch.multiprocessing.reductions import reduce_tensor
 
 import rlinf.algorithms  # noqa: F401
 from rlinf.algorithms.dvac_train_weighting import (
+    DVACPerHResidualStats,
     DVACRecentStats,
     DVACStepStats,
     DVACTrainWriter,
     local_log_v_sufficient_statistics,
+    log_variance_by_h,
     straight_through_scale_logprobs,
 )
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
@@ -1055,6 +1057,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 f"'apply', got {self.dvac_train_mode!r}"
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_signal_mode = str(
+            self.dvac_train_cfg.get("signal_mode", "global_zscore")
+        ).lower()
         self.dvac_recent_stats = None
         self.dvac_train_writer = None
         self._dvac_pending_step = None
@@ -1070,14 +1075,52 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                     "selected_l must be included in l_values, got "
                     f"selected_l={self.dvac_selected_l}, l_values={self.dvac_l_values}"
                 )
-            self.dvac_recent_stats = DVACRecentStats(
-                window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
-                warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
-                log_eps=float(self.dvac_train_cfg.get("log_eps", 1e-12)),
-                std_floor=float(self.dvac_train_cfg.get("std_floor", 1e-6)),
-                z_clip=float(self.dvac_train_cfg.get("z_clip", 2.0)),
-                strength=float(self.dvac_train_cfg.get("strength", 0.1)),
-            )
+            if self.dvac_signal_mode == "global_zscore":
+                self.dvac_recent_stats = DVACRecentStats(
+                    window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
+                    warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
+                    log_eps=float(self.dvac_train_cfg.get("log_eps", 1e-12)),
+                    std_floor=float(self.dvac_train_cfg.get("std_floor", 1e-6)),
+                    z_clip=float(self.dvac_train_cfg.get("z_clip", 2.0)),
+                    strength=float(self.dvac_train_cfg.get("strength", 0.1)),
+                )
+            elif self.dvac_signal_mode == DVACPerHResidualStats.SIGNAL_MODE:
+                weight_mapping = str(
+                    self.dvac_train_cfg.get(
+                        "weight_mapping", "asymmetric_linear"
+                    )
+                ).lower()
+                if weight_mapping != "asymmetric_linear":
+                    raise ValueError(
+                        "per_h_robust_residual requires "
+                        "weight_mapping='asymmetric_linear', got "
+                        f"{weight_mapping!r}"
+                    )
+                self.dvac_recent_stats = DVACPerHResidualStats(
+                    window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
+                    warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
+                    log_eps=float(self.dvac_train_cfg.get("log_eps", 1e-12)),
+                    scale_floor=float(
+                        self.dvac_train_cfg.get("scale_floor", 1e-6)
+                    ),
+                    mad_consistency=float(
+                        self.dvac_train_cfg.get("mad_consistency", 1.4826)
+                    ),
+                    residual_clip=float(
+                        self.dvac_train_cfg.get("residual_clip", 2.0)
+                    ),
+                    weight_min=float(
+                        self.dvac_train_cfg.get("weight_min", 0.5)
+                    ),
+                    weight_max=float(
+                        self.dvac_train_cfg.get("weight_max", 1.2)
+                    ),
+                )
+            else:
+                raise ValueError(
+                    "Unsupported DVAC signal_mode: "
+                    f"{self.dvac_signal_mode!r}"
+                )
         if self.enable_sft_co_train:
             self._build_sft_data_loader()
 
@@ -1502,7 +1545,13 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         if self.dvac_train_enabled:
             pending = self._dvac_pending_step
-            self.dvac_recent_stats.push(pending["current_stats"])
+            if self.dvac_signal_mode == DVACPerHResidualStats.SIGNAL_MODE:
+                self.dvac_recent_stats.push(
+                    pending["runner_step"],
+                    pending["current_log_v_by_h"],
+                )
+            else:
+                self.dvac_recent_stats.push(pending["current_stats"])
             self.dvac_train_writer.write_step_summary(
                 pending["summary"],
                 mean_metric_dict,
@@ -1528,6 +1577,20 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         return mean_metric_dict
 
+    def _gather_dvac_log_v_by_h(
+        self,
+        variance: torch.Tensor,
+    ) -> torch.Tensor:
+        """Give every actor rank the same global ``[query,h]`` step tensor."""
+
+        local = log_variance_by_h(
+            variance,
+            log_eps=self.dvac_recent_stats.log_eps,
+        ).to(device=self.device, dtype=torch.float32).contiguous()
+        gathered = [torch.empty_like(local) for _ in range(self._world_size)]
+        torch.distributed.all_gather(gathered, local)
+        return torch.cat(gathered, dim=0).cpu()
+
     def _prepare_dvac_train_step(self) -> None:
         """Freeze one runner-step's weights and raw artifacts before replay."""
 
@@ -1543,13 +1606,27 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             variances[l_value] = forward_inputs.pop(key)
 
         selected_variance = variances[self.dvac_selected_l]
-        local_stats = local_log_v_sufficient_statistics(
-            selected_variance,
-            None,
-            log_eps=self.dvac_recent_stats.log_eps,
-        ).to(self.device)
-        torch.distributed.all_reduce(local_stats, op=torch.distributed.ReduceOp.SUM)
-        count, value_sum, value_sq_sum = local_stats.detach().cpu().tolist()
+        current_log_v_by_h = None
+        if self.dvac_signal_mode == DVACPerHResidualStats.SIGNAL_MODE:
+            current_log_v_by_h = self._gather_dvac_log_v_by_h(
+                selected_variance
+            )
+            flat_current = current_log_v_by_h.double().reshape(-1)
+            count = flat_current.numel()
+            value_sum = flat_current.sum().item()
+            value_sq_sum = flat_current.square().sum().item()
+        else:
+            local_stats = local_log_v_sufficient_statistics(
+                selected_variance,
+                None,
+                log_eps=self.dvac_recent_stats.log_eps,
+            ).to(self.device)
+            torch.distributed.all_reduce(
+                local_stats, op=torch.distributed.ReduceOp.SUM
+            )
+            count, value_sum, value_sq_sum = (
+                local_stats.detach().cpu().tolist()
+            )
         current_stats = DVACStepStats(
             runner_step=int(self.version),
             count=int(round(count)),
@@ -1557,8 +1634,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             value_sq_sum=float(value_sq_sum),
         )
 
-        weights, clipped_z, warmup, history = self.dvac_recent_stats.compute_weights(
-            selected_variance
+        weights, clipped_signal, warmup, history = (
+            self.dvac_recent_stats.compute_weights(selected_variance)
         )
         summary = self.dvac_train_writer.write_rollout_step(
             runner_step=int(self.version),
@@ -1566,7 +1643,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             warmup=warmup,
             variances=variances,
             weights=weights,
-            clipped_z=clipped_z,
+            clipped_signal=clipped_signal,
             forward_inputs=forward_inputs,
             loss_mask=self.rollout_batch.get("loss_mask", None),
             advantages=self.rollout_batch["advantages"],
@@ -1584,7 +1661,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             forward_inputs.pop(key)
         forward_inputs["dvac_weights"] = weights
         self._dvac_pending_step = {
+            "runner_step": int(self.version),
             "current_stats": current_stats,
+            "current_log_v_by_h": current_log_v_by_h,
             "history": history,
             "summary": summary,
             "warmup": warmup,
