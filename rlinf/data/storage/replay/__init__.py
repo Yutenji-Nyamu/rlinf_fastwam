@@ -24,12 +24,18 @@ from rlinf.data.storage.replay.dataset import (
     ReplayBufferDataset,
     replay_buffer_collate_fn,
 )
+from rlinf.data.storage.replay.dsrl_transition import (
+    DSRLTransitionReplayBuffer,
+    project_dsrl_trajectory,
+)
 
 __all__ = [
+    "DSRLTransitionReplayBuffer",
     "PreloadReplayBufferDataset",
     "PriorityStore",
     "ReplayBufferDataset",
     "TrajectoryCache",
     "TrajectoryReplayBuffer",
+    "project_dsrl_trajectory",
     "replay_buffer_collate_fn",
 ]
