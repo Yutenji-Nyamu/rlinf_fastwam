@@ -1,0 +1,44 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current
+  - _self_
+
+# Source-aligned RoboTwin RLT formal overlay. It keeps the current exact-pi0 /
+# causal-AR implementation and restores the validated AutoDL Stage-2 budget.
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_stage2_current_ar_8env250_v1
+  max_steps: 250
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null
+  ckpt_path: null
+
+algorithm:
+  rlt_schedule:
+    max_updates_per_train_step: 1600
+    warmup_min_size: 10000
+    warmup_post_collect_updates: 30000
+    train_every_episodes: 0
+    train_every_transitions: 1
+
+  actor_weight_schedule:
+    warmup_updates: 20000
+    ramp_updates: 50000
+
+  replay_buffer:
+    cache_size: 50000
+    sample_window_size: 50000
+    min_buffer_size: 1
+
+env:
+  train:
+    total_num_envs: 8
+
+  eval:
+    rollout_epoch: 5
+    total_num_envs: 4
+    auto_reset: false
+    ignore_terminations: true
+    group_size: 1
+    use_fixed_reset_state_ids: false
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json
