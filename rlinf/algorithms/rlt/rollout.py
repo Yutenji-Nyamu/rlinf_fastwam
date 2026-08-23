@@ -49,7 +49,14 @@ def predict_rlt_actions(
     expert_model: Any | None = None,
 ) -> tuple[torch.Tensor, dict[str, Any]]:
     with torch.no_grad():
-        rlt_obs = feature_model.extract_rlt_obs(env_obs)
+        action_adapter = getattr(feature_model.config, "rlt_action_adapter", "identity")
+        decode_context = None
+        if action_adapter == "identity":
+            rlt_obs = feature_model.extract_rlt_obs(env_obs)
+        else:
+            rlt_obs, decode_context = feature_model.extract_rlt_obs(
+                env_obs, return_decode_context=True
+            )
         actions, result = policy_model.predict_action_batch(
             env_obs=rlt_obs,
             mode=mode,
@@ -73,6 +80,8 @@ def predict_rlt_actions(
         )
         actions = route_output.actions
         result = route_output.result
+        if decode_context is not None:
+            actions = feature_model.decode_rlt_action(actions, decode_context)
 
         _append_rlt_transition_obs(
             feature_model=feature_model,

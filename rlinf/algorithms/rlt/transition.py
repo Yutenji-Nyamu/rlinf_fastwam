@@ -25,6 +25,9 @@ RLT_TRANSITION_PREFIX = "rlt_transition_"
 
 def use_simulator_transition_replay(cfg: Any) -> bool:
     """Return True for envs that store one replay row per env step."""
+    capability_cfg = cfg.algorithm.get("rlt_transition_replay", None)
+    if capability_cfg is not None and "enable" in capability_cfg:
+        return bool(capability_cfg.get("enable", False))
     train_env_cfg = cfg.env.get("train", None)
     if train_env_cfg is None:
         return False

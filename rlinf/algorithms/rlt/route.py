@@ -244,7 +244,70 @@ class SimulatorRLTRoute(RLTRoute):
         return RLTRouteOutput(actions=routed_actions, result=result)
 
 
+class FullTaskRLTRoute(RLTRoute):
+    """Full-task reference warmup followed by student-only RLT control."""
+
+    def __init__(self, *, use_schedule: bool, warmup_updates: int):
+        self.use_schedule = use_schedule
+        self.warmup_updates = warmup_updates
+
+    def _ready_for_online(self, version: int) -> bool:
+        return not self.use_schedule or int(version) >= self.warmup_updates
+
+    def route(self, ctx: RLTRouteContext) -> RLTRouteOutput:
+        actions = ctx.student_actions
+        result = ctx.result
+        batch_size, chunk_len, action_dim = actions.shape
+        ready_for_online = self._ready_for_online(ctx.version)
+        use_student = ctx.mode == "eval" or ready_for_online
+
+        reference_actions = _base_ref_actions(
+            ctx.rlt_obs["ref_chunk"],
+            chunk_len=chunk_len,
+            action_dim=action_dim,
+            device=actions.device,
+            dtype=actions.dtype,
+        )
+        routed_actions = (actions if use_student else reference_actions).contiguous()
+
+        forward_inputs = result["forward_inputs"]
+        forward_inputs["action"] = _flatten_action_chunk(routed_actions).detach()
+        forward_inputs["record_transition"] = torch.full(
+            (batch_size, 1),
+            ctx.mode == "train",
+            dtype=torch.bool,
+            device=actions.device,
+        )
+        forward_inputs["actor_switch"] = torch.full(
+            (batch_size, 1),
+            use_student,
+            dtype=torch.bool,
+            device=actions.device,
+        )
+        forward_inputs["intervention_requested"] = torch.zeros(
+            (batch_size, 1),
+            dtype=torch.bool,
+            device=actions.device,
+        )
+        result["intervene_flags"] = torch.zeros(
+            (batch_size, chunk_len),
+            dtype=torch.bool,
+            device=actions.device,
+        )
+        return RLTRouteOutput(actions=routed_actions, result=result)
+
+
 def build_rlt_route(cfg: Any) -> RLTRoute:
+    route_cfg = cfg.algorithm.get("rlt_route", {}) or {}
+    route_type = route_cfg.get("type", None)
+    if route_type == "full_task":
+        schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
+        return FullTaskRLTRoute(
+            use_schedule=bool(schedule_cfg.get("enable", False)),
+            warmup_updates=int(schedule_cfg.get("warmup_post_collect_updates", 0)),
+        )
+    if route_type not in (None, "legacy"):
+        raise ValueError(f"Unsupported RLT route type {route_type!r}.")
     if use_simulator_transition_replay(cfg):
         schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
         return SimulatorRLTRoute(

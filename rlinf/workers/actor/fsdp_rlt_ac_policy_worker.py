@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
+import json
+import os
 import queue
 
 import torch
 import torch.nn.functional as F
+from omegaconf import OmegaConf
 
 from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
 from rlinf.data.schema.embodied_types import Trajectory
@@ -42,6 +46,19 @@ class RLTACLossMixin:
     RLT objective disables entropy/alpha and uses a fixed-std actor, min-Q
     critic target, Q1 actor objective, and BC regularization.
     """
+
+    def _rlt_transition_replay_cfg(self):
+        return self.cfg.algorithm.get("rlt_transition_replay", {}) or {}
+
+    def _bootstrap_on_truncation(self) -> bool:
+        return bool(
+            self._rlt_transition_replay_cfg().get(
+                "bootstrap_on_truncation", False
+            )
+        )
+
+    def _use_compact_rlt_transition(self) -> bool:
+        return bool(self._rlt_transition_replay_cfg().get("compact", False))
 
     @staticmethod
     def _flatten_chunk(tensor: torch.Tensor) -> torch.Tensor:
@@ -239,7 +256,10 @@ class RLTACLossMixin:
         actions = batch["actions"]
         rewards = batch["rewards"]
         done_source = batch["terminations"]
-        if use_simulator_transition_replay(self.cfg):
+        if (
+            use_simulator_transition_replay(self.cfg)
+            and not self._bootstrap_on_truncation()
+        ):
             done_source = batch["dones"]
         done_source = done_source.to(self.torch_dtype)
         not_done = ~done_source.reshape(done_source.shape[0], -1).bool().any(
@@ -477,18 +497,29 @@ class RLTACReplayMixin:
         ):
             return [], 0
 
-        tensor_fields = (
-            "actions",
-            "intervene_flags",
-            "rewards",
-            "terminations",
-            "truncations",
-            "dones",
-            "prev_logprobs",
-            "prev_values",
-            "versions",
-        )
-        dict_fields = ("forward_inputs",)
+        if self._use_compact_rlt_transition():
+            tensor_fields = (
+                "actions",
+                "intervene_flags",
+                "rewards",
+                "terminations",
+                "truncations",
+                "dones",
+            )
+            dict_fields = ()
+        else:
+            tensor_fields = (
+                "actions",
+                "intervene_flags",
+                "rewards",
+                "terminations",
+                "truncations",
+                "dones",
+                "prev_logprobs",
+                "prev_values",
+                "versions",
+            )
+            dict_fields = ("forward_inputs",)
         replay_trajectories = []
         completed_episodes = 0
         traj_len = int(trajectory.actions.shape[0])
@@ -555,7 +586,20 @@ class RLTACReplayMixin:
                     isinstance(transition.dones, torch.Tensor)
                     and transition.dones.reshape(-1).to(torch.bool).any()
                 )
-                if is_done:
+                is_termination = (
+                    isinstance(transition.terminations, torch.Tensor)
+                    and transition.terminations.reshape(-1).to(torch.bool).any()
+                )
+                is_truncation = (
+                    isinstance(transition.truncations, torch.Tensor)
+                    and transition.truncations.reshape(-1).to(torch.bool).any()
+                )
+                bootstrap_truncation = bool(
+                    self._bootstrap_on_truncation()
+                    and is_truncation
+                    and not is_termination
+                )
+                if is_done and not bootstrap_truncation:
                     next_obs = curr_obs
                 else:
                     next_obs = self._rlt_obs_from_flat_dict(flat, "next_obs", idx)
@@ -671,10 +715,14 @@ class RLTACReplayMixin:
 class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
     """Synchronous RLT AC worker with transition replay and warmup scheduling."""
 
+    _RLT_STATE_SCHEMA_VERSION = 1
+
     def __init__(self, cfg):
         super().__init__(cfg)
         self.rlt_schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
         self.use_rlt_schedule = bool(self.rlt_schedule_cfg.get("enable", False))
+        self.rlt_resume_cfg = cfg.algorithm.get("rlt_resume", {}) or {}
+        self.use_rlt_resume = bool(self.rlt_resume_cfg.get("enable", False))
         self.transitions_since_train = 0
         self.episodes_since_train = 0
         self.total_transitions_added = 0
@@ -682,6 +730,245 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         self._warmup_ready_total_transitions: int | None = None
         self._warmup_ready_total_episodes: int | None = None
         self.pending_update_budget = 0
+
+    def _rlt_state_dir(self, base_path: str) -> str:
+        return os.path.join(base_path, "sac_components/rlt_trainer_state")
+
+    def _rlt_state_path(self, base_path: str) -> str:
+        return os.path.join(
+            self._rlt_state_dir(base_path), f"checkpoint_rank_{self._rank}.pt"
+        )
+
+    def _rlt_manifest_path(self, base_path: str) -> str:
+        return os.path.join(self._rlt_state_dir(base_path), "complete.json")
+
+    @staticmethod
+    def _atomic_json_dump(payload: dict, path: str) -> None:
+        temporary = f"{path}.tmp.{os.getpid()}"
+        with open(temporary, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, sort_keys=True, indent=2)
+            handle.write("\n")
+        os.replace(temporary, path)
+
+    @staticmethod
+    def _barrier_if_distributed() -> None:
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.barrier()
+
+    def _rlt_contract(self) -> tuple[str, str]:
+        contract = self.rlt_resume_cfg.get("contract", {})
+        if OmegaConf.is_config(contract):
+            contract = OmegaConf.to_container(contract, resolve=True)
+        if not isinstance(contract, dict) or not contract:
+            raise ValueError(
+                "algorithm.rlt_resume.contract must be a non-empty mapping."
+            )
+        unresolved = [
+            key
+            for key, value in contract.items()
+            if isinstance(value, str) and value.startswith("UNRESOLVED_")
+        ]
+        if unresolved:
+            raise ValueError(
+                "algorithm.rlt_resume.contract has unresolved fields: "
+                f"{sorted(unresolved)}."
+            )
+        serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
+        digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+        return serialized, digest
+
+    def _rlt_state_payload(self, runner_step: int) -> dict:
+        contract, contract_sha256 = self._rlt_contract()
+        return {
+            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+            "rank": int(self._rank),
+            "actor_world_size": int(self._world_size),
+            "saved_runner_step": int(runner_step),
+            "rlt_resume_contract": contract,
+            "rlt_resume_contract_sha256": contract_sha256,
+            "update_step": int(self.update_step),
+            "local_total_transitions_added": int(self.total_transitions_added),
+            "local_total_episodes_added": int(self.total_episodes_added),
+            "global_warmup_ready_total_transitions": (
+                None
+                if self._warmup_ready_total_transitions is None
+                else int(self._warmup_ready_total_transitions)
+            ),
+            "global_warmup_ready_total_episodes": (
+                None
+                if self._warmup_ready_total_episodes is None
+                else int(self._warmup_ready_total_episodes)
+            ),
+        }
+
+    def _gather_rlt_state_summaries(self, state: dict) -> list[dict]:
+        summary = {
+            "rank": int(state["rank"]),
+            "update_step": int(state["update_step"]),
+            "warmup_transitions": state["global_warmup_ready_total_transitions"],
+            "warmup_episodes": state["global_warmup_ready_total_episodes"],
+            "contract_sha256": state["rlt_resume_contract_sha256"],
+        }
+        if not (
+            torch.distributed.is_available()
+            and torch.distributed.is_initialized()
+        ):
+            return [summary]
+        summaries = [None] * int(self._world_size)
+        torch.distributed.all_gather_object(summaries, summary)
+        return summaries
+
+    def _validate_rlt_state(self, state: dict) -> None:
+        required = {
+            "schema_version",
+            "rank",
+            "actor_world_size",
+            "saved_runner_step",
+            "rlt_resume_contract",
+            "rlt_resume_contract_sha256",
+            "update_step",
+            "local_total_transitions_added",
+            "local_total_episodes_added",
+            "global_warmup_ready_total_transitions",
+            "global_warmup_ready_total_episodes",
+        }
+        missing = sorted(required.difference(state))
+        if missing:
+            raise ValueError(f"RLT trainer state is missing keys: {missing}.")
+        contract, contract_sha256 = self._rlt_contract()
+        checks = {
+            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+            "rank": int(self._rank),
+            "actor_world_size": int(self._world_size),
+            "rlt_resume_contract": contract,
+            "rlt_resume_contract_sha256": contract_sha256,
+        }
+        for key, expected in checks.items():
+            if state[key] != expected:
+                raise ValueError(
+                    f"RLT trainer state mismatch for {key}: "
+                    f"{state[key]!r} != {expected!r}."
+                )
+
+    def _save_rlt_state(self, save_base_path: str, runner_step: int) -> None:
+        state_dir = self._rlt_state_dir(save_base_path)
+        os.makedirs(state_dir, exist_ok=True)
+        state = self._rlt_state_payload(runner_step)
+        state_path = self._rlt_state_path(save_base_path)
+        temporary = f"{state_path}.tmp.{os.getpid()}"
+        torch.save(state, temporary)
+        os.replace(temporary, state_path)
+
+        summaries = self._gather_rlt_state_summaries(state)
+        ranks = sorted(int(item["rank"]) for item in summaries)
+        if ranks != list(range(int(self._world_size))):
+            raise ValueError(f"RLT trainer state rank set mismatch: {ranks}.")
+        for key in (
+            "update_step",
+            "warmup_transitions",
+            "warmup_episodes",
+            "contract_sha256",
+        ):
+            if len({item[key] for item in summaries}) != 1:
+                raise ValueError(f"RLT trainer state ranks disagree on {key}.")
+
+        self._barrier_if_distributed()
+        if int(self._rank) == 0:
+            self._atomic_json_dump(
+                {
+                    "complete": True,
+                    "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+                    "actor_world_size": int(self._world_size),
+                    "saved_runner_step": int(runner_step),
+                    "update_step": int(self.update_step),
+                    "rlt_resume_contract_sha256": state[
+                        "rlt_resume_contract_sha256"
+                    ],
+                    "rank_files": [
+                        f"checkpoint_rank_{rank}.pt"
+                        for rank in range(int(self._world_size))
+                    ],
+                },
+                self._rlt_manifest_path(save_base_path),
+            )
+        self._barrier_if_distributed()
+
+    def _load_rlt_state(self, load_base_path: str) -> dict:
+        manifest_path = self._rlt_manifest_path(load_base_path)
+        if not os.path.isfile(manifest_path):
+            raise FileNotFoundError(f"Missing RLT completion manifest: {manifest_path}")
+        with open(manifest_path, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+        _, contract_sha256 = self._rlt_contract()
+        if not manifest.get("complete", False):
+            raise ValueError("RLT completion manifest is incomplete.")
+        if int(manifest.get("schema_version", -1)) != self._RLT_STATE_SCHEMA_VERSION:
+            raise ValueError("RLT completion manifest schema mismatch.")
+        if int(manifest.get("actor_world_size", -1)) != int(self._world_size):
+            raise ValueError("RLT completion manifest world-size mismatch.")
+        if manifest.get("rlt_resume_contract_sha256") != contract_sha256:
+            raise ValueError("RLT completion manifest contract mismatch.")
+        expected_files = [
+            f"checkpoint_rank_{rank}.pt" for rank in range(int(self._world_size))
+        ]
+        if manifest.get("rank_files") != expected_files:
+            raise ValueError("RLT completion manifest rank-file set mismatch.")
+        if any(
+            not os.path.isfile(os.path.join(self._rlt_state_dir(load_base_path), name))
+            for name in expected_files
+        ):
+            raise FileNotFoundError("RLT trainer state is missing one or more ranks.")
+        state = torch.load(
+            self._rlt_state_path(load_base_path),
+            map_location="cpu",
+            weights_only=True,
+        )
+        self._validate_rlt_state(state)
+        return state
+
+    def _restore_rlt_state(self, state: dict) -> None:
+        self._validate_rlt_state(state)
+        self.update_step = int(state["update_step"])
+        self.total_transitions_added = int(
+            state["local_total_transitions_added"]
+        )
+        self.total_episodes_added = int(state["local_total_episodes_added"])
+        self._warmup_ready_total_transitions = state[
+            "global_warmup_ready_total_transitions"
+        ]
+        self._warmup_ready_total_episodes = state[
+            "global_warmup_ready_total_episodes"
+        ]
+        self.transitions_since_train = 0
+        self.episodes_since_train = 0
+        self.pending_update_budget = 0
+
+    def save_checkpoint(self, save_base_path, step):
+        if self.use_rlt_resume:
+            state_dir = self._rlt_state_dir(save_base_path)
+            os.makedirs(state_dir, exist_ok=True)
+            if int(self._rank) == 0:
+                self._atomic_json_dump(
+                    {
+                        "complete": False,
+                        "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+                        "actor_world_size": int(self._world_size),
+                        "saved_runner_step": int(step),
+                    },
+                    self._rlt_manifest_path(save_base_path),
+                )
+            self._barrier_if_distributed()
+        super().save_checkpoint(save_base_path, step)
+        if self.use_rlt_resume:
+            self._save_rlt_state(save_base_path, step)
+
+    def load_checkpoint(self, load_base_path):
+        state = None
+        if self.use_rlt_resume:
+            state = self._load_rlt_state(load_base_path)
+        super().load_checkpoint(load_base_path)
+        if state is not None:
+            self._restore_rlt_state(state)
 
     def setup_sac_components(self):
         """Initialize replay components and let RLT schedule own readiness."""
