@@ -670,6 +670,8 @@ class FSDPModelManager:
                     ]
                 )
             )
+        for optimizer in optimizers:
+            warmup_optimizer_state(optimizer)
         return optimizers
 
     def build_grad_scaler(self, enabled: bool, **kwargs) -> ShardedGradScaler:
