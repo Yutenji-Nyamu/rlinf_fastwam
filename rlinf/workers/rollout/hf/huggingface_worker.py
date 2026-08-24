@@ -23,6 +23,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tqdm import tqdm
 
+from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variance
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.rlt import (
     build_rlt_route,
@@ -129,6 +130,31 @@ class MultiStepRolloutWorker(Worker):
 
         self.env_decoupled_mode = self.cfg.runner.get("enable_decoupled_mode", False)
 
+        dvac_train_cfg = OmegaConf.select(
+            self.cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_cfg = (
+            {}
+            if dvac_train_cfg is None
+            else OmegaConf.to_container(dvac_train_cfg, resolve=True)
+        )
+        self.dvac_train_mode = str(
+            self.dvac_train_cfg.get("mode", "off")
+        ).lower()
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 5))
+        if self.dvac_train_enabled:
+            if self.only_eval:
+                raise ValueError("DVAC gradient weighting requires a training run.")
+            if self.env_decoupled_mode:
+                raise ValueError(
+                    "DVAC gradient weighting does not support decoupled mode."
+                )
+
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
             # The batch_router is a dictionary that maps the tag to the list of batch_index.
@@ -175,6 +201,18 @@ class MultiStepRolloutWorker(Worker):
             self.expert_model.eval()
         if self.rlt_feature_model is not None:
             self.rlt_feature_model.eval()
+
+        if self.dvac_train_enabled:
+            if self.rlt_feature_model is not None or self.expert_model is not None:
+                raise ValueError(
+                    "DVAC gradient weighting requires the native rollout policy."
+                )
+            if not bool(
+                getattr(self.hf_model, "rlinf_dvac_endpoint_capable", False)
+            ):
+                raise ValueError(
+                    "The rollout policy does not expose DVAC endpoint telemetry."
+                )
 
         if self.cfg.rollout.get("enable_torch_compile", False):
             mode = self.cfg.rollout.get(
@@ -501,6 +539,10 @@ class MultiStepRolloutWorker(Worker):
             kwargs = dict(kwargs)
             kwargs["mode"] = "eval" if self.enable_dagger else mode
 
+        if self.dvac_train_enabled and mode == "train":
+            kwargs = dict(kwargs)
+            kwargs["return_dvac_telemetry"] = True
+
         if SupportedModel(self.model_cfg.model_type) in [
             SupportedModel.CNN_POLICY,
             SupportedModel.FLOW_POLICY,
@@ -552,6 +594,17 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["action"] = expert_action
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
+
+        if self.dvac_train_enabled and mode == "train":
+            telemetry = result.pop("dvac_telemetry", None)
+            if telemetry is None or "z_endpoint" not in telemetry:
+                raise ValueError("Rollout policy did not return DVAC endpoint telemetry.")
+            variance = compute_endpoint_variance(
+                telemetry["z_endpoint"], self.dvac_selected_l
+            )
+            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
+                variance.detach().cpu().contiguous()
+            )
 
         if isinstance(actions, np.ndarray):
             actions = torch.from_numpy(actions)
