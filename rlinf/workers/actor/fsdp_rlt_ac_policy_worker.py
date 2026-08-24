@@ -26,6 +26,7 @@ from omegaconf import OmegaConf
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
     global_z_weights,
+    masked_weight_totals,
     straight_through_scale_actions,
     summarize_weights,
 )
@@ -969,34 +970,29 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 payload["weights"].float().mean(dim=-1), q_gap
             )
 
+        query_weight = payload["weights"].float().mean(dim=-1)
+        positive = torch.zeros_like(query_weight, dtype=torch.bool)
         rewards = batch.get("rewards")
         if isinstance(rewards, torch.Tensor):
             positive = rewards.reshape(rewards.shape[0], -1).sum(dim=-1) > 0
-            query_weight = payload["weights"].float().mean(dim=-1)
-            if positive.any():
-                metrics["rlt_dvac/positive_reward_weight_mean"] = float(
-                    query_weight[positive].mean().item()
-                )
-            if (~positive).any():
-                metrics["rlt_dvac/nonpositive_reward_weight_mean"] = float(
-                    query_weight[~positive].mean().item()
-                )
 
         actor_switch = payload.get("actor_switch")
+        route_mask = torch.zeros_like(query_weight, dtype=torch.bool)
         if isinstance(actor_switch, torch.Tensor):
-            actor_switch = actor_switch.reshape(-1).bool()
-            query_weight = payload["weights"].float().mean(dim=-1)
-            metrics["rlt_dvac/actor_switch_rate"] = float(
-                actor_switch.float().mean().item()
-            )
-            if actor_switch.any():
-                metrics["rlt_dvac/student_route_weight_mean"] = float(
-                    query_weight[actor_switch].mean().item()
-                )
-            if (~actor_switch).any():
-                metrics["rlt_dvac/reference_route_weight_mean"] = float(
-                    query_weight[~actor_switch].mean().item()
-                )
+            route_mask = actor_switch.reshape(-1).bool()
+        metrics["rlt_dvac/actor_switch_rate"] = float(
+            route_mask.float().mean().item()
+        )
+
+        for prefix, mask in (
+            ("positive_reward", positive),
+            ("nonpositive_reward", ~positive),
+            ("student_route", route_mask),
+            ("reference_route", ~route_mask),
+        ):
+            weight_sum, count = masked_weight_totals(query_weight, mask)
+            metrics[f"rlt_dvac/{prefix}_weight_sum"] = weight_sum
+            metrics[f"rlt_dvac/{prefix}_count"] = count
 
         collection_version = payload.get("dvac_collection_version")
         if isinstance(collection_version, torch.Tensor):
@@ -1004,6 +1000,26 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             metrics["rlt_dvac/replay_age_mean"] = float(replay_age.mean().item())
             metrics["rlt_dvac/replay_age_p95"] = float(
                 torch.quantile(replay_age, 0.95).item()
+            )
+        return metrics
+
+    @staticmethod
+    def _finalize_rlt_dvac_context_metrics(
+        metrics: dict[str, float],
+    ) -> dict[str, float]:
+        for prefix in (
+            "positive_reward",
+            "nonpositive_reward",
+            "student_route",
+            "reference_route",
+        ):
+            sum_key = f"rlt_dvac/{prefix}_weight_sum"
+            count_key = f"rlt_dvac/{prefix}_count"
+            if sum_key not in metrics or count_key not in metrics:
+                continue
+            count = float(metrics[count_key])
+            metrics[f"rlt_dvac/{prefix}_weight_mean"] = (
+                float(metrics[sum_key]) / count if count > 0 else 0.0
             )
         return metrics
 
@@ -1985,6 +2001,9 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         )
         append_to_dict(metrics, schedule_metrics)
         mean_metric_dict = self.process_train_metrics(metrics)
+        mean_metric_dict = self._finalize_rlt_dvac_context_metrics(
+            mean_metric_dict
+        )
         self.transitions_since_train = 0
         self.episodes_since_train = 0
 

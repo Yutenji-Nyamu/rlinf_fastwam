@@ -4,6 +4,7 @@ from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
     compute_endpoint_variances,
     global_z_weights,
+    masked_weight_totals,
     straight_through_scale_actions,
 )
 from rlinf.algorithms.rlt.transition import extract_rlt_obs_from_forward_inputs
@@ -72,3 +73,18 @@ def test_optional_teacher_dvac_fields_roundtrip_without_becoming_required():
     torch.testing.assert_close(
         transition_obs["teacher_dvac_v"], with_dvac["teacher_dvac_v"]
     )
+
+
+def test_masked_weight_totals_keep_empty_groups_in_the_metric_schema():
+    weights = torch.tensor([0.5, 1.0, 2.0])
+    selected_sum, selected_count = masked_weight_totals(
+        weights, torch.tensor([True, False, True])
+    )
+    empty_sum, empty_count = masked_weight_totals(
+        weights, torch.tensor([False, False, False])
+    )
+
+    assert selected_sum == 2.5
+    assert selected_count == 2.0
+    assert empty_sum == 0.0
+    assert empty_count == 0.0

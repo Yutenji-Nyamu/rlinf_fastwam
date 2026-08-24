@@ -154,6 +154,25 @@ def straight_through_scale_actions(
     return scaled.reshape_as(actions)
 
 
+def masked_weight_totals(
+    query_weights: torch.Tensor,
+    mask: torch.Tensor,
+) -> tuple[float, float]:
+    """Return a fixed-schema weight sum and count for a masked query group."""
+
+    flat_weights = query_weights.detach().float().reshape(-1)
+    flat_mask = mask.detach().bool().reshape(-1)
+    if flat_weights.numel() != flat_mask.numel():
+        raise ValueError(
+            "RLT DVAC query-weight/mask shape mismatch: "
+            f"weights={tuple(query_weights.shape)}, mask={tuple(mask.shape)}"
+        )
+    return (
+        float(flat_weights[flat_mask].sum().item()),
+        float(flat_mask.sum().item()),
+    )
+
+
 def summarize_weights(
     weights: torch.Tensor,
     z_scores: torch.Tensor,
