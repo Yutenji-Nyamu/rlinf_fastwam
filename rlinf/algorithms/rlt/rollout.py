@@ -18,7 +18,11 @@ import numpy as np
 import torch
 
 from rlinf.algorithms.rlt.route import RLTRoute, RLTRouteContext
-from rlinf.algorithms.rlt.transition import RLT_OBS_KEYS, RLT_TRANSITION_PREFIX
+from rlinf.algorithms.rlt.transition import (
+    RLT_OBS_KEYS,
+    RLT_OPTIONAL_OBS_KEYS,
+    RLT_TRANSITION_PREFIX,
+)
 
 
 def _append_rlt_transition_obs(
@@ -31,7 +35,12 @@ def _append_rlt_transition_obs(
     transition_obs = rlt_obs
     if final_obs is not None:
         transition_obs = feature_model.extract_rlt_obs(final_obs)
-    for key in RLT_OBS_KEYS:
+        for key in ("dvac_collection_version", "actor_switch"):
+            if key in rlt_obs:
+                transition_obs[key] = rlt_obs[key]
+    for key in (*RLT_OBS_KEYS, *RLT_OPTIONAL_OBS_KEYS):
+        if key not in transition_obs:
+            continue
         result["forward_inputs"][f"{RLT_TRANSITION_PREFIX}{key}"] = transition_obs[key]
 
 
@@ -80,6 +89,20 @@ def predict_rlt_actions(
         )
         actions = route_output.actions
         result = route_output.result
+        if "teacher_dvac_v" in rlt_obs:
+            batch_size = int(rlt_obs["teacher_dvac_v"].shape[0])
+            rlt_obs["dvac_collection_version"] = torch.full(
+                (batch_size, 1),
+                int(version),
+                dtype=torch.long,
+                device=rlt_obs["teacher_dvac_v"].device,
+            )
+            rlt_obs["actor_switch"] = result["forward_inputs"]["actor_switch"].to(
+                device=rlt_obs["teacher_dvac_v"].device
+            )
+            for key in RLT_OPTIONAL_OBS_KEYS:
+                if key in rlt_obs:
+                    result["forward_inputs"][key] = rlt_obs[key]
         if decode_context is not None:
             actions = feature_model.decode_rlt_action(actions, decode_context)
 

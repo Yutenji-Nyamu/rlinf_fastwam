@@ -28,6 +28,7 @@ from openpi.models.pi0_config import Pi0Config
 from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
+from rlinf.algorithms.rlt.dvac_weighting import compute_endpoint_variances
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -149,6 +150,7 @@ class OpenPi0Config(Pi0Config):
     rlt_image_only: bool = True
     rlt_use_mask: bool = False
     rlt_action_adapter: str = "identity"
+    rlt_dvac_mode: Literal["off", "observe", "apply"] = "off"
     state_indices: list[int] | None = None
 
 
@@ -684,6 +686,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             past_key_values,
             mode="eval",
             compute_values=False,
+            collect_endpoint_previews=self.config.rlt_dvac_mode != "off",
         )
         decode_context = None
         if self.config.rlt_action_adapter == "identity":
@@ -734,6 +737,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "proprio": proprio.to(device=z_rl.device, dtype=torch.float32),
             "ref_chunk": ref_chunk.to(device=z_rl.device, dtype=torch.float32),
         }
+        if "teacher_dvac_v" in outputs:
+            rlt_obs["teacher_dvac_v"] = outputs["teacher_dvac_v"].to(
+                device=z_rl.device, dtype=torch.float32
+            )
         if return_decode_context:
             return rlt_obs, decode_context
         return rlt_obs
@@ -1190,6 +1197,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        collect_endpoint_previews: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
@@ -1239,6 +1247,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         # collect nft states for nft algorithm
         nft_state = self._init_nft_state(collect_nft_state, x_t, num_steps, device)
+        endpoint_previews = [] if collect_endpoint_previews else None
+        endpoint_timesteps = (
+            self._get_timesteps(num_steps, device)
+            if collect_endpoint_previews
+            else None
+        )
 
         # denoise step
         for idx in range(num_steps):
@@ -1258,6 +1272,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 num_steps,
                 compute_values,
             )
+            if endpoint_previews is not None:
+                endpoint_previews.append(
+                    (x_t_prev - v_t * endpoint_timesteps[idx].to(dtype=x_t_prev.dtype))[
+                        :, :, : self.config.action_env_dim
+                    ].detach()
+                )
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
@@ -1291,6 +1311,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "prev_values": values,
             "denoise_inds": denoise_inds,
         }
+        if endpoint_previews is not None:
+            endpoint_tensor = torch.stack(endpoint_previews, dim=1)
+            endpoint_variances = compute_endpoint_variances(
+                endpoint_tensor, l_values=(2, 3, 4)
+            )
+            result["teacher_dvac_v"] = torch.stack(
+                [endpoint_variances[l_value] for l_value in (2, 3, 4)], dim=1
+            ).to(dtype=torch.float32)
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
