@@ -12,12 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
+from pathlib import Path
+
 import numpy as np
 import torch
 from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.algorithms.dvac_train_weighting import (
+    DVACRecentStats,
+    DVACStepStats,
+    local_log_v_sufficient_statistics,
+    straight_through_scale_logprobs,
+)
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.config import SupportedModel
@@ -75,6 +85,29 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         self.enable_sft_co_train = cfg.actor.get("enable_sft_co_train", False)
         self.version = 0
+
+        dvac_cfg = OmegaConf.select(
+            cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_cfg = (
+            {}
+            if dvac_cfg is None
+            else OmegaConf.to_container(dvac_cfg, resolve=True)
+        )
+        self.dvac_train_mode = str(
+            self.dvac_train_cfg.get("mode", "off")
+        ).lower()
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        self.dvac_recent_stats = (
+            self._new_dvac_recent_stats() if self.dvac_train_enabled else None
+        )
+        self.dvac_output_dir: Path | None = None
+        self._dvac_pending_step: dict | None = None
         if self.enable_sft_co_train:
             self._build_sft_data_loader()
 
@@ -103,12 +136,39 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             range(self._component_placement.get_world_size("rollout"))
         )
 
+    def _new_dvac_recent_stats(self) -> DVACRecentStats:
+        return DVACRecentStats(
+            window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
+            warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
+            log_eps=float(self.dvac_train_cfg.get("log_eps", 1e-12)),
+            std_floor=float(self.dvac_train_cfg.get("std_floor", 1e-6)),
+            z_clip=float(self.dvac_train_cfg.get("z_clip", 2.0)),
+            strength=float(self.dvac_train_cfg.get("strength", 0.5)),
+        )
+
     def init_worker(self) -> None:
         """
         Initialize the actor worker. build the model and use corresponding training backend,
         if needed, offload model parameters and optimizer states to CPU.
         """
         self.setup_model_and_optimizer()
+
+        if self.dvac_train_enabled:
+            if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
+                raise ValueError("DVAC gradient weighting requires OpenPI.")
+            if self.cfg.algorithm.logprob_type != "chunk_level":
+                raise ValueError(
+                    "DVAC gradient weighting preserves chunk-level GRPO clipping."
+                )
+            output_dir = self.dvac_train_cfg.get("output_dir")
+            if not output_dir:
+                raise ValueError(
+                    "algorithm.dvac_gradient_weighting.output_dir is required."
+                )
+            self.dvac_output_dir = Path(str(output_dir)) / (
+                f"actor_rank{self._rank:02d}"
+            )
+            self.dvac_output_dir.mkdir(parents=True, exist_ok=True)
 
         if self.enable_offload:
             self.offload_param_and_grad()
@@ -480,6 +540,104 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             )
         return loss
 
+    def _prepare_dvac_train_step(self) -> None:
+        forward_inputs = self.rollout_batch.get("forward_inputs")
+        if not isinstance(forward_inputs, dict):
+            raise ValueError("DVAC gradient weighting requires forward_inputs.")
+        variance_key = f"dvac_v_l{self.dvac_selected_l}"
+        if variance_key not in forward_inputs:
+            raise ValueError(f"Missing train-time DVAC tensor: {variance_key}")
+        variance = forward_inputs.pop(variance_key)
+
+        local_stats = local_log_v_sufficient_statistics(
+            variance, log_eps=self.dvac_recent_stats.log_eps
+        ).to(self.device)
+        torch.distributed.all_reduce(local_stats, op=torch.distributed.ReduceOp.SUM)
+        count, value_sum, value_sq_sum = local_stats.detach().cpu().tolist()
+        current_stats = DVACStepStats(
+            runner_step=int(self.version),
+            count=int(round(count)),
+            value_sum=float(value_sum),
+            value_sq_sum=float(value_sq_sum),
+        )
+
+        weights, clipped_z, warmup, history = self.dvac_recent_stats.compute_weights(
+            variance
+        )
+        forward_inputs["dvac_weights"] = weights
+        self._dvac_pending_step = {
+            "runner_step": int(self.version),
+            "current_stats": current_stats,
+            "history": history,
+            "warmup": warmup,
+            "variance": variance.detach().cpu().contiguous(),
+            "weights": weights.detach().cpu().contiguous(),
+            "clipped_z": clipped_z.detach().cpu().contiguous(),
+            "advantages": self.rollout_batch["advantages"].detach().cpu().contiguous(),
+            "rewards": self.rollout_batch["rewards"].detach().cpu().contiguous(),
+            "loss_mask": (
+                None
+                if self.rollout_batch.get("loss_mask") is None
+                else self.rollout_batch["loss_mask"].detach().cpu().contiguous()
+            ),
+            "metrics": {
+                "actor/dvac_warmup": float(warmup),
+                "actor/dvac_history_mean": float(history["history_mean"]),
+                "actor/dvac_history_std": float(history["history_std"]),
+                "actor/dvac_current_mean": current_stats.mean,
+                "actor/dvac_current_std": current_stats.std,
+                "actor/dvac_weight_mean": float(weights.float().mean().item()),
+                "actor/dvac_weight_sq_mean": float(
+                    weights.float().square().mean().item()
+                ),
+                "actor/dvac_z_low_clip_fraction": float(
+                    (clipped_z <= -self.dvac_recent_stats.z_clip)
+                    .float()
+                    .mean()
+                    .item()
+                ),
+                "actor/dvac_z_high_clip_fraction": float(
+                    (clipped_z >= self.dvac_recent_stats.z_clip)
+                    .float()
+                    .mean()
+                    .item()
+                ),
+            },
+        }
+
+    def _write_dvac_step_artifact(self, pending: dict) -> None:
+        if not bool(self.dvac_train_cfg.get("save_step_tensors", True)):
+            return
+        path = self.dvac_output_dir / (
+            f"runner_step_{int(pending['runner_step']):04d}.pt"
+        )
+        if path.exists():
+            raise FileExistsError(f"DVAC step artifact already exists: {path}")
+        temporary = path.with_suffix(".partial.pt")
+        torch.save(
+            {
+                "schema_version": 1,
+                "runner_step": int(pending["runner_step"]),
+                "actor_rank": int(self._rank),
+                "selected_l": int(self.dvac_selected_l),
+                "warmup": bool(pending["warmup"]),
+                "history": dict(pending["history"]),
+                "current_stats": {
+                    "count": pending["current_stats"].count,
+                    "mean": pending["current_stats"].mean,
+                    "std": pending["current_stats"].std,
+                },
+                "variance": pending["variance"],
+                "weights": pending["weights"],
+                "clipped_z": pending["clipped_z"],
+                "advantages": pending["advantages"],
+                "rewards": pending["rewards"],
+                "loss_mask": pending["loss_mask"],
+            },
+            temporary,
+        )
+        os.replace(temporary, path)
+
     @Worker.timer("run_training")
     def run_training(self) -> None:
         """
@@ -504,6 +662,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 )
 
         self.model.train()
+        if self.dvac_train_enabled:
+            self._prepare_dvac_train_step()
         rollout_size = (
             self.rollout_batch["prev_logprobs"].shape[0]
             * self.rollout_batch["prev_logprobs"].shape[1]
@@ -569,6 +729,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 if len(lr_list) > 1:
                     data["critic/lr"] = lr_list[1]
                 append_to_dict(metrics, data)
+        if self.dvac_train_enabled:
+            append_to_dict(metrics, self._dvac_pending_step["metrics"])
+
         # put LR scheduler step here
         self.lr_scheduler.step()
         self.optimizer.zero_grad()
@@ -578,6 +741,16 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         mean_metric_dict = all_reduce_dict(
             mean_metric_dict, op=torch.distributed.ReduceOp.AVG
         )
+        if self.dvac_train_enabled:
+            weight_mean = float(mean_metric_dict["actor/dvac_weight_mean"])
+            weight_sq_mean = float(mean_metric_dict["actor/dvac_weight_sq_mean"])
+            mean_metric_dict["actor/dvac_weight_ess_fraction"] = (
+                weight_mean**2 / weight_sq_mean if weight_sq_mean > 0 else 0.0
+            )
+            pending = self._dvac_pending_step
+            self._write_dvac_step_artifact(pending)
+            self.dvac_recent_stats.push(pending["current_stats"])
+            self._dvac_pending_step = None
         if explained_variance_stats:
             reduced_stats = all_reduce_dict(
                 explained_variance_stats, op=torch.distributed.ReduceOp.SUM
@@ -605,6 +778,18 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         loss_mask_sum = micro_batch.get("loss_mask_sum", None)
         forward_inputs = micro_batch.get("forward_inputs", None)
 
+        dvac_weights = None
+        model_forward_inputs = forward_inputs
+        if self.dvac_train_enabled:
+            if forward_inputs is None or "dvac_weights" not in forward_inputs:
+                raise ValueError("Missing frozen per-h DVAC weights during replay.")
+            dvac_weights = forward_inputs["dvac_weights"]
+            model_forward_inputs = {
+                key: value
+                for key, value in forward_inputs.items()
+                if key != "dvac_weights"
+            }
+
         kwargs = {}
         if SupportedModel(self.cfg.actor.model.model_type) in [
             SupportedModel.OPENVLA,
@@ -623,7 +808,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         compute_values = self.cfg.algorithm.adv_type == "gae"
         with self.amp_context:
             output_dict = self.model(
-                forward_inputs=forward_inputs,
+                forward_inputs=model_forward_inputs,
                 compute_logprobs=True,
                 compute_entropy=self.cfg.algorithm.entropy_bonus > 0,
                 compute_values=compute_values,
@@ -639,12 +824,18 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         ]:
             prev_logprobs = output_dict["prev_logprobs"]
 
+        logprobs_for_loss = output_dict["logprobs"]
+        if self.dvac_train_enabled:
+            logprobs_for_loss = straight_through_scale_logprobs(
+                logprobs_for_loss, dvac_weights
+            )
+
         loss_kwargs = {
             "loss_type": self.cfg.algorithm.loss_type,
             "logprob_type": self.cfg.algorithm.logprob_type,
             "reward_type": self.cfg.algorithm.reward_type,
             "single_action_dim": self.cfg.actor.model.get("action_dim", 7),
-            "logprobs": output_dict["logprobs"],
+            "logprobs": logprobs_for_loss,
             "values": output_dict.get("values", None),
             "old_logprobs": prev_logprobs,
             "advantages": advantages,
@@ -698,6 +889,61 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         metrics_data["actor/total_loss"] = loss.detach().item()
         append_to_dict(metrics, metrics_data)
+
+    def _dvac_sidecar_path(self, checkpoint_path: str) -> Path:
+        return Path(checkpoint_path) / f"dvac_state_rank{self._rank:04d}.json"
+
+    def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+        super().save_checkpoint(save_path, step)
+        if not self.dvac_train_enabled:
+            return
+        if self._dvac_pending_step is not None:
+            raise RuntimeError("Cannot checkpoint a partially applied DVAC runner step.")
+        path = self._dvac_sidecar_path(save_path)
+        temporary = path.with_suffix(".partial.json")
+        payload = {
+            "schema_version": 1,
+            "runner_step": int(step),
+            "actor_rank": int(self._rank),
+            "actor_world_size": int(self._world_size),
+            "mode": self.dvac_train_mode,
+            "selected_l": int(self.dvac_selected_l),
+            "recent_stats": self.dvac_recent_stats.state_dict(),
+        }
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+
+    def load_checkpoint(self, load_path: str) -> None:
+        restored_stats = None
+        if self.dvac_train_enabled:
+            path = self._dvac_sidecar_path(load_path)
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"Exact DVAC resume requires actor sidecar: {path}"
+                )
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            expected = {
+                "schema_version": 1,
+                "actor_rank": int(self._rank),
+                "actor_world_size": int(self._world_size),
+                "mode": self.dvac_train_mode,
+                "selected_l": int(self.dvac_selected_l),
+            }
+            for key, value in expected.items():
+                if payload.get(key) != value:
+                    raise ValueError(
+                        f"DVAC resume mismatch for {key}: "
+                        f"checkpoint={payload.get(key)!r}, current={value!r}"
+                    )
+            restored_stats = self._new_dvac_recent_stats()
+            restored_stats.load_state_dict(payload["recent_stats"])
+
+        super().load_checkpoint(load_path)
+        if restored_stats is not None:
+            self.dvac_recent_stats = restored_stats
 
     def set_global_step(self, global_step: int) -> None:
         """

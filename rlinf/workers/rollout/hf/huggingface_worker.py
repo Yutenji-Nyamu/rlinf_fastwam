@@ -25,6 +25,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tqdm import tqdm
 
+from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variance
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.rlt import (
     build_rlt_route,
@@ -155,6 +156,33 @@ class MultiStepRolloutWorker(Worker):
                 raise ValueError(
                     "DVAC telemetry v1 expects the original SFT model_path."
                 )
+
+        dvac_train_cfg = OmegaConf.select(
+            self.cfg, "algorithm.dvac_gradient_weighting", default=None
+        )
+        self.dvac_train_cfg = (
+            {}
+            if dvac_train_cfg is None
+            else OmegaConf.to_container(dvac_train_cfg, resolve=True)
+        )
+        self.dvac_train_mode = str(
+            self.dvac_train_cfg.get("mode", "off")
+        ).lower()
+        if self.dvac_train_mode not in {"off", "apply"}:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
+            )
+        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        if self.dvac_train_enabled:
+            if self.only_eval:
+                raise ValueError("DVAC gradient weighting requires a training run.")
+            if self.env_decoupled_mode:
+                raise ValueError(
+                    "DVAC gradient weighting does not support decoupled mode."
+                )
+            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                raise ValueError("DVAC gradient weighting requires OpenPI.")
 
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
@@ -289,6 +317,22 @@ class MultiStepRolloutWorker(Worker):
                 },
                 resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
             )
+
+        if self.dvac_train_enabled:
+            if self.rlt_feature_model is not None or self.expert_model is not None:
+                raise ValueError(
+                    "DVAC gradient weighting requires the native OpenPI policy."
+                )
+            active_modes = [
+                name
+                for name in ("use_dsrl", "use_rlt", "is_nft")
+                if bool(getattr(self.hf_model.config, name, False))
+            ]
+            if active_modes:
+                raise ValueError(
+                    "DVAC gradient weighting does not support: "
+                    + ", ".join(active_modes)
+                )
 
         if self.cfg.rollout.get("enable_torch_compile", False):
             mode = self.cfg.rollout.get(
@@ -622,6 +666,8 @@ class MultiStepRolloutWorker(Worker):
             and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
         ):
             kwargs["return_dvac_telemetry"] = True
+        if self.dvac_train_enabled and mode == "train":
+            kwargs["return_dvac_telemetry"] = True
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
             "only_save_expert", True
@@ -667,6 +713,17 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["action"] = expert_action
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
+
+        if self.dvac_train_enabled and mode == "train":
+            telemetry = result.pop("dvac_telemetry", None)
+            if telemetry is None or "z_endpoint" not in telemetry:
+                raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
+            variance = compute_endpoint_variance(
+                telemetry["z_endpoint"], self.dvac_selected_l
+            )
+            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
+                variance.detach().cpu().contiguous()
+            )
 
         if isinstance(actions, np.ndarray):
             actions = torch.from_numpy(actions)

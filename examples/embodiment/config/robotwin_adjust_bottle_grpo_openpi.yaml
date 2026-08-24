@@ -65,6 +65,20 @@ algorithm:
   filter_rewards: True
   rewards_lower_bound: 0.1
   rewards_upper_bound: 0.9
+
+  # Optional original DVAC weighting. The baseline remains unchanged while
+  # mode=off; DVAC runs override only mode=apply.
+  dvac_gradient_weighting:
+    mode: "off"
+    selected_l: 3
+    warmup_steps: 1
+    window_steps: 5
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 0.5
+    save_step_tensors: true
+    output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_train
 env:
   group_name: "EnvGroup"
   enable_offload: True
