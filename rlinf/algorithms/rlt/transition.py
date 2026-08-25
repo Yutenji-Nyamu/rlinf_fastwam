@@ -26,6 +26,14 @@ RLT_OPTIONAL_OBS_KEYS = (
 RLT_TRANSITION_PREFIX = "rlt_transition_"
 
 
+def core_rlt_obs(obs: dict[str, Any]) -> dict[str, Any]:
+    """Copy only the model state shared by every RLT replay observation."""
+    missing = [key for key in RLT_OBS_KEYS if key not in obs]
+    if missing:
+        raise ValueError(f"Missing core RLT observation keys: {missing}.")
+    return copy_dict_tensor({key: obs[key] for key in RLT_OBS_KEYS})
+
+
 def use_simulator_transition_replay(cfg: Any) -> bool:
     """Return True for envs that store one replay row per env step."""
     capability_cfg = cfg.algorithm.get("rlt_transition_replay", None)

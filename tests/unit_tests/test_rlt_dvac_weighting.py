@@ -10,7 +10,10 @@ from rlinf.algorithms.rlt.dvac_weighting import (
     masked_weight_totals,
     straight_through_scale_actions,
 )
-from rlinf.algorithms.rlt.transition import extract_rlt_obs_from_forward_inputs
+from rlinf.algorithms.rlt.transition import (
+    core_rlt_obs,
+    extract_rlt_obs_from_forward_inputs,
+)
 
 
 def test_endpoint_variance_uses_population_tail_variance():
@@ -142,6 +145,23 @@ def test_optional_teacher_dvac_fields_roundtrip_without_becoming_required():
     torch.testing.assert_close(
         transition_obs["teacher_dvac_v"], with_dvac["teacher_dvac_v"]
     )
+
+
+def test_core_rlt_obs_excludes_current_only_replay_metadata():
+    obs = {
+        "z_rl": torch.zeros(1, 4),
+        "proprio": torch.zeros(1, 3),
+        "ref_chunk": torch.zeros(1, 2, 3),
+        "teacher_dvac_v": torch.zeros(1, 3, 50),
+        "actor_switch": torch.ones(1, 1, dtype=torch.bool),
+        "episode_success": torch.ones(1, 1, 1, dtype=torch.bool),
+    }
+
+    projected = core_rlt_obs(obs)
+
+    assert set(projected) == {"z_rl", "proprio", "ref_chunk"}
+    projected["z_rl"].add_(1)
+    assert not torch.equal(projected["z_rl"], obs["z_rl"])
 
 
 def test_masked_weight_totals_keep_empty_groups_in_the_metric_schema():

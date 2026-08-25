@@ -33,7 +33,10 @@ from rlinf.algorithms.rlt.dvac_weighting import (
     straight_through_scale_actions,
     summarize_weights,
 )
-from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
+from rlinf.algorithms.rlt.transition import (
+    core_rlt_obs,
+    use_simulator_transition_replay,
+)
 from rlinf.data.embodied_io_struct import Trajectory
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.scheduler import Worker
@@ -742,9 +745,14 @@ class RLTACReplayMixin:
                     and not is_termination
                 )
                 if is_done and not bootstrap_truncation:
-                    next_obs = curr_obs
+                    # Terminal rows do not bootstrap. Reuse current model state,
+                    # but keep current-only training metadata out of next_obs so
+                    # every replay row has one fixed nested schema.
+                    next_obs = core_rlt_obs(curr_obs)
                 else:
                     next_obs = self._rlt_obs_from_flat_dict(flat, "next_obs", idx)
+                    if next_obs is not None:
+                        next_obs = core_rlt_obs(next_obs)
                 if next_obs is not None:
                     transition.next_obs = next_obs
                 else:
