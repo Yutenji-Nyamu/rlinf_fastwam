@@ -134,6 +134,102 @@ def global_z_weights(
     return weights.detach(), z_scores.detach(), log_variances.detach()
 
 
+def centered_mean_one_weights(
+    z_scores: torch.Tensor,
+    *,
+    strength: float = 0.25,
+) -> torch.Tensor:
+    """Map clipped per-h scores to detached, per-query mean-one weights."""
+
+    if z_scores.ndim != 2:
+        raise ValueError(
+            f"RLT DVAC z_scores must be [B,H], got {tuple(z_scores.shape)}."
+        )
+    if float(strength) < 0:
+        raise ValueError("RLT DVAC centered strength must be non-negative.")
+    centered = z_scores.float() - z_scores.float().mean(dim=-1, keepdim=True)
+    return (1.0 + float(strength) * centered).detach()
+
+
+def episode_success_flags(rewards: torch.Tensor) -> torch.Tensor:
+    """Return one success flag per env from a complete ``[T,B,...]`` rollout."""
+
+    if rewards.ndim < 2:
+        raise ValueError(
+            f"RLT episode rewards must be [T,B,...], got {tuple(rewards.shape)}."
+        )
+    by_step_env = (
+        rewards.detach().float().reshape(rewards.shape[0], rewards.shape[1], -1)
+    )
+    return (by_step_env > 0).any(dim=0).any(dim=-1)
+
+
+def build_rlt_bc_targets_and_weights(
+    executed_actions: torch.Tensor,
+    reference_actions: torch.Tensor,
+    human_mask: torch.Tensor,
+    *,
+    episode_success: torch.Tensor | None = None,
+    success_weights: torch.Tensor | None = None,
+    success_episode_bc: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Build RLT BC targets while preserving the existing human-target rule."""
+
+    if executed_actions.shape != reference_actions.shape:
+        raise ValueError(
+            "RLT BC executed/reference shape mismatch: "
+            f"executed={tuple(executed_actions.shape)}, "
+            f"reference={tuple(reference_actions.shape)}"
+        )
+    if executed_actions.ndim != 3:
+        raise ValueError(
+            "RLT BC action chunks must be [B,H,D], got "
+            f"{tuple(executed_actions.shape)}."
+        )
+    if tuple(human_mask.shape) != tuple(executed_actions.shape[:2]):
+        raise ValueError(
+            "RLT BC human mask/action shape mismatch: "
+            f"mask={tuple(human_mask.shape)}, "
+            f"actions={tuple(executed_actions.shape)}"
+        )
+
+    success_mask = torch.zeros_like(human_mask, dtype=torch.bool)
+    if success_episode_bc:
+        if episode_success is None or success_weights is None:
+            raise ValueError(
+                "Success-episode RLT BC requires episode_success and success_weights."
+            )
+        success_query = (
+            episode_success.detach().to(human_mask.device).bool().reshape(-1)
+        )
+        if success_query.shape[0] != executed_actions.shape[0]:
+            raise ValueError(
+                "RLT BC episode-success/action batch mismatch: "
+                f"success={tuple(episode_success.shape)}, "
+                f"actions={tuple(executed_actions.shape)}"
+            )
+        if tuple(success_weights.shape) != tuple(executed_actions.shape[:2]):
+            raise ValueError(
+                "RLT BC success-weight/action shape mismatch: "
+                f"weights={tuple(success_weights.shape)}, "
+                f"actions={tuple(executed_actions.shape)}"
+            )
+        success_mask = success_query[:, None].expand_as(human_mask)
+
+    executed_target_mask = human_mask | success_mask
+    targets = torch.where(
+        executed_target_mask[..., None], executed_actions, reference_actions
+    )
+    weights = torch.ones_like(human_mask, dtype=executed_actions.dtype)
+    if success_episode_bc:
+        weights = torch.where(
+            success_mask,
+            success_weights.detach().to(device=weights.device, dtype=weights.dtype),
+            weights,
+        )
+    return targets, weights.detach(), success_mask, executed_target_mask
+
+
 def straight_through_scale_actions(
     actions: torch.Tensor,
     weights: torch.Tensor,

@@ -25,6 +25,9 @@ from omegaconf import OmegaConf
 
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
+    build_rlt_bc_targets_and_weights,
+    centered_mean_one_weights,
+    episode_success_flags,
     global_z_weights,
     masked_weight_totals,
     straight_through_scale_actions,
@@ -139,6 +142,10 @@ class RLTACLossMixin:
         actions: torch.Tensor,
         ref_chunk: torch.Tensor,
         intervene_flags: torch.Tensor | None,
+        *,
+        episode_success: torch.Tensor | None = None,
+        success_weights: torch.Tensor | None = None,
+        success_episode_bc: bool = False,
     ) -> tuple[torch.Tensor, dict[str, float]]:
         chunk_len, action_dim = self._chunk_shape()
         pi_chunk = self._flatten_chunk(pi).reshape(-1, chunk_len, action_dim)
@@ -160,11 +167,20 @@ class RLTACLossMixin:
                 .any(dim=-1)
             )
 
-        bc_target = torch.where(human_mask[..., None], action_chunk, bc_ref_chunk)
+        bc_target, bc_weights, success_mask, executed_target_mask = (
+            build_rlt_bc_targets_and_weights(
+                action_chunk,
+                bc_ref_chunk,
+                human_mask,
+                episode_success=episode_success,
+                success_weights=success_weights,
+                success_episode_bc=success_episode_bc,
+            )
+        )
         bc_error = torch.mean(torch.square(pi_chunk - bc_target), dim=-1)
-        bc_loss = torch.mean(bc_error)
+        bc_loss = torch.mean(bc_weights * bc_error)
 
-        policy_mask = ~human_mask
+        policy_mask = ~executed_target_mask
         ref_error = torch.mean(torch.square(pi_chunk - bc_ref_chunk), dim=-1)
         human_error = torch.mean(torch.square(pi_chunk - action_chunk), dim=-1)
         bc_ref = torch.sum(ref_error * policy_mask.to(ref_error.dtype)) / torch.clamp(
@@ -175,12 +191,68 @@ class RLTACLossMixin:
         ) / torch.clamp(torch.sum(human_mask.to(human_error.dtype)), min=1.0)
 
         human_ratio = torch.mean(human_mask.to(torch.float32)).item()
+        success_count = torch.sum(success_mask.to(torch.float32))
+        success_denom = torch.clamp(success_count, min=1.0)
+        success_unweighted = (
+            torch.sum(bc_error * success_mask.to(bc_error.dtype)) / success_denom
+        )
+        success_weighted = (
+            torch.sum(bc_weights * bc_error * success_mask.to(bc_error.dtype))
+            / success_denom
+        )
+        success_weight_mean = (
+            torch.sum(bc_weights * success_mask.to(bc_weights.dtype)) / success_denom
+        )
+        success_weight_sum = torch.sum(
+            bc_weights * success_mask.to(bc_weights.dtype), dim=-1
+        )
+        success_weight_sum_sq = torch.sum(
+            bc_weights.square() * success_mask.to(bc_weights.dtype), dim=-1
+        )
+        success_horizon = torch.sum(success_mask.to(bc_weights.dtype), dim=-1)
+        success_query = success_horizon > 0
+        success_ess = success_weight_sum.square() / (
+            success_horizon * success_weight_sum_sq
+        ).clamp_min(1e-12)
+        success_ess_mean = torch.sum(
+            success_ess * success_query.to(success_ess.dtype)
+        ) / torch.clamp(torch.sum(success_query.to(success_ess.dtype)), min=1.0)
+        executed_ref_distance = torch.mean(
+            torch.square(action_chunk - bc_ref_chunk), dim=-1
+        )
+        success_executed_ref_distance = (
+            torch.sum(
+                executed_ref_distance * success_mask.to(executed_ref_distance.dtype)
+            )
+            / success_denom
+        )
         metrics = {
             "bc_loss": bc_loss.detach().item(),
+            "bc_unweighted_loss": bc_error.detach().mean().item(),
             "bc_ref_loss": bc_ref.detach().item(),
             "bc_human_loss": bc_human.detach().item(),
             "human_mask_ratio": human_ratio,
             "policy_mask_ratio": 1.0 - human_ratio,
+            "rlt_dvac_bc/success_query_count": float(success_query.sum().item()),
+            "rlt_dvac_bc/success_action_count": float(success_count.item()),
+            "rlt_dvac_bc/executed_target_ratio": float(
+                executed_target_mask.float().mean().item()
+            ),
+            "rlt_dvac_bc/success_unweighted_loss": float(
+                success_unweighted.detach().item()
+            ),
+            "rlt_dvac_bc/success_weighted_loss": float(
+                success_weighted.detach().item()
+            ),
+            "rlt_dvac_bc/success_weight_mean": float(
+                success_weight_mean.detach().item()
+            ),
+            "rlt_dvac_bc/success_weight_ess_ratio": float(
+                success_ess_mean.detach().item()
+            ),
+            "rlt_dvac_bc/success_executed_ref_mse": float(
+                success_executed_ref_distance.detach().item()
+            ),
         }
         return bc_loss, metrics
 
@@ -389,6 +461,14 @@ class RLTACLossMixin:
             actions=batch["actions"],
             ref_chunk=ref_chunk,
             intervene_flags=batch.get("intervene_flags", None),
+            episode_success=curr_obs.get("episode_success"),
+            success_weights=(
+                dvac_payload["weights"] if dvac_payload is not None else None
+            ),
+            success_episode_bc=bool(
+                dvac_payload is not None
+                and dvac_payload.get("success_episode_bc_applied", False)
+            ),
         )
         metrics.update(rlt_metrics)
         metrics.update(
@@ -406,6 +486,7 @@ class RLTACLossMixin:
             pi=pi,
             ref_chunk=ref_chunk,
             curr_obs=curr_obs,
+            batch=batch,
         )
 
         entropy = -log_pi.mean()
@@ -571,6 +652,13 @@ class RLTACReplayMixin:
         bsz = int(trajectory.actions.shape[1])
         num_rows = int(actions.shape[0])
         auto_reset = bool(self.cfg.env.train.get("auto_reset", False))
+        add_episode_success = bool(
+            getattr(self, "rlt_dvac_application", "q_gradient") == "success_episode_bc"
+            and getattr(self, "rlt_dvac_mode", "off") != "off"
+        )
+        success_by_env = (
+            episode_success_flags(trajectory.rewards) if add_episode_success else None
+        )
 
         for env_idx in range(bsz):
             for t in range(traj_len):
@@ -603,6 +691,15 @@ class RLTACReplayMixin:
                         f"before replay ingestion, got row index {idx}."
                     )
                 transition.curr_obs = curr_obs
+                if success_by_env is not None:
+                    transition.curr_obs["episode_success"] = (
+                        success_by_env[env_idx]
+                        .detach()
+                        .clone()
+                        .reshape(1, 1, 1)
+                        .cpu()
+                        .contiguous()
+                    )
 
                 # Dones have one extra initial slot, so transition t reads
                 # terminal flags from t+1. Rewards are already action-aligned
@@ -826,8 +923,47 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             )
         self.rlt_dvac_z_clip = float(self.rlt_dvac_cfg.get("z_clip", 2.0))
         self.rlt_dvac_strength = float(self.rlt_dvac_cfg.get("strength", 0.5))
-        self.rlt_dvac_weight_min = 1.0 - (self.rlt_dvac_strength * self.rlt_dvac_z_clip)
-        self.rlt_dvac_weight_max = 1.0 + (self.rlt_dvac_strength * self.rlt_dvac_z_clip)
+        self.rlt_dvac_application = str(
+            self.rlt_dvac_cfg.get("application", "q_gradient")
+        ).lower()
+        if self.rlt_dvac_application not in {"q_gradient", "success_episode_bc"}:
+            raise ValueError(
+                "algorithm.rlt_dvac.application must be q_gradient or "
+                f"success_episode_bc, got {self.rlt_dvac_application!r}."
+            )
+        self.rlt_dvac_success_scale = float(self.rlt_dvac_cfg.get("success_scale", 1.0))
+        if self.rlt_dvac_success_scale <= 0:
+            raise ValueError("RLT DVAC success_scale must be positive.")
+        if self.rlt_dvac_application == "success_episode_bc":
+            if bool(self.cfg.env.train.get("auto_reset", False)):
+                raise ValueError(
+                    "Success-episode RLT DVAC BC currently requires "
+                    "env.train.auto_reset=false."
+                )
+            if 2.0 * self.rlt_dvac_z_clip * self.rlt_dvac_strength > 1.0 + 1e-8:
+                raise ValueError(
+                    "Success-episode RLT DVAC BC requires "
+                    "2 * z_clip * strength <= 1 for non-negative weights."
+                )
+            horizon_range = (
+                2.0
+                * self.rlt_dvac_z_clip
+                * (self.rlt_dvac_horizon - 1)
+                / max(self.rlt_dvac_horizon, 1)
+            )
+            self.rlt_dvac_weight_min = self.rlt_dvac_success_scale * (
+                1.0 - self.rlt_dvac_strength * horizon_range
+            )
+            self.rlt_dvac_weight_max = self.rlt_dvac_success_scale * (
+                1.0 + self.rlt_dvac_strength * horizon_range
+            )
+        else:
+            self.rlt_dvac_weight_min = 1.0 - (
+                self.rlt_dvac_strength * self.rlt_dvac_z_clip
+            )
+            self.rlt_dvac_weight_max = 1.0 + (
+                self.rlt_dvac_strength * self.rlt_dvac_z_clip
+            )
         self.rlt_dvac_stats = None
         if self.rlt_dvac_mode != "off":
             self.rlt_dvac_stats = FrozenGlobalZMoments(
@@ -863,7 +999,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
 
         selected_v = self._rlt_dvac_selected_variances(curr_obs)
         if self.rlt_dvac_stats.frozen:
-            candidate_weights, z_scores, log_variances = global_z_weights(
+            legacy_weights, z_scores, log_variances = global_z_weights(
                 selected_v,
                 mean=self.rlt_dvac_stats.mean,
                 std=self.rlt_dvac_stats.std,
@@ -871,6 +1007,12 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 std_floor=self.rlt_dvac_stats.std_floor,
                 z_clip=self.rlt_dvac_z_clip,
                 strength=self.rlt_dvac_strength,
+            )
+            candidate_weights = (
+                centered_mean_one_weights(z_scores, strength=self.rlt_dvac_strength)
+                * self.rlt_dvac_success_scale
+                if self.rlt_dvac_application == "success_episode_bc"
+                else legacy_weights
             )
         else:
             log_variances = torch.log(
@@ -883,13 +1025,14 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         weights = (
             candidate_weights if apply_weights else torch.ones_like(candidate_weights)
         )
+        apply_q_weights = apply_weights and self.rlt_dvac_application == "q_gradient"
         pi_for_q = (
             straight_through_scale_actions(
                 pi,
                 weights,
                 action_dim=int(self.cfg.actor.model.action_dim),
             )
-            if apply_weights
+            if apply_q_weights
             else pi
         )
 
@@ -905,6 +1048,12 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 "rlt_dvac/enabled": 1.0,
                 "rlt_dvac/mode_observe": float(self.rlt_dvac_mode == "observe"),
                 "rlt_dvac/mode_apply": float(self.rlt_dvac_mode == "apply"),
+                "rlt_dvac/application_q_gradient": float(
+                    self.rlt_dvac_application == "q_gradient"
+                ),
+                "rlt_dvac/application_success_episode_bc": float(
+                    self.rlt_dvac_application == "success_episode_bc"
+                ),
                 "rlt_dvac/baseline_frozen": float(self.rlt_dvac_stats.frozen),
                 "rlt_dvac/baseline_count": float(self.rlt_dvac_stats.count),
                 "rlt_dvac/baseline_mean": float(self.rlt_dvac_stats.mean),
@@ -927,6 +1076,9 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             "log_variances": log_variances.detach(),
             "z_scores": z_scores.detach(),
             "weights": weights.detach(),
+            "success_episode_bc_applied": bool(
+                apply_weights and self.rlt_dvac_application == "success_episode_bc"
+            ),
         }
         for key in ("dvac_collection_version", "actor_switch"):
             if key in curr_obs:
@@ -980,9 +1132,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         route_mask = torch.zeros_like(query_weight, dtype=torch.bool)
         if isinstance(actor_switch, torch.Tensor):
             route_mask = actor_switch.reshape(-1).bool()
-        metrics["rlt_dvac/actor_switch_rate"] = float(
-            route_mask.float().mean().item()
-        )
+        metrics["rlt_dvac/actor_switch_rate"] = float(route_mask.float().mean().item())
 
         for prefix, mask in (
             ("positive_reward", positive),
@@ -1030,6 +1180,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         pi: torch.Tensor,
         ref_chunk: torch.Tensor,
         curr_obs: dict[str, torch.Tensor],
+        batch: dict,
     ) -> None:
         if payload is None:
             return
@@ -1070,6 +1221,16 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             .numpy(),
             "ref_chunk": reference_actions[:query_count].detach().float().cpu().numpy(),
         }
+        executed_actions = self._flatten_chunk(batch["actions"]).reshape(
+            -1, chunk_len, action_dim
+        )
+        arrays["executed_actions"] = (
+            executed_actions[:query_count].detach().float().cpu().numpy()
+        )
+        if "episode_success" in curr_obs:
+            arrays["episode_success"] = (
+                curr_obs["episode_success"][:query_count].detach().cpu().numpy()
+            )
         for key in ("dvac_collection_version", "actor_switch"):
             if key in curr_obs:
                 arrays[key] = curr_obs[key][:query_count].cpu().numpy()
@@ -2001,9 +2162,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         )
         append_to_dict(metrics, schedule_metrics)
         mean_metric_dict = self.process_train_metrics(metrics)
-        mean_metric_dict = self._finalize_rlt_dvac_context_metrics(
-            mean_metric_dict
-        )
+        mean_metric_dict = self._finalize_rlt_dvac_context_metrics(mean_metric_dict)
         self.transitions_since_train = 0
         self.episodes_since_train = 0
 

@@ -2,7 +2,10 @@ import torch
 
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
+    build_rlt_bc_targets_and_weights,
+    centered_mean_one_weights,
     compute_endpoint_variances,
+    episode_success_flags,
     global_z_weights,
     masked_weight_totals,
     straight_through_scale_actions,
@@ -43,6 +46,72 @@ def test_action_straight_through_keeps_forward_and_scales_backward():
     torch.testing.assert_close(scaled, actions)
     scaled.sum().backward()
     torch.testing.assert_close(actions.grad, torch.tensor([[[0.0, 0.0], [2.0, 2.0]]]))
+
+
+def test_centered_mean_one_mapping_is_detached_and_bounded():
+    z_scores = torch.tensor([[-2.0, -2.0, 2.0, 2.0]], requires_grad=True)
+    weights = centered_mean_one_weights(z_scores, strength=0.25)
+    torch.testing.assert_close(weights.mean(dim=-1), torch.ones(1))
+    torch.testing.assert_close(weights, torch.tensor([[0.5, 0.5, 1.5, 1.5]]))
+    assert not weights.requires_grad
+    flat = centered_mean_one_weights(torch.ones(2, 10), strength=0.25)
+    torch.testing.assert_close(flat, torch.ones_like(flat))
+
+
+def test_episode_success_flags_cover_all_rows_of_each_environment():
+    rewards = torch.zeros(4, 3, 2)
+    rewards[2, 1, 0] = 1.0
+    rewards[0, 2, 1] = 0.5
+    torch.testing.assert_close(
+        episode_success_flags(rewards), torch.tensor([False, True, True])
+    )
+
+
+def test_success_episode_bc_targets_weights_and_action_gradients():
+    executed = torch.tensor([[[2.0], [4.0]], [[3.0], [5.0]], [[7.0], [9.0]]])
+    reference = torch.zeros_like(executed)
+    human_mask = torch.tensor([[False, False], [False, False], [True, False]])
+    episode_success = torch.tensor([True, False, False])
+    success_weights = torch.tensor([[0.5, 1.5], [0.5, 1.5], [0.5, 1.5]])
+
+    targets, weights, success_mask, executed_mask = build_rlt_bc_targets_and_weights(
+        executed,
+        reference,
+        human_mask,
+        episode_success=episode_success,
+        success_weights=success_weights,
+        success_episode_bc=True,
+    )
+    torch.testing.assert_close(targets[0], executed[0])
+    torch.testing.assert_close(targets[1], reference[1])
+    torch.testing.assert_close(targets[2, 0], executed[2, 0])
+    torch.testing.assert_close(targets[2, 1], reference[2, 1])
+    torch.testing.assert_close(weights[0], success_weights[0])
+    torch.testing.assert_close(weights[1:], torch.ones_like(weights[1:]))
+    assert success_mask[0].all() and not success_mask[1:].any()
+    assert executed_mask[2, 0] and not executed_mask[2, 1]
+
+    student = torch.zeros_like(executed, requires_grad=True)
+    loss = (weights * (student - targets).square().mean(dim=-1)).mean()
+    loss.backward()
+    expected = 2.0 * weights[..., None] * (student.detach() - targets) / 6.0
+    torch.testing.assert_close(student.grad, expected)
+
+
+def test_disabled_success_episode_bc_preserves_original_human_rule():
+    executed = torch.ones(1, 2, 1)
+    reference = torch.zeros_like(executed)
+    human_mask = torch.tensor([[False, True]])
+    targets, weights, success_mask, executed_mask = build_rlt_bc_targets_and_weights(
+        executed,
+        reference,
+        human_mask,
+        success_episode_bc=False,
+    )
+    torch.testing.assert_close(targets, torch.tensor([[[0.0], [1.0]]]))
+    torch.testing.assert_close(weights, torch.ones(1, 2))
+    assert not success_mask.any()
+    torch.testing.assert_close(executed_mask, human_mask)
 
 
 def test_optional_teacher_dvac_fields_roundtrip_without_becoming_required():
