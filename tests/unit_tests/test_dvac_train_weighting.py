@@ -38,6 +38,19 @@ def _recent() -> DVACRecentStats:
     )
 
 
+def _recent_w0to5() -> DVACRecentStats:
+    return DVACRecentStats(
+        window_steps=5,
+        warmup_steps=1,
+        log_eps=1e-12,
+        std_floor=1e-6,
+        z_clip=2.0,
+        strength=0.5,
+        weight_min=0.0,
+        weight_max=5.0,
+    )
+
+
 def test_endpoint_variance_uses_population_tail_variance() -> None:
     z = torch.tensor([[[[0.0]], [[1.0]], [[3.0]], [[7.0]]]])
     assert torch.allclose(compute_endpoint_variance(z, 3), torch.tensor([[56 / 9]]))
@@ -71,6 +84,28 @@ def test_recent_history_is_completed_step_only_and_roundtrips() -> None:
     restored = _recent()
     restored.load_state_dict(recent.state_dict())
     assert restored.state_dict() == recent.state_dict()
+
+
+def test_explicit_weight_endpoints_use_piecewise_mapping_and_roundtrip() -> None:
+    recent = _recent_w0to5()
+    recent.push(DVACStepStats(1, 2, 0.0, 2.0))
+    variance = torch.exp(torch.tensor([[[-2.0, -1.0, 0.0, 1.0, 2.0]]]))
+    weights, clipped_z, warmup, _ = recent.compute_weights(variance)
+    assert not warmup
+    assert torch.allclose(clipped_z, torch.tensor([[[-2.0, -1.0, 0.0, 1.0, 2.0]]]))
+    assert torch.allclose(weights, torch.tensor([[[0.0, 0.5, 1.0, 3.0, 5.0]]]))
+
+    logprobs = torch.ones(1, 5, 1, requires_grad=True)
+    straight_through_scale_logprobs(logprobs, weights.squeeze(0)).sum().backward()
+    assert torch.allclose(logprobs.grad.squeeze(-1), weights.squeeze(0))
+
+    restored = _recent_w0to5()
+    restored.load_state_dict(recent.state_dict())
+    assert restored.state_dict() == recent.state_dict()
+
+    incompatible = _recent()
+    with pytest.raises(ValueError, match="weight_min"):
+        incompatible.load_state_dict(recent.state_dict())
 
 
 def test_resume_rejects_different_weighting_config() -> None:

@@ -129,6 +129,8 @@ class DVACRecentStats:
         std_floor: float,
         z_clip: float,
         strength: float,
+        weight_min: float | None = None,
+        weight_max: float | None = None,
     ) -> None:
         if window_steps < 1:
             raise ValueError("window_steps must be >= 1")
@@ -136,19 +138,30 @@ class DVACRecentStats:
             raise ValueError("warmup_steps must be >= 0")
         if log_eps <= 0 or std_floor <= 0 or z_clip <= 0:
             raise ValueError("log_eps, std_floor, and z_clip must be positive")
-        if strength < 0:
-            raise ValueError("strength must be non-negative")
-        if strength * z_clip > 1.0:
-            raise ValueError(
-                "strength * z_clip must be <= 1 so weights cannot reverse "
-                "the GRPO advantage direction"
-            )
+        if (weight_min is None) != (weight_max is None):
+            raise ValueError("weight_min and weight_max must be set together")
+        if weight_min is None:
+            if strength < 0:
+                raise ValueError("strength must be non-negative")
+            if strength * z_clip > 1.0:
+                raise ValueError(
+                    "strength * z_clip must be <= 1 so weights cannot reverse "
+                    "the GRPO advantage direction"
+                )
+        elif (
+            not math.isfinite(weight_min)
+            or not math.isfinite(weight_max)
+            or not 0.0 <= weight_min <= 1.0 <= weight_max
+        ):
+            raise ValueError("weight endpoints must satisfy 0 <= min <= 1 <= max")
         self.window_steps = int(window_steps)
         self.warmup_steps = int(warmup_steps)
         self.log_eps = float(log_eps)
         self.std_floor = float(std_floor)
         self.z_clip = float(z_clip)
         self.strength = float(strength)
+        self.weight_min = None if weight_min is None else float(weight_min)
+        self.weight_max = None if weight_max is None else float(weight_max)
         self._steps: deque[DVACStepStats] = deque(maxlen=self.window_steps)
 
     def history_summary(self) -> dict[str, float | int]:
@@ -176,7 +189,10 @@ class DVACRecentStats:
             len(self._steps) < self.warmup_steps
             or int(history["history_count"]) == 0
         )
-        if warmup or self.strength == 0:
+        weighting_disabled = (
+            self.weight_min is None and self.strength == 0
+        ) or (self.weight_min == 1.0 and self.weight_max == 1.0)
+        if warmup or weighting_disabled:
             return (
                 torch.ones_like(variance, dtype=torch.float32),
                 torch.zeros_like(variance, dtype=torch.float32),
@@ -190,7 +206,16 @@ class DVACRecentStats:
             -self.z_clip,
             self.z_clip,
         )
-        weights = 1.0 + self.strength * clipped_z
+        if self.weight_min is None:
+            weights = 1.0 + self.strength * clipped_z
+        else:
+            negative_slope = (1.0 - self.weight_min) / self.z_clip
+            positive_slope = (self.weight_max - 1.0) / self.z_clip
+            weights = (
+                1.0
+                + negative_slope * torch.minimum(clipped_z, torch.zeros_like(clipped_z))
+                + positive_slope * torch.maximum(clipped_z, torch.zeros_like(clipped_z))
+            )
         if not torch.isfinite(weights).all():
             raise ValueError("Computed DVAC weights contain NaN or Inf")
         return weights.float(), clipped_z.float(), False, history
@@ -200,7 +225,7 @@ class DVACRecentStats:
             self._steps.append(stats)
 
     def state_dict(self) -> dict[str, Any]:
-        return {
+        state = {
             "window_steps": self.window_steps,
             "warmup_steps": self.warmup_steps,
             "log_eps": self.log_eps,
@@ -209,6 +234,9 @@ class DVACRecentStats:
             "strength": self.strength,
             "steps": [asdict(item) for item in self._steps],
         }
+        if self.weight_min is not None:
+            state.update(weight_min=self.weight_min, weight_max=self.weight_max)
+        return state
 
     def load_state_dict(self, state: dict[str, Any]) -> None:
         expected = {
@@ -219,6 +247,14 @@ class DVACRecentStats:
             "z_clip": self.z_clip,
             "strength": self.strength,
         }
+        if self.weight_min is not None:
+            expected.update(weight_min=self.weight_min, weight_max=self.weight_max)
+        state_has_endpoints = "weight_min" in state or "weight_max" in state
+        if state_has_endpoints != (self.weight_min is not None):
+            raise ValueError(
+                "DVAC resume config mismatch for weight_min: "
+                f"checkpoint={state.get('weight_min')!r}, current={self.weight_min!r}"
+            )
         for key, value in expected.items():
             if state.get(key) != value:
                 raise ValueError(

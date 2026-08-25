@@ -137,6 +137,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         )
 
     def _new_dvac_recent_stats(self) -> DVACRecentStats:
+        weight_min = self.dvac_train_cfg.get("weight_min", None)
+        weight_max = self.dvac_train_cfg.get("weight_max", None)
         return DVACRecentStats(
             window_steps=int(self.dvac_train_cfg.get("window_steps", 5)),
             warmup_steps=int(self.dvac_train_cfg.get("warmup_steps", 1)),
@@ -144,6 +146,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             std_floor=float(self.dvac_train_cfg.get("std_floor", 1e-6)),
             z_clip=float(self.dvac_train_cfg.get("z_clip", 2.0)),
             strength=float(self.dvac_train_cfg.get("strength", 0.5)),
+            weight_min=None if weight_min is None else float(weight_min),
+            weight_max=None if weight_max is None else float(weight_max),
         )
 
     def init_worker(self) -> None:
