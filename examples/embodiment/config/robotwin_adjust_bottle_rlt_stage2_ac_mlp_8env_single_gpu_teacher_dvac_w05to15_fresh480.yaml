@@ -1,0 +1,22 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250_teacher_dvac_w0to2
+  - _self_
+
+# Paired fresh single-GPU teacher-DVAC run. The parent owns the validated
+# telemetry path; only strength changes from 0.5 to 0.25, so with z_clip=2:
+# w = 1 + 0.25 * clip(z, -2, 2) in [0.5, 1.5].
+cluster:
+  component_placement:
+    actor, env, rollout: 0
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_teacher_dvac_w05to15_fresh480_v1"
+  max_steps: 480
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null
+
+algorithm:
+  rlt_dvac:
+    strength: 0.25
