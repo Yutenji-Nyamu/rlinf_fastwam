@@ -121,6 +121,50 @@ def compute_grpo_advantages(
     return advantages, None
 
 
+@register_advantage("prism_rloo")
+def compute_prism_rloo_advantages(
+    rewards: torch.Tensor,
+    loss_mask: torch.Tensor,
+    group_size: int,
+    trajectory_quality: torch.Tensor,
+    quality_lambda: float = 0.2,
+    **kwargs,
+):
+    """Use binary success plus within-group DVAC quality with RLOO."""
+
+    grouped_rewards = rewards.reshape(-1, group_size)
+    grouped_quality = trajectory_quality.to(
+        device=grouped_rewards.device, dtype=grouped_rewards.dtype
+    ).reshape_as(grouped_rewards)
+    if not torch.isfinite(grouped_quality).all():
+        raise ValueError("trajectory_quality contains NaN or Inf")
+    if (grouped_quality < 0).any() or (grouped_quality > 1).any():
+        raise ValueError("trajectory_quality must be in [0, 1]")
+    is_zero = torch.isclose(
+        grouped_rewards,
+        torch.zeros_like(grouped_rewards),
+        atol=1e-6,
+        rtol=0.0,
+    )
+    is_one = torch.isclose(
+        grouped_rewards,
+        torch.ones_like(grouped_rewards),
+        atol=1e-6,
+        rtol=0.0,
+    )
+    if not (is_zero | is_one).all():
+        raise ValueError("Prism RLOO requires binary episode scores in {0, 1}")
+    if not 0.0 < float(quality_lambda) < 1.0:
+        raise ValueError("quality_lambda must satisfy 0 < lambda < 1")
+
+    binary_rewards = is_one.to(grouped_rewards.dtype)
+    combined_rewards = binary_rewards + float(quality_lambda) * grouped_quality
+    sibling_sum = combined_rewards.sum(dim=-1, keepdim=True) - combined_rewards
+    advantages = combined_rewards - sibling_sum / float(group_size - 1)
+    advantages = (torch.zeros_like(loss_mask) + advantages.reshape(1, -1)) * loss_mask
+    return advantages, None
+
+
 @register_advantage("grpo_video")
 def compute_grpo_video_advantages(
     rewards: torch.Tensor,

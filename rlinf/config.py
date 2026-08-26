@@ -1517,8 +1517,42 @@ def validate_cfg(cfg: DictConfig) -> DictConfig:
         cfg = validate_offline_cfg(cfg)
 
     if cfg.runner.task_type != "sft" and not cfg.runner.get("only_eval", False):
-        if cfg.algorithm.adv_type in ("grpo", "grpo_dynamic", "reinpp_baseline"):
+        if cfg.algorithm.adv_type in (
+            "grpo",
+            "grpo_dynamic",
+            "prism_rloo",
+            "reinpp_baseline",
+        ):
             assert cfg.algorithm.group_size > 1
+
+        prism_cfg = OmegaConf.select(cfg, "algorithm.prism_dvac", default=None)
+        prism_enabled = bool(prism_cfg is not None and prism_cfg.get("enabled", False))
+        assert (cfg.algorithm.adv_type == "prism_rloo") == prism_enabled
+        if prism_enabled:
+            assert cfg.runner.task_type == "embodied"
+            assert cfg.algorithm.adv_type == "prism_rloo"
+            assert str(cfg.actor.model.model_type) == "openpi"
+            assert not cfg.algorithm.get("filter_rewards", False)
+            assert cfg.algorithm.reward_type == "chunk_level"
+            assert cfg.algorithm.logprob_type == "chunk_level"
+            assert not cfg.env.train.auto_reset
+            assert not cfg.env.train.ignore_terminations
+            assert cfg.env.train.use_custom_reward
+            assert cfg.env.train.use_rel_reward
+            assert float(cfg.env.train.reward_coef) == 1.0
+            assert float(cfg.algorithm.reward_coef) == 1.0
+            assert not cfg.runner.get("use_training_pipeline", False)
+            assert (
+                OmegaConf.select(
+                    cfg,
+                    "algorithm.dvac_gradient_weighting.mode",
+                    default="off",
+                )
+                == "off"
+            )
+            assert int(prism_cfg.get("selected_l", 3)) >= 2
+            assert 0.0 < float(prism_cfg.get("quality_lambda", 0.2)) < 1.0
+            assert float(prism_cfg.get("log_eps", 1e-12)) > 0
 
     assert cfg.actor.training_backend in SUPPORTED_TRAINING_BACKENDS, (
         f"Unsupported training_backend {cfg.actor.training_backend}. Supported training backends are {SUPPORTED_TRAINING_BACKENDS}."

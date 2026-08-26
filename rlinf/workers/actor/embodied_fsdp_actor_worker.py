@@ -22,6 +22,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.algorithms.dvac_rank_reward import trajectory_dvac_quality
 from rlinf.algorithms.dvac_train_weighting import (
     DVACRecentStats,
     DVACStepStats,
@@ -103,6 +104,21 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        prism_cfg = OmegaConf.select(cfg, "algorithm.prism_dvac", default=None)
+        self.prism_dvac_cfg = (
+            {} if prism_cfg is None else OmegaConf.to_container(prism_cfg, resolve=True)
+        )
+        self.prism_dvac_enabled = bool(self.prism_dvac_cfg.get("enabled", False))
+        self.prism_dvac_selected_l = int(self.prism_dvac_cfg.get("selected_l", 3))
+        self.prism_dvac_quality_lambda = float(
+            self.prism_dvac_cfg.get("quality_lambda", 0.2)
+        )
+        self.prism_dvac_log_eps = float(self.prism_dvac_cfg.get("log_eps", 1e-12))
+        if self.prism_dvac_enabled and self.dvac_train_enabled:
+            raise ValueError(
+                "Prism DVAC reward and DVAC gradient weighting cannot be enabled together."
+            )
+        self._prism_dvac_metrics: dict[str, float] | None = None
         self.dvac_recent_stats = (
             self._new_dvac_recent_stats() if self.dvac_train_enabled else None
         )
@@ -173,6 +189,16 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 f"actor_rank{self._rank:02d}"
             )
             self.dvac_output_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.prism_dvac_enabled:
+            if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
+                raise ValueError("Prism DVAC reward requires OpenPI.")
+            if self.cfg.algorithm.adv_type != "prism_rloo":
+                raise ValueError("Prism DVAC reward requires adv_type=prism_rloo.")
+            if self.cfg.algorithm.reward_type != "chunk_level":
+                raise ValueError("Prism DVAC reward requires chunk-level rewards.")
+            if self.cfg.algorithm.get("filter_rewards", False):
+                raise ValueError("Prism DVAC reward requires filter_rewards=false.")
 
         if self.enable_offload:
             self.offload_param_and_grad()
@@ -347,6 +373,54 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         return rollout_batch
 
+    def _prepare_prism_dvac_advantage_inputs(self) -> torch.Tensor:
+        forward_inputs = self.rollout_batch.get("forward_inputs")
+        if not isinstance(forward_inputs, dict):
+            raise ValueError("Prism DVAC reward requires forward_inputs.")
+        variance_key = f"dvac_v_l{self.prism_dvac_selected_l}"
+        if variance_key not in forward_inputs:
+            raise ValueError(f"Missing Prism DVAC tensor: {variance_key}")
+        variance = forward_inputs.pop(variance_key)
+        action_mask, _ = compute_loss_mask(self.rollout_batch["dones"])
+        group_size = int(self.cfg.algorithm.group_size)
+        cost, quality = trajectory_dvac_quality(
+            variance,
+            action_mask,
+            group_size=group_size,
+            log_eps=self.prism_dvac_log_eps,
+        )
+
+        grouped_cost = cost.reshape(-1, group_size)
+        grouped_quality = quality.reshape(-1, group_size)
+        sorted_cost = grouped_cost.sort(dim=-1).values
+        tied_groups = (sorted_cost[:, 1:] == sorted_cost[:, :-1]).any(dim=-1)
+        trajectory_rewards = (self.rollout_batch["rewards"] * action_mask).sum(
+            dim=(0, 2)
+        )
+        grouped_success = torch.isclose(
+            trajectory_rewards, torch.ones_like(trajectory_rewards)
+        ).reshape(-1, group_size)
+        all_success = grouped_success.all(dim=-1)
+        all_failure = (~grouped_success).all(dim=-1)
+        same_outcome = all_success | all_failure
+        rescued = same_outcome & (
+            grouped_quality.max(dim=-1).values > grouped_quality.min(dim=-1).values
+        )
+        self._prism_dvac_metrics = {
+            "prism_dvac/trajectory_cost_mean": float(cost.mean()),
+            "prism_dvac/tied_group_fraction": float(tied_groups.float().mean()),
+            "prism_dvac/all_success_group_fraction": float(all_success.float().mean()),
+            "prism_dvac/all_failure_group_fraction": float(all_failure.float().mean()),
+            "prism_dvac/mixed_group_fraction": float((~same_outcome).float().mean()),
+            "prism_dvac/same_outcome_group_fraction": float(
+                same_outcome.float().mean()
+            ),
+            "prism_dvac/rescued_same_outcome_group_fraction": float(
+                rescued.float().mean()
+            ),
+        }
+        return quality
+
     @Worker.timer("actor/compute_adv")
     def compute_advantages_and_returns(self) -> dict[str, torch.Tensor]:
         """
@@ -354,6 +428,10 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         """
         if self.cfg.algorithm.adv_type == "opd":
             self.compute_opd_teacher_logprobs()
+
+        trajectory_quality = None
+        if self.prism_dvac_enabled:
+            trajectory_quality = self._prepare_prism_dvac_advantage_inputs()
 
         kwargs = {
             "task_type": self.cfg.runner.task_type,
@@ -372,6 +450,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "loss_mask_sum": self.rollout_batch.get("loss_mask_sum", None),
             "advantage_mode": self.cfg.algorithm.get("advantage_mode", None),
         }
+        if trajectory_quality is not None:
+            kwargs["trajectory_quality"] = trajectory_quality
+            kwargs["quality_lambda"] = self.prism_dvac_quality_lambda
 
         advantages_and_returns = calculate_adv_and_returns(**kwargs)
 
@@ -382,6 +463,14 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             self.rollout_batch.update({"loss_mask_sum": kwargs["loss_mask_sum"]})
 
         rollout_metrics = compute_rollout_metrics(self.rollout_batch)
+        if self._prism_dvac_metrics is not None:
+            rollout_metrics.update(
+                all_reduce_dict(
+                    self._prism_dvac_metrics,
+                    op=torch.distributed.ReduceOp.AVG,
+                )
+            )
+            self._prism_dvac_metrics = None
         return rollout_metrics
 
     @Worker.timer("actor/compute_opd_teacher_logprobs")

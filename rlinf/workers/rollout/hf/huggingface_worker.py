@@ -174,6 +174,21 @@ class MultiStepRolloutWorker(Worker):
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        prism_cfg = OmegaConf.select(self.cfg, "algorithm.prism_dvac", default=None)
+        self.prism_dvac_cfg = (
+            {} if prism_cfg is None else OmegaConf.to_container(prism_cfg, resolve=True)
+        )
+        self.prism_dvac_enabled = bool(self.prism_dvac_cfg.get("enabled", False))
+        self.prism_dvac_selected_l = int(self.prism_dvac_cfg.get("selected_l", 3))
+        if self.prism_dvac_enabled and self.dvac_train_enabled:
+            raise ValueError(
+                "Prism DVAC reward and DVAC gradient weighting cannot be enabled together."
+            )
+        self.train_dvac_selected_l = (
+            self.prism_dvac_selected_l
+            if self.prism_dvac_enabled
+            else self.dvac_selected_l
+        )
         if self.dvac_train_enabled:
             if self.only_eval:
                 raise ValueError("DVAC gradient weighting requires a training run.")
@@ -183,6 +198,13 @@ class MultiStepRolloutWorker(Worker):
                 )
             if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
                 raise ValueError("DVAC gradient weighting requires OpenPI.")
+        if self.prism_dvac_enabled:
+            if self.only_eval:
+                raise ValueError("Prism DVAC reward requires a training run.")
+            if self.env_decoupled_mode:
+                raise ValueError("Prism DVAC reward does not support decoupled mode.")
+            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                raise ValueError("Prism DVAC reward requires OpenPI.")
 
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
@@ -318,10 +340,10 @@ class MultiStepRolloutWorker(Worker):
                 resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
             )
 
-        if self.dvac_train_enabled:
+        if self.dvac_train_enabled or self.prism_dvac_enabled:
             if self.rlt_feature_model is not None or self.expert_model is not None:
                 raise ValueError(
-                    "DVAC gradient weighting requires the native OpenPI policy."
+                    "Train-time DVAC methods require the native OpenPI policy."
                 )
             active_modes = [
                 name
@@ -330,8 +352,7 @@ class MultiStepRolloutWorker(Worker):
             ]
             if active_modes:
                 raise ValueError(
-                    "DVAC gradient weighting does not support: "
-                    + ", ".join(active_modes)
+                    "Train-time DVAC methods do not support: " + ", ".join(active_modes)
                 )
 
         if self.cfg.rollout.get("enable_torch_compile", False):
@@ -666,7 +687,7 @@ class MultiStepRolloutWorker(Worker):
             and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
         ):
             kwargs["return_dvac_telemetry"] = True
-        if self.dvac_train_enabled and mode == "train":
+        if (self.dvac_train_enabled or self.prism_dvac_enabled) and mode == "train":
             kwargs["return_dvac_telemetry"] = True
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
@@ -714,14 +735,14 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
 
-        if self.dvac_train_enabled and mode == "train":
+        if (self.dvac_train_enabled or self.prism_dvac_enabled) and mode == "train":
             telemetry = result.pop("dvac_telemetry", None)
             if telemetry is None or "z_endpoint" not in telemetry:
                 raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
             variance = compute_endpoint_variance(
-                telemetry["z_endpoint"], self.dvac_selected_l
+                telemetry["z_endpoint"], self.train_dvac_selected_l
             )
-            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
+            result["forward_inputs"][f"dvac_v_l{self.train_dvac_selected_l}"] = (
                 variance.detach().cpu().contiguous()
             )
 
