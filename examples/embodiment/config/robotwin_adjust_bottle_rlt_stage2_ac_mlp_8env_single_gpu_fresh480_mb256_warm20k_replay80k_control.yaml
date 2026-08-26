@@ -1,0 +1,18 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_fresh480_control
+  - _self_
+
+# Single-GPU control with the historical two-rank aggregate compute/data width.
+actor:
+  micro_batch_size: 256
+
+algorithm:
+  rlt_schedule:
+    warmup_min_size: 20000
+  replay_buffer:
+    cache_size: 80000
+    sample_window_size: 80000
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_control_matched_width_fresh480_v3"

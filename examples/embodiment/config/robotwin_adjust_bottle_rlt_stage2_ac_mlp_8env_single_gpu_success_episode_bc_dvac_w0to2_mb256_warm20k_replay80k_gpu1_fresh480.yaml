@@ -1,0 +1,18 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_success_episode_bc_dvac_w0to2_gpu1_fresh480
+  - _self_
+
+# Paired method run; method semantics are inherited unchanged from the v2 leaf.
+actor:
+  micro_batch_size: 256
+
+algorithm:
+  rlt_schedule:
+    warmup_min_size: 20000
+  replay_buffer:
+    cache_size: 80000
+    sample_window_size: 80000
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_success_episode_bc_dvac_matched_width_fresh480_v3"
