@@ -51,7 +51,7 @@ def test_action_straight_through_keeps_forward_and_scales_backward():
     torch.testing.assert_close(actions.grad, torch.tensor([[[0.0, 0.0], [2.0, 2.0]]]))
 
 
-def test_centered_mean_one_mapping_is_detached_and_bounded():
+def test_centered_mean_one_mapping_is_detached_non_negative_and_mean_one():
     z_scores = torch.tensor([[-2.0, -2.0, 2.0, 2.0]], requires_grad=True)
     weights = centered_mean_one_weights(z_scores, strength=0.25)
     torch.testing.assert_close(weights.mean(dim=-1), torch.ones(1))
@@ -59,6 +59,13 @@ def test_centered_mean_one_mapping_is_detached_and_bounded():
     assert not weights.requires_grad
     flat = centered_mean_one_weights(torch.ones(2, 10), strength=0.25)
     torch.testing.assert_close(flat, torch.ones_like(flat))
+
+    clipped = centered_mean_one_weights(
+        torch.tensor([[-2.0, 2.0, 2.0, 2.0]]), strength=0.5
+    )
+    assert torch.all(clipped >= 0)
+    torch.testing.assert_close(clipped.mean(dim=-1), torch.ones(1))
+    assert clipped[0, 0] == 0
 
 
 def test_episode_success_flags_cover_all_rows_of_each_environment():
@@ -99,6 +106,51 @@ def test_success_episode_bc_targets_weights_and_action_gradients():
     loss.backward()
     expected = 2.0 * weights[..., None] * (student.detach() - targets) / 6.0
     torch.testing.assert_close(student.grad, expected)
+
+
+def test_success_episode_reference_bc_keeps_reference_target_and_dvac_weights():
+    executed = torch.tensor([[[2.0], [4.0]], [[3.0], [5.0]]])
+    reference = torch.zeros_like(executed)
+    human_mask = torch.tensor([[False, False], [True, False]])
+    success_weights = torch.tensor([[0.5, 1.5], [0.5, 1.5]])
+
+    targets, weights, success_mask, executed_mask = build_rlt_bc_targets_and_weights(
+        executed,
+        reference,
+        human_mask,
+        episode_success=torch.tensor([True, False]),
+        success_weights=success_weights,
+        success_episode_bc=True,
+        success_target="reference",
+    )
+
+    torch.testing.assert_close(targets[0], reference[0])
+    torch.testing.assert_close(targets[1, 0], executed[1, 0])
+    torch.testing.assert_close(targets[1, 1], reference[1, 1])
+    torch.testing.assert_close(weights[0], success_weights[0])
+    torch.testing.assert_close(weights[1], torch.ones_like(weights[1]))
+    assert success_mask[0].all() and not success_mask[1].any()
+    torch.testing.assert_close(executed_mask, human_mask)
+
+    student = torch.ones_like(executed, requires_grad=True)
+    (weights * (student - targets).square().mean(dim=-1)).mean().backward()
+    expected = 2.0 * weights[..., None] * (student.detach() - targets) / 4.0
+    torch.testing.assert_close(student.grad, expected)
+
+
+def test_success_episode_bc_rejects_unknown_target():
+    actions = torch.zeros(1, 2, 1)
+    try:
+        build_rlt_bc_targets_and_weights(
+            actions,
+            actions,
+            torch.zeros(1, 2, dtype=torch.bool),
+            success_target="unknown",
+        )
+    except ValueError as exc:
+        assert "executed or reference" in str(exc)
+    else:
+        raise AssertionError("unknown success target must fail")
 
 
 def test_disabled_success_episode_bc_preserves_original_human_rule():

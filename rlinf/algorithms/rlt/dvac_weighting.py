@@ -139,7 +139,7 @@ def centered_mean_one_weights(
     *,
     strength: float = 0.25,
 ) -> torch.Tensor:
-    """Map clipped per-h scores to detached, per-query mean-one weights."""
+    """Map clipped per-h scores to non-negative per-query mean-one weights."""
 
     if z_scores.ndim != 2:
         raise ValueError(
@@ -148,7 +148,8 @@ def centered_mean_one_weights(
     if float(strength) < 0:
         raise ValueError("RLT DVAC centered strength must be non-negative.")
     centered = z_scores.float() - z_scores.float().mean(dim=-1, keepdim=True)
-    return (1.0 + float(strength) * centered).detach()
+    weights = (1.0 + float(strength) * centered).clamp_min(0.0)
+    return (weights / weights.mean(dim=-1, keepdim=True)).detach()
 
 
 def episode_success_flags(rewards: torch.Tensor) -> torch.Tensor:
@@ -172,8 +173,16 @@ def build_rlt_bc_targets_and_weights(
     episode_success: torch.Tensor | None = None,
     success_weights: torch.Tensor | None = None,
     success_episode_bc: bool = False,
+    success_target: str = "executed",
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Build RLT BC targets while preserving the existing human-target rule."""
+
+    success_target = str(success_target).lower()
+    if success_target not in {"executed", "reference"}:
+        raise ValueError(
+            "RLT success-episode BC target must be executed or reference, got "
+            f"{success_target!r}."
+        )
 
     if executed_actions.shape != reference_actions.shape:
         raise ValueError(
@@ -216,7 +225,10 @@ def build_rlt_bc_targets_and_weights(
             )
         success_mask = success_query[:, None].expand_as(human_mask)
 
-    executed_target_mask = human_mask | success_mask
+    success_executed_mask = (
+        success_mask if success_target == "executed" else torch.zeros_like(success_mask)
+    )
+    executed_target_mask = human_mask | success_executed_mask
     targets = torch.where(
         executed_target_mask[..., None], executed_actions, reference_actions
     )

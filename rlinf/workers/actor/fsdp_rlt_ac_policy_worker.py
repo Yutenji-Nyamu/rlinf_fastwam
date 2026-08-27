@@ -149,6 +149,7 @@ class RLTACLossMixin:
         episode_success: torch.Tensor | None = None,
         success_weights: torch.Tensor | None = None,
         success_episode_bc: bool = False,
+        success_target: str = "executed",
     ) -> tuple[torch.Tensor, dict[str, float]]:
         chunk_len, action_dim = self._chunk_shape()
         pi_chunk = self._flatten_chunk(pi).reshape(-1, chunk_len, action_dim)
@@ -178,6 +179,7 @@ class RLTACLossMixin:
                 episode_success=episode_success,
                 success_weights=success_weights,
                 success_episode_bc=success_episode_bc,
+                success_target=success_target,
             )
         )
         bc_error = torch.mean(torch.square(pi_chunk - bc_target), dim=-1)
@@ -472,6 +474,7 @@ class RLTACLossMixin:
                 dvac_payload is not None
                 and dvac_payload.get("success_episode_bc_applied", False)
             ),
+            success_target=getattr(self, "rlt_dvac_success_target", "executed"),
         )
         metrics.update(rlt_metrics)
         metrics.update(
@@ -939,6 +942,14 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 "algorithm.rlt_dvac.application must be q_gradient or "
                 f"success_episode_bc, got {self.rlt_dvac_application!r}."
             )
+        self.rlt_dvac_success_target = str(
+            self.rlt_dvac_cfg.get("success_target", "executed")
+        ).lower()
+        if self.rlt_dvac_success_target not in {"executed", "reference"}:
+            raise ValueError(
+                "algorithm.rlt_dvac.success_target must be executed or reference, got "
+                f"{self.rlt_dvac_success_target!r}."
+            )
         self.rlt_dvac_success_scale = float(self.rlt_dvac_cfg.get("success_scale", 1.0))
         if self.rlt_dvac_success_scale <= 0:
             raise ValueError("RLT DVAC success_scale must be positive.")
@@ -948,19 +959,14 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                     "Success-episode RLT DVAC BC currently requires "
                     "env.train.auto_reset=false."
                 )
-            if 2.0 * self.rlt_dvac_z_clip * self.rlt_dvac_strength > 1.0 + 1e-8:
-                raise ValueError(
-                    "Success-episode RLT DVAC BC requires "
-                    "2 * z_clip * strength <= 1 for non-negative weights."
-                )
             horizon_range = (
                 2.0
                 * self.rlt_dvac_z_clip
                 * (self.rlt_dvac_horizon - 1)
                 / max(self.rlt_dvac_horizon, 1)
             )
-            self.rlt_dvac_weight_min = self.rlt_dvac_success_scale * (
-                1.0 - self.rlt_dvac_strength * horizon_range
+            self.rlt_dvac_weight_min = self.rlt_dvac_success_scale * max(
+                1.0 - self.rlt_dvac_strength * horizon_range, 0.0
             )
             self.rlt_dvac_weight_max = self.rlt_dvac_success_scale * (
                 1.0 + self.rlt_dvac_strength * horizon_range
@@ -1061,6 +1067,9 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 ),
                 "rlt_dvac/application_success_episode_bc": float(
                     self.rlt_dvac_application == "success_episode_bc"
+                ),
+                "rlt_dvac/success_target_reference": float(
+                    self.rlt_dvac_success_target == "reference"
                 ),
                 "rlt_dvac/baseline_frozen": float(self.rlt_dvac_stats.frozen),
                 "rlt_dvac/baseline_count": float(self.rlt_dvac_stats.count),
