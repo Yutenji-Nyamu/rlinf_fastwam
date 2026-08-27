@@ -24,7 +24,7 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
-from rlinf.algorithms.losses import compute_ppo_actor_loss
+from rlinf.algorithms.losses import compute_ppo_actor_loss, compute_ppo_critic_loss
 from rlinf.algorithms.utils import preprocess_loss_inputs
 from rlinf.utils.nested_dict_process import process_nested_dict_for_train
 
@@ -139,6 +139,9 @@ def test_action_level_dvac_weights_form_explicit_advantages() -> None:
     logprobs = torch.arange(12.0).reshape(2, 3, 2)
     old_logprobs = logprobs - 0.1
     advantages = torch.tensor([[2.0], [-1.0]], requires_grad=True)
+    values = torch.tensor([[0.2], [0.4]])
+    prev_values = torch.tensor([[0.1], [0.3]])
+    returns = torch.tensor([[0.5], [0.0]])
     weights = torch.tensor(
         [[0.5, 1.0, 2.0], [2.0, 1.0, 0.5]],
         requires_grad=True,
@@ -148,6 +151,9 @@ def test_action_level_dvac_weights_form_explicit_advantages() -> None:
         logprobs=logprobs,
         old_logprobs=old_logprobs,
         advantages=advantages,
+        values=values,
+        prev_values=prev_values,
+        returns=returns,
         logprob_type="action_level",
         single_action_dim=2,
         reward_type="chunk_level",
@@ -156,6 +162,25 @@ def test_action_level_dvac_weights_form_explicit_advantages() -> None:
 
     assert result["logprobs"].shape == (2, 3)
     assert torch.equal(result["advantages"], advantages * weights.detach())
+    assert result["values"].shape == (2, 1)
+    assert result["prev_values"].shape == (2, 1)
+    assert result["returns"].shape == (2, 1)
+
+    critic_loss, _ = compute_ppo_critic_loss(
+        values=result["values"],
+        prev_values=result["prev_values"],
+        returns=result["returns"],
+        value_clip=0.2,
+        huber_delta=10.0,
+    )
+    control_critic_loss, _ = compute_ppo_critic_loss(
+        values=values,
+        prev_values=prev_values,
+        returns=returns,
+        value_clip=0.2,
+        huber_delta=10.0,
+    )
+    assert torch.equal(critic_loss, control_critic_loss)
     result["advantages"].sum().backward()
     assert weights.grad is None
     assert torch.equal(advantages.grad, weights.detach().sum(dim=1, keepdim=True))
