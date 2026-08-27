@@ -1,0 +1,13 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_dvac_pure_reference_bc_s0p5_mb256_warm20k_replay80k_fresh480
+  - _self_
+
+# Strong Pure variant. With z_clip=2, strength=2 is the nominal uncentered
+# [0,5] setting; the final per-query weights remain non-negative and mean-one.
+algorithm:
+  rlt_dvac:
+    strength: 2.0
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_dvac_pure_reference_bc_s2p0_matched_width_fresh480_v1"
