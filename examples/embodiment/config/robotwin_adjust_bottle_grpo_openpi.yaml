@@ -66,10 +66,12 @@ algorithm:
   rewards_lower_bound: 0.1
   rewards_upper_bound: 0.9
 
-  # Optional original DVAC weighting. The baseline remains unchanged while
-  # mode=off; DVAC runs override only mode=apply.
+  # Optional DVAC train weighting. The baseline remains unchanged while
+  # mode=off. logprob_st preserves joint-chunk clipping; action_advantage
+  # uses one explicit advantage and ratio/clip per future action.
   dvac_gradient_weighting:
     mode: "off"
+    application: "logprob_st"
     selected_l: 3
     warmup_steps: 1
     window_steps: 5

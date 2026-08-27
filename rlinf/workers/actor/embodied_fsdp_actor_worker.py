@@ -90,18 +90,25 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             cfg, "algorithm.dvac_gradient_weighting", default=None
         )
         self.dvac_train_cfg = (
-            {}
-            if dvac_cfg is None
-            else OmegaConf.to_container(dvac_cfg, resolve=True)
+            {} if dvac_cfg is None else OmegaConf.to_container(dvac_cfg, resolve=True)
         )
-        self.dvac_train_mode = str(
-            self.dvac_train_cfg.get("mode", "off")
-        ).lower()
+        self.dvac_train_mode = str(self.dvac_train_cfg.get("mode", "off")).lower()
         if self.dvac_train_mode not in {"off", "apply"}:
             raise ValueError(
                 "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_train_application = str(
+            self.dvac_train_cfg.get("application", "logprob_st")
+        ).lower()
+        if self.dvac_train_application not in {
+            "logprob_st",
+            "action_advantage",
+        }:
+            raise ValueError(
+                "algorithm.dvac_gradient_weighting.application must be "
+                "'logprob_st' or 'action_advantage'"
+            )
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
         self.dvac_recent_stats = (
             self._new_dvac_recent_stats() if self.dvac_train_enabled else None
@@ -159,10 +166,23 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         if self.dvac_train_enabled:
             if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
-                raise ValueError("DVAC gradient weighting requires OpenPI.")
-            if self.cfg.algorithm.logprob_type != "chunk_level":
+                raise ValueError("DVAC train weighting requires OpenPI.")
+            expected_logprob_type = (
+                "chunk_level"
+                if self.dvac_train_application == "logprob_st"
+                else "action_level"
+            )
+            if self.cfg.algorithm.logprob_type != expected_logprob_type:
                 raise ValueError(
-                    "DVAC gradient weighting preserves chunk-level GRPO clipping."
+                    f"DVAC {self.dvac_train_application} requires "
+                    f"algorithm.logprob_type={expected_logprob_type}."
+                )
+            if (
+                self.dvac_train_application == "action_advantage"
+                and self.cfg.algorithm.reward_type != "chunk_level"
+            ):
+                raise ValueError(
+                    "DVAC action_advantage requires trajectory-level chunk rewards."
                 )
             output_dir = self.dvac_train_cfg.get("output_dir")
             if not output_dir:
@@ -595,16 +615,10 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                     weights.float().square().mean().item()
                 ),
                 "actor/dvac_z_low_clip_fraction": float(
-                    (clipped_z <= -self.dvac_recent_stats.z_clip)
-                    .float()
-                    .mean()
-                    .item()
+                    (clipped_z <= -self.dvac_recent_stats.z_clip).float().mean().item()
                 ),
                 "actor/dvac_z_high_clip_fraction": float(
-                    (clipped_z >= self.dvac_recent_stats.z_clip)
-                    .float()
-                    .mean()
-                    .item()
+                    (clipped_z >= self.dvac_recent_stats.z_clip).float().mean().item()
                 ),
             },
         }
@@ -623,6 +637,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "schema_version": 1,
                 "runner_step": int(pending["runner_step"]),
                 "actor_rank": int(self._rank),
+                "application": self.dvac_train_application,
                 "selected_l": int(self.dvac_selected_l),
                 "warmup": bool(pending["warmup"]),
                 "history": dict(pending["history"]),
@@ -829,7 +844,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             prev_logprobs = output_dict["prev_logprobs"]
 
         logprobs_for_loss = output_dict["logprobs"]
-        if self.dvac_train_enabled:
+        if self.dvac_train_enabled and self.dvac_train_application == "logprob_st":
             logprobs_for_loss = straight_through_scale_logprobs(
                 logprobs_for_loss, dvac_weights
             )
@@ -855,6 +870,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "task_type": self.cfg.runner.task_type,
             "critic_warmup": self.optimizer_steps < self.critic_warmup_steps,
         }
+        if (
+            self.dvac_train_enabled
+            and self.dvac_train_application == "action_advantage"
+        ):
+            loss_kwargs["dvac_advantage_weights"] = dvac_weights
 
         if SupportedModel(self.cfg.actor.model.model_type) in [
             SupportedModel.GR00T_N1D6,
@@ -902,7 +922,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if not self.dvac_train_enabled:
             return
         if self._dvac_pending_step is not None:
-            raise RuntimeError("Cannot checkpoint a partially applied DVAC runner step.")
+            raise RuntimeError(
+                "Cannot checkpoint a partially applied DVAC runner step."
+            )
         path = self._dvac_sidecar_path(save_path)
         temporary = path.with_suffix(".partial.json")
         payload = {
@@ -911,6 +933,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "actor_rank": int(self._rank),
             "actor_world_size": int(self._world_size),
             "mode": self.dvac_train_mode,
+            "application": self.dvac_train_application,
             "selected_l": int(self.dvac_selected_l),
             "recent_stats": self.dvac_recent_stats.state_dict(),
         }
@@ -934,13 +957,17 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "actor_rank": int(self._rank),
                 "actor_world_size": int(self._world_size),
                 "mode": self.dvac_train_mode,
+                "application": self.dvac_train_application,
                 "selected_l": int(self.dvac_selected_l),
             }
             for key, value in expected.items():
-                if payload.get(key) != value:
+                checkpoint_value = payload.get(key)
+                if key == "application" and checkpoint_value is None:
+                    checkpoint_value = "logprob_st"
+                if checkpoint_value != value:
                     raise ValueError(
                         f"DVAC resume mismatch for {key}: "
-                        f"checkpoint={payload.get(key)!r}, current={value!r}"
+                        f"checkpoint={checkpoint_value!r}, current={value!r}"
                     )
             restored_stats = self._new_dvac_recent_stats()
             restored_stats.load_state_dict(payload["recent_stats"])

@@ -24,6 +24,7 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
+from rlinf.algorithms.utils import preprocess_loss_inputs
 from rlinf.utils.nested_dict_process import process_nested_dict_for_train
 
 
@@ -131,6 +132,45 @@ def test_current_nested_shuffle_keeps_weights_aligned() -> None:
         shuffled["forward_inputs"]["dvac_weights"][:, 0].long(),
         shuffled["forward_inputs"]["marker"][:, 0],
     )
+
+
+def test_action_level_dvac_weights_form_explicit_advantages() -> None:
+    logprobs = torch.arange(12.0).reshape(2, 3, 2)
+    old_logprobs = logprobs - 0.1
+    advantages = torch.tensor([[2.0], [-1.0]], requires_grad=True)
+    weights = torch.tensor(
+        [[0.5, 1.0, 2.0], [2.0, 1.0, 0.5]],
+        requires_grad=True,
+    )
+
+    result = preprocess_loss_inputs(
+        logprobs=logprobs,
+        old_logprobs=old_logprobs,
+        advantages=advantages,
+        logprob_type="action_level",
+        single_action_dim=2,
+        reward_type="chunk_level",
+        dvac_advantage_weights=weights,
+    )
+
+    assert result["logprobs"].shape == (2, 3)
+    assert torch.equal(result["advantages"], advantages * weights.detach())
+    result["advantages"].sum().backward()
+    assert weights.grad is None
+    assert torch.equal(advantages.grad, weights.detach().sum(dim=1, keepdim=True))
+
+
+def test_dvac_advantage_weights_require_action_level_logprobs() -> None:
+    with pytest.raises(ValueError, match="require action_level"):
+        preprocess_loss_inputs(
+            logprobs=torch.zeros(1, 2, 1),
+            old_logprobs=torch.zeros(1, 2, 1),
+            advantages=torch.ones(1, 1),
+            logprob_type="chunk_level",
+            single_action_dim=1,
+            reward_type="chunk_level",
+            dvac_advantage_weights=torch.ones(1, 2),
+        )
 
 
 def test_sufficient_statistics_match_log_values() -> None:

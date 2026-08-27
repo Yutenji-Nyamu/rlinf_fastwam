@@ -290,6 +290,7 @@ def preprocess_loss_inputs(
     returns: Optional[torch.Tensor] = None,
     reward_type: Optional[str] = None,
     versions: Optional[torch.Tensor] = None,
+    dvac_advantage_weights: Optional[torch.Tensor] = None,
     **kwargs,
 ) -> dict:
     if reward_type == "chunk_level":
@@ -357,6 +358,25 @@ def preprocess_loss_inputs(
     prev_values = expand_to_target_dim(prev_values, target_shape)
     returns = expand_to_target_dim(returns, target_shape)
     versions = expand_to_target_dim(versions, target_shape)
+
+    if dvac_advantage_weights is not None:
+        if logprob_type != "action_level":
+            raise ValueError(
+                "DVAC advantage weights require action_level log probabilities."
+            )
+        if tuple(dvac_advantage_weights.shape) != tuple(target_shape):
+            raise ValueError(
+                "DVAC advantage weights must match action-level loss shape: "
+                f"weights={tuple(dvac_advantage_weights.shape)}, "
+                f"target={tuple(target_shape)}"
+            )
+        if not torch.isfinite(dvac_advantage_weights).all():
+            raise ValueError("DVAC advantage weights contain NaN or Inf.")
+        weights = dvac_advantage_weights.detach().to(
+            device=advantages.device,
+            dtype=advantages.dtype,
+        )
+        advantages = advantages * weights
 
     kwargs.update(
         {
