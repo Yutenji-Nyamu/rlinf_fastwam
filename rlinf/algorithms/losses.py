@@ -182,6 +182,7 @@ def compute_ppo_actor_loss(
     clip_log_ratio_min: Optional[float] = None,
     clip_log_ratio_max: Optional[float] = None,
     fast_path_zero_loss_mask: Optional[bool] = False,
+    action_level_sum: bool = False,
     **kwargs,
 ) -> tuple[torch.Tensor, dict]:
     """
@@ -197,6 +198,9 @@ def compute_ppo_actor_loss(
         clip_ratio_c (Optional[float], optional): Optional clipping coefficient. Defaults to None.
         loss_agg_func (callable, optional): Aggregation function (e.g., masked_mean). Defaults to None.
         max_episode_steps (Optional[int], optional): Max episode length for normalization. Defaults to None.
+        action_level_sum (bool): Sum valid action-position losses before averaging
+            queries. This preserves the chunk-level Control's first-order update
+            scale while retaining independent per-action ratios and clipping.
 
     Returns:
         Tuple[torch.Tensor, Dict]: (actor_loss, metrics_dict)
@@ -228,6 +232,13 @@ def compute_ppo_actor_loss(
 
     if loss_mask is None:
         loss_mask = torch.ones_like(logprobs).bool()
+
+    if action_level_sum:
+        if logprobs.ndim != 2:
+            raise ValueError(
+                "action_level_sum expects action-level logprobs shaped [B, H], "
+                f"got {tuple(logprobs.shape)}"
+            )
 
     assert logprobs.dtype == torch.float32, (
         "logprobs must be float32 to keep numerical stability"
@@ -264,17 +275,20 @@ def compute_ppo_actor_loss(
     else:
         dual_clip_mask = torch.zeros_like(clip_mask)
 
-    metric_policy_loss_abs = loss_agg_func(
-        policy_loss.abs(), loss_mask, loss_mask_ratio
-    )
-    policy_loss = loss_agg_func(
-        policy_loss, loss_mask, loss_mask_ratio
-    )  # default max_episode_steps is None
+    def aggregate_policy_loss(values: torch.Tensor) -> torch.Tensor:
+        if not action_level_sum:
+            return loss_agg_func(values, loss_mask, loss_mask_ratio)
+        weighted = values * loss_mask
+        if loss_mask_ratio is not None:
+            weighted = weighted / loss_mask_ratio
+        return weighted.sum(dim=-1).mean()
+
+    metric_policy_loss_abs = aggregate_policy_loss(policy_loss.abs())
+    policy_loss = aggregate_policy_loss(policy_loss)
 
     clip_mask = policy_loss1.detach() < policy_loss2.detach()
     dual_clip_mask = (dual_clip_mask * loss_mask).bool()
 
-    clip_fraction = (clip_mask * loss_mask).sum() / float(loss_mask_count)
     approx_kl = -torch.sum(approx_kl) / float(loss_mask_count)
 
     dual_cliped_ratio = torch.where(dual_clip_mask, ratio, 0)
@@ -289,11 +303,13 @@ def compute_ppo_actor_loss(
     clipped_ratio_for_metrics = clipped_ratio.detach()
     dual_cliped_ratio_for_metrics = dual_cliped_ratio.detach()
 
-    # Only broadcast when ratio has action_dim dimension and loss_mask's last dim is 1
-    # This handles token_level mode: ratio [bsz, num_chunks, action_dim], loss_mask [bsz, num_chunks, 1]
-    if len(ratio.shape) > 2 and loss_mask.shape[-1] == 1 and ratio.shape[-1] > 1:
-        # Broadcast loss_mask to match ratio's shape for metrics computation
+    # Metrics count every ratio/clip element, including rank-2 action-level tensors.
+    if loss_mask.shape != ratio.shape:
         loss_mask_for_metrics = loss_mask.expand_as(ratio)
+    metric_loss_mask_count = loss_mask_for_metrics.count_nonzero() or 1
+    clip_fraction = (clip_mask * loss_mask_for_metrics).sum() / float(
+        metric_loss_mask_count
+    )
 
     metrics_data = {
         "actor/policy_loss": policy_loss.detach(),

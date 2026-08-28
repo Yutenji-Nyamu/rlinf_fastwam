@@ -24,6 +24,7 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
+from rlinf.algorithms.losses import compute_ppo_actor_loss
 from rlinf.algorithms.utils import preprocess_loss_inputs
 from rlinf.utils.nested_dict_process import process_nested_dict_for_train
 
@@ -171,6 +172,41 @@ def test_dvac_advantage_weights_require_action_level_logprobs() -> None:
             reward_type="chunk_level",
             dvac_advantage_weights=torch.ones(1, 2),
         )
+
+
+def test_action_level_sum_restores_scale_and_counts_action_metrics() -> None:
+    logprobs = torch.zeros(2, 3, dtype=torch.float32)
+    logprobs[0, 0] = torch.log(torch.tensor(1.3))
+    kwargs = {
+        "logprobs": logprobs,
+        "old_logprobs": torch.zeros_like(logprobs),
+        "clip_ratio_low": 0.2,
+        "clip_ratio_high": 0.2,
+        "advantages": torch.ones_like(logprobs),
+        "loss_mask": torch.ones(2, 1, dtype=torch.bool),
+        "loss_mask_sum": torch.ones(2, 1),
+        "max_episode_steps": 1,
+    }
+
+    mean_loss, _ = compute_ppo_actor_loss(**kwargs)
+    summed_loss, metrics = compute_ppo_actor_loss(
+        **kwargs,
+        action_level_sum=True,
+    )
+
+    assert torch.allclose(summed_loss, mean_loss * logprobs.shape[-1])
+    assert torch.allclose(
+        metrics["actor/ratio"],
+        torch.tensor((1.3 + 5.0) / 6.0),
+    )
+    assert torch.allclose(
+        metrics["actor/clip_fraction"],
+        torch.tensor(1.0 / 6.0),
+    )
+    assert torch.allclose(
+        metrics["actor/approx_kl"],
+        -torch.log(torch.tensor(1.3)) / 2.0,
+    )
 
 
 def test_sufficient_statistics_match_log_values() -> None:
