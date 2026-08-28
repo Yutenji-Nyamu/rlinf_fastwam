@@ -638,6 +638,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "runner_step": int(pending["runner_step"]),
                 "actor_rank": int(self._rank),
                 "application": self.dvac_train_application,
+                "advantage_reduction": (
+                    "sum_valid_actions_then_mean_queries"
+                    if self.dvac_train_application == "action_advantage"
+                    else None
+                ),
                 "selected_l": int(self.dvac_selected_l),
                 "warmup": bool(pending["warmup"]),
                 "history": dict(pending["history"]),
@@ -875,6 +880,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             and self.dvac_train_application == "action_advantage"
         ):
             loss_kwargs["dvac_advantage_weights"] = dvac_weights
+            loss_kwargs["action_level_sum"] = True
 
         if SupportedModel(self.cfg.actor.model.model_type) in [
             SupportedModel.GR00T_N1D6,
