@@ -1,0 +1,36 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env250
+  - _self_
+
+# AutoDL-validated matched-width single-GPU protocol on current causal-AR RLT.
+# Shenzhen's shared-Ray launcher must override placement with the chosen global
+# physical GPU id (2 or 3) and must leave CUDA_VISIBLE_DEVICES unset.
+cluster:
+  component_placement:
+    actor,env,rollout: 0
+
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_current_single_gpu_control_fresh480
+  max_steps: 480
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null
+  ckpt_path: null
+
+actor:
+  micro_batch_size: 256
+
+algorithm:
+  rlt_dvac:
+    mode: off
+  rlt_schedule:
+    warmup_min_size: 20000
+  replay_buffer:
+    cache_size: 80000
+    sample_window_size: 80000
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}

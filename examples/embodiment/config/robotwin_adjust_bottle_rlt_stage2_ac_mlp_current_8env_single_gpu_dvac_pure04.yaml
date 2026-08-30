@@ -1,0 +1,28 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_control
+  - _self_
+
+# AutoDL Pure04: successful episodes retain the frozen pi0 reference BC target;
+# L3 teacher DVAC only redistributes C10 BC weight with nonnegative mean-one weights.
+algorithm:
+  rlt_dvac:
+    mode: apply
+    application: success_episode_bc
+    success_target: reference
+    l_values: [2, 3, 4]
+    selected_l: 3
+    applied_horizon: ${actor.model.num_action_chunks}
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 1.5
+    success_scale: 1.0
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}
+
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_current_single_gpu_dvac_pure04_fresh480

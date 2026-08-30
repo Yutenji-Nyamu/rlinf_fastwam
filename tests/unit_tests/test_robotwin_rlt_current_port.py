@@ -282,10 +282,12 @@ def test_compact_replay_bootstraps_pure_truncation_from_real_next_obs():
         }
     )
     worker.replay_buffer = _FlattenOnlyReplay()
+    worker.rlt_dvac_mode = "apply"
     curr_obs = {
         "z_rl": torch.tensor([[[1.0, 2.0]]]),
         "proprio": torch.tensor([[[3.0]]]),
         "ref_chunk": torch.tensor([[[4.0, 5.0]]]),
+        "teacher_dvac_v": torch.ones(1, 1, 3, 50),
     }
     next_obs = {key: value + 10.0 for key, value in curr_obs.items()}
     trajectory = Trajectory(
@@ -312,6 +314,15 @@ def test_compact_replay_bootstraps_pure_truncation_from_real_next_obs():
     assert len(transitions) == 1
     transition = transitions[0]
     assert torch.equal(transition.next_obs["z_rl"], next_obs["z_rl"])
+    assert set(transition.next_obs) == {"z_rl", "proprio", "ref_chunk"}
+    assert set(transition.curr_obs) == {
+        "z_rl",
+        "proprio",
+        "ref_chunk",
+        "teacher_dvac_v",
+        "episode_success",
+    }
+    assert not transition.curr_obs["episode_success"].item()
     assert transition.forward_inputs == {}
     assert transition.prev_logprobs is None
     assert transition.prev_values is None

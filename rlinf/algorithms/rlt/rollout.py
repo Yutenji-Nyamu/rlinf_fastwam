@@ -18,7 +18,11 @@ import numpy as np
 import torch
 
 from rlinf.algorithms.rlt.route import RLTRoute, RLTRouteContext
-from rlinf.algorithms.rlt.transition import RLT_OBS_KEYS, RLT_TRANSITION_PREFIX
+from rlinf.algorithms.rlt.transition import (
+    RLT_OBS_KEYS,
+    RLT_OPTIONAL_OBS_KEYS,
+    RLT_TRANSITION_PREFIX,
+)
 
 
 def _append_rlt_transition_obs(
@@ -31,7 +35,9 @@ def _append_rlt_transition_obs(
     transition_obs = rlt_obs
     if final_obs is not None:
         transition_obs = feature_model.extract_rlt_obs(final_obs)
-    for key in RLT_OBS_KEYS:
+    for key in (*RLT_OBS_KEYS, *RLT_OPTIONAL_OBS_KEYS):
+        if key not in transition_obs:
+            continue
         result["forward_inputs"][f"{RLT_TRANSITION_PREFIX}{key}"] = transition_obs[key]
 
 
@@ -80,6 +86,9 @@ def predict_rlt_actions(
         )
         actions = route_output.actions
         result = route_output.result
+        for key in RLT_OPTIONAL_OBS_KEYS:
+            if key in rlt_obs:
+                result["forward_inputs"][key] = rlt_obs[key]
         if decode_context is not None:
             actions = feature_model.decode_rlt_action(actions, decode_context)
 

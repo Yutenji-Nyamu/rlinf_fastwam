@@ -21,7 +21,18 @@ import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
-from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
+from rlinf.algorithms.rlt.dvac_weighting import (
+    FrozenGlobalZMoments,
+    build_rlt_bc_targets_and_weights,
+    centered_mean_one_weights,
+    episode_success_flags,
+    global_z_scores,
+    summarize_weights,
+)
+from rlinf.algorithms.rlt.transition import (
+    core_rlt_obs,
+    use_simulator_transition_replay,
+)
 from rlinf.data.schema.embodied_types import Trajectory
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.scheduler import Worker
@@ -116,6 +127,10 @@ class RLTACLossMixin:
         actions: torch.Tensor,
         ref_chunk: torch.Tensor,
         intervene_flags: torch.Tensor | None,
+        *,
+        episode_success: torch.Tensor | None = None,
+        success_weights: torch.Tensor | None = None,
+        apply_success_weights: bool = False,
     ) -> tuple[torch.Tensor, dict[str, float]]:
         chunk_len, action_dim = self._chunk_shape()
         pi_chunk = self._flatten_chunk(pi).reshape(-1, chunk_len, action_dim)
@@ -137,9 +152,16 @@ class RLTACLossMixin:
                 .any(dim=-1)
             )
 
-        bc_target = torch.where(human_mask[..., None], action_chunk, bc_ref_chunk)
+        bc_target, bc_weights, success_mask = build_rlt_bc_targets_and_weights(
+            action_chunk,
+            bc_ref_chunk,
+            human_mask,
+            episode_success=episode_success,
+            success_weights=success_weights,
+            apply_success_weights=apply_success_weights,
+        )
         bc_error = torch.mean(torch.square(pi_chunk - bc_target), dim=-1)
-        bc_loss = torch.mean(bc_error)
+        bc_loss = torch.mean(bc_weights * bc_error)
 
         policy_mask = ~human_mask
         ref_error = torch.mean(torch.square(pi_chunk - bc_ref_chunk), dim=-1)
@@ -158,8 +180,116 @@ class RLTACLossMixin:
             "bc_human_loss": bc_human.detach().item(),
             "human_mask_ratio": human_ratio,
             "policy_mask_ratio": 1.0 - human_ratio,
+            "rlt_dvac/success_query_ratio": float(
+                success_mask[:, 0].float().mean().item()
+            ),
+            "rlt_dvac/success_bc_applied": float(apply_success_weights),
         }
         return bc_loss, metrics
+
+    def _rlt_dvac_selected_variances(
+        self, obs: dict[str, torch.Tensor]
+    ) -> torch.Tensor:
+        teacher_v = obs.get("teacher_dvac_v")
+        if not isinstance(teacher_v, torch.Tensor):
+            raise ValueError(
+                "RLT DVAC requires curr_obs.teacher_dvac_v from the frozen pi0 teacher."
+            )
+        l_values = getattr(self, "rlt_dvac_l_values", (2, 3, 4))
+        selected_l = getattr(self, "rlt_dvac_selected_l", 3)
+        if int(teacher_v.shape[-2]) != len(l_values):
+            raise ValueError(
+                "RLT teacher_dvac_v must be [...,3,H] in L=(2,3,4) order, got "
+                f"{tuple(teacher_v.shape)}."
+            )
+        return teacher_v[
+            ..., l_values.index(selected_l), : getattr(self, "rlt_dvac_horizon", 10)
+        ]
+
+    def _rlt_dvac_success_weights(
+        self, curr_obs: dict[str, torch.Tensor]
+    ) -> tuple[torch.Tensor | None, bool, dict[str, float]]:
+        mode = getattr(self, "rlt_dvac_mode", "off")
+        if mode == "off":
+            return None, False, {"rlt_dvac/enabled": 0.0}
+
+        selected_v = self._rlt_dvac_selected_variances(curr_obs)
+        stats = self.rlt_dvac_stats
+        if stats.frozen:
+            z_scores, log_variances = global_z_scores(
+                selected_v,
+                mean=stats.mean,
+                std=stats.std,
+                log_eps=stats.log_eps,
+                std_floor=stats.std_floor,
+                z_clip=self.rlt_dvac_z_clip,
+            )
+            candidate = centered_mean_one_weights(
+                z_scores, strength=self.rlt_dvac_strength
+            ) * self.rlt_dvac_success_scale
+        else:
+            log_variances = torch.log(
+                selected_v.float().clamp_min(0) + stats.log_eps
+            )
+            z_scores = torch.zeros_like(log_variances)
+            candidate = torch.ones_like(log_variances)
+        apply_weights = mode == "apply" and stats.frozen
+        weights = candidate if apply_weights else torch.ones_like(candidate)
+        metrics = summarize_weights(weights, z_scores, log_variances)
+        metrics.update(
+            {
+                "rlt_dvac/enabled": 1.0,
+                "rlt_dvac/mode_apply": float(mode == "apply"),
+                "rlt_dvac/baseline_frozen": float(stats.frozen),
+                "rlt_dvac/baseline_count": float(stats.count),
+                "rlt_dvac/baseline_mean": float(stats.mean),
+                "rlt_dvac/baseline_std": float(stats.std),
+            }
+        )
+        return weights.detach(), apply_weights, metrics
+
+    def _accumulate_rlt_dvac_baseline(
+        self, replay_trajectories: list[Trajectory]
+    ) -> None:
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None or stats.frozen:
+            return
+        for trajectory in replay_trajectories:
+            stats.update_variances(
+                self._rlt_dvac_selected_variances(trajectory.curr_obs)
+            )
+
+    def _freeze_rlt_dvac_baseline(self) -> None:
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None or stats.frozen:
+            return
+        count, total, total_sq = stats.sufficient_statistics()
+        global_stats = {
+            "count": float(count),
+            "total": float(total),
+            "total_sq": float(total_sq),
+        }
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            global_stats = all_reduce_dict(
+                global_stats, op=torch.distributed.ReduceOp.SUM
+            )
+        stats.freeze_from_statistics(
+            int(global_stats["count"]),
+            float(global_stats["total"]),
+            float(global_stats["total_sq"]),
+        )
+
+    def _rlt_dvac_baseline_metrics(self) -> dict[str, float]:
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None:
+            return {"rlt_dvac/enabled": 0.0}
+        return {
+            "rlt_dvac/enabled": 1.0,
+            "rlt_dvac/baseline_frozen": float(stats.frozen),
+            "rlt_dvac/baseline_count": float(stats.count),
+            "rlt_dvac/baseline_mean": float(stats.mean),
+            "rlt_dvac/baseline_std": float(stats.std),
+        }
 
     def _actor_objective_weights(self) -> tuple[float, float, dict[str, float]]:
         """Resolve RLT actor-objective BC/Q weights."""
@@ -322,6 +452,9 @@ class RLTACLossMixin:
         use_crossq = self.cfg.algorithm.get("q_head_type", "default") == "crossq"
 
         curr_obs = batch["curr_obs"]
+        success_weights, apply_success_weights, dvac_metrics = (
+            self._rlt_dvac_success_weights(curr_obs)
+        )
         reference_dropout_prob = float(
             self.cfg.algorithm.get("reference_dropout_prob", 0.0)
         )
@@ -366,8 +499,12 @@ class RLTACLossMixin:
             actions=batch["actions"],
             ref_chunk=ref_chunk,
             intervene_flags=batch.get("intervene_flags", None),
+            episode_success=curr_obs.get("episode_success"),
+            success_weights=success_weights,
+            apply_success_weights=apply_success_weights,
         )
         metrics.update(rlt_metrics)
+        metrics.update(dvac_metrics)
 
         entropy = -log_pi.mean()
         bc_weight, q_weight, weight_metrics = self._actor_objective_weights()
@@ -526,6 +663,9 @@ class RLTACReplayMixin:
         bsz = int(trajectory.actions.shape[1])
         num_rows = int(actions.shape[0])
         auto_reset = bool(self.cfg.env.train.get("auto_reset", False))
+        episode_success = None
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            episode_success = episode_success_flags(trajectory.rewards)
 
         for env_idx in range(bsz):
             for t in range(traj_len):
@@ -558,6 +698,14 @@ class RLTACReplayMixin:
                         f"before replay ingestion, got row index {idx}."
                     )
                 transition.curr_obs = curr_obs
+                if episode_success is not None:
+                    curr_obs["episode_success"] = (
+                        episode_success[env_idx]
+                        .detach()
+                        .reshape(1, 1, 1)
+                        .cpu()
+                        .contiguous()
+                    )
 
                 # Dones have one extra initial slot, so transition t reads
                 # terminal flags from t+1. Rewards are already action-aligned
@@ -600,9 +748,11 @@ class RLTACReplayMixin:
                     and not is_termination
                 )
                 if is_done and not bootstrap_truncation:
-                    next_obs = curr_obs
+                    next_obs = core_rlt_obs(curr_obs)
                 else:
                     next_obs = self._rlt_obs_from_flat_dict(flat, "next_obs", idx)
+                    if next_obs is not None:
+                        next_obs = core_rlt_obs(next_obs)
                 if next_obs is not None:
                     transition.next_obs = next_obs
                 else:
@@ -664,6 +814,7 @@ class RLTACReplayMixin:
                 )
                 replay_list.extend(transition_trajs)
                 completed += completed_count
+            self._accumulate_rlt_dvac_baseline(replay_list)
             self._last_replay_metrics = {
                 **self._transition_replay_metrics(replay_list),
                 **collect_trajectory_replay_metrics(recv_list, reducer=all_reduce_dict),
@@ -731,6 +882,63 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         self._warmup_ready_total_episodes: int | None = None
         self.pending_update_budget = 0
 
+        raw_dvac_cfg = cfg.algorithm.get("rlt_dvac", {}) or {}
+        if OmegaConf.is_config(raw_dvac_cfg):
+            raw_dvac_cfg = OmegaConf.to_container(raw_dvac_cfg, resolve=True)
+        self.rlt_dvac_cfg = dict(raw_dvac_cfg)
+        self.rlt_dvac_mode = str(self.rlt_dvac_cfg.get("mode", "off")).lower()
+        if self.rlt_dvac_mode not in {"off", "observe", "apply"}:
+            raise ValueError("algorithm.rlt_dvac.mode must be off, observe, or apply.")
+        self.rlt_dvac_l_values = tuple(
+            int(value) for value in self.rlt_dvac_cfg.get("l_values", (2, 3, 4))
+        )
+        self.rlt_dvac_selected_l = int(self.rlt_dvac_cfg.get("selected_l", 3))
+        self.rlt_dvac_horizon = int(
+            self.rlt_dvac_cfg.get(
+                "applied_horizon", self.cfg.actor.model.num_action_chunks
+            )
+        )
+        self.rlt_dvac_z_clip = float(self.rlt_dvac_cfg.get("z_clip", 2.0))
+        self.rlt_dvac_strength = float(self.rlt_dvac_cfg.get("strength", 1.5))
+        self.rlt_dvac_success_scale = float(
+            self.rlt_dvac_cfg.get("success_scale", 1.0)
+        )
+        if self.rlt_dvac_mode != "off":
+            if self.rlt_dvac_l_values != (2, 3, 4):
+                raise ValueError("RLT teacher DVAC requires fixed L=(2,3,4) order.")
+            if self.rlt_dvac_selected_l not in self.rlt_dvac_l_values:
+                raise ValueError("RLT DVAC selected_l must be included in l_values.")
+            if self.rlt_dvac_horizon != int(self.cfg.actor.model.num_action_chunks):
+                raise ValueError(
+                    "RLT DVAC applied_horizon must match the student action chunk."
+                )
+            if str(
+                self.rlt_dvac_cfg.get("application", "success_episode_bc")
+            ).lower() != "success_episode_bc":
+                raise ValueError(
+                    "This current port supports RLT DVAC only at success_episode_bc."
+                )
+            if str(self.rlt_dvac_cfg.get("success_target", "reference")).lower() != (
+                "reference"
+            ):
+                raise ValueError("RLT-DVAC-Pure requires success_target=reference.")
+            if bool(self.cfg.env.train.get("auto_reset", False)):
+                raise ValueError(
+                    "Success-episode RLT DVAC BC requires env.train.auto_reset=false."
+                )
+            if self.rlt_dvac_z_clip <= 0 or self.rlt_dvac_strength < 0:
+                raise ValueError(
+                    "RLT DVAC z_clip must be positive and strength nonnegative."
+                )
+            if self.rlt_dvac_success_scale <= 0:
+                raise ValueError("RLT DVAC success_scale must be positive.")
+            self.rlt_dvac_stats = FrozenGlobalZMoments(
+                log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
+                std_floor=float(self.rlt_dvac_cfg.get("std_floor", 1e-6)),
+            )
+        else:
+            self.rlt_dvac_stats = None
+
     def _rlt_state_dir(self, base_path: str) -> str:
         return os.path.join(base_path, "sac_components/rlt_trainer_state")
 
@@ -773,6 +981,9 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 "algorithm.rlt_resume.contract has unresolved fields: "
                 f"{sorted(unresolved)}."
             )
+        contract = dict(contract)
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
         serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         return serialized, digest
@@ -798,6 +1009,11 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 None
                 if self._warmup_ready_total_episodes is None
                 else int(self._warmup_ready_total_episodes)
+            ),
+            "rlt_dvac_baseline": (
+                None
+                if getattr(self, "rlt_dvac_stats", None) is None
+                else self.rlt_dvac_stats.state_dict()
             ),
         }
 
@@ -832,6 +1048,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             "global_warmup_ready_total_transitions",
             "global_warmup_ready_total_episodes",
         }
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            required.add("rlt_dvac_baseline")
         missing = sorted(required.difference(state))
         if missing:
             raise ValueError(f"RLT trainer state is missing keys: {missing}.")
@@ -849,6 +1067,10 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                     f"RLT trainer state mismatch for {key}: "
                     f"{state[key]!r} != {expected!r}."
                 )
+        if getattr(self, "rlt_dvac_mode", "off") != "off" and not isinstance(
+            state.get("rlt_dvac_baseline"), dict
+        ):
+            raise ValueError("RLT DVAC trainer state is missing its baseline payload.")
 
     def _save_rlt_state(self, save_base_path: str, runner_step: int) -> None:
         state_dir = self._rlt_state_dir(save_base_path)
@@ -939,6 +1161,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         self._warmup_ready_total_episodes = state[
             "global_warmup_ready_total_episodes"
         ]
+        if getattr(self, "rlt_dvac_stats", None) is not None:
+            self.rlt_dvac_stats.load_state_dict(state["rlt_dvac_baseline"])
         self.transitions_since_train = 0
         self.episodes_since_train = 0
         self.pending_update_budget = 0
@@ -1022,6 +1246,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         )
         counters = self._global_rlt_counters()
         buffer_ready = counters["min_replay_size"] >= min_buffer_size
+        if buffer_ready:
+            self._freeze_rlt_dvac_baseline()
         warmup_required_updates = int(
             schedule_cfg.get("warmup_post_collect_updates", 0)
         )
@@ -1110,6 +1336,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             ),
         }
         metrics.update(getattr(self, "_last_replay_metrics", {}))
+        metrics.update(self._rlt_dvac_baseline_metrics())
         return updates_to_run, metrics
 
     def run_training(self):
@@ -1179,6 +1406,13 @@ class AsyncRLTACFSDPPolicy(
     RLTACLossMixin, RLTACReplayMixin, AsyncEmbodiedSACFSDPPolicy
 ):
     def __init__(self, cfg):
+        dvac_mode = str(
+            (cfg.algorithm.get("rlt_dvac", {}) or {}).get("mode", "off")
+        ).lower()
+        if dvac_mode != "off":
+            raise NotImplementedError(
+                "RLT-DVAC-Pure currently supports the synchronous RLT policy only."
+            )
         super().__init__(cfg)
         self.rlt_schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
         self.use_rlt_schedule = bool(self.rlt_schedule_cfg.get("enable", False))
