@@ -1,0 +1,28 @@
+model_type: fastwam
+
+model_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt
+checkpoint_path: ${.model_path}
+dataset_stats_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json
+
+precision: bf16
+is_lora: false
+
+action_dim: 14
+action_horizon: 32
+num_action_chunks: 24
+num_inference_steps: 10
+sigma_shift: 5.0
+text_cfg_scale: 1.0
+negative_prompt: ""
+rand_device: cpu
+tiled: false
+model_forward_batch_size: 2
+eval_seed: 0
+add_value_head: false
+
+rl:
+  noise_level: 0.3
+
+fastwam:
+  config_name: sim_robotwin
+  task: robotwin_uncond_3cam_384_1e-4

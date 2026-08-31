@@ -495,6 +495,12 @@ class MultiStepRolloutWorker(Worker):
             else:
                 kwargs = {"mode": mode}
 
+        # External embodied policies can opt into the same explicit train/eval
+        # rollout contract without expanding the built-in model allow-list.
+        if getattr(self.hf_model, "rlinf_accepts_rollout_mode", False):
+            kwargs = dict(kwargs)
+            kwargs["mode"] = "eval" if self.enable_dagger else mode
+
         if SupportedModel(self.model_cfg.model_type) in [
             SupportedModel.CNN_POLICY,
             SupportedModel.FLOW_POLICY,

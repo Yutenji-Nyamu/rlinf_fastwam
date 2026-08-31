@@ -56,7 +56,9 @@ class FSDP2Strategy(FSDPStrategyBase):
         mp_policy = MixedPrecisionPolicy(
             param_dtype=param_dtype,
             reduce_dtype=reduce_dtype,
-            cast_forward_inputs=True,
+            cast_forward_inputs=self.cfg.fsdp_config.get(
+                "cast_forward_inputs", True
+            ),
         )
 
         offload_policy = (
