@@ -1,0 +1,25 @@
+defaults:
+  - robotwin_move_stapler_pad_grpo_fastwam
+  - _self_
+
+runner:
+  logger:
+    log_path: ../results/fastwam-current-grpo-action-dvac-adv
+    experiment_name: robotwin_move_stapler_pad_grpo_fastwam_action_dvac_adv_w05to15_2gpu32x4_g8
+
+algorithm:
+  logprob_type: action_level
+  dvac_gradient_weighting:
+    mode: apply
+    application: action_advantage
+    selected_l: 5
+    warmup_steps: 1
+    window_steps: 5
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 0.5
+    weight_min: 0.5
+    weight_max: 1.5
+    save_step_tensors: true
+    output_dir: ${runner.logger.log_path}/dvac_train

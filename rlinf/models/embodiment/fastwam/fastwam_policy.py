@@ -79,6 +79,7 @@ class FastWAMPolicy(nn.Module, BasePolicy):
     """Expose official Fast-WAM action inference through RLinf's policy contract."""
 
     rlinf_accepts_rollout_mode = True
+    rlinf_dvac_endpoint_capable = True
 
     def __init__(
         self,
@@ -161,12 +162,15 @@ class FastWAMPolicy(nn.Module, BasePolicy):
         self,
         env_obs: dict[str, Any],
         mode: Literal["train", "eval"] = "train",
+        return_dvac_telemetry: bool = False,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Return a physical RoboTwin qpos chunk and optional behavior replay."""
 
         if mode not in ("train", "eval"):
             raise ValueError(f"Unsupported Fast-WAM rollout mode: {mode!r}")
+        if not isinstance(return_dvac_telemetry, bool):
+            raise TypeError("return_dvac_telemetry must be a bool")
         image, proprio, prompts = adapt_robotwin_observation(
             env_obs,
             self.processor,
@@ -224,6 +228,7 @@ class FastWAMPolicy(nn.Module, BasePolicy):
         chains: list[torch.Tensor] = []
         old_logprobs: list[torch.Tensor] = []
         denoise_inds: list[torch.Tensor] = []
+        endpoint_traces: list[torch.Tensor] = []
         chunk_size = self.config.model_forward_batch_size
         for start in range(0, batch_size, chunk_size):
             stop = min(start + chunk_size, batch_size)
@@ -255,8 +260,18 @@ class FastWAMPolicy(nn.Module, BasePolicy):
                     if rollout_randomness is None
                     else rollout_randomness.sde_epsilon[item]
                 ),
+                return_endpoint_trace=return_dvac_telemetry,
             )
             model_actions.append(_cpu_detached(rollout.actions, dtype=torch.float32))
+            if return_dvac_telemetry:
+                if rollout.endpoint_trace is None:
+                    raise RuntimeError("Fast-WAM rollout omitted DVAC endpoint trace")
+                endpoint_traces.append(
+                    _cpu_detached(
+                        rollout.endpoint_trace[:, :, : self.config.num_action_chunks],
+                        dtype=torch.float32,
+                    )
+                )
             if not deterministic:
                 if (
                     rollout.chains is None
@@ -283,7 +298,7 @@ class FastWAMPolicy(nn.Module, BasePolicy):
         if deterministic:
             # Evaluation ignores replay, but current rollout workers still read
             # these three result keys before forwarding the physical actions.
-            return executed_actions, {
+            result = {
                 "prev_logprobs": torch.zeros(
                     batch_size,
                     self.config.num_action_chunks,
@@ -293,6 +308,11 @@ class FastWAMPolicy(nn.Module, BasePolicy):
                 "prev_values": None,
                 "forward_inputs": {},
             }
+            if return_dvac_telemetry:
+                result["dvac_telemetry"] = {
+                    "z_endpoint": torch.cat(endpoint_traces, dim=0)
+                }
+            return executed_actions, result
 
         replay = {
             "chains": torch.cat(chains, dim=0),
@@ -304,11 +324,16 @@ class FastWAMPolicy(nn.Module, BasePolicy):
             "action": executed_actions.reshape(batch_size, -1).contiguous(),
             "model_action": normalized_actions.reshape(batch_size, -1).contiguous(),
         }
-        return executed_actions, {
+        result = {
             "prev_logprobs": torch.cat(old_logprobs, dim=0),
             "prev_values": None,
             "forward_inputs": replay,
         }
+        if return_dvac_telemetry:
+            result["dvac_telemetry"] = {
+                "z_endpoint": torch.cat(endpoint_traces, dim=0)
+            }
+        return executed_actions, result
 
     def _validate_replay(self, forward_inputs: dict[str, torch.Tensor]) -> int:
         if not isinstance(forward_inputs, dict):

@@ -165,8 +165,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         self.setup_model_and_optimizer()
 
         if self.dvac_train_enabled:
-            if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
-                raise ValueError("DVAC train weighting requires OpenPI.")
+            model_type = str(self.cfg.actor.model.model_type)
+            if model_type not in {SupportedModel.OPENPI.value, "fastwam"}:
+                raise ValueError(
+                    "DVAC train weighting requires an endpoint-capable policy."
+                )
             expected_logprob_type = (
                 "chunk_level"
                 if self.dvac_train_application == "logprob_st"

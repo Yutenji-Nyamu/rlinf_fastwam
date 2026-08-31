@@ -81,6 +81,7 @@ class FlowRollout:
     chains: torch.Tensor | None = None
     prev_logprobs: torch.Tensor | None = None
     denoise_inds: torch.Tensor | None = None
+    endpoint_trace: torch.Tensor | None = None
 
 
 def _model_device(model) -> torch.device:
@@ -495,6 +496,7 @@ def flow_sde_rollout(
     deterministic: bool,
     denoise_inds: torch.Tensor | None = None,
     sde_epsilon: torch.Tensor | None = None,
+    return_endpoint_trace: bool = False,
 ) -> FlowRollout:
     """Run the one shared denoise loop.
 
@@ -526,6 +528,7 @@ def flow_sde_rollout(
         selected_logprob = torch.zeros_like(x)
         selected_seen = torch.zeros(batch_size, dtype=torch.bool, device=x.device)
 
+    endpoint_trace = [] if return_endpoint_trace else None
     for step_index in range(num_inference_steps):
         velocity = predict_action_velocity(
             model,
@@ -533,6 +536,14 @@ def flow_sde_rollout(
             raw_timestep=schedule.timesteps[step_index],
             conditioning=conditioning,
         )
+        if endpoint_trace is not None:
+            t = _right_broadcast(
+                _expand_batch_vector(
+                    schedule.normalized_timesteps[step_index].float(), batch_size
+                ).to(x.device),
+                x,
+            )
+            endpoint_trace.append((x.float() - t * velocity.float()).detach())
         if deterministic:
             x = model.infer_action_scheduler.step(
                 velocity.to(dtype=x.dtype),
@@ -558,8 +569,13 @@ def flow_sde_rollout(
         selected_seen |= selected
         chains.append(x)
 
+    endpoints = (
+        None
+        if endpoint_trace is None
+        else torch.stack(endpoint_trace, dim=1).float()
+    )
     if deterministic:
-        return FlowRollout(actions=x.float())
+        return FlowRollout(actions=x.float(), endpoint_trace=endpoints)
     if not bool(selected_seen.all()):
         raise RuntimeError("Every trajectory must execute exactly one stochastic step")
     return FlowRollout(
@@ -567,6 +583,7 @@ def flow_sde_rollout(
         chains=torch.stack(chains, dim=1).float(),
         prev_logprobs=selected_logprob.float(),
         denoise_inds=denoise_inds,
+        endpoint_trace=endpoints,
     )
 
 

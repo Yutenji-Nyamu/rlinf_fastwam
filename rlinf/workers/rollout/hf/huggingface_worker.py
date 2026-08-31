@@ -146,7 +146,7 @@ class MultiStepRolloutWorker(Worker):
                 "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
-        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 5))
+        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
         if self.dvac_train_enabled:
             if self.only_eval:
                 raise ValueError("DVAC gradient weighting requires a training run.")
@@ -207,7 +207,19 @@ class MultiStepRolloutWorker(Worker):
                 raise ValueError(
                     "DVAC gradient weighting requires the native rollout policy."
                 )
-            if not bool(
+            model_type = str(self.model_cfg.model_type)
+            if model_type == SupportedModel.OPENPI.value:
+                active_modes = [
+                    name
+                    for name in ("use_dsrl", "use_rlt", "is_nft")
+                    if bool(getattr(self.hf_model.config, name, False))
+                ]
+                if active_modes:
+                    raise ValueError(
+                        "DVAC gradient weighting does not support: "
+                        + ", ".join(active_modes)
+                    )
+            elif not bool(
                 getattr(self.hf_model, "rlinf_dvac_endpoint_capable", False)
             ):
                 raise ValueError(
