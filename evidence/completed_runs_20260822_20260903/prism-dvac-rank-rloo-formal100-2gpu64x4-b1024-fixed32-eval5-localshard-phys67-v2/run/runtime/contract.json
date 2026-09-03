@@ -1,0 +1,13 @@
+{
+  "source_head": "306ce2e98a06b6f439a1070d8942e20132e48d49",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-localshard-phys67-v2",
+  "physical_gpus": [6, 7],
+  "outer_steps": 100,
+  "train": "64 env x 4 rollout epochs = 256 trajectories; G8 = 32 groups; max 1024 chunk records",
+  "actor": "GB1024/MB32/update2; 512 records/rank; 2 optimizer calls/rank",
+  "method": "trajectory mean log V_L3; within-G8 lower-is-better average rank; reward=success+0.2q; sibling-mean RLOO; no std; DVAC-ST off",
+  "eval": "fixed32 as 32 env x 1 wave every 5 steps",
+  "checkpoint": "local_shard every 10 steps; strict resume requires same two-rank FSDP topology",
+  "normal_stop": "complete step100, final checkpoint, exit0",
+  "hard_timeout_seconds": 216000
+}
