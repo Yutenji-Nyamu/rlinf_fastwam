@@ -93,12 +93,16 @@ def export_native(args: argparse.Namespace) -> None:
     config.device = str(device)
     config.compile_model = False
     config.gradient_checkpointing = False
-    policy = PI05Policy.from_pretrained(
-        args.model,
-        config=config,
-        local_files_only=True,
-        strict=True,
-    ).eval()
+    policy = (
+        PI05Policy.from_pretrained(
+            args.model,
+            config=config,
+            local_files_only=True,
+            strict=True,
+        )
+        .to(device)
+        .eval()
+    )
     preprocessor, postprocessor = make_pre_post_processors(
         policy.config,
         pretrained_path=args.model,
