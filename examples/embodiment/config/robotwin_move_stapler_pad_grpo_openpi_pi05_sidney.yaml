@@ -19,7 +19,7 @@ hydra:
 cluster:
   num_nodes: 1
   component_placement:
-    actor, env, rollout: 0-7
+    actor, env, rollout: 0-1
 
 runner:
   task_type: embodied
@@ -31,7 +31,7 @@ runner:
   max_epochs: 1000
   max_steps: -1
   only_eval: false
-  val_check_interval: 10
+  val_check_interval: 5
   save_interval: 10
   resume_dir: null
   ckpt_path: null
@@ -44,7 +44,7 @@ algorithm:
   reward_type: chunk_level
   logprob_type: chunk_level
   entropy_type: token_level
-  update_epoch: 5
+  update_epoch: 2
   adv_type: grpo
   loss_type: actor
   loss_agg_func: token-mean
@@ -79,7 +79,7 @@ env:
   group_name: EnvGroup
   enable_offload: true
   train:
-    total_num_envs: 256
+    total_num_envs: 64
     rollout_epoch: 4
     max_episode_steps: 400
     max_steps_per_rollout_epoch: 400
@@ -104,7 +104,7 @@ env:
         crazy_random_light_rate: 0
   eval:
     rollout_epoch: 1
-    total_num_envs: 128
+    total_num_envs: 32
     max_episode_steps: 400
     max_steps_per_rollout_epoch: 400
     reward_coef: ${algorithm.reward_coef}
@@ -147,7 +147,7 @@ rollout:
 actor:
   group_name: ActorGroup
   training_backend: fsdp
-  global_batch_size: 2048
+  global_batch_size: 1024
   micro_batch_size: 32
   seed: 1234
   enable_offload: true
