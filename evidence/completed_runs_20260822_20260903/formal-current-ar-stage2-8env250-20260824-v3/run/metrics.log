@@ -1,0 +1,888 @@
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    1/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.4%                                  │
+│ Elapsed: 01:40 │ ETA: 06:56:08 │ Step Time: 100.276s                                                                 │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.68e-05       │actor/actor/recv_traj=98.527           │actor/actor/sync_model_to_rollout=1.1…│
+│actor_training=0.013                   │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0029  │
+│env/env/bootstrap_step=34.280          │env/env/send_rollout_trajectories=0.671│env/env_interact_step=56.361          │
+│env/interact=98.238                    │env/run_interact_once=96.967           │generate_rollouts=98.576              │
+│rollout/generate_one_epoch=96.458      │rollout/rollout/generate=96.460        │rollout/sync_model_from_actor=1.627   │
+│step=100.2                             │sync_weights=1.631                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=80.000                      │num_trajectories=80.000                │total_samples=80.000                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=80.000     │
+│rlt/global_total_transitions_added=160…│rlt/global_transitions_since_train=160…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    2/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.8%                                  │
+│ Elapsed: 03:20 │ ETA: 06:54:13 │ Step Time: 100.214s                                                                 │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=6.62e-05       │actor/actor/recv_traj=99.314           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0057                  │cal_adv_and_returns=0.0055             │env/compute_bootstrap_rewards=0.0027  │
+│env/env/bootstrap_step=38.349          │env/env/send_rollout_trajectories=0.528│env/env_interact_step=56.343          │
+│env/interact=99.258                    │env/run_interact_once=98.415           │generate_rollouts=99.360              │
+│rollout/generate_one_epoch=97.857      │rollout/rollout/generate=97.857        │rollout/sync_model_from_actor=0.740   │
+│step=100.1                             │sync_weights=0.747                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.25                           │
+│reward=0.00625                         │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=155.5                       │num_trajectories=155.5                 │total_samples=155.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.053                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0070             │
+│replay/reward_positive_rate=0.0070     │replay/transition_count=75.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=151.0      │
+│rlt/global_total_transitions_added=311…│rlt/global_transitions_since_train=311…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    3/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   1.2%                                  │
+│ Elapsed: 04:58 │ ETA: 06:50:16 │ Step Time: 99.664s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=5.18e-05       │actor/actor/recv_traj=97.756           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0062                  │cal_adv_and_returns=0.0055             │env/compute_bootstrap_rewards=0.0023  │
+│env/env/bootstrap_step=37.028          │env/env/send_rollout_trajectories=0.478│env/env_interact_step=55.692          │
+│env/interact=97.705                    │env/run_interact_once=96.806           │generate_rollouts=97.804              │
+│rollout/generate_one_epoch=96.319      │rollout/rollout/generate=96.320        │rollout/sync_model_from_actor=0.715   │
+│step=98.535                            │sync_weights=0.719                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.25                           │
+│reward=0.00625                         │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=231.0                       │num_trajectories=231.0                 │total_samples=231.0                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.053                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0070             │
+│replay/reward_positive_rate=0.0070     │replay/transition_count=75.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=231.0      │
+│rlt/global_total_transitions_added=462…│rlt/global_transitions_since_train=462…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    4/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   1.6%                                  │
+│ Elapsed: 06:36 │ ETA: 06:46:28 │ Step Time: 99.141s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=7.20e-05       │actor/actor/recv_traj=96.802           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0064                  │cal_adv_and_returns=0.0062             │env/compute_bootstrap_rewards=0.0023  │
+│env/env/bootstrap_step=36.587          │env/env/send_rollout_trajectories=0.483│env/env_interact_step=55.315          │
+│env/interact=96.744                    │env/run_interact_once=95.828           │generate_rollouts=96.849              │
+│rollout/generate_one_epoch=95.343      │rollout/rollout/generate=95.343        │rollout/sync_model_from_actor=0.679   │
+│step=97.545                            │sync_weights=0.683                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.375                          │
+│reward=0.006875                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=306.0                       │num_trajectories=306.0                 │total_samples=306.0                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.054                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0071             │
+│replay/reward_positive_rate=0.0071     │replay/transition_count=75.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=301.0      │
+│rlt/global_total_transitions_added=612…│rlt/global_transitions_since_train=612…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    5/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   2.0%                                  │
+│ Elapsed: 08:10 │ ETA: 06:40:56 │ Step Time: 98.190s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=5.65e-05       │actor/actor/recv_traj=93.583           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0057                  │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0024  │
+│env/env/bootstrap_step=36.869          │env/env/send_rollout_trajectories=0.475│env/env_interact_step=51.106          │
+│env/interact=93.541                    │env/run_interact_once=92.578           │generate_rollouts=93.628              │
+│rollout/generate_one_epoch=92.094      │rollout/rollout/generate=92.095        │rollout/sync_model_from_actor=0.716   │
+│step=94.360                            │sync_weights=0.720                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.375                          │
+│reward=0.011875                        │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=377.5                       │num_trajectories=377.5                 │total_samples=377.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=71.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=373.0      │
+│rlt/global_total_transitions_added=755…│rlt/global_transitions_since_train=755…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    6/250 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   2.4%                                  │
+│ Elapsed: 09:51 │ ETA: 06:40:43 │ Step Time: 98.540s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.48e-05       │actor/actor/recv_traj=99.553           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0058                  │cal_adv_and_returns=0.0052             │env/compute_bootstrap_rewards=0.0020  │
+│env/env/bootstrap_step=38.269          │env/env/send_rollout_trajectories=0.484│env/env_interact_step=55.752          │
+│env/interact=99.491                    │env/run_interact_once=98.419           │generate_rollouts=99.596              │
+│rollout/generate_one_epoch=97.902      │rollout/rollout/generate=97.902        │rollout/sync_model_from_actor=0.651   │
+│step=100.3                             │sync_weights=0.655                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=457.5                       │num_trajectories=457.5                 │total_samples=457.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=453.0      │
+│rlt/global_total_transitions_added=915…│rlt/global_transitions_since_train=915…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    7/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   2.8%                                  │
+│ Elapsed: 11:28 │ ETA: 06:38:28 │ Step Time: 98.389s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.02e-05       │actor/actor/recv_traj=96.685           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0036                  │cal_adv_and_returns=0.0023             │env/compute_bootstrap_rewards=0.0021  │
+│env/env/bootstrap_step=33.157          │env/env/send_rollout_trajectories=0.498│env/env_interact_step=57.670          │
+│env/interact=96.647                    │env/run_interact_once=95.913           │generate_rollouts=96.727              │
+│rollout/generate_one_epoch=95.570      │rollout/rollout/generate=95.570        │rollout/sync_model_from_actor=0.720   │
+│step=97.457                            │sync_weights=0.724                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.375                          │
+│reward=0.006875                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=532.5                       │num_trajectories=532.5                 │total_samples=532.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.054                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0071             │
+│replay/reward_positive_rate=0.0071     │replay/transition_count=75.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=523.0      │
+│rlt/global_total_transitions_added=106…│rlt/global_transitions_since_train=106…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    8/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   3.2%                                  │
+│ Elapsed: 12:58 │ ETA: 06:32:26 │ Step Time: 97.301s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=9.21e-05       │actor/actor/recv_traj=89.043           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0060                  │cal_adv_and_returns=0.0083             │env/compute_bootstrap_rewards=0.0021  │
+│env/env/bootstrap_step=32.592          │env/env/send_rollout_trajectories=0.479│env/env_interact_step=50.609          │
+│env/interact=88.999                    │env/run_interact_once=88.054           │generate_rollouts=89.086              │
+│rollout/generate_one_epoch=87.548      │rollout/rollout/generate=87.549        │rollout/sync_model_from_actor=0.549   │
+│step=89.653                            │sync_weights=0.551                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.25                           │
+│reward=0.01125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=604.5                       │num_trajectories=604.5                 │total_samples=604.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=72.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=594.0      │
+│rlt/global_total_transitions_added=120…│rlt/global_transitions_since_train=120…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    9/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   3.6%                                  │
+│ Elapsed: 14:32 │ ETA: 06:29:35 │ Step Time: 96.996s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.83e-05       │actor/actor/recv_traj=93.753           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0060                  │cal_adv_and_returns=0.0057             │env/compute_bootstrap_rewards=0.0022  │
+│env/env/bootstrap_step=37.389          │env/env/send_rollout_trajectories=0.516│env/env_interact_step=50.185          │
+│env/interact=93.698                    │env/run_interact_once=92.729           │generate_rollouts=93.801              │
+│rollout/generate_one_epoch=92.180      │rollout/rollout/generate=92.181        │rollout/sync_model_from_actor=0.707   │
+│step=94.524                            │sync_weights=0.710                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.5                            │
+│reward=0.0125                          │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=675.5                       │num_trajectories=675.5                 │total_samples=675.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=71.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=665.0      │
+│rlt/global_total_transitions_added=135…│rlt/global_transitions_since_train=135…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   10/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   4.0%                                  │
+│ Elapsed: 16:12 │ ETA: 06:29:00 │ Step Time: 97.252s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=9.97e-05       │actor/actor/recv_traj=98.754           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0061                  │cal_adv_and_returns=0.0059             │env/compute_bootstrap_rewards=0.0024  │
+│env/env/bootstrap_step=37.739          │env/env/send_rollout_trajectories=0.534│env/env_interact_step=55.051          │
+│env/interact=98.711                    │env/run_interact_once=97.786           │generate_rollouts=98.806              │
+│rollout/generate_one_epoch=97.286      │rollout/rollout/generate=97.287        │rollout/sync_model_from_actor=0.713   │
+│step=99.535                            │sync_weights=0.717                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=755.5                       │num_trajectories=755.5                 │total_samples=755.5                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=745.0      │
+│rlt/global_total_transitions_added=151…│rlt/global_transitions_since_train=151…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   11/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   4.4%                                  │
+│ Elapsed: 17:52 │ ETA: 06:28:27 │ Step Time: 97.521s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.44e-05       │actor/actor/recv_traj=99.350           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0061                  │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0024  │
+│env/env/bootstrap_step=38.534          │env/env/send_rollout_trajectories=0.506│env/env_interact_step=55.500          │
+│env/interact=99.310                    │env/run_interact_once=98.332           │generate_rollouts=99.412              │
+│rollout/generate_one_epoch=97.807      │rollout/rollout/generate=97.808        │rollout/sync_model_from_actor=0.746   │
+│step=100.2                             │sync_weights=0.750                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.0                            │
+│reward=0.005                           │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=832.0                       │num_trajectories=832.0                 │total_samples=832.0                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.052                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0068             │
+│replay/reward_positive_rate=0.0068     │replay/transition_count=76.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=818.0      │
+│rlt/global_total_transitions_added=166…│rlt/global_transitions_since_train=166…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   12/250 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   4.8%                                  │
+│ Elapsed: 19:32 │ ETA: 06:27:28 │ Step Time: 97.682s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.67e-05       │actor/actor/recv_traj=98.610           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0050                  │cal_adv_and_returns=0.0053             │env/compute_bootstrap_rewards=0.0019  │
+│env/env/bootstrap_step=36.872          │env/env/send_rollout_trajectories=0.515│env/env_interact_step=56.483          │
+│env/interact=98.563                    │env/run_interact_once=97.652           │generate_rollouts=98.656              │
+│rollout/generate_one_epoch=97.152      │rollout/rollout/generate=97.153        │rollout/sync_model_from_actor=0.750   │
+│step=99.423                            │sync_weights=0.755                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=912.0                       │num_trajectories=912.0                 │total_samples=912.0                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=898.0      │
+│rlt/global_total_transitions_added=182…│rlt/global_transitions_since_train=182…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   13/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   5.2%                                  │
+│ Elapsed: 21:12 │ ETA: 06:26:39 │ Step Time: 97.887s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.49e-05       │actor/actor/recv_traj=99.542           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0062                  │cal_adv_and_returns=0.0064             │env/compute_bootstrap_rewards=0.0022  │
+│env/env/bootstrap_step=36.963          │env/env/send_rollout_trajectories=0.480│env/env_interact_step=56.535          │
+│env/interact=99.493                    │env/run_interact_once=98.527           │generate_rollouts=99.587              │
+│rollout/generate_one_epoch=98.029      │rollout/rollout/generate=98.030        │rollout/sync_model_from_actor=0.711   │
+│step=100.3                             │sync_weights=0.716                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=992.0                       │num_trajectories=992.0                 │total_samples=992.0                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=978.0      │
+│rlt/global_total_transitions_added=198…│rlt/global_transitions_since_train=198…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   14/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   5.6%                                  │
+│ Elapsed: 22:50 │ ETA: 06:24:58 │ Step Time: 97.875s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.09e-05       │actor/actor/recv_traj=96.888           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0058                  │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0022  │
+│env/env/bootstrap_step=38.900          │env/env/send_rollout_trajectories=0.508│env/env_interact_step=51.838          │
+│env/interact=96.836                    │env/run_interact_once=95.830           │generate_rollouts=96.936              │
+│rollout/generate_one_epoch=95.290      │rollout/rollout/generate=95.292        │rollout/sync_model_from_actor=0.725   │
+│step=97.677                            │sync_weights=0.729                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.5                            │
+│reward=0.0125                          │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1063.0                      │num_trajectories=1063.0                │total_samples=1063.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=71.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1049.0     │
+│rlt/global_total_transitions_added=212…│rlt/global_transitions_since_train=212…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   15/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   6.0%                                  │
+│ Elapsed: 24:22 │ ETA: 06:22:00 │ Step Time: 97.533s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=6.98e-05       │actor/actor/recv_traj=91.965           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0036                  │cal_adv_and_returns=0.0037             │env/compute_bootstrap_rewards=0.0014  │
+│env/env/bootstrap_step=37.846          │env/env/send_rollout_trajectories=0.330│env/env_interact_step=49.422          │
+│env/interact=91.931                    │env/run_interact_once=91.326           │generate_rollouts=92.009              │
+│rollout/generate_one_epoch=90.989      │rollout/rollout/generate=90.990        │rollout/sync_model_from_actor=0.712   │
+│step=92.733                            │sync_weights=0.716                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=3.625                          │
+│reward=0.018125001                     │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1130.0                      │num_trajectories=1130.0                │total_samples=1130.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.060                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.023              │
+│replay/reward_positive_rate=0.023      │replay/transition_count=67.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1111.0     │
+│rlt/global_total_transitions_added=226…│rlt/global_transitions_since_train=226…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   16/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   6.4%                                  │
+│ Elapsed: 25:59 │ ETA: 06:20:03 │ Step Time: 97.449s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.24e-05       │actor/actor/recv_traj=95.625           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0057                  │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0020  │
+│env/env/bootstrap_step=34.239          │env/env/send_rollout_trajectories=0.479│env/env_interact_step=55.491          │
+│env/interact=95.582                    │env/run_interact_once=94.698           │generate_rollouts=95.676              │
+│rollout/generate_one_epoch=94.193      │rollout/rollout/generate=94.194        │rollout/sync_model_from_actor=0.474   │
+│step=96.165                            │sync_weights=0.477                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1210.0                      │num_trajectories=1210.0                │total_samples=1210.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1191.0     │
+│rlt/global_total_transitions_added=242…│rlt/global_transitions_since_train=242…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   17/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   6.8%                                  │
+│ Elapsed: 27:33 │ ETA: 06:17:40 │ Step Time: 97.256s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.86e-05       │actor/actor/recv_traj=93.349           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0066                  │cal_adv_and_returns=0.0060             │env/compute_bootstrap_rewards=0.0021  │
+│env/env/bootstrap_step=36.981          │env/env/send_rollout_trajectories=0.485│env/env_interact_step=50.549          │
+│env/interact=93.306                    │env/run_interact_once=92.337           │generate_rollouts=93.394              │
+│rollout/generate_one_epoch=91.834      │rollout/rollout/generate=91.835        │rollout/sync_model_from_actor=0.719   │
+│step=94.130                            │sync_weights=0.723                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.5                            │
+│reward=0.0125                          │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1281.0                      │num_trajectories=1281.0                │total_samples=1281.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=71.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1262.0     │
+│rlt/global_total_transitions_added=256…│rlt/global_transitions_since_train=256…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   18/250 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   7.2%                                  │
+│ Elapsed: 29:14 │ ETA: 06:16:47 │ Step Time: 97.448s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=4.32e-05       │actor/actor/recv_traj=99.910           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0066                  │cal_adv_and_returns=0.0054             │env/compute_bootstrap_rewards=0.0021  │
+│env/env/bootstrap_step=37.851          │env/env/send_rollout_trajectories=0.495│env/env_interact_step=55.985          │
+│env/interact=99.855                    │env/run_interact_once=98.942           │generate_rollouts=99.957              │
+│rollout/generate_one_epoch=98.415      │rollout/rollout/generate=98.415        │rollout/sync_model_from_actor=0.713   │
+│step=100.7                             │sync_weights=0.718                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.5                            │
+│reward=0.0125                          │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1352.0                      │num_trajectories=1352.0                │total_samples=1352.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.057                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.016              │
+│replay/reward_positive_rate=0.016      │replay/transition_count=71.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1342.0     │
+│rlt/global_total_transitions_added=270…│rlt/global_transitions_since_train=270…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   19/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   7.6%                                  │
+│ Elapsed: 30:55 │ ETA: 06:15:53 │ Step Time: 97.635s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.27e-05       │actor/actor/recv_traj=100.2            │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0038                  │cal_adv_and_returns=0.0035             │env/compute_bootstrap_rewards=0.0022  │
+│env/env/bootstrap_step=37.549          │env/env/send_rollout_trajectories=0.462│env/env_interact_step=56.977          │
+│env/interact=100.2                     │env/run_interact_once=99.492           │generate_rollouts=100.3               │
+│rollout/generate_one_epoch=99.136      │rollout/rollout/generate=99.136        │rollout/sync_model_from_actor=0.701   │
+│step=101.0                             │sync_weights=0.705                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.25                           │
+│reward=0.00625                         │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1427.5                      │num_trajectories=1427.5                │total_samples=1427.5                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.053                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0070             │
+│replay/reward_positive_rate=0.0070     │replay/transition_count=75.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1413.0     │
+│rlt/global_total_transitions_added=285…│rlt/global_transitions_since_train=285…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   20/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   8.0%                                  │
+│ Elapsed: 32:20 │ ETA: 06:11:55 │ Step Time: 97.023s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.60e-05       │actor/actor/recv_traj=84.825           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0027                  │cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=32.378          │env/env/send_rollout_trajectories=0.332│env/env_interact_step=47.707          │
+│env/interact=84.790                    │env/run_interact_once=84.073           │generate_rollouts=84.866              │
+│rollout/generate_one_epoch=83.719      │rollout/rollout/generate=83.719        │rollout/sync_model_from_actor=0.498   │
+│step=85.374                            │sync_weights=0.502                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.25                           │
+│reward=0.00625                         │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1503.0                      │num_trajectories=1503.0                │total_samples=1503.0                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.053                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0070             │
+│replay/reward_positive_rate=0.0070     │replay/transition_count=75.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1484.0     │
+│rlt/global_total_transitions_added=300…│rlt/global_transitions_since_train=300…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   21/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   8.4%                                  │
+│ Elapsed: 33:45 │ ETA: 06:08:12 │ Step Time: 96.476s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.26e-05       │actor/actor/recv_traj=84.953           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0042                  │cal_adv_and_returns=0.0045             │env/compute_bootstrap_rewards=0.0019  │
+│env/env/bootstrap_step=30.973          │env/env/send_rollout_trajectories=0.348│env/env_interact_step=48.896          │
+│env/interact=84.924                    │env/run_interact_once=84.355           │generate_rollouts=84.993              │
+│rollout/generate_one_epoch=84.014      │rollout/rollout/generate=84.016        │rollout/sync_model_from_actor=0.498   │
+│step=85.503                            │sync_weights=0.501                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.375                          │
+│reward=0.011875                        │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1574.5                      │num_trajectories=1574.5                │total_samples=1574.5                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.056                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=71.500         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1556.0     │
+│rlt/global_total_transitions_added=314…│rlt/global_transitions_since_train=314…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   22/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   8.8%                                  │
+│ Elapsed: 35:15 │ ETA: 06:05:19 │ Step Time: 96.138s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.73e-05       │actor/actor/recv_traj=88.457           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0035                  │cal_adv_and_returns=0.0027             │env/compute_bootstrap_rewards=0.0020  │
+│env/env/bootstrap_step=31.894          │env/env/send_rollout_trajectories=0.334│env/env_interact_step=51.573          │
+│env/interact=88.421                    │env/run_interact_once=87.771           │generate_rollouts=88.500              │
+│rollout/generate_one_epoch=87.420      │rollout/rollout/generate=87.420        │rollout/sync_model_from_actor=0.503   │
+│step=89.014                            │sync_weights=0.507                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1654.5                      │num_trajectories=1654.5                │total_samples=1654.5                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.050                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0000             │
+│replay/reward_positive_rate=0.0000     │replay/transition_count=80.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1636.0     │
+│rlt/global_total_transitions_added=330…│rlt/global_transitions_since_train=330…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   23/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   9.2%                                  │
+│ Elapsed: 36:37 │ ETA: 06:01:31 │ Step Time: 95.558s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.51e-05       │actor/actor/recv_traj=82.250           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0031                  │cal_adv_and_returns=0.0033             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=30.774          │env/env/send_rollout_trajectories=0.326│env/env_interact_step=46.671          │
+│env/interact=82.224                    │env/run_interact_once=81.550           │generate_rollouts=82.289              │
+│rollout/generate_one_epoch=81.204      │rollout/rollout/generate=81.205        │rollout/sync_model_from_actor=0.476   │
+│step=82.775                            │sync_weights=0.478                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.75                           │
+│reward=0.01375                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1724.5                      │num_trajectories=1724.5                │total_samples=1724.5                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.057                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.014              │
+│replay/reward_positive_rate=0.014      │replay/transition_count=70.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1706.0     │
+│rlt/global_total_transitions_added=344…│rlt/global_transitions_since_train=344…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   24/250 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   9.6%                                  │
+│ Elapsed: 38:13 │ ETA: 05:59:56 │ Step Time: 95.559s                                                                  │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.28e-05       │actor/actor/recv_traj=95.031           │actor/actor/sync_model_to_rollout=0.0…│
+│actor_training=0.0047                  │cal_adv_and_returns=0.0034             │env/compute_bootstrap_rewards=0.0021  │
+│env/env/bootstrap_step=32.162          │env/env/send_rollout_trajectories=0.482│env/env_interact_step=57.068          │
+│env/interact=94.999                    │env/run_interact_once=94.291           │generate_rollouts=95.070              │
+│rollout/generate_one_epoch=93.912      │rollout/rollout/generate=93.912        │rollout/sync_model_from_actor=0.483   │
+│step=95.565                            │sync_weights=0.486                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=1.375                          │
+│reward=0.006875                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=1799.5                      │num_trajectories=1799.5                │total_samples=1799.5                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│replay/actor_switch_rate=0.0000        │replay/done_rate=0.054                 │replay/intervention_rate=0.0000       │
+│replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000    │replay/reward_mean=0.0071             │
+│replay/reward_positive_rate=0.0071     │replay/transition_count=75.000         │rlt/actor_updates_run=0.0000          │
+│rlt/critic_updates_run=0.0000          │rlt/desired_total_updates=0.0000       │rlt/global_min_replay_size=1786.0     │
+│rlt/global_total_transitions_added=359…│rlt/global_transitions_since_train=359…│rlt/max_updates_per_train_step=1600.0 │
+│rlt/min_replay_buffer_size=10000.0     │rlt/pending_update_budget=0.0000       │rlt/ready_for_online=0.0000           │
+│rlt/should_train=0.0000                │rlt/skip_reason=1.000                  │rlt/train_every_episodes=0.0000       │
+│rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                 │rlt/update_step=0.0000                │
+│rlt/updates_scheduled=0.0000           │rlt/updates_to_run=0.0000              │rlt/warmup_required_updates=3.00e+04  │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

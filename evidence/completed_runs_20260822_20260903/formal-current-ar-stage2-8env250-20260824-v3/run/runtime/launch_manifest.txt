@@ -1,0 +1,16 @@
+prepared_at=2026-08-23T16:54:52+00:00
+source_head=f3ea5f691b99fe39e024e5571c0e6ee3d83c51b4
+shared_ray_address=172.17.0.1:6389
+ray_job_code_sync=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf
+stage1_checkpoint=/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260824-v2/stage1/robotwin_adjust_bottle_rlt_stage1_current_ar_clean50_2k_v1/checkpoints/global_step_2000
+stage1_manifest=/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260824-v2/stage1/artifacts/stage1_artifact_manifest.json
+stage1_manifest_sha256=ffeeaa44ebe34aa5ea10fe89c8aee3f28d0ab3ee1361c355f301020224a4b6dd
+physical_gpus=4,5; actor_world_size=2
+train=8 env x 250 cycles; 2000 episodes; H50/C10/D14
+update=UTD5; critic:actor=2; GB512/MB128
+eval=every25 cycles; 4 env x 5 waves = fixed20
+save=every25 cycles; expected 10 checkpoints
+train_output=/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage2-8env250-20260824-v3/robotwin_data/train
+eval_output=/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage2-8env250-20260824-v3/robotwin_data/eval
+normal_stop=cycle250
+failure_stop=nonzero driver exit or hard timeout 72000s

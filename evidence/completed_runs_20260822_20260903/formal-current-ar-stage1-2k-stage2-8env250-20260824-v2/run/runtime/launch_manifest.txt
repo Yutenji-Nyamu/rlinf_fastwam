@@ -1,0 +1,13 @@
+name=RLT current formal chain v1
+source_head=f3ea5f691b99fe39e024e5571c0e6ee3d83c51b4
+physical_gpus=4,5
+shared_ray_address=172.17.0.1:6389
+ray_job_code_sync=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf
+stage1=2000 optimizer steps; MB16/rank; GB32; 64000 sample presentations
+stage2=250 cycles; 8 train env; 2000 train episodes
+stage2=max 400000 primitive slots; max 40000 macro transitions
+stage2=UTD5; critic:actor=2; GB512; MB128
+periodic_eval=4 env x 5 waves every 25 cycles; 200 episodes total
+checkpoints=stage1 endpoint only; stage2 every 25 cycles (10)
+normal_stop=stage1 step2000 then stage2 cycle250
+failure_stop=nonzero stage exit, incomplete stage1 artifact, or hard timeout
