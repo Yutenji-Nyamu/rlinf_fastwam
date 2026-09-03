@@ -1,0 +1,8 @@
+started_at=2026-09-02T21:43:16+08:00
+source_head=7b2331c55d14397cfb4cb16181470ddc8afae44a
+purpose=one-step resource smoke; not formal
+physical_gpus=6,7
+sampling=32 env x rollout8 = 256 trajectories; G8; max2048 query records
+optimization=GB2048/MB2/update2; Fast-WAM H32/C24/M10
+only_method_delta=train/eval env offload true-to-false; actor offload false-to-true; rollout offload stays true
+fallback=only on observed OOM, 16 env x rollout16 with 256 trajectories and 2048 records unchanged

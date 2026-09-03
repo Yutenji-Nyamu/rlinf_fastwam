@@ -1,0 +1,8 @@
+started_at=2026-09-02T22:31:26+08:00
+source_head=7b2331c55d14397cfb4cb16181470ddc8afae44a
+purpose=one-step 16-env fallback resource smoke; not formal
+physical_gpus=6,7
+sampling=16 env x rollout16 = 256 trajectories; G8; max2048 query records
+optimization=GB2048/MB2/update2; Fast-WAM H32/C24/M10
+only_method_delta=train/eval env offload true-to-false; actor offload false-to-true; rollout offload stays true
+fallback_reason=32 env x rollout8 completed rollout then OOM at update; peak 81017/81011 MiB

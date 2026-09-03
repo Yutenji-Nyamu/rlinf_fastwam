@@ -1,0 +1,13 @@
+started_at=2026-09-02T10:48:32+00:00
+source_head=7b2331c55d14397cfb4cb16181470ddc8afae44a
+official_fastwam_head=7faa71108368fbb3b6885649f112af607427a2d4
+physical_gpus=6,7
+ray_namespace_expected=RLinf_1
+fresh_start=true
+target_steps=100
+sampling=32 env x rollout8 = 256 trajectories/step; G8; 32 groups; max2048 query records
+model=Fast-WAM H32/C24/M10/D14; episode192; action-expert only
+optimization=GB2048/MB2/update2; 2 optimizer calls; 4096 presentations/step; lr5e-6
+evaluation=fixed32 every5; eval videos true
+checkpoint=DCP every10
+runtime_fix=restored source-locked official Fast-WAM PYTHONPATH and cache variables; scientific config unchanged

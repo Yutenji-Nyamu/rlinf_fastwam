@@ -1,0 +1,1521 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py:35: Hydra14MigrationWarning: 
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  @hydra.main(
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+[INFO 01:06:26 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-02 01:06:26,736	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-02 01:06:26,744	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-02 01:06:26,839	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+2026-09-02 01:06:26,929	INFO packaging.py:734 -- Creating a file package for local module '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf'.
+2026-09-02 01:06:27,032	INFO packaging.py:434 -- Pushing file package 'gcs://_ray_pkg_c35ef154d72ec33b.zip' (10.08MiB) to Ray cluster...
+2026-09-02 01:06:27,067	INFO packaging.py:447 -- Successfully pushed file package 'gcs://_ray_pkg_c35ef154d72ec33b.zip'.
+[INFO 01:06:27 RLinf] Ray namespace conflict detected. Retrying to initialize Cluster with a new namespace (attempt 1).
+[INFO 01:06:27 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-02 01:06:27,420	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-02 01:06:27,423	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-02 01:06:27,488	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+[INFO 01:06:30 RLinf] RLinf is running on a cluster with 1 node and 8 accelerators. The nodes' details are: 
+node_labels: []
+node_rank: 0
+ray_id: 2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+node_ip: 172.17.0.1
+num_cpus: 128
+python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+profiler_backends: []
+
+Node groups' details are: 
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[INFO 01:06:30 FlexiblePlacementStrategy] 
+[INFO 01:06:30 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[INFO 01:06:30 FlexiblePlacementStrategy] 
+[INFO 01:06:30 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(_RemoteNodeProbe pid=3590327)[0m /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/cluster/node.py:532: UserWarning: Python interpreter used to launch Ray on node with IP 172.17.0.1 is different from that on the head node /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python. Keep using the current interpreter /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python3 on this node.
+[36m(_RemoteNodeProbe pid=3590327)[0m   warnings.warn(
+{
+  "env": {
+    "train": {
+      "env_type": "robotwin",
+      "total_num_envs": 32,
+      "auto_reset": false,
+      "ignore_terminations": false,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 8,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 192,
+      "max_episode_steps": 192,
+      "is_eval": false,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/train"
+      },
+      "enable_offload": true,
+      "task_config": {
+        "task_name": "move_stapler_pad",
+        "step_lim": 192,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/train",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 4
+    },
+    "eval": {
+      "env_type": "robotwin",
+      "total_num_envs": 32,
+      "auto_reset": true,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": true,
+      "max_steps_per_rollout_epoch": 192,
+      "max_episode_steps": 192,
+      "is_eval": true,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "video_cfg": {
+        "save_video": true,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/eval"
+      },
+      "enable_offload": true,
+      "task_config": {
+        "task_name": "move_stapler_pad",
+        "step_lim": 192,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/eval",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 1
+    },
+    "group_name": "EnvGroup",
+    "enable_offload": true
+  },
+  "actor": {
+    "model": {
+      "model_type": "fastwam",
+      "model_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+      "checkpoint_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+      "dataset_stats_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+      "precision": "bf16",
+      "is_lora": false,
+      "action_dim": 14,
+      "action_horizon": 32,
+      "num_action_chunks": 24,
+      "num_inference_steps": 10,
+      "sigma_shift": 5.0,
+      "text_cfg_scale": 1.0,
+      "negative_prompt": "",
+      "rand_device": "cpu",
+      "tiled": false,
+      "model_forward_batch_size": 2,
+      "eval_seed": 0,
+      "add_value_head": false,
+      "rl": {
+        "noise_level": 0.3
+      },
+      "fastwam": {
+        "config_name": "sim_robotwin",
+        "task": "robotwin_uncond_3cam_384_1e-4"
+      }
+    },
+    "fsdp_config": {
+      "strategy": "fsdp2",
+      "sharding_strategy": "full_shard",
+      "gradient_checkpointing": false,
+      "cpu_offload": false,
+      "offload_pin_memory": false,
+      "reshard_after_forward": true,
+      "enable_gradient_accumulation": true,
+      "forward_prefetch": false,
+      "limit_all_gathers": false,
+      "backward_prefetch": null,
+      "use_orig_params": false,
+      "use_liger_kernel": false,
+      "mixed_precision": {
+        "param_dtype": "bf16",
+        "reduce_dtype": "bf16",
+        "buffer_dtype": "bf16"
+      },
+      "amp_autocast": {
+        "enabled": false,
+        "precision": "bf16"
+      },
+      "grad_scaler": {
+        "enabled": false,
+        "init_scale": null,
+        "growth_interval": null
+      },
+      "wrap_policy": {
+        "no_split_names": [
+          "__none__"
+        ]
+      },
+      "save_full_model_weights": false,
+      "checkpoint_format": "dcp",
+      "cast_forward_inputs": false
+    },
+    "group_name": "ActorGroup",
+    "training_backend": "fsdp",
+    "micro_batch_size": 2,
+    "global_batch_size": 1024,
+    "seed": 1234,
+    "enable_offload": false,
+    "optim": {
+      "lr": 5e-06,
+      "value_lr": 0.00011,
+      "adam_beta1": 0.9,
+      "adam_beta2": 0.95,
+      "adam_eps": 1e-08,
+      "weight_decay": 0.01,
+      "clip_grad": 1.0,
+      "critic_warmup_steps": 0
+    }
+  },
+  "rollout": {
+    "model": {
+      "model_type": "fastwam",
+      "model_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+      "checkpoint_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+      "dataset_stats_path": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+      "precision": "bf16",
+      "is_lora": false,
+      "action_dim": 14,
+      "action_horizon": 32,
+      "num_action_chunks": 24,
+      "num_inference_steps": 10,
+      "sigma_shift": 5.0,
+      "text_cfg_scale": 1.0,
+      "negative_prompt": "",
+      "rand_device": "cpu",
+      "tiled": false,
+      "model_forward_batch_size": 2,
+      "eval_seed": 0,
+      "add_value_head": false,
+      "rl": {
+        "noise_level": 0.3
+      },
+      "fastwam": {
+        "config_name": "sim_robotwin",
+        "task": "robotwin_uncond_3cam_384_1e-4"
+      }
+    },
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "recompute_logprobs": false,
+    "collect_prev_infos": true,
+    "enable_offload": true,
+    "pipeline_stage_num": 1
+  },
+  "weight_syncer": {
+    "type": "bucket",
+    "bucket": {
+      "bucket_size": 536870912,
+      "bucket_dtype": null,
+      "is_agent": false,
+      "load_instant": true,
+      "bucket_device": "cpu"
+    }
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "actor, env, rollout": "6,7"
+    },
+    "tracer": {
+      "enable": false
+    }
+  },
+  "runner": {
+    "task_type": "embodied",
+    "logger": {
+      "log_path": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1",
+      "project_name": "rlinf",
+      "experiment_name": "fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": 1000,
+    "max_steps": 100,
+    "only_eval": false,
+    "val_check_interval": 5,
+    "save_interval": 10,
+    "weight_sync_interval": 1,
+    "resume_dir": null,
+    "ckpt_path": null,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "overlap_env_bootstrap": false
+  },
+  "algorithm": {
+    "normalize_advantages": true,
+    "kl_penalty": "kl",
+    "group_size": 8,
+    "reward_coef": 1.0,
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "update_epoch": 2,
+    "adv_type": "grpo",
+    "loss_type": "actor",
+    "loss_agg_func": "token-mean",
+    "kl_beta": 0.0,
+    "entropy_bonus": 0,
+    "clip_ratio_high": 0.2,
+    "clip_ratio_low": 0.2,
+    "clip_ratio_c": 3.0,
+    "value_clip": 0.2,
+    "huber_delta": 10.0,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "filter_rewards": true,
+    "rewards_lower_bound": 0.1,
+    "rewards_upper_bound": 0.9
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}
+[INFO 01:06:30 FlexiblePlacementStrategy] 
+[INFO 01:06:30 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[INFO 01:06:30 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 01:06:30 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 01:06:30 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 01:06:30 NodePlacementStrategy] 
+[INFO 01:06:30 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 01:06:30 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 01:06:30 NodePlacementStrategy] 
+[INFO 01:06:30 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 01:06:30 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 01:06:30 NodePlacementStrategy] 
+[INFO 01:06:30 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 01:06:30 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788311191.119862 3589674 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1788311191.222322 3589674 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788311193.025379 3589674 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(MultiStepRolloutWorker pid=3590534)[0m [INFO 01:06:35 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=3590534)[0m [INFO 01:06:35 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=3590591)[0m [INFO 01:06:36 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=3590591)[0m [INFO 01:06:36 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=3590536)[0m [INFO 01:06:36 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=3590536)[0m [INFO 01:06:36 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=3590594)[0m [INFO 01:06:36 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=3590594)[0m [INFO 01:06:36 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=3590531)[0m [WARNING 01:06:37 ActorGroup-Rank-0][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.helpers.loader:Loading Wan2.2-TI2V-5B components...
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.helpers.loader:Skipping pretrained video DiT load (`skip_dit_load_from_pretrain=True`); initializing video expert randomly and expecting checkpoint override.
+[36m(EmbodiedFSDPActor pid=3590533)[0m [WARNING 01:06:38 ActorGroup-Rank-1][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EnvGroup(rank=0) pid=3590591)[0m [W902 01:06:46.688078298 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(EmbodiedFSDPActor pid=3590531)[0m [W902 01:06:47.740070124 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(EmbodiedFSDPActor pid=3590531)[0m [INFO 01:06:49 ActorGroup-Rank-0][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=3590531)[0m [INFO 01:06:49 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=3590531)[0m [INFO 01:06:49 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=3590533)[0m [INFO 01:06:49 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=3590533)[0m [INFO 01:06:49 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=3590533)[0m [INFO 01:06:49 ActorGroup-Rank-1][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.helpers.loader:Finished loading Wan2.2-TI2V-5B components in 68.40 seconds.
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.action_dit:Skipping ActionDiT pretrained load (`skip_dit_load_from_pretrain=True`); initializing action expert randomly and expecting checkpoint override.
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.mot:Initialized MoT with experts: ['video', 'action'], num_layers=30
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.mot:  Expert 'video': num_params=5.00 B
+[36m(RolloutGroup(rank=0) pid=3590534)[0m INFO:fastwam.models.wan22.mot:  Expert 'action': num_params=1.02 B
+[36m(RolloutGroup(rank=0) pid=3590534)[0m [INFO 01:08:01 RolloutGroup-Rank-0][builder.py:312] Built Fast-WAM RoboTwin policy | checkpoint=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt | stats=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json | trainable_parameters=824 | H/N/S=32/24/10
+[36m(RolloutGroup(rank=1) pid=3590536)[0m [INFO 01:08:06 RolloutGroup-Rank-1][builder.py:312] Built Fast-WAM RoboTwin policy | checkpoint=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt | stats=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json | trainable_parameters=824 | H/N/S=32/24/10
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.helpers.loader:Loading Wan2.2-TI2V-5B components...
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.helpers.loader:Skipping pretrained video DiT load (`skip_dit_load_from_pretrain=True`); initializing video expert randomly and expecting checkpoint override.
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.helpers.loader:Finished loading Wan2.2-TI2V-5B components in 66.74 seconds.
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.action_dit:Skipping ActionDiT pretrained load (`skip_dit_load_from_pretrain=True`); initializing action expert randomly and expecting checkpoint override.
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.mot:Initialized MoT with experts: ['video', 'action'], num_layers=30
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.mot:  Expert 'video': num_params=5.00 B
+[36m(ActorGroup(rank=0) pid=3590531)[0m INFO:fastwam.models.wan22.mot:  Expert 'action': num_params=1.02 B
+[36m(ActorGroup(rank=0) pid=3590531)[0m [INFO 01:10:06 ActorGroup-Rank-0][builder.py:312] Built Fast-WAM RoboTwin policy | checkpoint=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt | stats=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json | trainable_parameters=824 | H/N/S=32/24/10
+[36m(ActorGroup(rank=0) pid=3590531)[0m [INFO 01:10:06 ActorGroup-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=1) pid=3590533)[0m [INFO 01:10:10 ActorGroup-Rank-1][builder.py:312] Built Fast-WAM RoboTwin policy | checkpoint=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt | stats=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json | trainable_parameters=824 | H/N/S=32/24/10
+[36m(ActorGroup(rank=1) pid=3590533)[0m [INFO 01:10:10 ActorGroup-Rank-1][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:17<15:52, 317.36s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:56<09:49, 294.62s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:26<04:43, 283.42s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:44<00:00, 273.53s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:44<00:00, 281.13s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    1/100 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   1.0%                                  │
+│ Elapsed: 21:29 │ ETA: 35:28:19 │ Step Time: 1289.891s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.036          │actor/actor/recv_traj=1143.6           │actor/actor/sync_model_to_rollout=2.7…│
+│actor/run_training=136.3               │actor_training=136.3                   │cal_adv_and_returns=0.041             │
+│env/compute_bootstrap_rewards=0.0037   │env/env/bootstrap_step=537.9           │env/env/send_rollout_trajectories=1.9…│
+│env/env_interact_step=461.4            │env/interact=1141.7                    │env/run_interact_once=1140.3          │
+│generate_rollouts=1150.2               │rollout/generate_one_epoch=1134.1      │rollout/predict=132.6                 │
+│rollout/rollout/generate=1150.1        │rollout/sync_model_from_actor=3.273    │step=1289.8                           │
+│sync_weights=3.278                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.265625                       │
+│reward=0.0013834636                    │success_once=0.265625                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.047                 │advantages_min=-2.475                 │
+│rewards=0.0018                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=1.36e-04               │actor/clip_fraction=0.026              │actor/clipped_ratio=0.939             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=11.210                │
+│actor/lr=5.00e-06                      │actor/policy_loss=-0.0055              │actor/policy_loss_abs=0.610           │
+│actor/ratio=0.943                      │actor/ratio_abs=0.036                  │actor/total_loss=-2.16e-05            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:04<15:13, 304.59s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:22<09:14, 277.09s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [13:43<04:29, 269.83s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [17:53<00:00, 261.77s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [17:53<00:00, 268.26s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    2/100 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   2.0%                                  │
+│ Elapsed: 42:11 │ ETA: 34:27:10 │ Step Time: 1265.615s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0076         │actor/actor/recv_traj=1084.7           │actor/actor/sync_model_to_rollout=1.7…│
+│actor/run_training=148.3               │actor_training=148.3                   │cal_adv_and_returns=0.013             │
+│env/compute_bootstrap_rewards=0.0030   │env/env/bootstrap_step=518.5           │env/env/send_rollout_trajectories=1.5…│
+│env/env_interact_step=444.8            │env/interact=1083.0                    │env/run_interact_once=1082.0          │
+│generate_rollouts=1090.9               │rollout/generate_one_epoch=1073.0      │rollout/predict=121.7                 │
+│rollout/rollout/generate=1090.8        │rollout/sync_model_from_actor=2.095    │step=1241.3                           │
+│sync_weights=2.099                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.3515625                      │
+│reward=0.0018310548                    │success_once=0.3515625                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.046                 │advantages_min=-2.475                 │
+│rewards=0.0026                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0013                 │actor/clip_fraction=0.0078             │actor/clipped_ratio=0.865             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=9.263                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=-0.0016              │actor/policy_loss_abs=0.637           │
+│actor/ratio=0.865                      │actor/ratio_abs=0.019                  │actor/total_loss=-6.39e-06            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:07<15:22, 307.54s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:57<09:54, 297.31s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:39<04:50, 290.34s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [19:17<00:00, 285.19s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [19:17<00:00, 289.26s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    3/100 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   3.0%                                  │
+│ Elapsed: 01:04:04 │ ETA: 34:31:30 │ Step Time: 1281.349s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0067         │actor/actor/recv_traj=1168.6           │actor/actor/sync_model_to_rollout=1.8…│
+│actor/run_training=137.0               │actor_training=137.0                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0035   │env/env/bootstrap_step=547.2           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=483.2            │env/interact=1166.9                    │env/run_interact_once=1165.2          │
+│generate_rollouts=1173.7               │rollout/generate_one_epoch=1157.0      │rollout/predict=132.1                 │
+│rollout/rollout/generate=1173.7        │rollout/sync_model_from_actor=2.099    │step=1312.8                           │
+│sync_weights=2.104                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.28125                        │
+│reward=0.0014648436                    │success_once=0.28125                   │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.027                 │advantages_min=-2.475                 │
+│rewards=0.0017                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0027                 │actor/clip_fraction=0.013              │actor/clipped_ratio=0.712             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=7.303                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=1.53e-04             │actor/policy_loss_abs=0.351           │
+│actor/ratio=0.712                      │actor/ratio_abs=0.019                  │actor/total_loss=5.98e-07             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:14<15:44, 314.92s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:31<09:21, 280.76s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:01<04:35, 275.86s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:26<00:00, 271.37s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:26<00:00, 276.57s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    4/100 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   4.0%                                  │
+│ Elapsed: 01:25:29 │ ETA: 34:11:49 │ Step Time: 1282.391s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0067         │actor/actor/recv_traj=1133.8           │actor/actor/sync_model_to_rollout=1.9…│
+│actor/run_training=142.9               │actor_training=142.9                   │cal_adv_and_returns=0.013             │
+│env/compute_bootstrap_rewards=0.0031   │env/env/bootstrap_step=521.9           │env/env/send_rollout_trajectories=1.5…│
+│env/env_interact_step=474.8            │env/interact=1132.0                    │env/run_interact_once=1130.6          │
+│generate_rollouts=1140.2               │rollout/generate_one_epoch=1123.9      │rollout/predict=127.3                 │
+│rollout/rollout/generate=1140.1        │rollout/sync_model_from_actor=2.347    │step=1285.5                           │
+│sync_weights=2.351                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.1875                         │
+│reward=0.0009765625                    │success_once=0.1875                    │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.046                 │advantages_min=-1.620                 │
+│rewards=0.0018                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0013                 │actor/clip_fraction=0.014              │actor/clipped_ratio=0.788             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=8.538                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=-5.08e-04            │actor/policy_loss_abs=0.456           │
+│actor/ratio=0.790                      │actor/ratio_abs=0.020                  │actor/total_loss=-1.98e-06            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:23<16:09, 323.09s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [10:02<09:55, 297.64s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:21<04:39, 279.84s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:51<00:00, 276.00s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:51<00:00, 282.92s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:56<00:00, 296.55s/it]Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:56<00:00, 296.55s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    5/100 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   5.0%                                  │
+│ Elapsed: 01:54:09 │ ETA: 36:09:00 │ Step Time: 1369.895s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0063         │actor/actor/recv_traj=1144.2           │actor/actor/sync_model_to_rollout=3.7…│
+│actor/run_training=133.5               │actor_training=133.5                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0029   │env/env/bootstrap_step=536.1           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=472.7            │env/evaluate=432.9                     │env/interact=1142.3                   │
+│env/run_interact_once=1140.5           │eval=435.2                             │generate_rollouts=1148.9              │
+│rollout/evaluate=313.8                 │rollout/generate_one_epoch=1131.7      │rollout/predict=157.3                 │
+│rollout/rollout/generate=1148.9        │rollout/sync_model_from_actor=4.553    │step=1719.9                           │
+│sync_weights=2.290                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.234375                       │
+│reward=0.0012207031                    │success_once=0.234375                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.042                 │advantages_min=-2.475                 │
+│rewards=0.0018                         │                                       │                                      │
+│                                                                                                                      │
+├───────────────────────────────────────────────────── Evaluation ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=32                    │return=0.4375                         │
+│reward=0.002278646                     │success_at_end=0.4375                  │success_once=0.4375                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=9.50e-04               │actor/clip_fraction=0.0098             │actor/clipped_ratio=0.786             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=11.321                │
+│actor/lr=5.00e-06                      │actor/policy_loss=0.0011               │actor/policy_loss_abs=0.487           │
+│actor/ratio=0.789                      │actor/ratio_abs=0.025                  │actor/total_loss=4.41e-06             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:10<15:30, 310.08s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:29<09:20, 280.45s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [13:48<04:30, 270.51s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:24<00:00, 272.79s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:24<00:00, 276.19s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    6/100 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   6.0%                                  │
+│ Elapsed: 02:16:01 │ ETA: 35:31:06 │ Step Time: 1360.286s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0053         │actor/actor/recv_traj=1145.5           │actor/actor/sync_model_to_rollout=2.6…│
+│actor/run_training=156.8               │actor_training=156.8                   │cal_adv_and_returns=0.011             │
+│env/compute_bootstrap_rewards=0.0032   │env/env/bootstrap_step=537.6           │env/env/send_rollout_trajectories=1.7…│
+│env/env_interact_step=467.9            │env/interact=1143.6                    │env/run_interact_once=1141.6          │
+│generate_rollouts=1152.1               │rollout/generate_one_epoch=1132.1      │rollout/predict=129.0                 │
+│rollout/rollout/generate=1152.1        │rollout/sync_model_from_actor=3.235    │step=1312.2                           │
+│sync_weights=3.239                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.2890625                      │
+│reward=0.0015055339                    │success_once=0.2890625                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.044                 │advantages_min=-1.620                 │
+│rewards=0.0020                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0028                 │actor/clip_fraction=0.017              │actor/clipped_ratio=0.829             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=11.552                │
+│actor/lr=5.00e-06                      │actor/policy_loss=0.0012               │actor/policy_loss_abs=0.502           │
+│actor/ratio=0.830                      │actor/ratio_abs=0.032                  │actor/total_loss=4.82e-06             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:15<15:46, 315.56s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:36<09:26, 283.15s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:06<04:37, 277.26s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:49<00:00, 279.80s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:49<00:00, 282.50s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    7/100 │ Progress: ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   7.0%                                  │
+│ Elapsed: 02:37:28 │ ETA: 34:52:07 │ Step Time: 1349.754s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0070         │actor/actor/recv_traj=1144.1           │actor/actor/sync_model_to_rollout=1.7…│
+│actor/run_training=134.2               │actor_training=134.2                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0031   │env/env/bootstrap_step=544.7           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=464.1            │env/interact=1141.4                    │env/run_interact_once=1139.3          │
+│generate_rollouts=1150.1               │rollout/generate_one_epoch=1131.7      │rollout/predict=131.4                 │
+│rollout/rollout/generate=1150.0        │rollout/sync_model_from_actor=2.204    │step=1286.5                           │
+│sync_weights=2.209                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.328125                       │
+│reward=0.0017089844                    │success_once=0.328125                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.039                 │advantages_min=-2.475                 │
+│rewards=0.0023                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0032                 │actor/clip_fraction=0.0078             │actor/clipped_ratio=0.830             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=8.713                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=-6.68e-04            │actor/policy_loss_abs=0.470           │
+│actor/ratio=0.830                      │actor/ratio_abs=0.021                  │actor/total_loss=-2.61e-06            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:12<15:38, 312.97s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:30<09:20, 280.18s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [13:58<04:34, 274.65s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:28<00:00, 272.78s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:28<00:00, 277.04s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    8/100 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   8.0%                                  │
+│ Elapsed: 02:58:53 │ ETA: 34:17:13 │ Step Time: 1341.667s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0060         │actor/actor/recv_traj=1124.7           │actor/actor/sync_model_to_rollout=1.6…│
+│actor/run_training=152.3               │actor_training=152.3                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0030   │env/env/bootstrap_step=527.9           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=459.4            │env/interact=1122.9                    │env/run_interact_once=1121.9          │
+│generate_rollouts=1130.7               │rollout/generate_one_epoch=1114.6      │rollout/predict=127.4                 │
+│rollout/rollout/generate=1130.6        │rollout/sync_model_from_actor=2.048    │step=1285.0                           │
+│sync_weights=2.052                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.3671875                      │
+│reward=0.0019124349                    │success_once=0.3671875                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.040                 │advantages_min=-2.475                 │
+│rewards=0.0023                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0017                 │actor/clip_fraction=0.012              │actor/clipped_ratio=0.975             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=13.684                │
+│actor/lr=5.00e-06                      │actor/policy_loss=7.70e-04             │actor/policy_loss_abs=0.710           │
+│actor/ratio=0.977                      │actor/ratio_abs=0.029                  │actor/total_loss=3.01e-06             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:15<15:46, 315.64s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:54<09:48, 294.17s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:09<04:36, 276.32s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:36<00:00, 272.36s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:36<00:00, 279.04s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    9/100 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   9.0%                                  │
+│ Elapsed: 03:20:25 │ ETA: 33:46:29 │ Step Time: 1336.152s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0053         │actor/actor/recv_traj=1144.4           │actor/actor/sync_model_to_rollout=1.7…│
+│actor/run_training=139.1               │actor_training=139.1                   │cal_adv_and_returns=0.0099            │
+│env/compute_bootstrap_rewards=0.0030   │env/env/bootstrap_step=536.4           │env/env/send_rollout_trajectories=1.5…│
+│env/env_interact_step=469.4            │env/interact=1142.7                    │env/run_interact_once=1141.5          │
+│generate_rollouts=1150.7               │rollout/generate_one_epoch=1135.2      │rollout/predict=128.9                 │
+│rollout/rollout/generate=1150.7        │rollout/sync_model_from_actor=2.112    │step=1292.0                           │
+│sync_weights=2.116                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.3046875                      │
+│reward=0.0015869141                    │success_once=0.3046875                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.033                 │advantages_min=-2.475                 │
+│rewards=0.0022                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0010                 │actor/clip_fraction=0.0088             │actor/clipped_ratio=0.916             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=8.505                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=0.0011               │actor/policy_loss_abs=0.557           │
+│actor/ratio=0.917                      │actor/ratio_abs=0.022                  │actor/total_loss=4.33e-06             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:14<15:43, 314.41s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:50<09:43, 291.68s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:15<04:39, 279.66s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:39<00:00, 273.42s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:39<00:00, 279.85s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:57<00:00, 297.32s/it]Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:57<00:00, 297.32s/it]
+[INFO 04:59:33 RLinf] Saving checkpoint at step 10.
+[36m(ActorGroup(rank=0) pid=3590531)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=3590531)[0m   return func(*args, **kwargs)
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   10/100 │ Progress: ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  10.0%                                  │
+│ Elapsed: 03:49:49 │ ETA: 34:28:27 │ Step Time: 1378.973s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0059         │actor/actor/recv_traj=1131.1           │actor/actor/sync_model_to_rollout=3.5…│
+│actor/run_training=156.9               │actor_training=156.9                   │cal_adv_and_returns=0.011             │
+│env/compute_bootstrap_rewards=0.0030   │env/env/bootstrap_step=530.3           │env/env/send_rollout_trajectories=1.7…│
+│env/env_interact_step=465.9            │env/evaluate=439.5                     │env/interact=1129.3                   │
+│env/run_interact_once=1127.6           │eval=441.8                             │generate_rollouts=1136.4              │
+│rollout/evaluate=314.1                 │rollout/generate_one_epoch=1119.4      │rollout/predict=157.2                 │
+│rollout/rollout/generate=1136.4        │rollout/sync_model_from_actor=4.316    │step=1764.3                           │
+│sync_weights=2.056                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.3046875                      │
+│reward=0.0015869142                    │success_once=0.3046875                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.037                 │advantages_min=-1.620                 │
+│rewards=0.0022                         │                                       │                                      │
+│                                                                                                                      │
+├───────────────────────────────────────────────────── Evaluation ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=32                    │return=0.4375                         │
+│reward=0.0022786458                    │success_at_end=0.4375                  │success_once=0.4375                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0063                 │actor/clip_fraction=0.016              │actor/clipped_ratio=0.910             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=11.251                │
+│actor/lr=5.00e-06                      │actor/policy_loss=-3.14e-04            │actor/policy_loss_abs=0.589           │
+│actor/ratio=0.910                      │actor/ratio_abs=0.027                  │actor/total_loss=-1.23e-06            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:07<15:23, 308.00s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:43<09:37, 288.86s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:07<04:37, 277.33s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:28<00:00, 270.92s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:28<00:00, 277.04s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   11/100 │ Progress: ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  11.0%                                  │
+│ Elapsed: 04:11:30 │ ETA: 33:54:57 │ Step Time: 1371.880s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0062         │actor/actor/recv_traj=1137.4           │actor/actor/sync_model_to_rollout=1.3…│
+│actor/run_training=155.7               │actor_training=155.7                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0033   │env/env/bootstrap_step=547.8           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=448.6            │env/interact=1135.7                    │env/run_interact_once=1134.1          │
+│generate_rollouts=1143.6               │rollout/generate_one_epoch=1125.9      │rollout/predict=130.5                 │
+│rollout/rollout/generate=1143.5        │rollout/sync_model_from_actor=1.645    │step=1300.9                           │
+│sync_weights=1.648                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.4609375                      │
+│reward=0.0024007163                    │success_once=0.4609375                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.047                 │advantages_min=-2.475                 │
+│rewards=0.0029                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=-9.77e-04              │actor/clip_fraction=0.0068             │actor/clipped_ratio=0.965             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=9.472                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=0.0018               │actor/policy_loss_abs=0.696           │
+│actor/ratio=0.965                      │actor/ratio_abs=0.025                  │actor/total_loss=7.20e-06             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:57<14:52, 297.43s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:32<09:28, 284.31s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:00<04:36, 276.75s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:27<00:00, 273.07s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:27<00:00, 276.93s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   12/100 │ Progress: ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  12.0%                                  │
+│ Elapsed: 04:33:18 │ ETA: 33:24:16 │ Step Time: 1366.550s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0070         │actor/actor/recv_traj=1147.3           │actor/actor/sync_model_to_rollout=2.1…│
+│actor/run_training=147.6               │actor_training=147.6                   │cal_adv_and_returns=0.014             │
+│env/compute_bootstrap_rewards=0.0030   │env/env/bootstrap_step=543.1           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=462.4            │env/interact=1144.7                    │env/run_interact_once=1142.8          │
+│generate_rollouts=1157.8               │rollout/generate_one_epoch=1135.0      │rollout/predict=130.2                 │
+│rollout/rollout/generate=1157.7        │rollout/sync_model_from_actor=2.475    │step=1307.9                           │
+│sync_weights=2.482                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.296875                       │
+│reward=0.001546224                     │success_once=0.296875                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.044                 │advantages_min=-1.620                 │
+│rewards=0.0020                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=-0.0011                │actor/clip_fraction=0.010              │actor/clipped_ratio=0.943             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=10.704                │
+│actor/lr=5.00e-06                      │actor/policy_loss=-1.30e-04            │actor/policy_loss_abs=0.616           │
+│actor/ratio=0.944                      │actor/ratio_abs=0.028                  │actor/total_loss=-5.06e-07            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:29<16:28, 329.55s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:58<09:47, 293.83s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:34<04:45, 285.94s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [19:01<00:00, 278.31s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [19:01<00:00, 285.38s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   13/100 │ Progress: █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  13.0%                                  │
+│ Elapsed: 04:55:12 │ ETA: 32:55:39 │ Step Time: 1362.519s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0074         │actor/actor/recv_traj=1165.7           │actor/actor/sync_model_to_rollout=1.5…│
+│actor/run_training=139.6               │actor_training=139.6                   │cal_adv_and_returns=0.013             │
+│env/compute_bootstrap_rewards=0.0033   │env/env/bootstrap_step=550.7           │env/env/send_rollout_trajectories=1.8…│
+│env/env_interact_step=477.7            │env/interact=1163.9                    │env/run_interact_once=1162.7          │
+│generate_rollouts=1172.6               │rollout/generate_one_epoch=1155.6      │rollout/predict=133.2                 │
+│rollout/rollout/generate=1172.5        │rollout/sync_model_from_actor=1.936    │step=1314.1                           │
+│sync_weights=1.940                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.265625                       │
+│reward=0.0013834636                    │success_once=0.265625                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.052                 │advantages_min=-1.620                 │
+│rewards=0.0021                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=-2.53e-04              │actor/clip_fraction=0.010              │actor/clipped_ratio=0.870             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=9.559                 │
+│actor/lr=5.00e-06                      │actor/policy_loss=1.14e-04             │actor/policy_loss_abs=0.559           │
+│actor/ratio=0.871                      │actor/ratio_abs=0.025                  │actor/total_loss=4.44e-07             │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:53<14:40, 293.55s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:25<09:22, 281.06s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [13:57<04:36, 276.79s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:24<00:00, 272.86s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:24<00:00, 276.10s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   14/100 │ Progress: █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  14.0%                                  │
+│ Elapsed: 05:16:12 │ ETA: 32:22:26 │ Step Time: 1355.191s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0063         │actor/actor/recv_traj=1115.4           │actor/actor/sync_model_to_rollout=1.5…│
+│actor/run_training=136.4               │actor_training=136.4                   │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0029   │env/env/bootstrap_step=523.8           │env/env/send_rollout_trajectories=1.6…│
+│env/env_interact_step=457.4            │env/interact=1113.7                    │env/run_interact_once=1112.7          │
+│generate_rollouts=1121.6               │rollout/generate_one_epoch=1104.4      │rollout/predict=129.8                 │
+│rollout/rollout/generate=1121.5        │rollout/sync_model_from_actor=1.915    │step=1259.9                           │
+│sync_weights=1.918                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=192.0                      │num_trajectories=128                   │return=0.296875                       │
+│reward=0.001546224                     │success_once=0.296875                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.047                 │advantages_min=-1.620                 │
+│rewards=0.0017                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=8.56e-04               │actor/clip_fraction=0.011              │actor/clipped_ratio=0.990             │
+│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=10.406                │
+│actor/lr=5.00e-06                      │actor/policy_loss=-2.38e-04            │actor/policy_loss_abs=0.715           │
+│actor/ratio=0.991                      │actor/ratio_abs=0.025                  │actor/total_loss=-9.29e-07            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:50<14:31, 290.63s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:10<09:05, 272.76s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [13:42<04:32, 272.39s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [18:02<00:00, 267.53s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [18:02<00:00, 270.73s/it]
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:50.525] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:50.590] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:50.663] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:51.668] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:51.724] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:51.796] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:57.131] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:57.187] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:57.241] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:49:57.311] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:58.161] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:58.214] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:58.273] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:49:58.344] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:03.739] [svulkan2] [error] OIDN Error: pthread_key_create failed
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:03.739] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:03.739] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:05.865] [svulkan2] [error] OIDN Error: pthread_key_create failed
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:05.865] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:05.865] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:05.866] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:12.121] [svulkan2] [error] OIDN Error: pthread_key_create failed
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:12.121] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:12.121] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:14.052] [svulkan2] [error] OIDN Error: pthread_key_create failed
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:14.052] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:14.052] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:14.052] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:23.947] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:23.947] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:23.947] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:27.618] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:27.619] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:27.619] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:27.619] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:28.897] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:28.898] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:28.898] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:30.024] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:30.024] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:30.024] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:30.025] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:39.925] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:39.925] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:39.925] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:46.199] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:46.199] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:46.199] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:50:46.199] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:46.479] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:46.479] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:46.480] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:47.270] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:47.270] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:47.270] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:47.270] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.340] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.340] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.340] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.663] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.663] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.663] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:50:58.663] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:04.623] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:04.623] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:04.623] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:04.623] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:05.581] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:05.581] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:05.582] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:18.493] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:18.493] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:18.494] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:18.494] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:21.065] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:21.066] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:21.066] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.289] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.290] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.290] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.984] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.984] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.985] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:24.985] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:35.654] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:35.654] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:35.654] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:37.694] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:37.694] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:37.694] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:37.695] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:40.944] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:40.944] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:40.945] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:45.279] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:45.279] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:45.279] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:51:45.280] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:50.349] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:50.349] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:50.349] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:58.590] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:58.590] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:58.590] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:51:58.591] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:00.420] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:00.421] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:00.421] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:00.421] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:02.609] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:02.609] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:02.610] [svulkan2] [error] OIDN Error: invalid handle
+[36m(RolloutGroup(rank=0) pid=3590534)[0m Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:50<00:00, 290.06s/it]Evaluating Rollout Epochs: 100%|██████████| 1/1 [04:50<00:00, 290.06s/it]
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:07.355] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:07.356] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:07.356] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:08.032] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:08.032] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:08.032] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:08.032] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:14.948] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:14.949] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=1) pid=3590594)[0m [2026-09-02 06:52:14.949] [svulkan2] [error] OIDN Error: invalid handle
+[36m(EnvGroup(rank=0) pid=3590591)[0m Fatal Python error: PyGILState_Release: auto-releasing thread-state, but no thread-state for this thread
+[36m(EnvGroup(rank=0) pid=3590591)[0m Python runtime state: initialized
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa7fbe16640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   <no Python frame>
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa63a7fc640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa690ad7640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6912d8640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/_base_task.py", line 653 in close_env
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 147 in reset
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 58 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 83 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa691ad9640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6922da640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa692adb640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6932dc640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa693add640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6942de640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa694adf640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ad7fa640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6f6060640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ec1ce640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ed1d0640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ec9cf640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ed9d1640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6f6861640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa5faffd640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa4d4ffd640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa4d57fe640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa541fff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa568ffd640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa5697fe640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ae7fc640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6acff9640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa65bfff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6affff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6c8ffd640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6c97fe640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6c9fff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e0e85640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e1ffb640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e27fc640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e2ffd640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e37fe640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6fa869640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa70140e640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e9301640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e9b02640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6eab04640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6e3fff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa6ea303640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 81 in _worker
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa7fa613640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa7fae14640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa7fb615640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/queue.py", line 171 in get
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/collective/collective_group.py", line 169 in _run_queue
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fa8069ff640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 331 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 451 in result
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 408 in reset
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 251 in reset
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 401 in _handle_auto_reset
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 376 in chunk_step
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/wrappers/record_video.py", line 434 in chunk_step
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/workers/env/env_worker.py", line 576 in env_evaluate_step
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/workers/env/env_worker.py", line 1426 in evaluate
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 1372 in wrapper
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/function_manager.py", line 740 in actor_method_executor
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/async_compat.py", line 52 in wrapper
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/asyncio/events.py", line 84 in _run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 1936 in _run_once
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 608 in run_forever
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fab7f11f640 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 327 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 629 in wait
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/gc_collect_manager.py", line 29 in run
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045 in _bootstrap_inner
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1002 in _bootstrap
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Thread 0x00007fdae7d1e740 (most recent call first):
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/worker.py", line 1066 in main_loop
+[36m(EnvGroup(rank=0) pid=3590591)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 323 in <module>
+[36m(EnvGroup(rank=0) pid=3590591)[0m 
+[36m(EnvGroup(rank=0) pid=3590591)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, simplejson._speedups, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet, numpy.core._multiarray_umath, numpy.core._multiarray_tests, numpy.linalg._umath_linalg, numpy.fft._pocketfft_internal, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._mt19937, numpy.random.mtrand, numpy.random._philox, numpy.random._pcg64, numpy.random._sfc64, numpy.random._generator, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, regex._regex, markupsafe._speedups, PIL._imaging, PIL._imagingft, pyarrow.lib, pyarrow._json, sklearn.__check_build._check_build, _cyutility, scipy._cyutility, scipy._lib._ccallback_c, scipy.sparse._sparsetools, _csparsetools, scipy.sparse._csparsetools, scipy.special._ufuncs_cxx, scipy.special._ellip_harm_2, scipy.special._special_ufuncs, scipy.special._gufuncs, scipy.special._ufuncs, scipy.special._specfun, scipy.special._comb, scipy.linalg._fblas, scipy.linalg._flapack, scipy.linalg.cython_lapack, scipy.linalg._cythonized_array_utils, scipy.linalg._solve_toeplitz, scipy.linalg._batched_linalg, scipy.linalg._decomp_lu_cython, scipy.linalg._matfuncs_schur_sqrtm, scipy.linalg._matfuncs_expm, scipy.linalg._linalg_pythran, scipy.linalg.cython_blas, scipy.linalg._decomp_update, scipy.sparse.linalg._dsolve._superlu, scipy.sparse.linalg._eigen.arpack._arpacklib, scipy.sparse.linalg._propack, scipy.spatial._ckdtree, scipy._lib.messagestream, scipy.spatial._qhull, scipy.spatial._voronoi, scipy.spatial._hausdorff, scipy.spatial._distance_wrap, scipy.spatial.transform._rotation_cy, scipy.spatial.transform._rigid_transform_cy, scipy.optimize._group_columns, scipy.optimize._trlib._trlib, scipy.optimize._lbfgsb, _moduleTNC, scipy.optimize._moduleTNC, scipy.optimize._slsqplib, scipy.optimize._minpack, scipy.optimize._lsq.givens_elimination, scipy.optimize._zeros, scipy._lib._uarray._uarray, scipy.linalg._decomp_interpolative, scipy.optimize._bglu_dense, scipy.optimize._lsap, scipy.optimize._direct, scipy.integrate._odepack, scipy.integrate._quadpack, scipy.integrate._vode, scipy.integrate._dop, scipy.interpolate._fitpack, scipy.interpolate._dfitpack, scipy.interpolate._dierckx, scipy.interpolate._ppoly, scipy.interpolate._interpnd, scipy.interpolate._rbfinterp_pythran, scipy.interpolate._rgi_cython, scipy.special.cython_special, scipy.stats._stats, scipy.stats._biasedurn, scipy.stats._stats_pythran, scipy.stats._levy_stable.levyst, scipy.stats._ansari_swilk_statistics, scipy.sparse.csgraph._tools, scipy.sparse.csgraph._shortest_path, scipy.sparse.csgraph._traversal, scipy.sparse.csgraph._min_spanning_tree, scipy.sparse.csgraph._flow, scipy.sparse.csgraph._matching, scipy.sparse.csgraph._reordering, scipy.stats._sobol, scipy.stats._qmc_cy, scipy.stats._rcont.rcont, scipy.stats._qmvnt_cy, scipy.ndimage._nd_image, scipy.ndimage._rank_filter_1d, _ni_label, scipy.ndimage._ni_label, pandas._libs.tslibs.ccalendar, pandas._libs.tslibs.np_datetime, pandas._libs.tslibs.dtypes, pandas._libs.tslibs.base, pandas._libs.tslibs.nattype, pandas._libs.tslibs.timezones, pandas._libs.tslibs.fields, pandas._libs.tslibs.timedeltas, pandas._libs.tslibs.tzconversion, pandas._libs.tslibs.timestamps, pandas._libs.properties, pandas._libs.tslibs.offsets, pandas._libs.tslibs.strptime, pandas._libs.tslibs.parsing, pandas._libs.tslibs.conversion, pandas._libs.tslibs.period, pandas._libs.tslibs.vectorized, pandas._libs.ops_dispatch, pandas._libs.missing, pandas._libs.hashtable, pandas._libs.algos, pandas._libs.interval, pandas._libs.lib, pyarrow._compute, pandas._libs.ops, pandas._libs.hashing, pandas._libs.arrays, pandas._libs.tslib, pandas._libs.sparse, pandas._libs.internals, pandas._libs.indexing, pandas._libs.index, pandas._libs.writers, pandas._libs.join, pandas._libs.window.aggregations, pandas._libs.window.indexers, pandas._libs.reshape, pandas._libs.groupby, pandas._libs.json, pandas._libs.parsers, pandas._libs.testing, sklearn._cyutility, sklearn.utils._isfinite, sklearn.utils.sparsefuncs_fast, sklearn.utils.murmurhash, sklearn.utils._openmp_helpers, sklearn.metrics.cluster._expected_mutual_info_fast, sklearn.metrics._dist_metrics, sklearn.metrics._pairwise_distances_reduction._datasets_pair, sklearn.utils._cython_blas, sklearn.metrics._pairwise_distances_reduction._base, sklearn.metrics._pairwise_distances_reduction._middle_term_computer, sklearn.utils._heap, sklearn.utils._sorting, sklearn.metrics._pairwise_distances_reduction._argkmin, sklearn.metrics._pairwise_distances_reduction._argkmin_classmode, sklearn.utils._vector_sentinel, sklearn.metrics._pairwise_distances_reduction._radius_neighbors, sklearn.metrics._pairwise_distances_reduction._radius_neighbors_classmode, sklearn.metrics._pairwise_fast, sklearn.preprocessing._csr_polynomial_expansion, sklearn.preprocessing._target_encoder_fast, sklearn.neighbors._partition_nodes, sklearn.neighbors._ball_tree, sklearn.neighbors._kd_tree, sklearn.utils.arrayfuncs, sklearn.utils._random, sklearn.utils._seq_dataset, sklearn.linear_model._cd_fast, sklearn._loss._loss, sklearn.linear_model._sag_fast, sklearn.svm._liblinear, sklearn.svm._libsvm, sklearn.svm._libsvm_sparse, sklearn.utils._weight_vector, sklearn.linear_model._sgd_fast, sklearn.decomposition._online_lda_fast, sklearn.decomposition._cdnmf_fast, h5py._errors, h5py.defs, h5py._objects, h5py.h5, h5py.utils, h5py.h5t, h5py.h5s, h5py.h5ac, h5py.h5p, h5py.h5r, h5py._proxy, h5py._conv, h5py.h5z, h5py.h5a, h5py.h5d, h5py.h5ds, h5py.h5g, h5py.h5i, h5py.h5o, h5py.h5f, h5py.h5fd, h5py.h5pl, h5py.h5l, h5py._selector, kiwisolver._cext, toppra._CythonUtils, toppra.solverwrapper.cy_seidel_solverwrapper, xxhash._xxhash, embreex.rtcore, embreex.rtcore_scene, embreex.mesh_construction, lxml._elementpath, lxml.etree, shapely.lib, shapely._geos, shapely._geometry_helpers (total: 239)
+[36m(EnvGroup(rank=1) pid=3590594)[0m [W902 06:52:20.373692802 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=61, addr=[admin]:46288, remote=[admin]:35975): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[36m(EnvGroup(rank=1) pid=3590594)[0m Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f50545e405d in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libc10.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #1: <unknown function> + 0x6a9149d (0x7f1fff7fe49d in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x273 (0x7f1fff7fc3f3 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x4a5 (0x7f1faa147515 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #4: <unknown function> + 0xdc253 (0x7f505eba0253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #5: <unknown function> + 0x94a83 (0x7f506139ea83 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #6: <unknown function> + 0x126890 (0x7f5061430890 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m 
+[36m(EnvGroup(rank=1) pid=3590594)[0m [W902 06:52:20.416303386 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID cg-EnvGroup:0-EnvGroup:1nccl_send_0 Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception occurred while running EnvWorker's function evaluate: exception is The actor c3f95d5f2c8d423bb1ce0c6162010000 is unavailable: The actor is temporarily unavailable: RpcError: RPC error: Socket closed rpc_code: 14. The task may or may not have been executed on the actor.
+[36m(EnvGroup(rank=1) pid=3590594)[0m [W902 06:52:21.416484811 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=61, addr=[admin]:46288, remote=[admin]:35975): Broken pipe
+[36m(EnvGroup(rank=1) pid=3590594)[0m Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f50545e405d in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libc10.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #1: <unknown function> + 0x6a90911 (0x7f1fff7fd911 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x24d (0x7f1fff7fc3cd in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x4a5 (0x7f1faa147515 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #4: <unknown function> + 0xdc253 (0x7f505eba0253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #5: <unknown function> + 0x94a83 (0x7f506139ea83 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m frame #6: <unknown function> + 0x126890 (0x7f5061430890 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(EnvGroup(rank=1) pid=3590594)[0m 
+[36m(EnvGroup(rank=1) pid=3590594)[0m [W902 06:52:21.455186632 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID cg-EnvGroup:0-EnvGroup:1nccl_send_0 Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+Exiting main process due to a failure upon worker execution.
