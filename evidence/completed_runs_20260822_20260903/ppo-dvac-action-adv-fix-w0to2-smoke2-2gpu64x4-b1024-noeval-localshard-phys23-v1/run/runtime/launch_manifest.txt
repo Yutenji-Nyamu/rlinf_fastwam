@@ -1,0 +1,9 @@
+started_at=2026-08-30T22:52:17+08:00
+source_head=74617ced87d64045ab6850d0efd90956a494af66
+physical_gpus=2,3
+fresh_start=true; target_step=2
+train=64 env x 4 rollout epochs = 256 trajectories/step
+actor=GB1024/MB32/update2; PPO GAE+critic
+method=DVAC Action-Adv Fix [0,2]; L3; warmup1; recent5
+eval=disabled only for smoke; videos=false; terminal checkpoint local_shard global_step_2
+normal_stop=step2/checkpoint/exit0; hard_timeout=7200s
