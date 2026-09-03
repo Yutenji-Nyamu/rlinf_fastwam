@@ -19,7 +19,7 @@ hydra:
 cluster:
   num_nodes: 1
   component_placement:
-    actor, env, rollout: 0-1
+    actor, env, rollout: 0-7
 
 runner:
   task_type: embodied
@@ -31,7 +31,7 @@ runner:
   max_epochs: 1000
   max_steps: -1
   only_eval: false
-  val_check_interval: 5
+  val_check_interval: 10
   save_interval: 10
   resume_dir: null
   ckpt_path: null
@@ -44,7 +44,7 @@ algorithm:
   reward_type: chunk_level
   logprob_type: chunk_level
   entropy_type: token_level
-  update_epoch: 2
+  update_epoch: 5
   adv_type: grpo
   loss_type: actor
   loss_agg_func: token-mean
@@ -79,24 +79,60 @@ env:
   group_name: EnvGroup
   enable_offload: true
   train:
-    total_num_envs: 64
+    total_num_envs: 256
     rollout_epoch: 4
     max_episode_steps: 400
     max_steps_per_rollout_epoch: 400
     reward_coef: ${algorithm.reward_coef}
     group_size: ${algorithm.group_size}
+    assets_path: "/path/to/robotwin_assets"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+    center_crop: false
     task_config:
       task_name: move_stapler_pad
       step_lim: 400
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
   eval:
-    total_num_envs: 32
+    rollout_epoch: 1
+    total_num_envs: 128
     max_episode_steps: 400
     max_steps_per_rollout_epoch: 400
     reward_coef: ${algorithm.reward_coef}
     group_size: 1
+    auto_reset: true
+    ignore_terminations: true
+    use_fixed_reset_state_ids: true
+    is_eval: true
+    assets_path: "/path/to/robotwin_assets"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
+    center_crop: false
+    video_cfg:
+      save_video: true
+      video_base_dir: ${runner.logger.log_path}/video/eval
     task_config:
       task_name: move_stapler_pad
       step_lim: 400
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
 
 rollout:
   group_name: RolloutGroup
@@ -111,7 +147,7 @@ rollout:
 actor:
   group_name: ActorGroup
   training_backend: fsdp
-  global_batch_size: 1024
+  global_batch_size: 2048
   micro_batch_size: 32
   seed: 1234
   enable_offload: true
@@ -125,7 +161,9 @@ actor:
       num_images_in_input: 3
       action_chunk: 50
       num_steps: 10
+      noise_level: 0.3
       train_expert_only: True
+      detach_critic_input: true
   optim:
     lr: 5.0e-06
     value_lr: 1.0e-04
@@ -135,6 +173,8 @@ actor:
     weight_decay: 0.01
     clip_grad: 1.0
     critic_warmup_steps: 0
+  fsdp_config:
+    checkpoint_format: local_shard
 
 reward:
   use_reward_model: false
