@@ -1,0 +1,9 @@
+started_at=2026-09-01T12:35:43+08:00
+source_head=256eeeb4459b4bd5db85bfc6a0eb315771e8c38c
+physical_gpus=6,7
+fresh_start=true; target_step=100
+train=64 env x 4 rollout epochs = 256 trajectories/step; G8; max1024 query records
+actor=GB512/MB32/update5; 10 optimizer calls/outer; pi0.5 M5
+method=pi0.5 GRPO-DVAC Action-Adv [0.5,1.5]; M5/L3/recent5
+eval=fixed32 every5; videos=true; checkpoint=local_shard every10
+normal_stop=complete step100/checkpoint/exit0; hard_timeout=259200s
