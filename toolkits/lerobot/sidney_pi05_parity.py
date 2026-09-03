@@ -114,15 +114,24 @@ def export_native(args: argparse.Namespace) -> None:
     batch = preprocessor(
         {
             OBS_STATE: torch.from_numpy(raw["state"]),
-            "observation.images.cam_high": torch.from_numpy(raw["main_image"]).float()
+            "observation.images.cam_high": torch.from_numpy(raw["main_image"])
+            .permute(2, 0, 1)
+            .contiguous()
+            .float()
             / 255.0,
             "observation.images.cam_left_wrist": torch.from_numpy(
                 raw["wrist_images"][0]
-            ).float()
+            )
+            .permute(2, 0, 1)
+            .contiguous()
+            .float()
             / 255.0,
             "observation.images.cam_right_wrist": torch.from_numpy(
                 raw["wrist_images"][1]
-            ).float()
+            )
+            .permute(2, 0, 1)
+            .contiguous()
+            .float()
             / 255.0,
             "task": raw["prompt"],
         }
