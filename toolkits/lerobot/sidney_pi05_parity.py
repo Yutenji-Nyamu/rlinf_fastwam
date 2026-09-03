@@ -78,6 +78,7 @@ def prepare(args: argparse.Namespace) -> None:
 
 
 def export_native(args: argparse.Namespace) -> None:
+    from lerobot.configs.policies import PreTrainedConfig
     from lerobot.policies.factory import make_pre_post_processors
     from lerobot.policies.pi05 import PI05Policy
     from lerobot.policies.pi05.configuration_pi05 import PI05Config
@@ -89,7 +90,9 @@ def export_native(args: argparse.Namespace) -> None:
 
     raw = _load_input(args.input)
     device = torch.device(args.device)
-    config = PI05Config.from_pretrained(args.model, local_files_only=True)
+    config = PreTrainedConfig.from_pretrained(args.model, local_files_only=True)
+    if not isinstance(config, PI05Config):
+        raise TypeError(f"expected PI05Config, got {type(config).__name__}")
     config.device = str(device)
     config.compile_model = False
     config.gradient_checkpointing = False
