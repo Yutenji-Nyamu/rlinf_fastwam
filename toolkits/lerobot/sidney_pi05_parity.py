@@ -28,13 +28,14 @@ def _load_input(path: str) -> dict[str, Any]:
     missing = required - result.keys()
     if missing:
         raise ValueError(f"input artifact is missing {sorted(missing)}")
-    if result["main_image"].shape != (480, 640, 3):
+    if result["main_image"].ndim != 3 or result["main_image"].shape[-1] != 3:
         raise ValueError(
-            f"expected main_image [480,640,3], got {result['main_image'].shape}"
+            f"expected main_image [H,W,3], got {result['main_image'].shape}"
         )
-    if result["wrist_images"].shape != (2, 480, 640, 3):
+    if result["wrist_images"].shape != (2, *result["main_image"].shape):
         raise ValueError(
-            f"expected wrist_images [2,480,640,3], got {result['wrist_images'].shape}"
+            "expected wrist_images [2,H,W,3] matching main_image, got "
+            f"{result['wrist_images'].shape}"
         )
     if result["state"].shape != (14,):
         raise ValueError(f"expected state [14], got {result['state'].shape}")
@@ -60,8 +61,9 @@ def _to_bhwc(image: torch.Tensor) -> torch.Tensor:
 
 def prepare(args: argparse.Namespace) -> None:
     rng = np.random.default_rng(args.seed)
-    main_image = rng.integers(0, 256, size=(480, 640, 3), dtype=np.uint8)
-    wrist_images = rng.integers(0, 256, size=(2, 480, 640, 3), dtype=np.uint8)
+    image_shape = (args.image_height, args.image_width, 3)
+    main_image = rng.integers(0, 256, size=image_shape, dtype=np.uint8)
+    wrist_images = rng.integers(0, 256, size=(2, *image_shape), dtype=np.uint8)
     state = np.linspace(-0.35, 0.35, 14, dtype=np.float32)
     noise = rng.standard_normal((1, 50, 32), dtype=np.float32)
     output = Path(args.output)
@@ -365,6 +367,8 @@ def build_parser() -> argparse.ArgumentParser:
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--output", required=True)
     prepare_parser.add_argument("--seed", type=int, default=1234)
+    prepare_parser.add_argument("--image-height", type=int, default=224)
+    prepare_parser.add_argument("--image-width", type=int, default=224)
     prepare_parser.add_argument("--prompt", default="move the stapler onto the pad")
     prepare_parser.set_defaults(func=prepare)
 
