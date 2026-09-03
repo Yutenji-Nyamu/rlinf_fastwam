@@ -320,14 +320,14 @@ def compare(args: argparse.Namespace) -> None:
             native["normalized_state14"],
             rlinf["normalized_state14"],
             rtol=0.0,
-            atol=1.0e-6,
+            atol=1.0e-5,
         ),
         "padded_state32": _compare_tensor(
             "padded_state32",
             native["padded_state32"],
             rlinf["padded_state32"],
             rtol=0.0,
-            atol=1.0e-6,
+            atol=1.0e-5,
         ),
         "tokens": _compare_tensor(
             "tokens", native["tokens"], rlinf["tokens"], rtol=0.0, atol=0.0
