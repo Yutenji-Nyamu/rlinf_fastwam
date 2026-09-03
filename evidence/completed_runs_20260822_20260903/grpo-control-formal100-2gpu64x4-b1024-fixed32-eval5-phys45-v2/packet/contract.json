@@ -1,0 +1,13 @@
+{
+  "source_head": "0e28ac6f09f821ea12e7d54eba7118ce0000ca86",
+  "placement": "4,5",
+  "method": "off",
+  "fresh_start": true,
+  "outer_steps": 100,
+  "train": "64 env x 4 rollout epochs = 256 trajectories/step; G8; 32 groups; max 1024 chunk records",
+  "actor": "GB1024/MB32/update2; 512 records/rank; 2 optimizer calls/step",
+  "eval": "fixed32 as 32 env x 1 wave every 5 steps",
+  "checkpoint": "every 10 steps",
+  "normal_stop": "complete step 100",
+  "hard_timeout_seconds": 216000
+}
