@@ -40,6 +40,7 @@ import argparse
 
 from rlinf.utils.ckpt_convertor.openpi import (
     jax_to_openpi_rlinf,
+    lerobot_pi05_to_openpi_rlinf,
     openpi_pytorch_to_openpi_rlinf,
     openpi_rlinf_to_openpi_pytorch,
     pt_to_safetensors,
@@ -51,6 +52,7 @@ from rlinf.utils.ckpt_convertor.openpi import (
 # OpenPI_RLinf.
 _MODES = {
     "jax_to_openpi_rlinf": jax_to_openpi_rlinf,
+    "lerobot_pi05_to_openpi_rlinf": lerobot_pi05_to_openpi_rlinf,
     "openpi_pytorch_to_openpi_rlinf": openpi_pytorch_to_openpi_rlinf,
     "sft_to_openpi_rlinf": pt_to_safetensors,
     "openpi_rlinf_to_openpi_pytorch": openpi_rlinf_to_openpi_pytorch,
