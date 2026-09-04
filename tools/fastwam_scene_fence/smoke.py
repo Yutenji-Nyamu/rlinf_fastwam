@@ -39,20 +39,30 @@ def main():
         print(OmegaConf.to_yaml(cfg), flush=True)
         return
     cfg = OmegaConf.load(out / 'resolved.yaml')
+    import torch
+    from rlinf.envs.robotwin.scene_fence import load_scene_fence
+    assert not os.environ.get('LD_PRELOAD'), 'Do not globally preload renderer dependencies'
+    patch = load_scene_fence()
+    assert patch is not None
     expected = Path(os.environ['RLINF_SCENE_FENCE_LIBRARY']).resolve()
-    # Check the process-global symbol, not merely the fact that a .so was mapped.
+    # LD_DEBUG additionally verifies the original renderer's vtable binding.
     class DlInfo(ctypes.Structure):
         _fields_ = [('name', ctypes.c_char_p), ('base', ctypes.c_void_p),
                     ('symbol', ctypes.c_char_p), ('address', ctypes.c_void_p)]
     lib = ctypes.CDLL(None)
-    fn = getattr(lib, SYMBOL)
+    fn = getattr(patch, SYMBOL)
     info = DlInfo()
     lib.dladdr.argtypes = [ctypes.c_void_p, ctypes.POINTER(DlInfo)]
     assert lib.dladdr(ctypes.cast(fn, ctypes.c_void_p), ctypes.byref(info))
     assert Path(info.name.decode()).resolve() == expected, info.name
     print('NATIVE_BINDING', info.name.decode(), hex(info.address), flush=True)
     import numpy as np
-    import torch
+    model = str(OmegaConf.load(args.source_config).actor.model.checkpoint_path)
+    def check_archive():
+        reader = torch._C.PyTorchFileReader(model)
+        assert reader.get_record('version') == b'3\n'
+        return len(reader.get_all_records())
+    assert check_archive() == 5
     import sapien
     from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
     torch.set_num_threads(4)
@@ -92,6 +102,8 @@ def main():
               'camera_images': len(cfg.seeds) * cfg.frames_per_scene * 3,
               'elapsed_seconds': time.monotonic() - start,
               'denoiser_calls': calls, 'native_library': str(expected), 'records': records}
+    assert check_archive() == 5
+    result['torch_archive_before_after'] = 'passed'
     (out / 'result.json').write_text(json.dumps(result, indent=2))
     print('SMOKE_PASS', json.dumps(result), flush=True)
 

@@ -9,11 +9,6 @@ base=$site/sapien.libs/libsvulkan2.so
 test "$(sha256sum "$base" | cut -d' ' -f1)" = 972eff8fc5fedfd59d4cd8794039d9bc850847a6c74dfbf7d549eff9d041b1b7
 test ! -e "$out"
 mkdir -p "$out"
-mkdir "$out/loader-libs"
-# The wheel normally preloads these exact files from Python before pysapien.
-# Native process-start loading needs their SONAMEs resolvable first.
-ln -s "$site/sapien/oidn_library/libOpenImageDenoise.so.2.0.1" "$out/loader-libs/libOpenImageDenoise.so.2"
-ln -s "$site/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1" "$out/loader-libs/libOpenImageDenoise_core.so.2.0.1"
 # The current wheel uses the C++11 string ABI and CUDA interop class layout.
 g++ -std=c++20 -O2 -DNDEBUG -fPIC -shared -fvisibility=hidden \
   -D_GLIBCXX_USE_CXX11_ABI=1 -DSVULKAN2_CUDA_INTEROP -DVK_NO_PROTOTYPES \
@@ -30,9 +25,6 @@ sha256sum "$base" "$out/librlinf_scene_fence.so" \
 g++ --version > "$out/compiler.txt"
 nm -D --defined-only "$out/librlinf_scene_fence.so" > "$out/exports.txt"
 objdump -d -C "$out/librlinf_scene_fence.so" > "$out/disassembly.txt"
-printf 'export LD_LIBRARY_PATH=%q${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\n' "$out/loader-libs" > "$out/enable.sh"
-printf 'export LD_PRELOAD=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
-printf 'export RLINF_SCENE_FENCE_LIBRARY=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
+printf 'export RLINF_SCENE_FENCE_LIBRARY=%q\n' "$out/librlinf_scene_fence.so" > "$out/enable.sh"
 cat "$out/build.sha256"
 cat "$out/exports.txt"
-(source "$out/enable.sh"; /bin/true)

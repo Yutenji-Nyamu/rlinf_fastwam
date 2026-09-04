@@ -81,6 +81,9 @@ class RoboTwinEnv(gym.Env):
         mp.set_start_method("spawn", force=True)
         os.environ["ASSETS_PATH"] = self.cfg.assets_path
 
+        from rlinf.envs.robotwin.scene_fence import load_scene_fence
+        load_scene_fence()
+
         from robotwin.envs.vector_env import VectorEnv
 
         env_seeds = self.reset_state_ids.tolist()

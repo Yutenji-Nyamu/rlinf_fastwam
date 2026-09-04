@@ -10,11 +10,14 @@ interface. It uses the installed wheel's C++ headers and links to the unchanged
 original library. No denoiser, shader, simulator, training algorithm or dependency
 version is replaced. No global files are installed or overwritten.
 
-The native loading mechanism is ELF symbol interposition via job-local
-`LD_PRELOAD`, not an in-memory or on-disk binary edit. Only enable it before the
-new process starts. The original wheel's exact library SHA256 is checked at build
-time; changing wheel/ABI requires re-audit. Do not generalize this patch to other
-SAPIEN builds. Compilation must use the CUDA-interop and C++11-ABI layout.
+The native loading mechanism is environment-local `ctypes.CDLL(RTLD_LOCAL)`
+before SAPIEN and after PyTorch, through the opt-in RoboTwin loader. Set only
+`RLINF_SCENE_FENCE_LIBRARY`; never globally LD_PRELOAD renderer dependencies:
+the bundled library exports ZIP symbols that can interfere with PyTorch's
+checkpoint reader. Actor, Rollout and driver processes do not load the patch.
+This is not an in-memory or on-disk binary edit. The original wheel's exact
+library SHA256 is checked at build time; changing wheel/ABI requires re-audit.
+Do not generalize to other SAPIEN builds. Use CUDA-interop and C++11-ABI layout.
 
 Build on the server:
 
@@ -25,8 +28,9 @@ source /absolute/new-output-directory/enable.sh
 
 Before training, test real multicamera rendering in a separate process and verify
 dynamic binding to the replacement symbol. Inspect new Ray EnvWorker maps/env;
-checking that a file exists is not sufficient. Preserve the original wheel and
-other jobs. Unsetting this job's `LD_PRELOAD` for a future process disables the fix.
+also verify PyTorch reads the original checkpoint before and after rendering.
+Preserve the original wheel and other jobs. Unsetting this job's
+`RLINF_SCENE_FENCE_LIBRARY` for a future process disables the fix.
 
 This repairs a concrete synchronization omission. A short regression does not
 prove that it was the sole cause of the previously stalled training frame, nor
