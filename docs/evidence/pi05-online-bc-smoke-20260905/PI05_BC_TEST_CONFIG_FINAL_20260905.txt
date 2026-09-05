@@ -1,0 +1,126 @@
+All checks passed!
+1 file reformatted
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/tests/unit_tests
+configfile: pytest.ini
+plugins: anyio-4.14.2, typeguard-4.6.0, dash-4.4.1, hydra-core-1.3.5, jaxtyping-0.2.36, zarr-3.1.5
+collected 13 items
+
+tests/unit_tests/test_online_bc.py ...........                           [ 84%]
+tests/unit_tests/test_pi05_online_bc.py ..                               [100%]
+
+=============================== warnings summary ===============================
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+test_online_bc.py::test_online_bc_config_is_teacher_free_expert_only_and_single_gpu
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/tests/unit_tests/test_online_bc.py:127: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+test_pi05_online_bc.py::test_pi05_bc_inherits_learning_and_capacity_budget
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/tests/unit_tests/test_pi05_online_bc.py:28: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 13 passed, 18 warnings in 8.57s ========================
+
+warning: Selection `DOC102` has no effect because preview is not enabled.
+warning: Selection `DOC202` has no effect because preview is not enabled.
+warning: Selection `DOC403` has no effect because preview is not enabled.
+warning: Selection `DOC502` has no effect because preview is not enabled.
+warning: Selection `DOC102` has no effect because preview is not enabled.
+warning: Selection `DOC202` has no effect because preview is not enabled.
+warning: Selection `DOC403` has no effect because preview is not enabled.
+warning: Selection `DOC502` has no effect because preview is not enabled.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788616473.416337 1912255 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788616474.618799 1912255 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-pi05-20260905/pi05_bc_validate_20260905.py:23: Hydra14MigrationWarning:
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  with initialize_config_dir(version_base='1.1',config_dir=str(root/'examples/embodiment/config')):
+[INFO 13:54:38 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-05 13:54:38,133	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-05 13:54:38,140	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-05 13:54:38,214	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+2026-09-05 13:54:38,259	INFO packaging.py:734 -- Creating a file package for local module '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf'.
+2026-09-05 13:54:38,330	INFO packaging.py:434 -- Pushing file package 'gcs://_ray_pkg_61dbe1944441b185.zip' (8.72MiB) to Ray cluster...
+2026-09-05 13:54:38,362	INFO packaging.py:447 -- Successfully pushed file package 'gcs://_ray_pkg_61dbe1944441b185.zip'.
+[INFO 13:54:38 RLinf] Ray namespace conflict detected. Retrying to initialize Cluster with a new namespace (attempt 1).
+[INFO 13:54:38 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-05 13:54:38,693	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-05 13:54:38,696	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-05 13:54:38,756	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+[INFO 13:54:41 RLinf] RLinf is running on a cluster with 1 node and 8 accelerators. The nodes' details are:
+node_labels: []
+node_rank: 0
+ray_id: 2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+node_ip: 172.17.0.1
+num_cpus: 128
+python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+profiler_backends: []
+
+Node groups' details are:
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[36m(_RemoteNodeProbe pid=1912922)[0m /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/scheduler/cluster/node.py:532: UserWarning: Python interpreter used to launch Ray on node with IP 172.17.0.1 is different from that on the head node /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python. Keep using the current interpreter /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python3 on this node.
+[36m(_RemoteNodeProbe pid=1912922)[0m   warnings.warn(
+[INFO 13:54:41 FlexiblePlacementStrategy]
+[INFO 13:54:41 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+[INFO 13:54:41 FlexiblePlacementStrategy]
+[INFO 13:54:41 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin
+Traceback (most recent call last):
+  File "/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-pi05-20260905/pi05_bc_validate_20260905.py", line 97, in <module>
+    torch.testing.assert_close(prepared['actions'],processed['actions'],rtol=0,atol=0)
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/testing/_comparison.py", line 1600, in assert_close
+    raise error_metas[0].to_error(msg)
+AssertionError: The values for attribute 'dtype' do not match: torch.float32 != torch.float64.
