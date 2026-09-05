@@ -175,7 +175,18 @@ class EnvWorker(Worker):
                         "Online BC requires full, chunk-aligned RoboTwin rounds with auto_reset=False."
                     )
                 self.bc_collectors = [
-                    SuccessEpisodeCollector(self.train_num_envs_per_stage)
+                    SuccessEpisodeCollector(
+                        self.train_num_envs_per_stage,
+                        dvac_log_eps=(
+                            self.cfg.algorithm.online_bc.dvac.log_eps
+                            if OmegaConf.select(
+                                self.cfg,
+                                "algorithm.online_bc.dvac.enabled",
+                                default=False,
+                            )
+                            else None
+                        ),
+                    )
                     for _ in range(self.stage_num)
                 ]
         else:
@@ -1424,10 +1435,18 @@ class EnvWorker(Worker):
             if self.enable_online_bc:
                 for collector in self.bc_collectors:
                     episodes = collector.drain()
+                    moments = collector.drain_dvac_moments()
                     for split in range(self.actor_split_num):
-                        actor_channel.put(
-                            episodes[split :: self.actor_split_num], async_op=True
-                        )
+                        packet = episodes[split :: self.actor_split_num]
+                        if collector.dvac_log_eps is not None:
+                            # Count each env's new moments once across actor ranks.
+                            packet = {
+                                "episodes": packet,
+                                "dvac_moments": moments
+                                if split == 0
+                                else torch.zeros_like(moments),
+                            }
+                        actor_channel.put(packet, async_op=True)
                 for builder in self.trajectory_builders:
                     builder.clear()
             elif self.enable_online_lerobot:

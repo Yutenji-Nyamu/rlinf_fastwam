@@ -1,0 +1,18 @@
+# @package _global_
+# Append to the existing primary BC config with +bc_dvac=default.
+cluster:
+  component_placement:
+    actor,env,rollout: "7"
+runner:
+  logger:
+    experiment_name: pi0-adjust-bottle-online-bc-dvac-smoke-gpu7
+algorithm:
+  online_bc:
+    dvac:
+      enabled: true
+      tail_steps: 3
+      window: 5
+      alpha: 0.25
+      z_clip: 2.0
+      log_eps: 1.0e-12
+      std_floor: 1.0e-6

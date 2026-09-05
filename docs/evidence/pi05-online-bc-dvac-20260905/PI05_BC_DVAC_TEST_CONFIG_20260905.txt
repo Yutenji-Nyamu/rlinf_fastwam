@@ -1,0 +1,244 @@
+All checks passed!
+2 files left unchanged
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/tests/unit_tests
+configfile: pytest.ini
+plugins: anyio-4.14.2, typeguard-4.6.0, dash-4.4.1, hydra-core-1.3.5, jaxtyping-0.2.36, zarr-3.1.5
+collected 28 items
+
+tests/unit_tests/test_online_bc.py ...........                           [ 39%]
+tests/unit_tests/test_online_bc_dvac.py .............                    [ 85%]
+tests/unit_tests/test_pi05_online_bc.py ..                               [ 92%]
+tests/unit_tests/test_pi05_online_bc_dvac.py ..                          [100%]
+
+=============================== warnings summary ===============================
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+test_online_bc.py::test_online_bc_config_is_teacher_free_expert_only_and_single_gpu
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/tests/unit_tests/test_online_bc.py:127: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+test_online_bc_dvac.py::test_dvac_config_group_extends_existing_primary_without_replacing_recipe
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/tests/unit_tests/test_online_bc_dvac.py:295: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+test_pi05_online_bc.py::test_pi05_bc_inherits_learning_and_capacity_budget
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/tests/unit_tests/test_pi05_online_bc.py:28: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+test_pi05_online_bc_dvac.py::test_pi05_dvac_composition_changes_only_method_and_placement
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/tests/unit_tests/test_pi05_online_bc_dvac.py:22: Hydra14MigrationWarning:
+  version_base="1.1" selects Hydra 1.1 compatibility behavior.
+  Hydra 1.4 will remove this compatibility behavior.
+  Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+  See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+    with initialize_config_dir(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 28 passed, 20 warnings in 9.83s ========================
+{
+  "passed": true,
+  "overrides": [
+    "+online_bc_model=pi05_sidney",
+    "+bc_dvac=bounded_half",
+    "runner.max_epochs=100",
+    "runner.val_check_interval=5",
+    "runner.save_interval=10",
+    "actor.optim.total_training_steps=1000",
+    "runner.logger.experiment_name=pi05-pillbottle-bc-dvac-u10-w05to15-formal100-gpu7"
+  ],
+  "changes": {
+    "algorithm.online_bc.data_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/success_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/success_data"
+    },
+    "algorithm.online_bc.dvac.alpha": {
+      "control": null,
+      "dvac": 0.125
+    },
+    "algorithm.online_bc.dvac.enabled": {
+      "control": null,
+      "dvac": true
+    },
+    "algorithm.online_bc.dvac.log_eps": {
+      "control": null,
+      "dvac": 1e-12
+    },
+    "algorithm.online_bc.dvac.std_floor": {
+      "control": null,
+      "dvac": 1e-06
+    },
+    "algorithm.online_bc.dvac.tail_steps": {
+      "control": null,
+      "dvac": 3
+    },
+    "algorithm.online_bc.dvac.window": {
+      "control": null,
+      "dvac": 5
+    },
+    "algorithm.online_bc.dvac.z_clip": {
+      "control": null,
+      "dvac": 2.0
+    },
+    "cluster.component_placement.actor,env,rollout": {
+      "control": "6",
+      "dvac": "7"
+    },
+    "env.eval.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json"
+    },
+    "env.eval.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/robotwin_data"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/video/train"
+    },
+    "env.train.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/robotwin_data"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "control": "pi05-pillbottle-bc-u10-eval8x4-formal100-gpu6",
+      "dvac": "pi05-pillbottle-bc-dvac-u10-w05to15-formal100-gpu7"
+    },
+    "runner.logger.log_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1"
+    }
+  },
+  "unchanged_files": {
+    "rlinf/envs/robotwin/seeds/train_seeds.json": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2",
+    "rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e",
+    "rlinf/models/embodiment/openpi/dataconfig/__init__.py": "f4f5378ede25e1963110bdfe80979de3d7d6a84a161163f83e7057cab94bffb0",
+    "rlinf/models/embodiment/openpi/dataconfig/robotwin_aloha_dataconfig.py": "b04ce506f62386dce2a1e21960285fab242d49479e1dcda72ffae3d1163e59f2",
+    "examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml": "6da89a57c9587cfcae4d366d958d2286dd55a1d7513c68e150a71ddc4fa341d2",
+    "examples/embodiment/config/online_bc_model/pi05_sidney.yaml": "4b263320a098106c458cc6764268fe4698e07aa2743972e9dfdbed685be86d19"
+  },
+  "no_smoke": true,
+  "weight_bounds": [
+    0.5,
+    1.5
+  ],
+  "alpha": 0.125,
+  "train_attempts": 3200,
+  "max_optimizer_updates": 1000,
+  "eval_episodes": 640,
+  "checkpoints": 10
+}
+PI05_DVAC_UNIT_AND_FORMAL_CONFIG_VALIDATION_PASSED; no smoke or training launched
+ rlinf/data/online_bc.py                            | 26 +++++++++++++--
+ .../embodiment/openpi/openpi_action_model.py       | 30 +++++++++++++++--
+ .../workers/actor/fsdp_online_bc_policy_worker.py  | 39 +++++++++++++++++++---
+ rlinf/workers/env/env_worker.py                    | 27 ++++++++++++---
+ rlinf/workers/rollout/hf/huggingface_worker.py     |  5 +++
+ 5 files changed, 115 insertions(+), 12 deletions(-)
+
+warning: Selection `DOC102` has no effect because preview is not enabled.
+warning: Selection `DOC202` has no effect because preview is not enabled.
+warning: Selection `DOC403` has no effect because preview is not enabled.
+warning: Selection `DOC502` has no effect because preview is not enabled.
+warning: Selection `DOC102` has no effect because preview is not enabled.
+warning: Selection `DOC202` has no effect because preview is not enabled.
+warning: Selection `DOC403` has no effect because preview is not enabled.
+warning: Selection `DOC502` has no effect because preview is not enabled.
+/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-pi05-dvac-20260905/validate.py:18: Hydra14MigrationWarning:
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  with initialize_config_dir(version_base="1.1", config_dir=str(root / "examples/embodiment/config")):
+[INFO 16:03:08 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-05 16:03:08,303	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-05 16:03:08,312	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-05 16:03:08,408	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+2026-09-05 16:03:08,465	INFO packaging.py:734 -- Creating a file package for local module '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf'.
+2026-09-05 16:03:08,550	INFO packaging.py:434 -- Pushing file package 'gcs://_ray_pkg_bb6989a4568f7795.zip' (7.91MiB) to Ray cluster...
+2026-09-05 16:03:08,579	INFO packaging.py:447 -- Successfully pushed file package 'gcs://_ray_pkg_bb6989a4568f7795.zip'.
+[INFO 16:03:08 RLinf] Ray namespace conflict detected. Retrying to initialize Cluster with a new namespace (attempt 1).
+[INFO 16:03:08 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-05 16:03:08,913	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-05 16:03:08,915	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-05 16:03:08,976	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+[INFO 16:03:09 RLinf] Ray namespace conflict detected. Retrying to initialize Cluster with a new namespace (attempt 2).
+[INFO 16:03:09 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-09-05 16:03:09,300	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-09-05 16:03:09,302	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-09-05 16:03:09,364	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+[INFO 16:03:12 RLinf] RLinf is running on a cluster with 1 node and 8 accelerators. The nodes' details are:
+node_labels: []
+node_rank: 0
+ray_id: 2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+node_ip: 172.17.0.1
+num_cpus: 128
+python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+profiler_backends: []
+
+Node groups' details are:
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[36m(_RemoteNodeProbe pid=2205950)[0m /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/scheduler/cluster/node.py:532: UserWarning: Python interpreter used to launch Ray on node with IP 172.17.0.1 is different from that on the head node /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python. Keep using the current interpreter /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python3 on this node.
+[36m(_RemoteNodeProbe pid=2205950)[0m   warnings.warn(
+[INFO 16:03:12 FlexiblePlacementStrategy]
+[INFO 16:03:12 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[7]], node groups: ['cluster'].
+[INFO 16:03:12 FlexiblePlacementStrategy]
+[INFO 16:03:12 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[7]], node groups: ['cluster'].

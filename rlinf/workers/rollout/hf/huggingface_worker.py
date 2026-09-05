@@ -498,6 +498,11 @@ class MultiStepRolloutWorker(Worker):
             else:
                 kwargs = {"mode": mode}
 
+        if self.algorithm_cfg.get("loss_type") == "online_bc" and mode == "train":
+            dvac = self.algorithm_cfg.online_bc.get("dvac", {})
+            if dvac.get("enabled", False):
+                kwargs["dvac_tail_steps"] = int(dvac.tail_steps)
+
         if SupportedModel(self.model_cfg.model_type) in [
             SupportedModel.CNN_POLICY,
             SupportedModel.FLOW_POLICY,

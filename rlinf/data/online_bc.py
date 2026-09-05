@@ -11,22 +11,31 @@ from pathlib import Path
 import torch
 
 
-def masked_fm_loss(loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+def masked_fm_loss(
+    loss: torch.Tensor, mask: torch.Tensor, action_weights: torch.Tensor | None = None
+) -> torch.Tensor:
     mask = mask.to(device=loss.device, dtype=loss.dtype)
     if mask.shape != loss.shape or (mask.sum(dim=(1, 2)) == 0).any():
         raise ValueError(
             "SFT mask must match loss and contain valid targets per query."
         )
+    if action_weights is not None:
+        w = action_weights.detach().to(device=loss.device, dtype=loss.dtype)
+        if w.shape != loss.shape[:2] or not torch.isfinite(w).all() or (w < 0).any():
+            raise ValueError("Action weights must be finite non-negative [B,H].")
+        loss = loss * w.unsqueeze(-1)
     return ((loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))).mean()
 
 
 class SuccessEpisodeCollector:
     """Collect complete episodes; never retain post-terminal policy queries."""
 
-    def __init__(self, num_envs: int):
+    def __init__(self, num_envs: int, dvac_log_eps: float | None = None):
         self.num_envs = num_envs
         self.completed = []
         self.episode_ids = [0] * num_envs
+        self.dvac_log_eps = dvac_log_eps
+        self.dvac_moments = torch.zeros(3, dtype=torch.float64)
         self.reset()
 
     def reset(self) -> None:
@@ -63,6 +72,14 @@ class SuccessEpisodeCollector:
                 raise ValueError("Missing pre-query OpenPI observation inputs.")
             record["action"] = commands[i].flatten().clone()
             record["action_valid_mask"] = torch.ones_like(commands[i], dtype=torch.bool)
+            if self.dvac_log_eps is not None:
+                from rlinf.algorithms.online_bc_dvac import log_moments
+
+                v = forward_inputs["dvac_v"][i].detach().float().cpu().clone()
+                if v.shape != commands[i].shape[:1]:
+                    raise ValueError("DVAC signal must match submitted command H.")
+                self.dvac_moments += log_moments(v, self.dvac_log_eps)
+                record["dvac_v"] = v
             record["query_idx"] = torch.tensor(len(self.pending[i]))
             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])
             if versions is not None:
@@ -78,6 +95,11 @@ class SuccessEpisodeCollector:
     def drain(self) -> list[list[dict[str, torch.Tensor]]]:
         episodes, self.completed = self.completed, []
         return episodes
+
+    def drain_dvac_moments(self) -> torch.Tensor:
+        moments = self.dvac_moments.clone()
+        self.dvac_moments.zero_()
+        return moments
 
 
 class SuccessReplay:
