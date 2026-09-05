@@ -42,7 +42,7 @@ algorithm:
   adv_type: gae  # Unused: the supervised actor skips advantage computation.
   gamma: 0.99
   reward_coef: 1.0
-  update_epoch: 2  # Optimizer steps per collection round, not passes over replay.
+  update_epoch: 10  # Optimizer steps per collection round, not passes over replay.
   online_bc:
     data_path: ${runner.logger.log_path}/success_data
     demo_weight: 0.0  # Loss = (online_FM + w * demo_FM) / (1 + w).
@@ -52,7 +52,7 @@ algorithm:
 
 env:
   group_name: EnvGroup
-  min_open_files: 4096  # 32 train + 32 eval cameras exceed Ray's inherited 1024.
+  min_open_files: 4096  # Keep the validated EnvWorker-local FD allowance.
   train:
     total_num_envs: 32
     rollout_epoch: 1
@@ -79,13 +79,14 @@ env:
         random_light: false
         crazy_random_light_rate: 0
   eval:
-    total_num_envs: 32
-    rollout_epoch: 1
-    auto_reset: true
+    total_num_envs: 16
+    rollout_epoch: 2
+    auto_reset: false  # Explicit batch boundaries; evaluate each fixed seed once.
     ignore_terminations: true
     max_episode_steps: 200
     max_steps_per_rollout_epoch: 200
     use_fixed_reset_state_ids: true
+    fixed_reset_batch_count: 2  # Cycle the original single-worker 32 fixed seeds.
     is_eval: true
     assets_path: ${oc.env:ASSETS_PATH}
     seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
@@ -138,7 +139,7 @@ actor:
     adam_eps: 1e-8
     weight_decay: 1e-10
     clip_grad: 1.0
-    total_training_steps: 4
+    total_training_steps: 20
     lr_warmup_steps: 0
     lr_scheduler: constant
     min_lr: 2.5e-5

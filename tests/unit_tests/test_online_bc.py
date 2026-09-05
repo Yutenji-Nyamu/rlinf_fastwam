@@ -145,12 +145,63 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     )
     assert cfg.cluster.component_placement["actor,env,rollout"] == "6"
     assert cfg.actor.model.num_steps == cfg.actor.model.openpi.num_steps == 4
-    assert cfg.env.train.total_num_envs == cfg.env.eval.total_num_envs == 32
+    assert cfg.env.train.total_num_envs == 32
+    assert cfg.env.eval.total_num_envs == 16
+    assert cfg.env.eval.rollout_epoch == cfg.env.eval.fixed_reset_batch_count == 2
+    assert not cfg.env.eval.auto_reset
     assert cfg.env.min_open_files == 4096
     assert cfg.env.train.rollout_epoch == 1
     assert cfg.actor.micro_batch_size == 32
     assert cfg.actor.global_batch_size == 1024
+    assert cfg.algorithm.update_epoch == 10
+    assert cfg.actor.optim.total_training_steps == 20
     assert cfg.algorithm.online_bc.demo_weight == 0
+
+
+def test_fixed_eval_batches_preserve_old_32_seeds_and_repeat_full_set(tmp_path):
+    import json
+
+    import pytest
+    from omegaconf import OmegaConf
+
+    from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
+
+    path = tmp_path / "seeds.json"
+    path.write_text(json.dumps({"adjust_bottle": {"success_seeds": list(range(100))}}))
+
+    def make_env(n, batches=1, auto_reset=False):
+        env = RoboTwinEnv.__new__(RoboTwinEnv)
+        env.cfg = OmegaConf.create(
+            {
+                "seeds_path": str(path),
+                "is_eval": True,
+                "fixed_reset_batch_count": batches,
+                "rollout_epoch": batches,
+            }
+        )
+        env.task_name = "adjust_bottle"
+        env.seed = env.base_seed = env.seed_offset = 0
+        env.total_num_processes = env.group_size = 1
+        env.num_envs = env.num_group = n
+        env.auto_reset = auto_reset
+        env.use_fixed_reset_state_ids = True
+        env._init_reset_state_ids()
+        return env
+
+    old = make_env(32)
+    expected = old.reset_state_ids.clone()
+    old.update_reset_state_ids()
+    torch.testing.assert_close(old.reset_state_ids, expected)
+    batched = make_env(16, 2)
+    for _ in range(3):
+        first = batched.reset_state_ids.clone()
+        batched.update_reset_state_ids()
+        second = batched.reset_state_ids.clone()
+        torch.testing.assert_close(torch.cat([first, second]), expected)
+        assert torch.unique(torch.cat([first, second])).numel() == 32
+        batched.update_reset_state_ids()
+    with pytest.raises(ValueError, match="explicit complete eval"):
+        make_env(16, 2, auto_reset=True)
 
 
 def test_sft_preserves_native_float32_augmentation_inputs(monkeypatch):

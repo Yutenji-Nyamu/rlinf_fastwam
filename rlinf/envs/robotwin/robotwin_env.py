@@ -438,13 +438,34 @@ class RoboTwinEnv(gym.Env):
             self.success_seeds = None
             self._current_seed_index = 0
 
+        fixed_batches = self.cfg.get("fixed_reset_batch_count", 1)
+        if fixed_batches != 1:
+            if not (
+                fixed_batches > 1
+                and self.cfg.is_eval
+                and self.use_fixed_reset_state_ids
+                and not self.auto_reset
+                and fixed_batches == self.cfg.rollout_epoch
+                and self.success_seeds is not None
+                and self.success_seeds.numel() >= self.num_group * fixed_batches
+            ):
+                raise ValueError(
+                    "Fixed seed batches require explicit complete eval rounds"
+                )
+            # Preserve the first N fixed seeds while reducing simultaneous scenes.
+            self.success_seeds = self.success_seeds[: self.num_group * fixed_batches]
+
         if not hasattr(self, "_generator"):
             self._generator = torch.Generator()
             self._generator.manual_seed(self.seed)
         self.update_reset_state_ids()
 
     def update_reset_state_ids(self, env_idx=None):
-        if self.use_fixed_reset_state_ids and hasattr(self, "reset_state_ids"):
+        if (
+            self.use_fixed_reset_state_ids
+            and hasattr(self, "reset_state_ids")
+            and self.cfg.get("fixed_reset_batch_count", 1) == 1
+        ):
             return
 
         if env_idx is not None and hasattr(self, "reset_state_ids"):
