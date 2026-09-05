@@ -52,6 +52,7 @@ algorithm:
 
 env:
   group_name: EnvGroup
+  min_open_files: 4096  # 32 train + 32 eval cameras exceed Ray's inherited 1024.
   train:
     total_num_envs: 32
     rollout_epoch: 1

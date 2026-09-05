@@ -267,6 +267,23 @@ class EnvWorker(Worker):
         ]
 
     def init_worker(self):
+        # Ray workers inherit the head's limits, not the launch shell's ulimit.
+        # Apply an explicit opt-in only to this environment worker process.
+        minimum = self.cfg.env.get("min_open_files", None)
+        if minimum is not None:
+            import resource
+
+            minimum = int(minimum)
+            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+            if minimum <= 0 or (hard != resource.RLIM_INFINITY and minimum > hard):
+                raise ValueError(
+                    f"env.min_open_files={minimum} exceeds allowed range (hard={hard})."
+                )
+            if soft != resource.RLIM_INFINITY and soft < minimum:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (minimum, hard))
+            self.log_info(
+                f"EnvWorker RLIMIT_NOFILE={resource.getrlimit(resource.RLIMIT_NOFILE)}"
+            )
         # This is a barrier to ensure all envs' initial setup upon import is done
         # Essential for RealWorld env to ensure initial ROS node setup is done
         self.broadcast(

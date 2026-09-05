@@ -118,6 +118,14 @@ that augmentation cannot affect learning or generalization.
 Worker import and full `validate_cfg` have also passed on the target server.
 The synthetic demo-loss test does not validate a real LeRobot dataset.
 
+The BC configuration opts into `env.min_open_files: 4096`. A same-server
+32-train-plus-32-eval camera probe exhausted the inherited 1024 file descriptor
+soft limit (`EMFILE`), producing a Vulkan fence creation error. The full smoke
+had failed on semaphore-fd export at first evaluation. Apply the minimum inside
+the owned EnvWorker: changing the launcher shell does not update existing Ray
+head limits. Other jobs and higher/unlimited limits remain unchanged. No
+camera, OIDN, concurrency, sample count, or learning parameter changes here.
+
 Still required: GPU collection/update/redeployment and real model/optimizer
 checkpoint validation. A single-GPU smoke is not a learning-gain measurement or a
 long-run renderer stability result. Multi-rank readiness is synchronized, but

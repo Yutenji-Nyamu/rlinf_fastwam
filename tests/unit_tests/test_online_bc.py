@@ -146,6 +146,7 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert cfg.cluster.component_placement["actor,env,rollout"] == "6"
     assert cfg.actor.model.num_steps == cfg.actor.model.openpi.num_steps == 4
     assert cfg.env.train.total_num_envs == cfg.env.eval.total_num_envs == 32
+    assert cfg.env.min_open_files == 4096
     assert cfg.env.train.rollout_epoch == 1
     assert cfg.actor.micro_batch_size == 32
     assert cfg.actor.global_batch_size == 1024
@@ -244,3 +245,46 @@ def test_augmentation_opt_out_preserves_resize_and_eval_behavior():
     obs = replace(obs, images={k: torch.zeros(2, 3, 240, 320) for k in IMAGE_KEYS})
     resized, *_ = model._preprocess_observation(obs, train=True)
     assert all(image.shape == (2, 3, 224, 224) for image in resized)
+
+
+def test_env_file_limit_is_opt_in_and_preserves_higher_or_unlimited_limits(monkeypatch):
+    import resource
+    from types import SimpleNamespace
+
+    from omegaconf import OmegaConf
+
+    from rlinf.workers.env.env_worker import EnvWorker
+
+    calls = []
+    monkeypatch.setattr(resource, "setrlimit", lambda *args: calls.append(args))
+    actor = SimpleNamespace(
+        cfg=OmegaConf.create({"env": {}}),
+        enable_train=False,
+        enable_eval=False,
+        _group_name="probe",
+        _world_size=1,
+        broadcast=lambda *a, **k: None,
+        update_env_cfg=lambda: None,
+        _init_env=lambda: None,
+        log_info=lambda *a: None,
+    )
+    monkeypatch.setattr(resource, "getrlimit", lambda _: (1024, 1048576))
+    EnvWorker.init_worker(actor)
+    assert calls == []
+    actor.cfg.env.min_open_files = 4096
+    EnvWorker.init_worker(actor)
+    assert calls == [(resource.RLIMIT_NOFILE, (4096, 1048576))]
+    for existing in (8192, resource.RLIM_INFINITY):
+        calls.clear()
+        monkeypatch.setattr(
+            resource,
+            "getrlimit",
+            lambda _, value=existing: (value, resource.RLIM_INFINITY),
+        )
+        EnvWorker.init_worker(actor)
+        assert calls == []
+    import pytest
+
+    monkeypatch.setattr(resource, "getrlimit", lambda _: (1024, 2048))
+    with pytest.raises(ValueError, match="exceeds allowed range"):
+        EnvWorker.init_worker(actor)
