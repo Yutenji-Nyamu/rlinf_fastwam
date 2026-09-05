@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -u
+case "${1:-}" in
+  smoke)
+    run_dir=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-b1024-u10-eval16x2-gpu6-20260905-v7
+    rounds=2; eval_every=1; save_every=1; updates=20; time_limit=5400
+    experiment=pi0-bc-u10-smoke-gpu6
+    ;;
+  formal)
+    run_dir=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-bc32x1-b1024-u10-eval16x2-gpu6-formal100-20260905-v1
+    rounds=100; eval_every=5; save_every=10; updates=1000; time_limit=172800
+    experiment=pi0-bc-u10-formal100-gpu6
+    ;;
+  *) exit 90 ;;
+esac
+root=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc
+robotwin=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+venv=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$root:$robotwin"
+export REPO_PATH="$root" EMBODIED_PATH="$root/examples/embodiment" ASSETS_PATH="$robotwin"
+export PI0_MODEL_PATH=/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50
+export ONLINE_BC_RUN_DIR="$run_dir" RAY_ADDRESS=172.17.0.1:6389 RLINF_CODE_WORKING_DIR="$root"
+export TORCHINDUCTOR_COMPILE_THREADS=1
+unset CUDA_VISIBLE_DEVICES LD_PRELOAD RLINF_SCENE_FENCE_LIBRARY
+cd "$root" || exit 91
+date -Is > "$run_dir/started_at.txt"
+git rev-parse HEAD > "$run_dir/runtime/source-head.txt"
+timeout --signal=TERM --kill-after=180s "$time_limit" "$venv/bin/python" -u \
+  "$root/examples/embodiment/train_embodied_agent.py" \
+  --config-name robotwin_adjust_bottle_online_bc_openpi \
+  runner.max_epochs="$rounds" runner.val_check_interval="$eval_every" \
+  runner.save_interval="$save_every" actor.optim.total_training_steps="$updates" \
+  runner.logger.experiment_name="$experiment" > "$run_dir/driver.log" 2>&1 &
+child=$!
+printf '%s\n' "$child" > "$run_dir/timeout.pid"
+wait "$child"
+rc=$?
+printf '%s\n' "$rc" > "$run_dir/exit_code.txt"
+date -Is > "$run_dir/finished_at.txt"
+exit "$rc"

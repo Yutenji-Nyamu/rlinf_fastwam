@@ -1,7 +1,8 @@
 # RoboTwin pi0 online success BC
 
-Status: implementation and CPU/config checks completed; GPU end-to-end validation
-is still pending. Based on official RLinf `dc9b87cc49334c7516487ead68ebeb060fd7c090`.
+Status: the two-round GPU6 U10 capacity smoke passed on 2026-09-05, including
+collection, updates, redeployment, fixed evaluation and checkpoint writing.
+Based on official RLinf `dc9b87cc49334c7516487ead68ebeb060fd7c090`.
 
 The existing embodied runner performs collection, supervised updates, weight
 synchronization, evaluation and checkpointing. `online_bc` selects a supervised
@@ -34,8 +35,8 @@ claim of deterministic behavior across independently drawn initial noise.
 
 Use `examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml`.
 It is a two-round single-GPU capacity smoke, **not** an automatic formal launch:
-GPU6; 32 parallel training environments x one serial sampling batch; 32 fixed
-evaluation environments; micro-batch 32 / global batch 1024; two optimizer steps
+GPU6; 32 parallel training environments x one serial sampling batch; 16 fixed
+evaluation environments x two explicit batches; micro-batch 32 / global batch 1024; ten optimizer steps
 per round. It keeps the intended per-GPU parallelism and training batch sizes.
 
 Model parameters inherit the official pi0 recipe: `num_steps=4` comes from
@@ -45,8 +46,14 @@ exactly four steps. The previous local override to 10 has been removed.
 The supervised optimizer LR 2.5e-5, Adam betas 0.9/0.95, epsilon 1e-8, weight
 decay 1e-10 and gradient clip 1 come from official RoboTwin **pi0** DAgger.
 Its 1000-step warmup / 30000-step cosine schedule is not inherited: this short
-budget uses constant LR and zero warmup. Two updates per round is our explicit
+budget uses constant LR and zero warmup. Ten updates per round is our explicit
 budget choice, not DAgger's default one update.
+
+`env.eval.fixed_reset_batch_count=2` preserves the original single-worker 32
+fixed seeds while reducing concurrent scenes. Evaluation uses `auto_reset=false`;
+the existing end-of-batch seed update advances to the next half, then wraps after
+two batches. All other configurations keep the original fixed-seed behavior.
+This is not a claim of identical seeds to an older two-worker GRPO partition.
 
 The proposed 100-round run also collects 32 attempts per round, with evaluation
 every 5 rounds and saving every 10; only the smoke's round/interval/name fields
@@ -92,10 +99,11 @@ python examples/embodiment/train_embodied_agent.py \
 python -m pytest -q tests/unit_tests/test_online_bc.py
 ```
 
-Nine tests cover pre-query/command alignment, success vs termination, exclusion
+Eleven tests cover pre-query/command alignment, success vs termination, exclusion
 of post-terminal queries, cumulative archives, replay RNG restoration, masked FM
 gradients, optional demo loss mixture, the teacher-free expert-only config, and
-real OpenPI augmentation with its native FP32 inputs. As in official pi0
+real OpenPI augmentation with its native FP32 inputs, the EnvWorker FD limit,
+and repeated fixed evaluation batches matching the original 32 seeds. As in official pi0
 DAgger, model/FSDP precision is null: OpenPI keeps its native BF16 backbone and
 FP32 projections. Globally forcing FSDP BF16 breaks augmentation and native
 projection input contracts. No extra image/projection cast patch is required.
@@ -126,7 +134,15 @@ the owned EnvWorker: changing the launcher shell does not update existing Ray
 head limits. Other jobs and higher/unlimited limits remain unchanged. No
 camera, OIDN, concurrency, sample count, or learning parameter changes here.
 
-Still required: GPU collection/update/redeployment and real model/optimizer
-checkpoint validation. A single-GPU smoke is not a learning-gain measurement or a
+The GPU6 U10 smoke exited normally after two full rounds / 20 optimizer updates.
+Both checkpoints contain the native model/optimizer shard, full weights, success
+replay and learner count (10 / 20). Fixed evaluation used two disjoint 16-seed
+batches each round. Sampled peak GPU use was 79319 MiB and EnvWorker FD peak 1003;
+memory headroom remains limited. See the complete resolved configurations and
+[verification](evidence/online-bc-u10-20260905/U10_SMOKE_VERIFICATION_20260905.json).
+TensorBoard steps 0 / 1 correspond to completed rounds 1 / 2.
+
+This validates checkpoint writing; it does not replace a full production-worker
+restart/restore test. A single-GPU smoke is not a learning-gain measurement or a
 long-run renderer stability result. Multi-rank readiness is synchronized, but
 multi-GPU training has not been tested for this new method.
