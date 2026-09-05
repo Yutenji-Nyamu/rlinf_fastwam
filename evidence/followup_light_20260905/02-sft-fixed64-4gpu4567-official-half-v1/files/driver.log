@@ -1,0 +1,299 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/evaluations/eval_embodied_agent.py:32: Hydra14MigrationWarning: 
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  @hydra.main(
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/defaults_list.py:251: UserWarning: In 'robotwin_adjust_bottle_openpi_eval': Defaults list is missing `_self_`. See https://hydra.cc/docs/1.2/upgrades/1.0_to_1.1/default_composition_order for more information
+  warnings.warn(msg, UserWarning)
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+2026-08-21 15:43:30,471	INFO worker.py:2015 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[INFO 15:43:32 RLinf] RLinf is running on a cluster with 1 node and 8 accelerators. The nodes' details are: 
+node_labels: []
+node_rank: 0
+ray_id: 9369f9af9373c732e89bc304338715702f6b94d731014b1f767648d8
+node_ip: 120.241.223.9
+num_cpus: 128
+python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+profiler_backends: []
+
+Node groups' details are: 
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[INFO 15:43:32 FlexiblePlacementStrategy] 
+[INFO 15:43:32 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+{
+  "env": {
+    "eval": {
+      "env_type": "robotwin",
+      "total_num_envs": 64,
+      "auto_reset": true,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": true,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": true,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "video_cfg": {
+        "save_video": true,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/results/rlinf-shenzhen/ppo/sft-fixed64-4gpu4567-official-half-v1/video/eval"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "./data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 1
+    },
+    "group_name": "EnvGroup",
+    "enable_offload": true
+  },
+  "rollout": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+      "precision": null,
+      "num_action_chunks": 50,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 4,
+      "add_value_head": true,
+      "openpi": {
+        "config_name": "pi0_aloha_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 50,
+        "num_steps": 4,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_sde",
+        "add_value_head": true,
+        "detach_critic_input": true,
+        "use_dsrl": false,
+        "dsrl_state_dim": 8,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "recompute_logprobs": false,
+    "enable_offload": true,
+    "pipeline_stage_num": 1
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "env, rollout": "4-7"
+    },
+    "tracer": {
+      "enable": false
+    }
+  },
+  "runner": {
+    "task_type": "embodied_eval",
+    "logger": {
+      "log_path": "/data/chenyiteng/results/rlinf-shenzhen/ppo/sft-fixed64-4gpu4567-official-half-v1",
+      "project_name": "rlinf",
+      "experiment_name": "robotwin_ppo_openpi",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": 1000,
+    "max_steps": -1,
+    "only_eval": true,
+    "val_check_interval": -1,
+    "save_interval": -1,
+    "resume_dir": null,
+    "ckpt_path": null,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "weight_sync_interval": 1,
+    "overlap_env_bootstrap": false
+  }
+}
+[INFO 15:43:32 FlexiblePlacementStrategy] 
+[INFO 15:43:32 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[INFO 15:43:32 FlexiblePlacementStrategy] Generated 4 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=4, accelerator_type='NV_GPU', local_rank=0, local_world_size=4, visible_accelerators=['4'], isolate_accelerator=True, local_hardware_ranks=[4], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=5, accelerator_type='NV_GPU', local_rank=1, local_world_size=4, visible_accelerators=['5'], isolate_accelerator=True, local_hardware_ranks=[5], node_group_label='cluster'), Placement(rank=2, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=2, local_world_size=4, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=3, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=3, local_world_size=4, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 15:43:32 FlexiblePlacementStrategy] Generated 4 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=4, accelerator_type='NV_GPU', local_rank=0, local_world_size=4, visible_accelerators=['4'], isolate_accelerator=True, local_hardware_ranks=[4], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=5, accelerator_type='NV_GPU', local_rank=1, local_world_size=4, visible_accelerators=['5'], isolate_accelerator=True, local_hardware_ranks=[5], node_group_label='cluster'), Placement(rank=2, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=2, local_world_size=4, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=3, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=3, local_world_size=4, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 15:43:33 NodePlacementStrategy] 
+[INFO 15:43:33 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 15:43:33 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 15:43:33 NodePlacementStrategy] 
+[INFO 15:43:33 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 15:43:33 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787327013.517307 1279722 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1787327013.564441 1279722 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787327014.997354 1279722 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(MultiStepRolloutWorker pid=1287708)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1287708)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=1287707)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1287707)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=1287711)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1287711)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=1287709)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1287709)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=1287712)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1287712)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=1287714)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1287714)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=1287715)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1287715)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=1287717)[0m [INFO 15:43:38 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1287717)[0m [INFO 15:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=1287707)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=1287707)[0m I0000 00:00:1787327019.832873 1288785 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=3) pid=1287711)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=3) pid=1287711)[0m I0000 00:00:1787327019.832875 1288783 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=1287708)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=1287708)[0m I0000 00:00:1787327020.100696 1288778 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=2) pid=1287709)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=2) pid=1287709)[0m I0000 00:00:1787327020.172338 1288780 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=3) pid=1287711)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=3) pid=1287711)[0m I0000 00:00:1787327020.849449 1288783 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=0) pid=1287707)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=1287707)[0m I0000 00:00:1787327020.864433 1288785 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=1287708)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=1287708)[0m I0000 00:00:1787327021.149784 1288778 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=2) pid=1287709)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=2) pid=1287709)[0m I0000 00:00:1787327021.210695 1288780 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=1287708)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=1287708)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=3) pid=1287711)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=3) pid=1287711)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=1287707)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=1287707)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=2) pid=1287709)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=2) pid=1287709)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=1287707)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=1287707)[0m Evaluating Rollout Epochs: 100%|██████████| 1/1 [02:47<00:00, 167.79s/it]Evaluating Rollout Epochs: 100%|██████████| 1/1 [02:47<00:00, 167.79s/it]
+[INFO 15:49:19 RLinf] {'eval/episode_len': array(200., dtype=float32), 'eval/reward': array(0.00367187, dtype=float32), 'eval/success_at_end': array(0.734375, dtype=float32), 'eval/return': array(0.734375, dtype=float32), 'eval/success_once': array(0.734375, dtype=float32), 'eval/num_trajectories': 64}
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    1/1 │ Progress: ████████████████████████████████████████ │ 100.0%                                    │
+│ Elapsed: 04:48 │ ETA: 00:00 │ Step Time: 288.695s                                                                    │
+├───────────────────────────────────────────────────── Evaluation ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=64                    │return=0.734375                       │
+│reward=0.0036718748                    │success_at_end=0.734375                │success_once=0.734375                 │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+	Command being timed: "timeout --signal=INT --kill-after=120s 3600s /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/evaluations/eval_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/evaluations/robotwin --config-name robotwin_adjust_bottle_openpi_eval cluster.component_placement={env\,\ rollout:4-7} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/ppo/sft-fixed64-4gpu4567-official-half-v1 rollout.model.model_path=/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50 env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.total_num_envs=64 env.eval.rollout_epoch=1 env.eval.max_episode_steps=200 env.eval.max_steps_per_rollout_epoch=200 env.eval.use_fixed_reset_state_ids=true"
+	User time (seconds): 14.79
+	System time (seconds): 8.88
+	Percent of CPU this job got: 6%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 5:58.40
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1627456
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 408399
+	Voluntary context switches: 42168
+	Involuntary context switches: 504
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 7128
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
