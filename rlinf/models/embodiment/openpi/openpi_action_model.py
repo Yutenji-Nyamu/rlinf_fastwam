@@ -16,7 +16,7 @@ import math
 import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 import numpy as np
@@ -73,6 +73,7 @@ class OpenPi0Config(Pi0Config):
     rtc_guidance_clip: float = 5.0
     # training config
     train_expert_only: bool = False
+    image_augmentation: bool = True
     safe_get_logprob: bool = False
     joint_logprob: bool = False  # designed for flow-noise
     double_layer: bool = False  # designed for flow-sde without acceleration
@@ -374,6 +375,11 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             raise NotImplementedError
 
+    def _preprocess_observation(self, observation, *, train=True):
+        return super()._preprocess_observation(
+            observation, train=train and self.config.image_augmentation
+        )
+
     def sft_forward(self, data, use_action_chunk_loss: bool = False, **kwargs):
         if hasattr(self, "gradient_checkpointing_disable"):
             self.gradient_checkpointing_disable()
@@ -393,12 +399,6 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 else x
             ),
             observation,
-        )
-        # Replay/FSDP may cast images to BF16. Native training augmentation
-        # builds an FP32 rotation grid, so restore images after the FSDP
-        # boundary; this does not change rollout rendering or model precision.
-        observation = replace(
-            observation, images={k: v.float() for k, v in observation.images.items()}
         )
         if not isinstance(actions, torch.Tensor):
             actions = torch.as_tensor(actions, device=device)

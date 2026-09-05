@@ -131,6 +131,9 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert cfg.algorithm.loss_type == "online_bc"
     assert cfg.rollout.expert_model is None
     assert cfg.actor.model.openpi.train_expert_only
+    assert not cfg.actor.model.openpi.image_augmentation
+    assert cfg.actor.model.precision is None
+    assert cfg.actor.fsdp_config.mixed_precision.param_dtype is None
     assert cfg.cluster.component_placement["actor,env,rollout"] == "6"
     assert cfg.actor.model.num_steps == cfg.actor.model.openpi.num_steps == 4
     assert cfg.env.train.total_num_envs == cfg.env.eval.total_num_envs == 32
@@ -140,7 +143,7 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert cfg.algorithm.online_bc.demo_weight == 0
 
 
-def test_sft_restores_image_dtype_after_mixed_precision_boundary(monkeypatch):
+def test_sft_preserves_native_float32_augmentation_inputs(monkeypatch):
     from types import SimpleNamespace
 
     from openpi.models.model import Observation
@@ -154,8 +157,8 @@ def test_sft_restores_image_dtype_after_mixed_precision_boundary(monkeypatch):
         OpenPi0ForRLActionPrediction,
     )
 
-    # Exercise the real SFT boundary and native augmentation without loading
-    # multi-billion-parameter weights. Input matches post-FSDP BF16 images.
+    # Native OpenPI SFT keeps augmentation and projection inputs FP32.
+    # The config test above prevents FSDP from globally overriding that dtype.
     model = OpenPi0ForRLActionPrediction.__new__(OpenPi0ForRLActionPrediction)
     torch.nn.Module.__init__(model)
     model.register_parameter("probe", torch.nn.Parameter(torch.zeros(1)))
@@ -164,10 +167,10 @@ def test_sft_restores_image_dtype_after_mixed_precision_boundary(monkeypatch):
     masks = {k: torch.ones(2, dtype=torch.bool) for k in IMAGE_KEYS}
     obs = Observation(
         images={
-            k: torch.zeros(2, 3, 224, 224, dtype=torch.bfloat16) for k in IMAGE_KEYS
+            k: torch.zeros(2, 3, 224, 224, dtype=torch.float32) for k in IMAGE_KEYS
         },
         image_masks=masks,
-        state=torch.zeros(2, 32, dtype=torch.bfloat16),
+        state=torch.zeros(2, 32, dtype=torch.float32),
         tokenized_prompt=torch.zeros(2, 8, dtype=torch.int64),
         tokenized_prompt_mask=torch.ones(2, 8, dtype=torch.bool),
     )
@@ -191,3 +194,44 @@ def test_sft_restores_image_dtype_after_mixed_precision_boundary(monkeypatch):
     loss.backward()
     torch.testing.assert_close(loss, torch.tensor(1.0))
     torch.testing.assert_close(model.probe.grad, torch.ones(1))
+
+
+def test_augmentation_opt_out_preserves_resize_and_eval_behavior():
+    from dataclasses import replace
+    from types import SimpleNamespace
+
+    from openpi.models.model import Observation
+    from openpi.models_pytorch.preprocessing_pytorch import IMAGE_KEYS
+
+    from rlinf.models.embodiment.openpi.openpi_action_model import (
+        OpenPi0Config,
+        OpenPi0ForRLActionPrediction,
+    )
+
+    assert OpenPi0Config.__dataclass_fields__["image_augmentation"].default is True
+    model = OpenPi0ForRLActionPrediction.__new__(OpenPi0ForRLActionPrediction)
+    torch.nn.Module.__init__(model)
+    model.config = SimpleNamespace(image_augmentation=False)
+    obs = Observation(
+        images={k: torch.full((2, 3, 224, 224), 0.2) for k in IMAGE_KEYS},
+        image_masks={k: torch.ones(2, dtype=torch.bool) for k in IMAGE_KEYS},
+        state=torch.zeros(2, 32),
+        tokenized_prompt=torch.zeros(2, 8, dtype=torch.int64),
+        tokenized_prompt_mask=torch.ones(2, 8, dtype=torch.bool),
+    )
+    rng = torch.get_rng_state().clone()
+    images, *_ = model._preprocess_observation(obs, train=True)
+    assert torch.equal(rng, torch.get_rng_state())
+    for actual, expected in zip(images, obs.images.values()):
+        torch.testing.assert_close(actual, expected)
+    model.config.image_augmentation = True
+    eval_images, *_ = model._preprocess_observation(obs, train=False)
+    for actual, expected in zip(eval_images, obs.images.values()):
+        torch.testing.assert_close(actual, expected)
+    torch.manual_seed(42)
+    augmented, *_ = model._preprocess_observation(obs, train=True)
+    assert any(not torch.equal(a, b) for a, b in zip(augmented, images))
+    model.config.image_augmentation = False
+    obs = replace(obs, images={k: torch.zeros(2, 3, 240, 320) for k in IMAGE_KEYS})
+    resized, *_ = model._preprocess_observation(obs, train=True)
+    assert all(image.shape == (2, 3, 224, 224) for image in resized)

@@ -115,7 +115,8 @@ actor:
   enable_offload: true
   enable_drq: false
   model:
-    precision: bf16
+    # Preserve native OpenPI BF16 backbone / FP32 projections, as in DAgger.
+    precision: null
     model_path: ${oc.env:PI0_MODEL_PATH}
     num_action_chunks: 50
     # num_steps inherits model/pi0.yaml (4), as in official pi0 DAgger/GRPO.
@@ -125,6 +126,7 @@ actor:
       config_name: pi0_aloha_robotwin
       num_images_in_input: 3
       train_expert_only: true
+      image_augmentation: false  # User-selected BC baseline; retain resize/norm.
       action_chunk: ${actor.model.num_action_chunks}
       action_env_dim: ${actor.model.action_dim}
   optim:

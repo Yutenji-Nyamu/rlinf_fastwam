@@ -92,12 +92,18 @@ python examples/embodiment/train_embodied_agent.py \
 python -m pytest -q tests/unit_tests/test_online_bc.py
 ```
 
-Eight tests cover pre-query/command alignment, success vs termination, exclusion
+Nine tests cover pre-query/command alignment, success vs termination, exclusion
 of post-terminal queries, cumulative archives, replay RNG restoration, masked FM
 gradients, optional demo loss mixture, the teacher-free expert-only config, and
-real OpenPI augmentation after the mixed-precision SFT boundary. SFT images are
-restored to FP32 inside the model, after FSDP input casting; model BF16 precision
-and rollout images/denoising remain unchanged.
+real OpenPI augmentation with its native FP32 inputs. As in official pi0
+DAgger, model/FSDP precision is null: OpenPI keeps its native BF16 backbone and
+FP32 projections. Globally forcing FSDP BF16 breaks augmentation and native
+projection input contracts. No extra image/projection cast patch is required.
+This BC configuration explicitly sets `openpi.image_augmentation: false`:
+random crop, rotation and color jitter are off, but model resize and normalization
+remain. The new flag defaults to true for other configurations; inference always
+uses the original non-augmented path. This is a baseline choice, not a claim
+that augmentation cannot affect learning or generalization.
 Worker import and full `validate_cfg` have also passed on the target server.
 The synthetic demo-loss test does not validate a real LeRobot dataset.
 
