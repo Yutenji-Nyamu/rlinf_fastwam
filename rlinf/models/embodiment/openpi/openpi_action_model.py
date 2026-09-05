@@ -421,7 +421,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             from rlinf.data.online_bc import masked_fm_loss
 
-            vla_loss = masked_fm_loss(loss, action_valid_mask)
+            vla_loss = masked_fm_loss(
+                loss, action_valid_mask, kwargs.get("action_weights")
+            )
         if not self.config.use_rlt:
             return vla_loss
 
@@ -910,7 +912,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 )
             else:
                 outputs = self.sample_actions(
-                    observation, mode=mode, compute_values=compute_values
+                    observation,
+                    mode=mode,
+                    compute_values=compute_values,
+                    dvac_tail_steps=kwargs.get("dvac_tail_steps", 0),
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -934,6 +939,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         }
         if forward_action is not None:
             forward_inputs["action"] = forward_action
+
+        if "dvac_v" in outputs:
+            forward_inputs["dvac_v"] = outputs["dvac_v"]
 
         if self.config.is_nft:
             nft_outputs = {
@@ -985,6 +993,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        dvac_tail_steps=0,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -1012,6 +1021,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             noise=noise,
             mode=mode,
             compute_values=compute_values,
+            dvac_tail_steps=dvac_tail_steps,
         )
 
     def _sample_actions_with_prefix_cache(
@@ -1023,10 +1033,15 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        dvac_tail_steps=0,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
         num_steps = self.config.num_steps
+        if dvac_tail_steps and not 2 <= dvac_tail_steps <= num_steps:
+            raise ValueError("DVAC tail length must be between 2 and denoising steps.")
+        dvac_endpoints = []
+        dvac_times = self._get_timesteps(num_steps, device) if dvac_tail_steps else None
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
@@ -1093,6 +1108,13 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             )
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
+            if dvac_tail_steps and idx >= num_steps - dvac_tail_steps:
+                # Same forward/RNG; x and v are in the model's normalized coordinates.
+                h, d = self.config.action_chunk, self.config.action_env_dim
+                dvac_endpoints.append(
+                    x_t_prev[:, :h, :d].detach().float()
+                    - dvac_times[idx] * v_t[:, :h, :d].detach().float()
+                )
             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
             log_prob = self.get_logprob_norm(x_t, x_t_mean, x_t_std)
             # store
@@ -1127,6 +1149,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
+        if dvac_tail_steps:
+            from rlinf.algorithms.online_bc_dvac import endpoint_variance
+
+            result["dvac_v"] = endpoint_variance(torch.stack(dvac_endpoints, dim=1))
         return result
 
     def _get_timesteps(self, denoise_steps, device):

@@ -49,6 +49,18 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             seed=self.cfg.actor.seed + self._rank,
             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
         )
+        self.dvac = None
+        self.dvac_metrics = {}
+        dvac_cfg = bc.get("dvac", {})
+        if dvac_cfg.get("enabled", False):
+            from rlinf.algorithms.online_bc_dvac import OnlineBCDvac
+
+            self.dvac = OnlineBCDvac(
+                **{
+                    key: dvac_cfg[key]
+                    for key in ("window", "alpha", "z_clip", "log_eps", "std_floor")
+                }
+            )
         if self.demo_weight:
             self._build_demo_loader()
 
@@ -83,10 +95,22 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
     async def recv_rollout_trajectories(self, input_channel: Channel):
         send_num = self._component_placement.get_world_size("env") * self.stage_num
         recv_num = self._component_placement.get_world_size("actor")
+        new_episodes = []
+        moments = torch.zeros(3, dtype=torch.float64)
         for _ in range(compute_split_num(send_num, recv_num)):
             # Every env stage sends its exact split count, including empty lists.
-            episodes = await input_channel.get(async_op=True).async_wait()
-            self.replay_buffer.add_episodes(episodes)
+            packet = await input_channel.get(async_op=True).async_wait()
+            if self.dvac is None:
+                self.replay_buffer.add_episodes(packet)
+            else:
+                new_episodes.extend(packet["episodes"])
+                moments += packet["dvac_moments"].cpu()
+        if self.dvac is not None:
+            moments = moments.to(self.device)
+            torch.distributed.all_reduce(moments)
+            self.dvac_metrics = self.dvac.annotate(new_episodes, moments.cpu())
+            self.replay_buffer.add_episodes(new_episodes)
+            self.log_info(f"Online BC DVAC: {self.dvac_metrics}")
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):
@@ -96,6 +120,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             data=prepared,
             use_action_chunk_loss=True,
             action_valid_mask=batch["action_valid_mask"],
+            action_weights=batch.get("action_weights"),
         )
         if not self.demo_weight:
             return online_loss
@@ -125,9 +150,11 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         )
         torch.distributed.all_reduce(ready, op=torch.distributed.ReduceOp.MIN)
         if not ready.item():
-            return {"bc/skipped_empty_rank": 1.0}
+            return {"bc/skipped_empty_rank": 1.0, **self.dvac_metrics}
         metrics = super().run_training()
-        return {k.replace("dagger/", "bc/"): v for k, v in metrics.items()}
+        return {
+            k.replace("dagger/", "bc/"): v for k, v in metrics.items()
+        } | self.dvac_metrics
 
     def save_checkpoint(self, save_base_path, step):
         if self.is_weight_offloaded:
@@ -146,6 +173,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         target = Path(save_base_path) / "online_bc" / f"rank_{self._rank}"
         self.replay_buffer.save_checkpoint(target)
         torch.save({"update_step": self.update_step}, target / "learner.pt")
+        if self.dvac is not None:
+            torch.save(self.dvac.state_dict(), target / "dvac.pt")
 
     def load_checkpoint(self, load_base_path):
         self._strategy.load_checkpoint(
@@ -160,3 +189,5 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.update_step = torch.load(target / "learner.pt", weights_only=True)[
             "update_step"
         ]
+        if self.dvac is not None:
+            self.dvac.load_state_dict(torch.load(target / "dvac.pt", weights_only=True))
