@@ -1,0 +1,153 @@
+# Single-GPU capacity smoke: keep per-GPU concurrency and training batches.
+# A 100-round candidate only overrides runner intervals and optimizer total.
+defaults:
+  - env/robotwin_adjust_bottle@env.train
+  - env/robotwin_adjust_bottle@env.eval
+  - model/pi0@actor.model
+  - hybrid_engines/fsdp@actor.fsdp_config
+  - weight_syncer/patch_syncer@weight_syncer
+  - _self_
+  - override hydra/job_logging: stdout
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  searchpath:
+    - file://${oc.env:EMBODIED_PATH}/config/
+
+cluster:
+  num_nodes: 1
+  component_placement:
+    actor,env,rollout: "6"
+
+runner:
+  task_type: embodied
+  logger:
+    log_path: ${oc.env:ONLINE_BC_RUN_DIR}
+    project_name: rlinf-online-bc
+    experiment_name: pi0-adjust-bottle-online-bc-smoke32-m4-gpu6
+    logger_backends: [tensorboard]
+  max_epochs: 2
+  max_steps: -1
+  only_eval: false
+  val_check_interval: 1
+  save_interval: 1
+  resume_dir: null
+  ckpt_path: null
+  overlap_env_bootstrap: false
+
+algorithm:
+  loss_type: online_bc
+  adv_type: gae  # Unused: the supervised actor skips advantage computation.
+  gamma: 0.99
+  reward_coef: 1.0
+  update_epoch: 2  # Optimizer steps per collection round, not passes over replay.
+  online_bc:
+    data_path: ${runner.logger.log_path}/success_data
+    demo_weight: 0.0  # Loss = (online_FM + w * demo_FM) / (1 + w).
+    demo_data_path: null  # Existing local LeRobot dataset; required only for w>0.
+  replay_buffer:
+    min_buffer_size: 1
+
+env:
+  group_name: EnvGroup
+  train:
+    total_num_envs: 32
+    rollout_epoch: 1
+    auto_reset: false
+    ignore_terminations: false
+    max_episode_steps: 200
+    max_steps_per_rollout_epoch: 200
+    assets_path: ${oc.env:ASSETS_PATH}
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+    center_crop: false
+    video_cfg:
+      save_video: false
+    task_config:
+      save_path: ${runner.logger.log_path}/robotwin_data
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+  eval:
+    total_num_envs: 32
+    rollout_epoch: 1
+    auto_reset: true
+    ignore_terminations: true
+    max_episode_steps: 200
+    max_steps_per_rollout_epoch: 200
+    use_fixed_reset_state_ids: true
+    is_eval: true
+    assets_path: ${oc.env:ASSETS_PATH}
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
+    center_crop: false
+    video_cfg:
+      save_video: false
+    task_config: ${env.train.task_config}
+
+rollout:
+  group_name: RolloutGroup
+  backend: huggingface
+  recompute_logprobs: false
+  enable_offload: true
+  pipeline_stage_num: 1
+  collect_prev_infos: false
+  collect_final_values: false
+  expert_model: null
+  model:
+    model_path: ${actor.model.model_path}
+    precision: ${actor.model.precision}
+
+actor:
+  group_name: ActorGroup
+  training_backend: fsdp
+  micro_batch_size: 32
+  global_batch_size: 1024
+  seed: 1234
+  enable_offload: true
+  enable_drq: false
+  model:
+    precision: bf16
+    model_path: ${oc.env:PI0_MODEL_PATH}
+    num_action_chunks: 50
+    # num_steps inherits model/pi0.yaml (4), as in official pi0 DAgger/GRPO.
+    action_dim: 14
+    add_value_head: false
+    openpi:
+      config_name: pi0_aloha_robotwin
+      num_images_in_input: 3
+      train_expert_only: true
+      action_chunk: ${actor.model.num_action_chunks}
+      action_env_dim: ${actor.model.action_dim}
+  optim:
+    lr: 2.5e-5
+    value_lr: 2.5e-5
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1e-8
+    weight_decay: 1e-10
+    clip_grad: 1.0
+    total_training_steps: 4
+    lr_warmup_steps: 0
+    lr_scheduler: constant
+    min_lr: 2.5e-5
+  fsdp_config:
+    sharding_strategy: no_shard
+    use_orig_params: true
+    mixed_precision:
+      param_dtype: ${actor.model.precision}
+      reduce_dtype: ${actor.model.precision}
+      buffer_dtype: ${actor.model.precision}
+
+reward:
+  use_reward_model: false
+critic:
+  use_critic_model: false

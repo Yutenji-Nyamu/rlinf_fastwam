@@ -23,6 +23,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from rlinf.algorithms.registry import calculate_adv_and_returns
 from rlinf.algorithms.rlt.transition import update_rlt_transitions
+from rlinf.data.online_bc import SuccessEpisodeCollector
 from rlinf.data.schema.embodied_trajectory_builder import (
     EmbodiedLerobotTrajectoryBuilder,
     EmbodiedTrajectoryBuilder,
@@ -84,6 +85,7 @@ class EnvWorker(Worker):
 
         self.collect_transitions = self.cfg.rollout.get("collect_transitions", False)
         self.collect_prev_infos = self.cfg.rollout.get("collect_prev_infos", True)
+        self.enable_online_bc = cfg.algorithm.get("loss_type") == "online_bc"
         self.stage_num = self.cfg.rollout.pipeline_stage_num
         self.enable_rlt = OmegaConf.select(
             self.cfg, "algorithm.loss_type", default=""
@@ -160,6 +162,22 @@ class EnvWorker(Worker):
                 self.cfg.env.train.total_num_envs // self._world_size // self.stage_num
             )
             self.train_batch_size = self.cfg.env.train.total_num_envs // self.stage_num
+            if self.enable_online_bc:
+                if (
+                    self.cfg.env.train.env_type != "robotwin"
+                    or self.cfg.env.train.auto_reset
+                    or self.cfg.env.train.max_steps_per_rollout_epoch
+                    != self.cfg.env.train.max_episode_steps
+                    or self.cfg.env.train.max_episode_steps
+                    % self.model_cfg.num_action_chunks
+                ):
+                    raise ValueError(
+                        "Online BC requires full, chunk-aligned RoboTwin rounds with auto_reset=False."
+                    )
+                self.bc_collectors = [
+                    SuccessEpisodeCollector(self.train_num_envs_per_stage)
+                    for _ in range(self.stage_num)
+                ]
         else:
             self.enable_online_lerobot = False
         if self.enable_eval:
@@ -931,6 +949,8 @@ class EnvWorker(Worker):
             for stage_id in range(self.stage_num):
                 self.env_list[stage_id].is_start = True
                 extracted_obs, infos = self.env_list[stage_id].reset()
+                if self.enable_online_bc:
+                    self.bc_collectors[stage_id].reset()
                 if self.enable_online_lerobot:
                     trajectory_builders = getattr(self, "trajectory_builders", None)
                     if trajectory_builders is not None:
@@ -1225,6 +1245,14 @@ class EnvWorker(Worker):
                         policy_output.actions,
                         stage_id,
                     )
+                    if self.enable_online_bc:
+                        self.bc_collectors[stage_id].append(
+                            policy_output.forward_inputs,
+                            chunk_step_payload["chunk_actions"],
+                            env_output.env_infos["success"],
+                            env_output.dones,
+                            policy_output.versions,
+                        )
                     # Emulated observation latency: wait before the obs goes out,
                     # without blocking the other coroutines in this worker.
                     await self._maybe_wait_env_delay(stage_id)
@@ -1324,10 +1352,10 @@ class EnvWorker(Worker):
                 )
                 final_actions = policy_output.forward_inputs.get("action", None)
                 final_forward_inputs = policy_output.forward_inputs
-                if (
-                    OmegaConf.select(self.cfg, "algorithm.loss_type", default="")
-                    == "embodied_dagger"
-                ):
+                if OmegaConf.select(self.cfg, "algorithm.loss_type", default="") in {
+                    "embodied_dagger",
+                    "online_bc",
+                }:
                     final_actions = None
                     final_forward_inputs = {}
 
@@ -1376,7 +1404,16 @@ class EnvWorker(Worker):
             self.finish_rollout()
 
         if not self.use_training_pipeline and actor_channel is not None:
-            if self.enable_online_lerobot:
+            if self.enable_online_bc:
+                for collector in self.bc_collectors:
+                    episodes = collector.drain()
+                    for split in range(self.actor_split_num):
+                        actor_channel.put(
+                            episodes[split :: self.actor_split_num], async_op=True
+                        )
+                for builder in self.trajectory_builders:
+                    builder.clear()
+            elif self.enable_online_lerobot:
                 for stage_id in range(self.stage_num):
                     episodes = self.trajectory_builders[stage_id].drain_episodes()
                     await self.send_lerobot_episodes(episodes, actor_channel)

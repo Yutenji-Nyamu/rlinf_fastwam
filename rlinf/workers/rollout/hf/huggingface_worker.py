@@ -491,7 +491,9 @@ class MultiStepRolloutWorker(Worker):
             SupportedModel.CFG_MODEL,
             SupportedModel.MOLMOACT2,
         ]:
-            if self.enable_dagger:
+            if self.enable_dagger or self.algorithm_cfg.get("loss_type") == "online_bc":
+                # Native stochastic-noise / ODE pi0 inference, without the
+                # GRPO-specific intermediate SDE exploration step.
                 kwargs = {"mode": "eval"}
             else:
                 kwargs = {"mode": mode}

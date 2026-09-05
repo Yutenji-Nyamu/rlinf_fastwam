@@ -72,6 +72,14 @@ def main(cfg) -> None:
         from rlinf.workers.actor.fsdp_rlt_td3_policy_worker import RLTTD3FSDPPolicy
 
         actor_worker_cls = RLTTD3FSDPPolicy
+    elif cfg.algorithm.loss_type == "online_bc":
+        if use_training_pipeline:
+            raise ValueError("online_bc uses synchronous collection/update rounds.")
+        from rlinf.workers.actor.fsdp_online_bc_policy_worker import (
+            EmbodiedOnlineBCFSDPPolicy,
+        )
+
+        actor_worker_cls = EmbodiedOnlineBCFSDPPolicy
     elif cfg.algorithm.loss_type == "embodied_dagger":
         if use_training_pipeline:
             raise ValueError(

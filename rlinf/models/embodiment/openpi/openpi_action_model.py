@@ -409,7 +409,13 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             loss = super().forward(observation, actions)
         if use_action_chunk_loss:
             loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
-        vla_loss = loss.mean()
+        action_valid_mask = kwargs.get("action_valid_mask")
+        if action_valid_mask is None:
+            vla_loss = loss.mean()
+        else:
+            from rlinf.data.online_bc import masked_fm_loss
+
+            vla_loss = masked_fm_loss(loss, action_valid_mask)
         if not self.config.use_rlt:
             return vla_loss
 
