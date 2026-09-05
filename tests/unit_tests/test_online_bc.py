@@ -146,8 +146,8 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert cfg.cluster.component_placement["actor,env,rollout"] == "6"
     assert cfg.actor.model.num_steps == cfg.actor.model.openpi.num_steps == 4
     assert cfg.env.train.total_num_envs == 32
-    assert cfg.env.eval.total_num_envs == 16
-    assert cfg.env.eval.rollout_epoch == cfg.env.eval.fixed_reset_batch_count == 2
+    assert cfg.env.eval.total_num_envs == 8
+    assert cfg.env.eval.rollout_epoch == cfg.env.eval.fixed_reset_batch_count == 4
     assert not cfg.env.eval.auto_reset
     assert cfg.env.min_open_files == 4096
     assert cfg.env.train.rollout_epoch == 1
@@ -192,14 +192,15 @@ def test_fixed_eval_batches_preserve_old_32_seeds_and_repeat_full_set(tmp_path):
     expected = old.reset_state_ids.clone()
     old.update_reset_state_ids()
     torch.testing.assert_close(old.reset_state_ids, expected)
-    batched = make_env(16, 2)
-    for _ in range(3):
-        first = batched.reset_state_ids.clone()
-        batched.update_reset_state_ids()
-        second = batched.reset_state_ids.clone()
-        torch.testing.assert_close(torch.cat([first, second]), expected)
-        assert torch.unique(torch.cat([first, second])).numel() == 32
-        batched.update_reset_state_ids()
+    for num_envs, batches in ((16, 2), (8, 4)):
+        batched = make_env(num_envs, batches)
+        for _ in range(3):
+            observed = []
+            for _ in range(batches):
+                observed.append(batched.reset_state_ids.clone())
+                batched.update_reset_state_ids()
+            torch.testing.assert_close(torch.cat(observed), expected)
+            assert torch.unique(torch.cat(observed)).numel() == 32
     with pytest.raises(ValueError, match="explicit complete eval"):
         make_env(16, 2, auto_reset=True)
 

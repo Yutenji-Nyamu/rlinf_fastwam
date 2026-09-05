@@ -79,14 +79,14 @@ env:
         random_light: false
         crazy_random_light_rate: 0
   eval:
-    total_num_envs: 16
-    rollout_epoch: 2
+    total_num_envs: 8
+    rollout_epoch: 4
     auto_reset: false  # Explicit batch boundaries; evaluate each fixed seed once.
     ignore_terminations: true
     max_episode_steps: 200
     max_steps_per_rollout_epoch: 200
     use_fixed_reset_state_ids: true
-    fixed_reset_batch_count: 2  # Cycle the original single-worker 32 fixed seeds.
+    fixed_reset_batch_count: 4  # Cycle the original single-worker 32 fixed seeds.
     is_eval: true
     assets_path: ${oc.env:ASSETS_PATH}
     seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
