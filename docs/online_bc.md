@@ -74,6 +74,9 @@ initialization, not the smoke's trained weights, for that separate run.
 
 Set `REPO_PATH`, `EMBODIED_PATH`, `ASSETS_PATH`, `PI0_MODEL_PATH`, and
 `ONLINE_BC_RUN_DIR`; include the selected RoboTwin repository on `PYTHONPATH`.
+`ASSETS_PATH` / `env.*.assets_path` must be the **RoboTwin repository root**,
+not its `assets/` child: the native environment sets this variable before import,
+and the clutter loader appends `assets/objects/objaverse/list.json` itself.
 On a shared Ray server, set `RAY_ADDRESS` and `RLINF_CODE_WORKING_DIR`, select an
 idle physical GPU in `cluster.component_placement`, and use absolute run paths.
 Never restart the shared head to launch this job.
@@ -89,9 +92,12 @@ python examples/embodiment/train_embodied_agent.py \
 python -m pytest -q tests/unit_tests/test_online_bc.py
 ```
 
-Seven tests cover pre-query/command alignment, success vs termination, exclusion
+Eight tests cover pre-query/command alignment, success vs termination, exclusion
 of post-terminal queries, cumulative archives, replay RNG restoration, masked FM
-gradients, optional demo loss mixture, and the teacher-free expert-only config.
+gradients, optional demo loss mixture, the teacher-free expert-only config, and
+real OpenPI augmentation after the mixed-precision SFT boundary. SFT images are
+restored to FP32 inside the model, after FSDP input casting; model BF16 precision
+and rollout images/denoising remain unchanged.
 Worker import and full `validate_cfg` have also passed on the target server.
 The synthetic demo-loss test does not validate a real LeRobot dataset.
 

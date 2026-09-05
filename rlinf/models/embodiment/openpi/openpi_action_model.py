@@ -16,7 +16,7 @@ import math
 import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
 import numpy as np
@@ -393,6 +393,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 else x
             ),
             observation,
+        )
+        # Replay/FSDP may cast images to BF16. Native training augmentation
+        # builds an FP32 rotation grid, so restore images after the FSDP
+        # boundary; this does not change rollout rendering or model precision.
+        observation = replace(
+            observation, images={k: v.float() for k, v in observation.images.items()}
         )
         if not isinstance(actions, torch.Tensor):
             actions = torch.as_tensor(actions, device=device)

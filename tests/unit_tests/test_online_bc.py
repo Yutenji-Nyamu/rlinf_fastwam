@@ -138,3 +138,56 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert cfg.actor.micro_batch_size == 32
     assert cfg.actor.global_batch_size == 1024
     assert cfg.algorithm.online_bc.demo_weight == 0
+
+
+def test_sft_restores_image_dtype_after_mixed_precision_boundary(monkeypatch):
+    from types import SimpleNamespace
+
+    from openpi.models.model import Observation
+    from openpi.models_pytorch.pi0_pytorch import PI0Pytorch
+    from openpi.models_pytorch.preprocessing_pytorch import (
+        IMAGE_KEYS,
+        preprocess_observation_pytorch,
+    )
+
+    from rlinf.models.embodiment.openpi.openpi_action_model import (
+        OpenPi0ForRLActionPrediction,
+    )
+
+    # Exercise the real SFT boundary and native augmentation without loading
+    # multi-billion-parameter weights. Input matches post-FSDP BF16 images.
+    model = OpenPi0ForRLActionPrediction.__new__(OpenPi0ForRLActionPrediction)
+    torch.nn.Module.__init__(model)
+    model.register_parameter("probe", torch.nn.Parameter(torch.zeros(1)))
+    model.config = SimpleNamespace(use_rlt=False, action_chunk=50, action_env_dim=14)
+    model.gradient_checkpointing_disable = lambda: None
+    masks = {k: torch.ones(2, dtype=torch.bool) for k in IMAGE_KEYS}
+    obs = Observation(
+        images={
+            k: torch.zeros(2, 3, 224, 224, dtype=torch.bfloat16) for k in IMAGE_KEYS
+        },
+        image_masks=masks,
+        state=torch.zeros(2, 32, dtype=torch.bfloat16),
+        tokenized_prompt=torch.zeros(2, 8, dtype=torch.int64),
+        tokenized_prompt_mask=torch.ones(2, 8, dtype=torch.bool),
+    )
+
+    def native_forward(self, observation, actions):
+        assert all(v.dtype == torch.float32 for v in observation.images.values())
+        assert observation.tokenized_prompt.dtype == torch.int64
+        assert all(v.dtype == torch.bool for v in observation.image_masks.values())
+        torch.manual_seed(42)
+        augmented = preprocess_observation_pytorch(observation, train=True)
+        assert all(torch.isfinite(v).all() for v in augmented.images.values())
+        assert actions.dtype == torch.float32
+        return actions.square() + self.probe
+
+    monkeypatch.setattr(PI0Pytorch, "forward", native_forward)
+    loss = model.sft_forward(
+        (obs, torch.ones(2, 50, 32, dtype=torch.bfloat16)),
+        use_action_chunk_loss=True,
+        action_valid_mask=torch.ones(2, 50, 14, dtype=torch.bool),
+    )
+    loss.backward()
+    torch.testing.assert_close(loss, torch.tensor(1.0))
+    torch.testing.assert_close(model.probe.grad, torch.ones(1))
