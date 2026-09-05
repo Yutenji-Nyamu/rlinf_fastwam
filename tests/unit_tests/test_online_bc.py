@@ -134,6 +134,15 @@ def test_online_bc_config_is_teacher_free_expert_only_and_single_gpu():
     assert not cfg.actor.model.openpi.image_augmentation
     assert cfg.actor.model.precision is None
     assert cfg.actor.fsdp_config.mixed_precision.param_dtype is None
+    assert not cfg.actor.fsdp_config.use_orig_params
+    assert cfg.actor.fsdp_config.checkpoint_format == "local_shard"
+    assert (
+        "GemmaDecoderLayer"
+        not in cfg.actor.fsdp_config.wrap_policy.transformer_layer_cls_to_wrap
+    )
+    assert {"q_proj", "k_proj", "v_proj", "o_proj"}.issubset(
+        cfg.actor.fsdp_config.wrap_policy.no_split_names
+    )
     assert cfg.cluster.component_placement["actor,env,rollout"] == "6"
     assert cfg.actor.model.num_steps == cfg.actor.model.openpi.num_steps == 4
     assert cfg.env.train.total_num_envs == cfg.env.eval.total_num_envs == 32

@@ -143,7 +143,13 @@ actor:
     min_lr: 2.5e-5
   fsdp_config:
     sharding_strategy: no_shard
-    use_orig_params: true
+    use_orig_params: false  # Match validated pi0 GRPO / official pi0 DAgger.
+    checkpoint_format: local_shard  # Same topology on resume; explicit, not dtype-dependent.
+    # Joint-prefix/suffix SFT calls inside GemmaDecoderLayer.forward; wrap the
+    # MLP/norm/projections actually invoked, keeping frozen and trained flats separate.
+    wrap_policy:
+      transformer_layer_cls_to_wrap: [GemmaMLP, SiglipVisionEmbeddings, GemmaRMSNorm, GemmaRotaryEmbedding]
+      no_split_names: [q_proj, k_proj, v_proj, o_proj, action_in_proj, action_out_proj, lm_head, state_proj, action_time_mlp_in, action_time_mlp_out, time_mlp_in, time_mlp_out]
     mixed_precision:
       param_dtype: ${actor.model.precision}
       reduce_dtype: ${actor.model.precision}

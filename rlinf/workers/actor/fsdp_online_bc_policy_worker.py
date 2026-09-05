@@ -37,6 +37,11 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         # Only the generic supervised update loop is inherited; no teacher,
         # intervention extraction, LeRobot collector or DAgger loss is used.
         bc = self.cfg.algorithm.online_bc
+        self.checkpoint_format = self.cfg.actor.fsdp_config.get(
+            "checkpoint_format", "local_shard"
+        )
+        if self.checkpoint_format not in ("local_shard", "dcp"):
+            raise ValueError("Online BC checkpoint_format must be local_shard or dcp.")
         self.demo_weight = float(bc.demo_weight)
         if self.demo_weight < 0:
             raise ValueError("online_bc.demo_weight must be non-negative.")
@@ -136,9 +141,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             optimizers=[self.optimizer],
             lr_schedulers=[self.lr_scheduler],
             save_path=save_base_path,
-            checkpoint_format="local_shard"
-            if self.cfg.actor.fsdp_config.use_orig_params
-            else "dcp",
+            checkpoint_format=self.checkpoint_format,
         )
         target = Path(save_base_path) / "online_bc" / f"rank_{self._rank}"
         self.replay_buffer.save_checkpoint(target)
@@ -150,9 +153,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             optimizers=[self.optimizer],
             lr_schedulers=[self.lr_scheduler],
             load_path=load_base_path,
-            checkpoint_format="local_shard"
-            if self.cfg.actor.fsdp_config.use_orig_params
-            else "dcp",
+            checkpoint_format=self.checkpoint_format,
         )
         target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
         self.replay_buffer.load_checkpoint(target)

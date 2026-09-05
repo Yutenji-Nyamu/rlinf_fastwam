@@ -99,6 +99,17 @@ real OpenPI augmentation with its native FP32 inputs. As in official pi0
 DAgger, model/FSDP precision is null: OpenPI keeps its native BF16 backbone and
 FP32 projections. Globally forcing FSDP BF16 breaks augmentation and native
 projection input contracts. No extra image/projection cast patch is required.
+As in the validated pi0 GRPO and official DAgger setup, `use_orig_params` is
+false. The true setting reproduced missing frozen vision keys on weight export
+after SFT; the false setting preserved all 778 model keys in the focused probe.
+Checkpoint format is explicitly `local_shard`, independently of parameter
+representation, and is passed symmetrically to native save/load. Resume requires
+the same world size and FSDP topology. No new checkpoint implementation is added.
+Joint-prefix/suffix native SFT calls Gemma attention projections/MLPs/norms
+directly rather than invoking each decoder layer's forward. The BC config uses
+the existing FSDP `wrap_policy` interface to wrap those invoked modules and keep
+frozen/trainable parameter groups separate. GRPO's decoder-layer wrap boundary
+cannot simply be reused for this different forward call graph.
 This BC configuration explicitly sets `openpi.image_augmentation: false`:
 random crop, rotation and color jitter are off, but model resize and normalization
 remain. The new flag defaults to true for other configurations; inference always
