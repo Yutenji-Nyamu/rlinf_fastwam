@@ -1,0 +1,75 @@
+diff --git a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+index c1daa572..7c2f01b0 100644
+--- a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
++++ b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+@@ -670,6 +670,8 @@ class FSDPModelManager:
+                     ]
+                 )
+             )
++        for optimizer in optimizers:
++            warmup_optimizer_state(optimizer)
+         return optimizers
+ 
+     def build_grad_scaler(self, enabled: bool, **kwargs) -> ShardedGradScaler:
+diff --git a/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py b/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+index 7f198b9f..9d8e9a6d 100644
+--- a/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
++++ b/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ from collections.abc import Iterable
++import os
+ from typing import Union
+ 
+ import torch
+@@ -63,6 +64,36 @@ class Checkpoint(Stateful):
+             for opt, opt_sd in zip(self.optimizers, optim_state_dicts):
+                 opt.load_state_dict(opt_sd)
+ 
++    def _log_optimizer_state(self, marker):
++        if os.environ.get("RLINF_CKPT_DIAG") != "1":
++            return
++        optimizers = (
++            (self.optimizers,)
++            if isinstance(self.optimizers, Optimizer)
++            else tuple(self.optimizers)
++        )
++        rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else -1
++        for index, optimizer in enumerate(optimizers):
++            params = [param for group in optimizer.param_groups for param in group["params"]]
++            missing = [param for param in params if param not in optimizer.state]
++            empty = [param for param in params if not optimizer.state.get(param)]
++            steps = []
++            for param in params:
++                step = optimizer.state.get(param, {}).get("step")
++                if step is not None:
++                    steps.append(float(step.item() if isinstance(step, torch.Tensor) else step))
++            print(
++                "RLINF_CKPT_DIAG "
++                f"marker={marker} rank={rank} optimizer={index} "
++                f"params={len(params)} state_entries={len(optimizer.state)} "
++                f"missing={len(missing)} empty={len(empty)} "
++                f"step_zero={sum(step == 0 for step in steps)} "
++                f"step_gt0={sum(step > 0 for step in steps)} "
++                f"step_min={min(steps) if steps else 'none'} "
++                f"step_max={max(steps) if steps else 'none'}",
++                flush=True,
++            )
++
+     def state_dict(self):
+         if self.checkpoint_format == "local_shard":
+             model_sd = self.model.state_dict()
+@@ -84,11 +115,13 @@ class Checkpoint(Stateful):
+                 "rng": get_rng_state(),
+             }
+         else:
++            self._log_optimizer_state("before_get_state_dict")
+             model_sd, optim_sd = get_state_dict(
+                 model=self.model,
+                 optimizers=self.optimizers,
+                 options=self.opts,
+             )
++            self._log_optimizer_state("after_get_state_dict")
+ 
+             lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
