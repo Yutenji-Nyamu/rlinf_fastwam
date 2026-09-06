@@ -1,0 +1,12 @@
+# @package _global_
+# Action-level advantage weighting; native Control remains the primary config.
+algorithm:
+  logprob_type: action_level
+  dvac_gradient_weighting:
+    mode: apply
+    application: action_advantage
+    selected_l: 3
+    warmup_steps: 1
+    window_steps: 5
+    weight_min: 0.5
+    weight_max: 1.5
