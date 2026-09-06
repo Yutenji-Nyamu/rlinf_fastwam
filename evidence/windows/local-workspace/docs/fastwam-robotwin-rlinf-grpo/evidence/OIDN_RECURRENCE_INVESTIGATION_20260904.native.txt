@@ -1,0 +1,344 @@
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_oidn_tricks.py
+1: #
+2: # Copyright 2025 Hillbot Inc.
+3: # Copyright 2020-2024 UCSD SU Lab
+4: # 
+5: # Licensed under the Apache License, Version 2.0 (the "License");
+6: # you may not use this file except in compliance with the License.
+7: # You may obtain a copy of the License at:
+8: # 
+9: #     http://www.apache.org/licenses/LICENSE-2.0
+10: # 
+11: # Unless required by applicable law or agreed to in writing, software
+12: # distributed under the License is distributed on an "AS IS" BASIS,
+13: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14: # See the License for the specific language governing permissions and
+15: # limitations under the License.
+16: #
+17: import ctypes
+18: import platform
+19: import os
+20: 
+21: if platform.system() == "Linux":
+22:     try:
+23:         oidn_dll = ctypes.CDLL(
+24:             os.path.join(
+25:                 os.path.dirname(__file__),
+26:                 "oidn_library/libOpenImageDenoise_core.so.2.0.1",
+27:             ),
+28:             ctypes.RTLD_LOCAL,
+29:         )
+30: 
+31:         oidn_dll = ctypes.CDLL(
+32:             os.path.join(
+33:                 os.path.dirname(__file__), "oidn_library/libOpenImageDenoise.so.2.0.1"
+34:             ),
+35:             ctypes.RTLD_LOCAL,
+36:         )
+37:     except Exception:
+38:         pass
+39: if platform.system() == "Windows":
+40:     try:
+41:         oidn_dll = ctypes.CDLL(
+42:             os.path.join(
+43:                 os.path.dirname(__file__),
+44:                 "oidn_library/OpenImageDenoise_core.dll",
+45:             ),
+46:         )
+47: 
+48:         oidn_dll = ctypes.CDLL(
+49:             os.path.join(
+50:                 os.path.dirname(__file__), "oidn_library/OpenImageDenoise.dll"
+51:             ),
+52:         )
+53:     except Exception:
+54:         pass
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/wrapper/scene.py
+38:     def __init__(self, systems=None):
+39:         if systems is None:
+40:             super().__init__(
+41:                 [sapien.physx.PhysxCpuSystem(), sapien.render.RenderSystem()]
+42:             )
+43:         else:
+44:             super().__init__(systems)
+45: 
+46:     @property
+47:     def timestep(self):
+48:         return self.physx_system.timestep
+49: 
+50:     @timestep.setter
+51:     def timestep(self, timestep):
+52:         self.physx_system.timestep = timestep
+53: 
+54:     def set_timestep(self, timestep):
+55:         self.timestep = timestep
+56: 
+57:     def get_timestep(self):
+58:         return self.timestep
+59: 
+60:     def create_actor_builder(self):
+61:         from .actor_builder import ActorBuilder
+62: 
+63:         return ActorBuilder().set_scene(self)
+64: 
+65:     def create_articulation_builder(self):
+66:         from .articulation_builder import ArticulationBuilder
+67: 
+68:         return ArticulationBuilder().set_scene(self)
+69: 
+70:     def create_urdf_loader(self):
+123:         self.remove_entity(camera.entity)
+124: 
+125:     def get_cameras(self):
+126:         return self.render_system.cameras
+127: 
+128:     def get_mounted_cameras(self):
+129:         return self.get_cameras()
+130: 
+131:     def step(self):
+132:         self.physx_system.step()
+133: 
+134:     def update_render(self):
+135:         self.render_system.step()
+136: 
+137:     def add_ground(
+138:         self,
+139:         altitude,
+140:         render=True,
+141:         material=None,
+142:         render_material=None,
+143:         render_half_size=[10, 10],
+144:     ):
+145:         from .actor_builder import ActorBuilder
+146: 
+147:         builder = self.create_actor_builder()
+148:         if render:
+149:             builder.add_plane_visual(
+150:                 sapien.Pose(p=[0, 0, altitude], q=[0.7071068, 0, -0.7071068, 0]),
+151:                 [10, *render_half_size],
+152:                 render_material,
+153:                 "",
+154:             )
+155: 
+156:         builder.add_plane_collision(
+157:             sapien.Pose(p=[0, 0, altitude], q=[0.7071068, 0, -0.7071068, 0]),
+158:             material,
+159:         )
+160:         builder.set_physx_body_type("static")
+161:         ground = builder.build()
+162:         ground.name = "ground"
+163:         return ground
+164: 
+298: 
+299:     @property
+300:     def ambient_light(self):
+301:         return self.render_system.ambient_light
+302: 
+303:     @ambient_light.setter
+304:     def ambient_light(self, color):
+305:         self.render_system.ambient_light = color
+306: 
+307:     def set_ambient_light(self, color):
+308:         self.ambient_light = color
+309: 
+310:     def add_point_light(
+311:         self,
+312:         position,
+313:         color,
+314:         shadow=False,
+315:         shadow_near=0.1,
+316:         shadow_far=10.0,
+317:         shadow_map_size=2048,
+318:     ):
+319:         entity = sapien.Entity()
+320:         light = sapien.render.RenderPointLightComponent()
+321:         entity.add_component(light)
+322:         light.color = color
+323:         light.shadow = shadow
+324:         light.shadow_near = shadow_near
+325:         light.shadow_far = shadow_far
+326:         light.shadow_map_size = shadow_map_size
+327:         light.pose = sapien.Pose(position)
+328:         self.add_entity(entity)
+329:         return light
+330: 
+331:     def add_directional_light(
+332:         self,
+333:         direction,
+334:         color,
+401: 
+402:     def set_environment_map(self, cubemap: str | RenderCubemap):
+403:         if isinstance(cubemap, str):
+404:             self.render_system.cubemap = sapien.render.RenderCubemap(cubemap)
+405:         else:
+406:             self.render_system.cubemap = cubemap
+407: 
+408:     def set_environment_map_from_files(
+409:         self, px: str, nx: str, py: str, ny: str, pz: str, nz: str
+410:     ):
+411:         self.render_system.cubemap = sapien.render.RenderCubemap(px, nx, py, ny, pz, nz)
+412: 
+413:     # TODO particle entity, deformable entity
+414: 
+415:     def create_viewer(self):
+416:         from sapien.utils import Viewer
+417: 
+418:         viewer = Viewer()
+419:         viewer.set_scene(self)
+420: 
+421:         return viewer
+422: 
+423:     def __del__(self):
+424:         self.clear()
+LIBC glibc 2.35
+
+/sys/fs/cgroup/user.slice/user-1003.slice/memory.max max
+/sys/fs/cgroup/user.slice/user-1003.slice/memory.current 1164619333632
+/sys/fs/cgroup/user.slice/user-1003.slice/memory.events low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+/sys/fs/cgroup/user.slice/user-1003.slice/pids.max 1384119
+/sys/fs/cgroup/user.slice/user-1003.slice/pids.current 9398
+/sys/fs/cgroup/user.slice/user-1003.slice/pids.events max 0
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/memory.max max
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/memory.current 1112412708864
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/memory.events low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/pids.max max
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/pids.current 9200
+/sys/fs/cgroup/user.slice/user-1003.slice/session-1419.scope/pids.events max 0
+GIT fastwam-current-grpo
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+
+
+GIT sidney-pi05-current-rlinf
+f50e235c5ab1f4390f0ba92bfb13390ed0a86810
+
+
+GIT robotwin-vector-render-lifecycle-fix-0008ae6
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+
+
+SOURCE_FILE_PATHS
+865:         sparse_rewards = torch.zeros_like(env_output.rewards, dtype=reward_output.dtype)
+866:         if not done_envs.any():
+867:             return sparse_rewards
+868: 
+869:         done_steps = env_output.dones.to(torch.int64).argmax(dim=1)
+870:         sparse_rewards[done_envs, done_steps[done_envs]] = (
+871:             reward_output[done_envs].reshape(-1).to(sparse_rewards.dtype)
+872:         )
+873:         return sparse_rewards
+874: 
+875:     def assign_history_reward(self, stage_id: int, reward_model_output: torch.Tensor):
+876:         reward_assign_lengths = [
+877:             min(
+878:                 history_buffer_length[env_id]
+879:                 for history_buffer_length in self.history_lengths[stage_id].values()
+880:             )
+881:             for env_id in range(self.train_num_envs_per_stage)
+882:         ]
+883:         rollout_rewards = self.trajectory_builders[stage_id].rewards
+884:         rollout_rewards_length = len(rollout_rewards)
+885:         reward_assign_lengths = [
+886:             min(reward_assign_length, rollout_rewards_length)
+887:             for reward_assign_length in reward_assign_lengths
+888:         ]
+889:         if not any(reward_assign_lengths):
+890:             return
+891:         reward = (self.reward_weight * reward_model_output).to(
+892:             rollout_rewards[-1].dtype
+893:         )
+894:         for env_id, reward_assign_length in enumerate(reward_assign_lengths):
+895:             for reward_assign_step in range(2, reward_assign_length + 1):
+896:                 rollout_rewards[-reward_assign_step][env_id] += reward[env_id]
+897: 
+898:     @Worker.timer("env/bootstrap_step")
+899:     def bootstrap_step(self) -> list[EnvOutput]:
+900:         def get_zero_dones() -> torch.Tensor:
+901:             return (
+902:                 torch.zeros((self.train_num_envs_per_stage,), dtype=bool)
+903:                 .unsqueeze(1)
+904:                 .repeat(1, self.model_cfg.num_action_chunks)
+905:             )
+906: 
+907:         env_outputs: list[EnvOutput] = []
+908:         if not self.cfg.env.train.auto_reset:
+909:             for stage_id in range(self.stage_num):
+910:                 self.env_list[stage_id].is_start = True
+911:                 extracted_obs, infos = self.env_list[stage_id].reset()
+912:                 if self.enable_online_lerobot:
+913:                     trajectory_builders = getattr(self, "trajectory_builders", None)
+914:                     if trajectory_builders is not None:
+915:                         trajectory_builders[stage_id].reset_episode_buffers()
+916:                 dones = get_zero_dones()
+917:                 terminations = dones.clone()
+918:                 truncations = dones.clone()
+919: 
+920:                 env_output = EnvOutput(
+921:                     obs=extracted_obs,
+922:                     dones=dones,
+923:                     terminations=terminations,
+924:                     truncations=truncations,
+925:                     final_obs=(
+1040:     async def send_lerobot_episodes(
+1041:         self, episodes: list[list[dict]], channel: Channel
+1042:     ) -> None:
+1043:         if not episodes:
+1044:             return
+1045:         if self.actor_split_num <= 1:
+1046:             chunks = [episodes]
+1047:         else:
+1048:             chunks = split_list(
+1049:                 episodes,
+1050:                 self.actor_split_num,
+1051:                 enforce_divisible_batch=False,
+1052:             )
+1053:         for chunk in chunks:
+1054:             if not chunk:
+1055:                 continue
+1056:             channel.put(chunk, async_op=True)
+1057: 
+1058:     @Worker.timer("run_interact_once")
+1059:     async def _run_interact_once(
+1060:         self,
+1061:         input_channel: Channel,
+1062:         rollout_channel: Channel,
+1063:         reward_channel: Channel | None,
+1064:         actor_channel: Channel | None,
+1065:         *,
+1066:         cooperative_yield: bool,
+1067:     ) -> dict[str, torch.Tensor]:
+1068:         self.trajectory_builders = self._prepare_trajectory_builders(
+1069:             getattr(self, "trajectory_builders", None)
+1070:         )
+1071:         env_metrics = defaultdict(list)
+1072:         rlt_pending_obs: list[dict[str, Any] | None] = [None] * self.stage_num
+1073: 
+1074:         for epoch in range(self.rollout_epoch):
+1075:             if epoch == 0 and self._prefetched_train_bootstrap is not None:
+1076:                 env_outputs = self._prefetched_train_bootstrap
+1077:                 self._prefetched_train_bootstrap = None
+1078:             else:
+1079:                 env_outputs = self._bootstrap_and_send_train(
+1080:                     rollout_channel,
+1081:                     skip_stage_ids=self.smooth_intervene.active_stage_ids(),
+1082:                 )
+1083: 
+1084:             for stage_id in range(self.stage_num):
+1085:                 await self._maybe_wait_env_delay(stage_id)
+1086: 
+1087:             for chunk_step_idx in range(self.n_train_chunk_steps):
+1088:                 for stage_id in range(self.stage_num):
+1089:                     if cooperative_yield:
+1090:                         await asyncio.sleep(0)
+1091: 
+1092:                     env_output = env_outputs[stage_id]
+1093:                     curr_obs = env_output.obs
+1094:                     if env_output.intervene_actions is not None:
+1095:                         self.trajectory_builders[stage_id].update_last_actions(

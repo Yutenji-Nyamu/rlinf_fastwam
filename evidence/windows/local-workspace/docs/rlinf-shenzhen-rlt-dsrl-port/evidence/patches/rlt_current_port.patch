@@ -1,0 +1,1457 @@
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_current.yaml b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_current.yaml
+new file mode 100644
+index 00000000..ae8d0521
+--- /dev/null
++++ b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_current.yaml
+@@ -0,0 +1,297 @@
++defaults:
++  - env/robotwin_adjust_bottle@env.train
++  - env/robotwin_adjust_bottle@env.eval
++  - hybrid_engines/fsdp@actor.fsdp_config
++  - weight_syncer/patch_syncer@weight_syncer
++  - override hydra/job_logging: stdout
++  - _self_
++
++hydra:
++  run:
++    dir: .
++  output_subdir: null
++
++cluster:
++  num_nodes: 1
++  # Base method config only. The approved smoke/formal overlay owns GPU count.
++  component_placement:
++    actor,env,rollout: all
++
++runner:
++  task_type: embodied
++  logger:
++    log_path: ${oc.env:RLT_LOG_ROOT,/data/chenyiteng/results/rlinf-rlt}
++    project_name: rlinf-rlt
++    experiment_name: robotwin_adjust_bottle_rlt_stage2_ac_mlp_current
++    logger_backends: [tensorboard]
++  max_epochs: 1000
++  # Deliberately non-launching base; an approved run supplies its cycle budget.
++  max_steps: 0
++  only_eval: false
++  weight_sync_interval: 1
++  val_check_interval: 10
++  save_interval: 10
++  resume_dir: null
++  ckpt_path: null
++
++algorithm:
++  update_epoch: 5
++  group_size: 1
++  adv_type: embodied_sac
++  loss_type: rlt_ac
++  loss_agg_func: token-mean
++  agg_q: min
++  actor_agg_q: q1
++  enable_drq: false
++  q_head_type: ${actor.model.q_head_type}
++  bootstrap_type: standard
++  gamma: 0.99
++  tau: 0.005
++
++  # RoboTwin V1: reference before readiness, student afterward, no expert gate.
++  rlt_route:
++    type: full_task
++  rlt_transition_replay:
++    enable: true
++    compact: true
++    bootstrap_on_truncation: true
++  rlt_schedule:
++    enable: true
++    max_updates_per_train_step: 400
++    warmup_min_size: 500
++    warmup_post_collect_updates: 5000
++    train_every_episodes: 0
++    train_every_transitions: 1
++
++  q_weight: 1.0
++  bc_weight: 1.0
++  reference_dropout_prob: 0.5
++  actor_weight_schedule:
++    enable: true
++    warmup_updates: 5000
++    ramp_updates: 10000
++    warmup_bc_weight: 7.0
++    warmup_q_weight: 0.05
++    online_bc_weight: 2.5
++    online_q_weight: 0.45
++  entropy_tuning:
++    alpha_type: fixed_alpha
++    initial_alpha: 0.0
++    optim:
++      lr: 3.0e-4
++      lr_scheduler: torch_constant
++      clip_grad: 10.0
++  replay_buffer:
++    enable_cache: true
++    cache_size: 15000
++    sample_window_size: 15000
++    min_buffer_size: 1
++    auto_save: false
++  target_update_freq: 1
++  target_update_type: all
++  critic_actor_ratio: 2
++  critic_subsample_size: 0
++  backup_entropy: false
++
++  # Sidecar state is saved on fresh runs too; unresolved artifact identity is
++  # allowed to compose but rejected before save/resume.
++  rlt_resume:
++    enable: true
++    schema_version: 1
++    contract:
++      current_base_commit: 7d07a4212ee6858cc333e1d4fab7a37256d1f839
++      model_identity: exact_pi0
++      reconstruction: current_causal_ar
++      stage1_manifest_path: ${oc.env:RLT_STAGE1_MANIFEST_PATH,UNRESOLVED_RLT_STAGE1_MANIFEST_PATH}
++      stage1_manifest_id: ${oc.env:RLT_STAGE1_MANIFEST_ID,UNRESOLVED_RLT_STAGE1_MANIFEST_ID}
++      stage1_manifest_sha256: ${oc.env:RLT_STAGE1_MANIFEST_SHA256,UNRESOLVED_RLT_STAGE1_MANIFEST_SHA256}
++      norm_stats_sha256: ${oc.env:RLT_NORM_STATS_SHA256,UNRESOLVED_RLT_NORM_STATS_SHA256}
++      train_vla: false
++      prefix_seq_len: 768
++      image_only: true
++      use_mask: true
++      z_dim: 2048
++      action_horizon: 50
++      action_chunk: 10
++      action_dim: 14
++      canonical_adapter_version: robotwin_aloha_canonical_v1
++      route: full_task
++      replay: compact_transition
++      bootstrap: pure_truncation_only
++
++env:
++  group_name: EnvGroup
++  enable_offload: true
++  train:
++    enable_offload: true
++    rollout_epoch: 1
++    # Old AutoDL 4-env/100-cycle pilot candidate; the later 8-env/250-cycle
++    # formal used an overlay. The approved H100 launch owns the final value.
++    total_num_envs: 4
++    auto_reset: false
++    ignore_terminations: false
++    use_rel_reward: false
++    reward_coef: 1.0
++    max_episode_steps: 200
++    max_steps_per_rollout_epoch: 200
++    group_size: ${algorithm.group_size}
++    assets_path: ${oc.env:ROBOTWIN_ASSETS_PATH,/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support}
++    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
++    center_crop: false
++    video_cfg:
++      save_video: false
++    task_config:
++      embodiment: [aloha-agilex]
++      camera:
++        collect_wrist_camera: true
++      domain_randomization:
++        random_background: false
++        cluttered_table: false
++        clean_background_rate: 1
++        random_head_camera_dis: 0
++        random_table_height: 0
++        random_light: false
++        crazy_random_light_rate: 0
++  eval:
++    rollout_epoch: 1
++    total_num_envs: 4
++    auto_reset: true
++    ignore_terminations: true
++    use_rel_reward: false
++    reward_coef: 1.0
++    max_episode_steps: 200
++    max_steps_per_rollout_epoch: 200
++    group_size: 1
++    use_fixed_reset_state_ids: true
++    is_eval: true
++    assets_path: ${oc.env:ROBOTWIN_ASSETS_PATH,/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support}
++    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
++    center_crop: false
++    video_cfg:
++      save_video: false
++      video_base_dir: ${runner.logger.log_path}/video/eval
++    task_config:
++      embodiment: [aloha-agilex]
++      camera:
++        collect_wrist_camera: true
++      domain_randomization:
++        random_background: false
++        cluttered_table: false
++        clean_background_rate: 1
++        random_head_camera_dis: 0
++        random_table_height: 0
++        random_light: false
++        crazy_random_light_rate: 0
++
++rollout:
++  group_name: RolloutGroup
++  backend: huggingface
++  enable_offload: false
++  pipeline_stage_num: 1
++  collect_transitions: true
++  collect_prev_infos: false
++  model:
++    model_type: ${actor.model.model_type}
++    model_path: null
++    precision: ${actor.model.precision}
++    action_dim: ${actor.model.action_dim}
++    num_action_chunks: ${actor.model.num_action_chunks}
++    ref_num_action_chunks: ${actor.model.ref_num_action_chunks}
++    z_dim: ${actor.model.z_dim}
++    proprio_dim: ${actor.model.proprio_dim}
++    add_q_head: ${actor.model.add_q_head}
++    q_head_type: ${actor.model.q_head_type}
++    fixed_std: ${actor.model.fixed_std}
++    is_lora: false
++    lora_rank: 32
++  rlt_feature_model:
++    model_type: openpi
++    model_path: ${oc.env:RLT_STAGE1_MODEL_PATH}
++    precision: null
++    num_action_chunks: ${actor.model.ref_num_action_chunks}
++    action_dim: ${actor.model.action_dim}
++    add_value_head: false
++    is_lora: false
++    lora_rank: 32
++    openpi_data:
++      repo_id: physical-intelligence/robotwin
++      default_prompt: adjust the bottle
++      norm_stats_path: ${oc.env:ROBOTWIN_PI0_NORM_STATS_PATH,/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin/norm_stats.json}
++    openpi:
++      config_name: pi0_aloha_robotwin
++      num_images_in_input: 3
++      action_horizon: 50
++      action_chunk: ${actor.model.ref_num_action_chunks}
++      action_env_dim: ${actor.model.action_dim}
++      num_steps: 4
++      state_indices: []
++      train_expert_only: false
++      add_value_head: false
++      detach_critic_input: true
++      noise_method: flow_ode
++      rtc_enabled: false
++      use_rlt: true
++      rlt_train_vla: false
++      rlt_alpha: 0.0
++      rlt_input_dim: 2048
++      rlt_embed_dim: 2048
++      rlt_prefix_seq_len: 768
++      rlt_num_layers: 2
++      rlt_num_heads: 8
++      rlt_mlp_ratio: 4.0
++      rlt_image_only: true
++      rlt_use_mask: true
++      rlt_action_adapter: robotwin_aloha_canonical_v1
++  enable_torch_compile: false
++  enable_cuda_graph: false
++
++actor:
++  group_name: ActorGroup
++  training_backend: fsdp
++  # 512/128 is the upstream current ManiSkill RLT Stage2 batch and was retained
++  # by the old RoboTwin runs; it remains a launch-overlay candidate here.
++  micro_batch_size: 128
++  global_batch_size: 512
++  seed: 1234
++  enable_offload: false
++  model:
++    model_type: rlt_mlp_policy
++    precision: fp32
++    z_dim: 2048
++    proprio_dim: 14
++    action_dim: 14
++    num_action_chunks: 10
++    ref_num_action_chunks: 10
++    add_value_head: false
++    add_q_head: true
++    q_head_type: default
++    fixed_std: 0.002
++    is_lora: false
++    lora_rank: 32
++  optim:
++    clip_grad: 10.0
++    lr: 1.0e-4
++    lr_scheduler: torch_constant
++  critic_optim:
++    clip_grad: 10.0
++    lr: 1.0e-4
++    lr_scheduler: torch_constant
++  fsdp_config:
++    strategy: fsdp
++    sharding_strategy: no_shard
++    mixed_precision:
++      param_dtype: ${actor.model.precision}
++      reduce_dtype: ${actor.model.precision}
++      buffer_dtype: ${actor.model.precision}
++
++reward:
++  use_reward_model: false
++
++critic:
++  use_critic_model: false
++
++weight_syncer:
++  patch:
++    snapshot_device: cpu
++    init_sync:
++      enabled: true
+diff --git a/examples/sft/config/robotwin_rlt_stage1_sft_openpi_current_ar.yaml b/examples/sft/config/robotwin_rlt_stage1_sft_openpi_current_ar.yaml
+new file mode 100644
+index 00000000..9ba6b21f
+--- /dev/null
++++ b/examples/sft/config/robotwin_rlt_stage1_sft_openpi_current_ar.yaml
+@@ -0,0 +1,105 @@
++defaults:
++  - model/pi0@actor.model
++  - hybrid_engines/fsdp@actor.fsdp_config
++  - override hydra/job_logging: stdout
++  - _self_
++
++hydra:
++  run:
++    dir: .
++  output_subdir: null
++
++cluster:
++  num_nodes: 1
++  # Base method config only. The approved smoke/formal overlay owns GPU count.
++  component_placement:
++    actor,env,rollout: all
++
++runner:
++  task_type: sft
++  logger:
++    log_path: ${oc.env:RLT_LOG_ROOT,/data/chenyiteng/results/rlinf-rlt}
++    project_name: rlinf-rlt
++    experiment_name: robotwin_adjust_bottle_rlt_stage1_current_ar
++    logger_backends: [tensorboard]
++  max_epochs: -1
++  max_steps: 2000
++  val_check_interval: -1
++  save_interval: 2000
++
++data:
++  train_data_paths:
++    # Required: OpenPI/LeRobot processed clean-50, not ACT processed data.
++    - dataset_path: ${oc.env:ROBOTWIN_RLT_CLEAN50_PATH}
++      weight: 1.0
++
++actor:
++  group_name: ActorGroup
++  training_backend: fsdp
++  # AutoDL-successful candidate batch; launch overlay may resize it for H100.
++  micro_batch_size: 16
++  global_batch_size: 32
++  seed: 0
++  model:
++    precision: null
++    model_path: ${oc.env:ROBOTWIN_PI0_BASE_PATH,/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50}
++    num_action_chunks: 10
++    action_dim: 14
++    add_value_head: false
++    openpi_data:
++      repo_id: physical-intelligence/robotwin
++      default_prompt: adjust the bottle
++      norm_stats_path: ${oc.env:ROBOTWIN_PI0_NORM_STATS_PATH,/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin/norm_stats.json}
++    openpi:
++      config_name: pi0_aloha_robotwin
++      num_images_in_input: 3
++      action_horizon: 50
++      action_chunk: ${actor.model.num_action_chunks}
++      action_env_dim: ${actor.model.action_dim}
++      num_steps: 4
++      train_expert_only: false
++      detach_critic_input: true
++      noise_method: flow_ode
++      rtc_enabled: false
++
++      use_rlt: true
++      rlt_train_vla: false
++      rlt_alpha: 0.0
++      rlt_input_dim: 2048
++      rlt_embed_dim: 2048
++      rlt_prefix_seq_len: 768
++      rlt_num_layers: 2
++      rlt_num_heads: 8
++      rlt_mlp_ratio: 4.0
++      rlt_image_only: true
++      rlt_use_mask: true
++      rlt_action_adapter: robotwin_aloha_canonical_v1
++
++  optim:
++    lr: 2.5e-5
++    adam_beta1: 0.9
++    adam_beta2: 0.95
++    adam_eps: 1.0e-8
++    weight_decay: 1.0e-10
++    clip_grad: 1.0
++    total_training_steps: 2000
++    lr_warmup_steps: 100
++    lr_scheduler: cosine
++    num_cycles: 0.5
++    min_lr_rate: 0.1
++
++  fsdp_config:
++    strategy: fsdp
++    sharding_strategy: no_shard
++    use_orig_params: true
++    gradient_checkpointing: false
++    mixed_precision:
++      param_dtype: ${actor.model.precision}
++      reduce_dtype: ${actor.model.precision}
++      buffer_dtype: ${actor.model.precision}
++
++reward:
++  use_reward_model: false
++
++critic:
++  use_critic_model: false
+diff --git a/rlinf/algorithms/rlt/__init__.py b/rlinf/algorithms/rlt/__init__.py
+index ea05becf..ed61533d 100644
+--- a/rlinf/algorithms/rlt/__init__.py
++++ b/rlinf/algorithms/rlt/__init__.py
+@@ -15,6 +15,7 @@
+ from rlinf.algorithms.expert import build_expert_model_config
+ from rlinf.algorithms.rlt.rollout import predict_rlt_actions
+ from rlinf.algorithms.rlt.route import (
++    FullTaskRLTRoute,
+     RealworldRLTRoute,
+     RLTRoute,
+     RLTRouteContext,
+@@ -26,6 +27,7 @@ from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
+ __all__ = [
+     "RLTRoute",
+     "RLTRouteContext",
++    "FullTaskRLTRoute",
+     "RealworldRLTRoute",
+     "SimulatorRLTRoute",
+     "build_expert_model_config",
+diff --git a/rlinf/algorithms/rlt/rollout.py b/rlinf/algorithms/rlt/rollout.py
+index f2d02f99..8a5e3f04 100644
+--- a/rlinf/algorithms/rlt/rollout.py
++++ b/rlinf/algorithms/rlt/rollout.py
+@@ -49,7 +49,14 @@ def predict_rlt_actions(
+     expert_model: Any | None = None,
+ ) -> tuple[torch.Tensor, dict[str, Any]]:
+     with torch.no_grad():
+-        rlt_obs = feature_model.extract_rlt_obs(env_obs)
++        action_adapter = getattr(feature_model.config, "rlt_action_adapter", "identity")
++        decode_context = None
++        if action_adapter == "identity":
++            rlt_obs = feature_model.extract_rlt_obs(env_obs)
++        else:
++            rlt_obs, decode_context = feature_model.extract_rlt_obs(
++                env_obs, return_decode_context=True
++            )
+         actions, result = policy_model.predict_action_batch(
+             env_obs=rlt_obs,
+             mode=mode,
+@@ -73,6 +80,8 @@ def predict_rlt_actions(
+         )
+         actions = route_output.actions
+         result = route_output.result
++        if decode_context is not None:
++            actions = feature_model.decode_rlt_action(actions, decode_context)
+ 
+         _append_rlt_transition_obs(
+             feature_model=feature_model,
+diff --git a/rlinf/algorithms/rlt/route.py b/rlinf/algorithms/rlt/route.py
+index 160e832c..ac556040 100644
+--- a/rlinf/algorithms/rlt/route.py
++++ b/rlinf/algorithms/rlt/route.py
+@@ -244,7 +244,70 @@ class SimulatorRLTRoute(RLTRoute):
+         return RLTRouteOutput(actions=routed_actions, result=result)
+ 
+ 
++class FullTaskRLTRoute(RLTRoute):
++    """Full-task reference warmup followed by student-only RLT control."""
++
++    def __init__(self, *, use_schedule: bool, warmup_updates: int):
++        self.use_schedule = use_schedule
++        self.warmup_updates = warmup_updates
++
++    def _ready_for_online(self, version: int) -> bool:
++        return not self.use_schedule or int(version) >= self.warmup_updates
++
++    def route(self, ctx: RLTRouteContext) -> RLTRouteOutput:
++        actions = ctx.student_actions
++        result = ctx.result
++        batch_size, chunk_len, action_dim = actions.shape
++        ready_for_online = self._ready_for_online(ctx.version)
++        use_student = ctx.mode == "eval" or ready_for_online
++
++        reference_actions = _base_ref_actions(
++            ctx.rlt_obs["ref_chunk"],
++            chunk_len=chunk_len,
++            action_dim=action_dim,
++            device=actions.device,
++            dtype=actions.dtype,
++        )
++        routed_actions = (actions if use_student else reference_actions).contiguous()
++
++        forward_inputs = result["forward_inputs"]
++        forward_inputs["action"] = _flatten_action_chunk(routed_actions).detach()
++        forward_inputs["record_transition"] = torch.full(
++            (batch_size, 1),
++            ctx.mode == "train",
++            dtype=torch.bool,
++            device=actions.device,
++        )
++        forward_inputs["actor_switch"] = torch.full(
++            (batch_size, 1),
++            use_student,
++            dtype=torch.bool,
++            device=actions.device,
++        )
++        forward_inputs["intervention_requested"] = torch.zeros(
++            (batch_size, 1),
++            dtype=torch.bool,
++            device=actions.device,
++        )
++        result["intervene_flags"] = torch.zeros(
++            (batch_size, chunk_len),
++            dtype=torch.bool,
++            device=actions.device,
++        )
++        return RLTRouteOutput(actions=routed_actions, result=result)
++
++
+ def build_rlt_route(cfg: Any) -> RLTRoute:
++    route_cfg = cfg.algorithm.get("rlt_route", {}) or {}
++    route_type = route_cfg.get("type", None)
++    if route_type == "full_task":
++        schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
++        return FullTaskRLTRoute(
++            use_schedule=bool(schedule_cfg.get("enable", False)),
++            warmup_updates=int(schedule_cfg.get("warmup_post_collect_updates", 0)),
++        )
++    if route_type not in (None, "legacy"):
++        raise ValueError(f"Unsupported RLT route type {route_type!r}.")
+     if use_simulator_transition_replay(cfg):
+         schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
+         return SimulatorRLTRoute(
+diff --git a/rlinf/algorithms/rlt/transition.py b/rlinf/algorithms/rlt/transition.py
+index d740ae0a..882e4bca 100644
+--- a/rlinf/algorithms/rlt/transition.py
++++ b/rlinf/algorithms/rlt/transition.py
+@@ -25,6 +25,9 @@ RLT_TRANSITION_PREFIX = "rlt_transition_"
+ 
+ def use_simulator_transition_replay(cfg: Any) -> bool:
+     """Return True for envs that store one replay row per env step."""
++    capability_cfg = cfg.algorithm.get("rlt_transition_replay", None)
++    if capability_cfg is not None and "enable" in capability_cfg:
++        return bool(capability_cfg.get("enable", False))
+     train_env_cfg = cfg.env.get("train", None)
+     if train_env_cfg is None:
+         return False
+diff --git a/rlinf/models/embodiment/openpi/__init__.py b/rlinf/models/embodiment/openpi/__init__.py
+index 7b54efc1..75adfe46 100644
+--- a/rlinf/models/embodiment/openpi/__init__.py
++++ b/rlinf/models/embodiment/openpi/__init__.py
+@@ -88,6 +88,8 @@ def get_model(cfg: DictConfig, torch_dtype=None):
+         model.load_state_dict(all_state_dict, strict=False)
+ 
+     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
++    if actor_model_config.use_rlt and not actor_model_config.rlt_train_vla:
++        model.freeze_for_rlt_stage1()
+     # fsdp replace
+     # model.paligemma_with_expert.replace_gemma_decoder_layers()
+     # load data stats
+diff --git a/rlinf/models/embodiment/openpi/openpi_action_model.py b/rlinf/models/embodiment/openpi/openpi_action_model.py
+index 1cb4e8d0..890a479a 100644
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -101,6 +101,7 @@ class OpenPi0Config(Pi0Config):
+ 
+     # ===== RLT SFT parameters =====
+     use_rlt: bool = False
++    rlt_train_vla: bool = True
+     rlt_alpha: float = 1.0
+     rlt_input_dim: int = 2048
+     rlt_embed_dim: int = 2048
+@@ -110,6 +111,7 @@ class OpenPi0Config(Pi0Config):
+     rlt_mlp_ratio: float = 4.0
+     rlt_image_only: bool = True
+     rlt_use_mask: bool = False
++    rlt_action_adapter: str = "identity"
+     state_indices: list[int] | None = None
+ 
+ 
+@@ -401,15 +403,27 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         actions = actions.to(dtype=torch.float32)
+ 
+         # PI0Pytorch.forward returns per-element MSE (reduction="none").
+-        if self.config.use_rlt:
++        if self.config.use_rlt and not self.config.rlt_train_vla:
++            if self.config.rlt_alpha != 0.0:
++                raise ValueError(
++                    "RLT token-only SFT requires rlt_alpha=0 when rlt_train_vla=False."
++                )
++            prefix_output, prefix_mask = self._extract_rlt_prefix_embeddings(
++                observation, train=False
++            )
++            vla_loss = torch.zeros((), device=device, dtype=torch.float32)
++        elif self.config.use_rlt:
+             loss, prefix_output, prefix_mask = self._sft_forward_with_rlt_prefix(
+                 observation, actions
+             )
++            if use_action_chunk_loss:
++                loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
++            vla_loss = loss.mean()
+         else:
+             loss = super().forward(observation, actions)
+-        if use_action_chunk_loss:
+-            loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
+-        vla_loss = loss.mean()
++            if use_action_chunk_loss:
++                loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
++            return loss.mean()
+         if not self.config.use_rlt:
+             return vla_loss
+ 
+@@ -555,7 +569,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+     def extract_rlt_obs(
+         self,
+         env_obs: dict[str, Any],
+-    ) -> dict[str, torch.Tensor]:
++        *,
++        return_decode_context: bool = False,
++    ) -> (
++        dict[str, torch.Tensor]
++        | tuple[dict[str, torch.Tensor], dict[str, torch.Tensor] | None]
++    ):
+         if not self.config.use_rlt or not hasattr(self, "rlt_module"):
+             raise ValueError("extract_rlt_obs requires openpi.use_rlt=True.")
+ 
+@@ -587,9 +606,34 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             mode="eval",
+             compute_values=False,
+         )
+-        ref_chunk = self.output_transform(
+-            {"actions": outputs["actions"], "state": observation.state}
+-        )["actions"]
++        decode_context = None
++        if self.config.rlt_action_adapter == "identity":
++            ref_chunk = self.output_transform(
++                {"actions": outputs["actions"], "state": observation.state}
++            )["actions"]
++        elif self.config.rlt_action_adapter == "robotwin_aloha_canonical_v1":
++            raw_actions = outputs["actions"]
++            chunk_len = int(self.config.action_chunk)
++            action_dim = int(self.config.action_env_dim)
++            if raw_actions.ndim != 3:
++                raise ValueError(
++                    "RoboTwin RLT raw reference must be [B,H,D], got "
++                    f"{tuple(raw_actions.shape)}."
++                )
++            if raw_actions.shape[1] < chunk_len or raw_actions.shape[2] < action_dim:
++                raise ValueError(
++                    "RoboTwin RLT canonical slice exceeds the raw reference: "
++                    f"raw={tuple(raw_actions.shape)}, C={chunk_len}, D={action_dim}."
++                )
++            ref_chunk = raw_actions[:, :chunk_len, :action_dim]
++            decode_context = {
++                "processed_state": observation.state.detach(),
++                "raw_action_template": raw_actions.detach(),
++            }
++        else:
++            raise ValueError(
++                f"Unsupported RLT action adapter {self.config.rlt_action_adapter!r}."
++            )
+         raw_proprio = self._select_configured_state(env_obs["states"])
+         if (
+             isinstance(self.config.config_name, str)
+@@ -606,11 +650,86 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         if not torch.is_tensor(proprio):
+             proprio = torch.as_tensor(proprio)
+ 
+-        return {
++        rlt_obs = {
+             "z_rl": z_rl,
+             "proprio": proprio.to(device=z_rl.device, dtype=torch.float32),
+             "ref_chunk": ref_chunk.to(device=z_rl.device, dtype=torch.float32),
+         }
++        if return_decode_context:
++            return rlt_obs, decode_context
++        return rlt_obs
++
++    @torch.no_grad()
++    def decode_rlt_action(
++        self,
++        canonical_actions: torch.Tensor,
++        decode_context: dict[str, torch.Tensor],
++    ) -> torch.Tensor:
++        """Decode one routed canonical RoboTwin action through OpenPI transforms."""
++        if self.config.rlt_action_adapter != "robotwin_aloha_canonical_v1":
++            raise ValueError(
++                "decode_rlt_action requires "
++                "rlt_action_adapter=robotwin_aloha_canonical_v1."
++            )
++        if decode_context is None:
++            raise ValueError("RoboTwin RLT decode context is required.")
++        raw_template = decode_context.get("raw_action_template")
++        processed_state = decode_context.get("processed_state")
++        if not isinstance(raw_template, torch.Tensor) or not isinstance(
++            processed_state, torch.Tensor
++        ):
++            raise ValueError(
++                "RoboTwin RLT decode context must contain tensor "
++                "raw_action_template and processed_state."
++            )
++        if canonical_actions.ndim != 3 or raw_template.ndim != 3:
++            raise ValueError(
++                "RoboTwin RLT canonical/template actions must be [B,C,D] and "
++                f"[B,H,D], got {tuple(canonical_actions.shape)} and "
++                f"{tuple(raw_template.shape)}."
++            )
++        if canonical_actions.shape[0] != raw_template.shape[0]:
++            raise ValueError(
++                "RoboTwin RLT canonical/template batch mismatch: "
++                f"{canonical_actions.shape[0]} != {raw_template.shape[0]}."
++            )
++        chunk_len = canonical_actions.shape[1]
++        action_dim = canonical_actions.shape[2]
++        expected_action_dim = int(self.config.action_env_dim)
++        if action_dim != expected_action_dim:
++            raise ValueError(
++                "RoboTwin RLT canonical action dim mismatch: "
++                f"expected {expected_action_dim}, got {action_dim}."
++            )
++        if (
++            chunk_len > int(self.config.action_chunk)
++            or chunk_len > raw_template.shape[1]
++            or action_dim > raw_template.shape[2]
++        ):
++            raise ValueError(
++                "RoboTwin RLT canonical action exceeds the decode template: "
++                f"canonical={tuple(canonical_actions.shape)}, "
++                f"template={tuple(raw_template.shape)}, "
++                f"configured_chunk={self.config.action_chunk}."
++            )
++
++        raw_actions = raw_template.clone()
++        raw_actions[:, :chunk_len, :action_dim] = canonical_actions.to(
++            device=raw_actions.device,
++            dtype=raw_actions.dtype,
++        )
++        decoded_actions = self.output_transform(
++            {"actions": raw_actions, "state": processed_state}
++        )["actions"]
++        return decoded_actions[:, :chunk_len, :action_dim]
++
++    def freeze_for_rlt_stage1(self) -> None:
++        """Freeze the base VLA and leave only the RLT token module trainable."""
++        if not self.config.use_rlt or not hasattr(self, "rlt_module"):
++            raise ValueError("RLT Stage 1 freezing requires use_rlt=True.")
++        for parameter in self.parameters():
++            parameter.requires_grad_(False)
++        self.rlt_module.requires_grad_(True)
+ 
+     def prepare_dagger_sft_batch(self, batch):
+         """Prepare replay-buffer samples for DAgger SFT updates."""
+diff --git a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+index 5b770524..e8426f2c 100644
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -12,10 +12,14 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++import hashlib
++import json
++import os
+ import queue
+ 
+ import torch
+ import torch.nn.functional as F
++from omegaconf import OmegaConf
+ 
+ from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
+ from rlinf.data.schema.embodied_types import Trajectory
+@@ -43,6 +47,19 @@ class RLTACLossMixin:
+     critic target, Q1 actor objective, and BC regularization.
+     """
+ 
++    def _rlt_transition_replay_cfg(self):
++        return self.cfg.algorithm.get("rlt_transition_replay", {}) or {}
++
++    def _bootstrap_on_truncation(self) -> bool:
++        return bool(
++            self._rlt_transition_replay_cfg().get(
++                "bootstrap_on_truncation", False
++            )
++        )
++
++    def _use_compact_rlt_transition(self) -> bool:
++        return bool(self._rlt_transition_replay_cfg().get("compact", False))
++
+     @staticmethod
+     def _flatten_chunk(tensor: torch.Tensor) -> torch.Tensor:
+         if tensor.dim() <= 2:
+@@ -239,7 +256,10 @@ class RLTACLossMixin:
+         actions = batch["actions"]
+         rewards = batch["rewards"]
+         done_source = batch["terminations"]
+-        if use_simulator_transition_replay(self.cfg):
++        if (
++            use_simulator_transition_replay(self.cfg)
++            and not self._bootstrap_on_truncation()
++        ):
+             done_source = batch["dones"]
+         done_source = done_source.to(self.torch_dtype)
+         not_done = ~done_source.reshape(done_source.shape[0], -1).bool().any(
+@@ -477,18 +497,29 @@ class RLTACReplayMixin:
+         ):
+             return [], 0
+ 
+-        tensor_fields = (
+-            "actions",
+-            "intervene_flags",
+-            "rewards",
+-            "terminations",
+-            "truncations",
+-            "dones",
+-            "prev_logprobs",
+-            "prev_values",
+-            "versions",
+-        )
+-        dict_fields = ("forward_inputs",)
++        if self._use_compact_rlt_transition():
++            tensor_fields = (
++                "actions",
++                "intervene_flags",
++                "rewards",
++                "terminations",
++                "truncations",
++                "dones",
++            )
++            dict_fields = ()
++        else:
++            tensor_fields = (
++                "actions",
++                "intervene_flags",
++                "rewards",
++                "terminations",
++                "truncations",
++                "dones",
++                "prev_logprobs",
++                "prev_values",
++                "versions",
++            )
++            dict_fields = ("forward_inputs",)
+         replay_trajectories = []
+         completed_episodes = 0
+         traj_len = int(trajectory.actions.shape[0])
+@@ -555,7 +586,20 @@ class RLTACReplayMixin:
+                     isinstance(transition.dones, torch.Tensor)
+                     and transition.dones.reshape(-1).to(torch.bool).any()
+                 )
+-                if is_done:
++                is_termination = (
++                    isinstance(transition.terminations, torch.Tensor)
++                    and transition.terminations.reshape(-1).to(torch.bool).any()
++                )
++                is_truncation = (
++                    isinstance(transition.truncations, torch.Tensor)
++                    and transition.truncations.reshape(-1).to(torch.bool).any()
++                )
++                bootstrap_truncation = bool(
++                    self._bootstrap_on_truncation()
++                    and is_truncation
++                    and not is_termination
++                )
++                if is_done and not bootstrap_truncation:
+                     next_obs = curr_obs
+                 else:
+                     next_obs = self._rlt_obs_from_flat_dict(flat, "next_obs", idx)
+@@ -671,10 +715,14 @@ class RLTACReplayMixin:
+ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
+     """Synchronous RLT AC worker with transition replay and warmup scheduling."""
+ 
++    _RLT_STATE_SCHEMA_VERSION = 1
++
+     def __init__(self, cfg):
+         super().__init__(cfg)
+         self.rlt_schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
+         self.use_rlt_schedule = bool(self.rlt_schedule_cfg.get("enable", False))
++        self.rlt_resume_cfg = cfg.algorithm.get("rlt_resume", {}) or {}
++        self.use_rlt_resume = bool(self.rlt_resume_cfg.get("enable", False))
+         self.transitions_since_train = 0
+         self.episodes_since_train = 0
+         self.total_transitions_added = 0
+@@ -683,6 +731,245 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
+         self._warmup_ready_total_episodes: int | None = None
+         self.pending_update_budget = 0
+ 
++    def _rlt_state_dir(self, base_path: str) -> str:
++        return os.path.join(base_path, "sac_components/rlt_trainer_state")
++
++    def _rlt_state_path(self, base_path: str) -> str:
++        return os.path.join(
++            self._rlt_state_dir(base_path), f"checkpoint_rank_{self._rank}.pt"
++        )
++
++    def _rlt_manifest_path(self, base_path: str) -> str:
++        return os.path.join(self._rlt_state_dir(base_path), "complete.json")
++
++    @staticmethod
++    def _atomic_json_dump(payload: dict, path: str) -> None:
++        temporary = f"{path}.tmp.{os.getpid()}"
++        with open(temporary, "w", encoding="utf-8") as handle:
++            json.dump(payload, handle, sort_keys=True, indent=2)
++            handle.write("\n")
++        os.replace(temporary, path)
++
++    @staticmethod
++    def _barrier_if_distributed() -> None:
++        if torch.distributed.is_available() and torch.distributed.is_initialized():
++            torch.distributed.barrier()
++
++    def _rlt_contract(self) -> tuple[str, str]:
++        contract = self.rlt_resume_cfg.get("contract", {})
++        if OmegaConf.is_config(contract):
++            contract = OmegaConf.to_container(contract, resolve=True)
++        if not isinstance(contract, dict) or not contract:
++            raise ValueError(
++                "algorithm.rlt_resume.contract must be a non-empty mapping."
++            )
++        unresolved = [
++            key
++            for key, value in contract.items()
++            if isinstance(value, str) and value.startswith("UNRESOLVED_")
++        ]
++        if unresolved:
++            raise ValueError(
++                "algorithm.rlt_resume.contract has unresolved fields: "
++                f"{sorted(unresolved)}."
++            )
++        serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
++        digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
++        return serialized, digest
++
++    def _rlt_state_payload(self, runner_step: int) -> dict:
++        contract, contract_sha256 = self._rlt_contract()
++        return {
++            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
++            "rank": int(self._rank),
++            "actor_world_size": int(self._world_size),
++            "saved_runner_step": int(runner_step),
++            "rlt_resume_contract": contract,
++            "rlt_resume_contract_sha256": contract_sha256,
++            "update_step": int(self.update_step),
++            "local_total_transitions_added": int(self.total_transitions_added),
++            "local_total_episodes_added": int(self.total_episodes_added),
++            "global_warmup_ready_total_transitions": (
++                None
++                if self._warmup_ready_total_transitions is None
++                else int(self._warmup_ready_total_transitions)
++            ),
++            "global_warmup_ready_total_episodes": (
++                None
++                if self._warmup_ready_total_episodes is None
++                else int(self._warmup_ready_total_episodes)
++            ),
++        }
++
++    def _gather_rlt_state_summaries(self, state: dict) -> list[dict]:
++        summary = {
++            "rank": int(state["rank"]),
++            "update_step": int(state["update_step"]),
++            "warmup_transitions": state["global_warmup_ready_total_transitions"],
++            "warmup_episodes": state["global_warmup_ready_total_episodes"],
++            "contract_sha256": state["rlt_resume_contract_sha256"],
++        }
++        if not (
++            torch.distributed.is_available()
++            and torch.distributed.is_initialized()
++        ):
++            return [summary]
++        summaries = [None] * int(self._world_size)
++        torch.distributed.all_gather_object(summaries, summary)
++        return summaries
++
++    def _validate_rlt_state(self, state: dict) -> None:
++        required = {
++            "schema_version",
++            "rank",
++            "actor_world_size",
++            "saved_runner_step",
++            "rlt_resume_contract",
++            "rlt_resume_contract_sha256",
++            "update_step",
++            "local_total_transitions_added",
++            "local_total_episodes_added",
++            "global_warmup_ready_total_transitions",
++            "global_warmup_ready_total_episodes",
++        }
++        missing = sorted(required.difference(state))
++        if missing:
++            raise ValueError(f"RLT trainer state is missing keys: {missing}.")
++        contract, contract_sha256 = self._rlt_contract()
++        checks = {
++            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
++            "rank": int(self._rank),
++            "actor_world_size": int(self._world_size),
++            "rlt_resume_contract": contract,
++            "rlt_resume_contract_sha256": contract_sha256,
++        }
++        for key, expected in checks.items():
++            if state[key] != expected:
++                raise ValueError(
++                    f"RLT trainer state mismatch for {key}: "
++                    f"{state[key]!r} != {expected!r}."
++                )
++
++    def _save_rlt_state(self, save_base_path: str, runner_step: int) -> None:
++        state_dir = self._rlt_state_dir(save_base_path)
++        os.makedirs(state_dir, exist_ok=True)
++        state = self._rlt_state_payload(runner_step)
++        state_path = self._rlt_state_path(save_base_path)
++        temporary = f"{state_path}.tmp.{os.getpid()}"
++        torch.save(state, temporary)
++        os.replace(temporary, state_path)
++
++        summaries = self._gather_rlt_state_summaries(state)
++        ranks = sorted(int(item["rank"]) for item in summaries)
++        if ranks != list(range(int(self._world_size))):
++            raise ValueError(f"RLT trainer state rank set mismatch: {ranks}.")
++        for key in (
++            "update_step",
++            "warmup_transitions",
++            "warmup_episodes",
++            "contract_sha256",
++        ):
++            if len({item[key] for item in summaries}) != 1:
++                raise ValueError(f"RLT trainer state ranks disagree on {key}.")
++
++        self._barrier_if_distributed()
++        if int(self._rank) == 0:
++            self._atomic_json_dump(
++                {
++                    "complete": True,
++                    "schema_version": self._RLT_STATE_SCHEMA_VERSION,
++                    "actor_world_size": int(self._world_size),
++                    "saved_runner_step": int(runner_step),
++                    "update_step": int(self.update_step),
++                    "rlt_resume_contract_sha256": state[
++                        "rlt_resume_contract_sha256"
++                    ],
++                    "rank_files": [
++                        f"checkpoint_rank_{rank}.pt"
++                        for rank in range(int(self._world_size))
++                    ],
++                },
++                self._rlt_manifest_path(save_base_path),
++            )
++        self._barrier_if_distributed()
++
++    def _load_rlt_state(self, load_base_path: str) -> dict:
++        manifest_path = self._rlt_manifest_path(load_base_path)
++        if not os.path.isfile(manifest_path):
++            raise FileNotFoundError(f"Missing RLT completion manifest: {manifest_path}")
++        with open(manifest_path, encoding="utf-8") as handle:
++            manifest = json.load(handle)
++        _, contract_sha256 = self._rlt_contract()
++        if not manifest.get("complete", False):
++            raise ValueError("RLT completion manifest is incomplete.")
++        if int(manifest.get("schema_version", -1)) != self._RLT_STATE_SCHEMA_VERSION:
++            raise ValueError("RLT completion manifest schema mismatch.")
++        if int(manifest.get("actor_world_size", -1)) != int(self._world_size):
++            raise ValueError("RLT completion manifest world-size mismatch.")
++        if manifest.get("rlt_resume_contract_sha256") != contract_sha256:
++            raise ValueError("RLT completion manifest contract mismatch.")
++        expected_files = [
++            f"checkpoint_rank_{rank}.pt" for rank in range(int(self._world_size))
++        ]
++        if manifest.get("rank_files") != expected_files:
++            raise ValueError("RLT completion manifest rank-file set mismatch.")
++        if any(
++            not os.path.isfile(os.path.join(self._rlt_state_dir(load_base_path), name))
++            for name in expected_files
++        ):
++            raise FileNotFoundError("RLT trainer state is missing one or more ranks.")
++        state = torch.load(
++            self._rlt_state_path(load_base_path),
++            map_location="cpu",
++            weights_only=True,
++        )
++        self._validate_rlt_state(state)
++        return state
++
++    def _restore_rlt_state(self, state: dict) -> None:
++        self._validate_rlt_state(state)
++        self.update_step = int(state["update_step"])
++        self.total_transitions_added = int(
++            state["local_total_transitions_added"]
++        )
++        self.total_episodes_added = int(state["local_total_episodes_added"])
++        self._warmup_ready_total_transitions = state[
++            "global_warmup_ready_total_transitions"
++        ]
++        self._warmup_ready_total_episodes = state[
++            "global_warmup_ready_total_episodes"
++        ]
++        self.transitions_since_train = 0
++        self.episodes_since_train = 0
++        self.pending_update_budget = 0
++
++    def save_checkpoint(self, save_base_path, step):
++        if self.use_rlt_resume:
++            state_dir = self._rlt_state_dir(save_base_path)
++            os.makedirs(state_dir, exist_ok=True)
++            if int(self._rank) == 0:
++                self._atomic_json_dump(
++                    {
++                        "complete": False,
++                        "schema_version": self._RLT_STATE_SCHEMA_VERSION,
++                        "actor_world_size": int(self._world_size),
++                        "saved_runner_step": int(step),
++                    },
++                    self._rlt_manifest_path(save_base_path),
++                )
++            self._barrier_if_distributed()
++        super().save_checkpoint(save_base_path, step)
++        if self.use_rlt_resume:
++            self._save_rlt_state(save_base_path, step)
++
++    def load_checkpoint(self, load_base_path):
++        state = None
++        if self.use_rlt_resume:
++            state = self._load_rlt_state(load_base_path)
++        super().load_checkpoint(load_base_path)
++        if state is not None:
++            self._restore_rlt_state(state)
++
+     def setup_sac_components(self):
+         """Initialize replay components and let RLT schedule own readiness."""
+         super().setup_sac_components()
+diff --git a/tests/unit_tests/test_robotwin_rlt_current_port.py b/tests/unit_tests/test_robotwin_rlt_current_port.py
+new file mode 100644
+index 00000000..f1843abb
+--- /dev/null
++++ b/tests/unit_tests/test_robotwin_rlt_current_port.py
+@@ -0,0 +1,318 @@
++# Copyright 2026 The RLinf Authors.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++from types import SimpleNamespace
++
++import pytest
++import torch
++from omegaconf import OmegaConf
++from torch import nn
++
++from rlinf.algorithms.rlt.rollout import predict_rlt_actions
++from rlinf.algorithms.rlt.route import (
++    FullTaskRLTRoute,
++    RLTRouteContext,
++    build_rlt_route,
++)
++from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
++from rlinf.data.schema.embodied_types import Trajectory
++from rlinf.data.storage.replay.buffer import TrajectoryReplayBuffer
++
++
++def _route_cfg(*, route_type="full_task", transition_replay=True):
++    return OmegaConf.create(
++        {
++            "algorithm": {
++                "rlt_schedule": {
++                    "enable": True,
++                    "warmup_post_collect_updates": 3,
++                },
++                "rlt_route": {"type": route_type},
++                "rlt_transition_replay": {"enable": transition_replay},
++            },
++            "env": {"train": {"env_type": "robotwin"}},
++        }
++    )
++
++
++@pytest.mark.parametrize(
++    ("mode", "version", "student", "record"),
++    [
++        ("train", 2, False, True),
++        ("train", 3, True, True),
++        ("eval", 2, True, False),
++        ("eval", 3, True, False),
++    ],
++)
++def test_full_task_route_truth_table(mode, version, student, record):
++    student_actions = torch.full((2, 2, 3), 7.0)
++    reference_actions = torch.full((2, 4, 3), -2.0)
++    route = FullTaskRLTRoute(use_schedule=True, warmup_updates=3)
++
++    output = route.route(
++        RLTRouteContext(
++            env_obs={},
++            rlt_obs={"ref_chunk": reference_actions},
++            student_actions=student_actions,
++            result={"forward_inputs": {}},
++            mode=mode,
++            version=version,
++        )
++    )
++
++    expected = student_actions if student else reference_actions[:, :2]
++    assert torch.equal(output.actions, expected)
++    assert torch.equal(
++        output.result["forward_inputs"]["action"], expected.reshape(2, -1)
++    )
++    assert output.result["forward_inputs"]["record_transition"].tolist() == [
++        [record],
++        [record],
++    ]
++    assert output.result["forward_inputs"]["actor_switch"].tolist() == [
++        [student],
++        [student],
++    ]
++    assert not output.result["intervene_flags"].any()
++
++
++def test_robotwin_capabilities_are_explicit_opt_ins():
++    cfg = _route_cfg()
++    assert isinstance(build_rlt_route(cfg), FullTaskRLTRoute)
++    assert use_simulator_transition_replay(cfg) is True
++    cfg.algorithm.rlt_transition_replay.enable = False
++    assert use_simulator_transition_replay(cfg) is False
++
++
++class _TinyOpenPi(nn.Module):
++    def __init__(self, config):
++        super().__init__()
++        self.config = config
++
++
++def _openpi_class():
++    module = pytest.importorskip("rlinf.models.embodiment.openpi.openpi_action_model")
++    return module.OpenPi0ForRLActionPrediction
++
++
++def test_stage1_freeze_leaves_only_rlt_module_trainable():
++    model = _TinyOpenPi(SimpleNamespace(use_rlt=True))
++    model.backbone = nn.Linear(3, 4)
++    model.rlt_module = nn.Sequential(nn.Linear(4, 5), nn.Linear(5, 2))
++
++    _openpi_class().freeze_for_rlt_stage1(model)
++
++    trainable = {
++        name for name, parameter in model.named_parameters() if parameter.requires_grad
++    }
++    assert trainable == {
++        name for name, _ in model.rlt_module.named_parameters(prefix="rlt_module")
++    }
++
++
++def test_canonical_decode_overwrites_once_and_preserves_template():
++    model = _TinyOpenPi(
++        SimpleNamespace(
++            rlt_action_adapter="robotwin_aloha_canonical_v1",
++            action_env_dim=3,
++            action_chunk=2,
++        )
++    )
++    captured = {}
++
++    def output_transform(payload):
++        captured["actions"] = payload["actions"].clone()
++        return {"actions": payload["actions"] + 1.0}
++
++    model.output_transform = output_transform
++    raw_template = torch.arange(40, dtype=torch.float32).reshape(2, 4, 5)
++    original = raw_template.clone()
++    canonical = torch.full((2, 2, 3), -5.0)
++
++    decoded = _openpi_class().decode_rlt_action(
++        model,
++        canonical,
++        {
++            "raw_action_template": raw_template,
++            "processed_state": torch.zeros(2, 1),
++        },
++    )
++
++    assert torch.equal(decoded, torch.full((2, 2, 3), -4.0))
++    assert torch.equal(raw_template, original)
++    assert torch.equal(captured["actions"][:, 2:], original[:, 2:])
++    assert torch.equal(captured["actions"][:, :2, 3:], original[:, :2, 3:])
++
++
++class _FakeFeatureModel:
++    config = SimpleNamespace(rlt_action_adapter="robotwin_aloha_canonical_v1")
++
++    def __init__(self):
++        self.decode_calls = 0
++
++    def extract_rlt_obs(self, _obs, return_decode_context=False):
++        rlt_obs = {
++            "z_rl": torch.zeros(1, 2),
++            "proprio": torch.zeros(1, 3),
++            "ref_chunk": torch.zeros(1, 2, 3),
++        }
++        if return_decode_context:
++            return rlt_obs, {"decode": True}
++        return rlt_obs
++
++    def decode_rlt_action(self, actions, _context):
++        self.decode_calls += 1
++        return actions + 10.0
++
++
++class _FakePolicy:
++    def predict_action_batch(self, **_kwargs):
++        actions = torch.ones(1, 2, 3)
++        return actions, {"forward_inputs": {}}
++
++
++def test_rollout_keeps_canonical_replay_action_and_decodes_env_action_once():
++    feature = _FakeFeatureModel()
++    actions, result = predict_rlt_actions(
++        policy_model=_FakePolicy(),
++        feature_model=feature,
++        rlt_route=FullTaskRLTRoute(use_schedule=True, warmup_updates=3),
++        env_obs={},
++        final_obs=None,
++        mode="eval",
++        version=0,
++    )
++
++    assert feature.decode_calls == 1
++    assert torch.equal(actions, torch.full((1, 2, 3), 11.0))
++    assert torch.equal(
++        result["forward_inputs"]["action"], torch.ones(1, 6)
++    )
++
++
++def _worker(tmp_path, *, contract_id="accepted"):
++    worker_cls = pytest.importorskip(
++        "rlinf.workers.actor.fsdp_rlt_ac_policy_worker"
++    ).RLTACFSDPPolicy
++    worker = worker_cls.__new__(worker_cls)
++    worker.cfg = OmegaConf.create(
++        {
++            "algorithm": {
++                "rlt_resume": {
++                    "enable": True,
++                    "contract": {
++                        "stage1_manifest_id": contract_id,
++                        "bootstrap": "pure_truncation_only",
++                    },
++                }
++            }
++        }
++    )
++    worker.rlt_resume_cfg = worker.cfg.algorithm.rlt_resume
++    worker._rank = 0
++    worker._world_size = 1
++    worker.update_step = 17
++    worker.total_transitions_added = 41
++    worker.total_episodes_added = 6
++    worker._warmup_ready_total_transitions = 24
++    worker._warmup_ready_total_episodes = 4
++    worker.transitions_since_train = 5
++    worker.episodes_since_train = 2
++    worker.pending_update_budget = 9
++    tmp_path.mkdir(parents=True, exist_ok=True)
++    return worker
++
++
++def test_rlt_resume_sidecar_world1_roundtrip_and_contract_lock(tmp_path):
++    checkpoint = tmp_path / "checkpoint"
++    source = _worker(tmp_path / "source")
++    source._save_rlt_state(str(checkpoint), runner_step=11)
++
++    resumed = _worker(tmp_path / "resumed")
++    state = resumed._load_rlt_state(str(checkpoint))
++    resumed._restore_rlt_state(state)
++    assert resumed.update_step == 17
++    assert resumed.total_transitions_added == 41
++    assert resumed._warmup_ready_total_transitions == 24
++    assert resumed.transitions_since_train == 0
++    assert resumed.episodes_since_train == 0
++    assert resumed.pending_update_budget == 0
++
++    changed = _worker(tmp_path / "changed", contract_id="different")
++    with pytest.raises(ValueError, match="contract mismatch"):
++        changed._load_rlt_state(str(checkpoint))
++
++
++def test_rlt_resume_rejects_unresolved_contract(tmp_path):
++    worker = _worker(tmp_path / "source", contract_id="UNRESOLVED_STAGE1")
++    with pytest.raises(ValueError, match="unresolved fields"):
++        worker._rlt_contract()
++
++
++class _FlattenOnlyReplay:
++    def _flatten_trajectory(self, trajectory):
++        return TrajectoryReplayBuffer._flatten_trajectory(self, trajectory)
++
++
++def test_compact_replay_bootstraps_pure_truncation_from_real_next_obs():
++    worker_cls = pytest.importorskip(
++        "rlinf.workers.actor.fsdp_rlt_ac_policy_worker"
++    ).RLTACFSDPPolicy
++    worker = worker_cls.__new__(worker_cls)
++    worker.cfg = OmegaConf.create(
++        {
++            "algorithm": {
++                "rlt_transition_replay": {
++                    "compact": True,
++                    "bootstrap_on_truncation": True,
++                }
++            },
++            "env": {"train": {"auto_reset": False}},
++        }
++    )
++    worker.replay_buffer = _FlattenOnlyReplay()
++    curr_obs = {
++        "z_rl": torch.tensor([[[1.0, 2.0]]]),
++        "proprio": torch.tensor([[[3.0]]]),
++        "ref_chunk": torch.tensor([[[4.0, 5.0]]]),
++    }
++    next_obs = {key: value + 10.0 for key, value in curr_obs.items()}
++    trajectory = Trajectory(
++        actions=torch.tensor([[[0.1, 0.2]]]),
++        rewards=torch.tensor([[[0.0]]]),
++        terminations=torch.tensor([[[False]], [[False]]]),
++        truncations=torch.tensor([[[False]], [[True]]]),
++        dones=torch.tensor([[[False]], [[True]]]),
++        intervene_flags=torch.ones(1, 1, 2, dtype=torch.bool),
++        prev_logprobs=torch.ones(1, 1, 1),
++        prev_values=torch.ones(1, 1, 1),
++        versions=torch.ones(1, 1, 1, dtype=torch.long),
++        forward_inputs={
++            "record_transition": torch.ones(1, 1, 1, dtype=torch.bool),
++            "bulky_prefix_cache": torch.ones(1, 1, 32),
++        },
++        curr_obs=curr_obs,
++        next_obs=next_obs,
++    )
++
++    transitions, completed = worker._transition_replay_trajectories(trajectory)
++
++    assert completed == 1
++    assert len(transitions) == 1
++    transition = transitions[0]
++    assert torch.equal(transition.next_obs["z_rl"], next_obs["z_rl"])
++    assert transition.forward_inputs == {}
++    assert transition.prev_logprobs is None
++    assert transition.prev_values is None
++    assert transition.versions is None

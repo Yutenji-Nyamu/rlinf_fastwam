@@ -1,0 +1,12 @@
+started_at=2026-09-03T18:14:46+08:00
+physical_gpus=6,7
+source_rlinf=7b2331c55d14397cfb4cb16181470ddc8afae44a
+source_fastwam=7faa71108368fbb3b6885649f112af607427a2d4
+source_robotwin_fix=8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+resume_from=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10
+target_step=100
+train=32 env x 4 rollout epochs = 128 trajectories/step; G8; max1024 query records
+actor=GB1024/MB2/update2; 2 optimizer calls/outer; Fast-WAM M10 H32 C24
+eval=fixed32 every5; videos=true; checkpoint=DCP every10
+offload=train_env true; eval_env true; actor false; rollout true
+acceptance=must complete Step15 fixed evaluation without former OIDN/Python/Ray fatal

@@ -1,0 +1,66 @@
+diff --git a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -1037,6 +1037,31 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
+             ),
+         }
+ 
++    def _mark_rlt_checkpoint_incomplete(
++        self, save_base_path: str, runner_step: int
++    ) -> None:
++        local_error = None
++        if int(self._rank) == 0:
++            try:
++                state_dir = self._rlt_resume_state_dir(save_base_path)
++                os.makedirs(state_dir, exist_ok=True)
++                self._atomic_json_dump(
++                    {
++                        "complete": False,
++                        "schema_version": self._RLT_TRAINER_STATE_SCHEMA_VERSION,
++                        "actor_world_size": int(self._world_size),
++                        "saved_runner_step": int(runner_step),
++                        "update_step": int(self.update_step),
++                    },
++                    self._rlt_resume_manifest_path(save_base_path),
++                )
++            except Exception as exc:  # pragma: no cover - distributed filesystem
++                local_error = f"{type(exc).__name__}: {exc}"
++        self._raise_collective_errors(
++            "RLT trainer-state invalidation marker", local_error
++        )
++        self._barrier_if_distributed()
++
+     def _save_rlt_trainer_state(self, save_base_path: str, runner_step: int) -> None:
+         path_runner_step = self._checkpoint_runner_step(save_base_path)
+         if path_runner_step is not None and path_runner_step != int(runner_step):
+@@ -1269,6 +1294,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
+                     "RLT checkpoint save path/step mismatch before base save: "
+                     f"{path_runner_step} != {step}."
+                 )
++            self._mark_rlt_checkpoint_incomplete(save_base_path, step)
+         super().save_checkpoint(save_base_path, step)
+         if self.use_rlt_resume:
+             self._save_rlt_trainer_state(save_base_path, step)
+diff --git a/tests/unit_tests/test_robotwin_rlt_contract.py b/tests/unit_tests/test_robotwin_rlt_contract.py
+--- a/tests/unit_tests/test_robotwin_rlt_contract.py
++++ b/tests/unit_tests/test_robotwin_rlt_contract.py
+@@ -382,6 +382,19 @@ def test_rlt_resume_preflight_fails_closed_for_contract_change(tmp_path):
+         changed._preflight_rlt_trainer_state(str(checkpoint_dir))
+ 
+ 
++def test_rlt_resume_invalidation_marker_blocks_stale_state(tmp_path):
++    checkpoint_dir = tmp_path / "checkpoint"
++    worker = _make_resume_worker(tmp_path / "source")
++    worker._save_rlt_trainer_state(str(checkpoint_dir), runner_step=11)
++    worker._mark_rlt_checkpoint_incomplete(
++        str(checkpoint_dir),
++        runner_step=11,
++    )
++
++    with pytest.raises(ValueError, match="not marked complete"):
++        worker._preflight_rlt_trainer_state(str(checkpoint_dir))
++
++
+ class _FlattenOnlyReplay:
+     def _flatten_trajectory(self, trajectory):
+         return TrajectoryReplayBuffer._flatten_trajectory(self, trajectory)

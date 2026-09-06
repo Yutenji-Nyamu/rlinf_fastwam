@@ -1,0 +1,491 @@
+2026-09-05T03:20:38+00:00
+[36m(EmbodiedOnlineBCFSDPPolicy pid=314360)[0m [INFO 03:11:00 ActorGroup-Rank-0][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedOnlineBCFSDPPolicy pid=314360)[0m [INFO 03:11:00 FlexiblePlacementStrategy] 
+[36m(EmbodiedOnlineBCFSDPPolicy pid=314360)[0m [INFO 03:11:00 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=314362)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=314362)[0m I0000 00:00:1788577861.496960  315049 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=0) pid=314362)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=314362)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=314360)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=314360)[0m I0000 00:00:1788577913.372158  315112 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=314360)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=314360)[0m I0000 00:00:1788577914.840676  315112 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=314360)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=314360)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=314360)[0m [INFO 03:12:33 ActorGroup-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=0) pid=314360)[0m [INFO 03:12:38 ActorGroup-Rank-0][fsdp_online_bc_policy_worker.py:31] Online BC trainable parameters: 578,036,768; expert_only=True
+[36m(RolloutGroup(rank=0) pid=314362)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=314362)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [05:32<00:00, 332.54s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [05:32<00:00, 332.54s/it]
+[36m(ActorGroup(rank=0) pid=314360)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+Exception occurred while running EmbodiedOnlineBCFSDPPolicy's function run_training: exception is [36mray::EmbodiedOnlineBCFSDPPolicy.run_training()[39m (pid=314360, ip=172.17.0.1, actor_id=72bd1dbe3045fa48035fb7ddc1010000, repr=ActorGroup(rank=0))
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+           ^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py", line 124, in run_training
+    metrics = super().run_training()
+              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 662, in run_training
+    metrics_data = self.update_one_epoch()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 466, in update_one_epoch
+    return self.update_buffer_one_epoch()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 498, in update_buffer_one_epoch
+    actor_loss = self.forward_actor(batch["forward_inputs"])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py", line 89, in forward_actor
+    online_loss = self.model(
+                  ^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/fully_sharded_data_parallel.py", line 857, in forward
+    output = self._fsdp_wrapped_module(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/openpi_action_model.py", line 365, in forward
+    return self.sft_forward(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/openpi_action_model.py", line 415, in sft_forward
+    loss = super().forward(observation, actions)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 331, in forward
+    suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(state, x_t, time)
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 251, in embed_suffix
+    state_emb = self._apply_checkpoint(state_proj_func, state)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 154, in _apply_checkpoint
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 249, in state_proj_func
+    return self.state_proj(state)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/fully_sharded_data_parallel.py", line 857, in forward
+    output = self._fsdp_wrapped_module(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 must have the same dtype, but got Float and BFloat16
+Exiting main process due to a failure upon worker execution.
+255
+2026-09-05T03:18:30+00:00
+# Copyright 2025 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# openpi model configs
+
+import os
+import pathlib
+
+import torch
+from omegaconf import DictConfig
+
+
+def get_model(cfg: DictConfig, torch_dtype=None):
+    import glob
+
+    import openpi.shared.download as download
+    import openpi.transforms as transforms
+    import safetensors
+    from openpi.training import checkpoints as _checkpoints
+
+    from rlinf.models.embodiment.openpi.dataconfig import get_openpi_config
+    from rlinf.models.embodiment.openpi.openpi_action_model import (
+        OpenPi0Config,
+        OpenPi0ForRLActionPrediction,
+    )
+
+    # config
+    config_name = getattr(cfg.openpi, "config_name", None)
+    data_kwargs = getattr(cfg, "openpi_data", None)
+    actor_train_config = get_openpi_config(
+        config_name, model_path=cfg.model_path, data_kwargs=data_kwargs
+    )
+
+    actor_model_config = actor_train_config.model
+    actor_model_config = OpenPi0Config(**actor_model_config.__dict__)
+    override_model_config_kwargs = cfg.openpi
+    if override_model_config_kwargs is not None:
+        for key, val in override_model_config_kwargs.items():
+            actor_model_config.__dict__[key] = val
+
+    # load model
+    checkpoint_dir = download.maybe_download(str(cfg.model_path))
+
+    # Check if this is a checkpoint directory (saved by FSDP)
+    # Check for model_state_dict/full_weights.pt (direct checkpoint) or actor/model_state_dict/full_weights.pt (from runner)
+    full_weights_path = os.path.join(
+        checkpoint_dir, "model_state_dict", "full_weights.pt"
+    )
+    actor_full_weights_path = os.path.join(
+        checkpoint_dir, "actor", "model_state_dict", "full_weights.pt"
+    )
+
+    model: OpenPi0ForRLActionPrediction = OpenPi0ForRLActionPrediction(
+        actor_model_config
+    )
+    # train expert only
+    if actor_model_config.train_expert_only:
+        model.freeze_vlm()
+
+    # Load weights from checkpoint if it's a checkpoint directory, otherwise load from safetensors
+    if os.path.exists(full_weights_path):
+        # Direct checkpoint directory
+        model_state_dict = torch.load(full_weights_path, map_location="cpu")
+        model.load_state_dict(model_state_dict, strict=False)
+    elif os.path.exists(actor_full_weights_path):
+        # Checkpoint directory from runner
+        model_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
+        model.load_state_dict(model_state_dict, strict=False)
+    else:
+        # Original model directory with safetensors files
+        weight_paths = sorted(glob.glob(os.path.join(checkpoint_dir, "*.safetensors")))
+        if not weight_paths:
+            weight_paths = [os.path.join(checkpoint_dir, "model.safetensors")]
+        all_state_dict = {}
+        for weight_path in weight_paths:
+            state_dict = safetensors.torch.load_file(weight_path, device="cpu")
+            all_state_dict.update(state_dict)
+        model.load_state_dict(all_state_dict, strict=False)
+
+    model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+    # fsdp replace
+    # model.paligemma_with_expert.replace_gemma_decoder_layers()
+    # load data stats
+    data_config = actor_train_config.data.create(
+        actor_train_config.assets_dirs, actor_model_config
+    )
+    norm_stats_path = (
+        data_kwargs.get("norm_stats_path") if data_kwargs is not None else None
+    )
+    if norm_stats_path is not None:
+        norm_stats = data_config.norm_stats
+        if norm_stats is None:
+            norm_dir = pathlib.Path(norm_stats_path).expanduser()
+            if norm_dir.is_file():
+                norm_dir = norm_dir.parent
+            norm_stats = _checkpoints.load_norm_stats(norm_dir.parent, norm_dir.name)
+    else:
+        # We are loading the norm stats from the checkpoint instead of the config assets dir to make sure
+        # that the policy is using the same normalization stats as the original training process.
+        if data_config.asset_id is None:
+            raise ValueError("Asset id is required to load norm stats.")
+        norm_stats = _checkpoints.load_norm_stats(checkpoint_dir, data_config.asset_id)
+    # wrappers
+    repack_transforms = transforms.Group()
+    default_prompt = None
+    model.setup_wrappers(
+        transforms=[
+            *repack_transforms.inputs,
+            transforms.InjectDefaultPrompt(default_prompt),
+            *data_config.data_transforms.inputs,
+            transforms.Normalize(
+                norm_stats, use_quantiles=data_config.use_quantile_norm
+            ),
+            *data_config.model_transforms.inputs,
+        ],
+        output_transforms=[
+            *data_config.model_transforms.outputs,
+            transforms.Unnormalize(
+                norm_stats, use_quantiles=data_config.use_quantile_norm
+            ),
+            *data_config.data_transforms.outputs,
+            *repack_transforms.outputs,
+        ],
+    )
+
+    return model
+
+            state_emb = self._apply_checkpoint(state_proj_func, state)
+
+            embs.append(state_emb[:, None, :])
+            bsize = state_emb.shape[0]
+            device = state_emb.device
+
+            state_mask = torch.ones(bsize, 1, dtype=torch.bool, device=device)
+            pad_masks.append(state_mask)
+
+            # Set attention masks so that image and language inputs do not attend to state or actions
+            att_masks += [1]
+
+        # Embed timestep using sine-cosine positional encoding with sensitivity in the range [0, 1]
+        time_emb = create_sinusoidal_pos_embedding(
+            timestep, self.action_in_proj.out_features, min_period=4e-3, max_period=4.0, device=timestep.device
+        )
+        time_emb = time_emb.type(dtype=timestep.dtype)
+
+        # Fuse timestep + action information using an MLP
+        def action_proj_func(noisy_actions):
+            return self.action_in_proj(noisy_actions)
+
+        action_emb = self._apply_checkpoint(action_proj_func, noisy_actions)
+
+        if not self.pi05:
+            time_emb = time_emb[:, None, :].expand_as(action_emb)
+            action_time_emb = torch.cat([action_emb, time_emb], dim=2)
+
+            # Apply MLP layers
+            def mlp_func(action_time_emb):
+                x = self.action_time_mlp_in(action_time_emb)
+                x = F.silu(x)  # swish == silu
+                return self.action_time_mlp_out(x)
+
+            action_time_emb = self._apply_checkpoint(mlp_func, action_time_emb)
+            adarms_cond = None
+        else:
+            # time MLP (for adaRMS)
+            def time_mlp_func(time_emb):
+                x = self.time_mlp_in(time_emb)
+                x = F.silu(x)  # swish == silu
+                x = self.time_mlp_out(x)
+                return F.silu(x)
+
+            time_emb = self._apply_checkpoint(time_mlp_func, time_emb)
+            action_time_emb = action_emb
+            adarms_cond = time_emb
+
+        # Add to input tokens
+        embs.append(action_time_emb)
+
+        bsize, action_time_dim = action_time_emb.shape[:2]
+        action_time_mask = torch.ones(bsize, action_time_dim, dtype=torch.bool, device=timestep.device)
+        pad_masks.append(action_time_mask)
+
+        # Set attention masks so that image, language and state inputs do not attend to action tokens
+        att_masks += [1] + ([0] * (self.config.action_horizon - 1))
+
+        embs = torch.cat(embs, dim=1)
+        pad_masks = torch.cat(pad_masks, dim=1)
+        att_masks = torch.tensor(att_masks, dtype=embs.dtype, device=embs.device)
+        att_masks = att_masks[None, :].expand(bsize, len(att_masks))
+
+        return embs, pad_masks, att_masks, adarms_cond
+
+    def forward(self, observation, actions, noise=None, time=None) -> Tensor:
+        """Do a full training forward pass and compute the loss (batch_size x num_steps x num_motors)"""
+        images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=True)
+
+        if noise is None:
+            noise = self.sample_noise(actions.shape, actions.device)
+
+        if time is None:
+            time = self.sample_time(actions.shape[0], actions.device)
+
+        time_expanded = time[:, None, None]
+        x_t = time_expanded * noise + (1 - time_expanded) * actions
+        u_t = noise - actions
+
+        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, lang_tokens, lang_masks)
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(state, x_t, time)
+        if (
+            self.paligemma_with_expert.paligemma.language_model.layers[0].self_attn.q_proj.weight.dtype
+            == torch.bfloat16
+        ):
+            suffix_embs = suffix_embs.to(dtype=torch.bfloat16)
+            prefix_embs = prefix_embs.to(dtype=torch.bfloat16)
+
+        pad_masks = torch.cat([prefix_pad_masks, suffix_pad_masks], dim=1)
+        att_masks = torch.cat([prefix_att_masks, suffix_att_masks], dim=1)
+
+        att_2d_masks = make_att_2d_masks(pad_masks, att_masks)
+        position_ids = torch.cumsum(pad_masks, dim=1) - 1
+
+        # Prepare attention masks
+        att_2d_masks_4d = self._prepare_attention_masks_4d(att_2d_masks)
+
+        # Apply gradient checkpointing if enabled
+        def forward_func(prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond):
+            (_, suffix_out), _ = self.paligemma_with_expert.forward(
+                attention_mask=att_2d_masks_4d,
+                position_ids=position_ids,
+                past_key_values=None,
+                inputs_embeds=[prefix_embs, suffix_embs],
+                use_cache=False,
+                adarms_cond=[None, adarms_cond],
+            )
+            return suffix_out
+
+        suffix_out = self._apply_checkpoint(
+            forward_func, prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond
+        )
+
+        suffix_out = suffix_out[:, -self.config.action_horizon :]
+        suffix_out = suffix_out.to(dtype=torch.float32)
+
+        # Apply gradient checkpointing to final action projection if enabled
+        def action_out_proj_func(suffix_out):
+            return self.action_out_proj(suffix_out)
+
+        v_t = self._apply_checkpoint(action_out_proj_func, suffix_out)
+
+        return F.mse_loss(u_t, v_t, reduction="none")
+
+    @torch.no_grad()
+    def sample_actions(self, device, observation, noise=None, num_steps=10) -> Tensor:
+        """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
+        bsize = observation.state.shape[0]
+        if noise is None:
+            actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
+            noise = self.sample_noise(actions_shape, device)
+
+        images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=False)
+
+        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, lang_tokens, lang_masks)
+        prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
+        prefix_position_ids = torch.cumsum(prefix_pad_masks, dim=1) - 1
+
+        # Compute image and language key value cache
+        prefix_att_2d_masks_4d = self._prepare_attention_masks_4d(prefix_att_2d_masks)
+        self.paligemma_with_expert.paligemma.language_model.config._attn_implementation = "eager"  # noqa: SLF001
+
+        _, past_key_values = self.paligemma_with_expert.forward(
+            attention_mask=prefix_att_2d_masks_4d,
+            position_ids=prefix_position_ids,
+            past_key_values=None,
+            inputs_embeds=[prefix_embs, None],
+            use_cache=True,
+        )
+
+        dt = -1.0 / num_steps
+        dt = torch.tensor(dt, dtype=torch.float32, device=device)
+
+        x_t = noise
+        time = torch.tensor(1.0, dtype=torch.float32, device=device)
+        while time >= -dt / 2:
+            expanded_time = time.expand(bsize)
+            v_t = self.denoise_step(
+                state,
+                prefix_pad_masks,
+        """
+        Initialize model used by FSDP actor
+
+        Returns:
+            model: the initialized model.
+        """
+        cfg = self._cfg
+        use_gptq = cfg.model.get("gptq_model", False)
+        load_in_8bit = cfg.model.get("load_in_8bit", False)
+
+        use_triton = cfg.get("use_triton", True)
+
+        assert Worker.torch_platform.is_available(), (
+            f"Accelerator type {Worker.torch_device_type} is not available."
+        )
+        local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        device = torch.device(f"{Worker.torch_device_type}:{local_rank}")
+
+        model_config = AutoConfig.from_pretrained(
+            cfg.model.model_path,
+            trust_remote_code=True,
+            attn_implementation="flash_attention_2",
+        )
+
+        if use_gptq:
+            from auto_gptq import AutoGPTQForCausalLM  # type: ignore[import-not-found]
+
+            model_wrapper = AutoGPTQForCausalLM.from_quantized(
+                cfg.model.model_path,
+                device=device,
+                use_triton=use_triton,
+            )
+            model = model_wrapper.model
+        elif load_in_8bit:
+            model = AutoModelForCausalLM.from_pretrained(
+                cfg.model.model_path,
+                config=model_config,
+                load_in_8bit=True,
+            )
+        else:
+            if (
+                AutoModelForVision2Seq is not None
+                and type(model_config) in AutoModelForVision2Seq._model_mapping.keys()
+            ):
+                auto_model_class = AutoModelForVision2Seq
+            else:
+                auto_model_class = AutoModelForCausalLM
+
+            model = auto_model_class.from_pretrained(
+                cfg.model.model_path,
+                torch_dtype=self.torch_dtype,
+                config=model_config,
+                trust_remote_code=True,
+            )
+
+        if torch.distributed.is_initialized():
+            torch.distributed.barrier()
+
+        if cfg.fsdp_config.use_liger_kernel:
+            self._optimize_with_liger_kernel(model)
+
+        return model
+
+    def _optimize_with_liger_kernel(self, model: torch.nn.Module) -> None:
+        """
+        Replace model modules with liger-kernel optimized modules.

@@ -1,0 +1,20 @@
+diff --git a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -762,6 +762,16 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
+         if not isinstance(contract, dict) or not contract:
+             raise ValueError(
+                 "algorithm.rlt_resume.contract must be a non-empty mapping."
+             )
++        unresolved = [
++            key
++            for key, value in contract.items()
++            if isinstance(value, str) and value.startswith("UNRESOLVED_")
++        ]
++        if unresolved:
++            raise ValueError(
++                "algorithm.rlt_resume.contract has unresolved fields: "
++                f"{sorted(unresolved)}."
++            )
+         serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
+         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()

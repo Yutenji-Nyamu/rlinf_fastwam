@@ -1,0 +1,98 @@
+{
+  "source_head": "a5b94b6f10a9212502d6930f07543f61e31af52e",
+  "reference": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/runtime/resolved.yaml",
+  "reference_diff": {
+    "algorithm.dvac_gradient_weighting.application": {
+      "left": "<MISSING>",
+      "right": "logprob_st"
+    },
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1/robotwin_dvac_action_adv_w0to2_smoke2_2gpu64x4_b1024_noeval_phys23_v1/dvac_train"
+    },
+    "cluster.component_placement.actor, env, rollout": {
+      "left": "4,5",
+      "right": "2,3"
+    },
+    "env.eval.seeds_path": {
+      "left": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "right": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv/rlinf/envs/robotwin/seeds/eval_seeds.json"
+    },
+    "env.eval.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1/video/eval"
+    },
+    "env.train.seeds_path": {
+      "left": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "right": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "left": "robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2",
+      "right": "robotwin_dvac_action_adv_w0to2_smoke2_2gpu64x4_b1024_noeval_phys23_v1"
+    },
+    "runner.logger.log_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1"
+    },
+    "runner.max_steps": {
+      "left": 100,
+      "right": 2
+    },
+    "runner.val_check_interval": {
+      "left": 5,
+      "right": -1
+    }
+  },
+  "method_diff": {
+    "algorithm.dvac_gradient_weighting.application": {
+      "left": "logprob_st",
+      "right": "action_advantage"
+    },
+    "algorithm.dvac_gradient_weighting.mode": {
+      "left": "off",
+      "right": "apply"
+    },
+    "algorithm.dvac_gradient_weighting.weight_max": {
+      "left": null,
+      "right": 2.0
+    },
+    "algorithm.dvac_gradient_weighting.weight_min": {
+      "left": null,
+      "right": 0.0
+    },
+    "algorithm.logprob_type": {
+      "left": "chunk_level",
+      "right": "action_level"
+    }
+  },
+  "budget": {
+    "physical_gpus": [
+      2,
+      3
+    ],
+    "outer_steps": 2,
+    "train_envs": 64,
+    "rollout_epochs": 4,
+    "trajectories_per_step": 256,
+    "group_size": 8,
+    "groups_per_step": 32,
+    "max_chunk_records": 1024,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "update_epochs": 2,
+    "inline_eval": "disabled for smoke",
+    "terminal_checkpoint": "global_step_2"
+  }
+}

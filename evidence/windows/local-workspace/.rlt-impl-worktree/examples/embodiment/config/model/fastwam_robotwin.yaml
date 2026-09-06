@@ -1,0 +1,50 @@
+model_type: "fastwam_robotwin"
+
+# RLinf rollout worker compatibility and official Fast-WAM checkpoint.
+model_path: /root/autodl-tmp/models/fastwam/release/robotwin_uncond_3cam_384.pt
+checkpoint_path: ${.model_path}
+dataset_stats_path: /root/autodl-tmp/models/fastwam/release/robotwin_uncond_3cam_384_dataset_stats.json
+
+precision: bf16
+is_lora: false
+
+# Official RoboTwin action contract.
+action_dim: 14
+action_horizon: 32
+num_action_chunks: 24
+
+# Official Fast-WAM denoise/inference contract.
+num_inference_steps: 10
+sigma_shift: null
+text_cfg_scale: 1.0
+negative_prompt: ""
+rand_device: cpu
+tiled: false
+
+# Resource-only forward chunking; randomness is generated before chunking.
+model_forward_batch_size: 2
+
+# Official deploy resets a CPU generator to this seed for every B=1 replan. The
+# batch path therefore generates that singleton once and broadcasts it across B;
+# train rollout still uses independent per-trajectory initial/SDE noise.
+eval_seed: 0
+
+# Critic-free by default. PPO top-level configs explicitly enable this head on
+# both actor and rollout; keeping the schema here documents the sole supported
+# observation-side critic without changing existing GRPO behavior.
+add_value_head: false
+value_head:
+  feature_source: video_cache_last_v_mean
+  input_dim: 3072
+  hidden_sizes: [1024, 512, 256]
+  activation: relu
+  bias_last: true
+  detach_input: true
+
+rl:
+  noise_level: 0.1
+
+# Official Fast-WAM Hydra composition.
+fastwam:
+  config_name: sim_robotwin
+  task: robotwin_uncond_3cam_384_1e-4

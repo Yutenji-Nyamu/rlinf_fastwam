@@ -1,0 +1,46 @@
+// Reuse the verified SVG/PNG renderer with a fresh snapshot and dynamic labels.
+const fs=require('fs'),vm=require('vm');
+const input=process.argv[2],output=process.argv[3];
+if(!input||!output)throw Error('Usage: node render_scene_fence_restart_20260904.cjs SNAPSHOT OUTPUT_DIR');
+const data=JSON.parse(fs.readFileSync(input,'utf8').split(/\r?\n/).find(x=>x.startsWith('SNAPSHOT_JSON ')).slice(14));
+const time=data.end_time.slice(0,16).replace('T',' ')+' CST';
+const r=data.runs,s=r.sidney.state.completed_step,f=r.fastwam.state.completed_step;
+const fastExit=r.fastwam.state['exit_code.txt'];
+const tr=r.sidney.scalars['env/success_once'].at(-1),ev=r.sidney.scalars['eval/success_once'].at(-1);
+const label=fastExit!==null?`Fast-WAM stopped at ${f}; Sidney at ${s}`:`Fast-WAM: ${f} completed steps; Sidney: Step ${s}`;
+const start=r.fastwam.resource[0]?.timestamp;
+if(!start)throw Error('New run has no resource samples');
+let src=fs.readFileSync('local_scripts/render_current_training_health_20260904.cjs','utf8');
+const replace=(a,b)=>{if(!src.includes(a))throw Error('Missing template target '+a);src=src.replace(a,b);};
+replace("const src='docs/fastwam-robotwin-rlinf-grpo/evidence/CURRENT_TRAINING_HEALTH_20260904_1417.data.txt';",'const src='+JSON.stringify(input)+';');
+replace("const out='docs/fastwam-robotwin-rlinf-grpo/evidence/current-training-health-20260904-1419';",'const out='+JSON.stringify(output)+';');
+const fastEval=r.fastwam.scalars['eval/success_once']?.at(-1);
+replace("'Step 1: 50/256. No fixed evaluation yet. Step 2: suspected stall.'",JSON.stringify(f===0?'New scene-fence run: first rollout; no completed update or evaluation yet.':fastEval?`New run Step ${f}. Fixed Step ${fastEval.step+1}: ${Math.round(fastEval.value*32)}/32. No old-run data spliced in.`:`New scene-fence run: ${f} completed steps. Old stalled run is not spliced in.`));
+replace('Math.ceil(xend*2)/2','Math.max(.1,Math.ceil(xend*10)/10)');
+replace('ymax:80,yticks:[0,20,40,60,80]','ymax:100,yticks:[0,20,40,60,80,100]');
+replace("labels:ev.map(p=>Math.round(p.y/100*32)+'/32')", "labels:ev.map(p=>step<=70||r==='fastwam'||p.x===ev[0]?.x||p.x===ev.at(-1)?.x||p.x===70||p.x%20===0?Math.round(p.y/100*32)+'/32':'')");
+replace('fy(p.y)+25','fy(p.y)-13');
+replace("'Step 46: 154/256. Fixed eval Step 45: 14/32; peak remains 19/32.'",JSON.stringify(`Train Step ${tr.step+1}: ${Math.round(tr.value*256)}/256. Fixed eval Step ${ev.step+1}: ${Math.round(ev.value*32)}/32.`));
+replace('a.at(-1).x!==runs[r].state.completed_step','a.at(-1).x>runs[r].state.completed_step');
+replace("const xmax=r==='fastwam'?5:Math.ceil(step/5)*5;",'const xmax=Math.max(5,Math.ceil(step/5)*5);');
+replace("xticks:r==='fastwam'?[0,1,2,3,4,5]:[0,10,20,30,40,50]", "xticks:Array.from({length:Math.floor(xmax/(r==='fastwam'?(step>15?5:1):10))+1},(_,i)=>i*(r==='fastwam'?(step>15?5:1):10))");
+replace('completed_step:step,last_train:vals.at(-1)','completed_step:step,last_train_step:train.at(-1)?.x,last_train:vals.at(-1)');
+replace("'Hours since 12:43 CST | solid: 4/6; dashed: 5/7'",JSON.stringify('Hours since new Fast launch | solid: 4/6; dashed: 5/7'));
+replace("'Fast-WAM GPU 6/7: 0% utilization in consecutive samples since ~14:05.'",JSON.stringify(fastExit!==null?'Fast curves end at exit. No extrapolation; Sidney continues.':'New Fast run only. Memory allocation alone is not proof of training progress.'));
+replace("'Availability is falling, but current memory / I/O pressure averages are zero.'",JSON.stringify('Whole host, including Sidney and other users; no old-run memory curve spliced in.'));
+replace("xticks:[0,.5,1,1.5,2],xlabel", "xticks:Array.from({length:Math.ceil(xend/(xend<1?.1:xend>8?2:.5))+1},(_,i)=>Number((i*(xend<1?.1:xend>8?2:.5)).toFixed(1))),xlabel");
+replace("fastres.map(p=>({x:(Date.parse(p.timestamp)-t0)/36e5,y:Number(p.host_mem_available_kib)/2**30}))", "runs.sidney.resource.filter(p=>Date.parse(p.timestamp)>=t0).map(p=>({x:(Date.parse(p.timestamp)-t0)/36e5,y:Number(p.host_mem_available_kib)/2**30}))");
+replace("const st='Read-only server snapshot | 2026-09-04 14:19 CST';",'const st='+JSON.stringify('Read-only server snapshot | '+time)+';');
+replace('Training: Sidney progressing; Fast-WAM needs attention',label);
+replace('Fast-WAM has one completed update cycle',f===0?'Fast-WAM has no completed update yet':`Fast-WAM has ${f} completed outer steps`);
+replace('Resources: memory available, Fast-WAM GPUs idle','Server resources since Fast-WAM launch');
+if(f===0){
+ replace('plot(specs.fastwam,100,360)+plot(specs.sidney,490,370),890', '`<rect x="48" y="104" width="1004" height="116" rx="12" fill="#e8f2f4"/><text x="70" y="142" font-size="23" font-weight="600">Fast-WAM: fresh restart with scene-fence fix</text><text x="70" y="177" font-size="20">384-image smoke passed; no completed training step / fixed evaluation yet.</text><text x="70" y="205" font-size="17" fill="${muted}">Old stalled run remains separate. Startup is not proof of long-run stability.</text>`+plot(specs.sidney,258,370),658');
+ const progress=r.fastwam.state.phase.at(-1)?.match(/(\d+)\/8/)?.[1] ?? '?';
+ replace('384-image smoke passed; no completed training step / fixed evaluation yet.',`384-image smoke passed. Step 1 sampling: ${progress}/8; no training update/eval yet.`);
+}
+replace('14:19 训练与服务器快照',time+' 训练与服务器快照');
+replace('Fast-WAM完成Step1，Step2出现停滞；Sidney完成Step46。',fastExit!==null?`Fast-WAM完成${f}步后退出，exit=${fastExit}；Sidney完整${s}步。`:`Fast-WAM修复重启后完整${f}步；Sidney完整${s}步。`);
+replace('Fast-WAM无fixed eval点，不能判断学习改善。',fastEval?`新Fast已完成fixed评估，最新Step${fastEval.step+1}为${Math.round(fastEval.value*32)}/32；评估点少，不判断持续提升；不拼接旧run。`:'新Fast无fixed eval点，不能判断学习改善；旧停滞run的50/256不接入新曲线。');
+replace('Latest KL=${kl.at(-1)?.y.toFixed(4)}; clip=${clip.at(-1)?.y.toFixed(2)}%. Logged averages, not a causal comparison.', 'Latest KL=${kl.at(-1)?.y.toFixed(4) ?? "N/A"}; clip=${clip.at(-1)?.y.toFixed(2) ?? "N/A"}%. Logged averages, not a causal comparison.');
+vm.runInNewContext(src,{require,console,Buffer},{filename:'scene-fence-dashboard-renderer.cjs'});

@@ -1,0 +1,522 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+9876c28de25bba429d10e2c8b4c85fb19b24c387
+FAILURE_STACK
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 92, in async_func
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1367, in wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py", line 140, in sync_model_to_rollout
+    state_dict = self.get_rollout_state_dict()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py", line 129, in get_rollout_state_dict
+    return self.get_model_state_dict(cpu_offload=False, full_state_dict=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py", line 337, in get_model_state_dict
+    state_dict = self._strategy.get_model_state_dict(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py", line 380, in get_model_state_dict
+    state_dict = get_model_state_dict(model=model, options=opts)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/checkpoint/state_dict.py", line 1191, in get_model_state_dict
+    model_state_dict = _get_model_state_dict(model, info)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/checkpoint/state_dict.py", line 483, in _get_model_state_dict
+    state_dict = _state_dict_fn(model, "state_dict")()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 2276, in state_dict
+    hook_result = hook(self, destination, prefix, local_metadata)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 724, in _post_state_dict_hook
+    processed_state_dict = _post_state_dict_hook_fn[fsdp_state._state_dict_type](
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 344, in _full_post_state_dict_hook
+    return _common_unshard_post_state_dict_hook(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 223, in _common_unshard_post_state_dict_hook
+    raise AssertionError(
+AssertionError: FSDP assumes paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.layer_norm1.weight is in the state_dict but the state_dict only has odict_keys(['paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.position_embedding.weight', 'paligemma_with_expert.paligemma.model.language_model.embed_tokens.weight', 'paligemma_with_expert.paligem
+
+FILE rlinf/hybrid_engines/fsdp/strategy/fsdp.py EXISTS True
+130:             handle._use_sharded_views()
+131:             return
+132:         self._rebind_sharded_tensor_views(handle)
+133: 
+134:     def wrap_model(self, model: nn.Module, device_mesh: DeviceMesh) -> FSDP:
+135:         """
+136:         Wrap the model with FSDP using the specified configuration,
+137:         it will apply mixed precision, sharding strategy, and wrapping policy.
+138: 
+139:         Args:
+140:             - model (nn.Module): The model to be wrapped.
+141:             - device_mesh (DeviceMesh): The device mesh for distributed training.
+142: 
+143:         Returns:
+144:             - FSDP: The wrapped FSDP model.
+145:         """
+146:         mixed_precision_config = self.cfg.fsdp_config.mixed_precision
+147:         param_dtype = torch_dtype_from_precision(mixed_precision_config.param_dtype)
+148:         reduce_dtype = torch_dtype_from_precision(mixed_precision_config.reduce_dtype)
+149:         buffer_dtype = torch_dtype_from_precision(mixed_precision_config.buffer_dtype)
+150:         mixed_precision = MixedPrecision(
+151:             param_dtype=param_dtype,
+152:             reduce_dtype=reduce_dtype,
+153:             buffer_dtype=buffer_dtype,
+154:         )
+155: 
+156:         sharding_strategy = get_sharding_strategy(
+157:             self.cfg.fsdp_config.sharding_strategy
+158:         )
+159: 
+160:         auto_wrap_policy = get_fsdp_wrap_policy(
+161:             module=model,
+162:             config=self.cfg.fsdp_config,
+163:             is_lora=self.cfg.model.is_lora,
+164:             model_type=self.cfg.model.model_type,
+165:         )
+166: 
+167:         backward_prefetch = get_backward_prefetch_strategy(
+168:             self.cfg.fsdp_config.backward_prefetch
+169:         )
+170: 
+171:         cpu_offload = CPUOffload(offload_params=self.cfg.fsdp_config.cpu_offload)
+172: 
+173:         fsdp_model = FSDP(
+174:             module=model,
+175:             param_init_fn=init_fn,
+176:             auto_wrap_policy=auto_wrap_policy,
+177:             device_id=int(os.environ["LOCAL_RANK"]),
+178:             sharding_strategy=sharding_strategy,
+179:             mixed_precision=mixed_precision,
+180:             sync_module_states=True,
+181:             device_mesh=device_mesh,
+182:             forward_prefetch=self.cfg.fsdp_config.forward_prefetch,
+183:             backward_prefetch=backward_prefetch,
+208:             optimizer_state_dict = FSDP.optim_state_dict(model, optimizer)
+209:         return optimizer_state_dict
+210: 
+211:     @torch.no_grad()
+212:     def offload_param_and_grad(self, model: FSDP, offload_grad: bool) -> None:
+213:         """
+214:         Offload model parameters and gradients to CPU.
+215:         Args:
+216:             - model (FSDP): The FSDP wrapped model.
+217:             - offload_grad (bool): Whether to offload gradients or not.
+218:         """
+219:         for handle in self._iter_fsdp_handles(model):
+220:             flat_param = handle.flat_param
+221: 
+222:             if hasattr(flat_param, "_local_shard"):
+223:                 flat_param._local_shard = self._move_tensor(
+224:                     flat_param._local_shard, "cpu"
+225:                 )
+226:             flat_param.data = self._move_tensor(flat_param.data, "cpu")
+227:             if hasattr(flat_param, "_local_shard") and flat_param.data is not None:
+228:                 flat_param._local_shard = flat_param.data
+229: 
+230:             if offload_grad:
+231:                 flat_param.grad = self._move_tensor(flat_param.grad, "cpu")
+232:                 for attr_name in self._FSDP_GRAD_ATTRS:
+233:                     if hasattr(flat_param, attr_name):
+234:                         setattr(
+235:                             flat_param,
+236:                             attr_name,
+237:                             self._move_tensor(getattr(flat_param, attr_name), "cpu"),
+238:                         )
+239: 
+240:             for attr_name in self._FSDP_CACHE_ATTRS:
+241:                 if hasattr(flat_param, attr_name):
+242:                     self._free_tensor_storage(getattr(flat_param, attr_name))
+243: 
+244:             self._rebind_handle_views(handle)
+245: 
+246:         for _, param in model.named_parameters():
+247:             param.data = self._move_tensor(param.data, "cpu")
+248:             if offload_grad:
+249:                 param.grad = self._move_tensor(param.grad, "cpu")
+250: 
+251:         for _, buffer in model.named_buffers():
+252:             buffer.data = self._move_tensor(buffer.data, "cpu")
+253: 
+254:         clear_memory()
+255: 
+256:     @torch.no_grad()
+257:     def onload_param_and_grad(
+258:         self, model: FSDP, device: torch.device, onload_grad: bool
+259:     ) -> None:
+260:         """
+261:         Load model parameters and gradients to the specified device.
+262: 
+263:         Args:
+264:             - model (FSDP): The FSDP wrapped model.
+265:             - device (torch.device): The device to load the parameters and gradients to.
+266:             - onload_grad (bool): Whether to load gradients or not.
+267: 
+268:         """
+269:         for handle in self._iter_fsdp_handles(model):
+270:             flat_param = handle.flat_param
+271: 
+272:             if hasattr(flat_param, "_local_shard"):
+273:                 flat_param._local_shard = self._move_tensor(
+274:                     flat_param._local_shard, device
+275:                 )
+276:             flat_param.data = self._move_tensor(flat_param.data, device)
+277:             if hasattr(flat_param, "_local_shard") and flat_param.data is not None:
+278:                 flat_param._local_shard = flat_param.data
+279: 
+280:             if onload_grad:
+281:                 flat_param.grad = self._move_tensor(flat_param.grad, device)
+282:                 for attr_name in self._FSDP_GRAD_ATTRS:
+283:                     if hasattr(flat_param, attr_name):
+284:                         setattr(
+285:                             flat_param,
+286:                             attr_name,
+287:                             self._move_tensor(getattr(flat_param, attr_name), device),
+288:                         )
+289: 
+290:             self._rebind_handle_views(handle)
+291: 
+292:         for _, param in model.named_parameters():
+293:             param.data = self._move_tensor(param.data, device)
+294:             if onload_grad:
+295:                 param.grad = self._move_tensor(param.grad, device)
+296: 
+297:         for _, buffer in model.named_buffers():
+298:             buffer.data = self._move_tensor(buffer.data, device)
+299: 
+300:         clear_memory()
+301: 
+302:     @torch.no_grad()
+303:     def offload_optimizer(self, optimizer: Optimizer) -> None:
+304:         """
+305:         Offload optimizer state to CPU.
+306: 
+
+FILE rlinf/hybrid_engines/fsdp/strategy/base.py EXISTS True
+180:         torch.save(obj, path, _use_new_zipfile_serialization=True)
+181:         print(f"Save using _use_new_zipfile_serialization to {path}")
+182: 
+183:     @classmethod
+184:     def save_checkpoint(
+185:         cls,
+186:         model: Union[FSDP, FSDPModule],
+187:         optimizers: Union[Optimizer, Iterable[Optimizer]],
+188:         lr_schedulers: Union[LRScheduler, Iterable[LRScheduler]],
+189:         save_path: str,
+190:         save_full_model_weights: bool = True,
+191:         checkpoint_format: str = "dcp",
+192:     ) -> None:
+193:         """
+194:         Save the training state checkpoint.
+195: 
+196:         Assumes:
+197:         cls must have get_fsdp_version method,
+198:         and torch.distributed has been initialized. Most importantly,
+199:         optimizers should have all state(by calling `fake_optimizer_step`),
+200:         this is done in `init_worker`.
+201: 
+202:         Args:
+203:             model (Union[FSDP, FSDPModule]): The model to be saved.
+204:             optimizers (Union[Optimizer, Iterable[Optimizer]]): The optimizers to be saved.
+205:             lr_schedulers (LRScheduler): The learning rate scheduler to be saved.
+206:             save_path (str): The path to save the checkpoint.
+207:             save_full_model_weights (bool): Whether to save full model weights.
+208:             checkpoint_format (str): "dcp" or "local_shard".
+209:         """
+210:         clear_memory()
+211:         torch.distributed.barrier()
+212:         opts = StateDictOptions(full_state_dict=False, cpu_offload=True)
+213:         try:
+214:             training_state = Checkpoint(
+215:                 model,
+216:                 optimizers,
+217:                 lr_schedulers,
+218:                 opts,
+219:                 fsdp_version=cls.get_fsdp_version(),
+220:                 checkpoint_format=checkpoint_format,
+221:             )
+222:             if checkpoint_format == "local_shard":
+223:                 local_shard_save_path = os.path.join(
+224:                     save_path, "local_shard_checkpoint"
+225:                 )
+226:                 rank = torch.distributed.get_rank()
+227:                 os.makedirs(local_shard_save_path, exist_ok=True)
+228:                 torch.save(
+229:                     training_state.state_dict(),
+230:                     os.path.join(local_shard_save_path, f"checkpoint_rank_{rank}.pt"),
+231:                 )
+232:             else:
+233:                 from torch.distributed import checkpoint as dcp
+266: 
+267:             torch.distributed.barrier()
+268: 
+269:     @classmethod
+270:     def load_checkpoint(
+271:         cls,
+272:         model: Union[FSDP, FSDPModule],
+273:         optimizers: Union[Optimizer, Iterable[Optimizer]],
+274:         lr_schedulers: Union[LRScheduler, Iterable[LRScheduler]],
+275:         load_path: str,
+276:         checkpoint_format: str = "dcp",
+277:     ) -> None:
+278:         """
+279:         Load the training state checkpoint.
+280: 
+281:         Assumes:
+282:         cls must have logger attribute and get_fsdp_version method,
+283:         and torch.distributed has been initialized. Most importantly,
+284:         optimizer should have all state(by calling `fake_optimizer_step`),
+285:         this is done in `init_worker`.
+286: 
+287:         Args:
+288:             model (Union[FSDP, FSDPModule]): The model to load the checkpoint into.
+289:             optimizers (Union[Optimizer, Iterable[Optimizer]]): The optimizer to load the checkpoint into.
+290:             lr_schedulers (Union[LRScheduler, Iterable[LRScheduler]]): The learning rate scheduler to load the checkpoint into.
+291:             load_path (str): The path to load the checkpoint from.
+292:             checkpoint_format (str): "dcp" or "local_shard".
+293:         """
+294:         opts = StateDictOptions(full_state_dict=False, cpu_offload=True)
+295:         training_state = Checkpoint(
+296:             model=model,
+297:             optimizers=optimizers,
+298:             lr_schedulers=lr_schedulers,
+299:             opts=opts,
+300:             fsdp_version=cls.get_fsdp_version(),
+301:             checkpoint_format=checkpoint_format,
+302:         )
+303:         try:
+304:             if checkpoint_format == "local_shard":
+305:                 rank = torch.distributed.get_rank()
+306:                 local_ckpt_file = os.path.join(
+307:                     load_path, "local_shard_checkpoint", f"checkpoint_rank_{rank}.pt"
+308:                 )
+309:                 if not os.path.isfile(local_ckpt_file):
+310:                     raise FileNotFoundError(
+311:                         f"Expected local shard checkpoint '{local_ckpt_file}' not found"
+312:                     )
+313: 
+314:                 if hasattr(cls, "logger") and cls.logger is not None:
+315:                     cls.logger.info(
+316:                         f"[Checkpoint] loading local shard checkpoint from {local_ckpt_file}"
+317:                     )
+318: 
+319:                 checkpoint = torch.load(local_ckpt_file, weights_only=False)
+358:             raise e
+359: 
+360:         torch.distributed.barrier()
+361: 
+362:     def get_model_state_dict(
+363:         self, model: Union[FSDP, FSDPModule], cpu_offload: bool, full_state_dict: bool
+364:     ) -> dict:
+365:         """
+366:         Get the full model state dict of FSDP2 from all ranks.
+367: 
+368:         Args:
+369:             - model (FSDPModule): The FSDP2 wrapped model.
+370:             - cpu_offload (bool): Whether returned state_dict's value will be offloaded to CPU. If true, will
+371:                 be copied to CPU memory, or just keep a reference to the original GPU tensor.
+372:             - full_state_dict (bool): Whether to get the full state dict.
+373: 
+374:         Returns:
+375:             - dict: The state dict of the FSDP/FSDP2 wrapped model according to the specified options.
+376:         """
+377:         opts = StateDictOptions(
+378:             cpu_offload=cpu_offload, full_state_dict=full_state_dict
+379:         )
+380:         state_dict = get_model_state_dict(model=model, options=opts)
+381:         return state_dict
+382: 
+383:     def load_model_with_state_dict(
+384:         self,
+385:         model: FSDPModule,
+386:         model_state_dict,
+387:         cpu_offload: bool,
+388:         full_state_dict: bool,
+389:     ):
+390:         opts = StateDictOptions(
+391:             cpu_offload=cpu_offload, full_state_dict=full_state_dict
+392:         )
+393:         set_model_state_dict(
+394:             model=model,
+395:             model_state_dict=model_state_dict,
+396:             options=opts,
+397:         )
+398: 
+399:     @abstractmethod
+400:     def offload_optimizer(self, optimizer: Optimizer) -> None: ...
+401: 
+402:     @abstractmethod
+403:     def onload_optimizer(self, optimizer: Optimizer, device: torch.device) -> None: ...
+404: 
+405:     @abstractmethod
+406:     def offload_param_and_grad(
+407:         self, model: Union[FSDP, FSDPModule], offload_grad: bool
+408:     ) -> None: ...
+409: 
+410:     @abstractmethod
+411:     def onload_param_and_grad(
+
+FILE rlinf/hybrid_engines/fsdp/strategy/checkpoint.py EXISTS True
+63:             for opt, opt_sd in zip(self.optimizers, optim_state_dicts):
+64:                 opt.load_state_dict(opt_sd)
+65: 
+66:     def state_dict(self):
+67:         if self.checkpoint_format == "local_shard":
+68:             model_sd = self.model.state_dict()
+69:             model_sd = {
+70:                 key: to_local_if_dtensor(value).cpu()
+71:                 if isinstance(value, torch.Tensor)
+72:                 else value
+73:                 for key, value in model_sd.items()
+74:             }
+75:             optim_sd = self._get_local_optim_state_dicts()
+76: 
+77:             lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
+78: 
+79:             out = {
+80:                 "model": model_sd,
+81:                 "optimizers": optim_sd,
+82:                 "lr_schedulers": lr_sched_sd,
+83:                 "fsdp_version": self.fsdp_version.value,
+84:                 "rng": get_rng_state(),
+85:             }
+86:         else:
+87:             model_sd, optim_sd = get_state_dict(
+88:                 model=self.model,
+89:                 optimizers=self.optimizers,
+90:                 options=self.opts,
+91:             )
+92: 
+93:             lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
+94: 
+95:             out = {
+96:                 "model": model_sd,
+97:                 "optimizers": optim_sd,
+98:                 "lr_schedulers": lr_sched_sd,
+99:                 "fsdp_version": self.fsdp_version.value,
+100:                 "rng": get_rng_state(),
+101:             }
+102:         return out
+103: 
+104:     def load_state_dict(self, state):
+105:         assert "fsdp_version" in state, "Checkpoint is missing FSDP version info."
+106:         ckpt_fsdp_version = FSDPVersion(state["fsdp_version"])
+107:         if ckpt_fsdp_version != self.fsdp_version:
+108:             raise ValueError(
+109:                 f"FSDP version mismatch: {ckpt_fsdp_version} != {self.fsdp_version}"
+110:             )
+111: 
+112:         if self.checkpoint_format == "local_shard":
+113:             self.model.load_state_dict(state["model"])
+114: 
+115:             self._load_local_optim_state_dicts(state["optimizers"])
+116: 
+117:         else:
+118:             set_state_dict(
+119:                 model=self.model,
+120:                 optimizers=self.optimizers,
+121:                 model_state_dict=state["model"],
+122:                 optim_state_dict=state.get("optimizers", state.get("optim")),
+123:                 options=self.opts,
+124:             )
+125: 
+126:         # lr schedulers
+127:         if "lr_schedulers" in state:
+128:             for lr, lr_sd in zip(self.lr_schedulers, state["lr_schedulers"]):
+129:                 lr.load_state_dict(lr_sd)
+130: 
+131:         if "rng" in state:
+132:             set_rng_state(state["rng"])
+
+FILE rlinf/workers/actor/embodied_fsdp_actor_worker.py EXISTS True
+124:             model.load_state_dict(model_dict)
+125: 
+126:         return model
+127: 
+128:     def get_rollout_state_dict(self) -> dict:
+129:         return self.get_model_state_dict(cpu_offload=False, full_state_dict=False)
+130: 
+131:     @Worker.timer("actor/sync_model_to_rollout")
+132:     async def sync_model_to_rollout(self) -> None:
+133:         if self.enable_offload:
+134:             if not self.is_optimizer_offloaded:
+135:                 self.offload_optimizer()
+136: 
+137:             if self.is_weight_offloaded:
+138:                 self.load_param_and_grad(self.device, False)
+139: 
+140:         state_dict = self.get_rollout_state_dict()
+141: 
+142:         async def send_func(data):
+143:             if not self._is_weight_sender:
+144:                 return
+145:             await self.broadcast(
+146:                 data,
+147:                 groups=[
+148:                     (self._group_name, 0),
+149:                     (self._rollout_group_name, self._rollout_all_ranks),
+150:                 ],
+151:                 src=(self._group_name, 0),
+152:                 async_op=True,
+153:                 options=self._sync_weight_comm_options,
+154:             ).async_wait()
+155: 
+156:         async def recv_func():
+157:             return await self.recv(
+158:                 src_group_name=self._rollout_group_name,
+159:                 src_rank=0,
+160:                 async_op=True,
+161:                 options=self._sync_weight_comm_options,
+162:             ).async_wait()
+163: 
+164:         if not self.weight_syncer.sender_initialized():
+165:             await self.weight_syncer.init_sender(
+166:                 state_dict=state_dict,
+167:                 send=send_func,
+168:                 recv=recv_func,
+169:                 param_names_need_sync=self.param_names_need_sync,
+170:                 is_sender=self._is_weight_sender,
+171:             )
+172: 
+173:         version = (
+174:             self.get_rollout_sync_version()
+175:             if hasattr(self, "get_rollout_sync_version")
+176:             else self.version
+177:         )
+178:         await self.weight_syncer.sync(state_dict, send_func, version=version)
+179: 
+180:         if self.enable_offload:
+181:             assert not self.is_weight_offloaded, (
+182:                 "weight should be offloaded in sync_model_to_rollout"
+183:             )
+184:             self.offload_param_and_grad(True)
+185: 
+186:     @Worker.timer("actor/recv_traj")
+187:     async def recv_rollout_trajectories(self, input_channel: Channel) -> None:
+188:         """
+189:         Receive rollout trajectories from rollout workers.
+RELATED_FILES
+rlinf/hybrid_engines/fsdp/strategy/fsdp.py
+rlinf/hybrid_engines/fsdp/strategy/base.py
+rlinf/hybrid_engines/fsdp/strategy/fsdp2.py
+rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+rlinf/hybrid_engines/fsdp/strategy/__init__.py
+rlinf/workers/actor/ma_fsdp_actor_worker.py
+rlinf/workers/actor/fsdp_actor_worker_pipeline.py
+rlinf/workers/actor/fsdp_actor_worker.py
+rlinf/workers/actor/embodied_fsdp_actor_worker.py

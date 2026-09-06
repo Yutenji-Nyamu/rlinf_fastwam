@@ -1,0 +1,146 @@
+NOW=2026-09-02T22:16:32+08:00
+WRAPPER_ALIVE=1 PID=1277582
+1277582       1 1277582 Ss         33:16  0.0  0.0  3492 bash /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-pi0style-offload-smoke1-2gpu32x8-g8-b2048-u2-m10-phys67-v1/runtime/wrapper.sh /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-pi0style-offload-smoke1-2gpu32x8-g8-b2048-u2-m10-phys67-v1/runtime
+started_at.txt=2026-09-02T13:43:16+00:00
+DRIVER_TAIL_BEGIN
+    "only_eval": false,
+    "val_check_interval": 5,
+    "save_interval": 10,
+    "weight_sync_interval": 1,
+    "resume_dir": null,
+    "ckpt_path": null,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "overlap_env_bootstrap": false
+  },
+  "algorithm": {
+    "normalize_advantages": true,
+    "kl_penalty": "kl",
+    "group_size": 8,
+    "reward_coef": 1.0,
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "update_epoch": 2,
+    "adv_type": "grpo",
+    "loss_type": "actor",
+    "loss_agg_func": "token-mean",
+    "kl_beta": 0.0,
+    "entropy_bonus": 0,
+    "clip_ratio_high": 0.2,
+    "clip_ratio_low": 0.2,
+    "clip_ratio_c": 3.0,
+    "value_clip": 0.2,
+    "huber_delta": 10.0,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "filter_rewards": true,
+    "rewards_lower_bound": 0.1,
+    "rewards_upper_bound": 0.9
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}[INFO 13:43:26 FlexiblePlacementStrategy] 
+[INFO 13:43:26 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[INFO 13:43:26 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[36m(_RemoteNodeProbe pid=1277965)[0m /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/cluster/node.py:532: UserWarning: Python interpreter used to launch Ray on node with IP 172.17.0.1 is different from that on the head node /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python. Keep using the current interpreter /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python3 on this node.
+[36m(_RemoteNodeProbe pid=1277965)[0m   warnings.warn(
+[INFO 13:43:26 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 13:43:26 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 13:43:27 NodePlacementStrategy] 
+[INFO 13:43:27 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 13:43:27 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 13:43:27 NodePlacementStrategy] 
+[INFO 13:43:27 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 13:43:27 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 13:43:27 NodePlacementStrategy] 
+[INFO 13:43:27 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 13:43:27 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788356607.444121 1277587 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1788356607.501961 1277587 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1788356609.186972 1277587 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EnvWorker pid=1278052)[0m [INFO 13:43:31 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1278052)[0m [INFO 13:43:31 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=1278050)[0m [INFO 13:43:32 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1278050)[0m [INFO 13:43:32 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=1278047)[0m [INFO 13:43:32 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=1278047)[0m [INFO 13:43:32 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=1278054)[0m [INFO 13:43:32 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=1278054)[0m [INFO 13:43:32 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.helpers.loader:Loading Wan2.2-TI2V-5B components...
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.helpers.loader:Skipping pretrained video DiT load (`skip_dit_load_from_pretrain=True`); initializing video expert randomly and expecting checkpoint override.
+[36m(EmbodiedFSDPActor pid=1278046)[0m [INFO 13:43:38 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=1278046)[0m [INFO 13:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=1278044)[0m [INFO 13:43:38 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=1278044)[0m [INFO 13:43:38 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6], [7]], node groups: ['cluster'].
+[36m(EnvGroup(rank=0) pid=1278052)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=0) pid=1278052)[0m   warn(
+[36m(EnvGroup(rank=1) pid=1278054)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=1) pid=1278054)[0m   warn(
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.helpers.loader:Finished loading Wan2.2-TI2V-5B components in 73.28 seconds.
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.action_dit:Skipping ActionDiT pretrained load (`skip_dit_load_from_pretrain=True`); initializing action expert randomly and expecting checkpoint override.
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.mot:Initialized MoT with experts: ['video', 'action'], num_layers=30
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.mot:  Expert 'video': num_params=5.00 B
+[36m(RolloutGroup(rank=0) pid=1278047)[0m INFO:fastwam.models.wan22.mot:  Expert 'action': num_params=1.02 B
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.helpers.loader:Loading Wan2.2-TI2V-5B components...
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.helpers.loader:Skipping pretrained video DiT load (`skip_dit_load_from_pretrain=True`); initializing video expert randomly and expecting checkpoint override.
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.helpers.loader:Finished loading Wan2.2-TI2V-5B components in 65.41 seconds.
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.action_dit:Skipping ActionDiT pretrained load (`skip_dit_load_from_pretrain=True`); initializing action expert randomly and expecting checkpoint override.
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.mot:Initialized MoT with experts: ['video', 'action'], num_layers=30
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.mot:  Expert 'video': num_params=5.00 B
+[36m(ActorGroup(rank=0) pid=1278044)[0m INFO:fastwam.models.wan22.mot:  Expert 'action': num_params=1.02 B
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:   0%|          | 0/8 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  12%|█▎        | 1/8 [04:29<31:26, 269.54s/it]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  25%|██▌       | 2/8 [08:47<26:16, 262.75s/it]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  38%|███▊      | 3/8 [13:16<22:08, 265.72s/it]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  50%|█████     | 4/8 [17:33<17:28, 262.14s/it]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  62%|██████▎   | 5/8 [21:51<13:02, 260.81s/it]
+[36m(RolloutGroup(rank=0) pid=1278047)[0m Generating Rollout Epochs:  75%|███████▌  | 6/8 [26:21<08:47, 263.80s/it]
+DRIVER_TAIL_END
+FATAL_SCAN_BEGIN
+FATAL_SCAN_END
+RESOURCE_TAIL_BEGIN
+2026-09-02T14:16:15+00:00,1918065908,45956,84,45862,0
+2026-09-02T14:16:17+00:00,1918054652,45956,99,45956,30
+2026-09-02T14:16:20+00:00,1918040744,45956,38,45956,30
+2026-09-02T14:16:22+00:00,1918033964,45956,29,45956,88
+2026-09-02T14:16:24+00:00,1917983636,45956,0,45956,72
+2026-09-02T14:16:26+00:00,1917987876,45956,62,45956,0
+2026-09-02T14:16:28+00:00,1917984600,45956,60,45956,0
+2026-09-02T14:16:30+00:00,1917979244,45956,0,45956,50
+RESOURCE_TAIL_END
+RESOURCE_PEAK_BEGIN
+samples=926 gpu6_peak_mib=46106 gpu7_peak_mib=46106 mem_available_min_kib=1917979244
+RESOURCE_PEAK_END
+GPU67_BEGIN
+6, 45956, 81559, 75, 40, 183.57
+7, 45956, 81559, 60, 48, 218.97
+GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 1278052, ray::EnvWorker.interact, 19140
+GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 1278044, ray::EmbodiedFSDPActor.recv_rollout_trajectories, 1582
+GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 1278047, ray::MultiStepRolloutWorker.generate, 25194
+GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 1278046, ray::EmbodiedFSDPActor.recv_rollout_trajectories, 1582
+GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 1278050, ray::MultiStepRolloutWorker.generate, 25194
+GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 1278054, ray::EnvWorker.interact, 19140
+GPU67_END
+OTHER_GPU_SUMMARY_BEGIN
+0, 9728, 0
+1, 4, 0
+2, 4, 0
+3, 4, 0
+4, 4, 0
+5, 4, 0
+6, 45956, 0
+7, 45956, 92
+OTHER_GPU_SUMMARY_END
+SHARED_RAY_BEGIN
+ 321933 Sl    9-21:48:39 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs --config_list=eyJhdXRvbWF0aWNfb2JqZWN0X3NwaWxsaW5nX2VuYWJsZWQiOiB0cnVlLCAib2JqZWN0X3NwaWxsaW5nX2NvbmZpZyI6ICJ7XCJ0eXBlXCI6IFwiZmlsZXN5c3RlbVwiLCBcInBhcmFtc1wiOiB7XCJkaXJlY3RvcnlfcGF0aFwiOiBcIi9kYXRhL2NoZW55aXRlbmcvcmF5L3JsdC1kc3JsLXYzL3Nlc3Npb25fMjAyNi0wOC0yM18xNi0yNy01M185MTExNjFfMzIxOTA2XCJ9fSIsICJpc19leHRlcm5hbF9zdG9yYWdlX3R5cGVfZnMiOiB0cnVlfQ== --gcs_server_port=6389 --metrics-agent-port=0 --node-ip-address=172.17.0.1 --session-name=session_2026-08-23_16-27-53_911161_321906 --ray-commit=4464bbb6e21bce4893ed3396b2e33996188d511d --session-dir=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906 --node-id=2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54 --stdout_filepath=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs/gcs_server.out --stderr_filepath=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs/gcs_server.err
+SHARED_RAY_END
+CHECKPOINTS_BEGIN
+CHECKPOINTS_END

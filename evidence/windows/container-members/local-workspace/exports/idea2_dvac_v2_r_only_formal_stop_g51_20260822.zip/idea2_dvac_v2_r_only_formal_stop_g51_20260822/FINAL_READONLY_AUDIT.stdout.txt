@@ -1,0 +1,157 @@
+IDENTITY_TIME
+autodl-container-nekaqbwt43-6ce5babb
+/root
+0
+2026-08-22T21:47:54+08:00
+CONTROLLERS_AND_TARGET_PROCESSES
+wrapper	198255	exited
+driver	198259	exited
+observer	198260	exited
+68290 bash -c #!/usr/bin/env bash set -u  run=/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822 runtime=/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822  printf 'IDENTITY_TIME\n' hostname pwd id -u date --iso-8601=seconds  printf 'CONTROLLERS_AND_TARGET_PROCESSES\n' for name in wrapper driver observer; do   pid=$(cat "$runtime/${name}.pid" 2>/dev/null || true)   if [[ -n "$pid" && -d "/proc/$pid" ]]; then     printf '%s\t%s\talive\t%s\n' "$name" "$pid" "$(tr '\0' ' ' <"/proc/$pid/cmdline")"   else     printf '%s\t%s\texited\n' "$name" "${pid:-missing}"   fi done pgrep -af 'idea2_dvac_r_only_downweight_formal_100step|RLinf_idea2_dvac_residual_downweight.*train_embodied_agent' || true  printf 'FINAL_STEPS_AND_METRICS\n' grep -o 'Global Step:[[:space:]]*[0-9]\+/100' "$run/metrics.log" 2>/dev/null | tail -n 10 || true grep -aE 'Global Step|rollout/.*/success_once|actor/.*approx_kl|actor/.*clip_fraction|actor/.*grad_norm|actor/dvac_weight_mean_rank_local' "$run/metrics.log" 2>/dev/null | tail -n 80 || true  printf 'CHECKPOINTS\n' find "$run" -maxdepth 7 -type d -name 'global_step_*' -printf '%p\n' 2>/dev/null | sort -V || true last_ckpt=$(find "$run" -maxdepth 7 -type d -name 'global_step_*' 2>/dev/null | sort -V | tail -n 1) if [[ -n "$last_ckpt" ]]; then   du -sb "$last_ckpt"   find "$last_ckpt" -type f -printf '%f\t%s\n' | sort   printf 'partial_count='; find "$last_ckpt" -type f -name '*.partial' | wc -l fi  printf 'ARTIFACT_INVENTORY\n' du -sh "$run" "$runtime" "$run/dvac_train" "$run/control_trace" 2>/dev/null || true printf 'npz_count='; find "$run/dvac_train" -type f -name 'rollout_step*.npz' | wc -l printf 'rank_csv_count='; find "$run/dvac_train" -type f -name 'runner_step_metrics.csv' | wc -l printf 'control_trace_files='; find "$run/control_trace" -type f | wc -l find "$run/control_trace" -type f -printf '%p\t%s\n' 2>/dev/null | sort || true  printf 'RESOURCE_FINAL\n' nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory,name --format=csv,noheader || true printf 'memory.current='; cat /sys/fs/cgroup/memory.current cat /sys/fs/cgroup/memory.events tail -n 4 "$runtime/resource_monitor/resources.csv" 2>/dev/null || true df -h /root/autodl-tmp  printf 'EXIT_AND_FILES\n' for f in driver.exitcode observer.exitcode launch_started_at.txt launch_finished_at.txt resolved_config.yaml launch_command.txt; do   if [[ -f "$runtime/$f" ]]; then     stat -c '%n\t%s\t%y' "$runtime/$f"     case "$f" in *.exitcode|launch_*at.txt) printf 'value='; cat "$runtime/$f";; esac   fi done stat -c '%n\t%s\t%y' "$run/metrics.log" "$runtime/driver.log" "$runtime/resource_monitor/resources.csv" 2>/dev/null || true  printf 'ERROR_SCAN\n' patterns='CUDA out of memory|OutOfMemoryError|NCCL.*(error|Error)|WorkerCrashed|RayTaskError|No space left|SIGSEGV|SIGBUS|Killed|Traceback|fatal|Fatal|FATAL' for f in "$run/metrics.log" "$runtime/driver.log" "$runtime/observer.log"; do   [[ -f "$f" ]] || continue   count=$(grep -aEc "$patterns" "$f" 2>/dev/null || true)   printf '%s\tcount=%s\n' "$f" "$count"   grep -aE "$patterns" "$f" 2>/dev/null | tail -n 20 || true done 
+FINAL_STEPS_AND_METRICS
+Global Step:   42/100
+Global Step:   43/100
+Global Step:   44/100
+Global Step:   45/100
+Global Step:   46/100
+Global Step:   47/100
+Global Step:   48/100
+Global Step:   49/100
+Global Step:   50/100
+Global Step:   51/100
+│actor/approx_kl=0.028                  │actor/clip_fraction=0.156              │actor/clipped_ratio=0.954             │
+│actor/dvac_weight_mean_rank_local=1.004│actor/entropy_loss=0.0000              │actor/grad_norm=23.655                │
+│ Global Step:   26/100 │ Progress: ██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  26.0%                                  │
+│actor/approx_kl=0.038                  │actor/clip_fraction=0.144              │actor/clipped_ratio=0.990             │
+│actor/dvac_weight_mean_rank_local=0.996│actor/entropy_loss=0.0000              │actor/grad_norm=40.565                │
+│ Global Step:   27/100 │ Progress: ██████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  27.0%                                  │
+│actor/approx_kl=0.047                  │actor/clip_fraction=0.122              │actor/clipped_ratio=0.982             │
+│actor/dvac_weight_mean_rank_local=1.003│actor/entropy_loss=0.0000              │actor/grad_norm=33.378                │
+│ Global Step:   28/100 │ Progress: ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  28.0%                                  │
+│actor/approx_kl=0.035                  │actor/clip_fraction=0.198              │actor/clipped_ratio=0.997             │
+│actor/dvac_weight_mean_rank_local=1.003│actor/entropy_loss=0.0000              │actor/grad_norm=29.385                │
+│ Global Step:   29/100 │ Progress: ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  29.0%                                  │
+│actor/approx_kl=0.025                  │actor/clip_fraction=0.137              │actor/clipped_ratio=0.987             │
+│actor/dvac_weight_mean_rank_local=1.016│actor/entropy_loss=0.0000              │actor/grad_norm=36.831                │
+│ Global Step:   30/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  30.0%                                  │
+│actor/approx_kl=0.011                  │actor/clip_fraction=0.091              │actor/clipped_ratio=0.996             │
+│actor/dvac_weight_mean_rank_local=1.023│actor/entropy_loss=0.0000              │actor/grad_norm=26.245                │
+│ Global Step:   31/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  31.0%                                  │
+│actor/approx_kl=0.045                  │actor/clip_fraction=0.152              │actor/clipped_ratio=0.986             │
+│actor/dvac_weight_mean_rank_local=0.987│actor/entropy_loss=0.0000              │actor/grad_norm=27.526                │
+│ Global Step:   32/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  32.0%                                  │
+│actor/approx_kl=0.031                  │actor/clip_fraction=0.152              │actor/clipped_ratio=0.997             │
+│actor/dvac_weight_mean_rank_local=0.992│actor/entropy_loss=0.0000              │actor/grad_norm=20.350                │
+│ Global Step:   33/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  33.0%                                  │
+│actor/approx_kl=0.037                  │actor/clip_fraction=0.176              │actor/clipped_ratio=0.990             │
+│actor/dvac_weight_mean_rank_local=0.981│actor/entropy_loss=0.0000              │actor/grad_norm=27.220                │
+│ Global Step:   34/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  34.0%                                  │
+│actor/approx_kl=0.054                  │actor/clip_fraction=0.172              │actor/clipped_ratio=0.979             │
+│actor/dvac_weight_mean_rank_local=0.975│actor/entropy_loss=0.0000              │actor/grad_norm=22.965                │
+│ Global Step:   35/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  35.0%                                  │
+│actor/approx_kl=0.037                  │actor/clip_fraction=0.166              │actor/clipped_ratio=0.985             │
+│actor/dvac_weight_mean_rank_local=0.987│actor/entropy_loss=0.0000              │actor/grad_norm=33.225                │
+│ Global Step:   36/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  36.0%                                  │
+│actor/approx_kl=0.021                  │actor/clip_fraction=0.128              │actor/clipped_ratio=0.995             │
+│actor/dvac_weight_mean_rank_local=0.976│actor/entropy_loss=0.0000              │actor/grad_norm=18.606                │
+│ Global Step:   37/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  37.0%                                  │
+│actor/approx_kl=0.033                  │actor/clip_fraction=0.167              │actor/clipped_ratio=0.985             │
+│actor/dvac_weight_mean_rank_local=0.987│actor/entropy_loss=0.0000              │actor/grad_norm=21.438                │
+│ Global Step:   38/100 │ Progress: ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │  38.0%                                  │
+│actor/approx_kl=0.0075                 │actor/clip_fraction=0.166              │actor/clipped_ratio=0.962             │
+│actor/dvac_weight_mean_rank_local=0.992│actor/entropy_loss=0.0000              │actor/grad_norm=20.680                │
+│ Global Step:   39/100 │ Progress: ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │  39.0%                                  │
+│actor/approx_kl=0.053                  │actor/clip_fraction=0.169              │actor/clipped_ratio=0.990             │
+│actor/dvac_weight_mean_rank_local=0.987│actor/entropy_loss=0.0000              │actor/grad_norm=31.009                │
+│ Global Step:   40/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  40.0%                                  │
+│actor/approx_kl=0.047                  │actor/clip_fraction=0.089              │actor/clipped_ratio=0.992             │
+│actor/dvac_weight_mean_rank_local=0.998│actor/entropy_loss=0.0000              │actor/grad_norm=26.973                │
+│ Global Step:   41/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  41.0%                                  │
+│actor/approx_kl=0.048                  │actor/clip_fraction=0.190              │actor/clipped_ratio=0.981             │
+│actor/dvac_weight_mean_rank_local=0.977│actor/entropy_loss=0.0000              │actor/grad_norm=30.458                │
+│ Global Step:   42/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  42.0%                                  │
+│actor/approx_kl=0.032                  │actor/clip_fraction=0.136              │actor/clipped_ratio=0.985             │
+│actor/dvac_weight_mean_rank_local=0.998│actor/entropy_loss=0.0000              │actor/grad_norm=26.613                │
+│ Global Step:   43/100 │ Progress: █████████████████░░░░░░░░░░░░░░░░░░░░░░░ │  43.0%                                  │
+│actor/approx_kl=0.040                  │actor/clip_fraction=0.178              │actor/clipped_ratio=0.987             │
+│actor/dvac_weight_mean_rank_local=0.991│actor/entropy_loss=0.0000              │actor/grad_norm=26.015                │
+│ Global Step:   44/100 │ Progress: █████████████████░░░░░░░░░░░░░░░░░░░░░░░ │  44.0%                                  │
+│actor/approx_kl=0.049                  │actor/clip_fraction=0.157              │actor/clipped_ratio=0.983             │
+│actor/dvac_weight_mean_rank_local=0.998│actor/entropy_loss=0.0000              │actor/grad_norm=24.380                │
+│ Global Step:   45/100 │ Progress: ██████████████████░░░░░░░░░░░░░░░░░░░░░░ │  45.0%                                  │
+│actor/approx_kl=0.091                  │actor/clip_fraction=0.135              │actor/clipped_ratio=0.971             │
+│actor/dvac_weight_mean_rank_local=0.991│actor/entropy_loss=0.0000              │actor/grad_norm=20.109                │
+│ Global Step:   46/100 │ Progress: ██████████████████░░░░░░░░░░░░░░░░░░░░░░ │  46.0%                                  │
+│actor/approx_kl=0.055                  │actor/clip_fraction=0.190              │actor/clipped_ratio=0.993             │
+│actor/dvac_weight_mean_rank_local=0.999│actor/entropy_loss=0.0000              │actor/grad_norm=27.792                │
+│ Global Step:   47/100 │ Progress: ██████████████████░░░░░░░░░░░░░░░░░░░░░░ │  47.0%                                  │
+│actor/approx_kl=0.018                  │actor/clip_fraction=0.130              │actor/clipped_ratio=0.993             │
+│actor/dvac_weight_mean_rank_local=0.995│actor/entropy_loss=0.0000              │actor/grad_norm=35.173                │
+│ Global Step:   48/100 │ Progress: ███████████████████░░░░░░░░░░░░░░░░░░░░░ │  48.0%                                  │
+│actor/approx_kl=0.033                  │actor/clip_fraction=0.185              │actor/clipped_ratio=0.998             │
+│actor/dvac_weight_mean_rank_local=0.992│actor/entropy_loss=0.0000              │actor/grad_norm=17.625                │
+│ Global Step:   49/100 │ Progress: ███████████████████░░░░░░░░░░░░░░░░░░░░░ │  49.0%                                  │
+│actor/approx_kl=0.021                  │actor/clip_fraction=0.149              │actor/clipped_ratio=0.994             │
+│actor/dvac_weight_mean_rank_local=1.004│actor/entropy_loss=0.0000              │actor/grad_norm=19.922                │
+│ Global Step:   50/100 │ Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ │  50.0%                                  │
+│actor/approx_kl=0.026                  │actor/clip_fraction=0.206              │actor/clipped_ratio=0.996             │
+│actor/dvac_weight_mean_rank_local=0.950│actor/entropy_loss=0.0000              │actor/grad_norm=25.274                │
+│ Global Step:   51/100 │ Progress: ████████████████████░░░░░░░░░░░░░░░░░░░░ │  51.0%                                  │
+│actor/approx_kl=0.024                  │actor/clip_fraction=0.132              │actor/clipped_ratio=0.992             │
+│actor/dvac_weight_mean_rank_local=0.951│actor/entropy_loss=0.0000              │actor/grad_norm=29.407                │
+CHECKPOINTS
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_10
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_20
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_30
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_40
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_50
+10393939477	/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/checkpoints/global_step_50
+.metadata	1029391
+__0_0.distcp	5196328616
+__1_0.distcp	5196581352
+partial_count=0
+ARTIFACT_INVENTORY
+49G	/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822
+106M	/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822
+npz_count=102
+rank_csv_count=2
+control_trace_files=4
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/control_trace/.claims/worker_000_env_slot_000_recording_0000.claim	11
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/control_trace/adjust_bottle/worker_000/env_slot_000/recording_0000_episode_0000_reset_57/frames.csv	13319
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/control_trace/adjust_bottle/worker_000/env_slot_000/recording_0000_episode_0000_reset_57/head_camera.mp4	15354
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/control_trace/adjust_bottle/worker_000/env_slot_000/recording_0000_episode_0000_reset_57/metadata.json	876
+RESOURCE_FINAL
+0, 0, 81920, 0
+1, 0, 81920, 0
+memory.current=91213062144
+low 0
+high 0
+max 36757
+oom 0
+oom_kill 0
+2026-08-22T21:42:00+08:00,77324,0,27178,81920,0,0,33,67.56,256501796864,163363971072,90995372032,0,0,36757,0,0,865907052,125814616,741583156,8,1
+2026-08-22T21:42:00+08:00,77324,1,28800,81920,0,0,33,68.85,256501796864,163363971072,90995372032,0,0,36757,0,0,865907052,125814616,741583156,8,1
+2026-08-22T21:42:02+08:00,77326,0,11321,81920,0,0,33,83.29,169272557568,77855404032,89662615552,0,0,36757,0,0,951424256,125829088,741583156,4,1
+2026-08-22T21:42:02+08:00,77326,1,13064,81920,0,0,33,83.57,169272557568,77855404032,89662615552,0,0,36757,0,0,951424256,125829088,741583156,4,1
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/md0        2.1T  1.4T  708G  67% /root/autodl-tmp
+EXIT_AND_FILES
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/driver.exitcode\t4\t2026-08-22 21:42:04.913357181 +0800
+value=134
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/observer.exitcode\t2\t2026-08-22 21:42:04.913357181 +0800
+value=0
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/launch_started_at.txt\t26\t2026-08-22 00:13:16.758651122 +0800
+value=2026-08-22T00:13:16+08:00
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/launch_finished_at.txt\t26\t2026-08-22 21:42:04.913357181 +0800
+value=2026-08-22T21:42:04+08:00
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/resolved_config.yaml\t7997\t2026-08-22 00:12:29.924261891 +0800
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/launch_command.txt\t321\t2026-08-22 00:13:16.758651122 +0800
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/metrics.log\t296667\t2026-08-22 21:24:41.391397874 +0800
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/driver.log\t450137\t2026-08-22 21:42:00.240997263 +0800
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/resource_monitor/resources.csv\t9993476\t2026-08-22 21:42:02.905202865 +0800
+ERROR_SCAN
+/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/metrics.log	count=0
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/driver.log	count=2
+[36m(EnvGroup(rank=0) pid=201911)[0m Traceback (most recent call last):
+[36m(EnvGroup(rank=1) pid=201913)[0m Traceback (most recent call last):
+/root/autodl-tmp/idea2_dvac_train_runtime/idea2_dvac_r_only_downweight_formal_100step_2gpu16env_20260822/observer.log	count=0

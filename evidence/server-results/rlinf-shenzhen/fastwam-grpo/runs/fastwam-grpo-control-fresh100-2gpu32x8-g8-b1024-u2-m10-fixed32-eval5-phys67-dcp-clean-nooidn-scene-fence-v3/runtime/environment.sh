@@ -1,0 +1,23 @@
+unset CUDA_VISIBLE_DEVICES http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+export PATH=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+export VIRTUAL_ENV=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin
+export RAY_ADDRESS=172.17.0.1:6389
+export ROBOTWIN_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904
+export ROBOT_PLATFORM=ALOHA
+export REPO_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+export EMBODIED_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment
+export RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+export PYTHONPATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo:/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904
+export DIFFSYNTH_DOWNLOAD_SOURCE=modelscope
+export DIFFSYNTH_MODEL_BASE_PATH=/data/chenyiteng/models/fastwam/diffsynth
+export MODELSCOPE_CACHE=/home/chenyiteng/cache/fastwam-7faa/modelscope
+export TMPDIR=/home/chenyiteng/cache/fastwam-7faa/tmp
+export HF_HOME=/data/chenyiteng/cache/huggingface
+export XDG_CACHE_HOME=/data/chenyiteng/cache
+export MUJOCO_GL=egl
+export PYOPENGL_PLATFORM=egl
+export HYDRA_FULL_ERROR=1
+export PYTHONUNBUFFERED=1
+export PYTHONDONTWRITEBYTECODE=1
+
+source /home/chenyiteng/builds/fastwam-scene-fence-20260904/release-final/enable.sh

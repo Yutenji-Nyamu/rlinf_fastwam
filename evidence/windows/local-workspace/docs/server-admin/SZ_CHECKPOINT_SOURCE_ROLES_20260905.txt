@@ -1,0 +1,125 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:68:    "actor/model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:69:    "model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:70:    "full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:144:    """Find the consolidated ``full_weights.pt`` checkpoint file."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:153:        f"No full_weights.pt found under {ckpt}; looked at "
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/pt_to_safetensors.py:261:        help="SFT checkpoint dir, actor/model_state_dict dir, or full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/convert.py:21:    sft_to_openpi_rlinf              RLinf SFT full_weights.pt -> OpenPI_RLinf
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/convert.py:24:    sft2deploy                     RLinf SFT -> OpenPI PyTorch deploy full_weights.pt
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:17:This mode converts a consolidated RLinf SFT ``full_weights.pt`` checkpoint into
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:18:the OpenPI PyTorch deploy ``full_weights.pt`` layout. It first strips the SFT
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:21:packs the resulting state dict as one deploy ``full_weights.pt``.
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:24:``model_state_dict`` directory, or a direct ``full_weights.pt`` file. ``--output``
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:25:can be either a direct ``full_weights.pt`` path or a deploy directory. When a
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:27:``<output>/actor/model_state_dict/full_weights.pt``.
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:50:DEPLOY_WEIGHTS_REL = pathlib.Path("actor") / "model_state_dict" / "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:52:    "actor/model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:53:    "model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:54:    "full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:59:    """Find the consolidated ``full_weights.pt`` for an SFT checkpoint."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:68:            f"No full_weights.pt found under {ckpt}; looked at "
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:75:    """Resolve OUTPUT to the final deploy ``full_weights.pt`` path."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:82:def load_full_weights_pt(path: str | pathlib.Path) -> Any:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:83:    """Load a consolidated ``full_weights.pt`` state dict onto CPU."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:95:        return load_full_weights_pt(reference)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:106:            return load_full_weights_pt(deploy_pt)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:110:        "full_weights.pt or an OpenPI PyTorch model.safetensors."
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:152:    raw = load_full_weights_pt(resolve_full_weights(input_ckpt))
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:262:    """Convert an SFT checkpoint into one legacy deploy ``full_weights.pt``."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:313:        help="saved SFT checkpoint or consolidated full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:319:            "output full_weights.pt path, or deploy directory where "
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:320:            "actor/model_state_dict/full_weights.pt will be written"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/utils/ckpt_convertor/openpi/sft2deploy.py:335:            "reference deploy full_weights.pt (or its checkpoint directory) used "
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/fsdp_steam_sft_worker.py:204:    def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/megatron_vlm_sft_worker.py:130:    def save_checkpoint(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/megatron_vlm_sft_worker.py:247:    def save_checkpoint(self, save_path: str, step: int = 0):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/megatron_vlm_sft_worker.py:280:    def load_checkpoint(self, load_path: str):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/fsdp_vla_sft_worker.py:109:    def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/fsdp_vla_sft_worker.py:131:    def load_checkpoint(self, load_path: str) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/fsdp_vlm_sft_worker.py:41:    def save_checkpoint(self, save_path: str, step: int = 0):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/sft/fsdp_vlm_sft_worker.py:72:    def load_checkpoint(self, load_path: str):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_sac_policy_worker.py:757:    def save_checkpoint(self, save_base_path, step):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_sac_policy_worker.py:798:            os.path.join(target_model_save_path, f"checkpoint_rank_{self._rank}.pt"),
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_sac_policy_worker.py:807:    def load_checkpoint(self, load_base_path):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_sac_policy_worker.py:834:            os.path.join(target_model_load_path, f"checkpoint_rank_{self._rank}.pt")
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py:676:    def save_checkpoint(self, save_base_path, step):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py:702:    def load_checkpoint(self, load_base_path):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_iql_policy_worker.py:857:    def save_checkpoint(self, save_base_path, step):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_iql_policy_worker.py:914:    def load_checkpoint(self, load_base_path: str):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py:132:    def save_checkpoint(self, save_base_path, step):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py:150:    def load_checkpoint(self, load_base_path):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_cfg/__init__.py:45:        checkpoint_dir, "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_cfg/__init__.py:48:        checkpoint_dir, "actor", "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/lingbotvla/__init__.py:36:        checkpoint_dir, "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/lingbotvla/__init__.py:39:        checkpoint_dir, "actor", "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/reward/vlm_reward_model.py:128:                self.lora_path, "actor", "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/__init__.py:55:    # Check for model_state_dict/full_weights.pt (direct checkpoint) or actor/model_state_dict/full_weights.pt (from runner)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/__init__.py:57:        checkpoint_dir, "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/__init__.py:60:        checkpoint_dir, "actor", "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:21:dict in ``model_state_dict/full_weights.pt``, and a ``merge_manifest.json``
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:28:``full_weights.pt`` file.
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:116:    elif (path / "full_weights.pt").is_file():
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:117:        weights_path = path / "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:119:    elif (path / "model_state_dict" / "full_weights.pt").is_file():
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:120:        weights_path = path / "model_state_dict" / "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:124:            f"Could not find full_weights.pt under {path}. Expected an actor dir, "
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:125:            "model_state_dict dir, or direct full_weights.pt file."
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:266:            ``output/model_state_dict/full_weights.pt``.
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/checkpoint_merge.py:353:    out_weights = output_model_dir / "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/__init__.py:84:    file path (e.g. ``<step>/actor/model_state_dict/full_weights.pt``), since
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/__init__.py:262:    full_weights_path = os.path.join(model_path, "model_state_dict", "full_weights.pt")
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/steam/__init__.py:267:        "full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/recap/__init__.py:114:            model_path, "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/value_model/recap/__init__.py:117:            model_path, "actor", "model_state_dict", "full_weights.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_rlinf/utils/rlt_utils.py:28:    "actor/model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_rlinf/utils/rlt_utils.py:29:    "model_state_dict/full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_rlinf/utils/rlt_utils.py:30:    "full_weights.pt",
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_rlinf/utils/rlt_utils.py:103:    """Resolve an RLinf FSDP ``full_weights.pt`` checkpoint path."""
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi_rlinf/__init__.py:37:    ``full_weights.pt``. Model shape comes from YAML; no checkpoint
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/data/storage/replay/buffer.py:927:    def save_checkpoint(self, save_path: str):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/data/storage/replay/buffer.py:998:    def load_checkpoint(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/data/online_bc.py:123:    def save_checkpoint(self, save_path: str | Path) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/data/online_bc.py:136:    def load_checkpoint(self, load_path: str | Path) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py:356:    def load_checkpoint(self, load_path: str) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py:374:    def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:184:    def save_checkpoint(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:224:                    save_path, "local_shard_checkpoint"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:230:                    os.path.join(local_shard_save_path, f"checkpoint_rank_{rank}.pt"),
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:259:                        model_state_dict, os.path.join(sd_save_path, "full_weights.pt")
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:264:                        model_state_dict, os.path.join(sd_save_path, "full_weights.pt")
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:270:    def load_checkpoint(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py:307:                    load_path, "local_shard_checkpoint", f"checkpoint_rank_{rank}.pt"
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/megatron/megatron_model_manager.py:583:    def save_checkpoint(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/megatron/megatron_model_manager.py:617:    def load_checkpoint(self, load_path):
+54996992	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v5
+18455478272	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sft-leaf-wrap-nativeopt-local-orig-false-20260905
+12288	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sync-probe-nativeopt-local-orig-false-20260905
+37152296960	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-bc-dvac32x1-b1024-u10-gpu7-smoke2-20260905-v1
+59199488	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v3
+4096	/data/chenyiteng/results/rlinf-shenzhen/online-bc/env-fd-probe-20260905
+55054336	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-b1024-u10-eval8x4-gpu6-20260905-v8
+12288	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sync-probe-orig-true-20260905
+28672	/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-dvac-20260905
+20480	/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-eval8-20260905
+61329408	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v6
+32768	/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-u10-20260905
+37162430464	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-b1024-u10-eval16x2-gpu6-20260905-v7
+262283264	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-bc32x1-b1024-u10-eval16x2-gpu6-formal100-20260905-v1
+17404485632	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sync-probe-orig-false-20260905
+98304	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v1
+52867072	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v2
+55017472	/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi0-adjust-bottle-smoke32x1-m4-gpu6-20260905-v4
+16384	/data/chenyiteng/results/rlinf-shenzhen/online-bc/native-sft-probe-20260905
+36864	/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-20260905
+12288	/data/chenyiteng/results/rlinf-shenzhen/online-bc/implementation-20260904
+110775717888	/data/chenyiteng/results/rlinf-shenzhen/online-bc
+ 322129  321906 12-19:18:08 Sl   python3
+ 322130  321906 12-19:18:08 Sl   python3
+ 322131  321906 12-19:18:08 Sl   python3
+ 322193  322131 12-19:18:07 S    python3
+ 322684  321906 12-19:18:07 Sl   python3
+1597472       1       18:36 S    python3
+1609044 1609043       15:12 S    python3
+some avg10=0.00 avg60=0.00 avg300=0.00 total=89202316
+full avg10=0.00 avg60=0.00 avg300=0.00 total=87238090
+

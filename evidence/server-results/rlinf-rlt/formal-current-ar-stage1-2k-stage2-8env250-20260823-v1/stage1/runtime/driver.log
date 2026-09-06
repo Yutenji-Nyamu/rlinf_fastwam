@@ -1,0 +1,95 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/examples/sft/train_vla_sft.py:31: Hydra14MigrationWarning: 
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  @hydra.main(
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+2026-08-23 16:29:07,517	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-08-23 16:29:07,522	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-08-23 16:29:07,581	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+Error executing job with overrides: ['cluster.component_placement={actor\\,env\\,rollout:4-5}', 'runner.logger.log_path=/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260823-v1/stage1', 'runner.logger.experiment_name=robotwin_adjust_bottle_rlt_stage1_current_ar_clean50_2k_v1', 'runner.max_steps=2000', 'runner.save_interval=2000', 'runner.val_check_interval=-1', 'actor.micro_batch_size=16', 'actor.global_batch_size=32', 'actor.optim.total_training_steps=2000', 'actor.optim.lr_warmup_steps=100']
+[36m(TemporaryActor pid=323565)[0m No module named 'rlinf'
+[36m(TemporaryActor pid=323565)[0m Traceback (most recent call last):
+[36m(TemporaryActor pid=323565)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/serialization.py", line 590, in deserialize_objects
+[36m(TemporaryActor pid=323565)[0m     obj = self._deserialize_object(
+[36m(TemporaryActor pid=323565)[0m           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/serialization.py", line 432, in _deserialize_object
+[36m(TemporaryActor pid=323565)[0m     return self._deserialize_msgpack_data(
+[36m(TemporaryActor pid=323565)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/serialization.py", line 379, in _deserialize_msgpack_data
+[36m(TemporaryActor pid=323565)[0m     python_objects = self._deserialize_pickle5_data(
+[36m(TemporaryActor pid=323565)[0m                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/serialization.py", line 361, in _deserialize_pickle5_data
+[36m(TemporaryActor pid=323565)[0m     obj = pickle.loads(in_band)
+[36m(TemporaryActor pid=323565)[0m           ^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m ModuleNotFoundError: No module named 'rlinf'
+[36m(TemporaryActor pid=323565)[0m Exception raised in creation task: The actor died because of an error raised in its creation task, [36mray::NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54:_RemoteNodeProbe.__init__()[39m (pid=323565, ip=172.17.0.1, actor_id=4f8067fdc9ab0c3a1a9b1ff901000000, repr=<rlinf.scheduler.cluster.node.FunctionActorManager._create_fake_actor_class.<locals>.TemporaryActor object at 0x7ff501bdf110>)
+[36m(TemporaryActor pid=323565)[0m   At least one of the input arguments for this task could not be computed:
+[36m(TemporaryActor pid=323565)[0m ray.exceptions.RaySystemError: System error: No module named 'rlinf'
+[36m(TemporaryActor pid=323565)[0m traceback: Traceback (most recent call last):
+[36m(TemporaryActor pid=323565)[0m           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m           ^^^^^^^^^^^^^^^^^^^^^
+[36m(TemporaryActor pid=323565)[0m ModuleNotFoundError: No module named 'rlinf'
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/examples/sft/train_vla_sft.py", line 62, in <module>
+    main()
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+           ^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+            ^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+        ^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/examples/sft/train_vla_sft.py", line 35, in main
+    cfg = validate_cfg(cfg)
+          ^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf/config.py", line 1492, in validate_cfg
+    Cluster(
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf/scheduler/cluster/cluster.py", line 206, in __init__
+    self._init_and_launch_managers(
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf/scheduler/cluster/cluster.py", line 386, in _init_and_launch_managers
+    self._node_probe = NodeProbe(self._num_nodes, self._cluster_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421/rlinf/scheduler/cluster/node.py", line 313, in __init__
+    self._nodes = ray.get(handles)
+                  ^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/worker.py", line 2986, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/worker.py", line 1052, in get_objects
+    raise value
+ray.exceptions.ActorDiedError: The actor died because of an error raised in its creation task, [36mray::NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54:_RemoteNodeProbe.__init__()[39m (pid=323565, ip=172.17.0.1, actor_id=4f8067fdc9ab0c3a1a9b1ff901000000, repr=<rlinf.scheduler.cluster.node.FunctionActorManager._create_fake_actor_class.<locals>.TemporaryActor object at 0x7ff501bdf110>)
+  At least one of the input arguments for this task could not be computed:
+ray.exceptions.RaySystemError: System error: No module named 'rlinf'
+traceback: Traceback (most recent call last):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          ^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'rlinf'

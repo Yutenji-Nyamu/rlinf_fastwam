@@ -1,0 +1,128 @@
+{
+  "snapshot": {
+    "stop_completed_time": "2026-08-22T21:42:04+08:00",
+    "latest_complete_global_step": 51,
+    "termination": "user-authorized stop after complete g51; SIGINT then exact-driver SIGTERM",
+    "controllers": "wrapper/driver/observer exited",
+    "checkpoints": [
+      "global_step_10",
+      "global_step_20",
+      "global_step_30",
+      "global_step_40",
+      "global_step_50"
+    ],
+    "run_size_reported": "49 GiB",
+    "runtime_size_reported": "110 MiB",
+    "resource_csv_through": "2026-08-22T21:42:02+08:00"
+  },
+  "three_run_training": {
+    "common_window_end": 51,
+    "runs": {
+      "Original GRPO": {
+        "latest_available_step": 100,
+        "latest_success_pct": 98.4375,
+        "own_window_success_mean_pct": 91.70703125,
+        "common_g1_to_g51_success_mean_pct": 88.31188725490196,
+        "common_latest5_success_pct": 91.796875,
+        "common_latest10_success_pct": 90.3515625,
+        "common_approx_kl_mean": 0.046588235294117646,
+        "common_clip_pct_mean": 15.03921568627451,
+        "common_grad_norm_mean": 30.69358823529412,
+        "common_step_minutes_mean": 24.59153594771242
+      },
+      "DVAC v1 global-z": {
+        "latest_available_step": 54,
+        "latest_success_pct": 88.671875,
+        "own_window_success_mean_pct": 86.66087962962963,
+        "common_g1_to_g51_success_mean_pct": 86.51194852941177,
+        "common_latest5_success_pct": 89.6875,
+        "common_latest10_success_pct": 89.1796875,
+        "common_approx_kl_mean": 0.0463313725490196,
+        "common_clip_pct_mean": 14.821568627450983,
+        "common_grad_norm_mean": 33.891019607843134,
+        "common_step_minutes_mean": 24.757058823529416
+      },
+      "DVAC v2 R-only": {
+        "latest_available_step": 51,
+        "latest_success_pct": 94.140625,
+        "own_window_success_mean_pct": 87.39276960784314,
+        "common_g1_to_g51_success_mean_pct": 87.39276960784314,
+        "common_latest5_success_pct": 92.421875,
+        "common_latest10_success_pct": 91.328125,
+        "common_approx_kl_mean": 0.03784313725490195,
+        "common_clip_pct_mean": 14.327450980392157,
+        "common_grad_norm_mean": 30.710568627450975,
+        "common_step_minutes_mean": 24.88277777777778
+      }
+    },
+    "deltas_vs_grpo_common_window": {
+      "DVAC v1 global-z": {
+        "g1_to_g51_mean_success_pp": -1.7999387254901933,
+        "latest5_success_pp": -2.109375,
+        "latest10_success_pp": -1.171875
+      },
+      "DVAC v2 R-only": {
+        "g1_to_g51_mean_success_pp": -0.919117647058826,
+        "latest5_success_pp": 0.625,
+        "latest10_success_pp": 0.9765625
+      }
+    }
+  },
+  "v2_method_g2_to_g51": {
+    "weight_mean": 0.9942986503337728,
+    "weight_p05_mean": 0.6904142284393311,
+    "weight_median_mean": 1.028329799771309,
+    "weight_p95_mean": 1.1989157319068908,
+    "downweighted_fraction_mean": 0.3916465978884965,
+    "upweighted_fraction_mean": 0.6083526537918739,
+    "lower_bound_fraction_mean": 0.0063846162745335435,
+    "upper_bound_fraction_mean": 0.08388510938147681,
+    "positive_adv_weight_mean": 0.983628721833229,
+    "negative_adv_weight_mean": 1.016890012025833,
+    "latest_horizon": {
+      "valid_queries": 279,
+      "valid_weight_points": 13950,
+      "weight_mean": 0.952627956867218,
+      "weight_p05": 0.5908222794532776,
+      "weight_p50": 1.003063440322876,
+      "weight_p95": 1.2000000476837158,
+      "weight_below_one_fraction": 0.4893189964157706,
+      "weight_above_one_fraction": 0.5106810035842294,
+      "weight_at_min_fraction": 0.024301075268817203,
+      "weight_at_max_fraction": 0.07103942652329749,
+      "positive_adv_query_weight_mean": 0.943104088306427,
+      "negative_adv_query_weight_mean": 0.987390398979187,
+      "raw_log_v_back_minus_front": 0.21956706047058105,
+      "position_center_back_minus_front": 0.08784224510192828,
+      "residual_back_minus_front": 0.25781431794166565,
+      "weight_back_minus_front": 0.03900986909866333,
+      "weight_h_spearman": 0.932484993997599,
+      "center_rank_max_abs_difference": 0.0,
+      "scale_rank_max_abs_difference": 0.0
+    },
+    "latest_weight_geometry": {
+      "valid_queries": 279,
+      "weight_ess_ratio_mean": 0.9729373153120263,
+      "effective_h_mean": 48.64686576560132,
+      "per_query_coefficient_angle_deg_mean": 9.010328926531741,
+      "advantage_weighted_coefficient_cosine": 0.9832310965171017,
+      "advantage_weighted_coefficient_angle_deg": 10.507483677702519,
+      "pooled_top20_weight_mass": 0.24492118997398507
+    }
+  },
+  "v2_resources": {
+    "gpu0_peak_gib": 30.3681640625,
+    "gpu1_peak_gib": 30.2177734375,
+    "cgroup_peak_gib": 239.99992752075195,
+    "cgroup_latest_gib": 157.64735412597656,
+    "cgroup_limit_gib": 240.0,
+    "anon_peak_gib": 159.59886932373047,
+    "file_peak_gib": 84.90475463867188,
+    "event_max_latest": 36757,
+    "event_max_first_nonzero_timestamp": "2026-08-22T16:51:53+08:00",
+    "event_oom_latest": 0,
+    "event_oom_kill_latest": 0,
+    "host_ram_available_min_gib": 818.2888145446777,
+    "disk_available_min_gib": 704.8972930908203
+  }
+}

@@ -1,0 +1,63 @@
+HEAD=7b2331c55d14397cfb4cb16181470ddc8afae44a
+29-
+30-
+31:def check_progress(
+32-    step: int,
+33-    max_steps: int,
+34-    val_check_interval: int,
+35-    save_interval: int,
+36-    limit_val_batches: Union[int, float, None],
+37-    run_time_exceeded: bool = False,
+38-):
+39-    is_validation_enabled = limit_val_batches != 0 and val_check_interval > 0
+40-    is_save_enabled = save_interval > 0
+41-    is_train_end = step == max_steps
+42-
+43-    if is_validation_enabled:
+44-        assert save_interval < 0 or save_interval % val_check_interval == 0, (
+45-            f"{save_interval=} must be divisible by {val_check_interval=}"
+46-        )
+47-
+48-    # run validation on the last step
+49-    # or when we hit the val check interval
+50-    run_val = (
+51-        safe_is_divisible(step, val_check_interval) or is_train_end or run_time_exceeded
+52-    )
+53-    run_val &= is_validation_enabled
+54-
+55-    # save model at save intervals or last step
+56-    save_model = (
+57-        safe_is_divisible(step, save_interval) or is_train_end or run_time_exceeded
+58-    )
+59-    # sometimes the user will provide a validation metric
+60-    # to save against, so we need to run val when we save
+61-    save_model &= is_save_enabled
+304-        rollout_metrics = [result.get("rollout_metrics", {}) for result in results]
+305-        training_metrics = [result.get("training_metrics", {}) for result in results]
+306-        return rollout_metrics, training_metrics
+307-
+308:    def _maybe_eval_and_checkpoint(self, step: int) -> dict:
+309-        run_val, save_model, _ = check_progress(
+310-            self.global_step,
+311-            self.max_steps,
+312-            self.cfg.runner.val_check_interval,
+313-            self.cfg.runner.save_interval,
+314-            1.0,
+315-            run_time_exceeded=False,
+316-        )
+317-
+318-        eval_metrics = {}
+319-        if run_val:
+320-            with self.timer("eval"):
+321-                self.update_rollout_weights()
+322-                eval_metrics = self.evaluate()
+323-                eval_metrics = {f"eval/{k}": v for k, v in eval_metrics.items()}
+324-                self.metric_logger.log(data=eval_metrics, step=step)
+325-
+326-        if save_model:
+327-            self._save_checkpoint()
+328-
+329-        return eval_metrics
+330-
+331-    def _log_step_metrics(
+332-        self,

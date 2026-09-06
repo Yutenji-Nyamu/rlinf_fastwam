@@ -1,0 +1,41 @@
+defaults:
+  - override hydra/job_logging: disabled   # 不要每次建立新目录
+
+
+batch_size: 32
+num_workers: 4
+epochs: 10
+lr: 0.001
+seed: 0
+min_lr: 0.00001
+eval_epoch: 2
+inf_demo_path: [
+
+  ]
+model_weight: 
+select_mode: 
+num_to_save: 25
+save_dir: 
+
+data:
+  val_ratio: 0.1
+  test_ratio: 0
+  suite: 
+  expert_shots: 8
+  data_path: 
+  save_path: [
+    ]
+
+model:
+  h_dim: 256       
+  action_dim: 7
+  n_blocks: 2
+  n_heads: 1
+  drop_p: 0.2
+  num_cls: 10
+  freeze_img_encoder: false
+  pretrain_img_encoder: true
+  use_img: true
+
+experiment_label: ${now:%Y.%m.%d}
+output_dir: 

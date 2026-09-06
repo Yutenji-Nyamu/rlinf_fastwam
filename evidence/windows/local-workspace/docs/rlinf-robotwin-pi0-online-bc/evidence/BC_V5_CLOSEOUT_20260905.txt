@@ -1,0 +1,90 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+2026-09-05T04:49:45+00:00
+SSH_NOFILE_SOFT=1024
+SSH_NOFILE_HARD=1048576
+/proc/321933/limits:Max open files            1024                 1048576              files     
+/proc/322685/limits:Max open files            1024                 1048576              files     
+{
+  "success_episodes": 26,
+  "query_records": 78,
+  "sft_disable_lines": 64,
+  "evaluation_entered": true,
+  "first_error": "vk::Device::getSemaphoreFdKHR: ErrorInitializationFailed",
+  "exit": "255"
+}
+    def reset(
+        self,
+        env_idx: Optional[Union[int, list[int]]] = None,
+        env_seeds=None,
+    ):
+        if self._is_start:
+            self._is_start = False
+
+        env_seeds = self.reset_state_ids.tolist() if env_seeds is None else env_seeds
+
+        self.venv.reset(env_idx=env_idx, env_seeds=env_seeds)
+        raw_obs = self.venv.get_obs()
+        infos = {}
+
+        self._reset_metrics(env_idx)
+
+        extracted_obs = self._extract_obs_image(raw_obs)
+
+        return extracted_obs, infos
+
+    def update_reset_state_ids(self, env_idx=None):
+        if self.use_fixed_reset_state_ids and hasattr(self, "reset_state_ids"):
+            return
+
+        if env_idx is not None and hasattr(self, "reset_state_ids"):
+            if self.success_seeds is not None:
+                total_seeds = self.success_seeds.numel()
+                indices = (
+                    torch.arange(self.num_group, device=self.success_seeds.device)
+                    + self._current_seed_index
+                ) % total_seeds
+                reset_state_ids = self.success_seeds[indices]
+                reset_state_ids = reset_state_ids.repeat_interleave(
+                    repeats=self.group_size
+                )
+                self._current_seed_index = (
+                    self._current_seed_index + self.num_group
+                ) % total_seeds
+            else:
+                reset_state_ids = torch.randint(
+                    low=10000,
+                    high=200000,
+                    size=(self.num_group,),
+                    generator=self._generator,
+                )
+                reset_state_ids = reset_state_ids.repeat_interleave(
+                    repeats=self.group_size
+                )
+            for idx in env_idx:
+                self.reset_state_ids[idx] = reset_state_ids[idx]
+        else:
+            if self.success_seeds is not None:
+                total_seeds = self.success_seeds.numel()
+                indices = (
+                    torch.arange(self.num_group, device=self.success_seeds.device)
+                    + self._current_seed_index
+                ) % total_seeds
+                reset_state_ids = self.success_seeds[indices]
+                reset_state_ids = reset_state_ids.repeat_interleave(
+                    repeats=self.group_size
+                )
+                self._current_seed_index = (
+                    self._current_seed_index + self.num_group
+                ) % total_seeds
+            else:
+                reset_state_ids = torch.randint(
+                    low=10000,
+                    high=200000,
+                    size=(self.num_group,),
+                    generator=self._generator,
+                )
+                reset_state_ids = reset_state_ids.repeat_interleave(
+                    repeats=self.group_size
+                )
+            self.reset_state_ids = reset_state_ids
+

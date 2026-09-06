@@ -1,0 +1,303 @@
+<div id="rlt-verified-progress" style="position:relative">
+  <style>
+    #rlt-verified-progress .rlt-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      color: var(--foreground);
+    }
+    #rlt-verified-progress .rlt-axis {
+      stroke: var(--border);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-grid {
+      stroke: var(--border);
+      stroke-width: 1;
+      opacity: 0.65;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-label {
+      fill: var(--muted-foreground);
+      font-size: 11px;
+      font-weight: 400;
+    }
+    #rlt-verified-progress .rlt-phase-label {
+      fill: var(--foreground);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    #rlt-verified-progress .rlt-train {
+      fill: none;
+      stroke: var(--viz-series-1);
+      stroke-width: 2.5;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-eval {
+      fill: none;
+      stroke: var(--viz-series-2);
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-updates {
+      fill: none;
+      stroke: var(--viz-series-4);
+      stroke-width: 2.25;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-current {
+      stroke: var(--foreground);
+      stroke-width: 1.25;
+      stroke-dasharray: 5 4;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-guide {
+      stroke: var(--muted-foreground);
+      stroke-width: 1;
+      stroke-dasharray: 3 4;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-hit {
+      fill: transparent;
+      cursor: crosshair;
+    }
+    #rlt-verified-progress .rlt-focus {
+      stroke: var(--foreground);
+      stroke-width: 1;
+      opacity: 0;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-dot {
+      fill: var(--viz-series-2);
+      stroke: var(--background);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-legend {
+      margin-bottom: 0.5rem;
+    }
+    #rlt-verified-progress .rlt-swatch {
+      width: 1.2rem;
+      height: 0.18rem;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 0.25rem;
+      background: var(--viz-series-1);
+    }
+    #rlt-verified-progress .rlt-swatch.eval {
+      background: var(--viz-series-2);
+    }
+    #rlt-verified-progress .rlt-swatch.updates {
+      background: var(--viz-series-4);
+    }
+    #rlt-verified-progress .rlt-detail {
+      min-height: 1.5rem;
+      margin-top: 0.35rem;
+    }
+  </style>
+  <div class="viz-row rlt-legend text-small" aria-label="Legend">
+    <span><span class="rlt-swatch"></span>Train success, rolling 10 cycles</span>
+    <span><span class="rlt-swatch eval"></span>Deterministic eval, 20 episodes</span>
+    <span><span class="rlt-swatch updates"></span>Cumulative critic updates</span>
+  </div>
+  <svg
+    id="rlt-verified-svg"
+    class="rlt-chart"
+    viewBox="0 0 736 430"
+    role="img"
+    aria-labelledby="rlt-verified-title rlt-verified-desc"
+  >
+    <title id="rlt-verified-title">RLT Stage 2 success and optimization progress</title>
+    <desc id="rlt-verified-desc">
+      Full training history with four actual phases, deterministic evaluations,
+      and cumulative critic updates through the latest complete cycle.
+    </desc>
+  </svg>
+  <div id="rlt-verified-detail" class="rlt-detail text-small text-muted"></div>
+  <div class="table-responsive">
+    <table class="table table-sm" aria-label="Observed phase success summary">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>Observed cycles</th>
+          <th class="text-end">Train success</th>
+        </tr>
+      </thead>
+      <tbody id="rlt-verified-phase-table"></tbody>
+    </table>
+  </div>
+  <script>
+    (() => {
+      const data = __RLT_DATA__;
+      const root = document.getElementById("rlt-verified-progress");
+      const svg = document.getElementById("rlt-verified-svg");
+      const detail = document.getElementById("rlt-verified-detail");
+      const table = document.getElementById("rlt-verified-phase-table");
+      const ns = "http://www.w3.org/2000/svg";
+      const W = 736;
+      const left = 48;
+      const right = 18;
+      const width = W - left - right;
+      const successTop = 30;
+      const successBottom = 275;
+      const updateTop = 318;
+      const updateBottom = 395;
+      const x = cycle => left + ((cycle - 1) / (data.plannedCycles - 1)) * width;
+      const ySuccess = value => successBottom - (value / 100) * (successBottom - successTop);
+      const updateMax = Math.max(76000, data.criticUpdates.at(-1)[1] * 1.05);
+      const yUpdate = value => updateBottom - (value / updateMax) * (updateBottom - updateTop);
+      const make = (tag, attrs = {}, text = "") => {
+        const node = document.createElementNS(ns, tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        if (text) node.textContent = text;
+        return node;
+      };
+      const linePath = points =>
+        points.map((point, index) => `${index ? "L" : "M"}${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(" ");
+      const rolling = data.train.map((entry, index) => {
+        const start = Math.max(0, index - 9);
+        const window = data.train.slice(start, index + 1);
+        return [
+          entry[0],
+          (window.reduce((sum, item) => sum + item[1], 0) / (window.length * 8)) * 100,
+        ];
+      });
+      const colors = getComputedStyle(root);
+      const phaseDefs = [
+        [1, data.boundaries.p2 - 1, "P1", "--viz-series-1"],
+        [data.boundaries.p2, data.boundaries.p3 - 1, "P2", "--viz-series-3"],
+        [data.boundaries.p3, data.boundaries.p4 - 1, "P3", "--viz-series-5"],
+        [data.boundaries.p4, data.plannedCycles, "P4", "--viz-series-4"],
+      ];
+      for (const [start, end, label, token] of phaseDefs) {
+        const rect = make("rect", {
+          x: x(start),
+          y: successTop,
+          width: Math.max(0, x(end + 1) - x(start)),
+          height: updateBottom - successTop,
+          fill: colors.getPropertyValue(token).trim(),
+          opacity: "0.08",
+        });
+        svg.appendChild(rect);
+        const center = (x(start) + x(end)) / 2;
+        svg.appendChild(make("text", {
+          x: center,
+          y: 20,
+          "text-anchor": "middle",
+          class: "rlt-phase-label",
+        }, label));
+      }
+      for (const tick of [0, 25, 50, 75, 100]) {
+        const yy = ySuccess(tick);
+        svg.appendChild(make("line", {x1: left, y1: yy, x2: W - right, y2: yy, class: "rlt-grid"}));
+        svg.appendChild(make("text", {x: left - 8, y: yy + 4, "text-anchor": "end", class: "rlt-label"}, `${tick}%`));
+      }
+      for (const tick of [1, 50, 100, 150, 200, 250]) {
+        const xx = x(tick);
+        svg.appendChild(make("line", {x1: xx, y1: successTop, x2: xx, y2: updateBottom, class: "rlt-grid"}));
+        svg.appendChild(make("text", {x: xx, y: 416, "text-anchor": "middle", class: "rlt-label"}, String(tick)));
+      }
+      svg.appendChild(make("line", {x1: left, y1: successBottom, x2: W - right, y2: successBottom, class: "rlt-axis"}));
+      svg.appendChild(make("line", {x1: left, y1: updateBottom, x2: W - right, y2: updateBottom, class: "rlt-axis"}));
+      for (const gate of [30000, 70000]) {
+        const yy = yUpdate(gate);
+        svg.appendChild(make("line", {x1: left, y1: yy, x2: W - right, y2: yy, class: "rlt-guide"}));
+        svg.appendChild(make("text", {x: left + 4, y: yy - 4, class: "rlt-label"}, `${gate / 1000}k`));
+      }
+      svg.appendChild(make("path", {
+        d: linePath(rolling.map(entry => [x(entry[0]), ySuccess(entry[1])])),
+        class: "rlt-train",
+      }));
+      const evalPoints = data.eval.map(entry => [x(entry[0]), ySuccess((entry[1] / 20) * 100)]);
+      svg.appendChild(make("path", {d: linePath(evalPoints), class: "rlt-eval"}));
+      for (let index = 0; index < data.eval.length; index += 1) {
+        const entry = data.eval[index];
+        const point = evalPoints[index];
+        svg.appendChild(make("circle", {cx: point[0], cy: point[1], r: 4, class: "rlt-dot"}));
+        svg.appendChild(make("text", {
+          x: point[0],
+          y: point[1] - 8,
+          "text-anchor": "middle",
+          class: "rlt-label",
+        }, `${entry[1]}/20`));
+      }
+      svg.appendChild(make("path", {
+        d: linePath(data.criticUpdates.map(entry => [x(entry[0]), yUpdate(entry[1])])),
+        class: "rlt-updates",
+      }));
+      const currentX = x(data.currentCycle);
+      svg.appendChild(make("line", {
+        x1: currentX,
+        y1: successTop,
+        x2: currentX,
+        y2: updateBottom,
+        class: "rlt-current",
+      }));
+      svg.appendChild(make("text", {
+        x: currentX - 5,
+        y: updateTop - 7,
+        "text-anchor": "end",
+        class: "rlt-label",
+      }, `complete cycle ${data.currentCycle}`));
+      const focus = make("line", {
+        x1: currentX,
+        y1: successTop,
+        x2: currentX,
+        y2: updateBottom,
+        class: "rlt-focus",
+      });
+      svg.appendChild(focus);
+      const evalMap = new Map(data.eval.map(entry => [entry[0], entry[1]]));
+      const updateMap = new Map(data.criticUpdates.map(entry => [entry[0], entry[1]]));
+      const showCycle = cycle => {
+        const trainEntry = data.train[Math.max(0, Math.min(data.train.length - 1, cycle - 1))];
+        const rollEntry = rolling[Math.max(0, Math.min(rolling.length - 1, cycle - 1))];
+        const evalValue = evalMap.get(cycle);
+        let updateValue = 0;
+        for (const entry of data.criticUpdates) {
+          if (entry[0] > cycle) break;
+          updateValue = entry[1];
+        }
+        detail.textContent =
+          `Cycle ${cycle}: train ${trainEntry[1]}/8; rolling-10 ${rollEntry[1].toFixed(1)}%; ` +
+          `critic updates ${updateValue.toLocaleString()}` +
+          (evalValue === undefined ? "" : `; deterministic eval ${evalValue}/20`);
+      };
+      const hit = make("rect", {
+        x: left,
+        y: successTop,
+        width,
+        height: updateBottom - successTop,
+        class: "rlt-hit",
+      });
+      hit.addEventListener("pointermove", event => {
+        const bounds = svg.getBoundingClientRect();
+        const px = ((event.clientX - bounds.left) / bounds.width) * W;
+        const cycle = Math.max(1, Math.min(data.currentCycle, Math.round(1 + ((px - left) / width) * (data.plannedCycles - 1))));
+        const xx = x(cycle);
+        focus.setAttribute("x1", xx);
+        focus.setAttribute("x2", xx);
+        focus.style.opacity = "0.75";
+        showCycle(cycle);
+      });
+      hit.addEventListener("pointerleave", () => {
+        focus.style.opacity = "0";
+        showCycle(data.currentCycle);
+      });
+      svg.appendChild(hit);
+      showCycle(data.currentCycle);
+      for (const row of data.summary.success.phase_rows) {
+        const tr = document.createElement("tr");
+        const phase = document.createElement("td");
+        const cyclesCell = document.createElement("td");
+        const rate = document.createElement("td");
+        phase.textContent = row.phase;
+        cyclesCell.textContent = `${row.start}-${row.end}`;
+        rate.textContent = `${row.successes}/${row.episodes} (${(row.rate * 100).toFixed(1)}%)`;
+        rate.className = "text-end";
+        tr.append(phase, cyclesCell, rate);
+        table.appendChild(tr);
+      }
+    })();
+  </script>
+</div>

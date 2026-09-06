@@ -1,0 +1,822 @@
+diff --git a/docs/online_bc_dvac.md b/docs/online_bc_dvac.md
+new file mode 100644
+index 00000000..0348bb20
+--- /dev/null
++++ b/docs/online_bc_dvac.md
+@@ -0,0 +1,31 @@
++# Action-level DVAC for online success FM-BC
++
++Base source: BC production cb01451f, evidence HEAD385d4e75. Independent branch;
++no change to the original BC working tree or shared environments.
++
++The existing four-step ODE forward supplies endpoint previews x-t*v. The final
++three previews produce population variance over denoising steps, summed over
++the 14 valid action coordinates: one signal per future position, H=50.
++Observation/action/policy version and this signal come from the same query.
++
++Successful complete episodes enter the existing cumulative replay. New valid
++queries (including failed episodes, excluding post-terminal queries) contribute
++only count/sum/sumsq of log(V+eps) to calibration. Prior five completed rounds
++define global mean/std. The first uncalibrated round is unit-weighted. Otherwise
++z is clipped to [-2,2] and w=1+0.25*(z-mean_H(z)), with the valid mask used for
++centering. This gives mean-one [0,2] weights. V, fixed w and calibration round
++are archived with the original query; replay does not relabel or recount them.
++
++Weights are detached and broadcast onto the existing [B,H,D] FM error before
++mask/reduction. No teacher targets, rewards, critic, GRPO advantage/ratio, new
++forward, optimizer, FSDP or renderer implementation is introduced. Demos, if
++explicitly enabled, retain their existing unweighted loss branch. Calibration
++history is saved as online_bc/rank_N/dvac.pt beside the original replay/learner.
++
++Sources: GRPO Action-DVAC 7006ad20 endpoint/log-moment semantics; RLT Pure
++30349428 mean-one per-action BC entry (its error was action regression, not FM);
++AttenA+ OpenPI fb3954ba pi0.py:223-229 demonstrates per-action FM weighting.
++No claim that these precedents establish DVAC's effectiveness in online BC.
++
++Run-budget/resource overrides belong to the separately reviewed smoke contract.
++No formal DVAC long run is authorized by the implementation/smoke request.
+diff --git a/examples/embodiment/config/bc_dvac/default.yaml b/examples/embodiment/config/bc_dvac/default.yaml
+new file mode 100644
+index 00000000..81864c58
+--- /dev/null
++++ b/examples/embodiment/config/bc_dvac/default.yaml
+@@ -0,0 +1,18 @@
++# @package _global_
++# Append to the existing primary BC config with +bc_dvac=default.
++cluster:
++  component_placement:
++    actor,env,rollout: "7"
++runner:
++  logger:
++    experiment_name: pi0-adjust-bottle-online-bc-dvac-smoke-gpu7
++algorithm:
++  online_bc:
++    dvac:
++      enabled: true
++      tail_steps: 3
++      window: 5
++      alpha: 0.25
++      z_clip: 2.0
++      log_eps: 1.0e-12
++      std_floor: 1.0e-6
+diff --git a/rlinf/algorithms/online_bc_dvac.py b/rlinf/algorithms/online_bc_dvac.py
+new file mode 100644
+index 00000000..9bb4e6cb
+--- /dev/null
++++ b/rlinf/algorithms/online_bc_dvac.py
+@@ -0,0 +1,136 @@
++# Copyright 2026 The RLinf Authors.
++# SPDX-License-Identifier: Apache-2.0
++"""Action-level endpoint DVAC for success FM-BC; no RL objective or new forward.
++
++Sources: GRPO action-DVAC endpoint variance / past-round log moments;
++RLT per-horizon centered mean-one supervision; AttenA+ unreduced FM entry.
++"""
++
++import math
++from collections import deque
++
++import torch
++
++
++def endpoint_variance(endpoints: torch.Tensor) -> torch.Tensor:
++    """Population variance over denoising previews [B,L,H,D] -> [B,H]."""
++    if endpoints.ndim != 4 or endpoints.shape[1] < 2:
++        raise ValueError("DVAC requires at least two [B,L,H,D] endpoint previews.")
++    endpoints = endpoints.detach().float()
++    if not torch.isfinite(endpoints).all():
++        raise ValueError("Non-finite DVAC endpoint preview.")
++    return endpoints.var(dim=1, unbiased=False).sum(dim=-1)
++
++
++def log_moments(variance: torch.Tensor, eps: float) -> torch.Tensor:
++    """Small CPU float64 count/sum/sumsq packet, including failed episodes."""
++    variance = variance.detach().to(device="cpu", dtype=torch.float64)
++    if not torch.isfinite(variance).all() or (variance < 0).any():
++        raise ValueError("DVAC variance must be finite and non-negative.")
++    values = (variance + eps).log()
++    return torch.stack(
++        (values.new_tensor(values.numel()), values.sum(), values.square().sum())
++    )
++
++
++class OnlineBCDvac:
++    """Annotate new success records once, before replay archiving.
++
++    Map using preceding completed rounds, then add this round's moments. Old
++    replay weights stay fixed; the first uncalibrated round gets unit weights.
++    """
++
++    def __init__(
++        self, *, window=5, alpha=0.25, z_clip=2.0, log_eps=1e-12, std_floor=1e-6
++    ):
++        if not all(math.isfinite(x) for x in (alpha, z_clip, log_eps, std_floor)):
++            raise ValueError("DVAC settings must be finite.")
++        if window < 1 or z_clip <= 0 or not 0 <= alpha <= 1 / (2 * z_clip):
++            raise ValueError(
++                "Require window>=1 and 0<=alpha<=1/(2*z_clip) for [0,2] weights."
++            )
++        if log_eps <= 0 or std_floor <= 0:
++            raise ValueError("DVAC log epsilon and std floor must be positive.")
++        self.settings = dict(
++            window=int(window),
++            alpha=float(alpha),
++            z_clip=float(z_clip),
++            log_eps=float(log_eps),
++            std_floor=float(std_floor),
++        )
++        self.history = deque(maxlen=int(window))
++        self.round_id = 0
++
++    def annotate(self, episodes: list, moments: torch.Tensor) -> dict:
++        moments = moments.detach().to(device="cpu", dtype=torch.float64)
++        if moments.shape != (3,) or not torch.isfinite(moments).all() or moments[0] < 0:
++            raise ValueError("Invalid DVAC round moments.")
++        past = sum(self.history, torch.zeros(3, dtype=torch.float64))
++        calibrated = past[0].item() > 0
++        mean = past[1] / past[0] if calibrated else torch.tensor(0.0)
++        std = (
++            (
++                (past[2] / past[0] - mean.square())
++                .clamp_min(0)
++                .sqrt()
++                .clamp_min(self.settings["std_floor"])
++            )
++            if calibrated
++            else torch.tensor(1.0)
++        )
++        weights = []
++        for episode in episodes:
++            for row in episode:
++                v = row["dvac_v"].detach().to(dtype=torch.float64, device="cpu")
++                q = (
++                    row["action_valid_mask"]
++                    .to(dtype=torch.float64, device="cpu")
++                    .sum(-1)
++                )
++                if v.shape != q.shape or q.sum() <= 0:
++                    raise ValueError("DVAC H axis must match valid supervised actions.")
++                log_moments(v, self.settings["log_eps"])
++                w = torch.ones_like(v)
++                if calibrated:
++                    z = ((v + self.settings["log_eps"]).log() - mean) / std
++                    z = z.clamp(-self.settings["z_clip"], self.settings["z_clip"])
++                    w = 1 + self.settings["alpha"] * (z - (z * q).sum() / q.sum())
++                row["action_weights"] = w.float()
++                row["dvac_calibration_round"] = torch.tensor(self.round_id)
++                weights.append(w[q > 0])
++        metrics = {
++            "dvac/round": float(self.round_id + 1),
++            "dvac/new_action_positions": moments[0].item(),
++            "dvac/reference_positions": past[0].item(),
++            "dvac/calibrated": float(calibrated),
++            "dvac/log_mean": mean.item(),
++            "dvac/log_std": std.item(),
++        }
++        if weights:
++            w = torch.cat(weights)
++            metrics.update(
++                {
++                    "dvac/weight_mean": w.mean().item(),
++                    "dvac/weight_std": w.std(unbiased=False).item(),
++                    "dvac/weight_min": w.min().item(),
++                    "dvac/weight_max": w.max().item(),
++                }
++            )
++        self.history.append(moments.clone())
++        self.round_id += 1
++        return metrics
++
++    def state_dict(self):
++        return {
++            "settings": self.settings.copy(),
++            "round_id": self.round_id,
++            "history": list(self.history),
++        }
++
++    def load_state_dict(self, state):
++        if state["settings"] != self.settings:
++            raise ValueError(
++                "DVAC checkpoint calibration settings differ from this run."
++            )
++        self.round_id = int(state["round_id"])
++        self.history = deque(state["history"], maxlen=self.settings["window"])
+diff --git a/rlinf/data/online_bc.py b/rlinf/data/online_bc.py
+index 5686af46..c745e4a1 100644
+--- a/rlinf/data/online_bc.py
++++ b/rlinf/data/online_bc.py
+@@ -11,22 +11,31 @@ from pathlib import Path
+ import torch
+ 
+ 
+-def masked_fm_loss(loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
++def masked_fm_loss(
++    loss: torch.Tensor, mask: torch.Tensor, action_weights: torch.Tensor | None = None
++) -> torch.Tensor:
+     mask = mask.to(device=loss.device, dtype=loss.dtype)
+     if mask.shape != loss.shape or (mask.sum(dim=(1, 2)) == 0).any():
+         raise ValueError(
+             "SFT mask must match loss and contain valid targets per query."
+         )
++    if action_weights is not None:
++        w = action_weights.detach().to(device=loss.device, dtype=loss.dtype)
++        if w.shape != loss.shape[:2] or not torch.isfinite(w).all() or (w < 0).any():
++            raise ValueError("Action weights must be finite non-negative [B,H].")
++        loss = loss * w.unsqueeze(-1)
+     return ((loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))).mean()
+ 
+ 
+ class SuccessEpisodeCollector:
+     """Collect complete episodes; never retain post-terminal policy queries."""
+ 
+-    def __init__(self, num_envs: int):
++    def __init__(self, num_envs: int, dvac_log_eps: float | None = None):
+         self.num_envs = num_envs
+         self.completed = []
+         self.episode_ids = [0] * num_envs
++        self.dvac_log_eps = dvac_log_eps
++        self.dvac_moments = torch.zeros(3, dtype=torch.float64)
+         self.reset()
+ 
+     def reset(self) -> None:
+@@ -63,6 +72,14 @@ class SuccessEpisodeCollector:
+                 raise ValueError("Missing pre-query OpenPI observation inputs.")
+             record["action"] = commands[i].flatten().clone()
+             record["action_valid_mask"] = torch.ones_like(commands[i], dtype=torch.bool)
++            if self.dvac_log_eps is not None:
++                from rlinf.algorithms.online_bc_dvac import log_moments
++
++                v = forward_inputs["dvac_v"][i].detach().float().cpu().clone()
++                if v.shape != commands[i].shape[:1]:
++                    raise ValueError("DVAC signal must match submitted command H.")
++                self.dvac_moments += log_moments(v, self.dvac_log_eps)
++                record["dvac_v"] = v
+             record["query_idx"] = torch.tensor(len(self.pending[i]))
+             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])
+             if versions is not None:
+@@ -79,6 +96,11 @@ class SuccessEpisodeCollector:
+         episodes, self.completed = self.completed, []
+         return episodes
+ 
++    def drain_dvac_moments(self) -> torch.Tensor:
++        moments = self.dvac_moments.clone()
++        self.dvac_moments.zero_()
++        return moments
++
+ 
+ class SuccessReplay:
+     """Cumulative query replay, with uniform replacement sampling and restart state."""
+diff --git a/rlinf/models/embodiment/openpi/openpi_action_model.py b/rlinf/models/embodiment/openpi/openpi_action_model.py
+index 058009b2..bf0b4d41 100644
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -421,7 +421,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         else:
+             from rlinf.data.online_bc import masked_fm_loss
+ 
+-            vla_loss = masked_fm_loss(loss, action_valid_mask)
++            vla_loss = masked_fm_loss(
++                loss, action_valid_mask, kwargs.get("action_weights")
++            )
+         if not self.config.use_rlt:
+             return vla_loss
+ 
+@@ -910,7 +912,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+                 )
+             else:
+                 outputs = self.sample_actions(
+-                    observation, mode=mode, compute_values=compute_values
++                    observation,
++                    mode=mode,
++                    compute_values=compute_values,
++                    dvac_tail_steps=kwargs.get("dvac_tail_steps", 0),
+                 )
+             actions = self.output_transform(
+                 {"actions": outputs["actions"], "state": observation.state}
+@@ -935,6 +940,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         if forward_action is not None:
+             forward_inputs["action"] = forward_action
+ 
++        if "dvac_v" in outputs:
++            forward_inputs["dvac_v"] = outputs["dvac_v"]
++
+         if self.config.is_nft:
+             nft_outputs = {
+                 key: value for key, value in outputs.items() if key.startswith("nft_")
+@@ -985,6 +993,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         noise=None,
+         mode="train",
+         compute_values=True,
++        dvac_tail_steps=0,
+     ) -> torch.Tensor:
+         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
+         bsize = observation.state.shape[0]
+@@ -1012,6 +1021,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             noise=noise,
+             mode=mode,
+             compute_values=compute_values,
++            dvac_tail_steps=dvac_tail_steps,
+         )
+ 
+     def _sample_actions_with_prefix_cache(
+@@ -1023,10 +1033,15 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         noise=None,
+         mode="train",
+         compute_values=True,
++        dvac_tail_steps=0,
+     ) -> torch.Tensor:
+         bsize = state.shape[0]
+         device = state.device
+         num_steps = self.config.num_steps
++        if dvac_tail_steps and not 2 <= dvac_tail_steps <= num_steps:
++            raise ValueError("DVAC tail length must be between 2 and denoising steps.")
++        dvac_endpoints = []
++        dvac_times = self._get_timesteps(num_steps, device) if dvac_tail_steps else None
+         if noise is None:
+             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
+             noise = self.sample_noise(actions_shape, device)
+@@ -1093,6 +1108,13 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             )
+             # Euler step - use new tensor assignment instead of in-place operation
+             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
++            if dvac_tail_steps and idx >= num_steps - dvac_tail_steps:
++                # Same forward/RNG; x and v are in the model's normalized coordinates.
++                h, d = self.config.action_chunk, self.config.action_env_dim
++                dvac_endpoints.append(
++                    x_t_prev[:, :h, :d].detach().float()
++                    - dvac_times[idx] * v_t[:, :h, :d].detach().float()
++                )
+             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
+             log_prob = self.get_logprob_norm(x_t, x_t_mean, x_t_std)
+             # store
+@@ -1127,6 +1149,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+         if collect_nft_state:
+             result.update(nft_state)
+             result["nft_x0"] = x_0.detach()
++        if dvac_tail_steps:
++            from rlinf.algorithms.online_bc_dvac import endpoint_variance
++
++            result["dvac_v"] = endpoint_variance(torch.stack(dvac_endpoints, dim=1))
+         return result
+ 
+     def _get_timesteps(self, denoise_steps, device):
+diff --git a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+index 3e29c112..81f2eb93 100644
+--- a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+@@ -49,6 +49,18 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+             seed=self.cfg.actor.seed + self._rank,
+             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
+         )
++        self.dvac = None
++        self.dvac_metrics = {}
++        dvac_cfg = bc.get("dvac", {})
++        if dvac_cfg.get("enabled", False):
++            from rlinf.algorithms.online_bc_dvac import OnlineBCDvac
++
++            self.dvac = OnlineBCDvac(
++                **{
++                    key: dvac_cfg[key]
++                    for key in ("window", "alpha", "z_clip", "log_eps", "std_floor")
++                }
++            )
+         if self.demo_weight:
+             self._build_demo_loader()
+ 
+@@ -83,10 +95,22 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+     async def recv_rollout_trajectories(self, input_channel: Channel):
+         send_num = self._component_placement.get_world_size("env") * self.stage_num
+         recv_num = self._component_placement.get_world_size("actor")
++        new_episodes = []
++        moments = torch.zeros(3, dtype=torch.float64)
+         for _ in range(compute_split_num(send_num, recv_num)):
+             # Every env stage sends its exact split count, including empty lists.
+-            episodes = await input_channel.get(async_op=True).async_wait()
+-            self.replay_buffer.add_episodes(episodes)
++            packet = await input_channel.get(async_op=True).async_wait()
++            if self.dvac is None:
++                self.replay_buffer.add_episodes(packet)
++            else:
++                new_episodes.extend(packet["episodes"])
++                moments += packet["dvac_moments"].cpu()
++        if self.dvac is not None:
++            moments = moments.to(self.device)
++            torch.distributed.all_reduce(moments)
++            self.dvac_metrics = self.dvac.annotate(new_episodes, moments.cpu())
++            self.replay_buffer.add_episodes(new_episodes)
++            self.log_info(f"Online BC DVAC: {self.dvac_metrics}")
+ 
+     @Worker.timer("forward_actor")
+     def forward_actor(self, batch):
+@@ -96,6 +120,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+             data=prepared,
+             use_action_chunk_loss=True,
+             action_valid_mask=batch["action_valid_mask"],
++            action_weights=batch.get("action_weights"),
+         )
+         if not self.demo_weight:
+             return online_loss
+@@ -125,9 +150,11 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         )
+         torch.distributed.all_reduce(ready, op=torch.distributed.ReduceOp.MIN)
+         if not ready.item():
+-            return {"bc/skipped_empty_rank": 1.0}
++            return {"bc/skipped_empty_rank": 1.0, **self.dvac_metrics}
+         metrics = super().run_training()
+-        return {k.replace("dagger/", "bc/"): v for k, v in metrics.items()}
++        return {
++            k.replace("dagger/", "bc/"): v for k, v in metrics.items()
++        } | self.dvac_metrics
+ 
+     def save_checkpoint(self, save_base_path, step):
+         if self.is_weight_offloaded:
+@@ -146,6 +173,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         target = Path(save_base_path) / "online_bc" / f"rank_{self._rank}"
+         self.replay_buffer.save_checkpoint(target)
+         torch.save({"update_step": self.update_step}, target / "learner.pt")
++        if self.dvac is not None:
++            torch.save(self.dvac.state_dict(), target / "dvac.pt")
+ 
+     def load_checkpoint(self, load_base_path):
+         self._strategy.load_checkpoint(
+@@ -160,3 +189,5 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         self.update_step = torch.load(target / "learner.pt", weights_only=True)[
+             "update_step"
+         ]
++        if self.dvac is not None:
++            self.dvac.load_state_dict(torch.load(target / "dvac.pt", weights_only=True))
+diff --git a/rlinf/workers/env/env_worker.py b/rlinf/workers/env/env_worker.py
+index bf271a05..9015570b 100644
+--- a/rlinf/workers/env/env_worker.py
++++ b/rlinf/workers/env/env_worker.py
+@@ -175,7 +175,18 @@ class EnvWorker(Worker):
+                         "Online BC requires full, chunk-aligned RoboTwin rounds with auto_reset=False."
+                     )
+                 self.bc_collectors = [
+-                    SuccessEpisodeCollector(self.train_num_envs_per_stage)
++                    SuccessEpisodeCollector(
++                        self.train_num_envs_per_stage,
++                        dvac_log_eps=(
++                            self.cfg.algorithm.online_bc.dvac.log_eps
++                            if OmegaConf.select(
++                                self.cfg,
++                                "algorithm.online_bc.dvac.enabled",
++                                default=False,
++                            )
++                            else None
++                        ),
++                    )
+                     for _ in range(self.stage_num)
+                 ]
+         else:
+@@ -1424,10 +1435,18 @@ class EnvWorker(Worker):
+             if self.enable_online_bc:
+                 for collector in self.bc_collectors:
+                     episodes = collector.drain()
++                    moments = collector.drain_dvac_moments()
+                     for split in range(self.actor_split_num):
+-                        actor_channel.put(
+-                            episodes[split :: self.actor_split_num], async_op=True
+-                        )
++                        packet = episodes[split :: self.actor_split_num]
++                        if collector.dvac_log_eps is not None:
++                            # Count each env's new moments once across actor ranks.
++                            packet = {
++                                "episodes": packet,
++                                "dvac_moments": moments
++                                if split == 0
++                                else torch.zeros_like(moments),
++                            }
++                        actor_channel.put(packet, async_op=True)
+                 for builder in self.trajectory_builders:
+                     builder.clear()
+             elif self.enable_online_lerobot:
+diff --git a/rlinf/workers/rollout/hf/huggingface_worker.py b/rlinf/workers/rollout/hf/huggingface_worker.py
+index 7b653189..c7845ce7 100644
+--- a/rlinf/workers/rollout/hf/huggingface_worker.py
++++ b/rlinf/workers/rollout/hf/huggingface_worker.py
+@@ -498,6 +498,11 @@ class MultiStepRolloutWorker(Worker):
+             else:
+                 kwargs = {"mode": mode}
+ 
++        if self.algorithm_cfg.get("loss_type") == "online_bc" and mode == "train":
++            dvac = self.algorithm_cfg.online_bc.get("dvac", {})
++            if dvac.get("enabled", False):
++                kwargs["dvac_tail_steps"] = int(dvac.tail_steps)
++
+         if SupportedModel(self.model_cfg.model_type) in [
+             SupportedModel.CNN_POLICY,
+             SupportedModel.FLOW_POLICY,
+diff --git a/tests/unit_tests/test_online_bc_dvac.py b/tests/unit_tests/test_online_bc_dvac.py
+new file mode 100644
+index 00000000..c7bd9c53
+--- /dev/null
++++ b/tests/unit_tests/test_online_bc_dvac.py
+@@ -0,0 +1,307 @@
++# Copyright 2026 The RLinf Authors.
++# SPDX-License-Identifier: Apache-2.0
++from contextlib import nullcontext
++from inspect import unwrap
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from rlinf.algorithms.online_bc_dvac import OnlineBCDvac, endpoint_variance, log_moments
++from rlinf.data.online_bc import SuccessEpisodeCollector, SuccessReplay, masked_fm_loss
++
++
++def row(v):
++    return {
++        "dvac_v": torch.as_tensor(v, dtype=torch.float32),
++        "action_valid_mask": torch.ones(len(v), 2, dtype=torch.bool),
++    }
++
++
++def test_endpoint_population_variance():
++    x = torch.arange(2 * 3 * 50 * 14.0).reshape(2, 3, 50, 14).requires_grad_()
++    expected = ((x - x.mean(1, keepdim=True)).square().mean(1)).sum(-1)
++    v = endpoint_variance(x)
++    torch.testing.assert_close(v, expected)
++    assert v.shape == (2, 50) and not v.requires_grad
++    with pytest.raises(ValueError):
++        endpoint_variance(torch.ones(2, 1, 50, 14))
++
++
++def test_unit_weights_exact_loss_gradient_and_detachment():
++    a = torch.randn(2, 50, 14, requires_grad=True)
++    b = a.detach().clone().requires_grad_()
++    mask = torch.ones_like(a, dtype=torch.bool)
++    mask[:, -2:] = False
++    w = torch.ones(2, 50, requires_grad=True)
++    unweighted = masked_fm_loss(a.square(), mask)
++    weighted = masked_fm_loss(b.square(), mask, w)
++    assert torch.equal(unweighted, weighted)
++    unweighted.backward()
++    weighted.backward()
++    assert torch.equal(a.grad, b.grad) and w.grad is None
++    with pytest.raises(ValueError):
++        masked_fm_loss(a, mask, torch.ones(2))
++
++
++def test_weights_act_before_horizon_reduction():
++    values = torch.tensor([[[1.0], [3.0]]], requires_grad=True)
++    mask = torch.ones_like(values, dtype=torch.bool)
++    loss = masked_fm_loss(values, mask, torch.tensor([[0.5, 1.5]]))
++    torch.testing.assert_close(loss, torch.tensor(2.5))
++    loss.backward()
++    torch.testing.assert_close(values.grad.flatten(), torch.tensor([0.25, 0.75]))
++
++
++def test_collector_counts_failed_once_excludes_post_terminal_and_archives_success(
++    tmp_path,
++):
++    c = SuccessEpisodeCollector(2, dvac_log_eps=1e-12)
++    obs = {
++        "observation/state": torch.zeros(2, 14),
++        "dvac_v": torch.arange(1.0, 101).reshape(2, 50),
++    }
++    c.append(obs, torch.ones(2, 50, 14), [True, False], torch.ones(2, 50))
++    c.append(obs, torch.ones(2, 50, 14), [True, True], torch.ones(2, 50))
++    moments = c.drain_dvac_moments()
++    torch.testing.assert_close(moments, log_moments(obs["dvac_v"], 1e-12))
++    assert moments[0] == 100 and c.drain_dvac_moments().eq(0).all()
++    episodes = c.drain()
++    assert len(episodes) == 1 and len(episodes[0]) == 1
++    dvac = OnlineBCDvac()
++    dvac.annotate(episodes, moments)
++    pool = SuccessReplay(1, str(tmp_path / "data"))
++    pool.add_episodes(episodes)
++    saved = torch.load(tmp_path / "data/batch_000000.pt", weights_only=True)
++    assert saved[0][0]["action_weights"].eq(1).all()
++    torch.testing.assert_close(saved[0][0]["dvac_v"], obs["dvac_v"][0])
++    assert "action_weights" in pool.sample(2)["forward_inputs"]
++
++
++def test_calibrate_from_past_rounds_freeze_weights_bounds_and_restore(tmp_path):
++    d = OnlineBCDvac(window=2)
++    first = [[row([0.01, 0.1, 1.0])]]
++    moments = log_moments(first[0][0]["dvac_v"], 1e-12)
++    assert d.annotate(first, moments)["dvac/calibrated"] == 0
++    assert first[0][0]["action_weights"].eq(1).all()
++    second = [[row([0.001, 0.1, 10.0])]]
++    metrics = d.annotate(second, moments * 2)
++    assert metrics["dvac/reference_positions"] == 3
++    w = second[0][0]["action_weights"]
++    assert 0 <= w.min() < 1 < w.max() <= 2
++    torch.testing.assert_close(w.mean(), torch.tensor(1.0))
++    assert first[0][0]["action_weights"].eq(1).all()
++    torch.save(d.state_dict(), tmp_path / "dvac.pt")
++    restored = OnlineBCDvac(window=2)
++    restored.load_state_dict(torch.load(tmp_path / "dvac.pt", weights_only=True))
++    third, fourth = [[row([0.01, 1.0, 100.0])]], [[row([0.01, 1.0, 100.0])]]
++    m1, m2 = d.annotate(third, moments), restored.annotate(fourth, moments)
++    assert m1 == m2 and len(d.history) == 2
++    assert torch.equal(third[0][0]["action_weights"], fourth[0][0]["action_weights"])
++    with pytest.raises(ValueError):
++        OnlineBCDvac(alpha=0.5)
++    with pytest.raises(ValueError):
++        OnlineBCDvac().load_state_dict(d.state_dict())
++
++
++def test_weight_centering_respects_mask_and_empty_round():
++    d = OnlineBCDvac()
++    moments = log_moments(torch.tensor([0.01, 0.1, 1.0]), 1e-12)
++    d.annotate([], moments)
++    r = row([0.01, 0.1, 1.0])
++    r["action_valid_mask"][0] = False
++    r["action_valid_mask"][1, 1] = False
++    d.annotate([[r]], torch.zeros(3))
++    q = r["action_valid_mask"].sum(-1)
++    torch.testing.assert_close(
++        (r["action_weights"] * q).sum() / q.sum(), torch.tensor(1.0)
++    )
++
++
++def test_real_sampler_recording_preserves_actions_rng_and_forward_count():
++    from rlinf.models.embodiment.openpi.openpi_action_model import (
++        OpenPi0ForRLActionPrediction,
++    )
++
++    model = OpenPi0ForRLActionPrediction.__new__(OpenPi0ForRLActionPrediction)
++    torch.nn.Module.__init__(model)
++    model.action_in_proj = torch.nn.Linear(32, 2)
++    model.config = SimpleNamespace(
++        num_steps=4,
++        action_horizon=50,
++        action_dim=32,
++        action_chunk=50,
++        action_env_dim=14,
++        joint_logprob=False,
++        is_nft=False,
++    )
++    model.use_vlm_value = False
++    model.sample_noise = lambda shape, device: torch.randn(shape, device=device)
++    model.get_logprob_norm = lambda x, mean, std: torch.zeros_like(x)
++    model._init_nft_state = lambda *args: {}
++    model._update_nft_state = lambda *args: None
++    previews = []
++
++    def velocity(x, idx, *args):
++        v = x * 0.2 + idx * 0.1
++        v[:, :, 14:] = 999  # Padding must not enter DVAC.
++        previews.append(x[:, :, :14] - (1 - idx / 4) * v[:, :, :14])
++        return x - 0.25 * v, torch.zeros_like(x), torch.zeros(x.shape[0]), v
++
++    model.sample_mean_var_val = velocity
++    state, noise = torch.zeros(2, 32), torch.ones(2, 50, 32)
++    outputs, rngs = [], []
++    for tail in (0, 3):
++        previews.clear()
++        torch.manual_seed(123)
++        outputs.append(
++            model._sample_actions_with_prefix_cache(
++                state, None, None, None, noise=noise, mode="eval", dvac_tail_steps=tail
++            )
++        )
++        rngs.append(torch.get_rng_state().clone())
++        assert len(previews) == 4
++    for key in outputs[0]:
++        assert torch.equal(outputs[0][key], outputs[1][key]), key
++    assert torch.equal(*rngs)
++    torch.testing.assert_close(
++        outputs[1]["dvac_v"], endpoint_variance(torch.stack(previews[-3:], 1))
++    )
++
++
++def test_sft_weight_reaches_native_unreduced_loss(monkeypatch):
++    from openpi.models.model import Observation
++    from openpi.models_pytorch.pi0_pytorch import PI0Pytorch
++
++    from rlinf.models.embodiment.openpi.openpi_action_model import (
++        OpenPi0ForRLActionPrediction,
++    )
++
++    model = OpenPi0ForRLActionPrediction.__new__(OpenPi0ForRLActionPrediction)
++    torch.nn.Module.__init__(model)
++    model.register_parameter("probe", torch.nn.Parameter(torch.tensor(1.0)))
++    model.config = SimpleNamespace(use_rlt=False, action_chunk=50, action_env_dim=14)
++    model.gradient_checkpointing_disable = lambda: None
++    obs = Observation(
++        images={},
++        image_masks={},
++        state=torch.zeros(1, 32),
++        tokenized_prompt=torch.zeros(1, 4, dtype=torch.long),
++        tokenized_prompt_mask=torch.ones(1, 4, dtype=torch.bool),
++    )
++    actions = torch.arange(50.0).reshape(1, 50, 1).expand(1, 50, 32)
++    monkeypatch.setattr(
++        PI0Pytorch, "forward", lambda self, obs, a: a.square() * self.probe
++    )
++    weights = torch.linspace(0.5, 1.5, 50).unsqueeze(0)
++    loss = model.sft_forward(
++        (obs, actions),
++        use_action_chunk_loss=True,
++        action_valid_mask=torch.ones(1, 50, 14, dtype=torch.bool),
++        action_weights=weights,
++    )
++    expected = (actions[:, :, :14].square() * weights[..., None]).mean()
++    torch.testing.assert_close(loss, expected)
++    loss.backward()
++    torch.testing.assert_close(model.probe.grad, expected)
++
++
++def test_rollout_records_only_training_but_keeps_bc_ode_mode():
++    from omegaconf import OmegaConf
++
++    from rlinf.workers.rollout.hf.huggingface_worker import MultiStepRolloutWorker
++
++    seen = []
++
++    class Model:
++        def predict_action_batch(self, **kwargs):
++            seen.append(kwargs)
++            return torch.zeros(2, 50, 14), {"forward_inputs": {}}
++
++    worker = SimpleNamespace(
++        algorithm_cfg=OmegaConf.create(
++            {
++                "loss_type": "online_bc",
++                "online_bc": {"dvac": {"enabled": True, "tail_steps": 3}},
++            }
++        ),
++        model_cfg=SimpleNamespace(model_type="openpi"),
++        enable_dagger=False,
++        expert_model=None,
++        hf_model=Model(),
++        _train_sampling_params={},
++        _eval_sampling_params={},
++        worker_timer=lambda *a, **k: nullcontext(),
++    )
++    predict = unwrap(MultiStepRolloutWorker.predict)
++    predict(worker, {}, mode="train")
++    predict(worker, {}, mode="eval")
++    assert seen[0]["mode"] == seen[1]["mode"] == "eval"
++    assert seen[0]["dvac_tail_steps"] == 3 and "dvac_tail_steps" not in seen[1]
++    worker.algorithm_cfg.online_bc.dvac.enabled = False
++    predict(worker, {}, mode="train")
++    assert "dvac_tail_steps" not in seen[2]
++
++
++def test_actor_checkpoint_keeps_dvac_with_existing_replay_and_learner(tmp_path):
++    from rlinf.workers.actor.fsdp_online_bc_policy_worker import (
++        EmbodiedOnlineBCFSDPPolicy,
++    )
++
++    calls = []
++    strategy = SimpleNamespace(
++        save_checkpoint=lambda **kw: calls.append("save"),
++        load_checkpoint=lambda **kw: calls.append("load"),
++    )
++    pool = SuccessReplay(3, str(tmp_path / "data"))
++    d = OnlineBCDvac()
++    episodes = [[row([0.01, 0.1, 1])]]
++    d.annotate(episodes, log_moments(episodes[0][0]["dvac_v"], 1e-12))
++    pool.add_episodes(episodes)
++    actor = SimpleNamespace(
++        is_weight_offloaded=False,
++        is_optimizer_offloaded=False,
++        _strategy=strategy,
++        model=None,
++        optimizer=None,
++        lr_scheduler=None,
++        checkpoint_format="local_shard",
++        _rank=0,
++        replay_buffer=pool,
++        update_step=10,
++        dvac=d,
++    )
++    path = tmp_path / "checkpoint"
++    EmbodiedOnlineBCFSDPPolicy.save_checkpoint(actor, path, 1)
++    actor.update_step = 99
++    actor.dvac = OnlineBCDvac()
++    actor.replay_buffer = SuccessReplay(33, str(tmp_path / "data2"))
++    EmbodiedOnlineBCFSDPPolicy.load_checkpoint(actor, path)
++    assert calls == ["save", "load"] and actor.update_step == 10
++    assert actor.dvac.round_id == 1 and len(actor.replay_buffer) == 1
++    assert actor.replay_buffer.records[0]["action_weights"].eq(1).all()
++
++
++def test_dvac_config_group_extends_existing_primary_without_replacing_recipe():
++    import os
++    from pathlib import Path
++
++    from hydra import compose, initialize_config_dir
++
++    root = Path(__file__).resolve().parents[2]
++    os.environ.setdefault("EMBODIED_PATH", str(root / "examples/embodiment"))
++    with initialize_config_dir(
++        version_base="1.1", config_dir=str(root / "examples/embodiment/config")
++    ):
++        cfg = compose(
++            config_name="robotwin_adjust_bottle_online_bc_openpi",
++            overrides=["+bc_dvac=default"],
++        )
++    assert cfg.cluster.component_placement["actor,env,rollout"] == "7"
++    assert (
++        cfg.algorithm.online_bc.dvac.enabled
++        and cfg.algorithm.online_bc.dvac.tail_steps == 3
++    )
++    assert cfg.env.train.total_num_envs == 32 and cfg.env.train.rollout_epoch == 1
++    assert cfg.actor.micro_batch_size == 32 and cfg.actor.global_batch_size == 1024
++    assert cfg.algorithm.update_epoch == 10 and cfg.actor.model.num_steps == 4

@@ -1,0 +1,77 @@
+{
+  "source_head": "0e28ac6f09f821ea12e7d54eba7118ce0000ca86",
+  "reference": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/runtime/resolved.yaml",
+  "reference_diff": {
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_st_half_same_code_control_not_run/dvac_train"
+    },
+    "cluster.component_placement.actor, env, rollout": {
+      "left": "4,5",
+      "right": "6,7"
+    },
+    "env.eval.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/video/eval"
+    },
+    "env.train.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "left": "robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2",
+      "right": "robotwin_st_half_same_code_control_not_run"
+    },
+    "runner.logger.log_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1"
+    }
+  },
+  "unexpected_reference_diff": [],
+  "method_diff": {
+    "algorithm.dvac_gradient_weighting.mode": {
+      "left": "off",
+      "right": "apply"
+    },
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_st_half_same_code_control_not_run/dvac_train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/dvac_train"
+    },
+    "algorithm.dvac_gradient_weighting.weight_max": {
+      "left": null,
+      "right": 1.5
+    },
+    "algorithm.dvac_gradient_weighting.weight_min": {
+      "left": null,
+      "right": 0.5
+    },
+    "runner.logger.experiment_name": {
+      "left": "robotwin_st_half_same_code_control_not_run",
+      "right": "robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1"
+    }
+  },
+  "budget": {
+    "physical_gpus": 2,
+    "train_envs": 64,
+    "train_envs_per_gpu": 32,
+    "rollout_epochs": 4,
+    "trajectories_per_step": 256,
+    "group_size": 8,
+    "groups_per_step": 32,
+    "max_chunk_records": 1024,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "update_epochs": 2,
+    "inline_eval": "fixed32 every 5 steps",
+    "checkpoint": "default DCP every 10 steps"
+  },
+  "method": "GRPO DVAC ST global-z [0.5,1.5]: Control joint-chunk forward/clip; local backward scaling only"
+}

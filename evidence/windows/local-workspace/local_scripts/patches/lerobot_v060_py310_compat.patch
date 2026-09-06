@@ -1,0 +1,116 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 9ac2541..ab7b708 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -29,7 +29,7 @@ description = "🤗 LeRobot: State-of-the-art Machine Learning for Real-World Roboti
+ dynamic = ["readme"]
+ license = { text = "Apache-2.0" }
+-requires-python = ">=3.12"
++requires-python = ">=3.10"
+ authors = [
+     { name = "Rémi Cadène", email = "re.cadene@gmail.com" },
+     { name = "Simon Alibert", email = "alibert.sim@gmail.com" },
+diff --git a/src/lerobot/configs/video.py b/src/lerobot/configs/video.py
+index a3ae265..0f06fe3 100644
+--- a/src/lerobot/configs/video.py
++++ b/src/lerobot/configs/video.py
+@@ -20,7 +20,8 @@ from __future__ import annotations
+ 
+ import logging
+ from dataclasses import dataclass, field
+-from typing import Any, ClassVar, Self
++from typing import Any, ClassVar
++from typing_extensions import Self
+ 
+ import numpy as np
+ 
+diff --git a/src/lerobot/datasets/streaming_dataset.py b/src/lerobot/datasets/streaming_dataset.py
+index af64812..0cc3029 100644
+--- a/src/lerobot/datasets/streaming_dataset.py
++++ b/src/lerobot/datasets/streaming_dataset.py
+@@ -17,6 +17,9 @@ from collections import deque
+ from collections.abc import Callable, Generator, Iterable, Iterator
+ from pathlib import Path
+ 
++from typing import Generic, TypeVar
++
++T = TypeVar("T")
+ import datasets
+ import numpy as np
+ import torch
+@@ -58,7 +61,7 @@ class LookAheadError(Exception):
+     pass
+ 
+ 
+-class Backtrackable[T]:
++class Backtrackable(Generic[T]):
+     """
+     Wrap any iterator/iterable so you can step back up to `history` items
+     and look ahead up to `lookahead` items.
+diff --git a/src/lerobot/motors/motors_bus.py b/src/lerobot/motors/motors_bus.py
+index 84f43ca..da07be2 100644
+--- a/src/lerobot/motors/motors_bus.py
++++ b/src/lerobot/motors/motors_bus.py
+@@ -29,7 +29,7 @@ from dataclasses import dataclass
+ from enum import Enum
+ from functools import cached_property
+ from pprint import pformat
+-from typing import TYPE_CHECKING, Protocol
++from typing import TYPE_CHECKING, Protocol, TypeAlias
+ 
+ from tqdm import tqdm
+ 
+@@ -48,8 +48,8 @@ from lerobot.utils.decorators import check_if_already_connected, check_if_not_conne
+ from lerobot.utils.utils import enter_pressed, move_cursor_up
+ 
+-type NameOrID = str | int
+-type Value = int | float
++NameOrID: TypeAlias = str | int
++Value: TypeAlias = int | float
+ 
+ logger = logging.getLogger(__name__)
+diff --git a/src/lerobot/processor/pipeline.py b/src/lerobot/processor/pipeline.py
+index f56d02f..3414ce2 100644
+--- a/src/lerobot/processor/pipeline.py
++++ b/src/lerobot/processor/pipeline.py
+@@ -38,7 +38,7 @@ from copy import deepcopy
+ from dataclasses import dataclass, field
+ from pathlib import Path
+-from typing import Any, TypedDict, TypeVar, cast
++from typing import Any, Generic, TypedDict, TypeVar, cast
+ 
+ import torch
+ from huggingface_hub import hf_hub_download
+@@ -251,7 +251,7 @@ class ProcessorMigrationError(Exception):
+ 
+ 
+ @dataclass
+-class DataProcessorPipeline[TInput, TOutput](HubMixin):
++class DataProcessorPipeline(HubMixin, Generic[TInput, TOutput]):
+     """A sequential pipeline for processing data, integrated with the Hugging Face Hub.
+ 
+     This class chains together multiple `ProcessorStep` instances to form a complete
+diff --git a/src/lerobot/utils/io_utils.py b/src/lerobot/utils/io_utils.py
+index 91280c1..a9332b3 100644
+--- a/src/lerobot/utils/io_utils.py
++++ b/src/lerobot/utils/io_utils.py
+@@ -15,11 +15,12 @@ import json
+ import logging
+ from pathlib import Path
+-from typing import Any
++from typing import Any, TypeVar
+ 
+ logger = logging.getLogger(__name__)
+ 
+ JsonLike = str | int | float | bool | None | list["JsonLike"] | dict[str, "JsonLike"] | tuple["JsonLike", ...]
++T = TypeVar("T", bound=JsonLike)
+ 
+@@ -90,7 +91,7 @@ def write_video(video_path: str | Path, stacked_frames: list, fps: int) -> None:
+             container.mux(packet)
+ 
+ 
+-def deserialize_json_into_object[T: JsonLike](fpath: Path, obj: T) -> T:
++def deserialize_json_into_object(fpath: Path, obj: T) -> T:
+     """
+     Loads the JSON data from `fpath` and recursively fills `obj` with the
+     corresponding values (strictly matching structure and types).

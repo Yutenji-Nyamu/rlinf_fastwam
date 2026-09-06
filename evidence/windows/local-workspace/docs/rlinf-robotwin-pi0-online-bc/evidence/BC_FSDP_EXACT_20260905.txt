@@ -1,0 +1,513 @@
+# Copyright 2025 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+from contextlib import nullcontext
+from typing import ContextManager, Union
+
+import torch
+import torch.nn as nn
+from torch.distributed.device_mesh import DeviceMesh
+from torch.distributed.fsdp import (
+    MixedPrecision,
+    StateDictType,
+)
+from torch.optim import Optimizer
+
+from rlinf.config import torch_dtype_from_precision
+from rlinf.hybrid_engines.fsdp import FSDP, CPUOffload
+from rlinf.hybrid_engines.fsdp.strategy.base import FSDPStrategyBase
+from rlinf.hybrid_engines.fsdp.utils import (
+    FSDPVersion,
+    get_backward_prefetch_strategy,
+    get_fsdp_wrap_policy,
+    get_grad_norm_for_mixed_precision,
+    get_sharding_strategy,
+    init_fn,
+)
+from rlinf.scheduler import Worker
+from rlinf.utils.utils import clear_memory
+
+
+class FSDPStrategy(FSDPStrategyBase):
+    _FSDP_CACHE_ATTRS = (
+        "_mp_shard",
+        "_full_param_padded",
+        "_full_prec_full_param_padded",
+        "_unsharded_flat_param_for_skipped_views",
+    )
+    _FSDP_GRAD_ATTRS = ("_saved_grad_shard", "_cpu_grad")
+
+    @staticmethod
+    def _iter_fsdp_handles(model: FSDP) -> list:
+        handles = []
+        seen_handle_ids = set()
+        for module in model.modules():
+            handle = getattr(module, "_handle", None)
+            if handle is not None and id(handle) not in seen_handle_ids:
+                seen_handle_ids.add(id(handle))
+                handles.append(handle)
+
+            all_handles = getattr(module, "_all_handles", None)
+            if all_handles is None:
+                continue
+            for inner_handle in all_handles:
+                if inner_handle is None or id(inner_handle) in seen_handle_ids:
+                    continue
+                seen_handle_ids.add(id(inner_handle))
+                handles.append(inner_handle)
+        return handles
+
+    @staticmethod
+    def _move_tensor(
+        tensor: torch.Tensor | None, device: torch.device | str
+    ) -> torch.Tensor | None:
+        if tensor is None or tensor.device == torch.device(device):
+            return tensor
+        return tensor.to(device, non_blocking=True)
+
+    @staticmethod
+    def _free_tensor_storage(tensor: torch.Tensor | None) -> None:
+        if tensor is None:
+            return
+        try:
+            storage = tensor.untyped_storage()
+            if storage.size() > 0:
+                storage.resize_(0)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _rebind_sharded_tensor_views(handle) -> None:
+        flat_param = handle.flat_param
+        if not handle.uses_sharded_strategy:
+            handle._use_unsharded_views(as_params=False)
+            return
+
+        size_0_empty_tensor = torch.empty(
+            0,
+            dtype=flat_param.dtype,
+            device=flat_param.device,
+            requires_grad=False,
+        )
+        for shard_param_info, (param_name, module, _) in zip(
+            flat_param._shard_param_infos,
+            flat_param._param_infos,
+        ):
+            if not shard_param_info.in_shard:
+                tensor = size_0_empty_tensor
+            else:
+                offset = shard_param_info.offset_in_shard
+                numel_in_shard = shard_param_info.numel_in_shard
+                tensor = flat_param[offset : offset + numel_in_shard]
+            handle._setattr_tensor(module, param_name, tensor)
+
+        for (
+            param_name,
+            module,
+            _,
+            prim_param_name,
+            prim_module,
+            _,
+        ) in flat_param._shared_param_infos:
+            handle._setattr_tensor(
+                module, param_name, getattr(prim_module, prim_param_name)
+            )
+
+    def _rebind_handle_views(self, handle) -> None:
+        if handle._use_orig_params:
+            handle._use_sharded_views()
+            return
+        self._rebind_sharded_tensor_views(handle)
+
+    def wrap_model(self, model: nn.Module, device_mesh: DeviceMesh) -> FSDP:
+        Initialize the actor worker. build the model and use corresponding training backend,
+        if needed, offload model parameters and optimizer states to CPU.
+        """
+        self.setup_model_and_optimizer()
+
+        if self.enable_offload:
+            self.offload_param_and_grad()
+            self.offload_optimizer()
+
+    def model_provider_func(self) -> nn.Module:
+        model = get_model(self.cfg.actor.model)
+        if model is None:
+            model = super().model_provider_func()
+
+        if self.cfg.runner.get("ckpt_path", None):
+            model_dict = torch.load(self.cfg.runner.ckpt_path)
+            model.load_state_dict(model_dict)
+
+        return model
+
+    def get_rollout_state_dict(self) -> dict:
+        return self.get_model_state_dict(cpu_offload=False, full_state_dict=False)
+
+    @Worker.timer("actor/sync_model_to_rollout")
+    async def sync_model_to_rollout(self) -> None:
+        if self.enable_offload:
+            if not self.is_optimizer_offloaded:
+                self.offload_optimizer()
+
+            if self.is_weight_offloaded:
+                self.load_param_and_grad(self.device, False)
+
+        state_dict = self.get_rollout_state_dict()
+
+        async def send_func(data):
+            if not self._is_weight_sender:
+                return
+            await self.broadcast(
+                data,
+                groups=[
+                    (self._group_name, 0),
+                    (self._rollout_group_name, self._rollout_all_ranks),
+                ],
+                src=(self._group_name, 0),
+                async_op=True,
+                options=self._sync_weight_comm_options,
+            ).async_wait()
+
+        async def recv_func():
+            return await self.recv(
+                src_group_name=self._rollout_group_name,
+                src_rank=0,
+                async_op=True,
+                options=self._sync_weight_comm_options,
+            ).async_wait()
+
+        if not self.weight_syncer.sender_initialized():
+            await self.weight_syncer.init_sender(
+                state_dict=state_dict,
+                send=send_func,
+                recv=recv_func,
+                param_names_need_sync=self.param_names_need_sync,
+                is_sender=self._is_weight_sender,
+            )
+
+        version = (
+            self.get_rollout_sync_version()
+            if hasattr(self, "get_rollout_sync_version")
+            else self.version
+        )
+        await self.weight_syncer.sync(state_dict, send_func, version=version)
+
+        if self.enable_offload:
+            assert not self.is_weight_offloaded, (
+                "weight should be offloaded in sync_model_to_rollout"
+            )
+            self.offload_param_and_grad(True)
+
+    @Worker.timer("actor/recv_traj")
+    async def recv_rollout_trajectories(self, input_channel: Channel) -> None:
+        """
+        Receive rollout trajectories from rollout workers.
+
+        Args:
+            input_channel: The input channel to read from.
+        """
+        clear_memory(sync=False)
+
+        send_num = self._component_placement.get_world_size("env") * self.stage_num
+        recv_num = self._component_placement.get_world_size("actor")
+        split_num = compute_split_num(send_num, recv_num)
+
+        recv_list = []
+        for _ in range(split_num):
+            trajectory: Trajectory = await input_channel.get(async_op=True).async_wait()
+            recv_list.append(trajectory)
+
+        self.rollout_batch = convert_trajectories_to_batch(recv_list)
+
+        self.rollout_batch = self._process_received_rollout_batch(self.rollout_batch)
+
+    def _process_received_rollout_batch(
+        self, rollout_batch: dict[str, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
+        """
+        original shape: [rollout_epoch x n_chunk_steps, bsz, num_action_chunks, ...]
+        target shape: [n_chunk_steps, rollout_epoch x bsz, num_action_chunks, ...]
+        """
+# Copyright 2025 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from collections.abc import Iterable
+from typing import Union
+
+import torch
+from torch.distributed.checkpoint.state_dict import (
+    StateDictOptions,
+    get_state_dict,
+    set_state_dict,
+)
+from torch.distributed.checkpoint.stateful import Stateful
+from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
+
+from rlinf.hybrid_engines.fsdp import FSDP, FSDPModule
+from rlinf.hybrid_engines.fsdp.utils import FSDPVersion, to_local_if_dtensor
+from rlinf.utils.utils import get_rng_state, set_rng_state
+
+
+class Checkpoint(Stateful):
+    def __init__(
+        self,
+        model: Union[FSDP, FSDPModule],
+        optimizers: Union[Optimizer, Iterable[Optimizer]],
+        lr_schedulers: Union[LRScheduler, Iterable[LRScheduler]],
+        opts: StateDictOptions,
+        fsdp_version: FSDPVersion,
+        checkpoint_format: str = "dcp",
+    ):
+        self.model = model
+        self.optimizers = optimizers
+        self.lr_schedulers = (
+            (lr_schedulers,)
+            if isinstance(lr_schedulers, LRScheduler)
+            else tuple(lr_schedulers)
+        )
+        self.opts = opts
+        self.fsdp_version = fsdp_version
+        self.checkpoint_format = checkpoint_format
+
+    def _get_local_optim_state_dicts(self):
+        if isinstance(self.optimizers, Optimizer):
+            return self.optimizers.state_dict()
+        return [opt.state_dict() for opt in self.optimizers]
+
+    def _load_local_optim_state_dicts(self, optim_state_dicts):
+        if isinstance(self.optimizers, Optimizer):
+            self.optimizers.load_state_dict(optim_state_dicts)
+        else:
+            for opt, opt_sd in zip(self.optimizers, optim_state_dicts):
+                opt.load_state_dict(opt_sd)
+
+    def state_dict(self):
+        if self.checkpoint_format == "local_shard":
+            model_sd = self.model.state_dict()
+            model_sd = {
+                key: to_local_if_dtensor(value).cpu()
+                if isinstance(value, torch.Tensor)
+                else value
+                for key, value in model_sd.items()
+            }
+            optim_sd = self._get_local_optim_state_dicts()
+
+            lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
+
+            out = {
+                "model": model_sd,
+                "optimizers": optim_sd,
+                "lr_schedulers": lr_sched_sd,
+                "fsdp_version": self.fsdp_version.value,
+                "rng": get_rng_state(),
+            }
+        else:
+            model_sd, optim_sd = get_state_dict(
+                model=self.model,
+                optimizers=self.optimizers,
+                options=self.opts,
+            )
+
+            lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
+
+            out = {
+                "model": model_sd,
+                "optimizers": optim_sd,
+                "lr_schedulers": lr_sched_sd,
+                "fsdp_version": self.fsdp_version.value,
+                "rng": get_rng_state(),
+            }
+        return out
+
+    def load_state_dict(self, state):
+        assert "fsdp_version" in state, "Checkpoint is missing FSDP version info."
+        ckpt_fsdp_version = FSDPVersion(state["fsdp_version"])
+        if ckpt_fsdp_version != self.fsdp_version:
+            raise ValueError(
+                f"FSDP version mismatch: {ckpt_fsdp_version} != {self.fsdp_version}"
+            )
+
+        if self.checkpoint_format == "local_shard":
+            self.model.load_state_dict(state["model"])
+
+            self._load_local_optim_state_dicts(state["optimizers"])
+
+        else:
+            set_state_dict(
+                model=self.model,
+                optimizers=self.optimizers,
+                model_state_dict=state["model"],
+                optim_state_dict=state.get("optimizers", state.get("optim")),
+                options=self.opts,
+            )
+
+        # lr schedulers
+        if "lr_schedulers" in state:
+            for lr, lr_sd in zip(self.lr_schedulers, state["lr_schedulers"]):
+                lr.load_state_dict(lr_sd)
+
+        if "rng" in state:
+            set_rng_state(state["rng"])
+1952:    def _use_unsharded_views(self, as_params: bool) -> None:
+2131:    def _use_sharded_views(self) -> None:
+2479:    def _deregister_orig_params(self):
+                if accumulated_grad_in_no_sync:
+                    self._use_unsharded_grad_views()
+                else:
+                    self._use_sharded_grad_views()
+
+    #########
+    # VIEWS #
+    #########
+    @no_type_check
+    def _get_unflat_views_unaligned(
+        self,
+        tensor: torch.Tensor | None = None,
+    ) -> Iterator[Tensor]:
+        """
+        Return unflattened ``Tensor`` views into ``tensor``.
+
+        If `tensor`` is ``None``,  ``flat_param`` is used. The unflattening is based
+        on ``flat_param`` 's metadata.
+
+        Examples for ``tensor`` include ``flat_param.grad`` or unsharded
+        tensor optimizer state.
+        """
+        flat_param = self.flat_param
+        if tensor is None:
+            tensor = flat_param
+        views = (
+            _ext_post_unflatten_transform(
+                subtensor.view(shape)
+                if contiguous
+                else subtensor.as_strided(shape, stride),
+                param_extension,
+                self._fsdp_extension,
+            )
+            for (subtensor, shape, stride, contiguous, param_extension) in zip(
+                torch.split(tensor, flat_param._numels, dim=0),
+                flat_param._shapes,
+                flat_param._strides,
+                flat_param._contiguities,
+                flat_param._param_extensions,
+            )
+        )
+        return views
+
+    @no_type_check
+    def _get_unflat_views_aligned(
+        self,
+        tensor: Tensor | None = None,
+    ) -> list[Tensor]:
+        """
+        Return unflattened ``Tensor`` views into ``tensor`` with handling for padding.
+
+        This method has the same contract as :meth:`_get_unflat_views_unaligned`
+        except it checks for ``None`` placeholders representing padding for
+        alignment, which may incur slightly more CPU overhead.
+        """
+        flat_param = self.flat_param
+        if tensor is None:
+            tensor = flat_param
+        splits: list[Tensor] = torch.split(
+            tensor, flat_param._numels_with_padding, dim=0
+        )
+        idx = 0
+        views: list[Tensor] = []
+        for split, is_padding in zip(splits, flat_param._is_padding_mask):
+            if is_padding:
+                continue
+            views.append(
+                _ext_post_unflatten_transform(
+                    split.view(flat_param._shapes[idx])
+                    if flat_param._contiguities[idx]
+                    else split.as_strided(
+                        flat_param._shapes[idx], flat_param._strides[idx]
+                    ),
+                    flat_param._param_extensions[idx],
+                    self._fsdp_extension,
+                )
+            )
+            idx += 1
+        return views
+
+    @no_type_check
+    @torch.enable_grad()
+    def _use_unsharded_views(self, as_params: bool) -> None:
+        """
+        Unflatten the unsharded flat parameter by setting the original parameter variables to be views into it.
+
+        Args:
+            as_params (bool): If ``True``, then registers the original
+                parameters as ``nn.Parameter`` s; if ``False``, then registers
+                the original parameters only as ``Tensor`` s. ``False`` should
+                be used during forward/backward computation and when hiding the
+                original parameters from :meth:`nn.Module.named_parameters`.
+
+        Note:
+            when prefetching for next forward, current forward may be
+            annotated with `@torch.no_grad()`
+            `@torch.enable_grad()` ensures non-empty `view.grad_fn`
+            otherwise `_post_backward_hook` will not get called
+        """
+        flat_param = self.flat_param
+        self._check_unsharded(flat_param)
+        views = self._get_unflat_views()
+        from torch.distributed.tensor import DTensor
+
+        for i, (view, (param_name, module, _)) in enumerate(
+            zip(views, flat_param._param_infos)
+        ):
+            if self._use_orig_params and as_params:
+                if type(view) is DTensor:
+                    # A `DTensor` `view` is not compatible with assigning
+                    # `param.data = view`, so we cannot preserve the parameter
+                    # variable.
+                    self._setattr_param(
+                        module,
+                        param_name,
+                        nn.Parameter(view, requires_grad=flat_param.requires_grad),
+                    )
+                    continue
+                param = self.flat_param._params[i]
+                self._setattr_param(module, param_name, param)
+                param.data = view
+            elif as_params:
+                self._setattr_param(
+                    module,
+                    param_name,
+                    nn.Parameter(view, requires_grad=flat_param.requires_grad),
+                )
+            else:  # `as_params=False`
+                param_var: Tensor = view
+                if self._use_orig_params:
+                    if self._training_state == HandleTrainingState.FORWARD:
+                        # Save the `Tensor` for the pre-backward
+                        self.flat_param._tensors[i] = view  # save for pre-backward
+                    elif self._training_state == HandleTrainingState.BACKWARD_PRE:
+                        # Use the saved `Tensor` variable from the forward to
+                        # preserve the autograd graph so that the post-backward

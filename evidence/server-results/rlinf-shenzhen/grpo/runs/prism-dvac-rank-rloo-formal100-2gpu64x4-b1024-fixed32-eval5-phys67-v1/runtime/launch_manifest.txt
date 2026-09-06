@@ -1,0 +1,10 @@
+started_at=2026-08-27T15:28:43+08:00
+source_head=3f977ce7f0c9271a4e164b4d602166286a9ad9f3
+physical_gpus=6,7
+fresh_start=true; target_step=100
+train=64 env x 4 epochs = 256 trajectories; G8; max 1024 chunk records
+actor=GB1024/MB32/update2; 512 records/rank; 2 optimizer calls/rank
+method=mean log V_L3 -> G8 reverse rank q -> success+0.2q -> RLOO/no-std; DVAC-ST off
+eval=fixed32 every5; checkpoint every10
+normal_stop=complete step100/checkpoint/exit0; hard_timeout=216000s
+cutover_gap_seconds=1

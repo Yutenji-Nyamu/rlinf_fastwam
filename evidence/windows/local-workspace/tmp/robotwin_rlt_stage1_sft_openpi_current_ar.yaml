@@ -1,0 +1,105 @@
+defaults:
+  - model/pi0@actor.model
+  - hybrid_engines/fsdp@actor.fsdp_config
+  - override hydra/job_logging: stdout
+  - _self_
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+
+cluster:
+  num_nodes: 1
+  # Base method config only. The approved smoke/formal overlay owns GPU count.
+  component_placement:
+    actor,env,rollout: all
+
+runner:
+  task_type: sft
+  logger:
+    log_path: ${oc.env:RLT_LOG_ROOT,/data/chenyiteng/results/rlinf-rlt}
+    project_name: rlinf-rlt
+    experiment_name: robotwin_adjust_bottle_rlt_stage1_current_ar
+    logger_backends: [tensorboard]
+  max_epochs: -1
+  max_steps: 2000
+  val_check_interval: -1
+  save_interval: 2000
+
+data:
+  train_data_paths:
+    # Required: OpenPI/LeRobot processed clean-50, not ACT processed data.
+    - dataset_path: ${oc.env:ROBOTWIN_RLT_CLEAN50_PATH}
+      weight: 1.0
+
+actor:
+  group_name: ActorGroup
+  training_backend: fsdp
+  # AutoDL-successful candidate batch; launch overlay may resize it for H100.
+  micro_batch_size: 16
+  global_batch_size: 32
+  seed: 0
+  model:
+    precision: null
+    model_path: ${oc.env:ROBOTWIN_PI0_BASE_PATH,/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50}
+    num_action_chunks: 10
+    action_dim: 14
+    add_value_head: false
+    openpi_data:
+      repo_id: physical-intelligence/robotwin
+      default_prompt: adjust the bottle
+      norm_stats_path: ${oc.env:ROBOTWIN_PI0_NORM_STATS_PATH,/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin/norm_stats.json}
+    openpi:
+      config_name: pi0_aloha_robotwin
+      num_images_in_input: 3
+      action_horizon: 50
+      action_chunk: ${actor.model.num_action_chunks}
+      action_env_dim: ${actor.model.action_dim}
+      num_steps: 4
+      train_expert_only: false
+      detach_critic_input: true
+      noise_method: flow_ode
+      rtc_enabled: false
+
+      use_rlt: true
+      rlt_train_vla: false
+      rlt_alpha: 0.0
+      rlt_input_dim: 2048
+      rlt_embed_dim: 2048
+      rlt_prefix_seq_len: 768
+      rlt_num_layers: 2
+      rlt_num_heads: 8
+      rlt_mlp_ratio: 4.0
+      rlt_image_only: true
+      rlt_use_mask: true
+      rlt_action_adapter: robotwin_aloha_canonical_v1
+
+  optim:
+    lr: 2.5e-5
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1.0e-8
+    weight_decay: 1.0e-10
+    clip_grad: 1.0
+    total_training_steps: 2000
+    lr_warmup_steps: 100
+    lr_scheduler: cosine
+    num_cycles: 0.5
+    min_lr_rate: 0.1
+
+  fsdp_config:
+    strategy: fsdp
+    sharding_strategy: no_shard
+    use_orig_params: true
+    gradient_checkpointing: false
+    mixed_precision:
+      param_dtype: ${actor.model.precision}
+      reduce_dtype: ${actor.model.precision}
+      buffer_dtype: ${actor.model.precision}
+
+reward:
+  use_reward_model: false
+
+critic:
+  use_critic_model: false

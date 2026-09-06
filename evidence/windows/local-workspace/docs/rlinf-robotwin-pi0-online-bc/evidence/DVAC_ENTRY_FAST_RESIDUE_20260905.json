@@ -1,0 +1,185 @@
+{
+  "time": "2026-09-05T17:19:16.802948+08:00",
+  "fast_runtime": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3/runtime",
+  "state": {
+    "wrapper.pid": "1568962\n",
+    "driver.pid": null,
+    "timeout.pid": null,
+    "finished_at.txt": "2026-09-04T20:47:11+00:00\n",
+    "exit_code.txt": "255\n"
+  },
+  "log_mtime": "2026-09-04T20:47:08.054980+00:00",
+  "log_bytes": 220492,
+  "fatal": [
+    "\u001b[36m(EnvGroup(rank=0) pid=1569541)\u001b[0m Fatal Python error: PyGILState_Release: auto-releasing thread-state, but no thread-state for this thread"
+  ],
+  "log_tail": [
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m [W904 20:47:06.443313213 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=61, addr=[admin]:48980, remote=[admin]:48039): Broken pipe",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x7f0a1c76b05d in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libc10.so)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #1: <unknown function> + 0x6a90911 (0x7ed9cb7fd911 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x24d (0x7ed9cb7fc3cd in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x4a5 (0x7ed976147515 in /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #4: <unknown function> + 0xdc253 (0x7f0a26de4253 in /lib/x86_64-linux-gnu/libstdc++.so.6)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #5: <unknown function> + 0x94a83 (0x7f0a295e2a83 in /lib/x86_64-linux-gnu/libc.so.6)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m frame #6: <unknown function> + 0x126890 (0x7f0a29674890 in /lib/x86_64-linux-gnu/libc.so.6)",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m ",
+    "\u001b[36m(EnvGroup(rank=1) pid=1569544)\u001b[0m [W904 20:47:06.626212483 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID cg-EnvGroup:0-EnvGroup:1nccl_send_0 Rank 1] Failed to check the \"should dump\" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe",
+    "Exiting main process due to a failure upon worker execution."
+  ],
+  "fast_process_matches": [
+    {
+      "pid": 1284694,
+      "comm": "bash",
+      "cwd": "/home/chenyiteng",
+      "env": [],
+      "matched": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3",
+        "fastwam-current-grpo",
+        "fastwam-scene-fence",
+        "fastwam-grpo-control",
+        "fastwam-action-dvac"
+      ],
+      "cmd": "bash -c #!/usr/bin/env bash\nset -eu\nPYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -B - <<'PY'\nimport datetime,hashlib,json,os,re,subprocess,urllib.request\nfrom pathlib import Path\nassert os.getuid()==1003\ndef read(p):\n    try:return Path(p).read_text(errors='replace')\n    except OSError:return None\ndef cmd(args):\n    p=subprocess.run(args,text=True,capture_output=True,timeout=20)\n    return {'rc':p.returncode,'out':p.stdout.strip(),'err':p.stderr[-600:]}\ndef git(tree,*args):return cmd(['git','-C',str(tree),*args])['out']\nbase=Path('/data/chenyiteng/projects/rlinf-shenzhen/worktrees')\nfast=Path('/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3')\nrt=fast/'runtime'\nf=rt/'driver.log';log=read(f) or '';lines=log.splitlines()\nnow=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat()\nout={'time':now,'fast_runtime':str(rt),'state':{n:read(rt/n) for n in "
+    }
+  ],
+  "our_gpu_processes": [
+    {
+      "pid": 603523,
+      "comm": "ray::EmbodiedFS",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=4",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 603531,
+      "comm": "ray::EmbodiedFS",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=5",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 603545,
+      "comm": "ray::MultiStepR",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=4",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 603548,
+      "comm": "ray::MultiStepR",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=5",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 603555,
+      "comm": "ray::EnvWorker",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=4",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 603565,
+      "comm": "ray::EnvWorker",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf",
+        "CUDA_VISIBLE_DEVICES=5",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae"
+      ]
+    },
+    {
+      "pid": 1152302,
+      "comm": "ray::EmbodiedOn",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc",
+        "CUDA_VISIBLE_DEVICES=6",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757"
+      ]
+    },
+    {
+      "pid": 1152304,
+      "comm": "ray::MultiStepR",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc",
+        "CUDA_VISIBLE_DEVICES=6",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757"
+      ]
+    },
+    {
+      "pid": 1152306,
+      "comm": "ray::EnvWorker",
+      "cwd": "/home/chenyiteng",
+      "env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc",
+        "CUDA_VISIBLE_DEVICES=6",
+        "PYTHONPATH=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_2f9fb86d3a4ae757"
+      ]
+    }
+  ],
+  "source_locks": [
+    {
+      "tree": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc",
+      "head": "385d4e75bf71cdca5d1ae3a8fc56445ab283185e",
+      "dirty": "",
+      "files": [
+        {
+          "path": "rlinf/data/online_bc.py",
+          "sha256": "73331da6d55a71fb521963eacd3c022b0571b8527cb9cd473a8483002a7fb84b"
+        },
+        {
+          "path": "rlinf/models/embodiment/openpi/openpi_action_model.py",
+          "sha256": "e6c5fc3e42eb0dbd02c3a7d4ddccd9f097ecdf68bad3f088f4cb61380e67738d"
+        },
+        {
+          "path": "rlinf/workers/actor/fsdp_online_bc_policy_worker.py",
+          "sha256": "1d1fd85a2e8b9529e5f1069c8da67a464fc29fc1222c7c10056716ad0d608043"
+        }
+      ]
+    },
+    {
+      "tree": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-dvac-pure-single-gpu-7d07a421",
+      "head": "30349428c37a008b95342121c1455debfeb4805e",
+      "dirty": "",
+      "files": [
+        {
+          "path": "rlinf/algorithms/rlt/dvac_weighting.py",
+          "sha256": "7c0de26d2fd47eae6d2871e6c95555ff03c3b9ec3181584a37b4763098548c9c"
+        },
+        {
+          "path": "rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py",
+          "sha256": "1c18562db753cd1a7148ea807a198cd9d1bda8db3d459f1f2c366e5ce8f20251"
+        }
+      ]
+    }
+  ],
+  "old_pid_checks": {
+    "rc": 1,
+    "out": "PID    PPID                  STARTED STAT COMMAND",
+    "err": ""
+  },
+  "gpu": {
+    "rc": 0,
+    "out": "0, 9881, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 34002, 1\n5, 35190, 8\n6, 63814, 100\n7, 4, 0",
+    "err": ""
+  },
+  "ray_actor_query_error": "<urlopen error [Errno 111] Connection refused>"
+}

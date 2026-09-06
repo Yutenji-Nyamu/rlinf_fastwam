@@ -1,0 +1,1339 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1786115634.576831  103684 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1786115634.626916  103684 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1786115636.017244  103684 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+2026-08-07 23:14:02,280	WARNING utils.py:461 -- Detecting docker specified CPUs. In previous versions of Ray, CPU detection in containers was incorrect. Please ensure that Ray has enough CPUs allocated. As a temporary workaround to revert to the prior behavior, set `RAY_USE_MULTIPROCESSING_CPU_COUNT=1` as an env var before starting Ray. Set the env var: `RAY_DISABLE_DOCKER_CPU_WARNING=1` to mute this warning.
+2026-08-07 23:14:05,560	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[INFO 23:14:07 RLinf] RLinf is running on a cluster with 1 node and 2 accelerators. The nodes' details are: 
+node_labels: []
+node_rank: 0
+ray_id: 793da694ddb39d2f09a8669182c81b18b711672e3bf21ff0fa7b9b64
+node_ip: 172.17.0.6
+num_cpus: 36
+python_interpreter_path: /root/autodl-tmp/RLinf/.venv/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+profiler_backends: []
+
+Node groups' details are: 
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[INFO 23:14:07 FlexiblePlacementStrategy] 
+[INFO 23:14:07 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[INFO 23:14:07 FlexiblePlacementStrategy] 
+[INFO 23:14:07 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+{
+  "env": {
+    "train": {
+      "env_type": "robotwin",
+      "total_num_envs": 8,
+      "auto_reset": false,
+      "ignore_terminations": false,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": false,
+      "assets_path": "/root/autodl-tmp/RoboTwin_RLinf",
+      "seeds_path": "/root/autodl-tmp/RLinf_ogpo_pi0_robotwin/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/root/autodl-tmp/experiments/ogpo_robotwin_formal_20260807_v1/video/train"
+      },
+      "enable_offload": true,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "./data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 1
+    },
+    "eval": {
+      "env_type": "robotwin",
+      "total_num_envs": 4,
+      "auto_reset": true,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": true,
+      "assets_path": "/root/autodl-tmp/RoboTwin_RLinf",
+      "seeds_path": "/root/autodl-tmp/RLinf_ogpo_pi0_robotwin/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/root/autodl-tmp/experiments/ogpo_robotwin_formal_20260807_v1/video/eval"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "./data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 5
+    },
+    "group_name": "EnvGroup",
+    "enable_offload": true
+  },
+  "actor": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle",
+      "precision": null,
+      "num_action_chunks": 10,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 4,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi0_aloha_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 10,
+        "num_steps": 4,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_ode",
+        "add_value_head": false,
+        "detach_critic_input": false,
+        "use_dsrl": false,
+        "dsrl_state_dim": 8,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ],
+        "action_horizon": 50,
+        "use_ogpo": true,
+        "ogpo_sigma_init": 0.01,
+        "ogpo_num_image_blocks": 3,
+        "use_rlt": false,
+        "is_nft": false
+      },
+      "openpi_data": {
+        "repo_id": "physical-intelligence/robotwin",
+        "default_prompt": "adjust the bottle",
+        "norm_stats_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json"
+      }
+    },
+    "fsdp_config": {
+      "strategy": "fsdp",
+      "sharding_strategy": "full_shard",
+      "gradient_checkpointing": false,
+      "cpu_offload": false,
+      "offload_pin_memory": false,
+      "reshard_after_forward": true,
+      "enable_gradient_accumulation": true,
+      "forward_prefetch": false,
+      "limit_all_gathers": false,
+      "backward_prefetch": null,
+      "use_orig_params": true,
+      "use_liger_kernel": false,
+      "mixed_precision": {
+        "param_dtype": null,
+        "reduce_dtype": null,
+        "buffer_dtype": null
+      },
+      "amp_autocast": {
+        "enabled": false,
+        "precision": "bf16"
+      },
+      "grad_scaler": {
+        "enabled": false,
+        "init_scale": null,
+        "growth_interval": null
+      },
+      "save_full_model_weights": false
+    },
+    "group_name": "ActorGroup",
+    "training_backend": "fsdp",
+    "micro_batch_size": 32,
+    "global_batch_size": 64,
+    "seed": 1234,
+    "enable_offload": false,
+    "optim": {
+      "lr": 5.6e-06,
+      "value_lr": 0.0003,
+      "adam_beta1": 0.9,
+      "adam_beta2": 0.95,
+      "adam_eps": 1e-08,
+      "weight_decay": 0.01,
+      "clip_grad": 1.0,
+      "critic_warmup_steps": 0,
+      "total_training_steps": 230000,
+      "lr_warmup_steps": 0,
+      "lr_scheduler": "constant",
+      "num_cycles": 0.5,
+      "min_lr": 0.0
+    }
+  },
+  "weight_syncer": {
+    "type": "patch",
+    "patch": {
+      "snapshot_device": "cpu",
+      "delta_encoding": true,
+      "compression": "none",
+      "init_sync": {
+        "enabled": true,
+        "prefixes": null,
+        "bucket_size": 134217728
+      },
+      "transport_device": "cpu"
+    }
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "actor, env, rollout": "0-1"
+    }
+  },
+  "runner": {
+    "task_type": "embodied",
+    "logger": {
+      "log_path": "/root/autodl-tmp/experiments/ogpo_robotwin_formal_20260807_v1",
+      "project_name": "rlinf",
+      "experiment_name": "robotwin_adjust_bottle_ogpo_ca_formal_35k_v1",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": 1000000,
+    "max_steps": -1,
+    "only_eval": false,
+    "val_check_interval": -1,
+    "save_interval": -1,
+    "resume_dir": null,
+    "ckpt_path": null,
+    "use_training_pipeline": false,
+    "overlap_env_bootstrap": false,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "weight_sync_interval": 1
+  },
+  "algorithm": {
+    "loss_type": "embodied_ogpo",
+    "adv_type": "ogpo",
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "group_size": 1,
+    "reward_coef": 1.0,
+    "gamma": 0.999,
+    "ogpo": {
+      "variant": "ogpo_ca",
+      "model_horizon": 50,
+      "execution_horizon": 10,
+      "model_action_dim": 32,
+      "active_action_dim": 14,
+      "flow_steps": 4,
+      "sigma_init": 0.01,
+      "gaussian_clip": 3.0,
+      "normalize_denoising_horizon": true,
+      "normalize_act_space_dimension": true,
+      "candidate_group_size": 8,
+      "candidate_microbatch_per_rank": 32,
+      "clip_epsilon": 0.01,
+      "bc_coeff": 1.0,
+      "actor_tau": 0.005,
+      "critic_tau": 0.05,
+      "num_q_heads": 10,
+      "critic_hidden_dims": [
+        512,
+        512,
+        512,
+        512,
+        512
+      ],
+      "critic_lr": 0.0003,
+      "critic_adam_beta1": 0.9,
+      "critic_adam_beta2": 0.999,
+      "critic_adam_eps": 1e-08,
+      "critic_weight_decay": 1e-05,
+      "critic_grad_clip": 1.0,
+      "state_batch_size": 64,
+      "start_training_rows": 10000,
+      "total_online_rows": 35000,
+      "replay_capacity": 40000,
+      "source_fingerprint": "rlinf-pi0-robotwin-sft-adjust_bottle-649ed92b431bd706",
+      "norm_fingerprint": "649ed92b431bd70627febdb00b2385e35fcab5088e72a4e4a4845585f8ce4f6a",
+      "utd_q": 0.1,
+      "utd_pi": 0.1,
+      "offline_ratio": 0.0,
+      "use_success_buffer_q": false,
+      "best_of_n": 1,
+      "baseline_eval": true,
+      "final_eval": true,
+      "eval_interval_rows": 20000,
+      "checkpoint_interval_rows": 50000
+    }
+  },
+  "rollout": {
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "collect_prev_infos": false,
+    "collect_transitions": false,
+    "recompute_logprobs": false,
+    "enable_offload": false,
+    "pipeline_stage_num": 1,
+    "model": {
+      "model_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle",
+      "precision": null
+    }
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}
+[INFO 23:14:07 FlexiblePlacementStrategy] 
+[INFO 23:14:07 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[INFO 23:14:07 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 23:14:08 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 23:14:08 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 23:14:08 NodePlacementStrategy] 
+[INFO 23:14:08 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 23:14:08 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 23:14:08 NodePlacementStrategy] 
+[INFO 23:14:08 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 23:14:08 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 23:14:08 NodePlacementStrategy] 
+[INFO 23:14:08 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 23:14:08 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[36m(MultiStepRolloutWorker pid=108023)[0m [INFO 23:14:12 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=108023)[0m [INFO 23:14:12 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=108015)[0m [INFO 23:14:12 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=108015)[0m [INFO 23:14:12 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(pid=108024)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=108024)[0m I0000 00:00:1786115652.474349  108024 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(pid=108029)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=108029)[0m I0000 00:00:1786115652.460283  108029 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EmbodiedOGPOFSDPPolicy pid=108001)[0m [WARNING 23:14:13 ActorGroup-Rank-0][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedOGPOFSDPPolicy pid=108005)[0m [WARNING 23:14:13 ActorGroup-Rank-1][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedOGPOFSDPPolicy pid=108001)[0m [INFO 23:14:13 ActorGroup-Rank-0][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(EmbodiedOGPOFSDPPolicy pid=108001)[0m [INFO 23:14:13 FlexiblePlacementStrategy] 
+[36m(EmbodiedOGPOFSDPPolicy pid=108001)[0m [INFO 23:14:13 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(EmbodiedOGPOFSDPPolicy pid=108005)[0m [INFO 23:14:13 ActorGroup-Rank-1][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(EmbodiedOGPOFSDPPolicy pid=108005)[0m [INFO 23:14:13 FlexiblePlacementStrategy] 
+[36m(EmbodiedOGPOFSDPPolicy pid=108005)[0m [INFO 23:14:13 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(pid=108029)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=108029)[0m I0000 00:00:1786115653.964259  108029 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(pid=108024)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=108024)[0m I0000 00:00:1786115654.012875  108024 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=0) pid=108015)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=108015)[0m I0000 00:00:1786115654.137758  109177 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=108023)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=108023)[0m I0000 00:00:1786115654.137758  109176 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EnvWorker pid=108024)[0m [INFO 23:14:15 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=108024)[0m [INFO 23:14:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(EnvWorker pid=108029)[0m [INFO 23:14:15 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=108029)[0m [INFO 23:14:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=108015)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=108015)[0m I0000 00:00:1786115655.600629  109177 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=108023)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=108023)[0m I0000 00:00:1786115655.600632  109176 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EnvGroup(rank=1) pid=108029)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=1) pid=108029)[0m   warn(
+[36m(EnvGroup(rank=0) pid=108024)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=0) pid=108024)[0m   warn(
+[36m(RolloutGroup(rank=1) pid=108023)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(RolloutGroup(rank=1) pid=108023)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(RolloutGroup(rank=1) pid=108023)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(RolloutGroup(rank=1) pid=108023)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(RolloutGroup(rank=0) pid=108015)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(RolloutGroup(rank=0) pid=108015)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(RolloutGroup(rank=0) pid=108015)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(RolloutGroup(rank=0) pid=108015)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(EnvGroup(rank=1) pid=108029)[0m [planner.py]: Something wrong happened when importing CuroboPlanner! Please check if Curobo is installed correctly. If the problem still exists, you can install Curobo from https://github.com/NVlabs/curobo manually.
+[36m(EnvGroup(rank=1) pid=108029)[0m Exception traceback:
+[36m(EnvGroup(rank=1) pid=108029)[0m missing pytorch3d
+[36m(EnvGroup(rank=1) pid=108029)[0m Traceback (most recent call last):
+[36m(EnvGroup(rank=1) pid=108029)[0m   File "/root/autodl-tmp/RoboTwin_RLinf/envs/robot/planner.py", line 297, in <module>
+[36m(EnvGroup(rank=1) pid=108029)[0m     from curobo.types.math import Pose as CuroboPose
+[36m(EnvGroup(rank=1) pid=108029)[0m ModuleNotFoundError: No module named 'curobo.types.math'; 'curobo.types' is not a package
+[36m(EnvGroup(rank=0) pid=108024)[0m [planner.py]: Something wrong happened when importing CuroboPlanner! Please check if Curobo is installed correctly. If the problem still exists, you can install Curobo from https://github.com/NVlabs/curobo manually.
+[36m(EnvGroup(rank=0) pid=108024)[0m Exception traceback:
+[36m(EnvGroup(rank=0) pid=108024)[0m missing pytorch3d
+[36m(EnvGroup(rank=0) pid=108024)[0m Traceback (most recent call last):
+[36m(EnvGroup(rank=0) pid=108024)[0m   File "/root/autodl-tmp/RoboTwin_RLinf/envs/robot/planner.py", line 297, in <module>
+[36m(EnvGroup(rank=0) pid=108024)[0m     from curobo.types.math import Pose as CuroboPose
+[36m(EnvGroup(rank=0) pid=108024)[0m ModuleNotFoundError: No module named 'curobo.types.math'; 'curobo.types' is not a package
+[36m(RolloutGroup(rank=0) pid=108015)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=108023)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=108001)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=108001)[0m I0000 00:00:1786115716.780834  109344 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=108005)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=108005)[0m I0000 00:00:1786115716.780834  109345 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=108005)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=108005)[0m I0000 00:00:1786115717.949744  109345 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=108001)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=108001)[0m I0000 00:00:1786115717.955332  109344 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=108001)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(ActorGroup(rank=0) pid=108001)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(ActorGroup(rank=0) pid=108001)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(ActorGroup(rank=0) pid=108001)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(ActorGroup(rank=1) pid=108005)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(ActorGroup(rank=1) pid=108005)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(ActorGroup(rank=1) pid=108005)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(ActorGroup(rank=1) pid=108005)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(ActorGroup(rank=0) pid=108001)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=108005)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=108001)[0m [INFO 23:16:17 ActorGroup-Rank-0][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=1) pid=108005)[0m [INFO 23:16:17 ActorGroup-Rank-1][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:   0%|          | 0/5 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  20%|██        | 1/5 [00:55<03:40, 55.24s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  40%|████      | 2/5 [01:49<02:44, 54.94s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  60%|██████    | 3/5 [02:39<01:45, 52.62s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  80%|████████  | 4/5 [03:33<00:53, 53.05s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs: 100%|██████████| 5/5 [04:28<00:00, 53.63s/it]Evaluating Rollout Epochs: 100%|██████████| 5/5 [04:28<00:00, 53.64s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:20<00:00, 500.31s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:20<00:00, 500.31s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 1600/35000 │ Progress: █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   4.6%                                │
+│ Elapsed: 13:34 │ ETA: 04:43:23 │ Step Time: 0.509s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=502.6       │actor/actor/sync_model_to_rollout=13.0…│actor/run_training=0.440              │
+│cal_adv_and_returns=0.0032             │env/compute_bootstrap_rewards=0.0025   │env/env/bootstrap_step=30.246         │
+│env/env/send_rollout_trajectories=0.858│env/env_interact_step=464.7            │env/env_interact_step_ogpo=464.7      │
+│env/interact=501.6                     │env/run_interact_once=501.2            │generate_rollouts=502.8               │
+│rollout/generate_one_epoch=500.3       │rollout/predict=24.350                 │rollout/rollout/generate=500.3        │
+│step=504.1                             │sync_weights=0.914                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1600.0       │ogpo/local_inserted_rows=800.0         │ogpo/previous_online_rows=0.0000      │
+│ogpo/replay_rows=800.0                 │ogpo/success_rows=0.0000               │ogpo/total_online_rows=1600.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1600.0      │
+│ogpo/local_inserted_rows=800.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=0.0000       │ogpo/replay_rows=800.0                │
+│ogpo/success_rows=0.0000               │ogpo/total_online_rows=1600.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:14<00:00, 494.30s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:14<00:00, 494.30s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 3200/35000 │ Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   9.1%                                │
+│ Elapsed: 21:52 │ ETA: 03:37:25 │ Step Time: 0.410s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=496.6       │actor/actor/sync_model_to_rollout=0.454│actor/run_training=0.447              │
+│cal_adv_and_returns=0.0034             │env/compute_bootstrap_rewards=0.0024   │env/env/bootstrap_step=30.529         │
+│env/env/send_rollout_trajectories=0.848│env/env_interact_step=458.0            │env/env_interact_step_ogpo=457.9      │
+│env/interact=495.6                     │env/run_interact_once=495.2            │generate_rollouts=496.8               │
+│rollout/generate_one_epoch=494.3       │rollout/predict=4.674                  │rollout/rollout/generate=494.3        │
+│step=498.1                             │sync_weights=0.929                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1600.0       │ogpo/local_inserted_rows=800.0         │ogpo/previous_online_rows=1600.0      │
+│ogpo/replay_rows=1600.0                │ogpo/success_rows=0.0000               │ogpo/total_online_rows=3200.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1600.0      │
+│ogpo/local_inserted_rows=800.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=1600.0       │ogpo/replay_rows=1600.0               │
+│ogpo/success_rows=0.0000               │ogpo/total_online_rows=3200.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:46<00:00, 466.66s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:46<00:00, 466.66s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 4504/35000 │ Progress: █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  12.9%                                │
+│ Elapsed: 29:43 │ ETA: 03:21:14 │ Step Time: 0.396s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=469.0       │actor/actor/sync_model_to_rollout=0.450│actor/run_training=0.450              │
+│cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0024   │env/env/bootstrap_step=29.510         │
+│env/env/send_rollout_trajectories=0.854│env/env_interact_step=432.1            │env/env_interact_step_ogpo=432.0      │
+│env/interact=468.0                     │env/run_interact_once=467.5            │generate_rollouts=469.1               │
+│rollout/generate_one_epoch=466.7       │rollout/predict=4.680                  │rollout/rollout/generate=466.7        │
+│step=470.5                             │sync_weights=0.921                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1304.0       │ogpo/local_inserted_rows=652.0         │ogpo/previous_online_rows=3200.0      │
+│ogpo/replay_rows=2252.0                │ogpo/success_rows=152.0                │ogpo/total_online_rows=4504.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1304.0      │
+│ogpo/local_inserted_rows=652.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=3200.0       │ogpo/replay_rows=2252.0               │
+│ogpo/success_rows=152.0                │ogpo/total_online_rows=4504.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:31<00:00, 451.48s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:31<00:00, 451.48s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 5748/35000 │ Progress: ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  16.4%                                │
+│ Elapsed: 37:47 │ ETA: 03:12:17 │ Step Time: 0.394s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=482.3       │actor/actor/sync_model_to_rollout=0.444│actor/run_training=0.498              │
+│cal_adv_and_returns=0.0038             │env/compute_bootstrap_rewards=0.0025   │env/env/bootstrap_step=29.900         │
+│env/env/send_rollout_trajectories=0.839│env/env_interact_step=444.4            │env/env_interact_step_ogpo=444.4      │
+│env/interact=481.1                     │env/run_interact_once=480.8            │generate_rollouts=482.4               │
+│rollout/generate_one_epoch=479.9       │rollout/predict=4.635                  │rollout/rollout/generate=479.9        │
+│step=483.8                             │sync_weights=0.918                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.5                            │
+│reward=0.0025                          │success_once=0.5                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1244.0       │ogpo/local_inserted_rows=622.0         │ogpo/previous_online_rows=4504.0      │
+│ogpo/replay_rows=2874.0                │ogpo/success_rows=374.0                │ogpo/total_online_rows=5748.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1244.0      │
+│ogpo/local_inserted_rows=622.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=4504.0       │ogpo/replay_rows=2874.0               │
+│ogpo/success_rows=374.0                │ogpo/total_online_rows=5748.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:04<00:00, 484.87s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:04<00:00, 484.87s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 7258/35000 │ Progress: ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  20.7%                                │
+│ Elapsed: 46:09 │ ETA: 02:56:26 │ Step Time: 0.382s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=501.1       │actor/actor/sync_model_to_rollout=0.446│actor/run_training=0.457              │
+│cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=29.857         │
+│env/env/send_rollout_trajectories=0.847│env/env_interact_step=463.6            │env/env_interact_step_ogpo=463.5      │
+│env/interact=499.9                     │env/run_interact_once=499.5            │generate_rollouts=501.2               │
+│rollout/generate_one_epoch=498.6       │rollout/predict=4.735                  │rollout/rollout/generate=498.6        │
+│step=502.6                             │sync_weights=0.920                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.125                          │
+│reward=0.000625                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1510.0       │ogpo/local_inserted_rows=755.0         │ogpo/previous_online_rows=5748.0      │
+│ogpo/replay_rows=3629.0                │ogpo/success_rows=429.0                │ogpo/total_online_rows=7258.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1510.0      │
+│ogpo/local_inserted_rows=755.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=5748.0       │ogpo/replay_rows=3629.0               │
+│ogpo/success_rows=429.0                │ogpo/total_online_rows=7258.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:31<00:00, 511.93s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:31<00:00, 511.93s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 8590/35000 │ Progress: █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  24.5%                                │
+│ Elapsed: 54:45 │ ETA: 02:48:21 │ Step Time: 0.382s                                                                   │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=514.4       │actor/actor/sync_model_to_rollout=0.462│actor/run_training=0.457              │
+│cal_adv_and_returns=0.0028             │env/compute_bootstrap_rewards=0.0025   │env/env/bootstrap_step=29.839         │
+│env/env/send_rollout_trajectories=0.842│env/env_interact_step=476.2            │env/env_interact_step_ogpo=476.1      │
+│env/interact=513.2                     │env/run_interact_once=512.8            │generate_rollouts=514.5               │
+│rollout/generate_one_epoch=511.9       │rollout/predict=4.835                  │rollout/rollout/generate=511.9        │
+│step=515.9                             │sync_weights=0.941                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1332.0       │ogpo/local_inserted_rows=666.0         │ogpo/previous_online_rows=7258.0      │
+│ogpo/replay_rows=4295.0                │ogpo/success_rows=595.0                │ogpo/total_online_rows=8590.0         │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_updates=0.0000              │ogpo/critic_updates=0.0000             │ogpo/global_inserted_rows=1332.0      │
+│ogpo/local_inserted_rows=666.0         │ogpo/pending_actor_updates=0.0000      │ogpo/pending_critic_updates=0.0000    │
+│ogpo/policy_version=0.0000             │ogpo/previous_online_rows=7258.0       │ogpo/replay_rows=4295.0               │
+│ogpo/success_rows=595.0                │ogpo/total_online_rows=8590.0          │ogpo/updates_run=0.0000               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:57<00:00, 477.85s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:57<00:00, 477.85s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 10094/35000 │ Progress: ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  28.8%                               │
+│ Elapsed: 01:04:39 │ ETA: 02:39:33 │ Step Time: 0.384s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=483.6       │actor/actor/sync_model_to_rollout=0.447│actor/run_training=109.4              │
+│cal_adv_and_returns=0.0034             │env/compute_bootstrap_rewards=0.0022   │env/env/bootstrap_step=30.118         │
+│env/env/send_rollout_trajectories=0.841│env/env_interact_step=445.7            │env/env_interact_step_ogpo=445.6      │
+│env/interact=482.4                     │env/run_interact_once=482.1            │generate_rollouts=483.7               │
+│rollout/generate_one_epoch=481.2       │rollout/predict=4.715                  │rollout/rollout/generate=481.2        │
+│step=594.1                             │sync_weights=0.928                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.125                          │
+│reward=0.000625                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1504.0       │ogpo/local_inserted_rows=752.0         │ogpo/previous_online_rows=8590.0      │
+│ogpo/replay_rows=5047.0                │ogpo/success_rows=647.0                │ogpo/total_online_rows=1.01e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=1.108             │ogpo/actor_loss=-1.81e-07              │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=9.000               │ogpo/bc_loss=0.115                     │ogpo/critic_grad_norm=91.335          │
+│ogpo/critic_loss=7.043                 │ogpo/critic_updates=9.000              │ogpo/global_inserted_rows=1504.0      │
+│ogpo/local_inserted_rows=752.0         │ogpo/pending_actor_updates=0.400       │ogpo/pending_critic_updates=0.400     │
+│ogpo/policy_version=9.000              │ogpo/previous_online_rows=8590.0       │ogpo/q_mean=-0.219                    │
+│ogpo/ratio=0.740                       │ogpo/replay_rows=5047.0                │ogpo/success_rows=647.0               │
+│ogpo/td_target_mean=-0.224             │ogpo/total_online_rows=1.01e+04        │ogpo/updates_run=9.000                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:44<00:00, 464.48s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:44<00:00, 464.48s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 11444/35000 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  32.7%                               │
+│ Elapsed: 01:40:37 │ ETA: 03:27:08 │ Step Time: 0.528s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=500.4       │actor/actor/sync_model_to_rollout=1.475│actor/run_training=1655.3             │
+│cal_adv_and_returns=0.0033             │env/compute_bootstrap_rewards=0.0026   │env/env/bootstrap_step=30.474         │
+│env/env/send_rollout_trajectories=0.861│env/env_interact_step=462.2            │env/env_interact_step_ogpo=462.1      │
+│env/interact=499.3                     │env/run_interact_once=498.9            │generate_rollouts=500.5               │
+│rollout/generate_one_epoch=498.0       │rollout/predict=4.456                  │rollout/rollout/generate=498.0        │
+│step=2158.1                            │sync_weights=2.208                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1350.0       │ogpo/local_inserted_rows=675.0         │ogpo/previous_online_rows=1.01e+04    │
+│ogpo/replay_rows=5722.0                │ogpo/success_rows=822.0                │ogpo/total_online_rows=1.14e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.511             │ogpo/actor_loss=1.11e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=144.0               │ogpo/bc_loss=0.074                     │ogpo/critic_grad_norm=2.489           │
+│ogpo/critic_loss=0.037                 │ogpo/critic_updates=144.0              │ogpo/global_inserted_rows=1350.0      │
+│ogpo/local_inserted_rows=675.0         │ogpo/pending_actor_updates=0.400       │ogpo/pending_critic_updates=0.400     │
+│ogpo/policy_version=144.0              │ogpo/previous_online_rows=1.01e+04     │ogpo/q_mean=-0.193                    │
+│ogpo/ratio=0.133                       │ogpo/replay_rows=5722.0                │ogpo/success_rows=822.0               │
+│ogpo/td_target_mean=-0.191             │ogpo/total_online_rows=1.14e+04        │ogpo/updates_run=135.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:53<00:00, 473.92s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:53<00:00, 473.92s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 12758/35000 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  36.5%                               │
+│ Elapsed: 02:15:15 │ ETA: 03:55:48 │ Step Time: 0.636s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=476.6       │actor/actor/sync_model_to_rollout=1.813│actor/run_training=1598.4             │
+│cal_adv_and_returns=0.0032             │env/compute_bootstrap_rewards=0.0026   │env/env/bootstrap_step=29.828         │
+│env/env/send_rollout_trajectories=0.918│env/env_interact_step=438.0            │env/env_interact_step_ogpo=438.0      │
+│env/interact=475.4                     │env/run_interact_once=474.9            │generate_rollouts=476.7               │
+│rollout/generate_one_epoch=473.9       │rollout/predict=4.930                  │rollout/rollout/generate=473.9        │
+│step=2077.9                            │sync_weights=2.707                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1314.0       │ogpo/local_inserted_rows=657.0         │ogpo/previous_online_rows=1.14e+04    │
+│ogpo/replay_rows=6379.0                │ogpo/success_rows=979.0                │ogpo/total_online_rows=1.28e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.261             │ogpo/actor_loss=4.14e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=275.0               │ogpo/bc_loss=0.045                     │ogpo/critic_grad_norm=1.119           │
+│ogpo/critic_loss=0.017                 │ogpo/critic_updates=275.0              │ogpo/global_inserted_rows=1314.0      │
+│ogpo/local_inserted_rows=657.0         │ogpo/pending_actor_updates=0.800       │ogpo/pending_critic_updates=0.800     │
+│ogpo/policy_version=275.0              │ogpo/previous_online_rows=1.14e+04     │ogpo/q_mean=-0.080                    │
+│ogpo/ratio=0.195                       │ogpo/replay_rows=6379.0                │ogpo/success_rows=979.0               │
+│ogpo/td_target_mean=-0.082             │ogpo/total_online_rows=1.28e+04        │ogpo/updates_run=131.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:51<00:00, 471.03s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:51<00:00, 471.03s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 14162/35000 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  40.5%                               │
+│ Elapsed: 02:52:18 │ ETA: 04:13:31 │ Step Time: 0.730s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=492.0       │actor/actor/sync_model_to_rollout=2.009│actor/run_training=1727.4             │
+│cal_adv_and_returns=0.0026             │env/compute_bootstrap_rewards=0.0021   │env/env/bootstrap_step=29.857         │
+│env/env/send_rollout_trajectories=1.054│env/env_interact_step=453.8            │env/env_interact_step_ogpo=453.7      │
+│env/interact=490.9                     │env/run_interact_once=490.5            │generate_rollouts=492.1               │
+│rollout/generate_one_epoch=489.6       │rollout/predict=4.805                  │rollout/rollout/generate=489.6        │
+│step=2222.5                            │sync_weights=2.979                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.25                           │
+│reward=0.00125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1404.0       │ogpo/local_inserted_rows=702.0         │ogpo/previous_online_rows=1.28e+04    │
+│ogpo/replay_rows=7081.0                │ogpo/success_rows=1081.0               │ogpo/total_online_rows=1.42e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.242             │ogpo/actor_loss=1.67e-04               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=416.0               │ogpo/bc_loss=0.040                     │ogpo/critic_grad_norm=0.700           │
+│ogpo/critic_loss=0.013                 │ogpo/critic_updates=416.0              │ogpo/global_inserted_rows=1404.0      │
+│ogpo/local_inserted_rows=702.0         │ogpo/pending_actor_updates=0.200       │ogpo/pending_critic_updates=0.200     │
+│ogpo/policy_version=416.0              │ogpo/previous_online_rows=1.28e+04     │ogpo/q_mean=0.0067                    │
+│ogpo/ratio=0.329                       │ogpo/replay_rows=7081.0                │ogpo/success_rows=1081.0              │
+│ogpo/td_target_mean=0.0066             │ogpo/total_online_rows=1.42e+04        │ogpo/updates_run=141.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:33<00:00, 513.10s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:33<00:00, 513.11s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 15664/35000 │ Progress: █████████████████░░░░░░░░░░░░░░░░░░░░░░░ │  44.8%                               │
+│ Elapsed: 03:31:26 │ ETA: 04:21:00 │ Step Time: 0.810s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=515.6       │actor/actor/sync_model_to_rollout=1.627│actor/run_training=1830.0             │
+│cal_adv_and_returns=0.0028             │env/compute_bootstrap_rewards=0.0022   │env/env/bootstrap_step=30.412         │
+│env/env/send_rollout_trajectories=0.869│env/env_interact_step=477.9            │env/env_interact_step_ogpo=477.8      │
+│env/interact=514.4                     │env/run_interact_once=514.0            │generate_rollouts=515.7               │
+│rollout/generate_one_epoch=513.1       │rollout/predict=4.776                  │rollout/rollout/generate=513.1        │
+│step=2348.1                            │sync_weights=2.419                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.125                          │
+│reward=0.000625                        │success_once=0.125                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1502.0       │ogpo/local_inserted_rows=751.0         │ogpo/previous_online_rows=1.42e+04    │
+│ogpo/replay_rows=7832.0                │ogpo/success_rows=1132.0               │ogpo/total_online_rows=1.57e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.218             │ogpo/actor_loss=2.50e-04               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=566.0               │ogpo/bc_loss=0.036                     │ogpo/critic_grad_norm=0.623           │
+│ogpo/critic_loss=0.0099                │ogpo/critic_updates=566.0              │ogpo/global_inserted_rows=1502.0      │
+│ogpo/local_inserted_rows=751.0         │ogpo/pending_actor_updates=0.400       │ogpo/pending_critic_updates=0.400     │
+│ogpo/policy_version=566.0              │ogpo/previous_online_rows=1.42e+04     │ogpo/q_mean=0.054                     │
+│ogpo/ratio=0.575                       │ogpo/replay_rows=7832.0                │ogpo/success_rows=1132.0              │
+│ogpo/td_target_mean=0.054              │ogpo/total_online_rows=1.57e+04        │ogpo/updates_run=150.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:02<00:00, 482.78s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:02<00:00, 482.78s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 17070/35000 │ Progress: ███████████████████░░░░░░░░░░░░░░░░░░░░░ │  48.8%                               │
+│ Elapsed: 04:08:15 │ ETA: 04:20:46 │ Step Time: 0.873s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=485.3       │actor/actor/sync_model_to_rollout=1.600│actor/run_training=1721.3             │
+│cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=29.765         │
+│env/env/send_rollout_trajectories=0.867│env/env_interact_step=447.5            │env/env_interact_step_ogpo=447.4      │
+│env/interact=484.1                     │env/run_interact_once=483.7            │generate_rollouts=485.4               │
+│rollout/generate_one_epoch=482.8       │rollout/predict=4.701                  │rollout/rollout/generate=482.8        │
+│step=2209.0                            │sync_weights=2.324                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.25                           │
+│reward=0.00125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1406.0       │ogpo/local_inserted_rows=703.0         │ogpo/previous_online_rows=1.57e+04    │
+│ogpo/replay_rows=8535.0                │ogpo/success_rows=1235.0               │ogpo/total_online_rows=1.71e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.226             │ogpo/actor_loss=1.75e-04               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=707.0               │ogpo/bc_loss=0.036                     │ogpo/critic_grad_norm=0.601           │
+│ogpo/critic_loss=0.0091                │ogpo/critic_updates=707.0              │ogpo/global_inserted_rows=1406.0      │
+│ogpo/local_inserted_rows=703.0         │ogpo/pending_actor_updates=2.84e-14    │ogpo/pending_critic_updates=2.84e-14  │
+│ogpo/policy_version=707.0              │ogpo/previous_online_rows=1.57e+04     │ogpo/q_mean=0.065                     │
+│ogpo/ratio=0.745                       │ogpo/replay_rows=8535.0                │ogpo/success_rows=1235.0              │
+│ogpo/td_target_mean=0.064              │ogpo/total_online_rows=1.71e+04        │ogpo/updates_run=141.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:04<00:00, 484.76s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:04<00:00, 484.76s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 18481/35000 │ Progress: █████████████████████░░░░░░░░░░░░░░░░░░░ │  52.8%                               │
+│ Elapsed: 04:45:11 │ ETA: 04:14:55 │ Step Time: 0.926s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=487.2       │actor/actor/sync_model_to_rollout=1.600│actor/run_training=1726.6             │
+│cal_adv_and_returns=0.0027             │env/compute_bootstrap_rewards=0.0025   │env/env/bootstrap_step=30.183         │
+│env/env/send_rollout_trajectories=0.850│env/env_interact_step=449.1            │env/env_interact_step_ogpo=449.0      │
+│env/interact=486.1                     │env/run_interact_once=485.7            │generate_rollouts=487.3               │
+│rollout/generate_one_epoch=484.8       │rollout/predict=5.015                  │rollout/rollout/generate=484.8        │
+│step=2216.2                            │sync_weights=2.318                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.25                           │
+│reward=0.00125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1411.0       │ogpo/local_inserted_rows=705.5         │ogpo/previous_online_rows=1.71e+04    │
+│ogpo/replay_rows=9240.5                │ogpo/success_rows=1340.5               │ogpo/total_online_rows=1.85e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.210             │ogpo/actor_loss=9.97e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=848.0               │ogpo/bc_loss=0.033                     │ogpo/critic_grad_norm=0.676           │
+│ogpo/critic_loss=0.0090                │ogpo/critic_updates=848.0              │ogpo/global_inserted_rows=1411.0      │
+│ogpo/local_inserted_rows=705.5         │ogpo/pending_actor_updates=0.100       │ogpo/pending_critic_updates=0.100     │
+│ogpo/policy_version=848.0              │ogpo/previous_online_rows=1.71e+04     │ogpo/q_mean=0.054                     │
+│ogpo/ratio=0.830                       │ogpo/replay_rows=9240.5                │ogpo/success_rows=1340.5              │
+│ogpo/td_target_mean=0.054              │ogpo/total_online_rows=1.85e+04        │ogpo/updates_run=141.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:17<00:00, 497.94s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:17<00:00, 497.94s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:   0%|          | 0/5 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  20%|██        | 1/5 [00:55<03:40, 55.24s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  40%|████      | 2/5 [01:44<02:34, 51.58s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  60%|██████    | 3/5 [02:33<01:40, 50.38s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs:  80%|████████  | 4/5 [03:21<00:49, 49.65s/it]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Evaluating Rollout Epochs: 100%|██████████| 5/5 [04:16<00:00, 51.57s/it]Evaluating Rollout Epochs: 100%|██████████| 5/5 [04:16<00:00, 51.34s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 20081/35000 │ Progress: ██████████████████████░░░░░░░░░░░░░░░░░░ │  57.4%                               │
+│ Elapsed: 05:30:52 │ ETA: 04:05:48 │ Step Time: 0.989s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=509.3       │actor/actor/sync_model_to_rollout=3.069│actor/run_training=1954.8             │
+│cal_adv_and_returns=0.0033             │env/compute_bootstrap_rewards=0.0024   │env/env/bootstrap_step=30.127         │
+│env/env/send_rollout_trajectories=0.857│env/env_interact_step=470.5            │env/env_interact_step_ogpo=470.5      │
+│env/interact=508.2                     │env/run_interact_once=507.8            │eval=273.7                            │
+│generate_rollouts=509.4                │rollout/generate_one_epoch=506.9       │rollout/predict=25.126                │
+│rollout/rollout/generate=506.9         │step=2740.2                            │sync_weights=2.281                    │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_once=0.0                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1600.0       │ogpo/local_inserted_rows=800.0         │ogpo/previous_online_rows=1.85e+04    │
+│ogpo/replay_rows=1.00e+04              │ogpo/success_rows=1340.5               │ogpo/total_online_rows=2.01e+04       │
+│                                                                                                                      │
+├───────────────────────────────────────────────────── Evaluation ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=20                    │return=0.35                           │
+│reward=0.0017499998                    │success_at_end=0.35                    │success_once=0.35                     │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.198             │ogpo/actor_loss=6.81e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1008.0              │ogpo/bc_loss=0.031                     │ogpo/critic_grad_norm=0.723           │
+│ogpo/critic_loss=0.011                 │ogpo/critic_updates=1008.0             │ogpo/global_inserted_rows=1600.0      │
+│ogpo/local_inserted_rows=800.0         │ogpo/pending_actor_updates=0.100       │ogpo/pending_critic_updates=0.100     │
+│ogpo/policy_version=1008.0             │ogpo/previous_online_rows=1.85e+04     │ogpo/q_mean=0.020                     │
+│ogpo/ratio=0.880                       │ogpo/replay_rows=1.00e+04              │ogpo/success_rows=1340.5              │
+│ogpo/td_target_mean=0.022              │ogpo/total_online_rows=2.01e+04        │ogpo/updates_run=160.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:46<00:00, 466.93s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:46<00:00, 466.93s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 21323/35000 │ Progress: ████████████████████████░░░░░░░░░░░░░░░░ │  60.9%                               │
+│ Elapsed: 06:03:59 │ ETA: 03:53:28 │ Step Time: 1.024s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=469.6       │actor/actor/sync_model_to_rollout=0.483│actor/run_training=1516.9             │
+│cal_adv_and_returns=0.0093             │env/compute_bootstrap_rewards=0.0024   │env/env/bootstrap_step=31.154         │
+│env/env/send_rollout_trajectories=0.881│env/env_interact_step=430.1            │env/env_interact_step_ogpo=430.0      │
+│env/interact=468.2                     │env/run_interact_once=467.8            │generate_rollouts=469.8               │
+│rollout/generate_one_epoch=466.9       │rollout/predict=4.761                  │rollout/rollout/generate=466.9        │
+│step=1987.6                            │sync_weights=0.917                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.5                            │
+│reward=0.0025                          │success_once=0.5                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1242.0       │ogpo/local_inserted_rows=621.0         │ogpo/previous_online_rows=2.01e+04    │
+│ogpo/replay_rows=1.07e+04              │ogpo/success_rows=1561.5               │ogpo/total_online_rows=2.13e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.206             │ogpo/actor_loss=5.94e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1132.0              │ogpo/bc_loss=0.030                     │ogpo/critic_grad_norm=0.602           │
+│ogpo/critic_loss=0.0097                │ogpo/critic_updates=1132.0             │ogpo/global_inserted_rows=1242.0      │
+│ogpo/local_inserted_rows=621.0         │ogpo/pending_actor_updates=0.300       │ogpo/pending_critic_updates=0.300     │
+│ogpo/policy_version=1132.0             │ogpo/previous_online_rows=2.01e+04     │ogpo/q_mean=0.0094                    │
+│ogpo/ratio=0.893                       │ogpo/replay_rows=1.07e+04              │ogpo/success_rows=1561.5              │
+│ogpo/td_target_mean=0.0086             │ogpo/total_online_rows=2.13e+04        │ogpo/updates_run=124.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:55<00:00, 475.49s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:55<00:00, 475.49s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 22742/35000 │ Progress: █████████████████████████░░░░░░░░░░░░░░░ │  65.0%                               │
+│ Elapsed: 06:40:55 │ ETA: 03:36:06 │ Step Time: 1.058s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=477.9       │actor/actor/sync_model_to_rollout=1.467│actor/run_training=1735.9             │
+│cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=30.500         │
+│env/env/send_rollout_trajectories=0.848│env/env_interact_step=439.2            │env/env_interact_step_ogpo=439.1      │
+│env/interact=476.8                     │env/run_interact_once=476.4            │generate_rollouts=478.0               │
+│rollout/generate_one_epoch=475.5       │rollout/predict=4.845                  │rollout/rollout/generate=475.5        │
+│step=2216.0                            │sync_weights=2.133                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.25                           │
+│reward=0.00125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1419.0       │ogpo/local_inserted_rows=709.5         │ogpo/previous_online_rows=2.13e+04    │
+│ogpo/replay_rows=1.14e+04              │ogpo/success_rows=1671.0               │ogpo/total_online_rows=2.27e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.207             │ogpo/actor_loss=5.30e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1274.0              │ogpo/bc_loss=0.031                     │ogpo/critic_grad_norm=0.556           │
+│ogpo/critic_loss=0.010                 │ogpo/critic_updates=1274.0             │ogpo/global_inserted_rows=1419.0      │
+│ogpo/local_inserted_rows=709.5         │ogpo/pending_actor_updates=0.200       │ogpo/pending_critic_updates=0.200     │
+│ogpo/policy_version=1274.0             │ogpo/previous_online_rows=2.13e+04     │ogpo/q_mean=0.018                     │
+│ogpo/ratio=0.908                       │ogpo/replay_rows=1.14e+04              │ogpo/success_rows=1671.0              │
+│ogpo/td_target_mean=0.018              │ogpo/total_online_rows=2.27e+04        │ogpo/updates_run=142.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:43<00:00, 463.00s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:43<00:00, 463.00s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 24079/35000 │ Progress: ███████████████████████████░░░░░░░░░░░░░ │  68.8%                               │
+│ Elapsed: 07:15:52 │ ETA: 03:17:41 │ Step Time: 1.086s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=465.4       │actor/actor/sync_model_to_rollout=1.467│actor/run_training=1628.6             │
+│cal_adv_and_returns=0.0034             │env/compute_bootstrap_rewards=0.0022   │env/env/bootstrap_step=29.586         │
+│env/env/send_rollout_trajectories=0.838│env/env_interact_step=427.8            │env/env_interact_step_ogpo=427.7      │
+│env/interact=464.3                     │env/run_interact_once=463.9            │generate_rollouts=465.5               │
+│rollout/generate_one_epoch=463.0       │rollout/predict=4.882                  │rollout/rollout/generate=463.0        │
+│step=2096.3                            │sync_weights=2.164                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1337.0       │ogpo/local_inserted_rows=668.5         │ogpo/previous_online_rows=2.27e+04    │
+│ogpo/replay_rows=1.20e+04              │ogpo/success_rows=1839.5               │ogpo/total_online_rows=2.41e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.206             │ogpo/actor_loss=5.16e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1407.0              │ogpo/bc_loss=0.029                     │ogpo/critic_grad_norm=0.607           │
+│ogpo/critic_loss=0.011                 │ogpo/critic_updates=1407.0             │ogpo/global_inserted_rows=1337.0      │
+│ogpo/local_inserted_rows=668.5         │ogpo/pending_actor_updates=0.900       │ogpo/pending_critic_updates=0.900     │
+│ogpo/policy_version=1407.0             │ogpo/previous_online_rows=2.27e+04     │ogpo/q_mean=0.020                     │
+│ogpo/ratio=0.912                       │ogpo/replay_rows=1.20e+04              │ogpo/success_rows=1839.5              │
+│ogpo/td_target_mean=0.020              │ogpo/total_online_rows=2.41e+04        │ogpo/updates_run=133.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:42<00:00, 462.09s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:42<00:00, 462.09s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 25333/35000 │ Progress: ████████████████████████████░░░░░░░░░░░░ │  72.4%                               │
+│ Elapsed: 07:49:25 │ ETA: 02:59:07 │ Step Time: 1.112s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=464.5       │actor/actor/sync_model_to_rollout=1.462│actor/run_training=1546.6             │
+│cal_adv_and_returns=0.0029             │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=29.812         │
+│env/env/send_rollout_trajectories=0.856│env/env_interact_step=426.5            │env/env_interact_step_ogpo=426.4      │
+│env/interact=463.4                     │env/run_interact_once=463.0            │generate_rollouts=464.6               │
+│rollout/generate_one_epoch=462.1       │rollout/predict=4.955                  │rollout/rollout/generate=462.1        │
+│step=2013.3                            │sync_weights=2.152                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.5                            │
+│reward=0.0025                          │success_once=0.5                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1254.0       │ogpo/local_inserted_rows=627.0         │ogpo/previous_online_rows=2.41e+04    │
+│ogpo/replay_rows=1.27e+04              │ogpo/success_rows=2066.5               │ogpo/total_online_rows=2.53e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.212             │ogpo/actor_loss=4.62e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1533.0              │ogpo/bc_loss=0.029                     │ogpo/critic_grad_norm=0.638           │
+│ogpo/critic_loss=0.012                 │ogpo/critic_updates=1533.0             │ogpo/global_inserted_rows=1254.0      │
+│ogpo/local_inserted_rows=627.0         │ogpo/pending_actor_updates=0.300       │ogpo/pending_critic_updates=0.300     │
+│ogpo/policy_version=1533.0             │ogpo/previous_online_rows=2.41e+04     │ogpo/q_mean=0.0013                    │
+│ogpo/ratio=0.914                       │ogpo/replay_rows=1.27e+04              │ogpo/success_rows=2066.5              │
+│ogpo/td_target_mean=0.0022             │ogpo/total_online_rows=2.53e+04        │ogpo/updates_run=126.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:42<00:00, 462.03s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:42<00:00, 462.03s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 26769/35000 │ Progress: ██████████████████████████████░░░░░░░░░░ │  76.5%                               │
+│ Elapsed: 08:27:20 │ ETA: 02:36:00 │ Step Time: 1.137s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=523.2       │actor/actor/sync_model_to_rollout=1.491│actor/run_training=1749.9             │
+│cal_adv_and_returns=0.0035             │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=30.438         │
+│env/env/send_rollout_trajectories=0.850│env/env_interact_step=484.2            │env/env_interact_step_ogpo=484.1      │
+│env/interact=522.0                     │env/run_interact_once=521.6            │generate_rollouts=523.4               │
+│rollout/generate_one_epoch=520.8       │rollout/predict=5.199                  │rollout/rollout/generate=520.8        │
+│step=2275.5                            │sync_weights=2.176                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.25                           │
+│reward=0.00125                         │success_once=0.25                      │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1436.0       │ogpo/local_inserted_rows=718.0         │ogpo/previous_online_rows=2.53e+04    │
+│ogpo/replay_rows=1.34e+04              │ogpo/success_rows=2184.5               │ogpo/total_online_rows=2.68e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.197             │ogpo/actor_loss=3.91e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1676.0              │ogpo/bc_loss=0.027                     │ogpo/critic_grad_norm=0.574           │
+│ogpo/critic_loss=0.011                 │ogpo/critic_updates=1676.0             │ogpo/global_inserted_rows=1436.0      │
+│ogpo/local_inserted_rows=718.0         │ogpo/pending_actor_updates=0.900       │ogpo/pending_critic_updates=0.900     │
+│ogpo/policy_version=1676.0             │ogpo/previous_online_rows=2.53e+04     │ogpo/q_mean=2.12e-04                  │
+│ogpo/ratio=0.928                       │ogpo/replay_rows=1.34e+04              │ogpo/success_rows=2184.5              │
+│ogpo/td_target_mean=2.05e-04           │ogpo/total_online_rows=2.68e+04        │ogpo/updates_run=143.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:20<00:00, 440.52s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:20<00:00, 440.52s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 28054/35000 │ Progress: ████████████████████████████████░░░░░░░░ │  80.2%                               │
+│ Elapsed: 09:01:47 │ ETA: 02:14:08 │ Step Time: 1.159s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=485.3       │actor/actor/sync_model_to_rollout=1.414│actor/run_training=1579.3             │
+│cal_adv_and_returns=0.0028             │env/compute_bootstrap_rewards=0.0022   │env/env/bootstrap_step=29.914         │
+│env/env/send_rollout_trajectories=0.837│env/env_interact_step=446.7            │env/env_interact_step_ogpo=446.6      │
+│env/interact=484.1                     │env/run_interact_once=483.7            │generate_rollouts=485.4               │
+│rollout/generate_one_epoch=482.8       │rollout/predict=5.068                  │rollout/rollout/generate=482.8        │
+│step=2066.8                            │sync_weights=2.095                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.5                            │
+│reward=0.0025                          │success_once=0.5                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1285.0       │ogpo/local_inserted_rows=642.5         │ogpo/previous_online_rows=2.68e+04    │
+│ogpo/replay_rows=1.40e+04              │ogpo/success_rows=2427.0               │ogpo/total_online_rows=2.81e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.204             │ogpo/actor_loss=4.11e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1805.0              │ogpo/bc_loss=0.027                     │ogpo/critic_grad_norm=0.565           │
+│ogpo/critic_loss=0.013                 │ogpo/critic_updates=1805.0             │ogpo/global_inserted_rows=1285.0      │
+│ogpo/local_inserted_rows=642.5         │ogpo/pending_actor_updates=0.400       │ogpo/pending_critic_updates=0.400     │
+│ogpo/policy_version=1805.0             │ogpo/previous_online_rows=2.68e+04     │ogpo/q_mean=-0.0028                   │
+│ogpo/ratio=0.926                       │ogpo/replay_rows=1.40e+04              │ogpo/success_rows=2427.0              │
+│ogpo/td_target_mean=-0.0022            │ogpo/total_online_rows=2.81e+04        │ogpo/updates_run=129.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:48<00:00, 468.32s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:48<00:00, 468.32s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 29394/35000 │ Progress: █████████████████████████████████░░░░░░░ │  84.0%                               │
+│ Elapsed: 09:37:33 │ ETA: 01:50:09 │ Step Time: 1.179s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=470.9       │actor/actor/sync_model_to_rollout=1.352│actor/run_training=1673.1             │
+│cal_adv_and_returns=0.017              │env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=30.201         │
+│env/env/send_rollout_trajectories=0.877│env/env_interact_step=432.6            │env/env_interact_step_ogpo=432.5      │
+│env/interact=469.7                     │env/run_interact_once=469.2            │generate_rollouts=471.0               │
+│rollout/generate_one_epoch=468.3       │rollout/predict=4.845                  │rollout/rollout/generate=468.3        │
+│step=2146.1                            │sync_weights=2.012                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1340.0       │ogpo/local_inserted_rows=670.0         │ogpo/previous_online_rows=2.81e+04    │
+│ogpo/replay_rows=1.47e+04              │ogpo/success_rows=2597.0               │ogpo/total_online_rows=2.94e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.203             │ogpo/actor_loss=4.73e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=1939.0              │ogpo/bc_loss=0.027                     │ogpo/critic_grad_norm=0.489           │
+│ogpo/critic_loss=0.011                 │ogpo/critic_updates=1939.0             │ogpo/global_inserted_rows=1340.0      │
+│ogpo/local_inserted_rows=670.0         │ogpo/pending_actor_updates=0.400       │ogpo/pending_critic_updates=0.400     │
+│ogpo/policy_version=1939.0             │ogpo/previous_online_rows=2.81e+04     │ogpo/q_mean=0.020                     │
+│ogpo/ratio=0.932                       │ogpo/replay_rows=1.47e+04              │ogpo/success_rows=2597.0              │
+│ogpo/td_target_mean=0.020              │ogpo/total_online_rows=2.94e+04        │ogpo/updates_run=134.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [07:35<00:00, 455.63s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [07:35<00:00, 455.63s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step: 30730/35000 │ Progress: ███████████████████████████████████░░░░░ │  87.8%                               │
+│ Elapsed: 10:13:44 │ ETA: 01:25:16 │ Step Time: 1.198s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/recv_ogpo_traj=492.6       │actor/actor/sync_model_to_rollout=1.382│actor/run_training=1675.6             │
+│cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0032   │env/env/bootstrap_step=30.041         │
+│env/env/send_rollout_trajectories=0.869│env/env_interact_step=454.8            │env/env_interact_step_ogpo=454.8      │
+│env/interact=491.5                     │env/run_interact_once=491.1            │generate_rollouts=492.7               │
+│rollout/generate_one_epoch=490.2       │rollout/predict=5.025                  │rollout/rollout/generate=490.2        │
+│step=2170.4                            │sync_weights=2.063                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=0.375                          │
+│reward=0.001875                        │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/global_inserted_rows=1336.0       │ogpo/local_inserted_rows=668.0         │ogpo/previous_online_rows=2.94e+04    │
+│ogpo/replay_rows=1.54e+04              │ogpo/success_rows=2765.0               │ogpo/total_online_rows=3.07e+04       │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│ogpo/actor_grad_norm=0.203             │ogpo/actor_loss=3.96e-05               │ogpo/actor_lr=5.60e-06                │
+│ogpo/actor_updates=2073.0              │ogpo/bc_loss=0.027                     │ogpo/critic_grad_norm=0.602           │
+│ogpo/critic_loss=0.011                 │ogpo/critic_updates=2073.0             │ogpo/global_inserted_rows=1336.0      │
+│ogpo/local_inserted_rows=668.0         │ogpo/pending_actor_updates=5.68e-14    │ogpo/pending_critic_updates=5.68e-14  │
+│ogpo/policy_version=2073.0             │ogpo/previous_online_rows=2.94e+04     │ogpo/q_mean=0.030                     │
+│ogpo/ratio=0.937                       │ogpo/replay_rows=1.54e+04              │ogpo/success_rows=2765.0              │
+│ogpo/td_target_mean=0.030              │ogpo/total_online_rows=3.07e+04        │ogpo/updates_run=134.0                │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=108015)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [08:02<00:00, 482.31s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [08:02<00:00, 482.31s/it]

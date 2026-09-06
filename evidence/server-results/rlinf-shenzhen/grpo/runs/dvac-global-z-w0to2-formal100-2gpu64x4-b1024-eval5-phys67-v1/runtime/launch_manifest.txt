@@ -1,0 +1,9 @@
+started_at=2026-08-26T11:18:15+08:00
+source_head=0e28ac6f09f821ea12e7d54eba7118ce0000ca86
+physical_gpus=6,7
+method=apply
+fresh_start=true; target_step=100
+train=64 env x 4 epochs = 256 trajectories/step; G8; max 1024 chunk records/step
+actor=GB1024/MB32/update2; 512 records/rank; 2 optimizer calls/step
+eval=fixed64 as 64 env x 1 wave every5; checkpoint every10
+normal_stop=complete step100; hard_timeout=216000s

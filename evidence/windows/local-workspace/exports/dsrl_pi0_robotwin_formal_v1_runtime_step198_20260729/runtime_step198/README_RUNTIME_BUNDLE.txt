@@ -1,0 +1,13 @@
+DSRL pi0 RoboTwin formal v1 runtime bundle
+created_at=2026-07-29 10:53:37 CST
+run_root=/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1
+last_completed_cycle=198
+tensorboard_metrics_last_flushed_cycle=197
+resume_checkpoint=/root/autodl-tmp/RLinf_fastwam_rlinf/logs/20260728_dsrl_pi0_robotwin_n20_formal_v1/robotwin_adjust_bottle_dsrl_openpi_a800_2gpu_formal_v1/checkpoints/global_step_195
+resume_checkpoint_note=step 196-198 metrics are preserved but their parameter updates are not in DCP195
+checkpoint_payloads_in_archive=no
+checkpoint_payloads_server_side=yes
+repo=/root/autodl-tmp/RLinf_fastwam_rlinf
+branch=codex/dsrl-pi0-robotwin
+head=acc7c14b93aec8eb2f2e8f32e4072be3957b761b
+upstream=acc7c14b93aec8eb2f2e8f32e4072be3957b761b

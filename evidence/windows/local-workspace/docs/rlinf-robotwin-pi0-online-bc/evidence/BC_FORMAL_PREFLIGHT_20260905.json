@@ -1,0 +1,395 @@
+{
+  "time": "2026-09-05T11:53:55.364631+08:00",
+  "runs": {
+    "bc": {
+      "started_at.txt": "2026-09-05T03:38:54+00:00",
+      "exit_code.txt": "255",
+      "finished_at.txt": "2026-09-05T03:48:05+00:00",
+      "progress": [
+        "Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]",
+        "Generating Rollout Epochs: 100%|██████████| 1/1 [05:42<00:00, 342.26s/it]",
+        "Generating Rollout Epochs: 100%|██████████| 1/1 [05:42<00:00, 342.26s/it]"
+      ],
+      "errors": {
+        "CUDA out of memory": 0,
+        "OutOfMemoryError": 0,
+        "Fatal Python error": 0,
+        "RuntimeError:": 0,
+        "Traceback": 0,
+        "OIDN Error": 0,
+        "pthread_key_create failed": 0
+      },
+      "tail": [
+        "    return _common_unshard_post_state_dict_hook(",
+        "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py\", line 223, in _common_unshard_post_state_dict_hook",
+        "    raise AssertionError(",
+        "AssertionError: FSDP assumes paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.layer_norm1.weight is in the state_dict but the state_dict only has odict_keys(['paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.position_embedding.weight', 'paligemma_with_expert.paligemma.model.language_model.embed_tokens.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.0.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.1.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.2.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.3.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.4.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.5.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.6.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.7.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.8.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.9.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.10.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.11.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.12.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.13.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.14.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.15.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.16.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.self_attn.q_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.self_attn.k_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.self_attn.v_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.self_attn.o_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.mlp.gate_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.mlp.up_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.mlp.down_proj.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.input_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.layers.17.post_attention_layernorm.weight', 'paligemma_with_expert.paligemma.model.language_model.norm.weight', 'paligemma_with_expert.paligemma.lm_head.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.0.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.1.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.2.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.3.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.4.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.5.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.6.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.7.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.8.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.9.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.10.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.11.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.12.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.13.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.14.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.15.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.16.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.self_attn.k_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.self_attn.o_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.mlp.gate_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.mlp.up_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.mlp.down_proj.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.input_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.layers.17.post_attention_layernorm.weight', 'paligemma_with_expert.gemma_expert.model.norm.weight', 'paligemma_with_expert.gemma_expert.lm_head.weight', 'action_in_proj.weight', 'action_in_proj.bias', 'action_out_proj.weight', 'action_out_proj.bias', 'state_proj.weight', 'state_proj.bias', 'action_time_mlp_in.weight', 'action_time_mlp_in.bias', 'action_time_mlp_out.weight', 'action_time_mlp_out.bias']). prefix=, module_name=paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.layer_norm1., param_name=weight rank=0.",
+        "Exception occurred while running MultiStepRolloutWorker's function sync_model_from_actor: exception is The actor died unexpectedly before finishing this task.",
+        "\tclass_name: MultiStepRolloutWorker",
+        "\tactor_id: 003ef13e1ccdd8b86e4ac4a6c7010000",
+        "\tpid: 396214",
+        "\tname: RolloutGroup:0",
+        "\tnamespace: RLinf_1",
+        "\tip: 172.17.0.1",
+        "The actor is dead because it was killed by `ray.kill`.",
+        "Exiting main process due to a failure upon worker execution."
+      ],
+      "scalars": {},
+      "checkpoints": [],
+      "resource": {
+        "sampled_peak_gpu_mib": 61577,
+        "min_host_available_gib": 1047.546371459961,
+        "max_memory_psi": 0.0,
+        "latest": {
+          "timestamp": "2026-09-05T03:48:09.944832+00:00",
+          "wrapper_alive": "0",
+          "host_mem_available_kib": "1158766472",
+          "swap_free_kib": "436",
+          "mem_psi_some_avg10": "0.00",
+          "gpu6_used_mib": "8",
+          "gpu6_util_pct": "0",
+          "gpu6_temp_c": "48"
+        }
+      },
+      "archives": [
+        {
+          "path": "success_data/rank_0/batch_000000.pt",
+          "bytes": 54857511
+        }
+      ]
+    },
+    "sidney": {
+      "started_at.txt": "2026-09-03T12:23:41+00:00",
+      "exit_code.txt": null,
+      "finished_at.txt": null,
+      "progress": [
+        "Generating Rollout Epochs: 100%|██████████| 4/4 [19:53<00:00, 300.72s/it]",
+        "Generating Rollout Epochs: 100%|██████████| 4/4 [19:53<00:00, 298.48s/it]",
+        "│ Global Step:   97/100 │ Progress: ██████████████████████████████████████░░ │  97.0%                                  │",
+        "Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]",
+        "Generating Rollout Epochs:  25%|██▌       | 1/4 [05:20<16:01, 320.60s/it]"
+      ],
+      "errors": {
+        "CUDA out of memory": 0,
+        "OutOfMemoryError": 0,
+        "Fatal Python error": 0,
+        "RuntimeError:": 0,
+        "Traceback": 0,
+        "OIDN Error": 0,
+        "pthread_key_create failed": 0
+      },
+      "tail": [
+        "│                                                                                                                      │",
+        "├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤",
+        "│                                                                                                                      │",
+        "│actor/approx_kl=0.017                  │actor/clip_fraction=0.056              │actor/clipped_ratio=0.997             │",
+        "│actor/dual_cliped_ratio=0.0000         │actor/entropy_loss=0.0000              │actor/grad_norm=23.194                │",
+        "│actor/lr=5.00e-06                      │actor/policy_loss=4.69e-04             │actor/policy_loss_abs=0.626           │",
+        "│actor/ratio=1.002                      │actor/ratio_abs=0.067                  │actor/total_loss=2.93e-05             │",
+        "│                                                                                                                      │",
+        "╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯",
+        "",
+        "(RolloutGroup(rank=0) pid=3177202) ",
+        "Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]",
+        "(RolloutGroup(rank=0) pid=3177202) ",
+        "Generating Rollout Epochs:  25%|██▌       | 1/4 [05:20<16:01, 320.60s/it]"
+      ],
+      "scalars": {
+        "env/success_once": [
+          {
+            "step": 92,
+            "value": 0.6953125
+          },
+          {
+            "step": 93,
+            "value": 0.73046875
+          },
+          {
+            "step": 94,
+            "value": 0.734375
+          },
+          {
+            "step": 95,
+            "value": 0.65234375
+          },
+          {
+            "step": 96,
+            "value": 0.65625
+          }
+        ],
+        "time/step": [
+          {
+            "step": 92,
+            "value": 1407.098876953125
+          },
+          {
+            "step": 93,
+            "value": 1404.5108642578125
+          },
+          {
+            "step": 94,
+            "value": 1717.22998046875
+          },
+          {
+            "step": 95,
+            "value": 1449.9959716796875
+          },
+          {
+            "step": 96,
+            "value": 1245.9464111328125
+          }
+        ],
+        "train/actor/grad_norm": [
+          {
+            "step": 92,
+            "value": 19.37305450439453
+          },
+          {
+            "step": 93,
+            "value": 21.794105529785156
+          },
+          {
+            "step": 94,
+            "value": 15.757522583007812
+          },
+          {
+            "step": 95,
+            "value": 19.71027374267578
+          },
+          {
+            "step": 96,
+            "value": 23.19413948059082
+          }
+        ],
+        "train/actor/lr": [
+          {
+            "step": 92,
+            "value": 4.999999873689376e-06
+          },
+          {
+            "step": 93,
+            "value": 4.999999873689376e-06
+          },
+          {
+            "step": 94,
+            "value": 4.999999873689376e-06
+          },
+          {
+            "step": 95,
+            "value": 4.999999873689376e-06
+          },
+          {
+            "step": 96,
+            "value": 4.999999873689376e-06
+          }
+        ],
+        "eval/success_at_end": [
+          {
+            "step": 74,
+            "value": 0.65625
+          },
+          {
+            "step": 79,
+            "value": 0.6875
+          },
+          {
+            "step": 84,
+            "value": 0.75
+          },
+          {
+            "step": 89,
+            "value": 0.65625
+          },
+          {
+            "step": 94,
+            "value": 0.6875
+          }
+        ],
+        "eval/success_once": [
+          {
+            "step": 74,
+            "value": 0.65625
+          },
+          {
+            "step": 79,
+            "value": 0.6875
+          },
+          {
+            "step": 84,
+            "value": 0.75
+          },
+          {
+            "step": 89,
+            "value": 0.65625
+          },
+          {
+            "step": 94,
+            "value": 0.6875
+          }
+        ]
+      },
+      "checkpoints": [
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_70",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_40",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_20",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_30",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_60",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_80",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_90",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_10",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        },
+        {
+          "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_50",
+          "files": [
+            {
+              "path": "actor/model_state_dict/full_weights.pt",
+              "bytes": 8526574644
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+              "bytes": 10150817963
+            },
+            {
+              "path": "actor/local_shard_checkpoint/checkpoint_rank_1.pt",
+              "bytes": 10150817963
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "gpu": "0, 9828, 0\n1, 4, 0\n2, 4, 0\n3, 6, 0\n4, 68690, 56\n5, 68980, 88\n6, 8, 0\n7, 6, 0",
+  "mem": "total        used        free      shared  buff/cache   available\nMem:           2.0Ti       880Gi       344Gi        25Gi       789Gi       1.1Ti\nSwap:          6.0Gi       6.0Gi       0.0Ki",
+  "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme1n1    3.5T  2.6T  713G  79% /data",
+  "cpu_swap": "procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----\n r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st\n14  0 6262292 361741280 2826476 825147776    0    0     9    31    0    0  3  2 95  0  0\n10  0 6262292 363148192 2826480 825148672    0    0     0  1512 69458 185640  5  2 93  0  0",
+  "preserved_processes": "USER         PID     ELAPSED STAT COMMAND\nchenyit+  321933 12-11:26:06 Sl   gcs_server\nchenyit+  322685 12-11:26:04 Sl   raylet\nchenyit+ 3176215  1-15:30:18 Sl   python",
+  "bc_git": ""
+}

@@ -1,0 +1,65 @@
+env_type: robotwin
+total_num_envs: null
+
+auto_reset: false
+ignore_terminations: false
+reward_coef: 1.0
+use_custom_reward: true
+use_rel_reward: true
+center_crop: false
+seed: 0
+group_size: 1
+use_fixed_reset_state_ids: false
+max_steps_per_rollout_epoch: 192
+max_episode_steps: 192
+is_eval: false
+
+assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+
+video_cfg:
+  save_video: false
+  info_on_video: true
+  video_base_dir: ${runner.logger.log_path}/video/train
+
+enable_offload: false
+
+task_config:
+  task_name: move_stapler_pad
+  step_lim: 192
+  planner_backend: mplib
+  render_freq: 0
+  episode_num: 100
+  use_seed: false
+  save_freq: 15
+  embodiment: [aloha-agilex]
+  language_num: 100
+  domain_randomization:
+    random_background: false
+    cluttered_table: false
+    clean_background_rate: 1
+    random_head_camera_dis: 0
+    random_table_height: 0
+    random_light: false
+    crazy_random_light_rate: 0
+  camera:
+    head_camera_type: D435
+    wrist_camera_type: D435
+    collect_head_camera: true
+    collect_wrist_camera: true
+  data_type:
+    rgb: true
+    third_view: false
+    depth: false
+    pointcloud: false
+    observer: false
+    endpose: false
+    qpos: true
+    mesh_segmentation: false
+    actor_segmentation: false
+  pcd_down_sample_num: 1024
+  pcd_crop: true
+  save_path: ${runner.logger.log_path}/robotwin_data/train
+  clear_cache_freq: 1
+  collect_data: true
+  eval_video_log: true

@@ -1,0 +1,21 @@
+diff --git a/envs/_base_task.py b/envs/_base_task.py
+index 79fc885..20dec30 100644
+--- a/envs/_base_task.py
++++ b/envs/_base_task.py
+@@ -89,6 +89,7 @@ class Base_Task(gym.Env):
+         self.file_path = []
+         self.plan_success = True
+         self.fix_gripper = False
++        self.ray_tracing_denoiser = kwags.get("ray_tracing_denoiser", "oidn")
+         self.setup_scene()
+ 
+         self.left_js = None
+@@ -216,7 +217,7 @@ class Base_Task(gym.Env):
+         sapien.render.set_camera_shader_dir("rt")
+         sapien.render.set_ray_tracing_samples_per_pixel(32)
+         sapien.render.set_ray_tracing_path_depth(8)
+-        sapien.render.set_ray_tracing_denoiser("oidn")
++        sapien.render.set_ray_tracing_denoiser(self.ray_tracing_denoiser)
+ 
+         # declare sapien scene
+         scene_config = sapien.SceneConfig()

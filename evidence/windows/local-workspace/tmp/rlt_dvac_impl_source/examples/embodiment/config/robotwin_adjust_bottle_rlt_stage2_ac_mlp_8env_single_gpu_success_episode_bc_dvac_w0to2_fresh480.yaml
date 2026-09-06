@@ -1,0 +1,39 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250
+  - _self_
+
+# Fresh single-GPU RLT run with success-episode self-imitation. A successful
+# episode uses its executed C10 action as the BC target; DVAC only redistributes
+# that BC credit within the chunk. Failed episodes retain the pi0 reference.
+cluster:
+  component_placement:
+    actor, env, rollout: 0
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_success_episode_bc_dvac_w0to2_fresh480_v1"
+  max_steps: 480
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null
+
+algorithm:
+  rlt_dvac:
+    mode: apply
+    application: success_episode_bc
+    l_values: [2, 3, 4]
+    selected_l: 3
+    applied_horizon: ${actor.model.num_action_chunks}
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 0.25
+    success_scale: 1.0
+    raw_trace_interval_updates: 1000
+    raw_trace_queries_per_update: 4
+    output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/rlt_dvac
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}

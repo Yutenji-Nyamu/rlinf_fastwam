@@ -1,0 +1,100 @@
+{
+  "passed": true,
+  "overrides": [
+    "+online_bc_model=pi05_sidney",
+    "+bc_dvac=bounded_half",
+    "runner.max_epochs=100",
+    "runner.val_check_interval=5",
+    "runner.save_interval=10",
+    "actor.optim.total_training_steps=1000",
+    "runner.logger.experiment_name=pi05-pillbottle-bc-dvac-u10-w05to15-formal100-gpu7"
+  ],
+  "changes": {
+    "algorithm.online_bc.data_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/success_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/success_data"
+    },
+    "algorithm.online_bc.dvac.alpha": {
+      "control": null,
+      "dvac": 0.125
+    },
+    "algorithm.online_bc.dvac.enabled": {
+      "control": null,
+      "dvac": true
+    },
+    "algorithm.online_bc.dvac.log_eps": {
+      "control": null,
+      "dvac": 1e-12
+    },
+    "algorithm.online_bc.dvac.std_floor": {
+      "control": null,
+      "dvac": 1e-06
+    },
+    "algorithm.online_bc.dvac.tail_steps": {
+      "control": null,
+      "dvac": 3
+    },
+    "algorithm.online_bc.dvac.window": {
+      "control": null,
+      "dvac": 5
+    },
+    "algorithm.online_bc.dvac.z_clip": {
+      "control": null,
+      "dvac": 2.0
+    },
+    "cluster.component_placement.actor,env,rollout": {
+      "control": "6",
+      "dvac": "7"
+    },
+    "env.eval.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json"
+    },
+    "env.eval.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/robotwin_data"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/video/train"
+    },
+    "env.train.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/robotwin_data"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "control": "pi05-pillbottle-bc-u10-eval8x4-formal100-gpu6",
+      "dvac": "pi05-pillbottle-bc-dvac-u10-w05to15-formal100-gpu7"
+    },
+    "runner.logger.log_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-w05to15-eval8x4-gpu7-formal100-20260905-v1"
+    }
+  },
+  "unchanged_files": {
+    "rlinf/envs/robotwin/seeds/train_seeds.json": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2",
+    "rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e",
+    "rlinf/models/embodiment/openpi/dataconfig/__init__.py": "f4f5378ede25e1963110bdfe80979de3d7d6a84a161163f83e7057cab94bffb0",
+    "rlinf/models/embodiment/openpi/dataconfig/robotwin_aloha_dataconfig.py": "b04ce506f62386dce2a1e21960285fab242d49479e1dcda72ffae3d1163e59f2",
+    "examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml": "6da89a57c9587cfcae4d366d958d2286dd55a1d7513c68e150a71ddc4fa341d2",
+    "examples/embodiment/config/online_bc_model/pi05_sidney.yaml": "4b263320a098106c458cc6764268fe4698e07aa2743972e9dfdbed685be86d19"
+  },
+  "no_smoke": true,
+  "weight_bounds": [
+    0.5,
+    1.5
+  ],
+  "alpha": 0.125,
+  "train_attempts": 3200,
+  "max_optimizer_updates": 1000,
+  "eval_episodes": 640,
+  "checkpoints": 10
+}

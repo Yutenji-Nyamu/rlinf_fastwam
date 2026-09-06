@@ -1,0 +1,98 @@
+2026-09-05T03:02:18+00:00
+wrapper.pid=262234
+timeout.pid=262237
+started_at.txt=2026-09-05T02:52:47+00:00
+exit_code.txt=255
+finished_at.txt=2026-09-05T03:01:04+00:00
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 662, in run_training
+    metrics_data = self.update_one_epoch()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 466, in update_one_epoch
+    return self.update_buffer_one_epoch()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_dagger_policy_worker.py", line 498, in update_buffer_one_epoch
+    actor_loss = self.forward_actor(batch["forward_inputs"])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py", line 89, in forward_actor
+    online_loss = self.model(
+                  ^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/fully_sharded_data_parallel.py", line 857, in forward
+    output = self._fsdp_wrapped_module(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/openpi_action_model.py", line 365, in forward
+    return self.sft_forward(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/openpi_action_model.py", line 409, in sft_forward
+    loss = super().forward(observation, actions)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 318, in forward
+    images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=True)
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py", line 163, in _preprocess_observation
+    observation = _preprocessing.preprocess_observation_pytorch(observation, train=train)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/preprocessing_pytorch.py", line 111, in preprocess_observation_pytorch
+    image = torch.nn.functional.grid_sample(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/functional.py", line 5242, in grid_sample
+    return torch.grid_sampler(input, grid, mode_enum, padding_mode_enum, align_corners)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: expected scalar type BFloat16 but found Float
+Exiting main process due to a failure upon worker execution.
+2026-09-05T03:00:46.392108+00:00,1,1105143896,168740,0.00,56883,0,39
+2026-09-05T03:00:51.543674+00:00,1,1104749056,168964,0.00,56883,99,42
+2026-09-05T03:00:56.677072+00:00,1,1100435000,169092,0.00,56883,9,38
+2026-09-05T03:01:03.300488+00:00,1,1147300780,169180,0.00,8,0,38
+2026-09-05T03:01:08.435983+00:00,0,1158001008,169180,0.00,8,0,36
+0, 9828, 0
+1, 4, 0
+2, 4, 0
+3, 6, 0
+4, 52644, 0
+5, 53742, 0
+6, 8, 0
+7, 6, 0
+               total        used        free      shared  buff/cache   available
+Mem:           2.0Ti       874Gi       381Gi        25Gi       759Gi       1.1Ti
+Swap:          6.0Gi       5.8Gi       165Mi
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1    3.5T  2.6T  732G  79% /data
+USER                 PID    PPID     ELAPSED %CPU   RSS COMMAND
+chenyiteng        321933  321906 12-10:34:25  3.4 2206132 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs --config_list=eyJhdXRvbWF0aWNfb2JqZWN0X3NwaWxsaW5nX2VuYWJsZWQiOiB0cnVlLCAib2JqZWN0X3NwaWxsaW5nX2NvbmZpZyI6ICJ7XCJ0eXBlXCI6IFwiZmlsZXN5c3RlbVwiLCBcInBhcmFtc1wiOiB7XCJkaXJlY3RvcnlfcGF0aFwiOiBcIi9kYXRhL2NoZW55aXRlbmcvcmF5L3JsdC1kc3JsLXYzL3Nlc3Npb25fMjAyNi0wOC0yM18xNi0yNy01M185MTExNjFfMzIxOTA2X
+chenyiteng        322685  321906 12-10:34:23  1.6 69632 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet --raylet_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/raylet --store_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/plasma_store --object_manager_port=0 --min_worker_port=10002 --max_worker_port=19999 --node_manager_port=0 --node_id=2730f38e60da6b4c0f68d8779893624a0917240589c544541c894
+chenyiteng       3176215 3176214  1-14:38:37  0.6 1047156 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_openpi_pi05_sidney cluster.component_placement={actor\, env\, rollout:"4,5"} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-si

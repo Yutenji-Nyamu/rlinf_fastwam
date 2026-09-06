@@ -1,0 +1,94 @@
+=== UV/PACKAGE CHECK ===
+Using Python 3.11.14 environment at: venvs/rlinf-7d07-openpi-robotwin
+Checked 375 packages in 5ms
+Found 7 incompatibilities
+The package `rlinf-openpi` requires `torch==2.7.1`, but `2.11.0+cu129` is installed
+The package `transformers` requires `tokenizers>=0.22.0,<=0.23.0`, but `0.21.4` is installed
+The package `tensorflow-addons` requires `typeguard>=2.7,<3.0.0`, but `4.6.0` is installed
+The package `nvidia-curobo` requires `scikit-image`, but it's not installed
+The package `lerobot` requires `torch>=2.2.1,<2.8.0`, but `2.11.0+cu129` is installed
+The package `lerobot` requires `torchcodec>=0.2.1,<0.6.0 ; (platform_machine != 'aarch64' and platform_machine != 'arm64' and platform_machine != 'armv7l' and sys_platform == 'linux') or (platform_machine != 'x86_64' and sys_platform == 'darwin') or (sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')`, but `0.11.1` is installed
+The package `lerobot` requires `torchvision>=0.21.0,<0.23.0`, but `0.26.0+cu129` is installed
+uv_pip_check_exit=1
+Warp 1.11.1 initialized:
+   CUDA Toolkit 12.9, Driver 12.9
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA H100 80GB HBM3" (79 GiB, sm_90, mempool enabled)
+   Kernel cache:
+     /home/chenyiteng/.cache/warp/1.11.1
+{
+  "versions": {
+    "rlinf-openpi": "0.1.1",
+    "rlinf-transformer-openpi": "4.53.2",
+    "transformers": "4.57.6",
+    "tokenizers": "0.21.4",
+    "jax": "0.5.3",
+    "jaxlib": "0.5.3",
+    "jax-cuda12-plugin": "0.5.3",
+    "orbax-checkpoint": "0.11.13",
+    "ray": "2.57.0",
+    "sapien": "3.0.1",
+    "mplib": "0.2.1",
+    "pytorch3d": "0.7.9",
+    "warp-lang": "1.11.1",
+    "nvidia-curobo": "0.7.8",
+    "flash-attn": "2.8.3+cu12torch2.11cxx11abitrue",
+    "huggingface-hub": "0.36.2",
+    "torch": "2.11.0+cu129",
+    "torchvision": "0.26.0+cu129",
+    "torchaudio": null
+  },
+  "torch_cuda": "12.9",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "capability": [
+    9,
+    0
+  ],
+  "rlinf_file": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/rlinf/__init__.py",
+  "robotwin_vector_env_file": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py",
+  "jax_version": "0.5.3"
+}
+=== OFFICIAL EVAL CONFIG COMPOSE ===
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/evaluations/eval_embodied_agent.py:32: Hydra14MigrationWarning: 
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  @hydra.main(
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/defaults_list.py:251: UserWarning: In 'robotwin_adjust_bottle_openpi_eval': Defaults list is missing `_self_`. See https://hydra.cc/docs/1.2/upgrades/1.0_to_1.1/default_composition_order for more information
+  warnings.warn(msg, UserWarning)
+    total_num_envs: 128
+    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+    model_path: /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50
+    num_action_chunks: 50
+    action_dim: 14
+=== OFFICIAL OPENPI CHECKPOINT LOAD-ONLY ===
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787324085.205771 1271204 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787324088.135373 1271204 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+{
+  "class": "OpenPi0ForRLActionPrediction",
+  "parameters": 3502061329,
+  "parameter_device": "cpu",
+  "config_name": "pi0_aloha_robotwin",
+  "action_chunk": 50,
+  "action_env_dim": 14
+}
+=== REPRODUCIBILITY MANIFEST ===
+Using Python 3.11.14 environment at: venvs/rlinf-7d07-openpi-robotwin
+a12284a6884ee26e4bd543365d4f19d620e1b88a99bdf666f2ce8e01ec296e36  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin/uv.lock
+## codex/sz-ppo-pi0-robotwin
+## HEAD (no branch)
+16G	/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin
+4.4G	/home/chenyiteng/.cache/uv
+7.6G	/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50
+16G	/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets
+Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv  296G   47G  237G  17% /
+/dev/mapper/ubuntu--vg-home--lv    2.3T   71G  2.2T   4% /home
+/dev/nvme1n1                       3.5T  127G  3.2T   4% /data
+R1_RUNTIME_COMPOSE_MODEL_LOAD_OK

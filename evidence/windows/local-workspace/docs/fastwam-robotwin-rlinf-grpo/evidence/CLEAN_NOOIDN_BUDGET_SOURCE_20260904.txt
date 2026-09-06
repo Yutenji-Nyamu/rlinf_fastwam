@@ -1,0 +1,156 @@
+2026-09-04T04:47:49+00:00
+CANDIDATES [PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_actor_worker_pipeline.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_actor_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/async_fsdp_dagger_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_rlt_td3_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_sac_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_dagger_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/embodied_fsdp_actor_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_iql_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/async_fsdp_sac_policy_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/async_ppo_fsdp_worker.py'), PosixPath('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/actor/fsdp_nft_policy_worker.py')]
+CONFIG_CHAIN /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py
+62:         self._is_start = True
+63: 
+64:         self.task_name = cfg.task_config.task_name
+65: 
+66:         self.center_crop = cfg.get("center_crop", False)
+67:         self._init_reset_state_ids()
+82:         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+83: 
+84:         from robotwin.envs.vector_env import VectorEnv
+85: 
+86:         env_seeds = self.reset_state_ids.tolist()
+87: 
+88:         self.venv = VectorEnv(
+89:             task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+90:             n_envs=self.num_envs,
+91:             env_seeds=env_seeds,
+92:         )
+CONFIG_CHAIN /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/robotwin/envs/vector_env.py
+69:         env_id: int,
+70:         task_name: str,
+71:         args: dict,
+72:         env_seed: int = None,
+73:         instruction_type = "seen",
+74:         global_lock=None,
+76:         self.env_id = env_id
+77:         self.task_name = task_name
+78:         self.args = args
+79:         self.env_seed = env_seed
+80:         if self.env_seed is None:
+81:             self.env_seed = self.env_id
+86:         self.lock = threading.Lock()
+87:         self.reset_count = 0
+88:         self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+89: 
+90:     def setup_task(self):
+91:         self.close()
+99:                     try:
+100:                         task = class_decorator(self.task_name)
+101:                         task.setup_demo(
+102:                             now_ep_num=trial_seed,
+103:                             seed=trial_seed,
+104:                             is_test=True,
+105:                             **self.args,
+106:                         )
+107:                         episode_info = task.get_info()
+108:                         is_valid = True
+150: 
+151:                 self.instruction = self.create_instruction()
+152:                 self.args["instruction"] = self.instruction
+153: 
+154:                 trial_seed = self.env_seed
+155:                 is_valid = False
+156:                 while not is_valid:
+157:                     try:
+158:                         self.task.setup_demo(
+159:                             now_ep_num=trial_seed, seed=trial_seed, **self.args
+160:                         )
+161:                         self.task.step_lim = self.args["step_lim"]
+162:                         self.task.run_steps = 0
+163:                         self.task.reward_step = 0
+164:                         is_valid = True
+199: 
+200:     def check_seed(self, seed):
+201:         setup_demo_success = False
+202:         play_once_success = False
+203: 
+204:         t1 = time.time()
+206:             with self.lock:
+207:                 try:
+208:                     self.task.setup_demo(now_ep_num=seed, seed=seed, **self.args)
+209:                     setup_demo_success = True
+210:                     _ = self.task.get_obs()
+211:                     _ = self.task.play_once()
+212:                     if self.task.plan_success and self.task.check_success():
+218:         t2 = time.time()
+219:         result = {
+220:             "setup_demo_success": setup_demo_success,
+221:             "play_once_success": play_once_success,
+222:             "cost_time": t2 - t1,
+223:         }
+241:         head_camera_type = "D435"
+242:         rdt_step = 10
+243:         args = task_config
+244: 
+245:         args["planner_backend"] = args.get("planner_backend", "curobo") # Choices: [curobo, mplib]
+246:         args["clear_cache_freq"] = max(1, int(args.get("clear_cache_freq", 8)))
+247: 
+248:         embodiment_type = args.get("embodiment")
+249:         embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
+250: 
+251:         with open(embodiment_config_path, "r", encoding="utf-8") as f:
+255:             _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
+256: 
+257:         args["head_camera_h"] = _camera_config[head_camera_type]["h"]
+258:         args["head_camera_w"] = _camera_config[head_camera_type]["w"]
+259: 
+260:         def get_embodiment_file(embodiment_type):
+261:             robot_file = _embodiment_types[embodiment_type]["file_path"]
+267:             robot_config_file = os.path.join(robot_file, "config.yml")
+268:             with open(robot_config_file, "r", encoding="utf-8") as f:
+269:                 embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+270:             return embodiment_args
+271: 
+272:         if len(embodiment_type) == 1:
+273:             args["left_robot_file"] = os.path.join(
+274:                 assets_path, get_embodiment_file(embodiment_type[0])
+275:             )
+276:             args["right_robot_file"] = os.path.join(
+277:                 assets_path, get_embodiment_file(embodiment_type[0])
+278:             )
+279:             args["dual_arm_embodied"] = True
+280:         elif len(embodiment_type) == 3:
+281:             args["left_robot_file"] = os.path.join(
+282:                 assets_path, get_embodiment_file(embodiment_type[0])
+283:             )
+284:             args["right_robot_file"] = os.path.join(
+285:                 assets_path, get_embodiment_file(embodiment_type[1])
+286:             )
+287:             args["embodiment_dis"] = embodiment_type[2]
+288:             args["dual_arm_embodied"] = False
+289:         else:
+290:             raise "embodiment items should be 1 or 3"
+291: 
+292:         args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
+293:         args["right_embodiment_config"] = get_embodiment_config(
+294:             args["right_robot_file"]
+295:         )
+296: 
+297:         if len(embodiment_type) == 1:
+300:             embodiment_name = str(embodiment_type[0]) + "_" + str(embodiment_type[1])
+301: 
+302:         args["embodiment_name"] = embodiment_name
+303: 
+304:         args["rdt_step"] = rdt_step
+305:         args["save_path"] += f"/{args['task_name']}_reward"
+306: 
+307:         args["n_envs"] = n_envs
+308:         args["action_dim"] = 14
+309: 
+310:         args["eval_mode"] = True
+311:         args["eval_video_log"] = False
+312:         args["render_freq"] = 0
+313: 
+314:         self.args = args
+315:         self.n_envs = n_envs
+316: 
+317:         self.envs = []
+329:                 env_id=i,
+330:                 task_name=self.task_name,
+331:                 args=self.args,
+332:                 env_seed=self.env_seeds[i] if self.env_seeds else None,
+333:                 instruction_type=self.instruction_type,
+334:                 global_lock=self.global_lock,

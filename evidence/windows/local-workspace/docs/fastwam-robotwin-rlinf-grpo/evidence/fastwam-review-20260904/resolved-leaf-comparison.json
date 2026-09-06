@@ -1,0 +1,3802 @@
+{
+  "runs": [
+    {
+      "name": "fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2"
+    },
+    {
+      "name": "fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3"
+    },
+    {
+      "name": "grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2"
+    },
+    {
+      "name": "pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2"
+    },
+    {
+      "name": "move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1"
+    },
+    {
+      "name": "move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1",
+      "path": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1"
+    }
+  ],
+  "leaves": [
+    {
+      "key": "actor.enable_offload",
+      "values": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.amp_autocast.enabled",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.amp_autocast.precision",
+      "values": [
+        "bf16",
+        "bf16",
+        "bf16",
+        "bf16",
+        "bf16",
+        "bf16"
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.backward_prefetch",
+      "values": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.cast_forward_inputs",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.checkpoint_format",
+      "values": [
+        "dcp",
+        "dcp",
+        "<absent>",
+        "local_shard",
+        "local_shard",
+        "local_shard"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.cpu_offload",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.enable_gradient_accumulation",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.forward_prefetch",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.grad_scaler.enabled",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.gradient_checkpointing",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.limit_all_gathers",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.mixed_precision.buffer_dtype",
+      "values": [
+        "bf16",
+        "bf16",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.mixed_precision.param_dtype",
+      "values": [
+        "bf16",
+        "bf16",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.mixed_precision.reduce_dtype",
+      "values": [
+        "bf16",
+        "bf16",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.offload_pin_memory",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.reshard_after_forward",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.save_full_model_weights",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.sharding_strategy",
+      "values": [
+        "full_shard",
+        "full_shard",
+        "full_shard",
+        "full_shard",
+        "full_shard",
+        "full_shard"
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.strategy",
+      "values": [
+        "fsdp2",
+        "fsdp2",
+        "fsdp",
+        "fsdp",
+        "fsdp",
+        "fsdp"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.fsdp_config.use_liger_kernel",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.use_orig_params",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.fsdp_config.wrap_policy.no_split_names",
+      "values": [
+        [
+          "__none__"
+        ],
+        [
+          "__none__"
+        ],
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.global_batch_size",
+      "values": [
+        1024,
+        2048,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.group_name",
+      "values": [
+        "ActorGroup",
+        "ActorGroup",
+        "ActorGroup",
+        "ActorGroup",
+        "ActorGroup",
+        "ActorGroup"
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.micro_batch_size",
+      "values": [
+        2,
+        2,
+        32,
+        32,
+        32,
+        32
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.action_dim",
+      "values": [
+        14,
+        14,
+        14,
+        14,
+        14,
+        14
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.model.action_horizon",
+      "values": [
+        32,
+        32,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.add_value_head",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.model.checkpoint_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.dataset_stats_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.eval_seed",
+      "values": [
+        0,
+        0,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.fastwam.config_name",
+      "values": [
+        "sim_robotwin",
+        "sim_robotwin",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.fastwam.task",
+      "values": [
+        "robotwin_uncond_3cam_384_1e-4",
+        "robotwin_uncond_3cam_384_1e-4",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.is_lora",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.model.lora_rank",
+      "values": [
+        "<absent>",
+        "<absent>",
+        32,
+        32,
+        32,
+        32
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.model_forward_batch_size",
+      "values": [
+        2,
+        2,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.model_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+        "/data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed",
+        "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+        "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.model_type",
+      "values": [
+        "fastwam",
+        "fastwam",
+        "openpi",
+        "openpi",
+        "openpi",
+        "openpi"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.negative_prompt",
+      "values": [
+        "",
+        "",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.num_action_chunks",
+      "values": [
+        24,
+        24,
+        50,
+        50,
+        50,
+        50
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.num_inference_steps",
+      "values": [
+        10,
+        10,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.num_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        4,
+        5,
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.action_chunk",
+      "values": [
+        "<absent>",
+        "<absent>",
+        50,
+        50,
+        50,
+        50
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.action_env_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        14,
+        14,
+        14,
+        14
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.add_value_head",
+      "values": [
+        "<absent>",
+        "<absent>",
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.config_name",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "pi0_aloha_robotwin",
+        "pi05_aloha_robotwin",
+        "pi05_sidney_robotwin",
+        "pi05_sidney_robotwin"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.detach_critic_input",
+      "values": [
+        "<absent>",
+        "<absent>",
+        false,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_action_noise_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        32,
+        32,
+        32,
+        32
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_agg_q",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "mean",
+        "mean",
+        "mean",
+        "mean"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_hidden_dims",
+      "values": [
+        "<absent>",
+        "<absent>",
+        [
+          128,
+          128,
+          128
+        ],
+        [
+          128,
+          128,
+          128
+        ],
+        [
+          128,
+          128,
+          128
+        ],
+        [
+          128,
+          128,
+          128
+        ]
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_image_latent_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        64,
+        64,
+        64,
+        64
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_num_q_heads",
+      "values": [
+        "<absent>",
+        "<absent>",
+        10,
+        10,
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_state_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        8,
+        8,
+        8,
+        8
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.dsrl_state_latent_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        64,
+        64,
+        64,
+        64
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.noise_level",
+      "values": [
+        "<absent>",
+        "<absent>",
+        0.5,
+        0.3,
+        0.5,
+        0.5
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.noise_method",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "flow_sde",
+        "flow_sde",
+        "flow_sde",
+        "flow_sde"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.num_images_in_input",
+      "values": [
+        "<absent>",
+        "<absent>",
+        3,
+        3,
+        3,
+        3
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.num_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        4,
+        5,
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.train_expert_only",
+      "values": [
+        "<absent>",
+        "<absent>",
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.use_dsrl",
+      "values": [
+        "<absent>",
+        "<absent>",
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.value_after_vlm",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        false,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.openpi.value_vlm_mode",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "mean_token",
+        "mean_token",
+        "mean_token"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.precision",
+      "values": [
+        "bf16",
+        "bf16",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.rand_device",
+      "values": [
+        "cpu",
+        "cpu",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.rl.noise_level",
+      "values": [
+        0.3,
+        0.3,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.sigma_shift",
+      "values": [
+        5,
+        5,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.text_cfg_scale",
+      "values": [
+        1,
+        1,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.tiled",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.model.use_proprio",
+      "values": [
+        "<absent>",
+        "<absent>",
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.optim.adam_beta1",
+      "values": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.optim.adam_beta2",
+      "values": [
+        0.95,
+        0.95,
+        0.95,
+        0.95,
+        0.95,
+        0.95
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.optim.adam_eps",
+      "values": [
+        1e-8,
+        1e-8,
+        1e-8,
+        1e-8,
+        1e-8,
+        1e-8
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.optim.clip_grad",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.optim.critic_warmup_steps",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.optim.lr",
+      "values": [
+        0.000005,
+        0.000005,
+        0.0000056,
+        0.000005,
+        0.000005,
+        0.000005
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.optim.value_lr",
+      "values": [
+        0.00011,
+        0.00011,
+        0.00011,
+        0.0001,
+        0.0001,
+        0.0001
+      ],
+      "equal": false
+    },
+    {
+      "key": "actor.optim.weight_decay",
+      "values": [
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.seed",
+      "values": [
+        1234,
+        1234,
+        1234,
+        1234,
+        1234,
+        1234
+      ],
+      "equal": true
+    },
+    {
+      "key": "actor.training_backend",
+      "values": [
+        "fsdp",
+        "fsdp",
+        "fsdp",
+        "fsdp",
+        "fsdp",
+        "fsdp"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.adv_type",
+      "values": [
+        "grpo",
+        "grpo",
+        "grpo",
+        "grpo",
+        "grpo",
+        "grpo"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.clip_ratio_c",
+      "values": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.clip_ratio_high",
+      "values": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.clip_ratio_low",
+      "values": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.application",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "logprob_st",
+        "logprob_st",
+        "logprob_st"
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.log_eps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.mode",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "off",
+        "off",
+        "off",
+        "off"
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.output_dir",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2/robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/dvac_train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/dvac_train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/dvac_train"
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.save_step_tensors",
+      "values": [
+        "<absent>",
+        "<absent>",
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.selected_l",
+      "values": [
+        "<absent>",
+        "<absent>",
+        3,
+        3,
+        3,
+        3
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.std_floor",
+      "values": [
+        "<absent>",
+        "<absent>",
+        0.000001,
+        0.000001,
+        0.000001,
+        0.000001
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.strength",
+      "values": [
+        "<absent>",
+        "<absent>",
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.warmup_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.weight_max",
+      "values": [
+        "<absent>",
+        "<absent>",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.weight_min",
+      "values": [
+        "<absent>",
+        "<absent>",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.window_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        5,
+        5,
+        5,
+        5
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.dvac_gradient_weighting.z_clip",
+      "values": [
+        "<absent>",
+        "<absent>",
+        2,
+        2,
+        2,
+        2
+      ],
+      "equal": false
+    },
+    {
+      "key": "algorithm.entropy_bonus",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.entropy_type",
+      "values": [
+        "token_level",
+        "token_level",
+        "token_level",
+        "token_level",
+        "token_level",
+        "token_level"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.filter_rewards",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.gae_lambda",
+      "values": [
+        0.95,
+        0.95,
+        0.95,
+        0.95,
+        0.95,
+        0.95
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.gamma",
+      "values": [
+        0.99,
+        0.99,
+        0.99,
+        0.99,
+        0.99,
+        0.99
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.group_size",
+      "values": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.huber_delta",
+      "values": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.kl_beta",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.kl_penalty",
+      "values": [
+        "kl",
+        "kl",
+        "kl",
+        "kl",
+        "kl",
+        "kl"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.logprob_type",
+      "values": [
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.loss_agg_func",
+      "values": [
+        "token-mean",
+        "token-mean",
+        "token-mean",
+        "token-mean",
+        "token-mean",
+        "token-mean"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.loss_type",
+      "values": [
+        "actor",
+        "actor",
+        "actor",
+        "actor",
+        "actor",
+        "actor"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.normalize_advantages",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.reward_coef",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.reward_type",
+      "values": [
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level",
+        "chunk_level"
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.rewards_lower_bound",
+      "values": [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.rewards_upper_bound",
+      "values": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.update_epoch",
+      "values": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "equal": true
+    },
+    {
+      "key": "algorithm.value_clip",
+      "values": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "equal": true
+    },
+    {
+      "key": "cluster.component_placement.actor, env, rollout",
+      "values": [
+        "6,7",
+        "6,7",
+        "4,5",
+        "4,5",
+        "4,5",
+        "4,5"
+      ],
+      "equal": false
+    },
+    {
+      "key": "cluster.num_nodes",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "critic.use_critic_model",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.enable_offload",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.assets_path",
+      "values": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.auto_reset",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.center_crop",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.enable_offload",
+      "values": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.env_type",
+      "values": [
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.group_size",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.ignore_terminations",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.is_eval",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.max_episode_steps",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.max_steps_per_rollout_epoch",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.reward_coef",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.rollout_epoch",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.seed",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.seeds_path",
+      "values": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/eval_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/eval_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/eval_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-robotwin-rl/rlinf/envs/robotwin/seeds/eval_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/eval_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/eval_seeds.json"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.task_config.camera.collect_head_camera",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.camera.collect_wrist_camera",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.camera.head_camera_type",
+      "values": [
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.camera.wrist_camera_type",
+      "values": [
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.clear_cache_freq",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.collect_data",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.actor_segmentation",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.depth",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.endpose",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.mesh_segmentation",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.observer",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.pointcloud",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.qpos",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.rgb",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.data_type.third_view",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.clean_background_rate",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.cluttered_table",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.crazy_random_light_rate",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.random_background",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.random_head_camera_dis",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.random_light",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.domain_randomization.random_table_height",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.embodiment",
+      "values": [
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ]
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.episode_num",
+      "values": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.eval_video_log",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.language_num",
+      "values": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.pcd_crop",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.pcd_down_sample_num",
+      "values": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.planner_backend",
+      "values": [
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.render_freq",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.save_freq",
+      "values": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.task_config.save_path",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3/robotwin_data/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2/robotwin_data/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/eval"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.task_config.step_lim",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.task_config.task_name",
+      "values": [
+        "move_stapler_pad",
+        "move_stapler_pad",
+        "adjust_bottle",
+        "adjust_bottle",
+        "move_stapler_pad",
+        "move_pillbottle_pad"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.eval.task_config.use_seed",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.total_num_envs",
+      "values": [
+        32,
+        32,
+        32,
+        32,
+        32,
+        32
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.use_custom_reward",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.use_fixed_reset_state_ids",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.use_rel_reward",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.video_cfg.info_on_video",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.video_cfg.save_video",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.eval.video_cfg.video_base_dir",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3/video/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2/video/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/eval",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/eval"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.group_name",
+      "values": [
+        "EnvGroup",
+        "EnvGroup",
+        "EnvGroup",
+        "EnvGroup",
+        "EnvGroup",
+        "EnvGroup"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.assets_path",
+      "values": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.auto_reset",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.center_crop",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.enable_offload",
+      "values": [
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.env_type",
+      "values": [
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin",
+        "robotwin"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.group_size",
+      "values": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.ignore_terminations",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.is_eval",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.max_episode_steps",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.max_steps_per_rollout_epoch",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.reward_coef",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.rollout_epoch",
+      "values": [
+        4,
+        16,
+        4,
+        4,
+        4,
+        4
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.seed",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.seeds_path",
+      "values": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-robotwin-rl/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/train_seeds.json"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.task_config.camera.collect_head_camera",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.camera.collect_wrist_camera",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.camera.head_camera_type",
+      "values": [
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.camera.wrist_camera_type",
+      "values": [
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435",
+        "D435"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.clear_cache_freq",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.collect_data",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.actor_segmentation",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.depth",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.endpose",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.mesh_segmentation",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.observer",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.pointcloud",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.qpos",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.rgb",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.data_type.third_view",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.clean_background_rate",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.cluttered_table",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.crazy_random_light_rate",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.random_background",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.random_head_camera_dis",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.random_light",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.domain_randomization.random_table_height",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.embodiment",
+      "values": [
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ],
+        [
+          "aloha-agilex"
+        ]
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.episode_num",
+      "values": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.eval_video_log",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.language_num",
+      "values": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.pcd_crop",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.pcd_down_sample_num",
+      "values": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.planner_backend",
+      "values": [
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib",
+        "mplib"
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.render_freq",
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.save_freq",
+      "values": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.task_config.save_path",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3/robotwin_data/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2/robotwin_data/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/train"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.task_config.step_lim",
+      "values": [
+        192,
+        192,
+        200,
+        200,
+        200,
+        200
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.task_config.task_name",
+      "values": [
+        "move_stapler_pad",
+        "move_stapler_pad",
+        "adjust_bottle",
+        "adjust_bottle",
+        "move_stapler_pad",
+        "move_pillbottle_pad"
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.task_config.use_seed",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.total_num_envs",
+      "values": [
+        32,
+        16,
+        64,
+        64,
+        64,
+        64
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.use_custom_reward",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.use_fixed_reset_state_ids",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.use_rel_reward",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.video_cfg.info_on_video",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "env.train.video_cfg.save_video",
+      "values": [
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "env.train.video_cfg.video_base_dir",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/train"
+      ],
+      "equal": false
+    },
+    {
+      "key": "reward.use_reward_model",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "rollout.backend",
+      "values": [
+        "huggingface",
+        "huggingface",
+        "huggingface",
+        "huggingface",
+        "huggingface",
+        "huggingface"
+      ],
+      "equal": true
+    },
+    {
+      "key": "rollout.collect_prev_infos",
+      "values": [
+        true,
+        true,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.enable_offload",
+      "values": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": true
+    },
+    {
+      "key": "rollout.group_name",
+      "values": [
+        "RolloutGroup",
+        "RolloutGroup",
+        "RolloutGroup",
+        "RolloutGroup",
+        "RolloutGroup",
+        "RolloutGroup"
+      ],
+      "equal": true
+    },
+    {
+      "key": "rollout.model.action_dim",
+      "values": [
+        14,
+        14,
+        "<absent>",
+        "<absent>",
+        14,
+        14
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.action_horizon",
+      "values": [
+        32,
+        32,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.add_value_head",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.checkpoint_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.dataset_stats_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.eval_seed",
+      "values": [
+        0,
+        0,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.fastwam.config_name",
+      "values": [
+        "sim_robotwin",
+        "sim_robotwin",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.fastwam.task",
+      "values": [
+        "robotwin_uncond_3cam_384_1e-4",
+        "robotwin_uncond_3cam_384_1e-4",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.is_lora",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.lora_rank",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        32,
+        32
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.model_forward_batch_size",
+      "values": [
+        2,
+        2,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.model_path",
+      "values": [
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+        "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+        "/data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed",
+        "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+        "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.model_type",
+      "values": [
+        "fastwam",
+        "fastwam",
+        "<absent>",
+        "<absent>",
+        "openpi",
+        "openpi"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.negative_prompt",
+      "values": [
+        "",
+        "",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.num_action_chunks",
+      "values": [
+        24,
+        24,
+        "<absent>",
+        "<absent>",
+        50,
+        50
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.num_inference_steps",
+      "values": [
+        10,
+        10,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.num_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.action_chunk",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        50,
+        50
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.action_env_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        14,
+        14
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.add_value_head",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.config_name",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "pi05_sidney_robotwin",
+        "pi05_sidney_robotwin"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.detach_critic_input",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_action_noise_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        32,
+        32
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_agg_q",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "mean",
+        "mean"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_hidden_dims",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        [
+          128,
+          128,
+          128
+        ],
+        [
+          128,
+          128,
+          128
+        ]
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_image_latent_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        64,
+        64
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_num_q_heads",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_state_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        8,
+        8
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.dsrl_state_latent_dim",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        64,
+        64
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.noise_level",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        0.5,
+        0.5
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.noise_method",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "flow_sde",
+        "flow_sde"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.num_images_in_input",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        3,
+        3
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.num_steps",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        10,
+        10
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.train_expert_only",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.use_dsrl",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.value_after_vlm",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        false,
+        false
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.openpi.value_vlm_mode",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "mean_token",
+        "mean_token"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.precision",
+      "values": [
+        "bf16",
+        "bf16",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.rand_device",
+      "values": [
+        "cpu",
+        "cpu",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.rl.noise_level",
+      "values": [
+        0.3,
+        0.3,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.sigma_shift",
+      "values": [
+        5,
+        5,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.text_cfg_scale",
+      "values": [
+        1,
+        1,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.tiled",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.model.use_proprio",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "rollout.pipeline_stage_num",
+      "values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "equal": true
+    },
+    {
+      "key": "rollout.recompute_logprobs",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.ckpt_path",
+      "values": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.logger.experiment_name",
+      "values": [
+        "fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2",
+        "fastwam_grpo_control_formal100_2gpu16x16_g8_b2048_u2_m10_fixed32_eval5_phys67_dcp_pi0style_v3",
+        "robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2",
+        "robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2",
+        "pi05_sidney_move_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1",
+        "pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1"
+      ],
+      "equal": false
+    },
+    {
+      "key": "runner.logger.log_path",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2",
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3",
+        "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05/runs/pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1"
+      ],
+      "equal": false
+    },
+    {
+      "key": "runner.logger.logger_backends",
+      "values": [
+        [
+          "tensorboard"
+        ],
+        [
+          "tensorboard"
+        ],
+        [
+          "tensorboard"
+        ],
+        [
+          "tensorboard"
+        ],
+        [
+          "tensorboard"
+        ],
+        [
+          "tensorboard"
+        ]
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.logger.project_name",
+      "values": [
+        "rlinf",
+        "rlinf",
+        "rlinf",
+        "rlinf",
+        "rlinf",
+        "rlinf"
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.max_epochs",
+      "values": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.max_steps",
+      "values": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.only_eval",
+      "values": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.resume_dir",
+      "values": [
+        "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10",
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "runner.save_interval",
+      "values": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.task_type",
+      "values": [
+        "embodied",
+        "embodied",
+        "embodied",
+        "embodied",
+        "embodied",
+        "embodied"
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.val_check_interval",
+      "values": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "equal": true
+    },
+    {
+      "key": "runner.weight_sync_interval",
+      "values": [
+        1,
+        1,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.bucket.bucket_device",
+      "values": [
+        "cpu",
+        "cpu",
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.bucket.bucket_dtype",
+      "values": [
+        null,
+        null,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.bucket.bucket_size",
+      "values": [
+        536870912,
+        536870912,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.bucket.is_agent",
+      "values": [
+        false,
+        false,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.bucket.load_instant",
+      "values": [
+        true,
+        true,
+        "<absent>",
+        "<absent>",
+        "<absent>",
+        "<absent>"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.compression",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "none",
+        "none",
+        "none",
+        "none"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.delta_encoding",
+      "values": [
+        "<absent>",
+        "<absent>",
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.init_sync.bucket_size",
+      "values": [
+        "<absent>",
+        "<absent>",
+        134217728,
+        134217728,
+        134217728,
+        134217728
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.init_sync.enabled",
+      "values": [
+        "<absent>",
+        "<absent>",
+        true,
+        true,
+        true,
+        true
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.init_sync.prefixes",
+      "values": [
+        "<absent>",
+        "<absent>",
+        null,
+        null,
+        null,
+        null
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.patch.snapshot_device",
+      "values": [
+        "<absent>",
+        "<absent>",
+        "cpu",
+        "cpu",
+        "cpu",
+        "cpu"
+      ],
+      "equal": false
+    },
+    {
+      "key": "weight_syncer.type",
+      "values": [
+        "bucket",
+        "bucket",
+        "patch",
+        "patch",
+        "patch",
+        "patch"
+      ],
+      "equal": false
+    }
+  ]
+}

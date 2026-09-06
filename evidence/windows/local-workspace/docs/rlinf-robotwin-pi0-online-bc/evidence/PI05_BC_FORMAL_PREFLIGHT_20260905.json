@@ -1,0 +1,69 @@
+{
+  "time": "2026-09-05T15:36:11.074374+00:00",
+  "head": "912bc6907d39a0eec1eb98a6d4c9358e69791924",
+  "git_status": "",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1",
+  "overrides": [
+    "+online_bc_model=pi05_sidney",
+    "runner.max_epochs=100",
+    "runner.val_check_interval=5",
+    "runner.save_interval=10",
+    "actor.optim.total_training_steps=1000",
+    "runner.logger.experiment_name=pi05-pillbottle-bc-u10-eval8x4-formal100-gpu6"
+  ],
+  "delta": {
+    "actor.optim.total_training_steps": {
+      "smoke": 20,
+      "formal": 1000
+    },
+    "algorithm.online_bc.data_path": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1/success_data",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/success_data"
+    },
+    "env.eval.task_config.save_path": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1/robotwin_data",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1/video/train",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train"
+    },
+    "env.train.task_config.save_path": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1/robotwin_data",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1/video/train",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "smoke": "pi05-pillbottle-bc-u10-eval8x4-smoke-gpu6",
+      "formal": "pi05-pillbottle-bc-u10-eval8x4-formal100-gpu6"
+    },
+    "runner.logger.log_path": {
+      "smoke": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-smoke32x1-b1024-u10-m10-eval8x4-gpu6-20260905-v1",
+      "formal": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1"
+    },
+    "runner.max_epochs": {
+      "smoke": 2,
+      "formal": 100
+    },
+    "runner.save_interval": {
+      "smoke": 1,
+      "formal": 10
+    },
+    "runner.val_check_interval": {
+      "smoke": 1,
+      "formal": 5
+    }
+  },
+  "resolved_yaml": "env:\n  train:\n    env_type: robotwin\n    total_num_envs: 32\n    auto_reset: false\n    ignore_terminations: false\n    reward_coef: 1.0\n    use_custom_reward: true\n    use_rel_reward: true\n    center_crop: false\n    seed: 0\n    group_size: 1\n    use_fixed_reset_state_ids: false\n    max_steps_per_rollout_epoch: 200\n    max_episode_steps: 200\n    is_eval: false\n    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\n    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json\n    video_cfg:\n      save_video: false\n      info_on_video: true\n      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train\n    enable_offload: false\n    task_config:\n      task_name: move_pillbottle_pad\n      step_lim: 200\n      planner_backend: mplib\n      render_freq: 0\n      episode_num: 100\n      use_seed: false\n      save_freq: 15\n      embodiment:\n      - aloha-agilex\n      language_num: 100\n      domain_randomization:\n        random_background: false\n        cluttered_table: false\n        clean_background_rate: 1\n        random_head_camera_dis: 0\n        random_table_height: 0\n        random_light: false\n        crazy_random_light_rate: 0\n      camera:\n        head_camera_type: D435\n        wrist_camera_type: D435\n        collect_head_camera: true\n        collect_wrist_camera: true\n      data_type:\n        rgb: true\n        third_view: false\n        depth: false\n        pointcloud: false\n        observer: false\n        endpose: false\n        qpos: true\n        mesh_segmentation: false\n        actor_segmentation: false\n      pcd_down_sample_num: 1024\n      pcd_crop: true\n      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data\n      clear_cache_freq: 1\n      collect_data: true\n      eval_video_log: true\n    rollout_epoch: 1\n  eval:\n    env_type: robotwin\n    total_num_envs: 8\n    auto_reset: false\n    ignore_terminations: true\n    reward_coef: 1.0\n    use_custom_reward: true\n    use_rel_reward: true\n    center_crop: false\n    seed: 0\n    group_size: 1\n    use_fixed_reset_state_ids: true\n    max_steps_per_rollout_epoch: 200\n    max_episode_steps: 200\n    is_eval: true\n    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\n    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json\n    video_cfg:\n      save_video: false\n      info_on_video: true\n      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/video/train\n    enable_offload: false\n    task_config:\n      task_name: move_pillbottle_pad\n      step_lim: 200\n      planner_backend: mplib\n      render_freq: 0\n      episode_num: 100\n      use_seed: false\n      save_freq: 15\n      embodiment:\n      - aloha-agilex\n      language_num: 100\n      domain_randomization:\n        random_background: false\n        cluttered_table: false\n        clean_background_rate: 1\n        random_head_camera_dis: 0\n        random_table_height: 0\n        random_light: false\n        crazy_random_light_rate: 0\n      camera:\n        head_camera_type: D435\n        wrist_camera_type: D435\n        collect_head_camera: true\n        collect_wrist_camera: true\n      data_type:\n        rgb: true\n        third_view: false\n        depth: false\n        pointcloud: false\n        observer: false\n        endpose: false\n        qpos: true\n        mesh_segmentation: false\n        actor_segmentation: false\n      pcd_down_sample_num: 1024\n      pcd_crop: true\n      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/robotwin_data\n      clear_cache_freq: 1\n      collect_data: true\n      eval_video_log: true\n    rollout_epoch: 4\n    fixed_reset_batch_count: 4\n  group_name: EnvGroup\n  min_open_files: 4096\nactor:\n  model:\n    model_type: openpi\n    model_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\n    precision: null\n    num_action_chunks: 50\n    action_dim: 14\n    is_lora: false\n    lora_rank: 32\n    use_proprio: true\n    num_steps: 10\n    add_value_head: false\n    openpi:\n      config_name: pi05_sidney_robotwin\n      num_images_in_input: 3\n      noise_level: 0.5\n      action_chunk: 50\n      num_steps: 10\n      train_expert_only: true\n      action_env_dim: 14\n      noise_method: flow_sde\n      add_value_head: false\n      detach_critic_input: false\n      use_dsrl: false\n      dsrl_state_dim: 8\n      dsrl_action_noise_dim: 32\n      dsrl_num_q_heads: 10\n      dsrl_agg_q: mean\n      dsrl_image_latent_dim: 64\n      dsrl_state_latent_dim: 64\n      dsrl_hidden_dims:\n      - 128\n      - 128\n      - 128\n      image_augmentation: false\n  fsdp_config:\n    strategy: fsdp\n    sharding_strategy: no_shard\n    gradient_checkpointing: false\n    cpu_offload: false\n    offload_pin_memory: false\n    reshard_after_forward: true\n    enable_gradient_accumulation: true\n    forward_prefetch: false\n    limit_all_gathers: false\n    backward_prefetch: null\n    use_orig_params: false\n    use_liger_kernel: false\n    mixed_precision:\n      param_dtype: null\n      reduce_dtype: null\n      buffer_dtype: null\n    amp_autocast:\n      enabled: false\n      precision: bf16\n    grad_scaler:\n      enabled: false\n      init_scale: null\n      growth_interval: null\n    checkpoint_format: local_shard\n    wrap_policy:\n      transformer_layer_cls_to_wrap:\n      - GemmaMLP\n      - SiglipVisionEmbeddings\n      - GemmaRMSNorm\n      - GemmaRotaryEmbedding\n      no_split_names:\n      - q_proj\n      - k_proj\n      - v_proj\n      - o_proj\n      - action_in_proj\n      - action_out_proj\n      - lm_head\n      - state_proj\n      - action_time_mlp_in\n      - action_time_mlp_out\n      - time_mlp_in\n      - time_mlp_out\n  group_name: ActorGroup\n  training_backend: fsdp\n  micro_batch_size: 32\n  global_batch_size: 1024\n  seed: 1234\n  enable_offload: true\n  enable_drq: false\n  optim:\n    lr: 2.5e-05\n    value_lr: 2.5e-05\n    adam_beta1: 0.9\n    adam_beta2: 0.95\n    adam_eps: 1.0e-08\n    weight_decay: 1.0e-10\n    clip_grad: 1.0\n    total_training_steps: 1000\n    lr_warmup_steps: 0\n    lr_scheduler: constant\n    min_lr: 2.5e-05\nweight_syncer:\n  type: patch\n  patch:\n    snapshot_device: cpu\n    delta_encoding: true\n    compression: none\n    init_sync:\n      enabled: true\n      prefixes: null\n      bucket_size: 134217728\ncluster:\n  num_nodes: 1\n  component_placement:\n    actor,env,rollout: '6'\n  tracer:\n    enable: false\nrunner:\n  task_type: embodied\n  logger:\n    log_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1\n    project_name: rlinf-online-bc\n    experiment_name: pi05-pillbottle-bc-u10-eval8x4-formal100-gpu6\n    logger_backends:\n    - tensorboard\n  max_epochs: 100\n  max_steps: -1\n  only_eval: false\n  val_check_interval: 5\n  save_interval: 10\n  resume_dir: null\n  ckpt_path: null\n  overlap_env_bootstrap: false\n  per_worker_log: false\n  per_worker_log_path: null\n  weight_sync_interval: 1\nalgorithm:\n  loss_type: online_bc\n  adv_type: gae\n  gamma: 0.99\n  reward_coef: 1.0\n  update_epoch: 10\n  online_bc:\n    data_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-eval8x4-gpu6-formal100-20260905-v1/success_data\n    demo_weight: 0.0\n    demo_data_path: null\n  replay_buffer:\n    min_buffer_size: 1\nrollout:\n  group_name: RolloutGroup\n  backend: huggingface\n  recompute_logprobs: false\n  enable_offload: true\n  pipeline_stage_num: 1\n  collect_prev_infos: false\n  collect_final_values: false\n  expert_model: null\n  model:\n    model_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\n    precision: null\nreward:\n  use_reward_model: false\ncritic:\n  use_critic_model: false\n",
+  "gpu": "0, 9864, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 65868, 1\n5, 68970, 13\n6, 11, 0\n7, 10, 0",
+  "memory": {
+    "MemAvailable": "1381405220 kB",
+    "SwapFree": "3496308 kB"
+  },
+  "disk": "Filesystem                          1B-blocks          Used     Available Use% Mounted on\n/dev/nvme1n1                    3779302981632 2647649308672  939599097856  74% /data\n/dev/mapper/ubuntu--vg-home--lv 2488371159040 1149215666176 1338043502592  47% /home",
+  "data_available_gib": 875.0698509216309,
+  "passed": true
+}

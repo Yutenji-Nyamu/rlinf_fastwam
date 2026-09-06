@@ -1,0 +1,30 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250
+  - _self_
+
+# The successful RLT 8-env/250-cycle protocol remains unchanged. This overlay
+# only adds frozen-teacher DVAC telemetry and per-future-action Q-gradient
+# weighting for the Stage 2 student actor.
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_stage2_teacher_dvac_w0to2_v1"
+
+algorithm:
+  rlt_dvac:
+    mode: apply
+    l_values: [2, 3, 4]
+    selected_l: 3
+    applied_horizon: ${actor.model.num_action_chunks}
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 0.5
+    raw_trace_interval_updates: 1000
+    raw_trace_queries_per_update: 4
+    output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/rlt_dvac
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}
+

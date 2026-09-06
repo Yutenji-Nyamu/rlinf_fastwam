@@ -1,0 +1,2146 @@
+CST 2026-09-04T10:13:46.156315+08:00
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+
+GIT /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+
+
+GIT /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py SHA256 863ab2a6f8f03742b4918bc049160f64200d814d5cc19c54d2fa35781407e93b
+1: import importlib
+2: import os
+3: import gc
+4: import sys
+5: 
+6: import cv2
+7: import torch
+8: import yaml
+9: from envs import *
+10: 
+11: sys.path.append("../../")
+12: 
+13: import logging
+14: import multiprocessing as mp
+15: import threading
+16: import time
+17: from collections import defaultdict
+18: from concurrent.futures import ThreadPoolExecutor, as_completed
+19: 
+20: import gymnasium as gym
+21: import numpy as np
+22: from sapien.render import clear_cache as sapien_clear_cache
+23: from description.utils.generate_episode_instructions import (
+24:     generate_episode_descriptions,
+25: )
+26: from envs._GLOBAL_CONFIGS import *
+27: from envs.utils.create_actor import UnStableError
+28: 
+29: 
+30: LOG_LEVEL = os.getenv("VECTOR_ENV_LOG_LEVEL", "WARNING").upper()
+31: logging.basicConfig(
+32:     level=getattr(logging, LOG_LEVEL, logging.WARNING),
+33:     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+34: )
+35: logging.getLogger("concurrent.futures").setLevel(logging.WARNING)
+36: logging.getLogger("curobo").setLevel(logging.ERROR)
+37: 
+38: 
+39: def class_decorator(task_name):
+40:     envs_module = importlib.import_module(f"envs.{task_name}")
+41:     try:
+42:         env_class = getattr(envs_module, task_name)
+43:         env_instance = env_class()
+44:     except:
+45:         raise SystemExit("No Task")
+46:     return env_instance
+47: 
+48: 
+49: def update_obs(observation):
+50:     full_image = observation["observation"]["head_camera"]["rgb"]
+51:     left_wrist_image = (
+52:         observation["observation"].get("left_camera", {}).get("rgb", None)
+53:     )
+54:     right_wrist_image = (
+55:         observation["observation"].get("right_camera", {}).get("rgb", None)
+56:     )
+57:     state = observation["joint_action"]["vector"]
+58: 
+59:     return {
+60:         "full_image": full_image,
+61:         "left_wrist_image": left_wrist_image,
+62:         "right_wrist_image": right_wrist_image,
+63:         "state": state,
+64:     }
+65: 
+66: 
+67: class SubEnv:
+68:     def __init__(
+69:         self,
+70:         env_id: int,
+71:         task_name: str,
+72:         args: dict,
+73:         env_seed: int = None,
+74:         instruction_type = "seen",
+75:         global_lock=None,
+76:     ):
+77:         self.env_id = env_id
+78:         self.task_name = task_name
+79:         self.args = args
+80:         self.env_seed = env_seed
+81:         if self.env_seed is None:
+82:             self.env_seed = self.env_id
+83:         self.instruction = None
+84:         self.task = class_decorator(self.task_name)
+85:         self.instruction_type = instruction_type
+86:         self.global_lock = global_lock
+87:         self.lock = threading.Lock()
+88: 
+89:     def setup_task(self):
+90:         self.close()
+91:         self.task = class_decorator(self.task_name)
+92: 
+93:         with self.global_lock:
+94:             with self.lock:
+95:                 trial_seed = self.env_seed
+96:                 is_valid = False
+97:                 while not is_valid:
+98:                     try:
+99:                         task = class_decorator(self.task_name)
+100:                         task.setup_demo(
+101:                             now_ep_num=trial_seed,
+102:                             seed=trial_seed,
+103:                             is_test=True,
+104:                             **self.args,
+105:                         )
+106:                         episode_info = task.get_info()
+107:                         is_valid = True
+108:                     except Exception as e:
+109:                         task.close_env(clear_cache=False)
+110:                         trial_seed += 1
+111:                         continue
+112:                     task.close_env(clear_cache=False)
+113: 
+114:                 self.episode_info_list = [episode_info]
+115: 
+116:     def create_instruction(self):
+117:         task_descriptions = generate_episode_descriptions(
+118:             self.task_name, self.episode_info_list, 1, self.env_seed
+119:         )
+120:         instruction = np.random.choice(task_descriptions[0][self.instruction_type])
+121:         return instruction
+122: 
+123:     def step(self, actions):
+124:         if self.get_instruction() is None:
+125:             self.reset(env_seed=None)
+126: 
+127:         with self.lock:
+128:             reward, termination, truncation, info = self.task.gen_sparse_reward_data(actions)
+129:             obs = update_obs(self.task.get_obs())
+130:             obs["instruction"] = self.task.get_instruction()
+131: 
+132:         return {
+133:             "obs": obs,
+134:             "reward": reward,
+135:             "terminated": termination,
+136:             "truncated": truncation,
+137:             "info": info,
+138:         }
+139: 
+140:     def reset(self, env_seed=None, close_current=True):
+141:         with self.global_lock:
+142:             with self.lock:
+143:                 if close_current and self.task is not None:
+144:                     self.task.close_env(clear_cache=False)
+145:                 if env_seed is not None:
+146:                     self.env_seed = env_seed
+147: 
+148:                 if self.task is None:
+149:                     self.task = class_decorator(self.task_name)
+150: 
+151:                 self.instruction = self.create_instruction()
+152:                 self.args["instruction"] = self.instruction
+153: 
+154:                 trial_seed = self.env_seed
+155:                 is_valid = False
+156:                 while not is_valid:
+157:                     try:
+158:                         self.task.setup_demo(
+159:                             now_ep_num=trial_seed, seed=trial_seed, **self.args
+160:                         )
+161:                         self.task.step_lim = self.args["step_lim"]
+162:                         self.task.run_steps = 0
+163:                         self.task.reward_step = 0
+164:                         is_valid = True
+165:                     except UnStableError as e:
+166:                         logging.warning(
+167:                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+168:                         )
+169:                         self.task.close_env(clear_cache=False)
+170:                         trial_seed += 1
+171:                         continue
+172:                     except Exception as e:
+173:                         logging.error(
+174:                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+175:                         )
+176:                         self.task.close_env(clear_cache=False)
+177:                         raise
+178: 
+179:         return
+180: 
+181:     def get_obs(self):
+182:         with self.lock:
+183:             obs = self.task.get_obs()
+184:             obs = update_obs(obs)
+185:             obs["instruction"] = self.task.get_instruction()
+186: 
+187:         return obs
+188: 
+189:     def get_instruction(self):
+190:         with self.lock:
+191:             if self.task is None:
+192:                 return None
+193:             return self.instruction
+194: 
+195:     def close(self):
+196:         if self.task is not None:
+197:             with self.lock:
+198:                 self.task.close_env(clear_cache=False)
+199:                 self.task = None
+200: 
+201:     def check_seed(self, seed):
+202:         setup_demo_success = False
+203:         play_once_success = False
+204: 
+205:         t1 = time.time()
+206:         with self.global_lock:
+207:             with self.lock:
+208:                 try:
+209:                     self.task.setup_demo(now_ep_num=seed, seed=seed, **self.args)
+210:                     setup_demo_success = True
+211:                     _ = self.task.get_obs()
+212:                     _ = self.task.play_once()
+213:                     if self.task.plan_success and self.task.check_success():
+214:                         play_once_success = True
+215:                 except Exception as e:
+216:                     logging.warning(
+217:                         f"RoboTwin SubEnv {self.env_id} check_seed error with seed {seed}, error: {e}"
+218:                     )
+219:         t2 = time.time()
+220:         result = {
+221:             "setup_demo_success": setup_demo_success,
+222:             "play_once_success": play_once_success,
+223:             "cost_time": t2 - t1,
+224:         }
+225:         return result
+226: 
+227: 
+228: class VectorEnv(gym.Env):
+229:     def __init__(
+230:         self,
+231:         task_config,
+232:         n_envs,
+233:         env_seeds=None,
+234:         instruction_type="seen",
+235:     ):
+236:         self.env_seeds = env_seeds
+237:         if self.env_seeds is not None:
+238:             assert len(self.env_seeds) == n_envs
+239:         assets_path = os.getenv("ASSETS_PATH")
+240:         self.task_name = task_config.get("task_name")
+241: 
+242:         head_camera_type = "D435"
+243:         rdt_step = 10
+244:         args = task_config
+245: 
+246:         args["planner_backend"] = args.get("planner_backend", "curobo") # Choices: [curobo, mplib]
+247:         args["clear_cache_freq"] = max(1, int(args.get("clear_cache_freq", 8)))
+248: 
+249:         embodiment_type = args.get("embodiment")
+250:         embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
+251: 
+252:         with open(embodiment_config_path, "r", encoding="utf-8") as f:
+253:             _embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
+254: 
+255:         with open(CONFIGS_PATH + "_camera_config.yml", "r", encoding="utf-8") as f:
+256:             _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
+257: 
+258:         args["head_camera_h"] = _camera_config[head_camera_type]["h"]
+259:         args["head_camera_w"] = _camera_config[head_camera_type]["w"]
+260: 
+261:         def get_embodiment_file(embodiment_type):
+262:             robot_file = _embodiment_types[embodiment_type]["file_path"]
+263:             if robot_file is None:
+264:                 raise "No embodiment files"
+265:             return robot_file
+266: 
+267:         def get_embodiment_config(robot_file):
+268:             robot_config_file = os.path.join(robot_file, "config.yml")
+269:             with open(robot_config_file, "r", encoding="utf-8") as f:
+270:                 embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+271:             return embodiment_args
+272: 
+273:         if len(embodiment_type) == 1:
+274:             args["left_robot_file"] = os.path.join(
+275:                 assets_path, get_embodiment_file(embodiment_type[0])
+276:             )
+277:             args["right_robot_file"] = os.path.join(
+278:                 assets_path, get_embodiment_file(embodiment_type[0])
+279:             )
+280:             args["dual_arm_embodied"] = True
+281:         elif len(embodiment_type) == 3:
+282:             args["left_robot_file"] = os.path.join(
+283:                 assets_path, get_embodiment_file(embodiment_type[0])
+284:             )
+285:             args["right_robot_file"] = os.path.join(
+286:                 assets_path, get_embodiment_file(embodiment_type[1])
+287:             )
+288:             args["embodiment_dis"] = embodiment_type[2]
+289:             args["dual_arm_embodied"] = False
+290:         else:
+291:             raise "embodiment items should be 1 or 3"
+292: 
+293:         args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
+294:         args["right_embodiment_config"] = get_embodiment_config(
+295:             args["right_robot_file"]
+296:         )
+297: 
+298:         if len(embodiment_type) == 1:
+299:             embodiment_name = str(embodiment_type[0])
+300:         else:
+301:             embodiment_name = str(embodiment_type[0]) + "_" + str(embodiment_type[1])
+302: 
+303:         args["embodiment_name"] = embodiment_name
+304: 
+305:         args["rdt_step"] = rdt_step
+306:         args["save_path"] += f"/{args['task_name']}_reward"
+307: 
+308:         args["n_envs"] = n_envs
+309:         args["action_dim"] = 14
+310: 
+311:         args["eval_mode"] = True
+312:         args["eval_video_log"] = False
+313:         args["render_freq"] = 0
+314: 
+315:         self.args = args
+316:         self.n_envs = n_envs
+317: 
+318:         self.envs = []
+319:         self.instruction_type = instruction_type
+320: 
+321:         self.global_lock = threading.Lock()
+322:         self.full_reset_count = 0
+323:         self.clear_cache_freq = args["clear_cache_freq"]
+324: 
+325:         self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
+326: 
+327:         self._init_envs()
+328: 
+329:     def _init_envs(self):
+330:         for i in range(self.n_envs):
+331:             sub_env = SubEnv(
+332:                 env_id=i,
+333:                 task_name=self.task_name,
+334:                 args=self.args,
+335:                 env_seed=self.env_seeds[i] if self.env_seeds else None,
+336:                 instruction_type=self.instruction_type,
+337:                 global_lock=self.global_lock,
+338:             )
+339:             sub_env.setup_task()
+340:             self.envs.append(sub_env)
+341: 
+342:     def transform(self, results):
+343:         res_dict = defaultdict(list)
+344:         for res in results:
+345:             for k, v in res.items():
+346:                 res_dict[k].append(v)
+347: 
+348:         res_dict = dict(res_dict)
+349:         return (
+350:             res_dict["obs"],
+351:             res_dict["reward"],
+352:             res_dict["terminated"],
+353:             res_dict["truncated"],
+354:             res_dict["info"],
+355:         )
+356: 
+357:     def step(self, actions):
+358:         if len(self.envs) == 0:
+359:             self._init_envs()
+360: 
+361:         step_futures = {}
+362:         for i in range(self.n_envs):
+363:             future = self.env_thread_pool.submit(self.envs[i].step, actions[i])
+364:             step_futures[i] = future
+365: 
+366:         results = []
+367:         for i in range(self.n_envs):
+368:             future = step_futures[i]
+369:             try:
+370:                 result = future.result(timeout=120)
+371:                 results.append(result)
+372:             except Exception as e:
+373:                 raise RuntimeError(f"SubEnv {i} step error: {e}")
+374: 
+375:         obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv = (
+376:             self.transform(results)
+377:         )
+378: 
+379:         return obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv
+380: 
+381:     def reset(self, env_idx=None, env_seeds=None):
+382:         if len(self.envs) == 0:
+383:             self._init_envs()
+384: 
+385:         if env_idx is None:
+386:             env_idx = list(range(self.n_envs))
+387:         elif isinstance(env_idx, (list, tuple)):
+388:             env_idx = list(env_idx)
+389:         elif isinstance(env_idx, torch.Tensor):
+390:             env_idx = env_idx.tolist()
+391:         else:
+392:             env_idx = [env_idx]
+393: 
+394:         valid_idx = [idx for idx in env_idx if 0 <= idx < self.n_envs]
+395:         seeds = {}
+396:         if env_seeds is not None and len(env_seeds) == len(env_idx):
+397:             seeds = {idx: env_seeds[pos] for pos, idx in enumerate(env_idx)}
+398: 
+399:         # SAPIEN's renderer cache is process-global. It is only safe to clear it
+400:         # after every child renderer in this VectorEnv has released its local
+401:         # references. Partial episode resets therefore never clear this cache.
+402:         full_reset = len(valid_idx) == self.n_envs and set(valid_idx) == set(
+403:             range(self.n_envs)
+404:         )
+405:         if full_reset:
+406:             for env in self.envs:
+407:                 env.close()
+408:             self.full_reset_count += 1
+409:             if self.full_reset_count % self.clear_cache_freq == 0:
+410:                 gc.collect()
+411:                 sapien_clear_cache()
+412:                 torch.cuda.empty_cache()
+413: 
+414:         # reset() was previously submitted to the pool, but a process-wide
+415:         # lock serialized every reset already. Keeping lifecycle operations on
+416:         # this caller thread avoids renderer creation/destruction affinity
+417:         # ambiguity while step() remains parallel.
+418:         for idx in valid_idx:
+419:             try:
+420:                 self.envs[idx].reset(
+421:                     env_seed=seeds.get(idx), close_current=not full_reset
+422:                 )
+423:             except Exception as e:
+424:                 raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+425: 
+426:     def get_obs(self):
+427:         obs_venv = []
+428:         for env in self.envs:
+429:             obs_venv.append(env.get_obs())
+430: 
+431:         return obs_venv
+432: 
+433:     def close(self, clear_cache=True):
+434:         for env in self.envs:
+435:             env.close()
+436: 
+437:         if clear_cache:
+438:             self.envs = []
+439:             gc.collect()
+440:             sapien_clear_cache()
+441:             torch.cuda.empty_cache()
+442: 
+443:     def check_seeds(self, seeds: list[int]):
+444:         assert len(seeds) == self.n_envs
+445:         check_futures = {}
+446:         for i in range(self.n_envs):
+447:             future = self.env_thread_pool.submit(self.envs[i].check_seed, seeds[i])
+448:             check_futures[i] = future
+449: 
+450:         results = [None] * self.n_envs
+451:         for future in as_completed(check_futures.values(), timeout=120):
+452:             for idx, f in check_futures.items():
+453:                 if f == future:
+454:                     try:
+455:                         result = future.result()
+456:                         results[idx] = result
+457:                     except Exception as e:
+458:                         raise RuntimeError(f"SubEnv {idx} check seed error: {e}")
+459:                     break
+460: 
+461:         return results
+462: 
+463: 
+464: if __name__ == "__main__":
+465:     mp.set_start_method("spawn")  # solve CUDA compatibility problem
+466:     task_name = "place_shoe"
+467:     n_envs = 4
+468:     steps = 30
+469:     horizon = 10
+470:     action_dim = 14
+471:     times = 10
+472:     env = VectorEnv(task_name, n_envs, horizon)
+473:     actions = np.zeros((n_envs, horizon, action_dim))
+474:     for t in range(times):
+475:         prev_obs_venv, reward_venv, truncation, termination, info_venv = (
+476:             env.reset()
+477:         )
+478:         for step in range(steps):
+479:             actions += np.random.randn(n_envs, horizon, action_dim) * 0.05
+480:             actions = np.clip(actions, 0, 1)
+481:             obs_venv, reward_venv, truncation, termination, info_venv = env.step(
+482:                 actions
+483:             )
+484: 
+485:             # 测试partial reset功能
+486:             if step % 10 == 0:
+487:                 # 重置所有环境
+488:                 env.reset()
+489:             elif step % 5 == 0:
+490:                 # 只重置环境0和2
+491:                 env.reset(env_idx=[0, 2])
+492:             
+493:             obs = (
+494:                 env.get_obs()
+495:             )
+496:         env.close()
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/_base_task.py SHA256 aa9d717ad214b9d68c6eeb83ed03f2491db6addc98deaa988a48a3c074178bdd
+1: import os
+2: import re
+3: import gc
+4: import sapien.core as sapien
+5: from sapien.render import clear_cache as sapien_clear_cache
+6: from sapien.utils.viewer import Viewer
+7: import numpy as np
+8: import gymnasium as gym
+9: import pdb
+10: import toppra as ta
+11: import json
+12: import transforms3d as t3d
+13: from collections import OrderedDict
+14: import torch, random
+15: import numpy as np
+16: 
+17: from .utils import *
+18: import math
+19: from .robot import Robot
+20: from .camera import Camera
+21: 
+22: from copy import deepcopy
+23: import subprocess
+24: from pathlib import Path
+25: import trimesh
+26: import imageio
+27: import glob
+28: 
+29: from ._GLOBAL_CONFIGS import *
+30: 
+31: from typing import Optional, Literal
+32: from PIL import Image, ImageDraw, ImageFont
+33: 
+34: current_file_path = os.path.abspath(__file__)
+35: parent_directory = os.path.dirname(current_file_path)
+36: 
+37: 
+38: class Base_Task(gym.Env):
+39: 
+40:     def __init__(self):
+41:         pass
+42: 
+43:     # =========================================================== Init Task Env ===========================================================
+44:     def _init_task_env_(self, table_xy_bias=[0, 0], table_height_bias=0, **kwags):
+45:         """
+46:         Initialization TODO
+47:         - `self.FRAME_IDX`: The index of the file saved for the current scene.
+48:         - `self.fcitx5-configtool`: Left gripper pose (close <=0, open >=0.4).
+49:         - `self.ep_num`: Episode ID.
+50:         - `self.task_name`: Task name.
+51:         - `self.save_dir`: Save path.`
+52:         - `self.left_original_pose`: Left arm original pose.
+53:         - `self.right_original_pose`: Right arm original pose.
+54:         - `self.left_arm_joint_id`: [6,14,18,22,26,30].
+55:         - `self.right_arm_joint_id`: [7,15,19,23,27,31].
+56:         - `self.render_fre`: Render frequency.
+57:         """
+58:         super().__init__()
+59:         ta.setup_logging("CRITICAL")  # hide logging
+60:         np.random.seed(kwags.get("seed", 0))
+61:         torch.manual_seed(kwags.get("seed", 0))
+62:         # random.seed(kwags.get('seed', 0))
+63: 
+64:         self.FRAME_IDX = 0
+65:         self.task_name = kwags.get("task_name")
+66:         self.save_dir = kwags.get("save_path", "data")
+67:         self.ep_num = kwags.get("now_ep_num", 0)
+68:         self.render_freq = kwags.get("render_freq", 10)
+69:         self.data_type = kwags.get("data_type", None)
+70:         self.save_data = kwags.get("save_data", False)
+71:         self.dual_arm = kwags.get("dual_arm", True)
+72:         self.eval_mode = kwags.get("eval_mode", False)
+73:         self.step_lim = kwags.get("step_lim", None)
+74: 
+75:         self.need_topp = True  # TODO
+76: 
+77:         # Random
+78:         random_setting = kwags.get("domain_randomization")
+79:         self.random_background = random_setting.get("random_background", False)
+80:         self.cluttered_table = random_setting.get("cluttered_table", False)
+81:         self.clean_background_rate = random_setting.get("clean_background_rate", 1)
+82:         self.random_head_camera_dis = random_setting.get("random_head_camera_dis", 0)
+83:         self.random_table_height = random_setting.get("random_table_height", 0)
+84:         self.random_light = random_setting.get("random_light", False)
+85:         self.crazy_random_light_rate = random_setting.get("crazy_random_light_rate", 0)
+86:         self.crazy_random_light = (0 if not self.random_light else np.random.rand() < self.crazy_random_light_rate)
+87:         self.random_embodiment = random_setting.get("random_embodiment", False)  # TODO
+88: 
+89:         self.file_path = []
+90:         self.plan_success = True
+91:         self.fix_gripper = False
+92:         self.setup_scene()
+93: 
+94:         self.left_js = None
+95:         self.right_js = None
+96:         self.raw_head_pcl = None
+97:         self.real_head_pcl = None
+98:         self.real_head_pcl_color = None
+99: 
+100:         self.now_obs = {}
+101:         self.take_action_cnt = 0
+102:         self.eval_video_path = kwags.get("eval_video_save_dir", None)
+103: 
+104:         self.save_freq = kwags.get("save_freq")
+105:         self.world_pcd = None
+106: 
+107:         self.size_dict = list()
+108:         self.cluttered_objs = list()
+109:         self.prohibited_area = list()  # [x_min, y_min, x_max, y_max]
+110:         self.record_cluttered_objects = list()  # record cluttered objects info
+111: 
+112:         self.eval_success = False
+113:         self.table_z_bias = (np.random.uniform(low=-self.random_table_height, high=0) + table_height_bias)  # TODO
+114:         self.need_plan = kwags.get("need_plan", True)
+115:         self.left_joint_path = kwags.get("left_joint_path", [])
+116:         self.right_joint_path = kwags.get("right_joint_path", [])
+117:         self.left_cnt = 0
+118:         self.right_cnt = 0
+119: 
+120:         self.instruction = kwags.get("instruction", None)  # for Eval
+121: 
+122:         self.create_table_and_wall(table_xy_bias=table_xy_bias, table_height=0.74)
+123:         self.load_robot(**kwags)
+124:         self.load_camera(**kwags)
+125:         self.robot.move_to_homestate()
+126: 
+127:         render_freq = self.render_freq
+128:         self.render_freq = 0
+129:         self.together_open_gripper(save_freq=None)
+130:         self.render_freq = render_freq
+131: 
+132:         self.robot.set_origin_endpose()
+133:         self.load_actors()
+134: 
+135:         if self.cluttered_table:
+136:             self.get_cluttered_table()
+137:         self.run_steps = 0
+138:         is_stable, unstable_list = self.check_stable()
+139:         if not is_stable:
+140:             raise UnStableError(
+141:                 f'Objects is unstable in seed({kwags.get("seed", 0)}), unstable objects: {", ".join(unstable_list)}')
+142: 
+143:         if self.eval_mode:
+144:             with open(os.path.join(CONFIGS_PATH, "_eval_step_limit.yml"), "r") as f:
+145:                 try:
+146:                     data = yaml.safe_load(f)
+147:                     self.step_lim = data[self.task_name]
+148:                 except:
+149:                     print(f"{self.task_name} not in step limit file, set to 1000")
+150:                     self.step_lim = 1000
+151: 
+152:         # info
+153:         self.info = dict()
+154:         self.info["cluttered_table_info"] = self.record_cluttered_objects
+155:         self.info["texture_info"] = {
+156:             "wall_texture": self.wall_texture,
+157:             "table_texture": self.table_texture,
+158:         }
+159:         self.info["info"] = {}
+160: 
+161:         self.stage_success_tag = False
+162: 
+163:     def check_stable(self):
+164:         actors_list, actors_pose_list = [], []
+165:         for actor in self.scene.get_all_actors():
+166:             actors_list.append(actor)
+167: 
+168:         def get_sim(p1, p2):
+169:             return np.abs(cal_quat_dis(p1.q, p2.q) * 180)
+170: 
+171:         is_stable, unstable_list = True, []
+172: 
+173:         def check(times):
+174:             nonlocal self, is_stable, actors_list, actors_pose_list
+175:             for _ in range(times):
+176:                 self.scene.step()
+177:                 for idx, actor in enumerate(actors_list):
+178:                     actors_pose_list[idx].append(actor.get_pose())
+179: 
+180:             for idx, actor in enumerate(actors_list):
+181:                 final_pose = actors_pose_list[idx][-1]
+182:                 for pose in actors_pose_list[idx][-200:]:
+183:                     if get_sim(final_pose, pose) > 3.0:
+184:                         is_stable = False
+185:                         unstable_list.append(actor.get_name())
+186:                         break
+187: 
+188:         is_stable = True
+189:         for _ in range(2000):
+190:             self.scene.step()
+191:         for idx, actor in enumerate(actors_list):
+192:             actors_pose_list.append([actor.get_pose()])
+193:         check(500)
+194:         return is_stable, unstable_list
+195: 
+196:     def play_once(self):
+197:         pass
+198: 
+199:     def check_success(self):
+200:         pass
+201: 
+202:     def setup_scene(self, **kwargs):
+203:         """
+204:         Set the scene
+205:             - Set up the basic scene: light source, viewer.
+206:         """
+207:         self.engine = sapien.Engine()
+208:         # declare sapien renderer
+209:         from sapien.render import set_global_config
+210: 
+211:         set_global_config(max_num_materials=50000, max_num_textures=50000)
+212:         self.renderer = sapien.SapienRenderer()
+213:         # give renderer to sapien sim
+214:         self.engine.set_renderer(self.renderer)
+215: 
+216:         sapien.render.set_camera_shader_dir("rt")
+217:         sapien.render.set_ray_tracing_samples_per_pixel(32)
+218:         sapien.render.set_ray_tracing_path_depth(8)
+219:         sapien.render.set_ray_tracing_denoiser("oidn")
+220: 
+221:         # declare sapien scene
+222:         scene_config = sapien.SceneConfig()
+223:         self.scene = self.engine.create_scene(scene_config)
+224:         # set simulation timestep
+225:         self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
+226:         # add ground to scene
+227:         self.scene.add_ground(kwargs.get("ground_height", 0))
+228:         # set default physical material
+229:         self.scene.default_physical_material = self.scene.create_physical_material(
+230:             kwargs.get("static_friction", 0.5),
+231:             kwargs.get("dynamic_friction", 0.5),
+232:             kwargs.get("restitution", 0),
+233:         )
+234:         # give some white ambient light of moderate intensity
+235:         self.scene.set_ambient_light(kwargs.get("ambient_light", [0.5, 0.5, 0.5]))
+236:         # default enable shadow unless specified otherwise
+237:         shadow = kwargs.get("shadow", True)
+238:         # default spotlight angle and intensity
+239:         direction_lights = kwargs.get("direction_lights", [[[0, 0.5, -1], [0.5, 0.5, 0.5]]])
+240:         self.direction_light_lst = []
+380:             pose.append(obj_radius)
+381:             self.size_dict.append(pose)
+382:             success_count += 1
+383:             self.record_cluttered_objects.append({"object_type": obj_name, "object_index": obj_idx})
+384: 
+385:         if success_count < cluttered_numbers:
+386:             print(f"Warning: Only {success_count} cluttered objects are placed on the table.")
+387: 
+388:         self.size_dict = None
+389:         self.cluttered_objs = []
+390: 
+391:     def load_robot(self, **kwags):
+392:         """
+393:         load aloha robot urdf file, set root pose and set joints
+394:         """
+395:         if not hasattr(self, "robot") or self.robot is None:
+396:             self.robot = Robot(self.scene, self.need_topp, **kwags)
+397:             self.robot.set_planner(self.scene)
+398:             self.robot.init_joints()
+399:         else:
+400:             self.robot.reset(self.scene, self.need_topp, **kwags)
+401: 
+402:         for link in self.robot.left_entity.get_links():
+403:             link: sapien.physx.PhysxArticulationLinkComponent = link
+404:             link.set_mass(1)
+405:         for link in self.robot.right_entity.get_links():
+406:             link: sapien.physx.PhysxArticulationLinkComponent = link
+407:             link.set_mass(1)
+408: 
+409:     def load_camera(self, **kwags):
+410:         """
+411:         Add cameras and set camera parameters
+412:             - Including four cameras: left, right, front, head.
+413:         """
+414: 
+415:         self.cameras = Camera(
+416:             bias=self.table_z_bias,
+417:             random_head_camera_dis=self.random_head_camera_dis,
+418:             **kwags,
+419:         )
+420:         self.cameras.load_camera(self.scene)
+421:         self.scene.step()  # run a physical step
+422:         self.scene.update_render()  # sync pose from SAPIEN to renderer
+423: 
+424:     # =========================================================== Sapien ===========================================================
+425: 
+426:     def _update_render(self):
+427:         """
+428:         Update rendering to refresh the camera's RGBD information
+429:         (rendering must be updated even when disabled, otherwise data cannot be collected).
+430:         """
+431:         if self.crazy_random_light:
+432:             for renderColor in self.point_light_lst:
+433:                 renderColor.set_color([np.random.rand(), np.random.rand(), np.random.rand()])
+434:             for renderColor in self.direction_light_lst:
+435:                 renderColor.set_color([np.random.rand(), np.random.rand(), np.random.rand()])
+436:             now_ambient_light = self.scene.ambient_light
+437:             now_ambient_light = np.clip(np.array(now_ambient_light) + np.random.rand(3) * 0.2 - 0.1, 0, 1)
+438:             self.scene.set_ambient_light(now_ambient_light)
+439:         self.cameras.update_wrist_camera(self.robot.left_camera.get_pose(), self.robot.right_camera.get_pose())
+440:         self.scene.update_render()
+441: 
+442:     # =========================================================== Basic APIs ===========================================================
+443: 
+444:     def compress_path(self, path, tolerance=1e-5):
+445:         compressed = [path[0]]
+446:         for i in range(1, len(path)):
+447:             if not np.allclose(path[i], compressed[-1], atol=tolerance, rtol=0):
+448:                 compressed.append(path[i])
+449:         if len(compressed) == 1:
+450:             compressed.append(compressed[0].copy() + np.random.normal(0, 2e-4, 6))
+451:         return np.array(compressed)
+452: 
+453:     def downsample_trajectory(self, positions, velocities, max_points=500):
+454:         n_points = positions.shape[0]
+455:         assert positions.shape[0] == velocities.shape[0]
+456:         if n_points <= max_points:
+457:             return positions, velocities
+458:         indices = np.linspace(0, n_points - 1, max_points).astype(int)
+459:         indices = np.unique(indices)
+460:         return positions[indices], velocities[indices]
+461: 
+462:     def get_obs(self):
+463:         self._update_render()
+464:         self.cameras.update_picture()
+465:         pkl_dic = {
+466:             "observation": {},
+467:             "pointcloud": [],
+468:             "joint_action": {},
+469:             "endpose": {},
+470:         }
+471: 
+472:         pkl_dic["observation"] = self.cameras.get_config()
+473:         # rgb
+474:         if self.data_type.get("rgb", True):
+475:             rgb = self.cameras.get_rgb()
+476:             for camera_name in rgb.keys():
+477:                 pkl_dic["observation"][camera_name].update(rgb[camera_name])
+478: 
+479:         if self.data_type.get("third_view", False):
+480:             third_view_rgb = self.cameras.get_observer_rgb()
+610:         try:
+611:             shutil.rmtree(folder_path)
+612:             print(f"{GREEN}Folder {folder_path} deleted successfully.{RESET}")
+613:         except OSError as e:
+614:             print(f"{RED}Error: {folder_path} is not empty or does not exist.{RESET}")
+615: 
+616:     def set_instruction(self, instruction=None):
+617:         self.instruction = instruction
+618: 
+619:     def get_instruction(self, instruction=None):
+620:         return self.instruction
+621: 
+622:     def set_path_lst(self, args):
+623:         self.need_plan = args.get("need_plan", True)
+624:         self.left_joint_path = args.get("left_joint_path", [])
+625:         self.right_joint_path = args.get("right_joint_path", [])
+626: 
+627:     def _set_eval_video_ffmpeg(self, ffmpeg):
+628:         self.eval_video_ffmpeg = ffmpeg
+629: 
+630:     def close_env(self, clear_cache=False):
+631:         if hasattr(self, "eval_video_ffmpeg"):
+632:             try:
+633:                 self._del_eval_video_ffmpeg()
+634:             except Exception:
+635:                 pass
+636: 
+637:         if hasattr(self, "viewer"):
+638:             try:
+639:                 self.viewer.close()
+640:             except Exception:
+641:                 pass
+642:             self.viewer = None
+643: 
+644:         if hasattr(self, "cameras"):
+645:             self.cameras = None
+646: 
+647:         if hasattr(self, "robot"):
+648:             self.robot = None
+649: 
+650:         if hasattr(self, "scene"):
+651:             self.scene = None
+652: 
+653:         if hasattr(self, "renderer"):
+654:             self.renderer = None
+655: 
+656:         if hasattr(self, "engine"):
+657:             self.engine = None
+658: 
+659:         if clear_cache:
+660:             # for actor in self.scene.get_all_actors():
+661:             #     self.scene.remove_actor(actor)
+662:             sapien_clear_cache()
+663:         self.close()
+664: 
+665:     def _del_eval_video_ffmpeg(self):
+666:         if self.eval_video_ffmpeg:
+667:             self.eval_video_ffmpeg.stdin.close()
+668:             self.eval_video_ffmpeg.wait()
+669:             del self.eval_video_ffmpeg
+670: 
+671:     def delay(self, delay_time, save_freq=None):
+672:         render_freq = self.render_freq
+673:         self.render_freq = 0
+674: 
+675:         left_gripper_val = self.robot.get_left_gripper_val()
+676:         right_gripper_val = self.robot.get_right_gripper_val()
+677:         for i in range(delay_time):
+678:             self.together_close_gripper(
+679:                 left_pos=left_gripper_val,
+680:                 right_pos=right_gripper_val,
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/move_stapler_pad.py SHA256 554f0838382a9e3da5b832ed251361a2da5ab1664aeeb10f0b32d5132a363845
+1: from ._base_task import Base_Task
+2: from .utils import *
+3: import sapien
+4: import math
+5: from ._GLOBAL_CONFIGS import *
+6: from copy import deepcopy
+7: 
+8: 
+9: class move_stapler_pad(Base_Task):
+10: 
+11:     def setup_demo(self, **kwags):
+12:         super()._init_task_env_(**kwags)
+13: 
+14:     def load_actors(self):
+15:         rand_pos = rand_pose(
+16:             xlim=[-0.25, 0.25],
+17:             ylim=[-0.2, 0.0],
+18:             qpos=[0.5, 0.5, 0.5, 0.5],
+19:             rotate_rand=True,
+20:             rotate_lim=[0, 3.14, 0],
+21:         )
+22:         while abs(rand_pos.p[0]) < 0.05:
+23:             rand_pos = rand_pose(
+24:                 xlim=[-0.25, 0.25],
+25:                 ylim=[-0.2, 0.0],
+26:                 qpos=[0.5, 0.5, 0.5, 0.5],
+27:                 rotate_rand=True,
+28:                 rotate_lim=[0, 3.14, 0],
+29:             )
+30:         self.stapler_id = np.random.choice([0, 1, 2, 3, 4, 5, 6], 1)[0]
+31:         self.stapler = create_actor(
+32:             scene=self,
+33:             pose=rand_pos,
+34:             modelname="048_stapler",
+35:             convex=True,
+36:             model_id=self.stapler_id,
+37:         )
+38: 
+39:         if rand_pos.p[0] > 0:
+40:             xlim = [0.05, 0.25]
+41:         else:
+42:             xlim = [-0.25, -0.05]
+43:         target_rand_pose = rand_pose(
+44:             xlim=xlim,
+45:             ylim=[-0.2, 0.0],
+46:             qpos=[1, 0, 0, 0],
+47:             rotate_rand=False,
+48:         )
+49:         while (np.sqrt((target_rand_pose.p[0] - rand_pos.p[0])**2 + (target_rand_pose.p[1] - rand_pos.p[1])**2) < 0.1):
+50:             target_rand_pose = rand_pose(
+51:                 xlim=xlim,
+52:                 ylim=[-0.2, 0.0],
+53:                 qpos=[1, 0, 0, 0],
+54:                 rotate_rand=False,
+55:             )
+56:         half_size = [0.055, 0.03, 0.0005]
+57: 
+58:         colors = {
+59:             "Red": (1, 0, 0),
+60:             "Green": (0, 1, 0),
+61:             "Blue": (0, 0, 1),
+62:             "Yellow": (1, 1, 0),
+63:             "Cyan": (0, 1, 1),
+64:             "Magenta": (1, 0, 1),
+65:             "Black": (0, 0, 0),
+66:             "Gray": (0.5, 0.5, 0.5),
+67:         }
+68: 
+69:         color_items = list(colors.items())
+70:         color_index = np.random.choice(len(color_items))
+71:         self.color_name, self.color_value = color_items[color_index]
+72: 
+73:         self.pad = create_box(
+74:             scene=self.scene,
+75:             pose=target_rand_pose,
+76:             half_size=half_size,
+77:             color=self.color_value,
+78:             name="box",
+79:         )
+80:         self.add_prohibit_area(self.stapler, padding=0.1)
+81:         self.add_prohibit_area(self.pad, padding=0.15)
+82: 
+83:         # Create target pose by combining target position with default quaternion orientation
+84:         self.pad_pose = self.pad.get_pose().p.tolist() + [0.707, 0, 0, 0.707]
+85: 
+86:     def play_once(self):
+87:         # Determine which arm to use based on stapler's position (right if on positive x, left otherwise)
+88:         arm_tag = ArmTag("right" if self.stapler.get_pose().p[0] > 0 else "left")
+89: 
+90:         # Grasp the stapler with specified arm
+91:         self.move(self.grasp_actor(self.stapler, arm_tag=arm_tag, pre_grasp_dis=0.1))
+92:         # Move the arm upward by 0.1 meters along z-axis
+93:         self.move(self.move_by_displacement(arm_tag, z=0.1, move_axis="arm"))
+94: 
+95:         # Place the stapler at target pose with alignment constraint
+96:         self.move(
+97:             self.place_actor(
+98:                 self.stapler,
+99:                 target_pose=self.pad_pose,
+100:                 arm_tag=arm_tag,
+101:                 pre_dis=0.1,
+102:                 dis=0.0,
+103:                 constrain="align",
+104:             ))
+105: 
+106:         self.info["info"] = {
+107:             "{A}": f"048_stapler/base{self.stapler_id}",
+108:             "{B}": self.color_name,
+109:             "{a}": str(arm_tag),
+110:         }
+111:         return self.info
+112: 
+113:     def get_info(self):
+114:         arm_tag = ArmTag("right" if self.stapler.get_pose().p[0] > 0 else "left")
+115:         info = {
+116:             "{A}": f"048_stapler/base{self.stapler_id}",
+117:             "{B}": self.color_name,
+118:             "{a}": str(arm_tag),
+119:         }
+120:         return info
+121: 
+122:     def check_success(self):
+123:         stapler_pose = self.stapler.get_pose().p
+124:         stapler_qpose = np.abs(self.stapler.get_pose().q)
+125:         target_pos = self.pad.get_pose().p
+126:         eps = [0.02, 0.02, 0.01]
+127:         return (np.all(abs(stapler_pose - target_pos) < np.array(eps))
+128:                 and (stapler_qpose.max() - stapler_qpose.min()) < 0.02 and self.robot.is_left_gripper_open()
+129:                 and self.robot.is_right_gripper_open())
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/wrapper/scene.py SHA256 9755a546e0825646f7188b894ae9b3c96397981dbdebc69f5127053470cf23e7
+1: #
+2: # Copyright 2025 Hillbot Inc.
+3: # Copyright 2020-2024 UCSD SU Lab
+4: # 
+5: # Licensed under the Apache License, Version 2.0 (the "License");
+6: # you may not use this file except in compliance with the License.
+7: # You may obtain a copy of the License at:
+8: # 
+9: #     http://www.apache.org/licenses/LICENSE-2.0
+10: # 
+11: # Unless required by applicable law or agreed to in writing, software
+12: # distributed under the License is distributed on an "AS IS" BASIS,
+13: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14: # See the License for the specific language governing permissions and
+15: # limitations under the License.
+16: #
+17: from __future__ import annotations
+18: 
+19: from typing import Optional, TypeVar, Union
+20: from warnings import warn
+21: 
+22: from .. import pysapien as sapien
+23: from ..pysapien import Scene as _Scene
+24: from ..pysapien.physx import PhysxSceneConfig as SceneConfig
+25: from ..pysapien.render import RenderCameraComponent, RenderCubemap
+26: 
+27: 
+28: class Widget:
+29:     def __init__(self):
+30:         warn(
+31:             "Inheriting from sapien.Widget is not required",
+32:             DeprecationWarning,
+33:             stacklevel=2,
+34:         )
+35: 
+36: 
+37: class Scene(_Scene):
+38:     def __init__(self, systems=None):
+39:         if systems is None:
+40:             super().__init__(
+41:                 [sapien.physx.PhysxCpuSystem(), sapien.render.RenderSystem()]
+42:             )
+43:         else:
+44:             super().__init__(systems)
+45: 
+46:     @property
+47:     def timestep(self):
+48:         return self.physx_system.timestep
+49: 
+50:     @timestep.setter
+51:     def timestep(self, timestep):
+52:         self.physx_system.timestep = timestep
+53: 
+54:     def set_timestep(self, timestep):
+55:         self.timestep = timestep
+56: 
+57:     def get_timestep(self):
+58:         return self.timestep
+59: 
+60:     def create_actor_builder(self):
+61:         from .actor_builder import ActorBuilder
+62: 
+63:         return ActorBuilder().set_scene(self)
+64: 
+65:     def create_articulation_builder(self):
+66:         from .articulation_builder import ArticulationBuilder
+67: 
+68:         return ArticulationBuilder().set_scene(self)
+69: 
+70:     def create_urdf_loader(self):
+71:         from .urdf_loader import URDFLoader
+72: 
+73:         loader = URDFLoader()
+74:         loader.set_scene(self)
+75:         return loader
+76: 
+77:     def create_physical_material(
+78:         self, static_friction: float, dynamic_friction: float, restitution: float
+79:     ):
+80:         return sapien.physx.PhysxMaterial(
+81:             static_friction, dynamic_friction, restitution
+82:         )
+83: 
+84:     def remove_actor(self, actor):
+85:         self.remove_entity(actor)
+86:         pass
+87: 
+88:     def remove_articulation(self, articulation):
+89:         entities = [l.entity for l in articulation.links]
+90:         for e in entities:
+91:             self.remove_entity(e)
+92: 
+93:     # TODO: find actor by id
+94:     def add_camera(
+95:         self, name, width: int, height: int, fovy: float, near: float, far: float
+96:     ) -> RenderCameraComponent:
+97:         camera_mount = sapien.Entity()
+98:         camera = RenderCameraComponent(width, height)
+99:         camera.set_fovy(fovy, compute_x=True)
+100:         camera.near = near
+101:         camera.far = far
+102:         camera_mount.add_component(camera)
+103:         self.add_entity(camera_mount)
+104:         camera_mount.name = name
+105:         camera.name = name
+106: 
+107:         return camera
+108: 
+109:     def add_mounted_camera(
+110:         self, name, mount, pose, width, height, fovy, near, far
+111:     ) -> RenderCameraComponent:
+112:         camera = RenderCameraComponent(width, height)
+113:         camera.set_fovy(fovy, compute_x=True)
+114:         camera.near = near
+115:         camera.far = far
+400:         self.remove_entity(light.entity)
+401: 
+402:     def set_environment_map(self, cubemap: str | RenderCubemap):
+403:         if isinstance(cubemap, str):
+404:             self.render_system.cubemap = sapien.render.RenderCubemap(cubemap)
+405:         else:
+406:             self.render_system.cubemap = cubemap
+407: 
+408:     def set_environment_map_from_files(
+409:         self, px: str, nx: str, py: str, ny: str, pz: str, nz: str
+410:     ):
+411:         self.render_system.cubemap = sapien.render.RenderCubemap(px, nx, py, ny, pz, nz)
+412: 
+413:     # TODO particle entity, deformable entity
+414: 
+415:     def create_viewer(self):
+416:         from sapien.utils import Viewer
+417: 
+418:         viewer = Viewer()
+419:         viewer.set_scene(self)
+420: 
+421:         return viewer
+422: 
+423:     def __del__(self):
+424:         self.clear()
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/wrapper/engine.py SHA256 6fcd650e8a8803a5ef4c81e8b4443cd54b19dab3d8df7db9db4fcd215792e78f
+1: #
+2: # Copyright 2025 Hillbot Inc.
+3: # Copyright 2020-2024 UCSD SU Lab
+4: # 
+5: # Licensed under the Apache License, Version 2.0 (the "License");
+6: # you may not use this file except in compliance with the License.
+7: # You may obtain a copy of the License at:
+8: # 
+9: #     http://www.apache.org/licenses/LICENSE-2.0
+10: # 
+11: # Unless required by applicable law or agreed to in writing, software
+12: # distributed under the License is distributed on an "AS IS" BASIS,
+13: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14: # See the License for the specific language governing permissions and
+15: # limitations under the License.
+16: #
+17: from ..pysapien.physx import PhysxSystem, PhysxGpuSystem, PhysxCpuSystem, PhysxMaterial
+18: from .. import pysapien as sapien
+19: from ..pysapien.render import RenderSystem
+20: from warnings import warn
+21: from .scene import Scene
+22: from ..pysapien.physx import PhysxSceneConfig as SceneConfig
+23: 
+24: 
+25: class Engine:
+26:     def __init__(self, **args):
+27:         warn(
+28:             "Engine is deprecated. use sapien.Scene() directly.",
+29:             DeprecationWarning,
+30:             stacklevel=2,
+31:         )
+32: 
+33:     def set_renderer(self, renderer):
+34:         self.renderer = renderer
+35: 
+36:     def create_physical_material(self, static_friction, dynamic_friction, restitution):
+37:         return PhysxMaterial(static_friction, dynamic_friction, restitution)
+38: 
+39:     def create_scene(self, config=SceneConfig()):
+40:         sapien.physx.set_scene_config(config)
+41:         return Scene()
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_oidn_tricks.py SHA256 61a7900ee84d846cd92bd6e0c0fe9a1de90981e4eb3c611828b7102e2c457d68
+1: #
+2: # Copyright 2025 Hillbot Inc.
+3: # Copyright 2020-2024 UCSD SU Lab
+4: # 
+5: # Licensed under the Apache License, Version 2.0 (the "License");
+6: # you may not use this file except in compliance with the License.
+7: # You may obtain a copy of the License at:
+8: # 
+9: #     http://www.apache.org/licenses/LICENSE-2.0
+10: # 
+11: # Unless required by applicable law or agreed to in writing, software
+12: # distributed under the License is distributed on an "AS IS" BASIS,
+13: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14: # See the License for the specific language governing permissions and
+15: # limitations under the License.
+16: #
+17: import ctypes
+18: import platform
+19: import os
+20: 
+21: if platform.system() == "Linux":
+22:     try:
+23:         oidn_dll = ctypes.CDLL(
+24:             os.path.join(
+25:                 os.path.dirname(__file__),
+26:                 "oidn_library/libOpenImageDenoise_core.so.2.0.1",
+27:             ),
+28:             ctypes.RTLD_LOCAL,
+29:         )
+30: 
+31:         oidn_dll = ctypes.CDLL(
+32:             os.path.join(
+33:                 os.path.dirname(__file__), "oidn_library/libOpenImageDenoise.so.2.0.1"
+34:             ),
+35:             ctypes.RTLD_LOCAL,
+36:         )
+37:     except Exception:
+38:         pass
+39: if platform.system() == "Windows":
+40:     try:
+41:         oidn_dll = ctypes.CDLL(
+42:             os.path.join(
+43:                 os.path.dirname(__file__),
+44:                 "oidn_library/OpenImageDenoise_core.dll",
+45:             ),
+46:         )
+47: 
+48:         oidn_dll = ctypes.CDLL(
+49:             os.path.join(
+50:                 os.path.dirname(__file__), "oidn_library/OpenImageDenoise.dll"
+51:             ),
+52:         )
+53:     except Exception:
+54:         pass
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py SHA256 af6b1768682c364c642d99df2d585861f2196bf9dd522904787af54f9a6bd035
+1: # Copyright 2025 The RLinf Authors.
+2: #
+3: # Licensed under the Apache License, Version 2.0 (the "License");
+4: # you may not use this file except in compliance with the License.
+5: # You may obtain a copy of the License at
+6: #
+7: #     https://www.apache.org/licenses/LICENSE-2.0
+8: #
+9: # Unless required by applicable law or agreed to in writing, software
+10: # distributed under the License is distributed on an "AS IS" BASIS,
+11: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+12: # See the License for the specific language governing permissions and
+13: # limitations under the License.
+14: 
+15: import json
+16: import os
+17: from typing import Optional, Union
+18: 
+19: import gymnasium as gym
+20: import numpy as np
+21: import torch
+22: import torch.multiprocessing as mp
+23: from omegaconf import OmegaConf
+24: from PIL import Image
+25: 
+26: from rlinf.envs.robotwin.seed_utils import partition_success_seeds
+27: from rlinf.envs.utils import center_crop_image, list_of_dict_to_dict_of_list
+28: 
+29: __all__ = ["RoboTwinEnv"]
+30: 
+31: 
+32: class RoboTwinEnv(gym.Env):
+33:     def __init__(
+34:         self,
+35:         cfg,
+36:         num_envs,
+37:         seed_offset,
+38:         total_num_processes,
+39:         worker_info,
+40:         record_metrics=True,
+41:     ):
+42:         env_seed = cfg.seed
+43:         self.seed = env_seed + seed_offset
+44:         self.base_seed = env_seed
+45:         self.num_envs = num_envs
+46:         self.seed_offset = seed_offset
+47:         self.total_num_processes = total_num_processes
+48:         self.worker_info = worker_info
+49:         self.auto_reset = cfg.auto_reset
+50:         self.use_rel_reward = cfg.use_rel_reward
+51:         self.ignore_terminations = cfg.ignore_terminations
+52: 
+53:         self.group_size = cfg.group_size
+54:         self.num_group = self.num_envs // self.group_size
+55:         self.use_fixed_reset_state_ids = cfg.use_fixed_reset_state_ids
+56:         self.use_custom_reward = cfg.use_custom_reward
+57: 
+58:         self.video_cfg = cfg.video_cfg
+59: 
+60:         self.cfg = cfg
+61:         self.record_metrics = record_metrics
+62:         self._is_start = True
+63: 
+64:         self.task_name = cfg.task_config.task_name
+65: 
+66:         self.center_crop = cfg.get("center_crop", False)
+67:         self._init_reset_state_ids()
+68: 
+69:         self._init_env()
+70: 
+71:         self.prev_step_reward = torch.zeros(
+72:             self.num_envs, dtype=torch.float32, device=self.device
+73:         )
+74:         if self.record_metrics:
+75:             self._init_metrics()
+76:             self._elapsed_steps = torch.zeros(
+77:                 self.num_envs, dtype=torch.long, device=self.device
+78:             )
+79: 
+80:     def _init_env(self):
+81:         mp.set_start_method("spawn", force=True)
+82:         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+83: 
+84:         from robotwin.envs.vector_env import VectorEnv
+85: 
+86:         env_seeds = self.reset_state_ids.tolist()
+87: 
+88:         self.venv = VectorEnv(
+89:             task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+90:             n_envs=self.num_envs,
+91:             env_seeds=env_seeds,
+92:         )
+93: 
+94:     @property
+95:     def device(self):
+96:         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+97: 
+98:     @property
+99:     def elapsed_steps(self):
+100:         return self._elapsed_steps
+101: 
+102:     @property
+103:     def is_start(self):
+104:         return self._is_start
+105: 
+106:     @is_start.setter
+107:     def is_start(self, value):
+108:         self._is_start = value
+109: 
+110:     def _init_metrics(self):
+111:         self.success_once = torch.zeros(
+112:             self.num_envs, device=self.device, dtype=torch.bool
+113:         )
+114:         self.fail_once = torch.zeros(
+115:             self.num_envs, device=self.device, dtype=torch.bool
+116:         )
+117:         self.returns = torch.zeros(
+118:             self.num_envs, device=self.device, dtype=torch.float32
+119:         )
+120: 
+121:     def _reset_metrics(self, env_idx=None):
+122:         if env_idx is not None:
+123:             mask = torch.zeros(self.num_envs, dtype=bool, device=self.device)
+124:             mask[env_idx] = True
+125:             self.prev_step_reward[mask] = 0.0
+126:             if self.record_metrics:
+127:                 self.success_once[mask] = False
+128:                 self.fail_once[mask] = False
+129:                 self.returns[mask] = 0
+130:                 self._elapsed_steps[env_idx] = 0
+131:         else:
+132:             self.prev_step_reward[:] = 0
+133:             if self.record_metrics:
+134:                 self.success_once[:] = False
+135:                 self.fail_once[:] = False
+136:                 self.returns[:] = 0.0
+137:                 self._elapsed_steps[:] = 0
+138: 
+139:     def _record_metrics(self, step_reward, infos):
+140:         episode_info = {}
+141:         self.returns += step_reward
+142:         if "success" in infos:
+143:             if isinstance(infos["success"], list):
+144:                 infos["success"] = torch.as_tensor(
+145:                     np.array(infos["success"]).reshape(-1), device=self.device
+146:                 )
+147:             self.success_once = self.success_once | infos["success"]
+148:             episode_info["success_once"] = self.success_once.clone()
+149:         episode_info["return"] = self.returns.clone()
+150:         episode_info["episode_len"] = self.elapsed_steps.clone()
+151:         episode_info["reward"] = episode_info["return"] / episode_info["episode_len"]
+152:         infos["episode"] = episode_info
+153:         return infos
+154: 
+155:     def center_and_crop(self, image, center_crop=False):
+156:         image = np.array(image)
+157: 
+158:         image = Image.fromarray(image).convert("RGB")
+159:         if center_crop:
+160:             image = center_crop_image(image)
+161:         return np.array(image)
+162: 
+163:     def _extract_obs_image(self, raw_obs):
+164:         batch_images = []
+165:         batch_wrist_images = []
+166:         batch_states = []
+167:         batch_instructions = []
+168:         for obs in raw_obs:
+169:             batch_images.append(
+170:                 self.center_and_crop(obs["full_image"], center_crop=self.center_crop)
+205: 
+206:         return extracted_obs
+207: 
+208:     def _calc_step_reward(self, terminations):
+209:         reward = self.cfg.reward_coef * terminations
+210: 
+211:         reward_diff = reward - self.prev_step_reward
+212:         self.prev_step_reward = reward
+213: 
+214:         if self.use_rel_reward:
+215:             return reward_diff
+216:         else:
+217:             return reward
+218: 
+219:     def _cal_chunk_rewards(self, step_reward, chunk_step, terminations, infos):
+220:         n_steps_to_run = np.array(
+221:             [[0] for i in range(self.num_envs)]
+222:         )  # infos.get("n_steps_to_run", np.array([[0] for i in range(self.num_envs)]))
+223: 
+224:         n_steps_to_run = torch.as_tensor(
+225:             np.array(n_steps_to_run).reshape(-1), device=self.device
+226:         )
+227:         chunk_rewards = torch.zeros(self.num_envs, chunk_step, device=self.device)
+228:         for env_id in range(self.num_envs):
+229:             steps_left = n_steps_to_run[env_id]
+230:             reward = step_reward[env_id]
+231:             start_idx = chunk_step - steps_left - 1
+232: 
+233:             if terminations[env_id] and start_idx > 0:
+234:                 if self.use_rel_reward:
+235:                     chunk_rewards[env_id, start_idx] = reward
+236:                 else:
+237:                     chunk_rewards[env_id, start_idx:] = reward
+238: 
+239:         return chunk_rewards
+240: 
+241:     def reset(
+242:         self,
+243:         env_idx: Optional[Union[int, list[int]]] = None,
+244:         env_seeds=None,
+245:     ):
+246:         if self._is_start:
+247:             self._is_start = False
+248: 
+249:         env_seeds = self.reset_state_ids.tolist() if env_seeds is None else env_seeds
+250: 
+251:         self.venv.reset(env_idx=env_idx, env_seeds=env_seeds)
+252:         raw_obs = self.venv.get_obs()
+253:         infos = {}
+254: 
+255:         self._reset_metrics(env_idx)
+256: 
+257:         extracted_obs = self._extract_obs_image(raw_obs)
+258: 
+259:         return extracted_obs, infos
+260: 
+261:     def step(
+262:         self, actions: Union[torch.Tensor, np.ndarray, dict] = None, auto_reset=True
+263:     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+264:         if actions is None:
+265:             assert self._is_start, "Actions must be provided after the first reset."
+266: 
+267:         if isinstance(actions, torch.Tensor):
+268:             actions = actions.cpu().numpy()
+269:         elif isinstance(actions, dict):
+270:             actions = actions.get("actions", actions)
+271: 
+272:         # [n_envs, horizon, action_dim]
+273:         if len(actions.shape) == 2:
+274:             # [n_envs, action_dim] -> [n_envs, 1, action_dim]
+275:             actions = actions[:, None, :]
+420:         ):
+421:             with open(self.cfg.seeds_path, "r") as f:
+422:                 data = json.load(f)
+423:             success_seeds = data[self.task_name].get("success_seeds", None)
+424:             if success_seeds is not None:
+425:                 success_seeds = torch.as_tensor(success_seeds, dtype=torch.long)
+426:                 self.success_seeds = partition_success_seeds(
+427:                     success_seeds,
+428:                     base_seed=self.base_seed,
+429:                     seed_offset=self.seed_offset,
+430:                     total_num_processes=self.total_num_processes,
+431:                     num_group=self.num_group,
+432:                 )
+433:                 self._current_seed_index = 0
+434:             else:
+435:                 self.success_seeds = None
+436:                 self._current_seed_index = 0
+437:         else:
+438:             self.success_seeds = None
+439:             self._current_seed_index = 0
+440: 
+441:         if not hasattr(self, "_generator"):
+442:             self._generator = torch.Generator()
+443:             self._generator.manual_seed(self.seed)
+444:         self.update_reset_state_ids()
+445: 
+446:     def update_reset_state_ids(self, env_idx=None):
+447:         if self.use_fixed_reset_state_ids and hasattr(self, "reset_state_ids"):
+448:             return
+449: 
+450:         if env_idx is not None and hasattr(self, "reset_state_ids"):
+451:             if self.success_seeds is not None:
+452:                 total_seeds = self.success_seeds.numel()
+453:                 indices = (
+454:                     torch.arange(self.num_group, device=self.success_seeds.device)
+455:                     + self._current_seed_index
+456:                 ) % total_seeds
+457:                 reset_state_ids = self.success_seeds[indices]
+458:                 reset_state_ids = reset_state_ids.repeat_interleave(
+459:                     repeats=self.group_size
+460:                 )
+461:                 self._current_seed_index = (
+462:                     self._current_seed_index + self.num_group
+463:                 ) % total_seeds
+464:             else:
+465:                 reset_state_ids = torch.randint(
+466:                     low=10000,
+467:                     high=200000,
+468:                     size=(self.num_group,),
+469:                     generator=self._generator,
+470:                 )
+471:                 reset_state_ids = reset_state_ids.repeat_interleave(
+472:                     repeats=self.group_size
+473:                 )
+474:             for idx in env_idx:
+475:                 self.reset_state_ids[idx] = reset_state_ids[idx]
+476:         else:
+477:             if self.success_seeds is not None:
+478:                 total_seeds = self.success_seeds.numel()
+479:                 indices = (
+480:                     torch.arange(self.num_group, device=self.success_seeds.device)
+481:                     + self._current_seed_index
+482:                 ) % total_seeds
+483:                 reset_state_ids = self.success_seeds[indices]
+484:                 reset_state_ids = reset_state_ids.repeat_interleave(
+485:                     repeats=self.group_size
+486:                 )
+487:                 self._current_seed_index = (
+488:                     self._current_seed_index + self.num_group
+489:                 ) % total_seeds
+490:             else:
+491:                 reset_state_ids = torch.randint(
+492:                     low=10000,
+493:                     high=200000,
+494:                     size=(self.num_group,),
+495:                     generator=self._generator,
+496:                 )
+497:                 reset_state_ids = reset_state_ids.repeat_interleave(
+498:                     repeats=self.group_size
+499:                 )
+500:             self.reset_state_ids = reset_state_ids
+501: 
+502:     def check_seeds(self, seeds):
+503:         resutls = self.venv.check_seeds(seeds)
+504: 
+505:         return resutls
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py SHA256 82d47e57908115168a57aa8411f13d3737fb01b28abb613463aff09b53b0521b
+115:             train_env_cfg.rollout_epoch if train_env_cfg is not None else 1
+116:         )
+117:         self.eval_rollout_epoch = eval_env_cfg.rollout_epoch if self.enable_eval else 1
+118: 
+119:         self.train_enable_offload = (
+120:             train_env_cfg.get("enable_offload", False)
+121:             if train_env_cfg is not None
+122:             else False
+123:         )
+124:         self.eval_enable_offload = (
+125:             eval_env_cfg.get("enable_offload", False)
+126:             if eval_env_cfg is not None
+127:             else False
+128:         )
+129:         if self.enable_train:
+130:             self.enable_online_lerobot = bool(
+131:                 OmegaConf.select(
+132:                     self.cfg,
+133:                     "algorithm.dagger.online_lerobot.enabled",
+134:                     default=False,
+135:                 )
+136:             )
+137:             self.train_num_envs_per_stage = (
+138:                 self.cfg.env.train.total_num_envs // self._world_size // self.stage_num
+139:             )
+140:             self.train_batch_size = self.cfg.env.train.total_num_envs // self.stage_num
+141:         else:
+142:             self.enable_online_lerobot = False
+143:         if self.enable_eval:
+144:             self.eval_num_envs_per_stage = (
+145:                 self.cfg.env.eval.total_num_envs // self._world_size // self.stage_num
+146:             )
+147:             self.eval_batch_size = self.cfg.env.eval.total_num_envs // self.stage_num
+148:         self.n_train_chunk_steps = 0
+149:         if self.enable_train:
+150:             self.n_train_chunk_steps = (
+151:                 self.cfg.env.train.max_steps_per_rollout_epoch
+152:                 // self.model_cfg.num_action_chunks
+153:             )
+154:         self.n_eval_chunk_steps = 0
+155:         if self.enable_eval:
+156:             self.n_eval_chunk_steps = (
+157:                 self.cfg.env.eval.max_steps_per_rollout_epoch
+158:                 // self.model_cfg.num_action_chunks
+159:             )
+160:         self.actor_split_num = (
+161:             1 if not self.enable_train else self.get_actor_split_num()
+162:         )
+163:         if self.use_training_pipeline and self.enable_train:
+164:             self._init_pipeline_params()
+165: 
+166:         if self.enable_train:
+167:             self.train_prev_done: list[torch.Tensor] = [
+168:                 torch.zeros(self.train_num_envs_per_stage, dtype=torch.bool)
+169:                 for _ in range(self.stage_num)
+170:             ]
+171:         if self.enable_eval:
+172:             self.eval_prev_done: list[torch.Tensor] = [
+173:                 torch.zeros(self.eval_num_envs_per_stage, dtype=torch.bool)
+174:                 for _ in range(self.stage_num)
+175:             ]
+176:         self.env_decoupled_mode = self.cfg.runner.get("enable_decoupled_mode", False)
+177: 
+178:         self.smooth_intervene = SmoothInterveneController.from_cfg(
+179:             self.cfg,
+180:             stage_num=self.stage_num,
+181:             enable_train=self.enable_train,
+182:             train_num_envs_per_stage=(
+183:                 self.train_num_envs_per_stage if self.enable_train else 0
+184:             ),
+185:         )
+186: 
+187:         if self.env_decoupled_mode:
+188:             # Init the batch_router for env decoupled mode
+189:             # The batch_router is a dictionary that maps the tag to the list of batch_index.
+190:             self.batch_router = {}
+191:             assert self._component_placement.get_world_size(
+192:                 "env"
+193:             ) >= self._component_placement.get_world_size("rollout"), (
+194:                 "the world size of env must be greater than the world size of rollout in env_decoupled_mode"
+195:             )
+196: 
+197:     def _prepare_trajectory_builders(
+198:         self, trajectory_builders: list | None = None
+199:     ) -> list:
+200:         if self.enable_online_lerobot and trajectory_builders is not None:
+201:             for stage_builder in trajectory_builders:
+202:                 stage_builder.rewards.clear()
+203:             return trajectory_builders
+204: 
+205:         collect_only_success = bool(
+850:         for key in self.env_infos_reward_keys:
+851:             if key not in env_infos:
+852:                 continue
+853:             reward_env_infos[key] = clone_nested_to_cpu(env_infos[key])
+854:         return reward_env_infos
+855: 
+856:     def _scatter_terminal_reward_output(
+857:         self,
+858:         env_output: EnvOutput,
+859:         reward_output: torch.Tensor,
+860:     ) -> torch.Tensor:
+861:         if env_output.rewards is None or env_output.dones is None:
+862:             return reward_output
+863: 
+864:         done_envs = env_output.dones.any(dim=1)
+865:         sparse_rewards = torch.zeros_like(env_output.rewards, dtype=reward_output.dtype)
+866:         if not done_envs.any():
+867:             return sparse_rewards
+868: 
+869:         done_steps = env_output.dones.to(torch.int64).argmax(dim=1)
+870:         sparse_rewards[done_envs, done_steps[done_envs]] = (
+871:             reward_output[done_envs].reshape(-1).to(sparse_rewards.dtype)
+872:         )
+873:         return sparse_rewards
+874: 
+875:     def assign_history_reward(self, stage_id: int, reward_model_output: torch.Tensor):
+876:         reward_assign_lengths = [
+877:             min(
+878:                 history_buffer_length[env_id]
+879:                 for history_buffer_length in self.history_lengths[stage_id].values()
+880:             )
+881:             for env_id in range(self.train_num_envs_per_stage)
+882:         ]
+883:         rollout_rewards = self.trajectory_builders[stage_id].rewards
+884:         rollout_rewards_length = len(rollout_rewards)
+885:         reward_assign_lengths = [
+886:             min(reward_assign_length, rollout_rewards_length)
+887:             for reward_assign_length in reward_assign_lengths
+888:         ]
+889:         if not any(reward_assign_lengths):
+890:             return
+891:         reward = (self.reward_weight * reward_model_output).to(
+892:             rollout_rewards[-1].dtype
+893:         )
+894:         for env_id, reward_assign_length in enumerate(reward_assign_lengths):
+895:             for reward_assign_step in range(2, reward_assign_length + 1):
+896:                 rollout_rewards[-reward_assign_step][env_id] += reward[env_id]
+897: 
+898:     @Worker.timer("env/bootstrap_step")
+899:     def bootstrap_step(self) -> list[EnvOutput]:
+900:         def get_zero_dones() -> torch.Tensor:
+901:             return (
+902:                 torch.zeros((self.train_num_envs_per_stage,), dtype=bool)
+903:                 .unsqueeze(1)
+904:                 .repeat(1, self.model_cfg.num_action_chunks)
+905:             )
+906: 
+907:         env_outputs: list[EnvOutput] = []
+908:         if not self.cfg.env.train.auto_reset:
+909:             for stage_id in range(self.stage_num):
+910:                 self.env_list[stage_id].is_start = True
+911:                 extracted_obs, infos = self.env_list[stage_id].reset()
+912:                 if self.enable_online_lerobot:
+913:                     trajectory_builders = getattr(self, "trajectory_builders", None)
+914:                     if trajectory_builders is not None:
+915:                         trajectory_builders[stage_id].reset_episode_buffers()
+916:                 dones = get_zero_dones()
+917:                 terminations = dones.clone()
+918:                 truncations = dones.clone()
+919: 
+920:                 env_output = EnvOutput(
+921:                     obs=extracted_obs,
+922:                     dones=dones,
+923:                     terminations=terminations,
+924:                     truncations=truncations,
+925:                     final_obs=(
+926:                         infos["final_observation"]
+927:                         if "final_observation" in infos
+928:                         else None
+929:                     ),
+930:                     env_infos=infos if isinstance(infos, dict) else None,
+950:                 env_outputs.append(env_output)
+951: 
+952:         return env_outputs
+953: 
+954:     def _build_rollout_input_data(self, env_batch: dict[str, Any]) -> dict[str, Any]:
+955:         data = {
+956:             "obs": env_batch["obs"],
+957:             "final_obs": env_batch["final_obs"],
+958:         }
+959:         if self.enable_rlt:
+960:             data["rlt_switch_flags"] = env_batch.get("rlt_switch_flags", None)
+961:             data["intervene_flags"] = env_batch.get("intervene_flags", None)
+962:         return data
+963: 
+964:     def _send_train_bootstrap(
+965:         self,
+966:         rollout_channel: Channel,
+967:         env_outputs: list[EnvOutput],
+968:         skip_stage_ids: set[int] | None = None,
+969:     ) -> None:
+970:         skip_stage_ids = skip_stage_ids or set()
+971:         for stage_id in range(self.stage_num):
+972:             if stage_id in skip_stage_ids:
+973:                 continue
+974:             env_output: EnvOutput = env_outputs[stage_id]
+975:             env_batch = env_output.to_dict()
+976:             self.send_to(
+977:                 group_name=self.cfg.rollout.group_name,
+978:                 channel=rollout_channel,
+979:                 data=self._build_rollout_input_data(env_batch),
+980:                 mode="train",
+981:                 tag="rollout_results",
+982:                 route_key=stage_id if not self.env_decoupled_mode else None,
+983:                 decoupled_mode=self.env_decoupled_mode,
+984:             )
+985: 
+986:     def _bootstrap_and_send_train(
+987:         self,
+988:         rollout_channel: Channel,
+989:         skip_stage_ids: set[int] | None = None,
+990:     ) -> list[EnvOutput]:
+991:         env_outputs = self.bootstrap_step()
+992:         self._send_train_bootstrap(
+993:             rollout_channel,
+994:             env_outputs,
+995:             skip_stage_ids=skip_stage_ids,
+996:         )
+997:         return env_outputs
+998: 
+999:     def prefetch_train_bootstrap(self, rollout_channel: Channel) -> None:
+1000:         """Prepare and send the first env batch for the next training rollout."""
+1001:         if self._prefetched_train_bootstrap is not None:
+1002:             raise RuntimeError(
+1003:                 "A prefetched train bootstrap already exists. "
+1004:                 "Call interact() to consume it before prefetching again."
+1005:             )
+1006:         self._prefetched_train_bootstrap = self._bootstrap_and_send_train(
+1007:             rollout_channel,
+1008:             skip_stage_ids=self.smooth_intervene.active_stage_ids(),
+1009:         )
+1010: 
+1011:     def record_env_metrics(
+1012:         self,
+1013:         env_metrics: dict[str, list],
+1014:         env_info: dict[str, Any],
+1015:     ):
+1016:         for key, value in env_info.items():
+1017:             env_metrics.setdefault(key, []).append(value)
+1018: 
+1019:     def store_last_obs_and_intervened_info(self, env_output_list: list[EnvOutput]):
+1020:         self.last_obs_list = [env_output.obs for env_output in env_output_list]
+1021:         self.last_intervened_info_list = [
+1022:             (env_output.intervene_actions, env_output.intervene_flags)
+1023:             for env_output in env_output_list
+1024:         ]
+1025: 
+1026:     @Worker.timer("env/send_rollout_trajectories")
+1027:     async def send_rollout_trajectories(
+1028:         self, trajectory_builder: EmbodiedTrajectoryBuilder, channel: Channel
+1029:     ):
+1030:         trajectories: list[Trajectory] = trajectory_builder.to_splited_trajectories(
+1031:             self.actor_split_num
+1032:         )
+1033:         trajectory_builder.clear()
+1034:         for trajectory in trajectories:
+1035:             channel.put(trajectory, async_op=True)
+1036:         del trajectories
+1037:         gc.collect()
+1038: 
+1039:     @Worker.timer("env/send_lerobot_episodes")
+1040:     async def send_lerobot_episodes(
+1041:         self, episodes: list[list[dict]], channel: Channel
+1042:     ) -> None:
+1043:         if not episodes:
+1044:             return
+1045:         if self.actor_split_num <= 1:
+1046:             chunks = [episodes]
+1047:         else:
+1048:             chunks = split_list(
+1049:                 episodes,
+1050:                 self.actor_split_num,
+1051:                 enforce_divisible_batch=False,
+1052:             )
+1053:         for chunk in chunks:
+1054:             if not chunk:
+1055:                 continue
+1056:             channel.put(chunk, async_op=True)
+1057: 
+1058:     @Worker.timer("run_interact_once")
+1059:     async def _run_interact_once(
+1060:         self,
+1061:         input_channel: Channel,
+1062:         rollout_channel: Channel,
+1063:         reward_channel: Channel | None,
+1064:         actor_channel: Channel | None,
+1065:         *,
+1066:         cooperative_yield: bool,
+1067:     ) -> dict[str, torch.Tensor]:
+1068:         self.trajectory_builders = self._prepare_trajectory_builders(
+1069:             getattr(self, "trajectory_builders", None)
+1070:         )
+1071:         env_metrics = defaultdict(list)
+1072:         rlt_pending_obs: list[dict[str, Any] | None] = [None] * self.stage_num
+1073: 
+1074:         for epoch in range(self.rollout_epoch):
+1075:             if epoch == 0 and self._prefetched_train_bootstrap is not None:
+1076:                 env_outputs = self._prefetched_train_bootstrap
+1077:                 self._prefetched_train_bootstrap = None
+1078:             else:
+1079:                 env_outputs = self._bootstrap_and_send_train(
+1080:                     rollout_channel,
+1081:                     skip_stage_ids=self.smooth_intervene.active_stage_ids(),
+1082:                 )
+1083: 
+1084:             for stage_id in range(self.stage_num):
+1085:                 await self._maybe_wait_env_delay(stage_id)
+1086: 
+1087:             for chunk_step_idx in range(self.n_train_chunk_steps):
+1088:                 for stage_id in range(self.stage_num):
+1089:                     if cooperative_yield:
+1090:                         await asyncio.sleep(0)
+1330:                 )
+1331: 
+1332:             self.store_last_obs_and_intervened_info(env_outputs)
+1333:             self.finish_rollout()
+1334: 
+1335:         if not self.use_training_pipeline and actor_channel is not None:
+1336:             if self.enable_online_lerobot:
+1337:                 for stage_id in range(self.stage_num):
+1338:                     episodes = self.trajectory_builders[stage_id].drain_episodes()
+1339:                     await self.send_lerobot_episodes(episodes, actor_channel)
+1340:             else:
+1341:                 for stage_id in range(self.stage_num):
+1342:                     await self.send_rollout_trajectories(
+1343:                         self.trajectory_builders[stage_id], actor_channel
+1344:                     )
+1345: 
+1346:         for key, value in env_metrics.items():
+1347:             env_metrics[key] = torch.cat(value, dim=0).contiguous().cpu()
+1348: 
+1349:         return env_metrics
+1350: 
+1351:     @Worker.timer("interact")
+1352:     async def interact(
+1353:         self,
+1354:         input_channel: Channel,
+1355:         rollout_channel: Channel,
+1356:         reward_channel: Channel | None,
+1357:         actor_channel: Channel | None = None,
+1358:     ):
+1359:         env_metrics = await self._run_interact_once(
+1360:             input_channel,
+1361:             rollout_channel,
+1362:             reward_channel,
+1363:             actor_channel,
+1364:             cooperative_yield=False,
+1365:         )
+1366: 
+1367:         for env in self.env_list:
+1368:             if self.train_enable_offload:
+1369:                 get_env_attr(env, "offload")()
+1370: 
+1371:         return env_metrics
+1372: 
+1373:     @Worker.timer("evaluate")
+1374:     def evaluate(self, input_channel: Channel, rollout_channel: Channel):
+1375:         eval_metrics = defaultdict(list)
+1376:         for eval_rollout_epoch in range(self.eval_rollout_epoch):
+1377:             if not self.cfg.env.eval.auto_reset or eval_rollout_epoch == 0:
+1378:                 for stage_id in range(self.stage_num):
+1379:                     self.eval_env_list[stage_id].is_start = True
+1380:                     self.eval_prev_done[stage_id] = torch.zeros(
+1381:                         self.eval_num_envs_per_stage, dtype=torch.bool
+1382:                     )
+1383:                     extracted_obs, infos = self.eval_env_list[stage_id].reset()
+1384:                     env_output = EnvOutput(
+1385:                         obs=extracted_obs,
+1386:                         final_obs=(
+1387:                             infos["final_observation"]
+1388:                             if "final_observation" in infos
+1389:                             else None
+1390:                         ),
+1391:                         env_infos=infos if isinstance(infos, dict) else None,
+1392:                     )
+1393:                     env_batch = env_output.to_dict()
+1394:                     self.send_to(
+1395:                         group_name=self.cfg.rollout.group_name,
+1396:                         channel=rollout_channel,
+1397:                         data=self._build_rollout_input_data(env_batch),
+1398:                         mode="eval",
+1399:                         tag="rollout_results",
+1400:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1401:                         decoupled_mode=self.env_decoupled_mode,
+1402:                     )
+1403: 
+1404:             for eval_step in range(self.n_eval_chunk_steps):
+1405:                 for stage_id in range(self.stage_num):
+1406:                     policy_output = self.recv_from(
+1407:                         group_name=self.cfg.rollout.group_name,
+1408:                         channel=input_channel,
+1409:                         tag="eval_rollout_results",
+1410:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1411:                         batch_size=self.eval_batch_size,
+1412:                         infer_batch_size_fn=self._infer_rollout_batch_size
+1413:                         if self.env_decoupled_mode
+1414:                         else None,
+1415:                         decoupled_mode=self.env_decoupled_mode,
+1416:                     )
+1417:                     raw_chunk_actions = (
+1418:                         policy_output.actions
+1419:                         if hasattr(policy_output, "actions")
+1420:                         else policy_output
+1421:                     )
+1422:                     if isinstance(raw_chunk_actions, torch.Tensor):
+1423:                         raw_chunk_actions = raw_chunk_actions.detach().cpu().numpy()
+1424:                     else:
+1425:                         raw_chunk_actions = np.asarray(raw_chunk_actions)
+1426:                     env_output, env_info = self.env_evaluate_step(
+1427:                         raw_chunk_actions, stage_id
+1428:                     )
+1429: 
+1430:                     for key, value in env_info.items():
+1431:                         eval_metrics[key].append(value)
+1432: 
+1433:                     if self.cfg.env.eval.auto_reset:
+1434:                         if (
+1435:                             eval_rollout_epoch == self.eval_rollout_epoch - 1
+1436:                             and eval_step == self.n_eval_chunk_steps - 1
+1437:                         ):
+1438:                             continue
+1439:                     else:
+1440:                         if eval_step == self.n_eval_chunk_steps - 1:
+1441:                             continue
+1442:                     env_batch = env_output.to_dict()
+1443:                     self.send_to(
+1444:                         group_name=self.cfg.rollout.group_name,
+1445:                         channel=rollout_channel,
+1446:                         data=self._build_rollout_input_data(env_batch),
+1447:                         mode="eval",
+1448:                         tag="rollout_results",
+1449:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1450:                         decoupled_mode=self.env_decoupled_mode,
+1451:                     )
+1452: 
+1453:             self.finish_rollout(mode="eval")
+1454:         for stage_id in range(self.stage_num):
+1455:             if self.eval_enable_offload:
+NATIVE_DEPENDENCIES
+LIBRARY /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien.cpython-311-x86_64-linux-gnu.so
+	linux-vdso.so.1 (0x00007ffe36519000)
+	libsapien.so => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/libsapien.so (0x00007f692d825000)
+	libsimsense-0103334e.so => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/libsimsense-0103334e.so (0x00007f692cf95000)
+	libsvulkan2.so => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/libsvulkan2.so (0x00007f692b4aa000)
+	libstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007f692b272000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f692b189000)
+	libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007f692b169000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f692af40000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007f692e21d000)
+	libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f692af3b000)
+	libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f692af36000)
+	librt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007f692af31000)
+	libOpenImageDenoise.so.2 => not found
+	libX11.so.6 => /lib/x86_64-linux-gnu/libX11.so.6 (0x00007f692adef000)
+	libxcb.so.1 => /lib/x86_64-linux-gnu/libxcb.so.1 (0x00007f692adc5000)
+	libXau.so.6 => /lib/x86_64-linux-gnu/libXau.so.6 (0x00007f692adbf000)
+	libXdmcp.so.6 => /lib/x86_64-linux-gnu/libXdmcp.so.6 (0x00007f692adb7000)
+	libbsd.so.0 => /lib/x86_64-linux-gnu/libbsd.so.0 (0x00007f692ad9d000)
+	libmd.so.0 => /lib/x86_64-linux-gnu/libmd.so.0 (0x00007f692ad90000)
+
+LIBRARY /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien_pinocchio.cpython-311-x86_64-linux-gnu.so
+	linux-vdso.so.1 (0x00007fff4d39a000)
+	libsapien.so => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/libsapien.so (0x00007fd0d728d000)
+	libsvulkan2.so => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/libsvulkan2.so (0x00007fd0d57a2000)
+	liblzma-51a76f52.so.5.2.4 => /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/../sapien.libs/liblzma-51a76f52.so.5.2.4 (0x00007fd0d5400000)
+	libstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x00007fd0d51d4000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007fd0d56ad000)
+	libgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x00007fd0d568d000)
+	libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007fd0d5688000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fd0d4fab000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007fd0d7aad000)
+	libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fd0d5683000)
+	librt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007fd0d567e000)
+	libOpenImageDenoise.so.2 => not found
+	libX11.so.6 => /lib/x86_64-linux-gnu/libX11.so.6 (0x00007fd0d4e6b000)
+	libxcb.so.1 => /lib/x86_64-linux-gnu/libxcb.so.1 (0x00007fd0d5652000)
+	libXau.so.6 => /lib/x86_64-linux-gnu/libXau.so.6 (0x00007fd0d564c000)
+	libXdmcp.so.6 => /lib/x86_64-linux-gnu/libXdmcp.so.6 (0x00007fd0d5644000)
+	libbsd.so.0 => /lib/x86_64-linux-gnu/libbsd.so.0 (0x00007fd0d562a000)
+	libmd.so.0 => /lib/x86_64-linux-gnu/libmd.so.0 (0x00007fd0d4e5e000)
+
+NATIVE_LOADER_PATHS_IN_OWN_WORKER
+PID 3177205
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/embreex.libs/libtbb-dcf63f8c.so.12
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/open3d/libtbb.so.12
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/liblzma-51a76f52.so.5.2.4
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsapien.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsimsense-0103334e.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsvulkan2.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_device_cuda.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien.cpython-311-x86_64-linux-gnu.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien_pinocchio.cpython-311-x86_64-linux-gnu.so
+/usr/lib/x86_64-linux-gnu/libc.so.6
+PID 3177207
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/embreex.libs/libtbb-dcf63f8c.so.12
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/open3d/libtbb.so.12
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/liblzma-51a76f52.so.5.2.4
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsapien.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsimsense-0103334e.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien.libs/libsvulkan2.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_device_cuda.so.2.0.1
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien.cpython-311-x86_64-linux-gnu.so
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/pysapien_pinocchio.cpython-311-x86_64-linux-gnu.so
+/usr/lib/x86_64-linux-gnu/libc.so.6
+FAST_TERMINAL exit_code.txt 255
+FAST_TERMINAL finished_at.txt 2026-09-03T15:51:49+00:00
+FATAL_REFRESH pthread_key_create failed 2 [(1546, '\x1b[36m(EnvGroup(rank=0) pid=2813140)\x1b[0m [2026-09-03 15:49:18.629] [svulkan2] [error] OIDN Error: pthread_key_create failed'), (1551, '\x1b[36m(EnvGroup(rank=1) pid=2813142)\x1b[0m [2026-09-03 15:49:19.334] [svulkan2] [error] OIDN Error: pthread_key_create failed')]
+FATAL_REFRESH OIDN Error: invalid handle 142 [(1547, '\x1b[36m(EnvGroup(rank=0) pid=2813140)\x1b[0m [2026-09-03 15:49:18.704] [svulkan2] [error] OIDN Error: invalid handle'), (1548, '\x1b[36m(EnvGroup(rank=0) pid=2813140)\x1b[0m [2026-09-03 15:49:18.773] [svulkan2] [error] OIDN Error: invalid handle')]
+FATAL_REFRESH Fatal Python error 2 [(1692, "\x1b[36m(EnvGroup(rank=1) pid=2813142)\x1b[0m Fatal Python error: _PyGILState_NoteThreadState: Couldn't create autoTSSkey mapping"), (2033, "\x1b[36m(EnvGroup(rank=0) pid=2813140)\x1b[0m Fatal Python error: _PyGILState_NoteThreadState: Couldn't create autoTSSkey mapping")]
+RESOLVED /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/runtime/resolved.yaml
+4     total_num_envs: 32
+5     auto_reset: false
+23     enable_offload: true
+61       clear_cache_freq: 1
+67     total_num_envs: 32
+68     auto_reset: true
+86     enable_offload: true
+124       clear_cache_freq: 1
+129   enable_offload: true
+159     cpu_offload: false
+160     offload_pin_memory: false
+188   enable_offload: false
+227   enable_offload: true

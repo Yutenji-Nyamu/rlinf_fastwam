@@ -1,0 +1,47 @@
+ docs/online_bc.md                                  | 10 +++-
+ .../robotwin_adjust_bottle_online_bc_openpi.yaml   |  2 +-
+ .../embodiment/openpi/openpi_action_model.py       |  8 +++-
+ tests/unit_tests/test_online_bc.py                 | 53 ++++++++++++++++++++++
+ 4 files changed, 69 insertions(+), 4 deletions(-)
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+index ea728960..b7f77395 100644
+--- a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
++++ b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+@@ -59,7 +59,7 @@ env:
+     ignore_terminations: false
+     max_episode_steps: 200
+     max_steps_per_rollout_epoch: 200
+-    assets_path: ${oc.env:ASSETS_PATH}
++    assets_path: ${oc.env:ASSETS_PATH}  # RoboTwin root, containing assets/.
+     seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+     center_crop: false
+     video_cfg:
+diff --git a/rlinf/models/embodiment/openpi/openpi_action_model.py b/rlinf/models/embodiment/openpi/openpi_action_model.py
+index 16e6c574..dc2ae76c 100644
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -16,7 +16,7 @@ import math
+ import random
+ from collections.abc import Sequence
+ from concurrent.futures import ThreadPoolExecutor
+-from dataclasses import dataclass, field
++from dataclasses import dataclass, field, replace
+ from typing import Any, Literal
+ 
+ import numpy as np
+@@ -394,6 +394,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             ),
+             observation,
+         )
++        # Replay/FSDP may cast images to BF16. Native training augmentation
++        # builds an FP32 rotation grid, so restore images after the FSDP
++        # boundary; this does not change rollout rendering or model precision.
++        observation = replace(
++            observation, images={k: v.float() for k, v in observation.images.items()}
++        )
+         if not isinstance(actions, torch.Tensor):
+             actions = torch.as_tensor(actions, device=device)
+         else:
+[codex/sz-pi0-online-bc 5be87478] Fix OpenPI SFT image dtype after FSDP and document RoboTwin asset root
+ 4 files changed, 69 insertions(+), 4 deletions(-)
+VERIFIED_HEAD=5be8747831cd998c7ba0a52d863b5d74e168358e

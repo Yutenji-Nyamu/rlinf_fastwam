@@ -1,0 +1,90 @@
+diff --git a/rlinf/envs/robotwin/robotwin_env.py b/rlinf/envs/robotwin/robotwin_env.py
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -87,4 +87,7 @@
+         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+ 
++        from rlinf.envs.robotwin.scene_fence import load_scene_fence
++        load_scene_fence()
++
+         from robotwin.envs.vector_env import VectorEnv
+ 
+diff --git a/tools/fastwam_scene_fence/build.sh b/tools/fastwam_scene_fence/build.sh
+--- a/tools/fastwam_scene_fence/build.sh
++++ b/tools/fastwam_scene_fence/build.sh
+@@ -10,8 +10,3 @@
+ test ! -e "$out"
+ mkdir -p "$out"
+-mkdir "$out/loader-libs"
+-# The wheel normally preloads these exact files from Python before pysapien.
+-# Native process-start loading needs their SONAMEs resolvable first.
+-ln -s "$site/sapien/oidn_library/libOpenImageDenoise.so.2.0.1" "$out/loader-libs/libOpenImageDenoise.so.2"
+-ln -s "$site/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1" "$out/loader-libs/libOpenImageDenoise_core.so.2.0.1"
+ # The current wheel uses the C++11 string ABI and CUDA interop class layout.
+@@ -34,6 +29,3 @@
+-printf 'export LD_LIBRARY_PATH=%q${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\n' "$out/loader-libs" > "$out/enable.sh"
+-printf 'export LD_PRELOAD=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
+-printf 'export RLINF_SCENE_FENCE_LIBRARY=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
++printf 'export RLINF_SCENE_FENCE_LIBRARY=%q\n' "$out/librlinf_scene_fence.so" > "$out/enable.sh"
+ cat "$out/build.sha256"
+ cat "$out/exports.txt"
+-(source "$out/enable.sh"; /bin/true)
+diff --git a/tools/fastwam_scene_fence/smoke.py b/tools/fastwam_scene_fence/smoke.py
+--- a/tools/fastwam_scene_fence/smoke.py
++++ b/tools/fastwam_scene_fence/smoke.py
+@@ -39,3 +39,8 @@
+     cfg = OmegaConf.load(out / 'resolved.yaml')
++    import torch
++    from rlinf.envs.robotwin.scene_fence import load_scene_fence
++    assert not os.environ.get('LD_PRELOAD'), 'Do not globally preload renderer dependencies'
++    patch = load_scene_fence()
++    assert patch is not None
+     expected = Path(os.environ['RLINF_SCENE_FENCE_LIBRARY']).resolve()
+-    # Check the process-global symbol, not merely the fact that a .so was mapped.
++    # LD_DEBUG additionally verifies the original renderer's vtable binding.
+@@ -46,3 +51,3 @@
+     lib = ctypes.CDLL(None)
+-    fn = getattr(lib, SYMBOL)
++    fn = getattr(patch, SYMBOL)
+     info = DlInfo()
+@@ -52,3 +57,8 @@
+     import numpy as np
+-    import torch
++    model = str(OmegaConf.load(args.source_config).actor.model.checkpoint_path)
++    def check_archive():
++        reader = torch._C.PyTorchFileReader(model)
++        assert reader.get_record('version') == b'3\n'
++        return len(reader.get_all_records())
++    assert check_archive() == 5
+     import sapien
+@@ -99,2 +109,3 @@
++    assert check_archive() == 5
+     (out / 'result.json').write_text(json.dumps(result, indent=2))
+     print('SMOKE_PASS', json.dumps(result), flush=True)
+diff --git a/tools/fastwam_scene_fence/README.md b/tools/fastwam_scene_fence/README.md
+--- a/tools/fastwam_scene_fence/README.md
++++ b/tools/fastwam_scene_fence/README.md
+@@ -14,7 +14,10 @@
+-The native loading mechanism is ELF symbol interposition via job-local
+-`LD_PRELOAD`, not an in-memory or on-disk binary edit. Only enable it before the
+-new process starts. The original wheel's exact library SHA256 is checked at build
+-time; changing wheel/ABI requires re-audit. Do not generalize this patch to other
+-SAPIEN builds. Compilation must use the CUDA-interop and C++11-ABI layout.
++The native loading mechanism is environment-local `ctypes.CDLL(RTLD_LOCAL)`
++before SAPIEN and after PyTorch, through the opt-in RoboTwin loader. Set only
++`RLINF_SCENE_FENCE_LIBRARY`; never globally LD_PRELOAD renderer dependencies:
++the bundled library exports ZIP symbols that can interfere with PyTorch's
++checkpoint reader. Actor, Rollout and driver processes do not load the patch.
++This is not an in-memory or on-disk binary edit. The original wheel's exact
++library SHA256 is checked at build time; changing wheel/ABI requires re-audit.
++Do not generalize to other SAPIEN builds. Use CUDA-interop and C++11-ABI layout.
+ 
+ Build on the server:
+@@ -29,4 +32,5 @@
+ dynamic binding to the replacement symbol. Inspect new Ray EnvWorker maps/env;
+-checking that a file exists is not sufficient. Preserve the original wheel and
+-other jobs. Unsetting this job's `LD_PRELOAD` for a future process disables the fix.
++also verify PyTorch reads the original checkpoint before and after rendering.
++Preserve the original wheel and other jobs. Unsetting this job's
++`RLINF_SCENE_FENCE_LIBRARY` for a future process disables the fix.
+ 

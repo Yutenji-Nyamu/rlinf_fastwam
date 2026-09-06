@@ -1,0 +1,68 @@
+{
+  "method": "GRPO-DVAC Action-Adv [0,2]",
+  "source_run": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v1",
+  "last_complete_step": 29,
+  "termination": "user-authorized exact stop to replace this run with the next experiment",
+  "train_success_mean_pct": 78.1384698275862,
+  "train_success_latest_pct": 80.078125,
+  "train_success_ma5_pct": 84.84375,
+  "train_success_ma10_pct": 81.1328125,
+  "fixed32_successes": 133,
+  "fixed32_episodes": 160,
+  "fixed32_points": [
+    {
+      "step": 5,
+      "fixed32_success_rate": 0.875,
+      "successes": 28
+    },
+    {
+      "step": 10,
+      "fixed32_success_rate": 0.84375,
+      "successes": 27
+    },
+    {
+      "step": 15,
+      "fixed32_success_rate": 0.84375,
+      "successes": 27
+    },
+    {
+      "step": 20,
+      "fixed32_success_rate": 0.71875,
+      "successes": 23
+    },
+    {
+      "step": 25,
+      "fixed32_success_rate": 0.875,
+      "successes": 28
+    }
+  ],
+  "latest_core_metrics": {
+    "step": 29,
+    "elapsed_s": 41520,
+    "train_success": 0.80078125,
+    "eval_success": null,
+    "approx_kl": 0.031,
+    "clip_fraction": 0.054,
+    "grad_norm": 0.779,
+    "ratio_abs": 0.75,
+    "policy_loss_abs": 0.535,
+    "step_time_s": 1414.7,
+    "generate_rollouts_s": 1393.1,
+    "actor_training_s": 19.654
+  },
+  "resources": {
+    "observer_rows": 707,
+    "gpu4_peak_gib": 76.9423828125,
+    "gpu5_peak_gib": 76.4736328125,
+    "host_available_min_gib": 221.70950317382812,
+    "host_available_final_gib": 240.77841567993164
+  },
+  "known_caveat": "This stopped v1 used mean reduction over H=50 action losses. Its pre-clip gradient scale was about 45.6x below matched Control. Action-level ratio/clip telemetry also used a Bx1 denominator for BxH values; those old ratio/clip fields are retained only as raw evidence and are not plotted as comparable metrics.",
+  "excluded": [
+    "checkpoints",
+    "videos",
+    "RoboTwin bulk data",
+    "Ray session logs",
+    "per-action tensors"
+  ]
+}

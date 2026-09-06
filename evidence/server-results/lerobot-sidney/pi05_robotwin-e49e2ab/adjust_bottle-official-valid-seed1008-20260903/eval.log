@@ -1,0 +1,458 @@
+WARNING 2026-09-03 02:11:22 figs/eval.py:69 No job name provided, using 'robotwin_pi05' as job name.
+INFO 2026-09-03 02:11:22 bot_eval.py:727 {'env': {'action_mode': 'joint',
+         'camera_names': 'head_camera,left_camera,right_camera',
+         'disable_env_checker': True,
+         'episode_length': 1200,
+         'features': {'action': {'shape': (14,),
+                                 'type': <FeatureType.ACTION: 'ACTION'>},
+                      'agent_pos': {'shape': (14,),
+                                    'type': <FeatureType.STATE: 'STATE'>},
+                      'pixels/head_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/left_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/right_camera': {'shape': (240, 320, 3),
+                                              'type': <FeatureType.VISUAL: 'VISUAL'>}},
+         'features_map': {'action': 'action',
+                          'agent_pos': 'observation.state',
+                          'pixels/head_camera': 'observation.images.head_camera',
+                          'pixels/left_camera': 'observation.images.left_camera',
+                          'pixels/right_camera': 'observation.images.right_camera'},
+         'fps': 25,
+         'max_parallel_tasks': 1,
+         'obs_type': 'pixels_agent_pos',
+         'observation_height': 240,
+         'observation_width': 320,
+         'render_mode': 'rgb_array',
+         'task': 'adjust_bottle'},
+ 'eval': {'batch_size': 1,
+          'n_episodes': 1,
+          'recording': False,
+          'recording_private': False,
+          'recording_repo_id': None,
+          'use_async_envs': True},
+ 'job_name': 'robotwin_pi05',
+ 'output_dir': PosixPath('/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval'),
+ 'policy': {'action_expert_variant': 'gemma_300m',
+            'action_feature_names': ['motors'],
+            'chunk_size': 50,
+            'compile_mode': 'max-autotune',
+            'compile_model': True,
+            'device': 'cuda',
+            'dtype': 'bfloat16',
+            'empty_cameras': 0,
+            'freeze_vision_encoder': False,
+            'gradient_checkpointing': True,
+            'image_resolution': (224, 224),
+            'input_features': {'observation.images.cam_high': {'shape': (480,
+                                                                         640,
+                                                                         3),
+                                                               'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_left_wrist': {'shape': (480,
+                                                                               640,
+                                                                               3),
+                                                                     'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_right_wrist': {'shape': (480,
+                                                                                640,
+                                                                                3),
+                                                                      'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.state': {'shape': (14,),
+                                                     'type': <FeatureType.STATE: 'STATE'>}},
+            'license': None,
+            'max_action_dim': 32,
+            'max_period': 4.0,
+            'max_state_dim': 32,
+            'min_period': 0.004,
+            'n_action_steps': 50,
+            'n_obs_steps': 1,
+            'normalization_mapping': {'ACTION': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'STATE': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'VISUAL': <NormalizationMode.IDENTITY: 'IDENTITY'>},
+            'num_inference_steps': 10,
+            'optimizer_betas': (0.9, 0.95),
+            'optimizer_eps': 1e-08,
+            'optimizer_grad_clip_norm': 1.0,
+            'optimizer_lr': 2.5e-05,
+            'optimizer_weight_decay': 0.01,
+            'output_features': {'action': {'shape': (14,),
+                                           'type': <FeatureType.ACTION: 'ACTION'>}},
+            'paligemma_variant': 'gemma_2b',
+            'pretrained_path': PosixPath('/data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab'),
+            'pretrained_revision': None,
+            'private': None,
+            'push_to_hub': True,
+            'relative_exclude_joints': ['gripper'],
+            'repo_id': 'SidneyXie/pi05_robotwin',
+            'rtc_config': None,
+            'scheduler_decay_lr': 2.5e-06,
+            'scheduler_decay_steps': 30000,
+            'scheduler_warmup_steps': 1000,
+            'tags': None,
+            'time_sampling_beta_alpha': 1.5,
+            'time_sampling_beta_beta': 1.0,
+            'time_sampling_offset': 0.001,
+            'time_sampling_scale': 0.999,
+            'tokenizer_max_length': 200,
+            'train_expert_only': False,
+            'use_amp': False,
+            'use_peft': False,
+            'use_relative_actions': False},
+ 'rename_map': {'observation.images.head_camera': 'observation.images.cam_high',
+                'observation.images.left_camera': 'observation.images.cam_left_wrist',
+                'observation.images.right_camera': 'observation.images.cam_right_wrist'},
+ 'seed': 1008,
+ 'trust_remote_code': False}
+INFO 2026-09-03 02:11:22 bot_eval.py:736 Output dir: /data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval
+INFO 2026-09-03 02:11:22 bot_eval.py:738 Making environment (batch_size=1, async=True).
+INFO 2026-09-03 02:11:22 robotwin.py:618 Creating RoboTwin envs | tasks=['adjust_bottle'] | n_envs(per task)=1
+INFO 2026-09-03 02:11:22 robotwin.py:649 Built vec env | task=adjust_bottle | n_envs=1
+INFO 2026-09-03 02:11:22 bot_eval.py:746 Making policy.
+INFO 2026-09-03 02:12:56 ing_pi05.py:612 Enabled gradient checkpointing for PI05Pytorch model
+WARNING 2026-09-03 02:12:57 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING 2026-09-03 02:12:57 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+Stepping through eval batches:   0%|          | 0/1 [00:00<?, ?it/s]/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/sapien/_vulkan_tricks.py:37: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+  warn(
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 USDParser failed to import, install curobo with pip install .[usd] or pip install usd-core, NOTE: Do not install this if using with Isaac Sim.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:03 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 02:13:04 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+missing pytorch3d
+Warp DeprecationWarning: The namespace `warp.torch` will soon be removed from the public API. It can still be accessed from `warp._src.torch` but might be changed or removed without notice.
+Warp DeprecationWarning: The symbol `warp.torch.device_from_torch` will soon be removed from the public API. Use `warp.device_from_torch` instead.
+
+Running rollout with at most 1200 steps:   0%|          | 0/1200 [00:00<?, ?it/s][A
+Running rollout with at most 1200 steps:   0%|          | 0/1200 [00:45<?, ?it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 1/1200 [00:45<15:13:15, 45.70s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 1/1200 [00:46<15:13:15, 45.70s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 2/1200 [00:46<6:21:30, 19.11s/it, running_success_rate=0.0%] [A
+Running rollout with at most 1200 steps:   0%|          | 2/1200 [00:46<6:21:30, 19.11s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 3/1200 [00:46<3:31:40, 10.61s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 3/1200 [00:47<3:31:40, 10.61s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 4/1200 [00:47<2:11:58,  6.62s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 4/1200 [00:47<2:11:58,  6.62s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 5/1200 [00:47<1:27:52,  4.41s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 5/1200 [00:48<1:27:52,  4.41s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 6/1200 [00:48<1:01:24,  3.09s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 6/1200 [00:48<1:01:24,  3.09s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 7/1200 [00:48<44:36,  2.24s/it, running_success_rate=0.0%]  [A
+Running rollout with at most 1200 steps:   1%|          | 7/1200 [00:49<44:36,  2.24s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 8/1200 [00:49<33:38,  1.69s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 8/1200 [00:49<33:38,  1.69s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 9/1200 [00:49<26:23,  1.33s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 9/1200 [00:50<26:23,  1.33s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 10/1200 [00:50<21:30,  1.08s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 10/1200 [00:50<21:30,  1.08s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 11/1200 [00:50<18:07,  1.09it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 11/1200 [00:51<18:07,  1.09it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 12/1200 [00:51<15:49,  1.25it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 12/1200 [00:51<15:49,  1.25it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 13/1200 [00:51<14:15,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 13/1200 [00:52<14:15,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 14/1200 [00:52<13:06,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 14/1200 [00:52<13:06,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 15/1200 [00:52<12:28,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 15/1200 [00:53<12:28,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 16/1200 [00:53<12:09,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 16/1200 [00:54<12:09,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 17/1200 [00:54<11:53,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 17/1200 [00:54<11:53,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 18/1200 [00:54<11:38,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 18/1200 [00:55<11:38,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 19/1200 [00:55<11:37,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 19/1200 [00:55<11:37,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 20/1200 [00:55<11:34,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 20/1200 [00:56<11:34,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 21/1200 [00:56<11:33,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 21/1200 [00:57<11:33,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 22/1200 [00:57<11:36,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 22/1200 [00:57<11:36,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 23/1200 [00:57<11:31,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 23/1200 [00:58<11:31,  1.70it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 24/1200 [00:58<11:34,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 24/1200 [00:58<11:34,  1.69it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 25/1200 [00:58<11:40,  1.68it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 25/1200 [00:59<11:40,  1.68it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 26/1200 [00:59<11:45,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 26/1200 [01:00<11:45,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 27/1200 [01:00<11:54,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 27/1200 [01:00<11:54,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 28/1200 [01:00<12:03,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 28/1200 [01:01<12:03,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 29/1200 [01:01<12:08,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 29/1200 [01:01<12:08,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▎         | 30/1200 [01:01<12:08,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▎         | 30/1200 [01:02<12:08,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 31/1200 [01:02<12:12,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 31/1200 [01:03<12:12,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 32/1200 [01:03<12:12,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 32/1200 [01:03<12:12,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 33/1200 [01:03<12:11,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 33/1200 [01:04<12:11,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 34/1200 [01:04<12:13,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 34/1200 [01:05<12:13,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 35/1200 [01:05<12:10,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 35/1200 [01:05<12:10,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 36/1200 [01:05<12:03,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 36/1200 [01:06<12:03,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 37/1200 [01:06<12:03,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 37/1200 [01:06<12:03,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 38/1200 [01:06<12:02,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 38/1200 [01:07<12:02,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 39/1200 [01:07<11:57,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 39/1200 [01:08<11:57,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 40/1200 [01:08<12:00,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 40/1200 [01:08<12:00,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 41/1200 [01:08<11:58,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 41/1200 [01:09<11:58,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 42/1200 [01:09<12:07,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 42/1200 [01:10<12:07,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 43/1200 [01:10<12:13,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 43/1200 [01:10<12:13,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 44/1200 [01:10<12:16,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 44/1200 [01:11<12:16,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 45/1200 [01:11<12:18,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 45/1200 [01:12<12:18,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 46/1200 [01:12<12:35,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 46/1200 [01:12<12:35,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 47/1200 [01:12<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 47/1200 [01:13<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 48/1200 [01:13<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 48/1200 [01:14<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 49/1200 [01:14<12:43,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 49/1200 [01:14<12:43,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 50/1200 [01:14<12:45,  1.50it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 50/1200 [01:31<12:45,  1.50it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 51/1200 [01:31<1:44:34,  5.46s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 51/1200 [01:32<1:44:34,  5.46s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 52/1200 [01:32<1:17:15,  4.04s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 52/1200 [01:32<1:17:15,  4.04s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 53/1200 [01:32<58:11,  3.04s/it, running_success_rate=0.0%]  [A
+Running rollout with at most 1200 steps:   4%|▍         | 53/1200 [01:33<58:11,  3.04s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 54/1200 [01:33<44:45,  2.34s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 54/1200 [01:34<44:45,  2.34s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 55/1200 [01:34<35:16,  1.85s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 55/1200 [01:34<35:16,  1.85s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 56/1200 [01:34<28:43,  1.51s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 56/1200 [01:35<28:43,  1.51s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 57/1200 [01:35<24:07,  1.27s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 57/1200 [01:36<24:07,  1.27s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 58/1200 [01:36<20:54,  1.10s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 58/1200 [01:37<20:54,  1.10s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 59/1200 [01:37<18:34,  1.02it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 59/1200 [01:37<18:34,  1.02it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 60/1200 [01:37<16:56,  1.12it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 60/1200 [01:38<16:56,  1.12it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 61/1200 [01:38<15:45,  1.20it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 61/1200 [01:39<15:45,  1.20it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 62/1200 [01:39<14:53,  1.27it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 62/1200 [01:39<14:53,  1.27it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 63/1200 [01:39<14:20,  1.32it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 63/1200 [01:40<14:20,  1.32it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 64/1200 [01:40<13:52,  1.36it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 64/1200 [01:41<13:52,  1.36it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 65/1200 [01:41<13:33,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 65/1200 [01:41<13:33,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 66/1200 [01:41<13:20,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 66/1200 [01:42<13:20,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 67/1200 [01:42<13:15,  1.43it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 67/1200 [01:43<13:15,  1.43it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 68/1200 [01:43<13:06,  1.44it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 68/1200 [01:43<13:06,  1.44it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 69/1200 [01:43<13:01,  1.45it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 69/1200 [01:44<13:01,  1.45it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 70/1200 [01:44<12:55,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 70/1200 [01:45<12:55,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 71/1200 [01:45<12:51,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 71/1200 [01:45<12:51,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 72/1200 [01:45<12:49,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 72/1200 [01:46<12:49,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 73/1200 [01:46<12:49,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 73/1200 [01:47<12:49,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 74/1200 [01:47<12:47,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 74/1200 [01:48<12:47,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 75/1200 [01:48<12:45,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 75/1200 [01:48<12:45,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 76/1200 [01:48<12:44,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 76/1200 [01:49<12:44,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 77/1200 [01:49<12:48,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 77/1200 [01:50<12:48,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 78/1200 [01:50<12:49,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 78/1200 [01:50<12:49,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 79/1200 [01:50<12:47,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 79/1200 [01:51<12:47,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 80/1200 [01:51<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 80/1200 [01:52<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 81/1200 [01:52<12:43,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 81/1200 [01:52<12:43,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 82/1200 [01:52<12:37,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 82/1200 [01:53<12:37,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 83/1200 [01:53<12:32,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 83/1200 [01:54<12:32,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 84/1200 [01:54<12:25,  1.50it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 84/1200 [01:54<12:25,  1.50it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 85/1200 [01:54<12:26,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 85/1200 [01:55<12:26,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 86/1200 [01:55<12:19,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 86/1200 [01:56<12:19,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 87/1200 [01:56<12:11,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 87/1200 [01:56<12:11,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 88/1200 [01:56<12:05,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 88/1200 [01:57<12:05,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 89/1200 [01:57<12:01,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 89/1200 [01:57<12:01,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 90/1200 [01:57<11:55,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 90/1200 [01:58<11:55,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 91/1200 [01:58<11:51,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 91/1200 [01:59<11:51,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 92/1200 [01:59<11:43,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 92/1200 [01:59<11:43,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 93/1200 [01:59<11:38,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 93/1200 [02:00<11:38,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 94/1200 [02:00<11:25,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 94/1200 [02:01<11:25,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 95/1200 [02:01<11:14,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 95/1200 [02:01<11:14,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 96/1200 [02:01<11:07,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 96/1200 [02:02<11:07,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 97/1200 [02:02<11:04,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 97/1200 [02:02<11:04,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 98/1200 [02:02<11:05,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 98/1200 [02:03<11:05,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 99/1200 [02:03<11:01,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 99/1200 [02:04<11:01,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 100/1200 [02:04<11:00,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 100/1200 [02:04<11:00,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 101/1200 [02:04<11:47,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 101/1200 [02:05<11:47,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 102/1200 [02:05<11:47,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 102/1200 [02:06<11:47,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 103/1200 [02:06<11:51,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 103/1200 [02:06<11:51,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 104/1200 [02:06<12:03,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 104/1200 [02:07<12:03,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 105/1200 [02:07<12:04,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 105/1200 [02:08<12:04,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 106/1200 [02:08<11:59,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 106/1200 [02:08<11:59,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 107/1200 [02:08<11:54,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 107/1200 [02:09<11:54,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 108/1200 [02:09<11:48,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 108/1200 [02:10<11:48,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 109/1200 [02:10<11:44,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 109/1200 [02:10<11:44,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 110/1200 [02:10<11:47,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 110/1200 [02:11<11:47,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 111/1200 [02:11<11:47,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 111/1200 [02:11<11:47,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 112/1200 [02:11<11:44,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 112/1200 [02:12<11:44,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 113/1200 [02:12<11:41,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 113/1200 [02:13<11:41,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 114/1200 [02:13<11:36,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 114/1200 [02:13<11:36,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 115/1200 [02:13<11:23,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 115/1200 [02:14<11:23,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 116/1200 [02:14<11:08,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 116/1200 [02:16<11:08,  1.62it/s, running_success_rate=100.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 117/1200 [02:16<17:10,  1.05it/s, running_success_rate=100.0%][A
+                                                                                                                        [AStepping through eval batches:   0%|          | 0/1 [02:47<?, ?it/s, running_success_rate=100.0%]Stepping through eval batches: 100%|██████████| 1/1 [02:47<00:00, 167.77s/it, running_success_rate=100.0%]Stepping through eval batches: 100%|██████████| 1/1 [02:47<00:00, 167.77s/it, running_success_rate=100.0%]
+INFO 2026-09-03 02:15:48 bot_eval.py:808 End of eval
+Overall Aggregated Metrics:
+{'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'eval_s': 168.4018430709839, 'eval_ep_s': 168.40184378623962, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}
+
+Aggregated Metrics for per_task:
+[{'task_group': 'adjust_bottle', 'task_id': 0, 'metrics': {'sum_rewards': [1.0], 'max_rewards': [1.0], 'successes': [True], 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}}]
+
+Aggregated Metrics for per_group:
+{'adjust_bottle': {'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}}
+
+Aggregated Metrics for overall:
+{'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'eval_s': 168.4018430709839, 'eval_ep_s': 168.40184378623962, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1008-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}

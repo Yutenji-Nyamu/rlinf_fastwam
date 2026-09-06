@@ -1,0 +1,13 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_success_episode_bc_dvac_w0to2_fresh480
+  - _self_
+
+# Paired multi-job runtime variant: the shared two-GPU Ray cluster exposes
+# physical GPUs 0 and 1, while this job owns placement 1.
+cluster:
+  component_placement:
+    actor, env, rollout: 1
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_success_episode_bc_dvac_w0to2_gpu1_fresh480_v1"

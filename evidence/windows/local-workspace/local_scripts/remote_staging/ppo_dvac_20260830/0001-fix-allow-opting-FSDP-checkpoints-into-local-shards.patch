@@ -1,0 +1,52 @@
+From 9b41994872b4a5e4523a4452eaa0ab62212d5b7c Mon Sep 17 00:00:00 2001
+From: Yutenji-Nyamu <1842710211@qq.com>
+Date: Thu, 27 Aug 2026 15:57:41 +0000
+Subject: [PATCH 1/2] fix: allow opting FSDP checkpoints into local shards
+
+---
+ rlinf/hybrid_engines/fsdp/fsdp_model_manager.py | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+index c1daa572..1806a32e 100644
+--- a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
++++ b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+@@ -339,6 +339,14 @@ class FSDPModelManager:
+         )
+         return state_dict
+ 
++    def _get_checkpoint_format(self) -> str:
++        checkpoint_format = self._cfg.fsdp_config.get("checkpoint_format", "dcp")
++        if checkpoint_format not in {"dcp", "local_shard"}:
++            raise ValueError(
++                f"Unsupported FSDP checkpoint format: {checkpoint_format!r}"
++            )
++        return checkpoint_format
++
+     def load_checkpoint(self, load_path: str) -> None:
+         """
+         Load checkpoint from local path.
+@@ -354,7 +362,11 @@ class FSDPModelManager:
+             self.is_optimizer_offloaded = False
+ 
+         self._strategy.load_checkpoint(
+-            self.model, self.optimizer, self.lr_scheduler, load_path
++            self.model,
++            self.optimizer,
++            self.lr_scheduler,
++            load_path,
++            checkpoint_format=self._get_checkpoint_format(),
+         )
+ 
+     def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+@@ -381,6 +393,7 @@ class FSDPModelManager:
+             save_full_model_weights=self._cfg.fsdp_config.get(
+                 "save_full_model_weights", True
+             ),
++            checkpoint_format=self._get_checkpoint_format(),
+         )
+ 
+         if restore_weight_offload:
+-- 
+2.45.2.windows.1
+

@@ -1,0 +1,11 @@
+{
+  "source_head": "a5b94b6f10a9212502d6930f07543f61e31af52e",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1",
+  "physical_gpus": [2, 3],
+  "train": "64 env x 4 rollout epochs = 256 trajectories/step; G8; max 1024 chunk records",
+  "actor": "GB1024/MB32/update2",
+  "method": "trajectory GRPO A_i; action-level ratio/clip; A_eff[i,h]=A_i*stopgrad(raw DVAC w[i,h] in [0,2])",
+  "smoke": "2 outer steps; step1 warm-up all-one; step2 must be non-uniform; inline eval disabled",
+  "normal_stop": "complete global_step_2 checkpoint and exit0",
+  "hard_timeout_seconds": 7200
+}

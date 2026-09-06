@@ -1,0 +1,51 @@
+diff --git a/docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md b/docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md
+index 49821d81..1556858b 100644
+--- a/docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md
++++ b/docs/rlinf-robotwin-pi0-rltoken/evidence/IMPLEMENTATION_LOG.md
+@@ -909,3 +909,46 @@ legacy decode parity       true
+ 即真实 checkpoint 下
+ `decode(ref_chunk, decode_context)` 与旧 reference 的
+ `output_transform(raw_template)[:10,:14]` 完全一致。探针正常退出，未启动训练。
++
++## 21. A021：证据固化与最终静态现场
++
++把四份最终 candidate resolved YAML、两份 probe JSON 和 GRPO legacy resolved YAML
++从服务器机械下载到：
++
++```text
++docs/rlinf-robotwin-pi0-rltoken/evidence/rlt_pre_smoke_20260729/
++```
++
++候选 config 的本地 SHA 与服务器输出逐一一致。新增
++`01_CONFIG_PROVENANCE_AND_PRE_SMOKE_PACKET.md`，集中记录每组参数来源、clean-50 能与不能
++证明什么、Stage 1/Stage 2 fresh/resume 验收、未解析变量和磁盘结构。专题主计划、packet、
++完整账本和小型 resolved/probe 证据随后机械复制进 RLT staging clone，并通过生成补丁：
++
++```text
++124,487 bytes
++SHA256 3a9a70e32a97b4259ccc97d6340eca22177657bc8638ca03b43f3c089ded1e2a
++```
++
++在服务器 RLT worktree 先 `git apply --check`，再应用。第一次文档补丁保留了 Markdown
++hard-break 的两个尾随空格，`git apply` 只警告但仍成功；为保持 `git diff --check` 干净，
++使用 `apply_patch` 删除这些尾随空格并把账本状态改为“等待 Stage 1 packet 批准”，再用
++自动生成的 3,296-byte incremental patch
++（SHA256 `9b3455ce4c666beb18a752426129546e38ca73a109020215a98f2a87a7ae953d`）
++检查、同步到服务器。
++
++根 `HANDOFF.md` 已更新当前路由、授权边界和下一步；没有把无关 QAM/DSRL 文档复制进
++RLT 专题默认上下文。
++
++最终只读现场边界：`2026-07-29T13:18:06+08:00`。
++
++- GPU0/GPU1：A800-SXM4-80GB，均 `0 MiB/0%`；
++- RAM available 778 GiB；
++- `/root/autodl-tmp` 可用 694 GiB，63% used；
++- 未见 Ray、RoboTwin、SFT、embodied training 或 prefix-probe 进程；
++- 主 π0 worktree 的 4 个既有 config 与 `local_scripts/` 仍保持 untracked、未触碰；
++- DSRL worktree仍 clean；
++- RLT worktree仍是独立 `codex/rlt-pi0-robotwin@48a775db...`，只有本批预期代码、
++  config、test、toolkit 和专题文档变更。
++
++截至本项仍没有下载/转换 clean-50，没有运行 Stage 1/Stage 2 smoke、训练、Ray、
++RoboTwin simulator 或 checkpoint save/load。

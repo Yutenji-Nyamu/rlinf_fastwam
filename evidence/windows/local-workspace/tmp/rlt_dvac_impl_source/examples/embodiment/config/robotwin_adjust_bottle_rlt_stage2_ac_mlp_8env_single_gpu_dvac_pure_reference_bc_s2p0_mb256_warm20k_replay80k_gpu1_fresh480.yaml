@@ -1,0 +1,8 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_dvac_pure_reference_bc_s2p0_mb256_warm20k_replay80k_fresh480
+  - _self_
+
+# Shared two-GPU Ray runtime: this single-rank job owns physical placement 1.
+cluster:
+  component_placement:
+    actor, env, rollout: 1

@@ -1,0 +1,62 @@
+TIME 2026-09-03 10:11:28 UTC
+GPU
+0, 9728, 81559, 0
+1, 4, 81559, 0
+2, 4, 81559, 0
+3, 4, 81559, 0
+4, 46929, 81559, 0
+5, 43818, 81559, 0
+6, 4, 81559, 0
+7, 4, 81559, 0
+GPU_PROCS
+GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 916861, 9686 MiB, /home/liwenbo/.conda/envs/starVLA/bin/python
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 2660593, 2444 MiB, ray::EmbodiedFSDPActor.recv_rollout_trajectories
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 2660596, 14852 MiB, ray::MultiStepRolloutWorker.generate
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 2660600, 29572 MiB, ray::EnvWorker.interact
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 2660598, 15758 MiB, ray::MultiStepRolloutWorker.generate
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 2660595, 1832 MiB, ray::EmbodiedFSDPActor.recv_rollout_trajectories
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 2660602, 26170 MiB, ray::EnvWorker.interact
+MEM_DISK
+               total        used        free      shared  buff/cache   available
+Mem:           2.0Ti       342Gi       1.1Ti        23Gi       524Gi       1.6Ti
+/dev/nvme1n1                     3.5T  1.9T  1.5T  57% /data
+/dev/mapper/ubuntu--vg-home--lv  2.3T  968G  1.4T  42% /home
+RAY
+======== Autoscaler status: 2026-09-03 10:11:26.325757 ========
+Node status
+---------------------------------------------------------------
+Active:
+ 1 node_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+Pending:
+ (no pending nodes)
+Recent failures:
+ (no failures)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0.0/128.0 CPU
+ 0.0/8.0 GPU
+ 0B/1.77TiB memory
+ 0B/186.26GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)
+RT
+## codex/sz-robotwin-vector-render-lifecycle-fix
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2 fix(robotwin): own renderer cache at vector scope
+OLD_EXIT
+exit_code.txt=255
+finished_at.txt=2026-09-02T06:52:25+00:00
+STEP10
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10
+27G	/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10
+14454316950 actor/dcp_checkpoint/__1_0.distcp
+14455154049 actor/dcp_checkpoint/__0_0.distcp
+2919680 actor/dcp_checkpoint/.metadata
+COMMAND
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_fastwam cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"6\,7\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1 runner.logger.experiment_name=fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1 runner.max_epochs=1000 runner.max_steps=100 runner.val_check_interval=5 runner.save_interval=10 runner.resume_dir=null env.train.total_num_envs=32 env.train.rollout_epoch=4 env.train.max_episode_steps=192 env.train.max_steps_per_rollout_epoch=192 env.train.enable_offload=true env.train.video_cfg.save_video=false env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/train env.eval.total_num_envs=32 env.eval.rollout_epoch=1 env.eval.max_episode_steps=192 env.eval.max_steps_per_rollout_epoch=192 env.eval.enable_offload=true env.eval.use_fixed_reset_state_ids=true env.eval.video_cfg.save_video=true env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/eval env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/eval actor.micro_batch_size=2 actor.global_batch_size=1024 algorithm.group_size=8 algorithm.update_epoch=2 actor.fsdp_config.checkpoint_format=dcp actor.fsdp_config.cast_forward_inputs=false 
+
+RESUME_SCHEMA_HITS

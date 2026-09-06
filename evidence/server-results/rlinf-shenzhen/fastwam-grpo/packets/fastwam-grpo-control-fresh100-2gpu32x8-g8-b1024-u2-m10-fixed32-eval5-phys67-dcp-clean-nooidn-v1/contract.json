@@ -1,0 +1,74 @@
+{
+  "fresh_from_original_sft": true,
+  "donor": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2",
+  "resolved_difference_count": 10,
+  "allowed_resolved_differences": {
+    "env.eval.task_config.ray_tracing_denoiser": [
+      null,
+      "none"
+    ],
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/robotwin_data/eval"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/video/eval"
+    ],
+    "env.train.rollout_epoch": [
+      4,
+      8
+    ],
+    "env.train.task_config.ray_tracing_denoiser": [
+      null,
+      "none"
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/robotwin_data/train"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/video/train"
+    ],
+    "runner.logger.experiment_name": [
+      "fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2",
+      "fastwam_grpo_control_fresh100_2gpu32x8_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_clean_nooidn_v1"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1"
+    ],
+    "runner.resume_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10",
+      null
+    ]
+  },
+  "source_heads": {
+    "rlinf": "4faade1d50bf21d1caf1b8a4e5f89282a810208a",
+    "robotwin": "f3e30a83365cdda1165911422dc3ce73e703201e",
+    "fastwam": "7faa71108368fbb3b6885649f112af607427a2d4"
+  },
+  "robotwin_clean_base": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+  "old_vector_patch_in_new_worktree": false,
+  "budget": {
+    "outer_steps": 100,
+    "train_episodes": 25600,
+    "train_submitted_action_slots_max": 4915200,
+    "new_query_records_max": 204800,
+    "query_record_presentations_max": 409600,
+    "actor_optimizer_calls": 400,
+    "critic_updates": 0,
+    "eval_episodes": 640,
+    "checkpoint_generations": 10,
+    "wall_timeout_seconds": 432000,
+    "reserved_gpu_hours_cap": 240,
+    "expected_wall_hours_rough": 50,
+    "expected_gpu_hours_rough": 100
+  },
+  "rendering": "RT/SPP32/pathdepth8 unchanged; explicitly none in train and eval",
+  "stop": "step100, driver fatal/exception, or inherited120h timeout; do not stop shared Ray or other jobs",
+  "latest_user_amendment": "Double trajectories via rollout4->8; keep parallel32 and all optimizer hyperparameters unchanged. GB1024/update_epoch2 implies4 optimizer calls per outer step.",
+  "prior_128_packet": "prepared but never launched",
+  "risk": "Prior256-trajectory OIDN-on run OOMed; noOIDN may reduce renderer memory but long-run fit is unproven. On OOM stop, do not silently change parallelism or batches."
+}

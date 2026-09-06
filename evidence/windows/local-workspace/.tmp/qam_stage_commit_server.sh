@@ -1,0 +1,43 @@
+set -eu
+repo=/root/autodl-tmp/RLinf_qam_pi0_robotwin
+cd "$repo"
+test "$(git branch --show-current)" = "codex/qam-pi0-robotwin"
+test "$(git rev-parse HEAD)" = "6d0db56bf26f972cd27fa29535f5eb939e80e5bf"
+git diff --check
+git add \
+  examples/embodiment/config/robotwin_adjust_bottle_qam_openpi.yaml \
+  examples/embodiment/train_embodied_agent.py \
+  rlinf/algorithms/qam/UPSTREAM_NOTICE.md \
+  rlinf/algorithms/qam/__init__.py \
+  rlinf/algorithms/qam/contracts.py \
+  rlinf/algorithms/qam/core.py \
+  rlinf/config.py \
+  rlinf/data/qam_transition_replay.py \
+  rlinf/models/embodiment/base_policy.py \
+  rlinf/models/embodiment/modules/qam_critic.py \
+  rlinf/models/embodiment/modules/qam_modules.py \
+  rlinf/models/embodiment/openpi/__init__.py \
+  rlinf/models/embodiment/openpi/openpi_action_model.py \
+  rlinf/workers/actor/fsdp_qam_policy_worker.py \
+  tests/algorithms/qam/oracle/README.md \
+  tests/algorithms/qam/oracle/export_official_fixture.py \
+  tests/algorithms/qam/oracle/qam_official_2726d767_v1.npz \
+  tests/algorithms/qam/test_core.py \
+  tests/algorithms/qam/test_official_fixture.py \
+  tests/embodiment/test_qam_openpi_adapter.py \
+  tests/embodiment/test_robotwin_qam_contract.py \
+  tests/workers/test_qam_worker_helpers.py
+git add -f \
+  tests/algorithms/qam/oracle/requirements.lock.txt \
+  tests/algorithms/qam/oracle/resolved-freeze.txt
+git diff --cached --check
+printf 'SERVER_STAGED_TREE='
+git write-tree
+git -c user.name='Zhou Yiming' \
+  -c user.email='149066435+YimingZhou2002@users.noreply.github.com' \
+  commit -m 'feat(qam): add pi0 RoboTwin plain QAM adaptation'
+printf 'SERVER_HEAD='
+git rev-parse HEAD
+printf 'SERVER_TREE='
+git rev-parse 'HEAD^{tree}'
+git status --short

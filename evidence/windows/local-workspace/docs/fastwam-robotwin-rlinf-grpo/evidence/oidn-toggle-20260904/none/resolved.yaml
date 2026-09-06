@@ -1,0 +1,103 @@
+mode: isolated_inference_no_training
+denoiser: none
+seeds:
+- 100100001
+- 100100005
+- 100100018
+max_episodes: 3
+max_action_slots_per_episode: 192
+max_policy_queries_per_episode: 8
+optimizer_updates: 0
+model:
+  model_type: fastwam
+  model_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt
+  checkpoint_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt
+  dataset_stats_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json
+  precision: bf16
+  is_lora: false
+  action_dim: 14
+  action_horizon: 32
+  num_action_chunks: 24
+  num_inference_steps: 10
+  sigma_shift: 5.0
+  text_cfg_scale: 1.0
+  negative_prompt: ''
+  rand_device: cpu
+  tiled: false
+  model_forward_batch_size: 2
+  eval_seed: 0
+  add_value_head: false
+  rl:
+    noise_level: 0.3
+  fastwam:
+    config_name: sim_robotwin
+    task: robotwin_uncond_3cam_384_1e-4
+env:
+  env_type: robotwin
+  total_num_envs: 1
+  auto_reset: false
+  ignore_terminations: true
+  reward_coef: 1.0
+  use_custom_reward: true
+  use_rel_reward: true
+  center_crop: false
+  seed: 0
+  group_size: 1
+  use_fixed_reset_state_ids: true
+  max_steps_per_rollout_epoch: 192
+  max_episode_steps: 192
+  is_eval: true
+  assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+  seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/seeds/eval_seeds.json
+  video_cfg:
+    save_video: false
+    info_on_video: true
+    video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/oidn-toggle-20260904/none/video
+  enable_offload: false
+  task_config:
+    task_name: move_stapler_pad
+    step_lim: 192
+    planner_backend: mplib
+    render_freq: 0
+    episode_num: 100
+    use_seed: false
+    save_freq: 15
+    embodiment:
+    - aloha-agilex
+    language_num: 100
+    domain_randomization:
+      random_background: false
+      cluttered_table: false
+      clean_background_rate: 1
+      random_head_camera_dis: 0
+      random_table_height: 0
+      random_light: false
+      crazy_random_light_rate: 0
+    camera:
+      head_camera_type: D435
+      wrist_camera_type: D435
+      collect_head_camera: true
+      collect_wrist_camera: true
+    data_type:
+      rgb: true
+      third_view: false
+      depth: false
+      pointcloud: false
+      observer: false
+      endpose: false
+      qpos: true
+      mesh_segmentation: false
+      actor_segmentation: false
+    pcd_down_sample_num: 1024
+    pcd_crop: true
+    save_path: /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/oidn-toggle-20260904/none/robotwin_data
+    clear_cache_freq: 1
+    collect_data: true
+    eval_video_log: true
+    ray_tracing_denoiser: none
+  rollout_epoch: 1
+render:
+  shader: rt
+  spp: 32
+  path_depth: 8
+physical_gpu: 6

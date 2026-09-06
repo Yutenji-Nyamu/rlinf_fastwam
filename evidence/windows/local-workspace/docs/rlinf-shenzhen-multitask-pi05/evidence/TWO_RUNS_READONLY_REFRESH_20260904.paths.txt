@@ -1,0 +1,338 @@
+UTC 2026-09-04T01:35:16.829007+00:00
+RUN move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1
+COMMAND /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_openpi_pi05_sidney cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"4\,5\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1 runner.logger.experiment_name=pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1 runner.only_eval=false runner.max_epochs=1000 runner.max_steps=100 runner.val_check_interval=5 runner.save_interval=10 runner.resume_dir=null algorithm.group_size=8 algorithm.update_epoch=2 algorithm.adv_type=grpo algorithm.logprob_type=chunk_level algorithm.filter_rewards=true algorithm.dvac_gradient_weighting.mode=off env.train.total_num_envs=64 env.train.rollout_epoch=4 env.train.max_episode_steps=200 env.train.max_steps_per_rollout_epoch=200 env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.train.video_cfg.save_video=false env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/train env.train.task_config.task_name=move_pillbottle_pad env.train.task_config.step_lim=200 env.eval.total_num_envs=32 env.eval.rollout_epoch=1 env.eval.max_episode_steps=200 env.eval.max_steps_per_rollout_epoch=200 env.eval.use_fixed_reset_state_ids=true env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.video_cfg.save_video=true env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/eval env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/eval env.eval.task_config.task_name=move_pillbottle_pad env.eval.task_config.step_lim=200 actor.global_batch_size=1024 actor.micro_batch_size=32 actor.model.model_path=/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab actor.model.num_steps=10 actor.model.openpi.num_steps=10 actor.model.openpi.noise_level=0.5 ++actor.fsdp_config.checkpoint_format=local_shard 
+
+CONTRACT {
+  "task": "move_pillbottle_pad",
+  "physical_gpus": [
+    4,
+    5
+  ],
+  "fresh": true,
+  "target_steps": 100,
+  "train_envs": 64,
+  "rollout_epochs": 4,
+  "trajectories_per_step": 256,
+  "group_size": 8,
+  "groups_per_step": 32,
+  "episode_action_limit": 200,
+  "H": 50,
+  "C": 50,
+  "M": 10,
+  "max_query_records_per_step": 1024,
+  "global_batch": 1024,
+  "micro_batch": 32,
+  "update_epochs": 2,
+  "optimizer_calls_per_step": 2,
+  "noise_level": 0.5,
+  "fixed_eval_episodes": 32,
+  "eval_interval": 5,
+  "save_interval": 10,
+  "checkpoint_format": "local_shard",
+  "only_semantic_change_from_source_run": "task_name: move_stapler_pad -> move_pillbottle_pad"
+}
+
+PROGRESS ['Global Step:   34/100']
+LAST_ROLLOUT ['Generating Rollout Epochs:  25%|██▌       | 1/4 [05:20<16:00, 320.05s/it]']
+OOM_AND_NONFINITE 0
+RUN fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+COMMAND /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_fastwam cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"6\,7\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2 runner.logger.experiment_name=fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2 runner.max_epochs=1000 runner.max_steps=100 runner.val_check_interval=5 runner.save_interval=10 runner.resume_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10 env.train.total_num_envs=32 env.train.rollout_epoch=4 env.train.max_episode_steps=192 env.train.max_steps_per_rollout_epoch=192 env.train.enable_offload=true env.train.video_cfg.save_video=false env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train env.eval.total_num_envs=32 env.eval.rollout_epoch=1 env.eval.max_episode_steps=192 env.eval.max_steps_per_rollout_epoch=192 env.eval.enable_offload=true env.eval.use_fixed_reset_state_ids=true env.eval.video_cfg.save_video=true env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval actor.micro_batch_size=2 actor.global_batch_size=1024 algorithm.group_size=8 algorithm.update_epoch=2 actor.fsdp_config.checkpoint_format=dcp actor.fsdp_config.cast_forward_inputs=false 
+
+CONTRACT {
+  "scientific_config": "identical to original v1",
+  "allowed_resolved_differences": {
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval"
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/train"
+    ],
+    "runner.logger.experiment_name": [
+      "fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1",
+      "fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2"
+    ],
+    "runner.resume_dir": [
+      null,
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10"
+    ]
+  },
+  "rlinf_head": "7b2331c55d14397cfb4cb16181470ddc8afae44a",
+  "robotwin_base": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+  "robotwin_fix": "8c7380c118ce7ca8a4ea4df53d753adc8fab0df2",
+  "resume_checkpoint": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10",
+  "acceptance_boundary": "complete Step-15 fixed evaluation without OIDN/Python/Ray fatal"
+}
+
+PROGRESS ['Global Step:   33/100']
+LAST_ROLLOUT ['Generating Rollout Epochs:  25%|██▌       | 1/4 [03:06<09:20, 186.76s/it]']
+OOM_AND_NONFINITE 0
+FASTWAM_POST_LAUNCH_DIFF
+ .../completed_runs_20260822_20260903/README.md     |    3 +
+ .../MANIFEST.sha256                                |   26 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   25 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/sha256.txt                              |    2 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/metrics.log                                |  176 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   25 +
+ .../run/runtime/driver.log                         |  799 +++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/launch_manifest.txt                |   13 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |  242 +
+ .../run/runtime/sha256.txt                         |    2 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788406401.admin.2153017.0 |  Bin 0 -> 12642 bytes
+ .../MANIFEST.sha256                                |   24 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   49 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/metrics.log                                |  488 ++
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   49 +
+ .../run/runtime/driver.log                         | 1521 +++++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/launch_manifest.txt                |   12 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |  348 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788311193.admin.3589674.0 |  Bin 0 -> 34996 bytes
+ .../MANIFEST.sha256                                |   23 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   49 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   49 +
+ .../run/runtime/driver.log                         |  459 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/launch_manifest.txt                |   12 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |    3 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788345834.admin.815655.0  |  Bin 0 -> 88 bytes
+ .../MANIFEST.sha256                                |   23 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   49 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/metrics.log                                |  102 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   49 +
+ .../run/runtime/driver.log                         |  611 ++
+ .../run/runtime/launch_manifest.txt                |   13 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |  167 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ ...topped_by_user_for_model_expansion_20260902.txt |    6 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788346129.admin.826985.0  |  Bin 0 -> 7298 bytes
+ .../MANIFEST.sha256                                |   26 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   20 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/sha256.txt                              |    2 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/metrics.log                                |   40 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   20 +
+ .../run/runtime/driver.log                         |  519 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/launch_manifest.txt                |    8 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource_2s.csv                    | 1412 ++++
+ .../run/runtime/sha256.txt                         |    2 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788359499.admin.1358525.0 |  Bin 0 -> 2904 bytes
+ .../MANIFEST.sha256                                |   25 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   20 +
+ .../packet/packet_complete.txt                     |    1 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/sha256.txt                              |    2 +
+ .../packet/source_head.txt                         |    1 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   20 +
+ .../run/runtime/driver.log                         |  523 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/launch_manifest.txt                |    8 +
+ .../run/runtime/observer.log                       |    0
+ .../run/runtime/observer.sh                        |   11 +
+ .../run/runtime/packet_complete.txt                |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource_2s.csv                    | 1127 ++++
+ .../run/runtime/sha256.txt                         |    2 +
+ .../run/runtime/source_head.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/runtime/wrapper.log                        |    0
+ .../run/runtime/wrapper.sh                         |    9 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788356609.admin.1277587.0 |  Bin 0 -> 88 bytes
+ .../MANIFEST.sha256                                |   16 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   28 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/worker.log                              |    0
+ .../packet/worker.sh                               |  106 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   28 +
+ .../run/runtime/driver.log                         |  503 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |   23 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788176804.admin.282093.0  |  Bin 0 -> 88 bytes
+ .../MANIFEST.sha256                                |    8 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../run/metrics.log                                |   40 +
+ .../run/runtime/driver.log                         |  511 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788178857.admin.427114.0  |  Bin 0 -> 3002 bytes
+ .../MANIFEST.sha256                                |   17 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   28 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/worker.log                              |    0
+ .../packet/worker.sh                               |  106 +
+ .../run/metrics.log                                |   40 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   28 +
+ .../run/runtime/driver.log                         |  510 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |   39 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788177719.admin.350862.0  |  Bin 0 -> 2904 bytes
+ .../MANIFEST.sha256                                |   16 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   28 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/worker.log                              |    0
+ .../packet/worker.sh                               |  103 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   28 +
+ .../run/runtime/driver.log                         |  525 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |   20 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788172640.admin.22296.0   |  Bin 0 -> 88 bytes
+ .../MANIFEST.sha256                                |    7 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../run/runtime/driver.log                         | 6768 ++++++++++++++++++++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788175210.admin.184641.0  |  Bin 0 -> 88 bytes
+ .../MANIFEST.sha256                                |   19 +
+ .../SERVER_RUN_PATH.txt                            |    1 +
+ .../packet/command.txt                             |    1 +
+ .../packet/contract.json                           |   28 +
+ .../packet/reloadcheck_worker.log                  |    0
+ .../packet/reloadcheck_worker.sh                   |   60 +
+ .../packet/resolved.yaml                           |  284 +
+ .../packet/worker.log                              |    0
+ .../packet/worker.sh                               |  103 +
+ .../run/metrics.log                                |   40 +
+ .../run/runtime/command.txt                        |    1 +
+ .../run/runtime/contract.json                      |   28 +
+ .../run/runtime/driver.log                         |  510 ++
+ .../run/runtime/exit_code.txt                      |    1 +
+ .../run/runtime/finished_at.txt                    |    1 +
+ .../run/runtime/resolved.yaml                      |  284 +
+ .../run/runtime/resource.csv                       |   38 +
+ .../run/runtime/started_at.txt                     |    1 +
+ .../run/tensorboard/config.yaml                    |  291 +
+ .../events.out.tfevents.1788173933.admin.102825.0  |  Bin 0 -> 2904 bytes
+ 243 files changed, 28929 insertions(+)
+ 
+ROBOTWIN_WORKTREES
+worktree /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+HEAD 0008ae6800df9f75fc8de7098bacb01735fd8fd2
+detached
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6
+HEAD 8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+branch refs/heads/codex/sz-robotwin-vector-render-lifecycle-fix
+
+ 

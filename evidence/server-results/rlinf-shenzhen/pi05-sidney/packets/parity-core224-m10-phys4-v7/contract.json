@@ -1,0 +1,15 @@
+{
+  "kind": "official-aligned native LeRobot versus current RLinf core semantic parity",
+  "physical_gpus": [4],
+  "execution": "sequential; models never co-resident",
+  "prompt": "move the stapler onto the pad",
+  "input_seed": 1234,
+  "input_images": "three deterministic uint8 HWC images at target 224x224; no resize",
+  "noise_shape": [1, 50, 32],
+  "H": 50,
+  "M": 10,
+  "compared": ["three_images", "image_masks", "normalized_state14", "padded_state32", "tokens", "token_mask", "model_actions32", "final_actions14"],
+  "sample_rtol": 0.01,
+  "sample_atol": 0.005,
+  "scope": "core processor/model/postprocessor parity; prior 480x640 white-noise resize result remains a non-gating diagnostic"
+}

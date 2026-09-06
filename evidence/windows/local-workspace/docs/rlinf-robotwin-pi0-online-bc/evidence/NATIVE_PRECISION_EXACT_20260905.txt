@@ -1,0 +1,365 @@
+
+            LIGER_COMMON_KWARGS = {
+                "rope": True,
+                "rms_norm": True,
+                "swiglu": True,
+                "fused_linear_cross_entropy": True,
+            }
+
+            _liger_func_by_model = {
+                SupportedModel.QWEN2_5: apply_liger_kernel_to_qwen2,
+                SupportedModel.QWEN2_5_VL: apply_liger_kernel_to_qwen2_5_vl,
+                SupportedModel.QWEN2_5_VL_SFT: apply_liger_kernel_to_qwen2_5_vl,
+                SupportedModel.QWEN3_VL_SFT: apply_liger_kernel_to_qwen3_vl,
+                SupportedModel.QWEN3_MOE: apply_liger_kernel_to_qwen3_moe,
+                SupportedModel.QWEN3_VL_MOE_SFT: apply_liger_kernel_to_qwen3_vl_moe,
+            }
+
+            MODEL_LIGER_KERNEL_APPLY_FUNC = {
+                model_type: (apply_fn, dict(LIGER_COMMON_KWARGS))
+                for model_type, apply_fn in _liger_func_by_model.items()
+            }
+
+            model_type = SupportedModel(self._cfg.model.get("model_type", "").lower())
+            if model_type in MODEL_LIGER_KERNEL_APPLY_FUNC:
+                apply_func, apply_kwargs = MODEL_LIGER_KERNEL_APPLY_FUNC[model_type]
+                apply_func(
+                    model=model,
+                    **apply_kwargs,
+                )
+                self._logger.info(
+                    f"[FSDP] Applied liger-kernel optimizations for model_type: {model_type.value}, used kwargs: {apply_kwargs}"
+                )
+            else:
+                self._logger.info(
+                    f"[FSDP] No liger-kernel optimizations applied for model_type: {model_type.value}"
+                )
+                return
+        except Exception as e:
+            self._logger.warning(f"[FSDP] Liger kernels not applied: {e}")
+
+    def setup_model_and_optimizer(self) -> None:
+        """
+        Setup model, lr_scheduler, optimizer and grad_scaler.
+        """
+        module = self.model_provider_func()
+
+        # Enable gradient checkpointing if configured
+        if self._cfg.fsdp_config.get("gradient_checkpointing", False):
+            use_reentrant = self._cfg.fsdp_config.get(
+                "gradient_checkpointing_use_reentrant", True
+            )
+            self._logger.info(
+                f"[FSDP] Enabling gradient checkpointing with use_reentrant={use_reentrant}"
+            )
+            if use_reentrant:
+                # use_reentrant=True is the default for HuggingFace models.
+                # We pass no arguments to stay compatible with openpi's
+                # PI0Pytorch.gradient_checkpointing_enable, which takes none.
+                module.gradient_checkpointing_enable()
+            else:
+                module.gradient_checkpointing_enable(
+                    gradient_checkpointing_kwargs={"use_reentrant": use_reentrant}
+                )
+        else:
+            self._logger.info("[FSDP] Gradient checkpointing is disabled")
+
+        # here record the original trainable parameters' names before FSDP wrapping
+        # persist buffers' names are also recorded, which will be used for weight syncing.
+        self.param_names_need_sync = collect_param_names_need_sync(module)
+
+        # build model, optimizer, lr_scheduler, grad_scaler
+        self.model = self._strategy.wrap_model(
+            model=module, device_mesh=self._device_mesh
+        )
+        self.optimizer = self.build_optimizer(
+            model=self.model, enable_critic_warmup=self.critic_warmup_steps > 0
+        )
+
+        self.lr_scheduler = self.build_lr_scheduler(
+            optimizer=self.optimizer, optim_config=self._cfg.optim
+        )
+
+        assert self._cfg.fsdp_config.get("grad_scaler") is not None, (
+            "fsdp_config.grad_scaler must be initialized before this step."
+        )
+
+        kwargs = {}
+        for key in ["init_scale", "growth_interval"]:
+            value = self._cfg.fsdp_config.grad_scaler.get(key, None)
+            if value is not None:
+                kwargs[key] = value
+        self.grad_scaler = self.build_grad_scaler(
+            self._cfg.fsdp_config.grad_scaler.get("enabled", False), **kwargs
+        )
+
+    def get_model_state_dict(self, cpu_offload: bool, full_state_dict: bool) -> dict:
+        """
+        Get the model state dict according to the specified options.
+
+        Args:
+            - cpu_offload (bool): Whether returned state_dict's value will be offloaded to CPU
+                If true, will be copied to CPU memory, or just keep a reference to the original GPU tensor.
+            - full_state_dict (bool): Whether to get the full state dict.
+
+        Returns:
+            - dict: The state dict of the FSDP wrapped model according to the specified options
+        """
+        state_dict = self._strategy.get_model_state_dict(
+            self.model, cpu_offload, full_state_dict
+        )
+        return state_dict
+import torch.nn as nn
+from torch.distributed.device_mesh import DeviceMesh
+from torch.distributed.fsdp import (
+    MixedPrecision,
+    StateDictType,
+)
+from torch.optim import Optimizer
+
+from rlinf.config import torch_dtype_from_precision
+from rlinf.hybrid_engines.fsdp import FSDP, CPUOffload
+from rlinf.hybrid_engines.fsdp.strategy.base import FSDPStrategyBase
+from rlinf.hybrid_engines.fsdp.utils import (
+    FSDPVersion,
+    get_backward_prefetch_strategy,
+    get_fsdp_wrap_policy,
+    get_grad_norm_for_mixed_precision,
+    get_sharding_strategy,
+    init_fn,
+)
+from rlinf.scheduler import Worker
+from rlinf.utils.utils import clear_memory
+
+
+class FSDPStrategy(FSDPStrategyBase):
+    _FSDP_CACHE_ATTRS = (
+        "_mp_shard",
+        "_full_param_padded",
+        "_full_prec_full_param_padded",
+        "_unsharded_flat_param_for_skipped_views",
+    )
+    _FSDP_GRAD_ATTRS = ("_saved_grad_shard", "_cpu_grad")
+
+    @staticmethod
+    def _iter_fsdp_handles(model: FSDP) -> list:
+        handles = []
+        seen_handle_ids = set()
+        for module in model.modules():
+            handle = getattr(module, "_handle", None)
+            if handle is not None and id(handle) not in seen_handle_ids:
+                seen_handle_ids.add(id(handle))
+                handles.append(handle)
+
+            all_handles = getattr(module, "_all_handles", None)
+            if all_handles is None:
+                continue
+            for inner_handle in all_handles:
+                if inner_handle is None or id(inner_handle) in seen_handle_ids:
+                    continue
+                seen_handle_ids.add(id(inner_handle))
+                handles.append(inner_handle)
+        return handles
+
+    @staticmethod
+    def _move_tensor(
+        tensor: torch.Tensor | None, device: torch.device | str
+    ) -> torch.Tensor | None:
+        if tensor is None or tensor.device == torch.device(device):
+            return tensor
+        return tensor.to(device, non_blocking=True)
+
+    @staticmethod
+    def _free_tensor_storage(tensor: torch.Tensor | None) -> None:
+        if tensor is None:
+            return
+        try:
+            storage = tensor.untyped_storage()
+            if storage.size() > 0:
+                storage.resize_(0)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _rebind_sharded_tensor_views(handle) -> None:
+        flat_param = handle.flat_param
+        if not handle.uses_sharded_strategy:
+            handle._use_unsharded_views(as_params=False)
+            return
+
+        size_0_empty_tensor = torch.empty(
+            0,
+            dtype=flat_param.dtype,
+            device=flat_param.device,
+            requires_grad=False,
+        )
+        for shard_param_info, (param_name, module, _) in zip(
+            flat_param._shard_param_infos,
+            flat_param._param_infos,
+        ):
+            if not shard_param_info.in_shard:
+                tensor = size_0_empty_tensor
+            else:
+                offset = shard_param_info.offset_in_shard
+                numel_in_shard = shard_param_info.numel_in_shard
+                tensor = flat_param[offset : offset + numel_in_shard]
+            handle._setattr_tensor(module, param_name, tensor)
+
+        for (
+            param_name,
+            module,
+            _,
+            prim_param_name,
+            prim_module,
+            _,
+        ) in flat_param._shared_param_infos:
+            handle._setattr_tensor(
+                module, param_name, getattr(prim_module, prim_param_name)
+            )
+
+    def _rebind_handle_views(self, handle) -> None:
+        if handle._use_orig_params:
+            handle._use_sharded_views()
+            return
+        self._rebind_sharded_tensor_views(handle)
+
+    def wrap_model(self, model: nn.Module, device_mesh: DeviceMesh) -> FSDP:
+        """
+        Wrap the model with FSDP using the specified configuration,
+        it will apply mixed precision, sharding strategy, and wrapping policy.
+
+        Args:
+            - model (nn.Module): The model to be wrapped.
+            - device_mesh (DeviceMesh): The device mesh for distributed training.
+
+        Returns:
+            - FSDP: The wrapped FSDP model.
+        """
+
+        cpu_offload = CPUOffload(offload_params=self.cfg.fsdp_config.cpu_offload)
+
+        fsdp_model = FSDP(
+            module=model,
+            param_init_fn=init_fn,
+            auto_wrap_policy=auto_wrap_policy,
+            device_id=int(os.environ["LOCAL_RANK"]),
+            sharding_strategy=sharding_strategy,
+            mixed_precision=mixed_precision,
+            sync_module_states=True,
+            device_mesh=device_mesh,
+            forward_prefetch=self.cfg.fsdp_config.forward_prefetch,
+            backward_prefetch=backward_prefetch,
+            limit_all_gathers=self.cfg.fsdp_config.limit_all_gathers,
+            use_orig_params=self.cfg.fsdp_config.use_orig_params,
+            cpu_offload=cpu_offload,
+        )
+        return fsdp_model
+
+    @classmethod
+    def get_fsdp_version(cls) -> FSDPVersion:
+        return FSDPVersion.FSDP
+
+    def get_optimizer_state_dict(self, model: FSDP, optimizer: Optimizer) -> dict:
+        """
+        Get the full state dict of the optimizer.
+
+        Args:
+            - model (FSDP): The FSDP wrapped model.
+            - optimizer (Optimizer): The optimizer used for training.
+
+        Returns:
+            Dict: The full state dict of the optimizer.
+        """
+        with FSDP.state_dict_type(
+            module=model, state_dict_type=StateDictType.FULL_STATE_DICT
+        ):
+            optimizer_state_dict = FSDP.optim_state_dict(model, optimizer)
+        return optimizer_state_dict
+
+    @torch.no_grad()
+    def offload_param_and_grad(self, model: FSDP, offload_grad: bool) -> None:
+        """
+        Offload model parameters and gradients to CPU.
+        Args:
+            - model (FSDP): The FSDP wrapped model.
+            - offload_grad (bool): Whether to offload gradients or not.
+        """
+        for handle in self._iter_fsdp_handles(model):
+            flat_param = handle.flat_param
+
+            if hasattr(flat_param, "_local_shard"):
+                flat_param._local_shard = self._move_tensor(
+                    flat_param._local_shard, "cpu"
+                )
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py:117:    def model_provider_func(self) -> nn.Module:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-118-        model = get_model(self.cfg.actor.model)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-119-        if model is None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-120-            model = super().model_provider_func()
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-121-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-122-        if self.cfg.runner.get("ckpt_path", None):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-123-            model_dict = torch.load(self.cfg.runner.ckpt_path)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-124-            model.load_state_dict(model_dict)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-125-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-126-        return model
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-127-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-128-    def get_rollout_state_dict(self) -> dict:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-129-        return self.get_model_state_dict(cpu_offload=False, full_state_dict=False)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-130-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-131-    @Worker.timer("actor/sync_model_to_rollout")
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-132-    async def sync_model_to_rollout(self) -> None:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-133-        if self.enable_offload:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-134-            if not self.is_optimizer_offloaded:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-135-                self.offload_optimizer()
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-136-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-137-            if self.is_weight_offloaded:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-138-                self.load_param_and_grad(self.device, False)
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-139-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-140-        state_dict = self.get_rollout_state_dict()
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-141-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-142-        async def send_func(data):
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-143-            if not self._is_weight_sender:
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-144-                return
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-145-            await self.broadcast(
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-146-                data,
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-147-                groups=[
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-148-                    (self._group_name, 0),
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-149-                    (self._rollout_group_name, self._rollout_all_ranks),
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-150-                ],
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-151-                src=(self._group_name, 0),
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-152-                async_op=True,
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-153-                options=self._sync_weight_comm_options,
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-154-            ).async_wait()
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-155-
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-156-        async def recv_func():
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py-157-            return await self.recv(
+strategy: "fsdp"            # FSDP strategy: ["fsdp", "fsdp2"]
+
+# Sharding strategy: "full_shard" (shard parameters, gradients, optimizer states),
+# "shard_grad_op" (shard gradients and optimizer states only),
+# "hybrid_shard" (combines data parallelism and model parallelism - sharding within FSDP groups, replicate across DDP groups),
+# "no_shard" (no sharding)
+sharding_strategy: "full_shard"
+
+gradient_checkpointing: False # if True, gradient checkpointing will be used for FSDP/FSDP2 training, which will save memory but increase computation time.
+cpu_offload: False            # whether to offload parameters and gradients to CPU when not in use, if True, actor's enable_offload should be True too.
+offload_pin_memory: False     # whether FSDP2's CPU offload policy should pin memory when cpu_offload is True
+reshard_after_forward: True   # if True, FSDP2 will reshard parameters after forward pass to save memory
+
+enable_gradient_accumulation: True  # if True, gradient accumulation will be enabled for FSDP/FSDP2 training, which will enhance training performance but increase memory usage.
+forward_prefetch: False             # if True, FSDP will explicitly prefetches the next upcoming all-gather while executing in the forward pass. only use with static graphs. Overlaps communication with computation to improve performance.
+limit_all_gathers: False            # if True, FSDP will synchronizes CPU threads to limit the number of concurrent all-gathers. Only affects strategies that schedule all-gathers
+backward_prefetch: null             # options are null, 'pre', 'post'. if 'pre', FSDP will prefetch the next upcoming all-gather while computing gradients. if 'post', FSDP will prefetch the next all-gather until current gradient is computed.
+use_orig_params: False              # if True, FSDP will use module's original parameters, it means it will expose nn.Module.named_parameters rather than FlatParameter
+use_liger_kernel: False             # if True, liger_kernel will be used for FSDP, note that currently supported models in RLinf are [qwen2.5, qwen2.5-vl], for more details, see liger_kernel's doc
+
+mixed_precision:            # mixed precision settings for fsdp/fsdp2
+  param_dtype: null
+  reduce_dtype: null
+  buffer_dtype: null
+
+amp_autocast:                       # Do not enable `amp_autocast` with FSDP `mixed_precision` enabled, using both will result in conflict.
+  enabled: False                    # if True, automatic mixed precision (AMP) will be used in FSDP/FSDP2 training.
+  precision: "bf16"                 # precision for AMP, options are ["fp16" , "bf16"]
+
+grad_scaler:
+  enabled: False                    # if True, GradScaler will be used for AMP training to prevent underflow.

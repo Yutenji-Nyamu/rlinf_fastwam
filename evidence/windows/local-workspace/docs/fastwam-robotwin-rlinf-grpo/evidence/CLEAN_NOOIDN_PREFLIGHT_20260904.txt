@@ -1,0 +1,509 @@
+2026-09-04T04:34:11+00:00
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+0, GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 9728, 81559, 0
+1, GPU-a5db195a-ea49-b641-5355-ea060827f70c, 4, 81559, 0
+2, GPU-4ec384bf-4828-063b-a26e-6812eca09f75, 4, 81559, 0
+3, GPU-2f0e1a8f-d784-6388-4e12-d211c97e9174, 4, 81559, 0
+4, GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 40906, 81559, 0
+5, GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 41454, 81559, 0
+6, GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 5, 81559, 0
+7, GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 5, 81559, 0
+GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 916861, 9686
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177202, 7962
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177199, 2444
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177205, 30435
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177201, 1832
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177204, 8868
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177207, 30691
+               total        used        free      shared  buff/cache   available
+Mem:     2164140818432 854537728000 790491815936 27732054016 519111274496 1271028273152
+Swap:     6413086720  2734698496  3678388224
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/nvme1n1                     3.5T  2.0T  1.3T  61% /data
+/dev/mapper/ubuntu--vg-home--lv  2.3T  971G  1.4T  42% /home
+ 321933  321906 11-12:06:19 2699004 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs --config_list=eyJhdXRvbWF0aWNfb2JqZWN0X3NwaWxsaW5nX2VuYWJsZWQiOiB0cnVlLCAib2JqZWN0X3NwaWxsaW5nX2NvbmZpZyI6ICJ7XCJ0eXBlXCI6IFwiZmlsZXN5c3RlbVwiLCBcInBhcmFtc1wiOiB7XCJkaXJlY3RvcnlfcGF0aFwiOiBcIi9
+ 322685  321906 11-12:06:17 67188 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet --raylet_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/raylet --store_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/plasma_store --object_manager_port=0 --min_worker_port=10002 --max_worke
+1033220 1033220       00:01  3684 bash -c #!/usr/bin/env bash set -euo pipefail export PYTHONDONTWRITEBYTECODE=1 date -Is id nvidia-smi --query-gpu=index,uuid,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits free -b df -h /data /home ps -u chenyiteng -o pid,pgid,etime,rss,args | grep -E 'gcs_server|raylet|train_embodied
+1033236 1033220       00:00  2308 grep -E gcs_server|raylet|train_embodied|EnvWorker|RolloutWorker
+3176214 3176214    16:10:31   940 timeout --signal=TERM --kill-after=180s 345600s bash -lc /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad
+3176215 3176214    16:10:31 1686304 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_openpi_pi05_sidney cluster.component_placement={a
+3177202 3177202    16:10:22 6315128 ray::MultiStepRolloutWorker.generate
+3177204 3177204    16:10:21 6668608 ray::MultiStepRolloutWorker.generate
+3177205 3177205    16:10:21 396554616 ray::EnvWorker.interact
+3177207 3177207    16:10:21 379853164 ray::EnvWorker.interact
+RUN /data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1
+wrapper.pid 3176203
+exit_code.txt absent
+finished_at.txt absent
+started_at.txt 2026-09-03T12:23:41+00:00
+LAST_STEPS ['│ Global Step:   41/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  41.0%                                  │', '│ Global Step:   42/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  42.0%                                  │']
+ERROR pthread_key_create failed 0
+ERROR Fatal Python error 0
+ERROR CUDA out of memory 0
+ERROR Traceback 0
+RUN /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+wrapper.pid 2812508
+exit_code.txt 255
+finished_at.txt 2026-09-03T15:51:49+00:00
+started_at.txt 2026-09-03T10:14:46+00:00
+LAST_STEPS ['│ Global Step:   32/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  32.0%                                  │', '│ Global Step:   33/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  33.0%                                  │']
+ERROR pthread_key_create failed 2
+ERROR Fatal Python error 2
+ERROR CUDA out of memory 0
+ERROR Traceback 1
+command.txt /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_fastwam cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"6\,7\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2 runner.logger.experiment_name=fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2 runner.max_epochs=1000 runner.max_steps=100 runner.val_check_interval=5 runner.save_interval=10 runner.resume_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10 env.train.total_num_envs=32 env.train.rollout_epoch=4 env.train.max_episode_steps=192 env.train.max_steps_per_rollout_epoch=192 env.train.enable_offload=true env.train.video_cfg.save_video=false env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train env.eval.total_num_envs=32 env.eval.rollout_epoch=1 env.eval.max_episode_steps=192 env.eval.max_steps_per_rollout_epoch=192 env.eval.enable_offload=true env.eval.use_fixed_reset_state_ids=true env.eval.video_cfg.save_video=true env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval actor.micro_batch_size=2 actor.global_batch_size=1024 algorithm.group_size=8 algorithm.update_epoch=2 actor.fsdp_config.checkpoint_format=dcp actor.fsdp_config.cast_forward_inputs=false 
+
+contract.json {
+  "scientific_config": "identical to original v1",
+  "allowed_resolved_differences": {
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval"
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/train"
+    ],
+    "runner.logger.experiment_name": [
+      "fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1",
+      "fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2"
+    ],
+    "runner.resume_dir": [
+      null,
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10"
+    ]
+  },
+  "rlinf_head": "7b2331c55d14397cfb4cb16181470ddc8afae44a",
+  "robotwin_base": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+  "robotwin_fix": "8c7380c118ce7ca8a4ea4df53d753adc8fab0df2",
+  "resume_checkpoint": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10",
+  "acceptance_boundary": "complete Step-15 fixed evaluation without OIDN/Python/Ray fatal"
+}
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+
+
+origin	https://github.com/RLinf/RLinf.git (fetch)
+origin	https://github.com/RLinf/RLinf.git (push)
+personal	git@github.com:Yutenji-Nyamu/rlinf_fastwam.git (fetch)
+personal	git@github.com:Yutenji-Nyamu/rlinf_fastwam.git (push)
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+0008ae6800df9f75fc8de7098bacb01735fd8fd2
+
+
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (fetch)
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (push)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (fetch)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (push)
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+
+
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (fetch)
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (push)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (fetch)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (push)
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904
+b76d4edcb7e23f09f9de6dafc16a3173f6d07adb
+
+?? oidn_toggle_trial.py
+
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (fetch)
+origin	https://github.com/RoboTwin-Platform/RoboTwin.git (push)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (fetch)
+personal	https://github.com/Yutenji-Nyamu/RoboTwin.git (push)
+
+NEW_TARGET_EXISTS False
+RUNTIME_SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py
+RUNTIME_SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/cluster/cluster.py
+94:         - override: replace existing value with the new value
+95:     """
+96: 
+97:     CODE_WORKING_DIR = "CODE_WORKING_DIR"
+98:     """Enable shipping the ``rlinf`` Python package to workers via Ray ``runtime_env`` (``py_modules``).
+99: 
+100:     Only the ``rlinf/`` subdirectory of the checkout is packaged (not ``examples/``, ``docs/``, etc.).
+101: 
+102:     Values (``RLINF_CODE_WORKING_DIR``):
+103:         - Unset / ``0`` / ``false`` / ``off`` / ``no``: disabled (same as legacy behavior: no Ray code sync).
+104:         - ``auto``: infer checkout root from the installed ``rlinf`` package / ``pyproject.toml``.
+105:         - Absolute path: repository root containing ``pyproject.toml`` and ``rlinf/``, or the ``rlinf`` package dir.
+106: 
+107:     Set explicitly when workers do not share a filesystem with the launch node.
+108:     """
+109: 
+110: 
+111: class PathEnvMergeMode(str, Enum):
+112:     """Merge mode for path-like worker env vars."""
+113: 
+137:         ClusterEnvVar.PATH_ENV_MERGE_MODE: PathEnvMergeMode.APPEND.value,
+138:         ClusterEnvVar.CODE_WORKING_DIR: "0",
+139:     }
+140:     PATH_LIKE_ENV_VARS = {
+141:         "PYTHONPATH",
+142:         "LD_LIBRARY_PATH",
+143:         "PATH",
+144:         "LIBRARY_PATH",
+145:         "CMAKE_PREFIX_PATH",
+146:         "PKG_CONFIG_PATH",
+147:         "CPATH",
+148:     }
+149: 
+150:     class NamespaceConflictError(Exception):
+151:         """Raised when there is a namespace conflict in Ray initialization."""
+152: 
+153:     @classmethod
+154:     def find_free_port(cls, max_port_num: Optional[int] = None):
+155:         """Find a free port on the node.
+156: 
+157:         Args:
+158:             max_port_num (Optional[int]): Largest acceptable port. Use it for servers that
+159:                 derive a second port from this one and would overflow past 65535.
+160:         """
+161:         import socket
+162: 
+209:                         distributed_log_dir,
+210:                     )
+211:                     break
+212:                 except Cluster.NamespaceConflictError:
+213:                     # Switch the namespace when multiple ray instances are created in the same node
+214:                     self._ray_instance_count += 1
+215:                     self._logger.info(
+216:                         f"Ray namespace conflict detected. Retrying to initialize Cluster with a new namespace (attempt {self._ray_instance_count})."
+217:                     )
+218:                     Cluster.NAMESPACE = f"{Cluster.SYS_NAME}_{self._ray_instance_count}"
+219:         else:
+220:             try:
+221:                 self._init_from_existing_managers()
+222:             except ConnectionError:
+223:                 self._logger.warning(
+224:                     "Could not connect to an existing Ray cluster. Initializing a new cluster with all connected nodes."
+225:                 )
+226:                 return self.__init__(
+227:                     num_nodes=0,
+261:     def _launch_manager_actor(
+262:         self,
+263:         manager_cls: type["Manager"],
+264:         manager_node: NodeInfo,
+265:         runtime_env: dict[str, Any],
+266:         *args,
+267:     ) -> ActorHandle:
+268:         """Launch a global manager actor pinned to cluster node rank 0."""
+269:         combined_runtime_env = Cluster._combine_ray_runtime_env(
+270:             Cluster._job_code_sync_fragment_for_child_runtime_env(
+271:                 self._ray_code_sync_fragment
+272:             ),
+273:             runtime_env,
+274:         )
+275:         return (
+276:             ray.remote(manager_cls)
+277:             .options(
+278:                 name=manager_cls.MANAGER_NAME,
+279:                 runtime_env=combined_runtime_env,
+280:                 scheduling_strategy=ray.util.scheduling_strategies.NodeAffinitySchedulingStrategy(
+281:                     node_id=manager_node.ray_id,
+282:                     soft=False,
+283:                 ),
+284:             )
+285:             .remote(*args)
+286:         )
+287: 
+288:     def _init_and_launch_managers(
+289:         self,
+290:         num_nodes: int,
+292:         distributed_log_dir: Optional[str],
+293:     ):
+294:         if ray.is_initialized():
+295:             if self._ray_instance_count > 0:
+296:                 # For reinit Ray to switch namespace
+297:                 ray.shutdown()
+298:             else:
+299:                 # Initializing Ray before us interferes with the namespace and logging level settings.
+300:                 raise RuntimeError(
+301:                     "You have initialized Ray before creating the Cluster instance. This may be due to calling ray.init or creating certain Ray objects like Ray Queue before instantiating the Cluster class. Please ensure that the Cluster class is instantiated before Ray is initialized because it will interfere with our Ray namespace and logging settings."
+302:                 )
+303: 
+304:         # NOTE: Add os.environ variables to the worker environment.
+305:         # When ray cluster has been started via `ray start` before running the Python script, ray will only capture the environment variables exported before `ray start` and ignore all subsequently exported environment variables.
+306:         # To handle this, we need to manually pass the environment variables to Ray when initializing the cluster.
+307:         # Any env vars conflicting with Worker env vars will be overwritten by Worker.
+308:         if "RAY_DEDUP_LOGS" not in os.environ:
+309:             # Default disabling deduplication of logs to ensure all logs are printed.
+310:             ray_logging.RAY_DEDUP_LOGS = 0
+311:         if "RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO" not in os.environ:
+312:             os.environ["RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO"] = "0"
+328:         )
+329:         assert self._num_nodes >= 0, "num_nodes must be greater than or equal to 0."
+330: 
+331:         self._ray_code_sync_fragment, self._runtime_code_sync_strip_roots = (
+332:             Cluster._prepare_ray_code_sync_runtime_env_fragment()
+333:         )
+334: 
+335:         try:
+336:             # First try to connect to an existing Ray cluster
+337:             ray_init_kwargs: dict[str, Any] = {
+338:                 "address": "auto",
+339:                 "logging_level": Cluster.LOGGING_LEVEL,
+340:                 "namespace": Cluster.NAMESPACE,
+341:             }
+342:             if self._ray_code_sync_fragment is not None:
+343:                 ray_init_kwargs["runtime_env"] = dict(self._ray_code_sync_fragment)
+344:                 py_mods = ray_init_kwargs["runtime_env"].get("py_modules") or ()
+345:                 self._logger.info(
+346:                     "%s Ray code sync is enabled (py_modules=%r); workers receive "
+347:                     "only the rlinf package from the launch node. Disable with %s=0.",
+348:                     Cluster.SYS_NAME,
+349:                     tuple(py_mods),
+350:                     Cluster.get_full_env_var_name(ClusterEnvVar.CODE_WORKING_DIR),
+351:                 )
+352:             ray.init(**ray_init_kwargs)
+353:         except ConnectionError:
+354:             ray_init_kwargs = {
+355:                 "logging_level": Cluster.LOGGING_LEVEL,
+356:                 "namespace": Cluster.NAMESPACE,
+357:             }
+358:             if self._ray_code_sync_fragment is not None:
+359:                 ray_init_kwargs["runtime_env"] = dict(self._ray_code_sync_fragment)
+360:             ray.init(**ray_init_kwargs)
+361: 
+362:         Cluster._install_failure_hook()
+363:         atexit.register(Cluster._shutdown_ray_at_exit)
+364: 
+365:         # Ray log collector
+366:         if distributed_log_dir is not None:
+367:             self._distributed_log_collector = DistributedRayLogCollector(
+368:                 logger=self._logger,
+369:                 output_dir=distributed_log_dir,
+370:                 namespace=Cluster.NAMESPACE,
+371:             )
+372:             self._distributed_log_collector.start()
+373: 
+374:         # If num_nodes is 0, infer the number of nodes from the connected Ray cluster
+375:         if self._num_nodes == 0:
+376:             self._num_nodes = len(Cluster.get_alive_nodes())
+377: 
+378:         # Wait for the cluster to be ready
+379:         while len(Cluster.get_alive_nodes()) < self._num_nodes:
+380:             self._logger.warning(
+381:                 f"Waiting for {self._num_nodes} nodes to be ready, currently {len(Cluster.get_alive_nodes())} nodes available."
+422:             WorkerManager,
+423:         )
+424: 
+425:         try:
+426:             runtime_env = {"env_vars": Manager.get_runtime_env_vars()}
+427:             manager_node = self._get_manager_node(self._nodes)
+428:             self._worker_manager = self._launch_manager_actor(
+429:                 WorkerManager, manager_node, runtime_env
+430:             )
+431:             self._coll_manager = self._launch_manager_actor(
+432:                 CollectiveManager, manager_node, runtime_env
+433:             )
+434:             self._node_manager = self._launch_manager_actor(
+435:                 NodeManager,
+436:                 manager_node,
+437:                 runtime_env,
+438:                 self._nodes,
+439:                 self._node_groups,
+440:                 self._cluster_cfg,
+441:             )
+442:             self._device_lock_manager = self._launch_manager_actor(
+443:                 DeviceLockManager, manager_node, runtime_env
+444:             )
+445:             self._port_lock_manager = self._launch_manager_actor(
+446:                 PortLockManager, manager_node, runtime_env
+447:             )
+448:             # Optional tracer manager, launched only when tracing is enabled
+449:             tracer_cfg = cluster_cfg.get("tracer", None) if cluster_cfg else None
+450:             if tracer_cfg is not None and tracer_cfg.get("enable", False):
+451:                 self._tracer = self._launch_manager_actor(
+452:                     Tracer, manager_node, runtime_env, tracer_cfg.get("output_file")
+453:                 )
+454:             # Optional net emulation manager, launched only when emulation is enabled
+455:             if net_emu_cfg is not None:
+456:                 self._net_emulation_manager = self._launch_manager_actor(
+457:                     NetEmulationManager, manager_node, runtime_env, net_emu_cfg
+458:                 )
+459:         except ValueError:
+460:             raise Cluster.NamespaceConflictError
+461: 
+462:         def signal_handler(sig, frame):
+463:             # Exit the main process if SIGUSR1 is received, which is sent by the worker group when an exception occurs.
+464:             sys.stdout.flush()
+465:             sys.stderr.flush()
+466:             if self._distributed_log_collector is not None:
+467:                 self._distributed_log_collector.stop()
+468: 
+511:     def _init_from_existing_managers(self):
+512:         if not ray.is_initialized():
+513:             ray.init(
+514:                 address="auto",
+515:                 namespace=Cluster.NAMESPACE,
+516:                 logging_level=Cluster.LOGGING_LEVEL,
+517:             )
+518: 
+519:         from ..manager.node_manager import NodeManager
+520: 
+521:         try:
+522:             self._node_manager = NodeManager.get_proxy(no_wait=True)
+523:         except ValueError:
+524:             ray.shutdown()
+525:             raise ConnectionError
+526:         self._nodes, self._node_groups, self._cluster_cfg = (
+824:             merged_env_vars = Cluster._strip_sync_roots_from_pythonpath(
+825:                 merged_env_vars,
+826:                 self._runtime_code_sync_strip_roots,
+827:             )
+828:         runtime_env_worker = Cluster._combine_ray_runtime_env(
+829:             Cluster._job_code_sync_fragment_for_child_runtime_env(
+830:                 self._ray_code_sync_fragment
+831:             ),
+832:             {
+833:                 "py_executable": python_interpreter_path,
+834:                 "env_vars": merged_env_vars,
+835:             },
+836:         )
+837: 
+838:         options = {
+839:             "runtime_env": runtime_env_worker,
+840:             "name": worker_name,
+841:             "scheduling_strategy": ray.util.scheduling_strategies.NodeAffinitySchedulingStrategy(
+842:                 node_id=node.ray_id,
+843:                 soft=False,
+844:             ),
+845:         }
+846:         if max_concurrency is not None:
+847:             assert 1 <= max_concurrency <= 2**31 - 1, (
+848:                 f"Invalid max_concurrency: {max_concurrency}. Must be between 1 and {2**31 - 1} (max int32) due to Ray's native layer limitation."
+849:             )
+850:             options["max_concurrency"] = max_concurrency
+933:         )
+934:         return os.pathsep.join(merged_entries)
+935: 
+936:     @staticmethod
+937:     def _combine_ray_runtime_env(
+938:         fragment: Optional[dict[str, Any]],
+939:         overlay: dict[str, Any],
+940:     ) -> dict[str, Any]:
+941:         """Merge Ray ``runtime_env`` dicts without dropping ``fragment`` extras (``py_modules``, ``working_dir``, …)."""
+942:         merged: dict[str, Any] = dict(fragment or {})
+943:         overlay_copy = dict(overlay)
+944:         overlay_vars = overlay_copy.pop("env_vars", None)
+945:         merged_vars = dict(merged.pop("env_vars", None) or {})
+946:         merged.update(overlay_copy)
+947:         if overlay_vars:
+948:             merged_vars.update(overlay_vars)
+949:         if merged_vars:
+950:             merged["env_vars"] = merged_vars
+951:         return merged
+952: 
+953:     @staticmethod
+954:     def _job_code_sync_fragment_for_child_runtime_env(
+955:         job_fragment: Optional[dict[str, Any]],
+956:     ) -> Optional[dict[str, Any]]:
+957:         """Return a copy of the job-level code-sync fragment safe for actor/task ``runtime_env``.
+958: 
+959:         Ray only accepts local ``py_modules`` / ``working_dir`` on ``ray.init``; packaging then applies
+960:         to the whole job. Passing the same local paths on ``.options(runtime_env=...)`` raises
+961:         ``ValueError: ... is not a valid URI`` (see Ray ``_validate_no_local_paths``).
+962:         Child actors inherit the driver's job runtime environment, so these keys must be omitted.
+963:         """
+964:         if not job_fragment:
+965:             return None
+966:         stripped = {
+967:             k: v
+968:             for k, v in job_fragment.items()
+969:             if k not in ("py_modules", "working_dir")
+970:         }
+971:         return stripped or None
+988:         raise RuntimeError(
+989:             f"{cls.SYS_NAME} could not infer the repo root for "
+990:             f"{cls.get_full_env_var_name(ClusterEnvVar.CODE_WORKING_DIR)}=auto "
+991:             "(no pyproject.toml parent of `rlinf` and current directory is not "
+992:             "an RLinf checkout). Set RLINF_CODE_WORKING_DIR to an absolute "
+993:             "path of the repo on the launch node."
+994:         )
+995: 
+996:     @staticmethod
+997:     def _paths_equivalent_for_code_sync(left: str, right_canonical: str) -> bool:
+998:         """Whether ``left`` resolves to the same directory as launch-node repo root."""
+999:         try:
+1000:             l_c = os.path.normcase(os.path.realpath(os.path.expanduser(left)))
+1001:             r_c = os.path.normcase(os.path.realpath(right_canonical))
+1002:             return l_c == r_c
+1003:         except OSError:
+1033:         cls,
+1034:         env_vars: dict[str, str],
+1035:         strip_roots: tuple[str, ...],
+1036:     ) -> dict[str, str]:
+1037:         """Drop PYTHONPATH segments that duplicate shipped paths (Ray injects ``py_modules``)."""
+1038:         if not strip_roots:
+1039:             return env_vars
+1040:         out = dict(env_vars)
+1041:         k = "PYTHONPATH"
+1042:         if k not in out:
+1043:             return out
+1044:         kept = [
+1045:             e
+1046:             for e in Cluster._split_path_entries(out[k])
+1047:             if not any(cls._paths_equivalent_for_code_sync(e, r) for r in strip_roots)
+1048:         ]
+1049:         if kept:
+1050:             out[k] = os.pathsep.join(kept)
+1051:         else:
+1052:             del out[k]
+1053:         return out
+1054: 
+1055:     @classmethod
+1056:     def _prepare_ray_code_sync_runtime_env_fragment(
+1057:         cls,
+1058:     ) -> tuple[Optional[dict[str, Any]], tuple[str, ...]]:
+1059:         """Build Ray ``runtime_env`` with ``py_modules`` for the ``rlinf`` package only."""
+1060:         env_key = cls.get_full_env_var_name(ClusterEnvVar.CODE_WORKING_DIR)
+1061:         raw = (os.environ.get(env_key) or "").strip()
+1062: 
+1063:         lowered = raw.lower()
+1064:         if lowered in {"0", "false", "no", "off"}:
+1065:             return None, ()
+1066: 
+1067:         if raw == "":
+1068:             return None, ()
+1069:         if lowered == "auto":
+1070:             repo_root = Path(cls._infer_rlinf_repo_root_for_ray_working_dir())
+======== Autoscaler status: 2026-09-04 04:34:08.824989 ========
+Node status
+---------------------------------------------------------------
+Active:
+ 1 node_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+Pending:
+ (no pending nodes)
+Recent failures:
+ (no failures)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0.0/128.0 CPU
+ 0.0/8.0 GPU
+ 0B/1.77TiB memory
+ 0B/186.26GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)

@@ -1,0 +1,52 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp
+  - _self_
+
+# Formal low-budget RoboTwin RLT Stage 2 run approved on 2026-07-30.
+# The source config remains fail-closed at max_steps=0; this opt-in overlay owns
+# the complete 8-env x 250-cycle budget and does not affect legacy entrypoints.
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_stage2_formal_8env_250c_v1"
+  max_steps: 250
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null
+
+algorithm:
+  rlt_schedule:
+    # At most two steady-state 8-env collection cycles per outer train phase.
+    # This clears the 30k critic-floor debt after readiness without a long
+    # single-cycle burst; steady macro-UTD remains 5.
+    max_updates_per_train_step: 1600
+    warmup_min_size: 10000
+    warmup_post_collect_updates: 30000
+    train_every_episodes: 0
+    train_every_transitions: 1
+
+  actor_weight_schedule:
+    warmup_updates: 20000
+    ramp_updates: 50000
+
+  replay_buffer:
+    # Effective bounded replay window per actor rank. auto_save=false makes the
+    # runtime cache use the same size as sample_window_size.
+    cache_size: 50000
+    sample_window_size: 50000
+    min_buffer_size: 1
+
+env:
+  train:
+    total_num_envs: 8
+
+  eval:
+    # Two EnvWorkers each own ten non-overlapping seeds. Two envs per worker
+    # over five explicit-reset epochs consume all 20, then wrap so every
+    # periodic evaluation reuses the exact same paired bank.
+    rollout_epoch: 5
+    total_num_envs: 4
+    auto_reset: False
+    ignore_terminations: True
+    group_size: 1
+    use_fixed_reset_state_ids: False
+    seeds_path: ${oc.env:REPO_PATH,/root/autodl-tmp/RLinf_rlt_pi0_robotwin}/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json

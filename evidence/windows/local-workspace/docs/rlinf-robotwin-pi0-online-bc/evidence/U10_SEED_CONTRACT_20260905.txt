@@ -1,0 +1,109 @@
+# Copyright 2026 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import torch
+
+
+def partition_success_seeds(
+    success_seeds: torch.Tensor,
+    *,
+    base_seed: int,
+    seed_offset: int,
+    total_num_processes: int,
+    num_group: int,
+) -> torch.Tensor:
+    """Shuffle success seeds globally and return the non-overlapping worker slice."""
+    global_generator = torch.Generator()
+    global_generator.manual_seed(base_seed)
+    shuffled_indices = torch.randperm(success_seeds.numel(), generator=global_generator)
+    shuffled_seeds = success_seeds[shuffled_indices]
+
+    seeds_per_worker = shuffled_seeds.numel() // total_num_processes
+    start = seed_offset * seeds_per_worker
+    end = start + seeds_per_worker
+    worker_seeds = shuffled_seeds[start:end]
+
+    keep_count = (worker_seeds.numel() // num_group) * num_group
+    return worker_seeds[:keep_count]
+env_type: robotwin
+total_num_envs: null
+
+auto_reset: False
+ignore_terminations: False
+
+reward_coef: 1.0
+use_custom_reward: True
+use_rel_reward: True
+center_crop: True
+
+seed: 0
+group_size: 1
+use_fixed_reset_state_ids: False
+max_steps_per_rollout_epoch: 200
+max_episode_steps: 200 # max episode steps for truncation
+
+is_eval: False
+
+assets_path: "/path/to/robotwin_assets"
+seeds_path: "/path/to/robotwin/train_seeds.json"
+
+video_cfg:
+  save_video: True
+  info_on_video: True
+  video_base_dir: ${runner.logger.log_path}/video/train
+
+enable_offload: False
+
+task_config:
+  task_name: adjust_bottle
+  step_lim: 200
+  planner_backend: mplib # # Choices: ["curobo", "mplib"], defalut is "curobo"
+  # if you want to modify the config, please check the following tutorial first:
+  # https://robotwin-platform.github.io/doc/usage/configurations.html
+  render_freq: 0
+  episode_num: 100
+  use_seed: false
+  save_freq: 15
+  embodiment: [piper, piper, 0.6]
+  language_num: 100
+  domain_randomization:
+    random_background: true
+    cluttered_table: true
+    clean_background_rate: 0.02
+    random_head_camera_dis: 0
+    random_table_height: 0.03
+    random_light: true
+    crazy_random_light_rate: 0.02
+  camera:
+    head_camera_type: D435
+    wrist_camera_type: D435
+    collect_head_camera: true
+    collect_wrist_camera: false
+  data_type:
+    rgb: true
+    third_view: false
+    depth: false
+    pointcloud: false
+    observer: false
+    endpose: false
+    qpos: true
+    mesh_segmentation: false
+    actor_segmentation: false
+  pcd_down_sample_num: 1024
+  pcd_crop: true
+  save_path: ./data
+  clear_cache_freq: 1
+  collect_data: true
+  eval_video_log: truefull_weights.pt 8065002471 bytes
+checkpoint_rank_0.pt 10390434174 bytes

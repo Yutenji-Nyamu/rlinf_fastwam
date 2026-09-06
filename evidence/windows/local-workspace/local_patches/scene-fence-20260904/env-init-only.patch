@@ -1,0 +1,13 @@
+diff --git a/rlinf/envs/robotwin/robotwin_env.py b/rlinf/envs/robotwin/robotwin_env.py
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -85,6 +85,9 @@
+     def _init_env(self):
+         mp.set_start_method("spawn", force=True)
+         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+ 
++        from rlinf.envs.robotwin.scene_fence import load_scene_fence
++        load_scene_fence()
++
+         from robotwin.envs.vector_env import VectorEnv
+ 

@@ -1,0 +1,6 @@
+cd /root/autodl-tmp/RLinf_qam_pi0_robotwin
+export PYTHONPATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin:/root/autodl-tmp/RoboTwin_RLinf
+export EMBODIED_PATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin/examples/embodiment
+export REPO_PATH=/root/autodl-tmp/RLinf_qam_pi0_robotwin
+export CUDA_VISIBLE_DEVICES=0\,1
+timeout --signal=TERM --kill-after=180s 29773s /root/autodl-tmp/RLinf/.venv/bin/python -B examples/embodiment/train_embodied_agent.py --config-path /root/autodl-tmp/RLinf_qam_pi0_robotwin/examples/embodiment/config --config-name robotwin_adjust_bottle_qam_openpi runner.logger.log_path=/root/autodl-tmp/experiments/qam_formal_20260801_v2 runner.logger.experiment_name=robotwin_adjust_bottle_qam_formal_20260801_v2 runner.max_steps=500 runner.save_interval=25 runner.resume_dir=null runner.ckpt_path=null algorithm.qam.phase=am_on algorithm.qam.inv_temp=1.0 algorithm.qam.warmup_global_inserts=512 algorithm.qam.q_only_updates_before_am=512 algorithm.qam.min_replay_per_rank=32 algorithm.qam.max_updates_per_step=32 actor.global_batch_size=64 actor.micro_batch_size=32 +actor.fsdp_config.save_full_model_weights=false

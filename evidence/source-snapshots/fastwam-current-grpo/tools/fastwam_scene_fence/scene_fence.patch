@@ -1,0 +1,14 @@
+diff --git a/src/renderer/rt_renderer.cpp b/src/renderer/rt_renderer.cpp
+--- a/src/renderer/rt_renderer.cpp
++++ b/src/renderer/rt_renderer.cpp
+@@ -714,7 +714,9 @@ void RTRenderer::render(
+ 
+   prepareRender(camera);
+ 
+-  mContext->getQueue().submit(mRenderCommandBuffer.get(), {}, {}, {}, {});
++  mContext->getDevice().resetFences(mSceneAccessFence.get());
++  mContext->getQueue().submit(mRenderCommandBuffer.get(), {}, {}, {},
++                            mSceneAccessFence.get());
+ #ifdef SVULKAN2_CUDA_INTEROP
+   if (mDenoiser) {
+     mDenoiser->denoise(mRenderImages.at(mDenoiseColorName)->getImage(),

@@ -1,0 +1,96 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+2026-09-05T05:25:36+00:00
+72a926041867cbdbf2565ab66a14d742c59a0dad
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m INFO:root:Disabled gradient checkpointing for PI0Pytorch model
+[36m(ActorGroup(rank=0) pid=616145)[0m Forcing gradient checkpointing to be enabled for Gemma expert model
+[36m(ActorGroup(rank=0) pid=616145)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=616145)[0m   return func(*args, **kwargs)
+[36m(RolloutGroup(rank=0) pid=616147)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+Exception occurred while running EnvWorker's function evaluate: exception is [36mray::EnvWorker.evaluate()[39m (pid=616149, ip=172.17.0.1, actor_id=79cb2f080db3a65813dfbe55d7010000, repr=EnvGroup(rank=0))
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+           ^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1375, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/env/env_worker.py", line 1480, in evaluate
+    extracted_obs, infos = self.eval_env_list[stage_id].reset()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/envs/robotwin/robotwin_env.py", line 252, in reset
+    raw_obs = self.venv.get_obs()
+              ^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 415, in get_obs
+    obs_venv.append(env.get_obs())
+                    ^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 183, in get_obs
+    obs = self.task.get_obs()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/_base_task.py", line 464, in get_obs
+    self.cameras.update_picture()
+  File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/camera/camera.py", line 276, in update_picture
+    self.left_camera.take_picture()
+RuntimeError: cannot create buffer
+Exception occurred while running MultiStepRolloutWorker's function evaluate: exception is The actor died unexpectedly before finishing this task.
+	class_name: MultiStepRolloutWorker
+	actor_id: 2638a6717ab902c75e26ef84d7010000
+	pid: 616147
+	name: RolloutGroup:0
+	namespace: RLinf_1
+	ip: 172.17.0.1
+The actor is dead because it was killed by `ray.kill`.
+Exiting main process due to a failure upon worker execution.
+0, 81559, 9828, 0
+1, 81559, 4, 0
+2, 81559, 4, 0
+3, 81559, 4, 0
+4, 81559, 38342, 0
+5, 81559, 38281, 0
+6, 81559, 11, 0
+7, 81559, 4, 0
+               total        used        free      shared  buff/cache   available
+Mem:           2.0Ti       173Gi       977Gi        20Gi       864Gi       1.8Ti
+Swap:          6.0Gi       2.7Gi       3.3Gi
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1    3.5T  2.7T  618G  82% /data
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 3  0 2795304 1024769856 2849368 903382912    0    0     9    32    0    0  3  2 95  0  0
+ 8  0 2795304 1024768320 2849376 903387008    0    0     0   172 69417 124742  3  1 96  0  0
+{"success_episodes": 29, "query_records": 87, "sft_calls": 64}

@@ -1,0 +1,219 @@
+2026-09-04T08:26:37+00:00
+
+MODE=plain
+TORCH_VERSION_RECORD b'3\n'
+TORCH_RECORD_COUNT 5
+PYTHON_ZIP_VERSION b'3\n'
+
+MODE=preload
+PYTHON_ZIP_VERSION b'3\n'
+
+MODE=late_load
+TORCH_VERSION_RECORD b'3\n'
+TORCH_RECORD_COUNT 5
+PYTHON_ZIP_VERSION b'3\n'
+# Copyright 2025 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import json
+import os
+from typing import Optional, Union
+
+import gymnasium as gym
+import numpy as np
+import torch
+import torch.multiprocessing as mp
+from omegaconf import OmegaConf
+from PIL import Image
+
+from rlinf.envs.robotwin.seed_utils import partition_success_seeds
+from rlinf.envs.utils import center_crop_image, list_of_dict_to_dict_of_list
+
+__all__ = ["RoboTwinEnv"]
+
+
+class RoboTwinEnv(gym.Env):
+    def __init__(
+        self,
+        cfg,
+        num_envs,
+        seed_offset,
+        total_num_processes,
+        worker_info,
+        record_metrics=True,
+    ):
+        env_seed = cfg.seed
+        self.seed = env_seed + seed_offset
+        self.base_seed = env_seed
+        self.num_envs = num_envs
+        self.seed_offset = seed_offset
+        self.total_num_processes = total_num_processes
+        self.worker_info = worker_info
+        self.auto_reset = cfg.auto_reset
+        self.use_rel_reward = cfg.use_rel_reward
+        self.ignore_terminations = cfg.ignore_terminations
+
+        self.group_size = cfg.group_size
+        self.num_group = self.num_envs // self.group_size
+        self.use_fixed_reset_state_ids = cfg.use_fixed_reset_state_ids
+        self.use_custom_reward = cfg.use_custom_reward
+
+        self.video_cfg = cfg.video_cfg
+
+        self.cfg = cfg
+        self.record_metrics = record_metrics
+        self._is_start = True
+
+        self.task_name = cfg.task_config.task_name
+
+        self.center_crop = cfg.get("center_crop", False)
+        self._init_reset_state_ids()
+
+        self._init_env()
+
+        self.prev_step_reward = torch.zeros(
+            self.num_envs, dtype=torch.float32, device=self.device
+        )
+        if self.record_metrics:
+            self._init_metrics()
+            self._elapsed_steps = torch.zeros(
+                self.num_envs, dtype=torch.long, device=self.device
+            )
+
+    def _init_env(self):
+        mp.set_start_method("spawn", force=True)
+        os.environ["ASSETS_PATH"] = self.cfg.assets_path
+
+        from robotwin.envs.vector_env import VectorEnv
+
+        env_seeds = self.reset_state_ids.tolist()
+
+        self.venv = VectorEnv(
+            task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+            n_envs=self.num_envs,
+            env_seeds=env_seeds,
+        )
+
+    @property
+    def device(self):
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    @property
+    def elapsed_steps(self):
+        return self._elapsed_steps
+
+    @property
+    def is_start(self):
+        return self._is_start
+
+    @is_start.setter
+    def is_start(self, value):
+        self._is_start = value
+
+    def _init_metrics(self):
+        self.success_once = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.fail_once = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.returns = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.float32
+        )
+
+    def _reset_metrics(self, env_idx=None):
+        if env_idx is not None:
+            mask = torch.zeros(self.num_envs, dtype=bool, device=self.device)
+            mask[env_idx] = True
+            self.prev_step_reward[mask] = 0.0
+0000000001139d90 T crc32
+0000000001139da0 T crc32_combine
+0000000001139db0 T crc32_combine64
+0000000001139900 T crc32_z
+00000000007ca7a0 T mz_crc32
+00000000007cce70 T mz_inflate
+00000000007ca9c0 T mz_inflateEnd
+00000000007ca9b0 T mz_inflateInit
+00000000007ca8d0 T mz_inflateInit2
+00000000007d2f00 T mz_zip_add_mem_to_archive_file_in_place
+00000000007d3130 T mz_zip_extract_archive_file_to_heap
+00000000007d07c0 T mz_zip_reader_end
+00000000007d06c0 T mz_zip_reader_extract_file_to_callback
+00000000007d1150 T mz_zip_reader_extract_file_to_file
+00000000007d0040 T mz_zip_reader_extract_file_to_heap
+00000000007cff30 T mz_zip_reader_extract_file_to_mem
+00000000007cfe90 T mz_zip_reader_extract_file_to_mem_no_alloc
+00000000007d0090 T mz_zip_reader_extract_to_callback
+00000000007d0720 T mz_zip_reader_extract_to_file
+00000000007cff50 T mz_zip_reader_extract_to_heap
+00000000007cff10 T mz_zip_reader_extract_to_mem
+00000000007cfe60 T mz_zip_reader_extract_to_mem_no_alloc
+00000000007cf310 T mz_zip_reader_file_stat
+00000000007cf960 T mz_zip_reader_get_filename
+00000000007cf250 T mz_zip_reader_get_num_files
+00000000007d08a0 T mz_zip_reader_init
+00000000007d0b50 T mz_zip_reader_init_file
+00000000007d09e0 T mz_zip_reader_init_mem
+00000000007cf2b0 T mz_zip_reader_is_file_a_directory
+00000000007cf260 T mz_zip_reader_is_file_encrypted
+00000000007cf9f0 T mz_zip_reader_locate_file
+00000000007d1c40 T mz_zip_writer_add_file
+00000000007d24e0 T mz_zip_writer_add_from_zip_reader
+00000000007d1c20 T mz_zip_writer_add_mem
+00000000007d13c0 T mz_zip_writer_add_mem_ex
+00000000007d2c40 T mz_zip_writer_end
+00000000007d2a10 T mz_zip_writer_finalize_archive
+00000000007d2b80 T mz_zip_writer_finalize_heap_archive
+00000000007d1190 T mz_zip_writer_init
+00000000007d2e80 T mz_zip_writer_init_file
+00000000007d12c0 T mz_zip_writer_init_from_reader
+00000000007d2d60 T mz_zip_writer_init_heap
+00000000007cd620 T tdefl_compress
+00000000007ce5d0 T tdefl_compress_buffer
+00000000007cea40 T tdefl_compress_mem_to_heap
+00000000007ceaa0 T tdefl_compress_mem_to_mem
+00000000007ce990 T tdefl_compress_mem_to_output
+00000000007ceb00 T tdefl_create_comp_flags_from_zip_params
+00000000007ce7d0 T tdefl_get_adler32
+00000000007ce7c0 T tdefl_get_prev_return_status
+00000000007ce5f0 T tdefl_init
+00000000007cf230 T tdefl_write_image_to_png_file_in_memory
+00000000007cedd0 T tdefl_write_image_to_png_file_in_memory_ex
+00000000007caa90 T tinfl_decompress
+00000000007cd4c0 T tinfl_decompress_mem_to_callback
+00000000007cd330 T tinfl_decompress_mem_to_heap
+00000000007cd460 T tinfl_decompress_mem_to_mem
+00000000007d4010 T zip_entry_crc32
+0000000000e96000 T _ZN7buminiz10mz_inflateEPNS_11mz_stream_sEi
+0000000000e97d00 T _ZN7buminiz10tdefl_initEPNS_16tdefl_compressorEPFiPKviPvES4_i
+0000000000e95c10 T _ZN7buminiz11mz_inflate2EPNS_11mz_stream_sEii
+0000000000e93540 T _ZN7buminiz13mz_inflateEndEPNS_11mz_stream_sE
+0000000000e93530 T _ZN7buminiz14mz_inflateInitEPNS_11mz_stream_sE
+0000000000e963d0 T _ZN7buminiz14tdefl_compressEPNS_16tdefl_compressorEPKvPmPvS4_NS_11tdefl_flushE
+0000000000e93450 T _ZN7buminiz15mz_inflateInit2EPNS_11mz_stream_sEi
+0000000000e93610 T _ZN7buminiz16tinfl_decompressEPNS_22tinfl_decompressor_tagEPKhPmPhS5_S4_j
+0000000000e97ee0 T _ZN7buminiz17tdefl_get_adler32EPNS_16tdefl_compressorE
+0000000000e97ce0 T _ZN7buminiz21tdefl_compress_bufferEPNS_16tdefl_compressorEPKvmNS_11tdefl_flushE
+0000000000e981b0 T _ZN7buminiz25tdefl_compress_mem_to_memEPvmPKvmi
+0000000000e98150 T _ZN7buminiz26tdefl_compress_mem_to_heapEPKvmPmi
+0000000000e96210 T _ZN7buminiz27tinfl_decompress_mem_to_memEPvmPKvmi
+0000000000e980a0 T _ZN7buminiz28tdefl_compress_mem_to_outputEPKvmPFiS1_iPvES2_i
+0000000000e97ed0 T _ZN7buminiz28tdefl_get_prev_return_statusEPNS_16tdefl_compressorE
+0000000000e960e0 T _ZN7buminiz28tinfl_decompress_mem_to_heapEPKvmPmi
+0000000000e96270 T _ZN7buminiz32tinfl_decompress_mem_to_callbackEPKvPmPFiS1_iPvES3_i
+0000000000e98210 T _ZN7buminiz39tdefl_create_comp_flags_from_zip_paramsEiii
+0000000000e98940 T _ZN7buminiz39tdefl_write_image_to_png_file_in_memoryEPKviiiPm
+0000000000e984e0 T _ZN7buminiz42tdefl_write_image_to_png_file_in_memory_exEPKviiiPmji
+0000000000e93320 T _ZN7buminiz8mz_crc32EmPKhm
+2026-09-04T08:26:42+00:00

@@ -1,0 +1,83 @@
+{
+  "resources": {
+    "/data/chenyiteng/results/rlinf-rlt/smoke-stage1-current-ar-2step-20260823/runtime/resource.csv": {
+      "max_cgroup_gib": 46.97160339355469,
+      "max_gpu4_mib": 24105,
+      "max_gpu5_mib": 24105,
+      "min_host_available_gib": 1953.2021560668945,
+      "samples": 15
+    },
+    "/data/chenyiteng/results/rlinf-rlt/smoke-stage2-current-ar-fresh1-resume1-20260823/fresh/resource.csv": {
+      "max_cgroup_gib": 41.76552963256836,
+      "max_gpu4_mib": 16937,
+      "max_gpu5_mib": 17233,
+      "min_host_available_gib": 1953.5858039855957,
+      "samples": 13
+    },
+    "/data/chenyiteng/results/rlinf-rlt/smoke-stage2-current-ar-fresh1-resume1-20260823/resume/resource.csv": {
+      "max_cgroup_gib": 41.921566009521484,
+      "max_gpu4_mib": 17230,
+      "max_gpu5_mib": 17690,
+      "min_host_available_gib": 1953.1235809326172,
+      "samples": 14
+    }
+  },
+  "stage1": {
+    "dataset": {
+      "action_dim": 14,
+      "episodes": 50,
+      "fps": 50,
+      "frames": 7188,
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1",
+      "state_dim": 14,
+      "validation_sha256": "8e9420957ebcd2a1782a5990e9e9d3f5fd2bc16119c7cccee9f4117f103b7df1"
+    },
+    "full_weights": {
+      "path": "/data/chenyiteng/results/rlinf-rlt/smoke-stage1-current-ar-2step-20260823/robotwin_adjust_bottle_rlt_stage1_current_ar_smoke2_v1/checkpoints/global_step_2/actor/model_state_dict/full_weights.pt",
+      "sha256": "bcab021eda1f45aff1d73523de00aa54cea0ccac24e88ad0033a673a66721d09",
+      "size_bytes": 9556454857
+    },
+    "manifest_id": "sz-rlt-stage1-current-ar-smoke2-v1",
+    "model_identity": "exact_pi0",
+    "reconstruction": "current_causal_ar",
+    "train_vla": false
+  },
+  "stage2": {
+    "fresh": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/smoke-stage2-current-ar-fresh1-resume1-20260823/fresh/robotwin_adjust_bottle_rlt_stage2_current_ar_smoke_fresh1_v1/checkpoints/global_step_1",
+      "global_total_transitions_added": 8,
+      "ranks": [
+        {
+          "local_total_transitions_added": 4,
+          "rank": 0,
+          "saved_runner_step": 1,
+          "update_step": 8
+        },
+        {
+          "local_total_transitions_added": 4,
+          "rank": 1,
+          "saved_runner_step": 1,
+          "update_step": 8
+        }
+      ]
+    },
+    "resume": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/smoke-stage2-current-ar-fresh1-resume1-20260823/resume/robotwin_adjust_bottle_rlt_stage2_current_ar_smoke_resume1_v1/checkpoints/global_step_2",
+      "global_total_transitions_added": 16,
+      "ranks": [
+        {
+          "local_total_transitions_added": 8,
+          "rank": 0,
+          "saved_runner_step": 2,
+          "update_step": 28
+        },
+        {
+          "local_total_transitions_added": 8,
+          "rank": 1,
+          "saved_runner_step": 2,
+          "update_step": 28
+        }
+      ]
+    }
+  }
+}

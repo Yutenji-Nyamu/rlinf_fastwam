@@ -1,0 +1,1081 @@
+2026-09-04T07:19:22+00:00
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+f3e30a83365cdda1165911422dc3ce73e703201e
+diff --git a/envs/_base_task.py b/envs/_base_task.py
+index 79fc885..20dec30 100644
+--- a/envs/_base_task.py
++++ b/envs/_base_task.py
+@@ -89,6 +89,7 @@ class Base_Task(gym.Env):
+         self.file_path = []
+         self.plan_success = True
+         self.fix_gripper = False
++        self.ray_tracing_denoiser = kwags.get("ray_tracing_denoiser", "oidn")
+         self.setup_scene()
+ 
+         self.left_js = None
+@@ -216,7 +217,7 @@ class Base_Task(gym.Env):
+         sapien.render.set_camera_shader_dir("rt")
+         sapien.render.set_ray_tracing_samples_per_pixel(32)
+         sapien.render.set_ray_tracing_path_depth(8)
+-        sapien.render.set_ray_tracing_denoiser("oidn")
++        sapien.render.set_ray_tracing_denoiser(self.ray_tracing_denoiser)
+ 
+         # declare sapien scene
+         scene_config = sapien.SceneConfig()
+diff --git a/robotwin/envs/vector_env.py b/robotwin/envs/vector_env.py
+index c55d3b4..94043ab 100644
+--- a/robotwin/envs/vector_env.py
++++ b/robotwin/envs/vector_env.py
+@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
+ 
+ import gymnasium as gym
+ import numpy as np
++from sapien.render import clear_cache as sapien_clear_cache
+ from description.utils.generate_episode_instructions import (
+     generate_episode_descriptions,
+ )
+@@ -84,8 +85,6 @@ class SubEnv:
+         self.instruction_type = instruction_type
+         self.global_lock = global_lock
+         self.lock = threading.Lock()
+-        self.reset_count = 0
+-        self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+ 
+     def setup_task(self):
+         self.close()
+@@ -107,10 +106,10 @@ class SubEnv:
+                         episode_info = task.get_info()
+                         is_valid = True
+                     except Exception as e:
+-                        task.close_env()
++                        task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+-                    task.close_env()
++                    task.close_env(clear_cache=False)
+ 
+                 self.episode_info_list = [episode_info]
+ 
+@@ -138,16 +137,17 @@ class SubEnv:
+             "info": info,
+         }
+ 
+-    def reset(self, env_seed=None):
++    def reset(self, env_seed=None, close_current=True):
+         with self.global_lock:
+             with self.lock:
+-                if self.task is not None:
+-                    self.reset_count += 1
+-                    should_clear_cache = self.reset_count % self.clear_cache_freq == 0
+-                    self.task.close_env(clear_cache=should_clear_cache)
++                if close_current and self.task is not None:
++                    self.task.close_env(clear_cache=False)
+                 if env_seed is not None:
+                     self.env_seed = env_seed
+ 
++                if self.task is None:
++                    self.task = class_decorator(self.task_name)
++
+                 self.instruction = self.create_instruction()
+                 self.args["instruction"] = self.instruction
+ 
+@@ -166,14 +166,14 @@ class SubEnv:
+                         logging.warning(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+                     except Exception as e:
+                         logging.error(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         raise
+ 
+         return
+@@ -192,10 +192,11 @@ class SubEnv:
+                 return None
+             return self.instruction
+ 
+-    def close(self, clear_cache=True):
++    def close(self):
+         if self.task is not None:
+             with self.lock:
+-                self.task.close_env(clear_cache=clear_cache)
++                self.task.close_env(clear_cache=False)
++                self.task = None
+ 
+     def check_seed(self, seed):
+         setup_demo_success = False
+@@ -318,6 +319,8 @@ class VectorEnv(gym.Env):
+         self.instruction_type = instruction_type
+ 
+         self.global_lock = threading.Lock()
++        self.full_reset_count = 0
++        self.clear_cache_freq = args["clear_cache_freq"]
+ 
+         self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
+ 
+@@ -388,26 +391,37 @@ class VectorEnv(gym.Env):
+         else:
+             env_idx = [env_idx]
+ 
+-        reset_futures = {}
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                seed = None
+-                if env_seeds is not None and len(env_seeds) == len(env_idx):
+-                    seed_idx = env_idx.index(idx)
+-                    seed = env_seeds[seed_idx]
++        valid_idx = [idx for idx in env_idx if 0 <= idx < self.n_envs]
++        seeds = {}
++        if env_seeds is not None and len(env_seeds) == len(env_idx):
++            seeds = {idx: env_seeds[pos] for pos, idx in enumerate(env_idx)}
+ 
+-                future = self.env_thread_pool.submit(
+-                    self.envs[idx].reset, env_seed=seed
++        # SAPIEN's renderer cache is process-global. It is only safe to clear it
++        # after every child renderer in this VectorEnv has released its local
++        # references. Partial episode resets therefore never clear this cache.
++        full_reset = len(valid_idx) == self.n_envs and set(valid_idx) == set(
++            range(self.n_envs)
++        )
++        if full_reset:
++            for env in self.envs:
++                env.close()
++            self.full_reset_count += 1
++            if self.full_reset_count % self.clear_cache_freq == 0:
++                gc.collect()
++                sapien_clear_cache()
++                torch.cuda.empty_cache()
++
++        # reset() was previously submitted to the pool, but a process-wide
++        # lock serialized every reset already. Keeping lifecycle operations on
++        # this caller thread avoids renderer creation/destruction affinity
++        # ambiguity while step() remains parallel.
++        for idx in valid_idx:
++            try:
++                self.envs[idx].reset(
++                    env_seed=seeds.get(idx), close_current=not full_reset
+                 )
+-                reset_futures[idx] = future
+-
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                future = reset_futures[idx]
+-                try:
+-                    future.result(timeout=120)
+-                except Exception as e:
+-                    raise RuntimeError(f"SubEnv {idx} reset error: {e}")
++            except Exception as e:
++                raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+ 
+     def get_obs(self):
+         obs_venv = []
+@@ -418,13 +432,12 @@ class VectorEnv(gym.Env):
+ 
+     def close(self, clear_cache=True):
+         for env in self.envs:
+-            env.close(clear_cache=clear_cache)
++            env.close()
+ 
+         if clear_cache:
+-            for env in self.envs:
+-                env = None
+             self.envs = []
+             gc.collect()
++            sapien_clear_cache()
+             torch.cuda.empty_cache()
+ 
+     def check_seeds(self, seeds: list[int]):
+@@ -480,4 +493,4 @@ if __name__ == "__main__":
+             obs = (
+                 env.get_obs()
+             )
+-        env.close()
+\ No newline at end of file
++        env.close()
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+            fovy=np.deg2rad(50),
+            near=near,
+            far=far,
+        )
+        world_cam_pos = np.array([-0.4, -0.4, 1.6])
+        world_cam_forward = np.array([1, 1, -1.4])
+        world_cam_left = np.array([-1, 1, 0])
+        world_cam_up = np.cross(world_cam_forward, world_cam_left)
+        world_cam_mat44 = np.eye(4)
+        world_cam_mat44[:3, :3] = np.stack([world_cam_forward, world_cam_left, world_cam_up], axis=1)
+        world_cam_mat44[:3, 3] = world_cam_pos
+        self.world_camera2.entity.set_pose(sapien.Pose(world_cam_mat44))
+
+    def update_picture(self):
+        # camera
+        if self.collect_wrist_camera:
+            self.left_camera.take_picture()
+            self.right_camera.take_picture()
+
+        for camera in self.static_camera_list:
+            camera.take_picture()
+
+        # ================================= sensor camera =================================
+        # self.head_sensor.take_picture()
+        # self.head_sensor.compute_depth()
+
+    def update_wrist_camera(self, left_pose, right_pose):
+        """
+        Update rendering to refresh the camera's RGBD information
+        (rendering must be updated even when disabled, otherwise data cannot be collected).
+        """
+        if self.collect_wrist_camera:
+            self.left_camera.entity.set_pose(left_pose)
+            self.right_camera.entity.set_pose(right_pose)
+
+    def get_config(self) -> dict:
+        res = {}
+
+        def _get_config(camera):
+            camera_intrinsic_cv = camera.get_intrinsic_matrix()
+            camera_extrinsic_cv = camera.get_extrinsic_matrix()
+            camera_model_matrix = camera.get_model_matrix()
+            return {
+                "intrinsic_cv": camera_intrinsic_cv,
+                "extrinsic_cv": camera_extrinsic_cv,
+                "cam2world_gl": camera_model_matrix,
+            }
+
+        if self.collect_wrist_camera:
+            res["left_camera"] = _get_config(self.left_camera)
+            res["right_camera"] = _get_config(self.right_camera)
+
+        for camera, camera_name in zip(self.static_camera_list, self.static_camera_name):
+            if camera_name == "head_camera":
+                if self.collect_head_camera:
+                    res[camera_name] = _get_config(camera)
+            else:
+                res[camera_name] = _get_config(camera)
+        # ================================= sensor camera =================================
+        # res['head_sensor'] = res['head_camera']
+        # print(res)
+        return res
+
+    def get_rgb(self) -> dict:
+        rgba = self.get_rgba()
+        rgb = {}
+        for camera_name, camera_data in rgba.items():
+            rgb[camera_name] = {}
+            rgb[camera_name]["rgb"] = camera_data["rgba"][:, :, :3]  # Exclude alpha channel
+        return rgb
+    
+    # Get Camera RGBA
+    def get_rgba(self) -> dict:
+
+        def _get_rgba(camera):
+            camera_rgba = camera.get_picture("Color")
+            camera_rgba_img = (camera_rgba * 255).clip(0, 255).astype("uint8")
+            return camera_rgba_img
+
+        # ================================= sensor camera =================================
+        # def _get_sensor_rgba(sensor):
+        #     camera_rgba = sensor.get_rgb()
+        #     camera_rgba_img = (camera_rgba * 255).clip(0, 255).astype("uint8")[:,:,:3]
+        #     return camera_rgba_img
+
+        res = {}
+
+        if self.collect_wrist_camera:
+            res["left_camera"] = {}
+            res["right_camera"] = {}
+            res["left_camera"]["rgba"] = _get_rgba(self.left_camera)
+            res["right_camera"]["rgba"] = _get_rgba(self.right_camera)
+
+        for camera, camera_name in zip(self.static_camera_list, self.static_camera_name):
+            if camera_name == "head_camera":
+                if self.collect_head_camera:
+421-        self.cameras.load_camera(self.scene)
+422-        self.scene.step()  # run a physical step
+423-        self.scene.update_render()  # sync pose from SAPIEN to renderer
+424-
+425-    # =========================================================== Sapien ===========================================================
+426-
+427:    def _update_render(self):
+428-        """
+429-        Update rendering to refresh the camera's RGBD information
+430-        (rendering must be updated even when disabled, otherwise data cannot be collected).
+431-        """
+432-        if self.crazy_random_light:
+433-            for renderColor in self.point_light_lst:
+434-                renderColor.set_color([np.random.rand(), np.random.rand(), np.random.rand()])
+435-            for renderColor in self.direction_light_lst:
+436-                renderColor.set_color([np.random.rand(), np.random.rand(), np.random.rand()])
+437-            now_ambient_light = self.scene.ambient_light
+438-            now_ambient_light = np.clip(np.array(now_ambient_light) + np.random.rand(3) * 0.2 - 0.1, 0, 1)
+439-            self.scene.set_ambient_light(now_ambient_light)
+440-        self.cameras.update_wrist_camera(self.robot.left_camera.get_pose(), self.robot.right_camera.get_pose())
+441-        self.scene.update_render()
+442-
+443-    # =========================================================== Basic APIs ===========================================================
+444-
+445-    def compress_path(self, path, tolerance=1e-5):
+446-        compressed = [path[0]]
+447-        for i in range(1, len(path)):
+448-            if not np.allclose(path[i], compressed[-1], atol=tolerance, rtol=0):
+449-                compressed.append(path[i])
+450-        if len(compressed) == 1:
+451-            compressed.append(compressed[0].copy() + np.random.normal(0, 2e-4, 6))
+452-        return np.array(compressed)
+453-
+454-    def downsample_trajectory(self, positions, velocities, max_points=500):
+455-        n_points = positions.shape[0]
+456-        assert positions.shape[0] == velocities.shape[0]
+457-        if n_points <= max_points:
+458-            return positions, velocities
+459-        indices = np.linspace(0, n_points - 1, max_points).astype(int)
+460-        indices = np.unique(indices)
+461-        return positions[indices], velocities[indices]
+462-
+463:    def get_obs(self):
+464-        self._update_render()
+465-        self.cameras.update_picture()
+466-        pkl_dic = {
+467-            "observation": {},
+468-            "pointcloud": [],
+469-            "joint_action": {},
+470-            "endpose": {},
+471-        }
+472-
+473-        pkl_dic["observation"] = self.cameras.get_config()
+474-        # rgb
+475-        if self.data_type.get("rgb", True):
+476-            rgb = self.cameras.get_rgb()
+477-            for camera_name in rgb.keys():
+478-                pkl_dic["observation"][camera_name].update(rgb[camera_name])
+479-
+480-        if self.data_type.get("third_view", False):
+481-            third_view_rgb = self.cameras.get_observer_rgb()
+482-            pkl_dic["third_view_rgb"] = third_view_rgb
+483-        # mesh_segmentation
+484-        if self.data_type.get("mesh_segmentation", False):
+485-            mesh_segmentation = self.cameras.get_segmentation(level="mesh")
+486-            for camera_name in mesh_segmentation.keys():
+487-                pkl_dic["observation"][camera_name].update(mesh_segmentation[camera_name])
+488-        # actor_segmentation
+489-        if self.data_type.get("actor_segmentation", False):
+490-            actor_segmentation = self.cameras.get_segmentation(level="actor")
+491-            for camera_name in actor_segmentation.keys():
+492-                pkl_dic["observation"][camera_name].update(actor_segmentation[camera_name])
+493-        # depth
+494-        if self.data_type.get("depth", False):
+495-            depth = self.cameras.get_depth()
+496-            for camera_name in depth.keys():
+497-                pkl_dic["observation"][camera_name].update(depth[camera_name])
+498-        # endpose
+499-        if self.data_type.get("endpose", False):
+500-            norm_gripper_val = [
+501-                self.robot.get_left_gripper_val(),
+502-                self.robot.get_right_gripper_val(),
+503-            ]
+504-            left_endpose = self.get_arm_pose("left")
+505-            right_endpose = self.get_arm_pose("right")
+506-            pkl_dic["endpose"]["left_endpose"] = left_endpose
+507-            pkl_dic["endpose"]["left_gripper"] = norm_gripper_val[0]
+508-            pkl_dic["endpose"]["right_endpose"] = right_endpose
+509-            pkl_dic["endpose"]["right_gripper"] = norm_gripper_val[1]
+510-        # qpos
+511-        if self.data_type.get("qpos", False):
+512-
+513-            left_jointstate = self.robot.get_left_arm_jointState()
+514-            right_jointstate = self.robot.get_right_arm_jointState()
+515-
+516-            pkl_dic["joint_action"]["left_arm"] = left_jointstate[:-1]
+517-            pkl_dic["joint_action"]["left_gripper"] = left_jointstate[-1]
+518-            pkl_dic["joint_action"]["right_arm"] = right_jointstate[:-1]
+519-            pkl_dic["joint_action"]["right_gripper"] = right_jointstate[-1]
+520-            pkl_dic["joint_action"]["vector"] = np.array(left_jointstate + right_jointstate)
+521-        # pointcloud
+522-        if self.data_type.get("pointcloud", False):
+523-            pkl_dic["pointcloud"] = self.cameras.get_pcd(self.data_type.get("conbine", False))
+524-
+525-        self.now_obs = deepcopy(pkl_dic)
+526-        return pkl_dic
+527-
+528-    def save_camera_rgb(self, save_path, camera_name='head_camera'):
+--
+625-        self.left_joint_path = args.get("left_joint_path", [])
+626-        self.right_joint_path = args.get("right_joint_path", [])
+627-
+628-    def _set_eval_video_ffmpeg(self, ffmpeg):
+629-        self.eval_video_ffmpeg = ffmpeg
+630-
+631:    def close_env(self, clear_cache=False):
+632-        if hasattr(self, "eval_video_ffmpeg"):
+633-            try:
+634-                self._del_eval_video_ffmpeg()
+635-            except Exception:
+636-                pass
+637-
+638-        if hasattr(self, "viewer"):
+639-            try:
+640-                self.viewer.close()
+641-            except Exception:
+642-                pass
+643-            self.viewer = None
+644-
+645-        if hasattr(self, "cameras"):
+646-            self.cameras = None
+647-
+648-        if hasattr(self, "robot"):
+649-            self.robot = None
+650-
+651-        if hasattr(self, "scene"):
+652-            self.scene = None
+653-
+654-        if hasattr(self, "renderer"):
+655-            self.renderer = None
+656-
+657-        if hasattr(self, "engine"):
+658-            self.engine = None
+659-
+660-        if clear_cache:
+661-            # for actor in self.scene.get_all_actors():
+662-            #     self.scene.remove_actor(actor)
+663-            sapien_clear_cache()
+664-        self.close()
+665-
+666-    def _del_eval_video_ffmpeg(self):
+667-        if self.eval_video_ffmpeg:
+668-            self.eval_video_ffmpeg.stdin.close()
+669-            self.eval_video_ffmpeg.wait()
+670-            del self.eval_video_ffmpeg
+671-
+672-    def delay(self, delay_time, save_freq=None):
+673-        render_freq = self.render_freq
+674-        self.render_freq = 0
+675-
+676-        left_gripper_val = self.robot.get_left_gripper_val()
+677-        right_gripper_val = self.robot.get_right_gripper_val()
+678-        for i in range(delay_time):
+679-            self.together_close_gripper(
+680-                left_pos=left_gripper_val,
+681-                right_pos=right_gripper_val,
+682-                save_freq=save_freq,
+683-            )
+684-
+685-        self.render_freq = render_freq
+686-
+687-    def set_gripper(self, set_tag="together", left_pos=None, right_pos=None):
+688-        """
+689-        Set gripper posture
+690-        - `left_pos`: Left gripper pose
+691-        - `right_pos`: Right gripper pose
+692-        - `set_tag`: "left" to set the left gripper, "right" to set the right gripper, "together" to set both grippers simultaneously.
+693-        """
+694-        alpha = 0.5
+695-
+696-        left_result, right_result = None, None
+--
+1438-        self,
+1439-        arm_tag: ArmTag,
+1440-        target_pose: list | np.ndarray | sapien.Pose,
+1441-    ):
+1442-        return arm_tag, [Action(arm_tag, "move", target_pose=target_pose)]
+1443-
+1444:    def close_gripper(self, arm_tag: ArmTag, pos: float = 0.0):
+1445-        return arm_tag, [Action(arm_tag, "close", target_gripper_pos=pos)]
+1446-
+1447-    def open_gripper(self, arm_tag: ArmTag, pos: float = 1.0):
+1448-        return arm_tag, [Action(arm_tag, "open", target_gripper_pos=pos)]
+1449-
+1450-    def back_to_origin(self, arm_tag: ArmTag):
+1451-        if arm_tag == "left":
+1452-            return arm_tag, [Action(arm_tag, "move", self.robot.left_original_pose)]
+1453-        elif arm_tag == "right":
+1454-            return arm_tag, [Action(arm_tag, "move", self.robot.right_original_pose)]
+1455-        return None, []
+1456-
+1457-    def get_arm_pose(self, arm_tag: ArmTag):
+1458-        if arm_tag == "left":
+1459-            return self.robot.get_left_ee_pose()
+1460-        elif arm_tag == "right":
+1461-            return self.robot.get_right_ee_pose()
+1462-        else:
+1463-            raise ValueError(f'arm_tag must be either "left" or "right", not {arm_tag}')
+1464-
+1465-    # =========================================================== Control Robot ===========================================================
+1466-
+1467-    def take_dense_action(self, control_seq, save_freq=-1):
+1468-        """
+1469-        control_seq:
+1470-            left_arm, right_arm, left_gripper, right_gripper
+1471-        """
+1472-        left_arm, left_gripper, right_arm, right_gripper = (
+1473-            control_seq["left_arm"],
+1474-            control_seq["left_gripper"],
+1475-            control_seq["right_arm"],
+1476-            control_seq["right_gripper"],
+1477-        )
+1478-
+1479-        save_freq = self.save_freq if save_freq == -1 else save_freq
+1480-        if save_freq != None:
+1481-            self._take_picture()
+1482-
+1483-        max_control_len = 0
+1484-
+1485-        if left_arm is not None:
+1486-            max_control_len = max(max_control_len, left_arm["position"].shape[0])
+1487-        if left_gripper is not None:
+1488-            max_control_len = max(max_control_len, left_gripper["num_step"])
+1489-        if right_arm is not None:
+1490-            max_control_len = max(max_control_len, right_arm["position"].shape[0])
+1491-        if right_gripper is not None:
+1492-            max_control_len = max(max_control_len, right_gripper["num_step"])
+1493-
+1494-        for control_idx in range(max_control_len):
+1495-
+1496-            if (left_arm is not None and control_idx < left_arm["position"].shape[0]):  # control left arm
+1497-                self.robot.set_arm_joints(
+1498-                    left_arm["position"][control_idx],
+1499-                    left_arm["velocity"][control_idx],
+1500-                    "left",
+1501-                )
+1502-
+1503-            if left_gripper is not None and control_idx < left_gripper["num_step"]:
+1504-                self.robot.set_gripper(
+1505-                    left_gripper["result"][control_idx],
+1506-                    "left",
+1507-                    left_gripper["per_step"],
+1508-                )  # TODO
+1509-
+import importlib
+import os
+import gc
+import sys
+
+import cv2
+import torch
+import yaml
+from envs import *
+
+sys.path.append("../../")
+
+import logging
+import multiprocessing as mp
+import threading
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import gymnasium as gym
+import numpy as np
+from description.utils.generate_episode_instructions import (
+    generate_episode_descriptions,
+)
+from envs._GLOBAL_CONFIGS import *
+from envs.utils.create_actor import UnStableError
+
+
+LOG_LEVEL = os.getenv("VECTOR_ENV_LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.WARNING),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logging.getLogger("concurrent.futures").setLevel(logging.WARNING)
+logging.getLogger("curobo").setLevel(logging.ERROR)
+
+
+def class_decorator(task_name):
+    envs_module = importlib.import_module(f"envs.{task_name}")
+    try:
+        env_class = getattr(envs_module, task_name)
+        env_instance = env_class()
+    except:
+        raise SystemExit("No Task")
+    return env_instance
+
+
+def update_obs(observation):
+    full_image = observation["observation"]["head_camera"]["rgb"]
+    left_wrist_image = (
+        observation["observation"].get("left_camera", {}).get("rgb", None)
+    )
+    right_wrist_image = (
+        observation["observation"].get("right_camera", {}).get("rgb", None)
+    )
+    state = observation["joint_action"]["vector"]
+
+    return {
+        "full_image": full_image,
+        "left_wrist_image": left_wrist_image,
+        "right_wrist_image": right_wrist_image,
+        "state": state,
+    }
+
+
+class SubEnv:
+    def __init__(
+        self,
+        env_id: int,
+        task_name: str,
+        args: dict,
+        env_seed: int = None,
+        instruction_type = "seen",
+        global_lock=None,
+    ):
+        self.env_id = env_id
+        self.task_name = task_name
+        self.args = args
+        self.env_seed = env_seed
+        if self.env_seed is None:
+            self.env_seed = self.env_id
+        self.instruction = None
+        self.task = class_decorator(self.task_name)
+        self.instruction_type = instruction_type
+        self.global_lock = global_lock
+        self.lock = threading.Lock()
+        self.reset_count = 0
+        self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+
+    def setup_task(self):
+        self.close()
+        self.task = class_decorator(self.task_name)
+
+        with self.global_lock:
+            with self.lock:
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        task = class_decorator(self.task_name)
+                        task.setup_demo(
+                            now_ep_num=trial_seed,
+                            seed=trial_seed,
+                            is_test=True,
+                            **self.args,
+                        )
+                        episode_info = task.get_info()
+                        is_valid = True
+                    except Exception as e:
+                        task.close_env()
+                        trial_seed += 1
+                        continue
+                    task.close_env()
+
+                self.episode_info_list = [episode_info]
+
+    def create_instruction(self):
+        task_descriptions = generate_episode_descriptions(
+            self.task_name, self.episode_info_list, 1, self.env_seed
+        )
+        instruction = np.random.choice(task_descriptions[0][self.instruction_type])
+        return instruction
+
+    def step(self, actions):
+        if self.get_instruction() is None:
+            self.reset(env_seed=None)
+
+        with self.lock:
+            reward, termination, truncation, info = self.task.gen_sparse_reward_data(actions)
+            obs = update_obs(self.task.get_obs())
+            obs["instruction"] = self.task.get_instruction()
+
+        return {
+            "obs": obs,
+            "reward": reward,
+            "terminated": termination,
+            "truncated": truncation,
+            "info": info,
+        }
+
+    def reset(self, env_seed=None):
+        with self.global_lock:
+            with self.lock:
+                if self.task is not None:
+                    self.reset_count += 1
+                    should_clear_cache = self.reset_count % self.clear_cache_freq == 0
+                    self.task.close_env(clear_cache=should_clear_cache)
+                if env_seed is not None:
+                    self.env_seed = env_seed
+
+                self.instruction = self.create_instruction()
+                self.args["instruction"] = self.instruction
+
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        self.task.setup_demo(
+                            now_ep_num=trial_seed, seed=trial_seed, **self.args
+                        )
+                        self.task.step_lim = self.args["step_lim"]
+                        self.task.run_steps = 0
+                        self.task.reward_step = 0
+                        is_valid = True
+                    except UnStableError as e:
+                        logging.warning(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                        )
+                        self.task.close_env(clear_cache=True)
+                        trial_seed += 1
+                        continue
+                    except Exception as e:
+                        logging.error(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                        )
+                        self.task.close_env(clear_cache=True)
+                        raise
+
+        return
+
+    def get_obs(self):
+        with self.lock:
+            obs = self.task.get_obs()
+            obs = update_obs(obs)
+            obs["instruction"] = self.task.get_instruction()
+
+        return obs
+
+    def get_instruction(self):
+        with self.lock:
+            if self.task is None:
+                return None
+            return self.instruction
+
+    def close(self, clear_cache=True):
+        if self.task is not None:
+            with self.lock:
+                self.task.close_env(clear_cache=clear_cache)
+
+    def check_seed(self, seed):
+Process 1053120: ray::EnvWorker.interact
+Python v3.11.14 (/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11)
+
+Thread 1053120 (idle): "MainThread"
+    main_loop (ray/_private/worker.py:1066)
+    <module> (ray/_private/workers/default_worker.py:323)
+Thread 1053712 (idle): "PythonGCThread"
+    wait (threading.py:327)
+    wait (threading.py:629)
+    run (ray/_private/gc_collect_manager.py:29)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054081 (idle): "AsyncIO Thread: default"
+    wait (threading.py:331)
+    result (concurrent/futures/_base.py:451)
+    step (robotwin/envs/vector_env.py:367)
+    chunk_step (rlinf/envs/robotwin/robotwin_env.py:332)
+    env_interact_step (rlinf/workers/env/env_worker.py:491)
+    wrapper (rlinf/scheduler/worker/worker.py:1372)
+    sync_func (rlinf/scheduler/worker/worker.py:81)
+    _resume_span (ray/util/tracing/tracing_helper.py:487)
+    _run_interact_once (rlinf/workers/env/env_worker.py:1182)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    interact (rlinf/workers/env/env_worker.py:1359)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    async_func (rlinf/scheduler/worker/worker.py:91)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    _run (asyncio/events.py:84)
+    _run_once (asyncio/base_events.py:1936)
+    run_forever (asyncio/base_events.py:608)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054141 (idle): "Thread-1 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054142 (idle): "Thread-2 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054143 (idle): "Thread-3 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1065920 (idle): "ThreadPoolExecutor-0_0"
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066014 (idle): "ThreadPoolExecutor-0_1"
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066016 (idle): "ThreadPoolExecutor-0_2"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066017 (idle): "ThreadPoolExecutor-0_3"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066018 (idle): "ThreadPoolExecutor-0_4"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066019 (idle): "ThreadPoolExecutor-0_5"
+    __enter__ (<frozen importlib._bootstrap>:1028)
+    _find_spec (<frozen importlib._bootstrap>:1070)
+    _find_and_load_unlocked (<frozen importlib._bootstrap>:1138)
+    _find_and_load (<frozen importlib._bootstrap>:1176)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066020 (idle): "ThreadPoolExecutor-0_6"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066194 (idle): "ThreadPoolExecutor-0_7"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066195 (idle): "ThreadPoolExecutor-0_8"
+    canlinear_colloc_to_interpolate (toppra/constraint/linear_constraint.py:171)
+    compute_constraint_params (toppra/constraint/linear_joint_acceleration.py:92)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:123)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066196 (idle): "ThreadPoolExecutor-0_9"
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066197 (idle): "ThreadPoolExecutor-0_10"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066198 (idle): "ThreadPoolExecutor-0_11"
+    _get_rgba (envs/camera/camera.py:335)
+    get_rgba (envs/camera/camera.py:350)
+    get_rgb (envs/camera/camera.py:324)
+    get_obs (envs/_base_task.py:476)
+    step (robotwin/envs/vector_env.py:130)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066199 (idle): "ThreadPoolExecutor-0_12"
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066200 (idle): "ThreadPoolExecutor-0_13"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066201 (idle): "ThreadPoolExecutor-0_14"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066202 (idle): "ThreadPoolExecutor-0_15"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072222 (idle): "Thread-4 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072223 (idle): "Thread-5 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072224 (idle): "Thread-6 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072426 (idle): "Thread-7 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072427 (idle): "Thread-8 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072428 (idle): "Thread-9 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156618 (idle): "Thread-10 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156619 (idle): "Thread-11 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156620 (idle): "Thread-12 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054135 (idle)
+2026-09-04T07:19:22+00:00

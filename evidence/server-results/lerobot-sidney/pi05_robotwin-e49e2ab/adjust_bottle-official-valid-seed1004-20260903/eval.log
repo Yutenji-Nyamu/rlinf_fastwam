@@ -1,0 +1,803 @@
+WARNING 2026-09-03 01:56:55 figs/eval.py:69 No job name provided, using 'robotwin_pi05' as job name.
+INFO 2026-09-03 01:56:55 bot_eval.py:727 {'env': {'action_mode': 'joint',
+         'camera_names': 'head_camera,left_camera,right_camera',
+         'disable_env_checker': True,
+         'episode_length': 1200,
+         'features': {'action': {'shape': (14,),
+                                 'type': <FeatureType.ACTION: 'ACTION'>},
+                      'agent_pos': {'shape': (14,),
+                                    'type': <FeatureType.STATE: 'STATE'>},
+                      'pixels/head_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/left_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/right_camera': {'shape': (240, 320, 3),
+                                              'type': <FeatureType.VISUAL: 'VISUAL'>}},
+         'features_map': {'action': 'action',
+                          'agent_pos': 'observation.state',
+                          'pixels/head_camera': 'observation.images.head_camera',
+                          'pixels/left_camera': 'observation.images.left_camera',
+                          'pixels/right_camera': 'observation.images.right_camera'},
+         'fps': 25,
+         'max_parallel_tasks': 1,
+         'obs_type': 'pixels_agent_pos',
+         'observation_height': 240,
+         'observation_width': 320,
+         'render_mode': 'rgb_array',
+         'task': 'adjust_bottle'},
+ 'eval': {'batch_size': 1,
+          'n_episodes': 1,
+          'recording': False,
+          'recording_private': False,
+          'recording_repo_id': None,
+          'use_async_envs': True},
+ 'job_name': 'robotwin_pi05',
+ 'output_dir': PosixPath('/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval'),
+ 'policy': {'action_expert_variant': 'gemma_300m',
+            'action_feature_names': ['motors'],
+            'chunk_size': 50,
+            'compile_mode': 'max-autotune',
+            'compile_model': True,
+            'device': 'cuda',
+            'dtype': 'bfloat16',
+            'empty_cameras': 0,
+            'freeze_vision_encoder': False,
+            'gradient_checkpointing': True,
+            'image_resolution': (224, 224),
+            'input_features': {'observation.images.cam_high': {'shape': (480,
+                                                                         640,
+                                                                         3),
+                                                               'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_left_wrist': {'shape': (480,
+                                                                               640,
+                                                                               3),
+                                                                     'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_right_wrist': {'shape': (480,
+                                                                                640,
+                                                                                3),
+                                                                      'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.state': {'shape': (14,),
+                                                     'type': <FeatureType.STATE: 'STATE'>}},
+            'license': None,
+            'max_action_dim': 32,
+            'max_period': 4.0,
+            'max_state_dim': 32,
+            'min_period': 0.004,
+            'n_action_steps': 50,
+            'n_obs_steps': 1,
+            'normalization_mapping': {'ACTION': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'STATE': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'VISUAL': <NormalizationMode.IDENTITY: 'IDENTITY'>},
+            'num_inference_steps': 10,
+            'optimizer_betas': (0.9, 0.95),
+            'optimizer_eps': 1e-08,
+            'optimizer_grad_clip_norm': 1.0,
+            'optimizer_lr': 2.5e-05,
+            'optimizer_weight_decay': 0.01,
+            'output_features': {'action': {'shape': (14,),
+                                           'type': <FeatureType.ACTION: 'ACTION'>}},
+            'paligemma_variant': 'gemma_2b',
+            'pretrained_path': PosixPath('/data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab'),
+            'pretrained_revision': None,
+            'private': None,
+            'push_to_hub': True,
+            'relative_exclude_joints': ['gripper'],
+            'repo_id': 'SidneyXie/pi05_robotwin',
+            'rtc_config': None,
+            'scheduler_decay_lr': 2.5e-06,
+            'scheduler_decay_steps': 30000,
+            'scheduler_warmup_steps': 1000,
+            'tags': None,
+            'time_sampling_beta_alpha': 1.5,
+            'time_sampling_beta_beta': 1.0,
+            'time_sampling_offset': 0.001,
+            'time_sampling_scale': 0.999,
+            'tokenizer_max_length': 200,
+            'train_expert_only': False,
+            'use_amp': False,
+            'use_peft': False,
+            'use_relative_actions': False},
+ 'rename_map': {'observation.images.head_camera': 'observation.images.cam_high',
+                'observation.images.left_camera': 'observation.images.cam_left_wrist',
+                'observation.images.right_camera': 'observation.images.cam_right_wrist'},
+ 'seed': 1004,
+ 'trust_remote_code': False}
+INFO 2026-09-03 01:56:55 bot_eval.py:736 Output dir: /data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval
+INFO 2026-09-03 01:56:55 bot_eval.py:738 Making environment (batch_size=1, async=True).
+INFO 2026-09-03 01:56:55 robotwin.py:618 Creating RoboTwin envs | tasks=['adjust_bottle'] | n_envs(per task)=1
+INFO 2026-09-03 01:56:55 robotwin.py:649 Built vec env | task=adjust_bottle | n_envs=1
+INFO 2026-09-03 01:56:55 bot_eval.py:746 Making policy.
+INFO 2026-09-03 01:58:33 ing_pi05.py:612 Enabled gradient checkpointing for PI05Pytorch model
+WARNING 2026-09-03 01:58:35 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING 2026-09-03 01:58:35 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+Stepping through eval batches:   0%|          | 0/1 [00:00<?, ?it/s]/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/sapien/_vulkan_tricks.py:37: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+  warn(
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 USDParser failed to import, install curobo with pip install .[usd] or pip install usd-core, NOTE: Do not install this if using with Isaac Sim.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_USE_LRU_CACHE is not set, Enabling as default.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:41 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+INFO 2026-09-03 01:58:42 il/logger.py:71 Environment variable for CUROBO_TORCH_COMPILE is not set, Disabling.
+missing pytorch3d
+Warp DeprecationWarning: The namespace `warp.torch` will soon be removed from the public API. It can still be accessed from `warp._src.torch` but might be changed or removed without notice.
+Warp DeprecationWarning: The symbol `warp.torch.device_from_torch` will soon be removed from the public API. Use `warp.device_from_torch` instead.
+
+Running rollout with at most 1200 steps:   0%|          | 0/1200 [00:00<?, ?it/s][AAUTOTUNE convolution(1x3x224x224, 1152x3x14x14)
+  convolution 0.0544 ms 100.0% 
+  triton_convolution2d_4 0.1529 ms 35.6% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=4
+  triton_convolution2d_3 0.2001 ms 27.2% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=128, BLOCK_N=128, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution2d_5 0.2136 ms 25.5% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=256, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution2d_6 0.2181 ms 25.0% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=256, BLOCK_N=64, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=8
+  triton_convolution2d_2 0.3456 ms 15.7% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=1024, BLOCK_N=16, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=1, num_warps=8
+  triton_convolution2d_1 0.4120 ms 13.2% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=256, BLOCK_N=64, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=4
+  triton_convolution2d_0 0.7439 ms 7.3% ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=256, GROUPS=1, KERNEL_H=14, KERNEL_W=14, PADDING_H=0, PADDING_W=0, STRIDE_H=14, STRIDE_W=14, UNROLL=False, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.6142 seconds and 0.8065 seconds precompiling for 8 choices
+E0903 02:01:57.149000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:57.149000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:57.149000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:57.212000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:57.212000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:57.212000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:57.269000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:57.269000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 393216, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:57.269000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:57.359000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:57.359000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:57.359000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+AUTOTUNE mm(256x1152, 1152x4304)
+  triton_mm_97 0.0229 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_93 0.0232 ms 98.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_100 0.0242 ms 94.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  mm 0.0250 ms 91.7% 
+  triton_mm_96 0.0261 ms 87.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_92 0.0262 ms 87.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_99 0.0282 ms 81.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_90 0.0287 ms 79.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_86 0.0294 ms 77.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_94 0.0296 ms 77.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3118 seconds and 115.6706 seconds precompiling for 20 choices
+E0903 02:01:59.081000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:59.081000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:59.081000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:59.167000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:59.167000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:59.167000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:59.234000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:59.234000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 393216, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:59.234000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:01:59.352000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:01:59.352000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:01:59.352000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+AUTOTUNE mm(256x4304, 4304x1152)
+  mm 0.0290 ms 100.0% 
+  triton_mm_3073 0.0459 ms 63.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_3077 0.0465 ms 62.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3080 0.0509 ms 56.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3076 0.0539 ms 53.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3069 0.0550 ms 52.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3067 0.0580 ms 49.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_3083 0.0605 ms 47.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3068 0.0638 ms 45.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3079 0.0662 ms 43.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3825 seconds and 0.0003 seconds precompiling for 20 choices
+E0903 02:02:26.496000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.496000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.496000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.555000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.555000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.555000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.611000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.611000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 393216, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.611000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.702000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.702000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.702000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+AUTOTUNE addmm(256x1152, 256x1152, 1152x1152)
+  bias_addmm 0.0128 ms 100.0% 
+  triton_mm_10 0.0151 ms 84.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_14 0.0160 ms 79.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  addmm 0.0168 ms 76.0% 
+  triton_mm_18 0.0173 ms 73.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_21 0.0182 ms 70.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_17 0.0185 ms 68.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_8 0.0186 ms 68.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_16 0.0223 ms 57.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_20 0.0224 ms 57.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3037 seconds and 0.0002 seconds precompiling for 21 choices
+E0903 02:02:26.784000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.784000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.784000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.843000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.843000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.843000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.897000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.897000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 393216, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.897000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+E0903 02:02:26.986000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Runtime error during autotuning: 
+E0903 02:02:26.986000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:02:26.986000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [13/0_1] Ignoring this choice.
+AUTOTUNE mm(256x1152, 1152x1152)
+  mm 0.0127 ms 100.0% 
+  triton_mm_67 0.0150 ms 84.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_71 0.0156 ms 81.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_75 0.0165 ms 77.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_78 0.0171 ms 74.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_74 0.0175 ms 72.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_65 0.0179 ms 71.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_66 0.0214 ms 59.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_81 0.0218 ms 58.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_73 0.0218 ms 58.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2814 seconds and 0.0002 seconds precompiling for 20 choices
+E0903 02:05:25.841000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Runtime error during autotuning: 
+E0903 02:05:25.841000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:05:25.841000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Ignoring this choice.
+E0903 02:05:25.902000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Runtime error during autotuning: 
+E0903 02:05:25.902000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:05:25.902000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Ignoring this choice.
+E0903 02:05:25.959000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Runtime error during autotuning: 
+E0903 02:05:25.959000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 393216, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:05:25.959000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Ignoring this choice.
+E0903 02:05:26.051000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Runtime error during autotuning: 
+E0903 02:05:26.051000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 327680, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:05:26.051000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [22/0] Ignoring this choice.
+AUTOTUNE addmm(256x2048, 256x1152, 1152x2048)
+  bias_addmm 0.0162 ms 100.0% 
+  triton_mm_3088 0.0163 ms 99.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3092 0.0169 ms 95.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_3096 0.0180 ms 89.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3099 0.0188 ms 85.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3095 0.0196 ms 82.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  addmm 0.0219 ms 73.8% 
+  triton_mm_3087 0.0226 ms 71.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3086 0.0229 ms 70.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_3098 0.0234 ms 69.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3104 seconds and 138.7976 seconds precompiling for 21 choices
+AUTOTUNE mm(968x2048, 2048x16384)
+  mm 0.0924 ms 100.0% 
+  triton_mm_3270 0.1082 ms 85.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3271 0.1184 ms 78.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3269 0.1385 ms 66.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3265 0.1555 ms 59.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_3264 0.1562 ms 59.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3262 0.1956 ms 47.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3267 0.1987 ms 46.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3266 0.2039 ms 45.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3263 0.2045 ms 45.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.7732 seconds and 71.0145 seconds precompiling for 20 choices
+AUTOTUNE mm(968x2048, 2048x2048)
+  mm 0.0177 ms 100.0% 
+  triton_mm_3233 0.0182 ms 96.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3232 0.0230 ms 76.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3226 0.0234 ms 75.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3227 0.0234 ms 75.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_3222 0.0250 ms 70.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_3225 0.0279 ms 63.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3229 0.0279 ms 63.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3223 0.0321 ms 55.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_3228 0.0336 ms 52.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3748 seconds and 0.0003 seconds precompiling for 20 choices
+AUTOTUNE bmm(1x128x1, 1x1x968)
+  triton_bmm_3123 0.0055 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=1, num_warps=2
+  triton_bmm_3125 0.0057 ms 97.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_3127 0.0057 ms 97.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_3129 0.0060 ms 92.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=8
+  triton_bmm_3124 0.0060 ms 92.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=2, num_warps=4
+  triton_bmm_3126 0.0061 ms 91.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_3128 0.0063 ms 88.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=2, num_warps=4
+  triton_bmm_3130 0.0064 ms 86.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_3131 0.0068 ms 82.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3135 0.0068 ms 82.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.2584 seconds and 0.0003 seconds precompiling for 17 choices
+AUTOTUNE mm(968x2048, 2048x256)
+  triton_mm_3143 0.0106 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  mm 0.0107 ms 99.1% 
+  triton_mm_3147 0.0111 ms 95.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_3151 0.0127 ms 83.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_3157 0.0164 ms 65.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3141 0.0180 ms 59.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3142 0.0180 ms 59.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3146 0.0182 ms 58.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_3140 0.0191 ms 55.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_3150 0.0193 ms 55.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3423 seconds and 0.0003 seconds precompiling for 20 choices
+AUTOTUNE bmm(8x968x256, 8x256x968)
+  bmm 0.0160 ms 100.0% 
+  triton_bmm_3175 0.0177 ms 90.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3174 0.0197 ms 81.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3169 0.0200 ms 79.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3176 0.0214 ms 74.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_3171 0.0220 ms 72.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3168 0.0222 ms 72.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_3167 0.0222 ms 71.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3172 0.0223 ms 71.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_3173 0.0233 ms 68.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.3245 seconds and 0.0004 seconds precompiling for 20 choices
+AUTOTUNE bmm(8x968x968, 8x968x256)
+  bmm 0.0153 ms 100.0% 
+  triton_bmm_3214 0.0167 ms 91.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_3207 0.0181 ms 84.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3213 0.0188 ms 81.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3206 0.0193 ms 79.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_3208 0.0202 ms 75.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=4
+  triton_bmm_3205 0.0223 ms 68.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3212 0.0234 ms 65.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_3210 0.0238 ms 64.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_3209 0.0242 ms 63.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2948 seconds and 0.0002 seconds precompiling for 20 choices
+AUTOTUNE mm(968x16384, 16384x2048)
+  mm 0.0884 ms 100.0% 
+  triton_mm_3290 0.1019 ms 86.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_3284 0.1213 ms 72.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_3289 0.1339 ms 66.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=128, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3283 0.1355 ms 65.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3282 0.1726 ms 51.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3280 0.1791 ms 49.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_3286 0.1825 ms 48.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_3281 0.2162 ms 40.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_3285 0.2165 ms 40.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=128, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.6565 seconds and 0.0002 seconds precompiling for 20 choices
+AUTOTUNE addmm(50x1024, 50x32, 32x1024)
+  triton_mm_6199 0.0056 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_6211 0.0060 ms 93.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_mm_6205 0.0061 ms 92.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6210 0.0061 ms 92.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6200 0.0061 ms 91.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6201 0.0061 ms 91.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6204 0.0063 ms 89.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_6206 0.0064 ms 87.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6198 0.0066 ms 85.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=1, num_warps=2
+  triton_mm_6202 0.0067 ms 84.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2196 seconds and 0.0936 seconds precompiling for 18 choices
+AUTOTUNE mm(50x1024, 1024x4096)
+  mm 0.0100 ms 100.0% 
+  triton_mm_6352 0.0100 ms 99.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6356 0.0103 ms 96.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6360 0.0114 ms 87.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_6364 0.0123 ms 80.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6355 0.0133 ms 74.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6359 0.0136 ms 73.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6351 0.0136 ms 73.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6349 0.0142 ms 70.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_6350 0.0142 ms 69.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.4014 seconds and 0.0003 seconds precompiling for 18 choices
+AUTOTUNE mm(50x2048, 2048x1024)
+  mm 0.0095 ms 100.0% 
+  triton_mm_6318 0.0107 ms 89.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6322 0.0117 ms 81.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6326 0.0134 ms 71.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_6330 0.0146 ms 65.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6317 0.0176 ms 54.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6321 0.0181 ms 52.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6315 0.0188 ms 50.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_mm_6325 0.0190 ms 50.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6316 0.0193 ms 49.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.2932 seconds and 0.0003 seconds precompiling for 18 choices
+AUTOTUNE mm(50x1024, 1024x2048)
+  mm 0.0087 ms 100.0% 
+  triton_mm_6218 0.0092 ms 94.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6222 0.0094 ms 93.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6226 0.0106 ms 82.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_6230 0.0114 ms 76.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6217 0.0123 ms 71.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6221 0.0127 ms 68.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6225 0.0129 ms 67.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6216 0.0131 ms 66.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6215 0.0131 ms 66.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2681 seconds and 0.0002 seconds precompiling for 18 choices
+AUTOTUNE bmm(1x128x1, 1x1x50)
+  triton_bmm_6231 0.0053 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=1, num_warps=2
+  triton_bmm_6233 0.0055 ms 97.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6235 0.0055 ms 97.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_6232 0.0057 ms 94.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=2, num_warps=4
+  triton_bmm_6234 0.0057 ms 94.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6237 0.0058 ms 92.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=8
+  triton_bmm_6239 0.0058 ms 92.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_6241 0.0058 ms 92.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=4
+  triton_bmm_6240 0.0060 ms 88.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_6238 0.0061 ms 87.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=16, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2227 seconds and 0.0002 seconds precompiling for 16 choices
+AUTOTUNE mm(50x1024, 1024x256)
+  mm 0.0072 ms 100.0% 
+  triton_mm_6250 0.0077 ms 93.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6254 0.0082 ms 87.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6258 0.0094 ms 76.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_6262 0.0100 ms 72.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6249 0.0108 ms 67.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6253 0.0111 ms 65.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6257 0.0113 ms 64.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6248 0.0115 ms 63.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6247 0.0118 ms 61.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2397 seconds and 0.0002 seconds precompiling for 18 choices
+AUTOTUNE bmm(8x50x256, 8x256x1018)
+  triton_bmm_6271 0.0079 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_6270 0.0081 ms 97.6% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_bmm_6277 0.0081 ms 97.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  triton_bmm_6279 0.0082 ms 95.7% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6274 0.0084 ms 93.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_6275 0.0086 ms 91.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_bmm_6266 0.0086 ms 91.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6265 0.0087 ms 90.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6264 0.0088 ms 89.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+  triton_bmm_6273 0.0089 ms 88.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+SingleProcess AUTOTUNE benchmarking takes 0.2261 seconds and 0.0002 seconds precompiling for 18 choices
+AUTOTUNE bmm(8x50x1018, 8x1018x256)
+  triton_bmm_6298 0.0134 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=2, num_warps=4
+  bmm 0.0159 ms 84.7% 
+  triton_bmm_6301 0.0162 ms 83.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_6305 0.0170 ms 79.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=4
+  triton_bmm_6304 0.0201 ms 66.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=8
+  triton_bmm_6308 0.0219 ms 61.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+  triton_bmm_6313 0.0224 ms 59.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6309 0.0254 ms 52.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=False, GROUP_M=8, num_stages=4, num_warps=4
+  triton_bmm_6299 0.0257 ms 52.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=5, num_warps=8
+  triton_bmm_6310 0.0281 ms 47.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=64, EVEN_K=False, GROUP_M=8, num_stages=3, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2738 seconds and 0.0002 seconds precompiling for 18 choices
+AUTOTUNE mm(50x4096, 4096x1024)
+  mm 0.0140 ms 100.0% 
+  triton_mm_6369 0.0141 ms 99.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6373 0.0156 ms 89.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_6377 0.0194 ms 72.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_6381 0.0244 ms 57.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6368 0.0302 ms 46.2% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6367 0.0315 ms 44.5% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_6376 0.0318 ms 43.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=128, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_6372 0.0319 ms 43.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=64, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_6366 0.0351 ms 39.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.3025 seconds and 0.0002 seconds precompiling for 18 choices
+E0903 02:09:07.965000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [34/0] Runtime error during autotuning: 
+E0903 02:09:07.965000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [34/0] No valid triton configs. OutOfResources: out of resource: shared memory, Required: 245760, Hardware limit: 232448. Reducing block sizes or `num_stages` may help.. 
+E0903 02:09:07.965000 2034450 site-packages/torch/_inductor/select_algorithm.py:2100] [34/0] Ignoring this choice.
+AUTOTUNE addmm(50x32, 50x1024, 1024x32)
+  triton_mm_8994 0.0096 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=4
+  triton_mm_8996 0.0103 ms 93.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  bias_addmm 0.0110 ms 87.8% 
+  triton_mm_8986 0.0115 ms 84.1% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=8
+  triton_mm_8985 0.0116 ms 82.9% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=5, num_warps=4
+  triton_mm_8993 0.0122 ms 79.0% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=4
+  triton_mm_8990 0.0124 ms 77.4% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=64, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=3, num_warps=8
+  triton_mm_8992 0.0130 ms 74.3% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=32, BLOCK_M=64, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=4, num_warps=8
+  addmm 0.0132 ms 72.7% 
+  triton_mm_8984 0.0138 ms 69.8% ACC_TYPE='tl.float32', ALLOW_TF32=True, BLOCK_K=128, BLOCK_M=32, BLOCK_N=32, EVEN_K=True, GROUP_M=8, num_stages=2, num_warps=4
+SingleProcess AUTOTUNE benchmarking takes 0.2372 seconds and 11.7600 seconds precompiling for 16 choices
+
+Running rollout with at most 1200 steps:   0%|          | 0/1200 [10:00<?, ?it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 1/1200 [10:00<200:05:07, 600.76s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 1/1200 [10:01<200:05:07, 600.76s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 2/1200 [10:01<82:24:38, 247.65s/it, running_success_rate=0.0%] [A
+Running rollout with at most 1200 steps:   0%|          | 2/1200 [10:01<82:24:38, 247.65s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 3/1200 [10:01<44:48:44, 134.77s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 3/1200 [10:02<44:48:44, 134.77s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 4/1200 [10:02<27:09:38, 81.75s/it, running_success_rate=0.0%] [A
+Running rollout with at most 1200 steps:   0%|          | 4/1200 [10:02<27:09:38, 81.75s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 5/1200 [10:02<17:24:36, 52.45s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 5/1200 [10:03<17:24:36, 52.45s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 6/1200 [10:03<11:32:04, 34.78s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   0%|          | 6/1200 [10:03<11:32:04, 34.78s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 7/1200 [10:03<7:48:39, 23.57s/it, running_success_rate=0.0%] [A
+Running rollout with at most 1200 steps:   1%|          | 7/1200 [10:04<7:48:39, 23.57s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 8/1200 [10:04<5:22:12, 16.22s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 8/1200 [10:04<5:22:12, 16.22s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 9/1200 [10:04<3:44:26, 11.31s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 9/1200 [10:05<3:44:26, 11.31s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 10/1200 [10:05<2:38:05,  7.97s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 10/1200 [10:05<2:38:05,  7.97s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 11/1200 [10:05<1:52:43,  5.69s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 11/1200 [10:06<1:52:43,  5.69s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 12/1200 [10:06<1:21:32,  4.12s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 12/1200 [10:06<1:21:32,  4.12s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 13/1200 [10:06<1:00:04,  3.04s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 13/1200 [10:07<1:00:04,  3.04s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|          | 14/1200 [10:07<45:07,  2.28s/it, running_success_rate=0.0%]  [A
+Running rollout with at most 1200 steps:   1%|          | 14/1200 [10:07<45:07,  2.28s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 15/1200 [10:07<34:48,  1.76s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 15/1200 [10:08<34:48,  1.76s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 16/1200 [10:08<27:30,  1.39s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 16/1200 [10:08<27:30,  1.39s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 17/1200 [10:08<22:35,  1.15s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   1%|▏         | 17/1200 [10:09<22:35,  1.15s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 18/1200 [10:09<19:07,  1.03it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 18/1200 [10:10<19:07,  1.03it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 19/1200 [10:10<16:42,  1.18it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 19/1200 [10:10<16:42,  1.18it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 20/1200 [10:10<15:00,  1.31it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 20/1200 [10:11<15:00,  1.31it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 21/1200 [10:11<13:48,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 21/1200 [10:11<13:48,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 22/1200 [10:11<12:58,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 22/1200 [10:12<12:58,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 23/1200 [10:12<12:30,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 23/1200 [10:12<12:30,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 24/1200 [10:12<12:07,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 24/1200 [10:13<12:07,  1.62it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 25/1200 [10:13<11:56,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 25/1200 [10:14<11:56,  1.64it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 26/1200 [10:14<11:51,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 26/1200 [10:14<11:51,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 27/1200 [10:14<11:48,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 27/1200 [10:15<11:48,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 28/1200 [10:15<11:51,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 28/1200 [10:15<11:51,  1.65it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 29/1200 [10:15<12:06,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▏         | 29/1200 [10:16<12:06,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▎         | 30/1200 [10:16<12:06,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   2%|▎         | 30/1200 [10:17<12:06,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 31/1200 [10:17<12:12,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 31/1200 [10:17<12:12,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 32/1200 [10:17<12:09,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 32/1200 [10:18<12:09,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 33/1200 [10:18<12:13,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 33/1200 [10:19<12:13,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 34/1200 [10:19<12:14,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 34/1200 [10:19<12:14,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 35/1200 [10:19<12:16,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 35/1200 [10:20<12:16,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 36/1200 [10:20<12:16,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 36/1200 [10:20<12:16,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 37/1200 [10:20<12:17,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 37/1200 [10:21<12:17,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 38/1200 [10:21<12:19,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 38/1200 [10:22<12:19,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 39/1200 [10:22<12:18,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 39/1200 [10:22<12:18,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 40/1200 [10:22<12:19,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 40/1200 [10:23<12:19,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 41/1200 [10:23<12:25,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   3%|▎         | 41/1200 [10:24<12:25,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 42/1200 [10:24<12:30,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 42/1200 [10:24<12:30,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 43/1200 [10:24<12:34,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 43/1200 [10:25<12:34,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 44/1200 [10:25<12:36,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▎         | 44/1200 [10:26<12:36,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 45/1200 [10:26<12:40,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 45/1200 [10:26<12:40,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 46/1200 [10:26<12:33,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 46/1200 [10:27<12:33,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 47/1200 [10:27<12:29,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 47/1200 [10:28<12:29,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 48/1200 [10:28<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 48/1200 [10:28<12:39,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 49/1200 [10:28<12:52,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 49/1200 [10:29<12:52,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 50/1200 [10:29<12:54,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 50/1200 [11:24<12:54,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 51/1200 [11:24<5:26:58, 17.07s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 51/1200 [11:25<5:26:58, 17.07s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 52/1200 [11:25<3:52:41, 12.16s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 52/1200 [11:26<3:52:41, 12.16s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 53/1200 [11:26<2:46:41,  8.72s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 53/1200 [11:26<2:46:41,  8.72s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 54/1200 [11:26<2:00:29,  6.31s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   4%|▍         | 54/1200 [11:27<2:00:29,  6.31s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 55/1200 [11:27<1:28:04,  4.62s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 55/1200 [11:28<1:28:04,  4.62s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 56/1200 [11:28<1:05:29,  3.43s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 56/1200 [11:28<1:05:29,  3.43s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 57/1200 [11:28<49:41,  2.61s/it, running_success_rate=0.0%]  [A
+Running rollout with at most 1200 steps:   5%|▍         | 57/1200 [11:29<49:41,  2.61s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 58/1200 [11:29<38:42,  2.03s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 58/1200 [11:30<38:42,  2.03s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 59/1200 [11:30<30:58,  1.63s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▍         | 59/1200 [11:31<30:58,  1.63s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 60/1200 [11:31<25:36,  1.35s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 60/1200 [11:31<25:36,  1.35s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 61/1200 [11:31<21:49,  1.15s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 61/1200 [11:32<21:49,  1.15s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 62/1200 [11:32<19:08,  1.01s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 62/1200 [11:33<19:08,  1.01s/it, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 63/1200 [11:33<17:17,  1.10it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 63/1200 [11:33<17:17,  1.10it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 64/1200 [11:33<16:01,  1.18it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 64/1200 [11:34<16:01,  1.18it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 65/1200 [11:34<15:02,  1.26it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   5%|▌         | 65/1200 [11:35<15:02,  1.26it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 66/1200 [11:35<14:26,  1.31it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 66/1200 [11:35<14:26,  1.31it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 67/1200 [11:35<13:55,  1.36it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 67/1200 [11:36<13:55,  1.36it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 68/1200 [11:36<13:37,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 68/1200 [11:37<13:37,  1.39it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 69/1200 [11:37<13:26,  1.40it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 69/1200 [11:37<13:26,  1.40it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 70/1200 [11:37<13:19,  1.41it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 70/1200 [11:38<13:19,  1.41it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 71/1200 [11:38<13:14,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 71/1200 [11:39<13:14,  1.42it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 72/1200 [11:39<13:07,  1.43it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 72/1200 [11:39<13:07,  1.43it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 73/1200 [11:39<13:02,  1.44it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 73/1200 [11:40<13:02,  1.44it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 74/1200 [11:40<12:55,  1.45it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▌         | 74/1200 [11:41<12:55,  1.45it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 75/1200 [11:41<12:51,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 75/1200 [11:42<12:51,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 76/1200 [11:42<12:48,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 76/1200 [11:42<12:48,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 77/1200 [11:42<12:47,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 77/1200 [11:43<12:47,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 78/1200 [11:43<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   6%|▋         | 78/1200 [11:44<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 79/1200 [11:44<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 79/1200 [11:44<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 80/1200 [11:44<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 80/1200 [11:45<12:46,  1.46it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 81/1200 [11:45<12:39,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 81/1200 [11:46<12:39,  1.47it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 82/1200 [11:46<12:33,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 82/1200 [11:46<12:33,  1.48it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 83/1200 [11:46<12:28,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 83/1200 [11:47<12:28,  1.49it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 84/1200 [11:47<12:20,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 84/1200 [11:48<12:20,  1.51it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 85/1200 [11:48<12:15,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 85/1200 [11:48<12:15,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 86/1200 [11:48<12:10,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 86/1200 [11:49<12:10,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 87/1200 [11:49<12:07,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 87/1200 [11:49<12:07,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 88/1200 [11:49<12:03,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 88/1200 [11:50<12:03,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 89/1200 [11:50<11:58,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   7%|▋         | 89/1200 [11:51<11:58,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 90/1200 [11:51<11:54,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 90/1200 [11:51<11:54,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 91/1200 [11:51<11:50,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 91/1200 [11:52<11:50,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 92/1200 [11:52<11:44,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 92/1200 [11:53<11:44,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 93/1200 [11:53<11:39,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 93/1200 [11:53<11:39,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 94/1200 [11:53<11:38,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 94/1200 [11:54<11:38,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 95/1200 [11:54<11:35,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 95/1200 [11:55<11:35,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 96/1200 [11:55<11:34,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 96/1200 [11:55<11:34,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 97/1200 [11:55<11:35,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 97/1200 [11:56<11:35,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 98/1200 [11:56<11:30,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 98/1200 [11:56<11:30,  1.60it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 99/1200 [11:56<11:35,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 99/1200 [11:57<11:35,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 100/1200 [11:57<11:34,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 100/1200 [11:58<11:34,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 101/1200 [11:58<12:02,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 101/1200 [11:58<12:02,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 102/1200 [11:58<11:56,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   8%|▊         | 102/1200 [11:59<11:56,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 103/1200 [11:59<11:58,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 103/1200 [12:00<11:58,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 104/1200 [12:00<11:59,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▊         | 104/1200 [12:00<11:59,  1.52it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 105/1200 [12:00<11:55,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 105/1200 [12:01<11:55,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 106/1200 [12:01<11:48,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 106/1200 [12:02<11:48,  1.54it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 107/1200 [12:02<11:46,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 107/1200 [12:02<11:46,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 108/1200 [12:02<11:39,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 108/1200 [12:03<11:39,  1.56it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 109/1200 [12:03<11:31,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 109/1200 [12:04<11:31,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 110/1200 [12:04<11:30,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 110/1200 [12:04<11:30,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 111/1200 [12:04<11:34,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 111/1200 [12:05<11:34,  1.57it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 112/1200 [12:05<11:30,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 112/1200 [12:05<11:30,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 113/1200 [12:05<11:22,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:   9%|▉         | 113/1200 [12:06<11:22,  1.59it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 114/1200 [12:06<11:48,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 114/1200 [12:07<11:48,  1.53it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 115/1200 [12:07<11:38,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 115/1200 [12:07<11:38,  1.55it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 116/1200 [12:07<11:26,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 116/1200 [12:08<11:26,  1.58it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 117/1200 [12:08<11:13,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 117/1200 [12:09<11:13,  1.61it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 118/1200 [12:09<11:03,  1.63it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 118/1200 [12:09<11:03,  1.63it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 119/1200 [12:09<10:52,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|▉         | 119/1200 [12:10<10:52,  1.66it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|█         | 120/1200 [12:10<10:41,  1.68it/s, running_success_rate=0.0%][A
+Running rollout with at most 1200 steps:  10%|█         | 120/1200 [12:11<10:41,  1.68it/s, running_success_rate=100.0%][A
+Running rollout with at most 1200 steps:  10%|█         | 121/1200 [12:11<16:01,  1.12it/s, running_success_rate=100.0%][A
+                                                                                                                        [AStepping through eval batches:   0%|          | 0/1 [12:43<?, ?it/s, running_success_rate=100.0%]Stepping through eval batches: 100%|██████████| 1/1 [12:43<00:00, 763.37s/it, running_success_rate=100.0%]Stepping through eval batches: 100%|██████████| 1/1 [12:43<00:00, 763.37s/it, running_success_rate=100.0%]
+INFO 2026-09-03 02:11:21 bot_eval.py:808 End of eval
+Overall Aggregated Metrics:
+{'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'eval_s': 763.9414310455322, 'eval_ep_s': 763.9414315223694, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}
+
+Aggregated Metrics for per_task:
+[{'task_group': 'adjust_bottle', 'task_id': 0, 'metrics': {'sum_rewards': [1.0], 'max_rewards': [1.0], 'successes': [True], 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}}]
+
+Aggregated Metrics for per_group:
+{'adjust_bottle': {'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}}
+
+Aggregated Metrics for overall:
+{'avg_sum_reward': 1.0, 'avg_max_reward': 1.0, 'pc_success': 100.0, 'n_episodes': 1, 'eval_s': 763.9414310455322, 'eval_ep_s': 763.9414315223694, 'video_paths': ['/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-official-valid-seed1004-20260903/eval/videos/adjust_bottle_0/eval_episode_0.mp4'], 'predicted_video_paths': []}

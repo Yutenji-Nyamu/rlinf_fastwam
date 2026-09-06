@@ -1,0 +1,1500 @@
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.02e+05               │rlt/updates_scheduled=530.0            │rlt/updates_to_run=530.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.111                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.81e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:11<00:00, 191.80s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:11<00:00, 191.80s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  430/480 │ Progress: ███████████████████████████████████░░░░░ │  89.6%                                  │
+│ Elapsed: 31:00:38 │ ETA: 03:36:21 │ Step Time: 259.624s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.43e-05       │actor/actor/recv_traj=193.2            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.648              │actor/forward_critic=5.719             │actor/sample=10.927                   │
+│actor/update_one_epoch=35.119          │cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0017  │
+│env/env/bootstrap_step=59.324          │env/env/send_rollout_trajectories=0.601│env/env_interact_step=123.6           │
+│env/interact=193.1                     │env/run_interact_once=192.4            │generate_rollouts=193.2               │
+│rollout/generate_one_epoch=191.8       │rollout/rollout/generate=191.8         │step=228.9                            │
+│sync_weights=0.545                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.75                           │
+│reward=0.03875                         │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.46e+04                    │num_trajectories=5.46e+04              │total_samples=5.46e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.187                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.320                      │
+│actor/q_value_0=0.320                  │actor/q_value_1=0.301                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.585 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.891       │actor/rlt_dvac/log_v_std=0.520        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.30e+05│actor/rlt_dvac/replay_age_p95=2.03e+05 │actor/rlt_dvac/student_route_count=14…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.851        │actor/rlt_dvac/weight_h02=0.819       │
+│actor/rlt_dvac/weight_h03=0.852        │actor/rlt_dvac/weight_h04=0.924        │actor/rlt_dvac/weight_h05=0.999       │
+│actor/rlt_dvac/weight_h06=1.069        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.205       │
+│actor/rlt_dvac/weight_h09=1.266        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0030       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.041           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.126                 │critic/lr=1.00e-04                     │critic/q_data=0.283                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.076                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.067               │replay/reward_positive_rate=0.067      │replay/transition_count=105.0         │
+│rlt/actor_updates_run=263.0            │rlt/critic_updates_run=525.0           │rlt/desired_total_updates=2.03e+05    │
+│rlt/global_min_replay_size=5.46e+04    │rlt/global_total_transitions_added=5.4…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.02e+05               │rlt/updates_scheduled=525.0            │rlt/updates_to_run=525.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.111                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.56e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:11<00:00, 191.62s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:11<00:00, 191.62s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  431/480 │ Progress: ███████████████████████████████████░░░░░ │  89.8%                                  │
+│ Elapsed: 31:04:25 │ ETA: 03:31:57 │ Step Time: 259.549s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.18e-05       │actor/actor/recv_traj=193.0            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.669              │actor/forward_critic=5.835             │actor/sample=9.764                    │
+│actor/update_one_epoch=33.836          │cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=59.943          │env/env/send_rollout_trajectories=0.579│env/env_interact_step=122.7           │
+│env/interact=192.9                     │env/run_interact_once=192.2            │generate_rollouts=193.1               │
+│rollout/generate_one_epoch=191.6       │rollout/rollout/generate=191.6         │step=227.4                            │
+│sync_weights=0.424                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.0                            │
+│reward=0.04                            │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.47e+04                    │num_trajectories=5.47e+04              │total_samples=5.47e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.185                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.320                      │
+│actor/q_value_0=0.320                  │actor/q_value_1=0.302                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.587 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.522        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.614 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.30e+05│actor/rlt_dvac/replay_age_p95=2.03e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.871        │actor/rlt_dvac/weight_h01=0.848        │actor/rlt_dvac/weight_h02=0.815       │
+│actor/rlt_dvac/weight_h03=0.854        │actor/rlt_dvac/weight_h04=0.924        │actor/rlt_dvac/weight_h05=0.999       │
+│actor/rlt_dvac/weight_h06=1.068        │actor/rlt_dvac/weight_h07=1.146        │actor/rlt_dvac/weight_h08=1.206       │
+│actor/rlt_dvac/weight_h09=1.268        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0027       │actor/rlt_dvac/weight_p95=1.961        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.877            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.139                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.078                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.068               │replay/reward_positive_rate=0.068      │replay/transition_count=103.0         │
+│rlt/actor_updates_run=257.0            │rlt/critic_updates_run=515.0           │rlt/desired_total_updates=2.03e+05    │
+│rlt/global_min_replay_size=5.47e+04    │rlt/global_total_transitions_added=5.4…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.03e+05               │rlt/updates_scheduled=515.0            │rlt/updates_to_run=515.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.58e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:05<00:00, 185.28s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:05<00:00, 185.28s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  432/480 │ Progress: ████████████████████████████████████░░░░ │  90.0%                                  │
+│ Elapsed: 31:08:04 │ ETA: 03:27:33 │ Step Time: 259.455s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.24e-05       │actor/actor/recv_traj=186.5            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.383              │actor/forward_critic=5.465             │actor/sample=9.023                    │
+│actor/update_one_epoch=31.606          │cal_adv_and_returns=0.0033             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=58.594          │env/env/send_rollout_trajectories=0.471│env/env_interact_step=117.9           │
+│env/interact=186.4                     │env/run_interact_once=185.8            │generate_rollouts=186.5               │
+│rollout/generate_one_epoch=185.3       │rollout/rollout/generate=185.3         │step=218.7                            │
+│sync_weights=0.514                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=9.0                            │
+│reward=0.045                           │success_once=1.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.48e+04                    │num_trajectories=5.48e+04              │total_samples=5.48e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.179                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.302                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.585 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.609 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.31e+05│actor/rlt_dvac/replay_age_p95=2.04e+05 │actor/rlt_dvac/student_route_count=14…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.870        │actor/rlt_dvac/weight_h01=0.849        │actor/rlt_dvac/weight_h02=0.815       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.926        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.070        │actor/rlt_dvac/weight_h07=1.141        │actor/rlt_dvac/weight_h08=1.207       │
+│actor/rlt_dvac/weight_h09=1.267        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0031       │actor/rlt_dvac/weight_p95=1.959        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.873            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.129                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.083                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.083               │replay/reward_positive_rate=0.083      │replay/transition_count=96.000        │
+│rlt/actor_updates_run=240.0            │rlt/critic_updates_run=480.0           │rlt/desired_total_updates=2.04e+05    │
+│rlt/global_min_replay_size=5.48e+04    │rlt/global_total_transitions_added=5.4…│rlt/global_transitions_since_train=96…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.03e+05               │rlt/updates_scheduled=480.0            │rlt/updates_to_run=480.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.33e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:15<00:00, 195.79s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:15<00:00, 195.80s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  433/480 │ Progress: ████████████████████████████████████░░░░ │  90.2%                                  │
+│ Elapsed: 31:11:59 │ ETA: 03:23:11 │ Step Time: 259.397s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.70e-05       │actor/actor/recv_traj=197.1            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=5.149              │actor/forward_critic=6.444             │actor/sample=10.516                   │
+│actor/update_one_epoch=36.997          │cal_adv_and_returns=0.0029             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=58.690          │env/env/send_rollout_trajectories=0.581│env/env_interact_step=128.5           │
+│env/interact=197.0                     │env/run_interact_once=196.4            │generate_rollouts=197.2               │
+│rollout/generate_one_epoch=195.8       │rollout/rollout/generate=195.8         │step=234.7                            │
+│sync_weights=0.457                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=6.75                           │
+│reward=0.03375                         │success_once=0.75                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.49e+04                    │num_trajectories=5.49e+04              │total_samples=5.49e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.182                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.302                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.586 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.892       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.609 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.31e+05│actor/rlt_dvac/replay_age_p95=2.04e+05 │actor/rlt_dvac/student_route_count=14…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.762 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.851        │actor/rlt_dvac/weight_h02=0.817       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.926        │actor/rlt_dvac/weight_h05=1.001       │
+│actor/rlt_dvac/weight_h06=1.070        │actor/rlt_dvac/weight_h07=1.141        │actor/rlt_dvac/weight_h08=1.204       │
+│actor/rlt_dvac/weight_h09=1.266        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0031       │actor/rlt_dvac/weight_p95=1.961        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.043           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.131                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.071                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.054               │replay/reward_positive_rate=0.054      │replay/transition_count=112.0         │
+│rlt/actor_updates_run=280.0            │rlt/critic_updates_run=560.0           │rlt/desired_total_updates=2.04e+05    │
+│rlt/global_min_replay_size=5.49e+04    │rlt/global_total_transitions_added=5.4…│rlt/global_transitions_since_train=11…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.04e+05               │rlt/updates_scheduled=560.0            │rlt/updates_to_run=560.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.65e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:15<00:00, 195.67s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:15<00:00, 195.67s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  434/480 │ Progress: ████████████████████████████████████░░░░ │  90.4%                                  │
+│ Elapsed: 31:15:54 │ ETA: 03:18:49 │ Step Time: 259.342s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.03e-05       │actor/actor/recv_traj=197.0            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=5.033              │actor/forward_critic=6.211             │actor/sample=11.796                   │
+│actor/update_one_epoch=37.934          │cal_adv_and_returns=0.0029             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=57.822          │env/env/send_rollout_trajectories=0.575│env/env_interact_step=129.1           │
+│env/interact=196.9                     │env/run_interact_once=196.3            │generate_rollouts=197.0               │
+│rollout/generate_one_epoch=195.7       │rollout/rollout/generate=195.7         │step=235.5                            │
+│sync_weights=0.433                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=6.375                          │
+│reward=0.031875                        │success_once=0.75                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.50e+04                    │num_trajectories=5.50e+04              │total_samples=5.50e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.175                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.322                      │
+│actor/q_value_0=0.322                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.587 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.892       │actor/rlt_dvac/log_v_std=0.520        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.32e+05│actor/rlt_dvac/replay_age_p95=2.05e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.873        │actor/rlt_dvac/weight_h01=0.858        │actor/rlt_dvac/weight_h02=0.819       │
+│actor/rlt_dvac/weight_h03=0.856        │actor/rlt_dvac/weight_h04=0.928        │actor/rlt_dvac/weight_h05=1.000       │
+│actor/rlt_dvac/weight_h06=1.065        │actor/rlt_dvac/weight_h07=1.140        │actor/rlt_dvac/weight_h08=1.200       │
+│actor/rlt_dvac/weight_h09=1.262        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0029       │actor/rlt_dvac/weight_p95=1.961        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.042           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.132                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.070                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.052               │replay/reward_positive_rate=0.052      │replay/transition_count=115.0         │
+│rlt/actor_updates_run=288.0            │rlt/critic_updates_run=575.0           │rlt/desired_total_updates=2.05e+05    │
+│rlt/global_min_replay_size=5.50e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=11…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.04e+05               │rlt/updates_scheduled=575.0            │rlt/updates_to_run=575.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.71e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:09<00:00, 189.77s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:09<00:00, 189.77s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  435/480 │ Progress: ████████████████████████████████████░░░░ │  90.6%                                  │
+│ Elapsed: 31:19:41 │ ETA: 03:14:27 │ Step Time: 259.269s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.34e-05       │actor/actor/recv_traj=191.0            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.714              │actor/forward_critic=5.841             │actor/sample=11.073                   │
+│actor/update_one_epoch=35.718          │cal_adv_and_returns=0.0029             │env/compute_bootstrap_rewards=0.0014  │
+│env/env/bootstrap_step=57.844          │env/env/send_rollout_trajectories=0.473│env/env_interact_step=123.0           │
+│env/interact=190.9                     │env/run_interact_once=190.3            │generate_rollouts=191.1               │
+│rollout/generate_one_epoch=189.8       │rollout/rollout/generate=189.8         │step=227.3                            │
+│sync_weights=0.529                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.5                            │
+│reward=0.037499998                     │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.52e+04                    │num_trajectories=5.52e+04              │total_samples=5.52e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.3                   │actor/grad_norm=2.180                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.320                      │
+│actor/q_value_0=0.320                  │actor/q_value_1=0.302                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.589 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.889       │actor/rlt_dvac/log_v_std=0.521        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.612 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.32e+05│actor/rlt_dvac/replay_age_p95=2.05e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.762 │
+│actor/rlt_dvac/weight_h00=0.869        │actor/rlt_dvac/weight_h01=0.852        │actor/rlt_dvac/weight_h02=0.813       │
+│actor/rlt_dvac/weight_h03=0.852        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.070        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.207       │
+│actor/rlt_dvac/weight_h09=1.267        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0026       │actor/rlt_dvac/weight_p95=1.961        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.130                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.075                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.065               │replay/reward_positive_rate=0.065      │replay/transition_count=107.0         │
+│rlt/actor_updates_run=267.0            │rlt/critic_updates_run=535.0           │rlt/desired_total_updates=2.05e+05    │
+│rlt/global_min_replay_size=5.52e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.05e+05               │rlt/updates_scheduled=535.0            │rlt/updates_to_run=535.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.71e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:13<00:00, 193.02s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:13<00:00, 193.02s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  436/480 │ Progress: ████████████████████████████████████░░░░ │  90.8%                                  │
+│ Elapsed: 31:23:31 │ ETA: 03:10:04 │ Step Time: 259.201s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.37e-05       │actor/actor/recv_traj=194.4            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.665              │actor/forward_critic=5.771             │actor/sample=10.663                   │
+│actor/update_one_epoch=34.911          │cal_adv_and_returns=0.0033             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.027          │env/env/send_rollout_trajectories=0.584│env/env_interact_step=126.1           │
+│env/interact=194.3                     │env/run_interact_once=193.6            │generate_rollouts=194.5               │
+│rollout/generate_one_epoch=193.0       │rollout/rollout/generate=193.0         │step=229.9                            │
+│sync_weights=0.426                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.75                           │
+│reward=0.03875                         │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.53e+04                    │num_trajectories=5.53e+04              │total_samples=5.53e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.170                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.588 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.610 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.32e+05│actor/rlt_dvac/replay_age_p95=2.06e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.870        │actor/rlt_dvac/weight_h01=0.850        │actor/rlt_dvac/weight_h02=0.817       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.924        │actor/rlt_dvac/weight_h05=1.003       │
+│actor/rlt_dvac/weight_h06=1.069        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.207       │
+│actor/rlt_dvac/weight_h09=1.264        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0029       │actor/rlt_dvac/weight_p95=1.959        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.038           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.129                 │critic/lr=1.00e-04                     │critic/q_data=0.284                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.076                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.067               │replay/reward_positive_rate=0.067      │replay/transition_count=105.0         │
+│rlt/actor_updates_run=263.0            │rlt/critic_updates_run=525.0           │rlt/desired_total_updates=2.06e+05    │
+│rlt/global_min_replay_size=5.53e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.05e+05               │rlt/updates_scheduled=525.0            │rlt/updates_to_run=525.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.00e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:03<00:00, 183.57s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:03<00:00, 183.57s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  437/480 │ Progress: ████████████████████████████████████░░░░ │  91.0%                                  │
+│ Elapsed: 31:27:09 │ ETA: 03:05:41 │ Step Time: 259.107s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.00e-05       │actor/actor/recv_traj=184.9            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.470              │actor/forward_critic=5.578             │actor/sample=9.235                    │
+│actor/update_one_epoch=32.323          │cal_adv_and_returns=0.0027             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.860          │env/env/send_rollout_trajectories=0.616│env/env_interact_step=116.3           │
+│env/interact=184.9                     │env/run_interact_once=184.2            │generate_rollouts=185.0               │
+│rollout/generate_one_epoch=183.6       │rollout/rollout/generate=183.6         │step=217.8                            │
+│sync_weights=0.406                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.75                           │
+│reward=0.04375                         │success_once=1.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.54e+04                    │num_trajectories=5.54e+04              │total_samples=5.54e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.172                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.322                      │
+│actor/q_value_0=0.322                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.589 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.892       │actor/rlt_dvac/log_v_std=0.518        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.609 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.32e+05│actor/rlt_dvac/replay_age_p95=2.06e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.854        │actor/rlt_dvac/weight_h02=0.816       │
+│actor/rlt_dvac/weight_h03=0.857        │actor/rlt_dvac/weight_h04=0.928        │actor/rlt_dvac/weight_h05=1.000       │
+│actor/rlt_dvac/weight_h06=1.067        │actor/rlt_dvac/weight_h07=1.141        │actor/rlt_dvac/weight_h08=1.202       │
+│actor/rlt_dvac/weight_h09=1.263        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0032       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.043           │actor/rlt_dvac/z_std=0.872            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.129                 │critic/lr=1.00e-04                     │critic/q_data=0.285                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.082                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.082               │replay/reward_positive_rate=0.082      │replay/transition_count=98.000        │
+│rlt/actor_updates_run=245.0            │rlt/critic_updates_run=490.0           │rlt/desired_total_updates=2.06e+05    │
+│rlt/global_min_replay_size=5.54e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=98…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.06e+05               │rlt/updates_scheduled=490.0            │rlt/updates_to_run=490.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.05e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.77s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.77s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  438/480 │ Progress: ████████████████████████████████████░░░░ │  91.2%                                  │
+│ Elapsed: 31:30:52 │ ETA: 03:01:19 │ Step Time: 259.024s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=8.65e-06       │actor/actor/recv_traj=190.0            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.469              │actor/forward_critic=5.557             │actor/sample=9.392                    │
+│actor/update_one_epoch=32.420          │cal_adv_and_returns=0.0029             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=59.563          │env/env/send_rollout_trajectories=0.482│env/env_interact_step=120.8           │
+│env/interact=189.9                     │env/run_interact_once=189.3            │generate_rollouts=190.0               │
+│rollout/generate_one_epoch=188.8       │rollout/rollout/generate=188.8         │step=223.0                            │
+│sync_weights=0.532                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.625                          │
+│reward=0.043125                        │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.55e+04                    │num_trajectories=5.55e+04              │total_samples=5.55e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.175                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.589 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.612 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.33e+05│actor/rlt_dvac/replay_age_p95=2.07e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.867        │actor/rlt_dvac/weight_h01=0.850        │actor/rlt_dvac/weight_h02=0.817       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.927        │actor/rlt_dvac/weight_h05=1.004       │
+│actor/rlt_dvac/weight_h06=1.069        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.203       │
+│actor/rlt_dvac/weight_h09=1.269        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0031       │actor/rlt_dvac/weight_p95=1.962        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.040           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.128                 │critic/lr=1.00e-04                     │critic/q_data=0.285                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.082                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.071               │replay/reward_positive_rate=0.071      │replay/transition_count=98.000        │
+│rlt/actor_updates_run=245.0            │rlt/critic_updates_run=490.0           │rlt/desired_total_updates=2.07e+05    │
+│rlt/global_min_replay_size=5.55e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=98…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.06e+05               │rlt/updates_scheduled=490.0            │rlt/updates_to_run=490.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.17e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:05<00:00, 185.35s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:05<00:00, 185.35s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  439/480 │ Progress: ████████████████████████████████████░░░░ │  91.5%                                  │
+│ Elapsed: 31:34:33 │ ETA: 02:56:56 │ Step Time: 258.938s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.40e-05       │actor/actor/recv_traj=186.7            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.356              │actor/forward_critic=5.455             │actor/sample=10.629                   │
+│actor/update_one_epoch=33.680          │cal_adv_and_returns=0.0032             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.451          │env/env/send_rollout_trajectories=0.596│env/env_interact_step=118.2           │
+│env/interact=186.6                     │env/run_interact_once=186.0            │generate_rollouts=186.8               │
+│rollout/generate_one_epoch=185.3       │rollout/rollout/generate=185.3         │step=220.9                            │
+│sync_weights=0.413                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.375                          │
+│reward=0.041875005                     │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.56e+04                    │num_trajectories=5.56e+04              │total_samples=5.56e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.178                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.302                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.589 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.33e+05│actor/rlt_dvac/replay_age_p95=2.07e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.762 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.850        │actor/rlt_dvac/weight_h02=0.817       │
+│actor/rlt_dvac/weight_h03=0.852        │actor/rlt_dvac/weight_h04=0.923        │actor/rlt_dvac/weight_h05=0.999       │
+│actor/rlt_dvac/weight_h06=1.068        │actor/rlt_dvac/weight_h07=1.143        │actor/rlt_dvac/weight_h08=1.207       │
+│actor/rlt_dvac/weight_h09=1.269        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0033       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.144                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.131                 │critic/lr=1.00e-04                     │critic/q_data=0.285                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.080                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.070               │replay/reward_positive_rate=0.070      │replay/transition_count=100.000       │
+│rlt/actor_updates_run=250.0            │rlt/critic_updates_run=500.0           │rlt/desired_total_updates=2.07e+05    │
+│rlt/global_min_replay_size=5.56e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.07e+05               │rlt/updates_scheduled=500.0            │rlt/updates_to_run=500.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=7.98e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:16<00:00, 196.30s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:16<00:00, 196.30s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  440/480 │ Progress: ████████████████████████████████████░░░░ │  91.7%                                  │
+│ Elapsed: 31:38:29 │ ETA: 02:52:35 │ Step Time: 258.885s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.39e-05       │actor/actor/recv_traj=197.6            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=5.224              │actor/forward_critic=6.541             │actor/sample=10.670                   │
+│actor/update_one_epoch=37.532          │cal_adv_and_returns=0.0028             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.174          │env/env/send_rollout_trajectories=0.594│env/env_interact_step=129.3           │
+│env/interact=197.6                     │env/run_interact_once=196.9            │generate_rollouts=197.7               │
+│rollout/generate_one_epoch=196.3       │rollout/rollout/generate=196.3         │step=235.8                            │
+│sync_weights=0.518                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=6.5                            │
+│reward=0.0325                          │success_once=0.75                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.57e+04                    │num_trajectories=5.57e+04              │total_samples=5.57e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.178                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.321                      │
+│actor/q_value_0=0.321                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.590 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.33e+05│actor/rlt_dvac/replay_age_p95=2.08e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.870        │actor/rlt_dvac/weight_h01=0.850        │actor/rlt_dvac/weight_h02=0.816       │
+│actor/rlt_dvac/weight_h03=0.855        │actor/rlt_dvac/weight_h04=0.926        │actor/rlt_dvac/weight_h05=1.001       │
+│actor/rlt_dvac/weight_h06=1.070        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.204       │
+│actor/rlt_dvac/weight_h09=1.265        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0030       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.133                 │critic/lr=1.00e-04                     │critic/q_data=0.286                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.070                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.053               │replay/reward_positive_rate=0.053      │replay/transition_count=114.0         │
+│rlt/actor_updates_run=285.0            │rlt/critic_updates_run=570.0           │rlt/desired_total_updates=2.08e+05    │
+│rlt/global_min_replay_size=5.57e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=11…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.07e+05               │rlt/updates_scheduled=570.0            │rlt/updates_to_run=570.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.15e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:06<00:00, 186.55s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:06<00:00, 186.55s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  441/480 │ Progress: ████████████████████████████████████░░░░ │  91.9%                                  │
+│ Elapsed: 31:42:11 │ ETA: 02:48:13 │ Step Time: 258.801s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=8.18e-06       │actor/actor/recv_traj=187.7            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.606              │actor/forward_critic=5.743             │actor/sample=9.697                    │
+│actor/update_one_epoch=33.481          │cal_adv_and_returns=0.0028             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=57.522          │env/env/send_rollout_trajectories=0.458│env/env_interact_step=120.2           │
+│env/interact=187.6                     │env/run_interact_once=187.0            │generate_rollouts=187.8               │
+│rollout/generate_one_epoch=186.5       │rollout/rollout/generate=186.6         │step=221.7                            │
+│sync_weights=0.438                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.125                          │
+│reward=0.040625                        │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.58e+04                    │num_trajectories=5.58e+04              │total_samples=5.58e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.172                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.322                      │
+│actor/q_value_0=0.322                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.591 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.891       │actor/rlt_dvac/log_v_std=0.521        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.612 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.33e+05│actor/rlt_dvac/replay_age_p95=2.08e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.853        │actor/rlt_dvac/weight_h02=0.819       │
+│actor/rlt_dvac/weight_h03=0.854        │actor/rlt_dvac/weight_h04=0.927        │actor/rlt_dvac/weight_h05=1.001       │
+│actor/rlt_dvac/weight_h06=1.067        │actor/rlt_dvac/weight_h07=1.139        │actor/rlt_dvac/weight_h08=1.203       │
+│actor/rlt_dvac/weight_h09=1.265        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0033       │actor/rlt_dvac/weight_p95=1.959        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.041           │actor/rlt_dvac/z_std=0.875            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.133                 │critic/lr=1.00e-04                     │critic/q_data=0.285                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.078                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.069               │replay/reward_positive_rate=0.069      │replay/transition_count=102.0         │
+│rlt/actor_updates_run=255.0            │rlt/critic_updates_run=510.0           │rlt/desired_total_updates=2.09e+05    │
+│rlt/global_min_replay_size=5.58e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.08e+05               │rlt/updates_scheduled=510.0            │rlt/updates_to_run=510.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.43e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:13<00:00, 193.62s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:13<00:00, 193.62s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  442/480 │ Progress: ████████████████████████████████████░░░░ │  92.1%                                  │
+│ Elapsed: 31:46:02 │ ETA: 02:43:52 │ Step Time: 258.740s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=8.57e-06       │actor/actor/recv_traj=194.9            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=5.014              │actor/forward_critic=6.245             │actor/sample=10.518                   │
+│actor/update_one_epoch=36.304          │cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=59.290          │env/env/send_rollout_trajectories=0.603│env/env_interact_step=125.4           │
+│env/interact=194.9                     │env/run_interact_once=194.3            │generate_rollouts=195.0               │
+│rollout/generate_one_epoch=193.6       │rollout/rollout/generate=193.6         │step=231.8                            │
+│sync_weights=0.408                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=6.875                          │
+│reward=0.034375                        │success_once=0.75                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.59e+04                    │num_trajectories=5.59e+04              │total_samples=5.59e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.173                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.322                      │
+│actor/q_value_0=0.322                  │actor/q_value_1=0.303                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.593 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.893       │actor/rlt_dvac/log_v_std=0.518        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.34e+05│actor/rlt_dvac/replay_age_p95=2.09e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.874        │actor/rlt_dvac/weight_h01=0.852        │actor/rlt_dvac/weight_h02=0.820       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.065        │actor/rlt_dvac/weight_h07=1.141        │actor/rlt_dvac/weight_h08=1.201       │
+│actor/rlt_dvac/weight_h09=1.264        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0039       │actor/rlt_dvac/weight_p95=1.958        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.595│actor/rlt_dvac/z_mean=-0.044           │actor/rlt_dvac/z_std=0.873            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.126                 │critic/lr=1.00e-04                     │critic/q_data=0.285                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.072                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.054               │replay/reward_positive_rate=0.054      │replay/transition_count=111.0         │
+│rlt/actor_updates_run=277.0            │rlt/critic_updates_run=555.0           │rlt/desired_total_updates=2.09e+05    │
+│rlt/global_min_replay_size=5.59e+04    │rlt/global_total_transitions_added=5.5…│rlt/global_transitions_since_train=11…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.09e+05               │rlt/updates_scheduled=555.0            │rlt/updates_to_run=555.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.112                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=7.99e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:12<00:00, 192.40s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:12<00:00, 192.41s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  443/480 │ Progress: ████████████████████████████████████░░░░ │  92.3%                                  │
+│ Elapsed: 31:49:52 │ ETA: 02:39:30 │ Step Time: 258.673s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.63e-05       │actor/actor/recv_traj=193.7            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.810              │actor/forward_critic=6.006             │actor/sample=10.010                   │
+│actor/update_one_epoch=34.784          │cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.326          │env/env/send_rollout_trajectories=0.594│env/env_interact_step=125.6           │
+│env/interact=193.6                     │env/run_interact_once=193.0            │generate_rollouts=193.8               │
+│rollout/generate_one_epoch=192.4       │rollout/rollout/generate=192.4         │step=229.1                            │
+│sync_weights=0.526                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.625                          │
+│reward=0.038125                        │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.60e+04                    │num_trajectories=5.60e+04              │total_samples=5.60e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.168                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.324                      │
+│actor/q_value_0=0.324                  │actor/q_value_1=0.305                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.591 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.892       │actor/rlt_dvac/log_v_std=0.518        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=9…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.609 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.34e+05│actor/rlt_dvac/replay_age_p95=2.09e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.873        │actor/rlt_dvac/weight_h01=0.852        │actor/rlt_dvac/weight_h02=0.819       │
+│actor/rlt_dvac/weight_h03=0.855        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=0.998       │
+│actor/rlt_dvac/weight_h06=1.068        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.203       │
+│actor/rlt_dvac/weight_h09=1.266        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0030       │actor/rlt_dvac/weight_p95=1.959        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.042           │actor/rlt_dvac/z_std=0.873            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.033               │
+│actor/weighted_q=0.146                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.128                 │critic/lr=1.00e-04                     │critic/q_data=0.287                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.075                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.066               │replay/reward_positive_rate=0.066      │replay/transition_count=106.0         │
+│rlt/actor_updates_run=265.0            │rlt/critic_updates_run=530.0           │rlt/desired_total_updates=2.10e+05    │
+│rlt/global_min_replay_size=5.60e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.09e+05               │rlt/updates_scheduled=530.0            │rlt/updates_to_run=530.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.113                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=7.92e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.44s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.44s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  444/480 │ Progress: █████████████████████████████████████░░░ │  92.5%                                  │
+│ Elapsed: 31:53:37 │ ETA: 02:35:09 │ Step Time: 258.597s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.42e-05       │actor/actor/recv_traj=189.6            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.790              │actor/forward_critic=6.003             │actor/sample=9.987                    │
+│actor/update_one_epoch=34.708          │cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=57.827          │env/env/send_rollout_trajectories=0.453│env/env_interact_step=122.1           │
+│env/interact=189.5                     │env/run_interact_once=188.9            │generate_rollouts=189.7               │
+│rollout/generate_one_epoch=188.4       │rollout/rollout/generate=188.4         │step=224.8                            │
+│sync_weights=0.422                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.625                          │
+│reward=0.038125                        │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.61e+04                    │num_trajectories=5.61e+04              │total_samples=5.61e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.161                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.324                      │
+│actor/q_value_0=0.324                  │actor/q_value_1=0.305                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.594 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.891       │actor/rlt_dvac/log_v_std=0.520        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=9…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.34e+05│actor/rlt_dvac/replay_age_p95=2.10e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.850        │actor/rlt_dvac/weight_h02=0.818       │
+│actor/rlt_dvac/weight_h03=0.855        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=0.998       │
+│actor/rlt_dvac/weight_h06=1.068        │actor/rlt_dvac/weight_h07=1.143        │actor/rlt_dvac/weight_h08=1.205       │
+│actor/rlt_dvac/weight_h09=1.266        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0034       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.041           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.146                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.124                 │critic/lr=1.00e-04                     │critic/q_data=0.287                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.075                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.066               │replay/reward_positive_rate=0.066      │replay/transition_count=106.0         │
+│rlt/actor_updates_run=265.0            │rlt/critic_updates_run=530.0           │rlt/desired_total_updates=2.10e+05    │
+│rlt/global_min_replay_size=5.61e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.10e+05               │rlt/updates_scheduled=530.0            │rlt/updates_to_run=530.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.113                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.04e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:02<00:00, 182.73s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:02<00:00, 182.73s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  445/480 │ Progress: █████████████████████████████████████░░░ │  92.7%                                  │
+│ Elapsed: 31:57:12 │ ETA: 02:30:47 │ Step Time: 258.499s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.11e-05       │actor/actor/recv_traj=184.0            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.005              │actor/forward_critic=4.941             │actor/sample=9.638                    │
+│actor/update_one_epoch=30.652          │cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=59.365          │env/env/send_rollout_trajectories=0.593│env/env_interact_step=114.6           │
+│env/interact=184.0                     │env/run_interact_once=183.4            │generate_rollouts=184.1               │
+│rollout/generate_one_epoch=182.7       │rollout/rollout/generate=182.7         │step=215.2                            │
+│sync_weights=0.402                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=9.5                            │
+│reward=0.0475                          │success_once=1.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.62e+04                    │num_trajectories=5.62e+04              │total_samples=5.62e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.161                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.323                      │
+│actor/q_value_0=0.323                  │actor/q_value_1=0.305                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.594 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.520        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=9…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.613 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.35e+05│actor/rlt_dvac/replay_age_p95=2.10e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.869        │actor/rlt_dvac/weight_h01=0.851        │actor/rlt_dvac/weight_h02=0.814       │
+│actor/rlt_dvac/weight_h03=0.855        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.069        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.206       │
+│actor/rlt_dvac/weight_h09=1.267        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0031       │actor/rlt_dvac/weight_p95=1.961        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.040           │actor/rlt_dvac/z_std=0.876            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.128                 │critic/lr=1.00e-04                     │critic/q_data=0.287                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.087                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.087               │replay/reward_positive_rate=0.087      │replay/transition_count=92.000        │
+│rlt/actor_updates_run=230.0            │rlt/critic_updates_run=460.0           │rlt/desired_total_updates=2.11e+05    │
+│rlt/global_min_replay_size=5.62e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=92…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.10e+05               │rlt/updates_scheduled=460.0            │rlt/updates_to_run=460.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.113                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.04e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.64s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:08<00:00, 188.64s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  446/480 │ Progress: █████████████████████████████████████░░░ │  92.9%                                  │
+│ Elapsed: 32:00:56 │ ETA: 02:26:26 │ Step Time: 258.423s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.08e-05       │actor/actor/recv_traj=189.8            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.463              │actor/forward_critic=5.510             │actor/sample=10.655                   │
+│actor/update_one_epoch=33.935          │cal_adv_and_returns=0.0030             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=58.127          │env/env/send_rollout_trajectories=0.484│env/env_interact_step=121.8           │
+│env/interact=189.8                     │env/run_interact_once=189.2            │generate_rollouts=189.9               │
+│rollout/generate_one_epoch=188.6       │rollout/rollout/generate=188.6         │step=224.4                            │
+│sync_weights=0.502                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=8.125                          │
+│reward=0.040625002                     │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.63e+04                    │num_trajectories=5.63e+04              │total_samples=5.63e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.164                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.323                      │
+│actor/q_value_0=0.323                  │actor/q_value_1=0.305                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.597 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.891       │actor/rlt_dvac/log_v_std=0.519        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.610 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.35e+05│actor/rlt_dvac/replay_age_p95=2.11e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.872        │actor/rlt_dvac/weight_h01=0.853        │actor/rlt_dvac/weight_h02=0.816       │
+│actor/rlt_dvac/weight_h03=0.854        │actor/rlt_dvac/weight_h04=0.926        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.069        │actor/rlt_dvac/weight_h07=1.139        │actor/rlt_dvac/weight_h08=1.204       │
+│actor/rlt_dvac/weight_h09=1.266        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0030       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.597│actor/rlt_dvac/z_mean=-0.041           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.145                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.136                 │critic/lr=1.00e-04                     │critic/q_data=0.287                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.078                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.069               │replay/reward_positive_rate=0.069      │replay/transition_count=102.0         │
+│rlt/actor_updates_run=255.0            │rlt/critic_updates_run=510.0           │rlt/desired_total_updates=2.11e+05    │
+│rlt/global_min_replay_size=5.63e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=10…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.11e+05               │rlt/updates_scheduled=510.0            │rlt/updates_to_run=510.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.113                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=9.06e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:03<00:00, 183.35s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:03<00:00, 183.35s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  447/480 │ Progress: █████████████████████████████████████░░░ │  93.1%                                  │
+│ Elapsed: 32:04:32 │ ETA: 02:22:04 │ Step Time: 258.328s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=2.22e-05       │actor/actor/recv_traj=184.7            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.061              │actor/forward_critic=4.997             │actor/sample=9.647                    │
+│actor/update_one_epoch=30.871          │cal_adv_and_returns=0.0031             │env/compute_bootstrap_rewards=0.0016  │
+│env/env/bootstrap_step=58.718          │env/env/send_rollout_trajectories=0.590│env/env_interact_step=115.7           │
+│env/interact=184.6                     │env/run_interact_once=184.0            │generate_rollouts=184.7               │
+│rollout/generate_one_epoch=183.4       │rollout/rollout/generate=183.4         │step=216.1                            │
+│sync_weights=0.408                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=9.375                          │
+│reward=0.046875004                     │success_once=1.0                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.64e+04                    │num_trajectories=5.64e+04              │total_samples=5.64e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.160                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.325                      │
+│actor/q_value_0=0.325                  │actor/q_value_1=0.306                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.598 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.891       │actor/rlt_dvac/log_v_std=0.518        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.35e+05│actor/rlt_dvac/replay_age_p95=2.11e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.871        │actor/rlt_dvac/weight_h01=0.852        │actor/rlt_dvac/weight_h02=0.819       │
+│actor/rlt_dvac/weight_h03=0.853        │actor/rlt_dvac/weight_h04=0.925        │actor/rlt_dvac/weight_h05=1.000       │
+│actor/rlt_dvac/weight_h06=1.067        │actor/rlt_dvac/weight_h07=1.141        │actor/rlt_dvac/weight_h08=1.205       │
+│actor/rlt_dvac/weight_h09=1.267        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.994    │
+│actor/rlt_dvac/weight_p05=0.0035       │actor/rlt_dvac/weight_p95=1.960        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.040           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.146                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.138                 │critic/lr=1.00e-04                     │critic/q_data=0.289                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.086                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.086               │replay/reward_positive_rate=0.086      │replay/transition_count=93.000        │
+│rlt/actor_updates_run=233.0            │rlt/critic_updates_run=465.0           │rlt/desired_total_updates=2.12e+05    │
+│rlt/global_min_replay_size=5.64e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=93…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.11e+05               │rlt/updates_scheduled=465.0            │rlt/updates_to_run=465.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.114                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=7.91e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs: 100%|██████████| 1/1 [03:12<00:00, 192.44s/it]Generating Rollout Epochs: 100%|██████████| 1/1 [03:12<00:00, 192.44s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:  448/480 │ Progress: █████████████████████████████████████░░░ │  93.3%                                  │
+│ Elapsed: 32:08:22 │ ETA: 02:17:44 │ Step Time: 258.265s                                                              │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=9.07e-06       │actor/actor/recv_traj=193.6            │actor/actor/sync_model_to_rollout=0.0…│
+│actor/forward_actor=4.970              │actor/forward_critic=6.190             │actor/sample=10.433                   │
+│actor/update_one_epoch=36.039          │cal_adv_and_returns=0.0025             │env/compute_bootstrap_rewards=0.0015  │
+│env/env/bootstrap_step=57.710          │env/env/send_rollout_trajectories=0.453│env/env_interact_step=126.0           │
+│env/interact=193.5                     │env/run_interact_once=192.9            │generate_rollouts=193.7               │
+│rollout/generate_one_epoch=192.4       │rollout/rollout/generate=192.4         │step=230.2                            │
+│sync_weights=0.413                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=7.0                            │
+│reward=0.035                           │success_once=0.75                      │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│cache_size=5.65e+04                    │num_trajectories=5.65e+04              │total_samples=5.65e+04                │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/action_ref_abs_mean=0.067        │actor/actor_weight_in_warmup=0.0000    │actor/actor_weight_ramp_progress=1.000│
+│actor/actor_weight_schedule_enabled=1.…│actor/bc_human_loss=0.0000             │actor/bc_loss=0.013                   │
+│actor/bc_ref_loss=0.013                │actor/bc_unweighted_loss=0.013         │actor/bc_weight=2.500                 │
+│actor/entropy=-671.4                   │actor/grad_norm=2.152                  │actor/human_mask_ratio=0.0000         │
+│actor/lr=1.00e-04                      │actor/policy_mask_ratio=1.000          │actor/q_pi=0.325                      │
+│actor/q_value_0=0.325                  │actor/q_value_1=0.306                  │actor/q_weight=0.450                  │
+│actor/reference_dropout_prob=0.500     │actor/rlt_dvac/actor_switch_rate=0.597 │actor/rlt_dvac/application_q_gradient…│
+│actor/rlt_dvac/application_success_epi…│actor/rlt_dvac/baseline_count=2.01e+05 │actor/rlt_dvac/baseline_frozen=1.000  │
+│actor/rlt_dvac/baseline_mean=-4.878    │actor/rlt_dvac/baseline_std=0.558      │actor/rlt_dvac/downweighted_fraction=…│
+│actor/rlt_dvac/enabled=1.000           │actor/rlt_dvac/log_v_mean=-4.890       │actor/rlt_dvac/log_v_std=0.520        │
+│actor/rlt_dvac/max_weight_fraction=0.0…│actor/rlt_dvac/min_weight_fraction=0.0…│actor/rlt_dvac/mode_apply=1.000       │
+│actor/rlt_dvac/mode_observe=0.0000     │actor/rlt_dvac/nonpositive_reward_coun…│actor/rlt_dvac/nonpositive_reward_wei…│
+│actor/rlt_dvac/positive_reward_count=8…│actor/rlt_dvac/positive_reward_weight_…│actor/rlt_dvac/query_mean_z_std=0.611 │
+│actor/rlt_dvac/query_weight_q_gap_corr…│actor/rlt_dvac/reference_route_count=1…│actor/rlt_dvac/reference_route_weight…│
+│actor/rlt_dvac/replay_age_mean=1.35e+05│actor/rlt_dvac/replay_age_p95=2.12e+05 │actor/rlt_dvac/student_route_count=15…│
+│actor/rlt_dvac/student_route_weight_su…│actor/rlt_dvac/success_target_referenc…│actor/rlt_dvac/teacher_v_mean=0.0088  │
+│actor/rlt_dvac/top20_weight_mass=0.354 │actor/rlt_dvac/upweighted_fraction=0.4…│actor/rlt_dvac/weight_ess_ratio=0.763 │
+│actor/rlt_dvac/weight_h00=0.869        │actor/rlt_dvac/weight_h01=0.851        │actor/rlt_dvac/weight_h02=0.815       │
+│actor/rlt_dvac/weight_h03=0.854        │actor/rlt_dvac/weight_h04=0.926        │actor/rlt_dvac/weight_h05=1.002       │
+│actor/rlt_dvac/weight_h06=1.070        │actor/rlt_dvac/weight_h07=1.142        │actor/rlt_dvac/weight_h08=1.203       │
+│actor/rlt_dvac/weight_h09=1.268        │actor/rlt_dvac/weight_mean=1.000       │actor/rlt_dvac/weight_median=0.995    │
+│actor/rlt_dvac/weight_p05=0.0030       │actor/rlt_dvac/weight_p95=1.959        │actor/rlt_dvac/weight_student_ref_err…│
+│actor/rlt_dvac/within_query_z_std=0.596│actor/rlt_dvac/z_mean=-0.039           │actor/rlt_dvac/z_std=0.874            │
+│actor/rlt_dvac_bc/executed_target_rati…│actor/rlt_dvac_bc/success_action_count…│actor/rlt_dvac_bc/success_executed_re…│
+│actor/rlt_dvac_bc/success_query_count=…│actor/rlt_dvac_bc/success_unweighted_l…│actor/rlt_dvac_bc/success_weight_ess_…│
+│actor/rlt_dvac_bc/success_weight_mean=…│actor/rlt_dvac_bc/success_weighted_los…│actor/weighted_bc=0.032               │
+│actor/weighted_q=0.146                 │                                       │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.128                 │critic/lr=1.00e-04                     │critic/q_data=0.288                   │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=0.0000                 │replay/actor_switch_rate=1.000         │replay/done_rate=0.073                │
+│replay/intervention_rate=0.0000        │replay/intervention_requested_rate=0.0…│replay/record_transition_rate=1.000   │
+│replay/reward_mean=0.055               │replay/reward_positive_rate=0.055      │replay/transition_count=110.0         │
+│rlt/actor_updates_run=275.0            │rlt/critic_updates_run=550.0           │rlt/desired_total_updates=2.12e+05    │
+│rlt/global_min_replay_size=5.65e+04    │rlt/global_total_transitions_added=5.6…│rlt/global_transitions_since_train=11…│
+│rlt/max_updates_per_train_step=1600.0  │rlt/min_replay_buffer_size=2.00e+04    │rlt/pending_update_budget=0.0000      │
+│rlt/ready_for_online=1.000             │rlt/should_train=1.000                 │rlt/skip_reason=0.0000                │
+│rlt/train_every_episodes=0.0000        │rlt/train_every_transitions=1.000      │rlt/update_epoch=5.000                │
+│rlt/update_step=2.12e+05               │rlt/updates_scheduled=550.0            │rlt/updates_to_run=550.0              │
+│rlt/warmup_required_updates=3.00e+04   │rlt_dvac/baseline_count=2.01e+05       │rlt_dvac/baseline_frozen=1.000        │
+│rlt_dvac/baseline_mean=-4.878          │rlt_dvac/baseline_std=0.558            │rlt_dvac/enabled=1.000                │
+│sac/actor_loss=-0.114                  │sac/alpha=0.0000                       │sac/alpha_loss=0.0000                 │
+│sac/critic_loss=8.16e-04               │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=400225)[0m Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+*** SIGTERM received at time=1788090971 on cpu 43 ***
+PC: @     0x7f9b6817e117  (unknown)  (unknown)
+    @     0x7f9b6812f520  (unknown)  (unknown)
+[2026-08-30 19:56:11,940 E 397878 397878] logging.cc:474: *** SIGTERM received at time=1788090971 on cpu 43 ***
+[2026-08-30 19:56:11,940 E 397878 397878] logging.cc:474: PC: @     0x7f9b6817e117  (unknown)  (unknown)
+[2026-08-30 19:56:11,941 E 397878 397878] logging.cc:474:     @     0x7f9b6812f520  (unknown)  (unknown)

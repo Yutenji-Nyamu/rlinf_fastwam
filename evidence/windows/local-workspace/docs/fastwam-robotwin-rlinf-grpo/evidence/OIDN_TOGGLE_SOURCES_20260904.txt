@@ -1,0 +1,843 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config/model/fastwam_robotwin.yaml
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config/robotwin_move_stapler_pad_grpo_fastwam.yaml
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/runtime/resolved.yaml 8560
+# Copyright 2026 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Construct the official Fast-WAM model as an RLinf embodied policy."""
+
+from __future__ import annotations
+
+import os
+from collections import defaultdict
+from pathlib import Path
+from typing import Any
+
+import torch
+from omegaconf import DictConfig, OmegaConf
+from rlinf.utils.logging import get_logger
+
+logger = get_logger()
+
+
+def _cfg_get(cfg: Any, key: str, default=None):
+    if cfg is None:
+        return default
+    if hasattr(cfg, "get"):
+        return cfg.get(key, default)
+    return getattr(cfg, key, default)
+
+
+def _default_fastwam_config_dir() -> Path:
+    explicit = os.environ.get("FASTWAM_CONFIG_DIR")
+    if explicit:
+        path = Path(explicit).expanduser().resolve()
+    else:
+        import fastwam
+
+        path = Path(fastwam.__file__).resolve().parents[2] / "configs"
+    if not path.is_dir():
+        raise FileNotFoundError(
+            f"Fast-WAM config directory not found: {path}. Set FASTWAM_CONFIG_DIR."
+        )
+    return path
+
+
+def _register_official_resolvers() -> None:
+    for name, fn in (
+        ("eval", eval),  # noqa: S307 - required by the pinned official config
+        ("max", lambda value: max(value)),
+        ("split", lambda value, index: value.split("/")[int(index)]),
+    ):
+        if not OmegaConf.has_resolver(name):
+            OmegaConf.register_new_resolver(name, fn)
+
+
+def compose_official_robotwin_cfg(cfg: DictConfig) -> DictConfig:
+    """Compose the pinned official config without retaining Fast-WAM Hydra state."""
+
+    from hydra import compose, initialize_config_dir
+    from hydra.core.global_hydra import GlobalHydra
+
+    fastwam_cfg = _cfg_get(cfg, "fastwam", {}) or {}
+    config_dir = (
+        Path(_cfg_get(fastwam_cfg, "config_dir", None) or _default_fastwam_config_dir())
+        .expanduser()
+        .resolve()
+    )
+    config_name = str(_cfg_get(fastwam_cfg, "config_name", "sim_robotwin"))
+    if config_name.endswith(".yaml"):
+        config_name = config_name[:-5]
+    task = str(
+        _cfg_get(
+            fastwam_cfg,
+            "task",
+            "robotwin_uncond_3cam_384_1e-4",
+        )
+    )
+    overrides = [f"task={task}"]
+    overrides.extend(list(_cfg_get(fastwam_cfg, "overrides", []) or []))
+
+    _register_official_resolvers()
+    global_hydra = GlobalHydra.instance()
+    outer_hydra = global_hydra.hydra if global_hydra.is_initialized() else None
+    if global_hydra.is_initialized():
+        global_hydra.clear()
+    try:
+        with initialize_config_dir(config_dir=str(config_dir), version_base=None):
+            official_cfg = compose(config_name=config_name, overrides=overrides)
+    finally:
+        if global_hydra.is_initialized():
+            global_hydra.clear()
+        if outer_hydra is not None:
+            global_hydra.initialize(outer_hydra)
+    return official_cfg
+
+
+def canonicalize_fastwam_module_tree(model: torch.nn.Module) -> torch.nn.Module:
+    """Keep ``mot`` as the only registered expert tree.
+
+    Upstream registers the same modules as ``video_expert``, ``action_expert``,
+    ``mot`` and ``dit``.  RLinf enumerates parameters with duplicate removal disabled
+    for synchronization, so the compatibility aliases must be non-registering.
+    """
+
+    mot = model.mot
+    video_expert = model.video_expert
+    action_expert = model.action_expert
+    dit = model.dit
+    if video_expert is not mot.mixtures["video"]:
+        raise ValueError("Fast-WAM video_expert is not mot.mixtures['video']")
+    if action_expert is not mot.mixtures["action"]:
+        raise ValueError("Fast-WAM action_expert is not mot.mixtures['action']")
+    if dit is not mot:
+        raise ValueError("Fast-WAM dit alias is not mot")
+
+    for alias in ("video_expert", "action_expert", "dit"):
+        registered = model._modules.get(alias)
+        if registered is not None:
+            del model._modules[alias]
+    object.__setattr__(model, "video_expert", mot.mixtures["video"])
+    object.__setattr__(model, "action_expert", mot.mixtures["action"])
+    object.__setattr__(model, "dit", mot)
+    assert_model_inventory(model)
+    return model
+
+
+def freeze_action_only(model: torch.nn.Module) -> None:
+    """Freeze every component except the canonical action expert."""
+
+    model.requires_grad_(False)
+    model.mot.mixtures["action"].requires_grad_(True)
+    trainable = [
+        name for name, parameter in model.named_parameters() if parameter.requires_grad
+    ]
+    if not trainable or not all(
+        name.startswith("mot.mixtures.action.") for name in trainable
+    ):
+        raise RuntimeError(
+            "Fast-WAM action-only freeze produced an invalid trainable set: "
+            f"{trainable[:20]}"
+        )
+
+
+def assert_model_inventory(model: torch.nn.Module) -> dict[str, list[str]]:
+    """Assert unique parameter objects and canonical expert/state-dict prefixes."""
+
+    names_by_id: dict[int, list[str]] = defaultdict(list)
+    for name, parameter in model.named_parameters(remove_duplicate=False):
+        names_by_id[id(parameter)].append(name)
+    duplicate_parameters = [names for names in names_by_id.values() if len(names) > 1]
+    if duplicate_parameters:
+        raise RuntimeError(
+            "Fast-WAM still exposes duplicate registered parameter paths: "
+            f"{duplicate_parameters[:10]}"
+        )
+
+    forbidden_prefixes = ("video_expert.", "action_expert.", "dit.")
+    bad_state_keys = [
+        key for key in model.state_dict() if key.startswith(forbidden_prefixes)
+    ]
+    if bad_state_keys:
+        raise RuntimeError(
+            "Fast-WAM state_dict still contains compatibility alias keys: "
+            f"{bad_state_keys[:20]}"
+        )
+    return {
+        "trainable": [
+            name
+            for name, parameter in model.named_parameters()
+            if parameter.requires_grad
+        ],
+        "frozen": [
+            name
+            for name, parameter in model.named_parameters()
+            if not parameter.requires_grad
+        ],
+    }
+
+
+def _validate_official_contract(
+    model, processor, cfg: DictConfig, official_cfg
+) -> None:
+    action_dim = int(_cfg_get(cfg, "action_dim", 14))
+    action_horizon = int(_cfg_get(cfg, "action_horizon", 32))
+    action_chunks = int(_cfg_get(cfg, "num_action_chunks", 24))
+    inference_steps = int(_cfg_get(cfg, "num_inference_steps", 10))
+    sigma_shift = _cfg_get(cfg, "sigma_shift", None)
+
+    official_horizon = int(official_cfg.data.train.num_frames) - 1
+    if action_dim != 14 or int(model.action_expert.action_dim) != action_dim:
+        raise ValueError("Fast-WAM RoboTwin requires the official 14D action expert")
+    if action_horizon != 32 or official_horizon != action_horizon:
+        raise ValueError(
+            f"Fast-WAM RoboTwin action horizon mismatch: RLinf={action_horizon}, "
+            f"official={official_horizon}"
+        )
+    if action_chunks != 24 or not (0 < action_chunks <= action_horizon):
+        raise ValueError("First-version RoboTwin execution prefix must be N=24")
+    if inference_steps != 10:
+        raise ValueError("Released RoboTwin Fast-WAM checkpoint requires S=10")
+    if sigma_shift is None or float(sigma_shift) != 5.0:
+        raise ValueError(
+            "The released RoboTwin Fast-WAM oracle requires sigma_shift=5.0"
+        )
+    if int(model.infer_action_scheduler.num_train_timesteps) != 1000:
+        raise ValueError("Pinned Fast-WAM action scheduler must use 1000 train steps")
+    if str(model.video_expert.video_attention_mask_mode) != "first_frame_causal":
+        raise ValueError(
+            "Fast-WAM action-only inference requires first_frame_causal video attention"
+        )
+    if model.proprio_dim is None or int(model.proprio_dim) != 14:
+        raise ValueError("Fast-WAM RoboTwin proprio encoder must consume 14D qpos")
+    if int(model.text_dim) != 4096:
+        raise ValueError("Pinned Fast-WAM text context width must be 4096")
+    if model.tokenizer is None or int(model.tokenizer.seq_len) != 128:
+        raise ValueError("Pinned Fast-WAM tokenizer length must be 128")
+
+    state_meta = list(processor.shape_meta["state"])
+    action_meta = list(processor.shape_meta["action"])
+    if len(state_meta) != 1 or state_meta[0]["key"] != "default":
+        raise ValueError("Expected singleton state key 'default'")
+    if len(action_meta) != 1 or action_meta[0]["key"] != "default":
+        raise ValueError("Expected singleton action key 'default'")
+    if int(state_meta[0]["shape"]) != 14 or int(action_meta[0]["shape"]) != 14:
+        raise ValueError("Fast-WAM RoboTwin state/action stats must be 14D")
+    if int(processor.num_output_cameras) != 3:
+        raise ValueError("Fast-WAM RoboTwin requires three cameras")
+
+
+def build_fastwam_policy(
+    cfg: DictConfig,
+    torch_dtype: torch.dtype | None = None,
+):
+    """Instantiate official Fast-WAM, canonicalize it and wrap it for RLinf."""
+
+    from fastwam.datasets.lerobot.utils.normalizer import (
+        load_dataset_stats_from_json,
+    )
+    from hydra.utils import instantiate
+
+    from .fastwam_policy import FastWAMPolicy, FastWAMPolicyConfig
+
+    checkpoint_value = _cfg_get(cfg, "checkpoint_path", None) or _cfg_get(
+        cfg, "model_path", None
+    )
+    stats_value = _cfg_get(cfg, "dataset_stats_path", None)
+    if not checkpoint_value:
+        raise ValueError("Fast-WAM checkpoint_path/model_path is required")
+    if not stats_value:
+        raise ValueError("Fast-WAM dataset_stats_path is required")
+    checkpoint_path = Path(
+        os.path.expandvars(os.path.expanduser(str(checkpoint_value)))
+# Copyright 2026 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""RLinf policy wrapper for the pinned Fast-WAM RoboTwin model.
+
+The wrapper vectorizes the official Fast-WAM action-only deployment path without
+changing its image, prompt, proprio, scheduler, or action-normalization semantics.
+Evaluation, stochastic rollout, and actor replay all use the shared primitives in
+``fastwam_rl``.  Resource chunking is deliberately outside those primitives so it
+cannot change the logical-batch random variables.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Literal
+
+import torch
+from torch import nn
+
+from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
+
+from .fastwam_rl import (
+    build_action_conditioning,
+    flow_sde_rollout,
+    prepare_initial_action_latents,
+    prepare_rollout_randomness,
+    recompute_logprob,
+)
+from .robotwin_adapter import (
+    ACTION_DIM,
+    ACTION_HORIZON,
+    adapt_robotwin_observation,
+    denormalize_actions,
+)
+
+
+@dataclass(frozen=True)
+class FastWAMPolicyConfig:
+    """Resolved inference and Flow-SDE settings for the first integration."""
+
+    action_dim: int = ACTION_DIM
+    action_horizon: int = ACTION_HORIZON
+    num_action_chunks: int = 24
+    num_inference_steps: int = 10
+    sigma_shift: float | None = None
+    text_cfg_scale: float = 1.0
+    negative_prompt: str = ""
+    rand_device: str = "cpu"
+    tiled: bool = False
+    model_forward_batch_size: int = 2
+    eval_seed: int = 0
+    noise_level: float = 0.1
+
+
+def _module_device_dtype(module: nn.Module) -> tuple[torch.device, torch.dtype]:
+    parameter = next(module.parameters())
+    return parameter.device, parameter.dtype
+
+
+def _cpu_detached(tensor: torch.Tensor, *, dtype=None) -> torch.Tensor:
+    if dtype is not None:
+        tensor = tensor.to(dtype=dtype)
+    return tensor.detach().to(device="cpu").contiguous()
+
+
+class FastWAMPolicy(nn.Module, BasePolicy):
+    """Expose official Fast-WAM action inference through RLinf's policy contract."""
+
+    rlinf_accepts_rollout_mode = True
+
+    def __init__(
+        self,
+        *,
+        model: nn.Module,
+        processor: Any,
+        config: FastWAMPolicyConfig,
+    ):
+        super().__init__()
+        self.model = model
+        self.processor = processor
+        self.config = config
+        self._validate_config()
+        self.train(False)
+
+    def _validate_config(self) -> None:
+        cfg = self.config
+        if cfg.action_dim != ACTION_DIM:
+            raise ValueError(f"Fast-WAM RoboTwin action_dim must be {ACTION_DIM}")
+        if cfg.action_horizon != ACTION_HORIZON:
+            raise ValueError(
+                f"Fast-WAM RoboTwin action_horizon must be {ACTION_HORIZON}"
+            )
+        if cfg.num_action_chunks != 24:
+            raise ValueError("The first Fast-WAM RoboTwin integration requires N=24")
+        if cfg.num_inference_steps != 10:
+            raise ValueError("The released RoboTwin checkpoint requires S=10")
+        if cfg.model_forward_batch_size <= 0:
+            raise ValueError("model_forward_batch_size must be positive")
+        if cfg.noise_level <= 0:
+            raise ValueError("Flow-SDE noise_level must be positive")
+        if cfg.rand_device != "cpu":
+            raise ValueError(
+                "Pinned official Fast-WAM action noise is generated on CPU"
+            )
+        if cfg.tiled:
+            raise ValueError(
+                "Pinned official WanVideoVAE does not support tiled encoding"
+            )
+        if cfg.text_cfg_scale != 1.0 or cfg.negative_prompt:
+            raise ValueError(
+                "Pinned action-only Fast-WAM uses text_cfg_scale=1 and no negative prompt"
+            )
+
+    @property
+    def device(self) -> torch.device:
+        return _module_device_dtype(self.model)[0]
+
+    @property
+    def model_dtype(self) -> torch.dtype:
+        dtype = getattr(self.model, "torch_dtype", None)
+        return dtype if dtype is not None else _module_device_dtype(self.model)[1]
+
+    def forward(self, forward_type=ForwardType.DEFAULT, **kwargs):
+        """Explicitly dispatch around the ``nn.Module, BasePolicy`` MRO."""
+
+        if forward_type == ForwardType.DEFAULT:
+            return self.default_forward(**kwargs)
+        raise NotImplementedError(f"FastWAMPolicy does not support {forward_type}")
+
+    def train(self, mode: bool = True):
+        """Keep frozen conditioners in eval mode while the action expert trains."""
+
+        if not isinstance(mode, bool):
+            raise ValueError("training mode must be a bool")
+        nn.Module.train(self, mode)
+        if mode:
+            self.model.training = True
+            self.model.mot.training = True
+            self.model.mot.mixtures["action"].train(True)
+            self.model.mot.mixtures["video"].train(False)
+            for component_name in ("vae", "text_encoder", "proprio_encoder"):
+                component = getattr(self.model, component_name, None)
+                if component is not None and hasattr(component, "train"):
+                    component.train(False)
+        return self
+
+    @torch.no_grad()
+    def predict_action_batch(
+        self,
+        env_obs: dict[str, Any],
+        mode: Literal["train", "eval"] = "train",
+        **kwargs,
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
+        """Return a physical RoboTwin qpos chunk and optional behavior replay."""
+
+        if mode not in ("train", "eval"):
+            raise ValueError(f"Unsupported Fast-WAM rollout mode: {mode!r}")
+        image, proprio, prompts = adapt_robotwin_observation(
+            env_obs,
+            self.processor,
+            device=self.device,
+            dtype=self.model_dtype,
+        )
+        batch_size = int(image.shape[0])
+        text_context, text_context_mask = self.model.encode_prompt(prompts)
+        if text_context.ndim != 3 or tuple(text_context.shape) != (
+            batch_size,
+            128,
+            4096,
+        ):
+            raise ValueError(
+                "Official encode_prompt must return text_context [B,128,4096]"
+            )
+        if text_context_mask.shape != text_context.shape[:2]:
+            raise ValueError(
+                "Official encode_prompt must return text_context_mask [B,128]"
+            )
+        if text_context.dtype != self.model_dtype:
+            raise TypeError(
+                "Official encode_prompt context dtype must match Fast-WAM model dtype"
+            )
+        if text_context_mask.dtype != torch.bool:
+            raise TypeError("Official encode_prompt mask must have dtype bool")
+        if not bool(torch.isfinite(text_context).all()):
+            raise ValueError("Official encode_prompt returned non-finite context")
+
+        deterministic = mode == "eval"
+        if deterministic:
+            initial_latents = prepare_initial_action_latents(
+                batch_size=batch_size,
+                action_horizon=self.config.action_horizon,
+                action_dim=self.config.action_dim,
+                device=self.device,
+                dtype=self.model_dtype,
+                rand_device=self.config.rand_device,
+                seed=self.config.eval_seed,
+                broadcast_singleton=True,
+            )
+            rollout_randomness = None
+        else:
+            rollout_randomness = prepare_rollout_randomness(
+                batch_size=batch_size,
+                action_horizon=self.config.action_horizon,
+                action_dim=self.config.action_dim,
+                num_inference_steps=self.config.num_inference_steps,
+                device=self.device,
+                rand_device=self.config.rand_device,
+            )
+            initial_latents = rollout_randomness.initial_latents
+
+        model_actions: list[torch.Tensor] = []
+        chains: list[torch.Tensor] = []
+        old_logprobs: list[torch.Tensor] = []
+        denoise_inds: list[torch.Tensor] = []
+        chunk_size = self.config.model_forward_batch_size
+        for start in range(0, batch_size, chunk_size):
+            stop = min(start + chunk_size, batch_size)
+            item = slice(start, stop)
+            conditioning = build_action_conditioning(
+                self.model,
+                input_image=image[item],
+                text_context=text_context[item],
+                text_context_mask=text_context_mask[item],
+                proprio=proprio[item],
+                action_horizon=self.config.action_horizon,
+                tiled=self.config.tiled,
+            )
+            rollout = flow_sde_rollout(
+                self.model,
+                conditioning=conditioning,
+                initial_latents=initial_latents[item],
+                num_inference_steps=self.config.num_inference_steps,
+                sigma_shift=self.config.sigma_shift,
+                noise_level=self.config.noise_level,
+                deterministic=deterministic,
+                denoise_inds=(
+                    None
+                    if rollout_randomness is None
+import os
+import re
+import gc
+import sapien.core as sapien
+from sapien.render import clear_cache as sapien_clear_cache
+from sapien.utils.viewer import Viewer
+import numpy as np
+import gymnasium as gym
+import pdb
+import toppra as ta
+import json
+import transforms3d as t3d
+from collections import OrderedDict
+import torch, random
+import numpy as np
+
+from .utils import *
+import math
+from .robot import Robot
+from .camera import Camera
+
+from copy import deepcopy
+import subprocess
+from pathlib import Path
+import trimesh
+import imageio
+import glob
+
+from ._GLOBAL_CONFIGS import *
+
+from typing import Optional, Literal
+from PIL import Image, ImageDraw, ImageFont
+
+current_file_path = os.path.abspath(__file__)
+parent_directory = os.path.dirname(current_file_path)
+
+
+class Base_Task(gym.Env):
+
+    def __init__(self):
+        pass
+
+    # =========================================================== Init Task Env ===========================================================
+    def _init_task_env_(self, table_xy_bias=[0, 0], table_height_bias=0, **kwags):
+        """
+        Initialization TODO
+        - `self.FRAME_IDX`: The index of the file saved for the current scene.
+        - `self.fcitx5-configtool`: Left gripper pose (close <=0, open >=0.4).
+        - `self.ep_num`: Episode ID.
+        - `self.task_name`: Task name.
+        - `self.save_dir`: Save path.`
+        - `self.left_original_pose`: Left arm original pose.
+        - `self.right_original_pose`: Right arm original pose.
+        - `self.left_arm_joint_id`: [6,14,18,22,26,30].
+        - `self.right_arm_joint_id`: [7,15,19,23,27,31].
+        - `self.render_fre`: Render frequency.
+        """
+        super().__init__()
+        ta.setup_logging("CRITICAL")  # hide logging
+        np.random.seed(kwags.get("seed", 0))
+        torch.manual_seed(kwags.get("seed", 0))
+        # random.seed(kwags.get('seed', 0))
+
+        self.FRAME_IDX = 0
+        self.task_name = kwags.get("task_name")
+        self.save_dir = kwags.get("save_path", "data")
+        self.ep_num = kwags.get("now_ep_num", 0)
+        self.render_freq = kwags.get("render_freq", 10)
+        self.data_type = kwags.get("data_type", None)
+        self.save_data = kwags.get("save_data", False)
+        self.dual_arm = kwags.get("dual_arm", True)
+        self.eval_mode = kwags.get("eval_mode", False)
+        self.step_lim = kwags.get("step_lim", None)
+
+        self.need_topp = True  # TODO
+
+        # Random
+        random_setting = kwags.get("domain_randomization")
+        self.random_background = random_setting.get("random_background", False)
+        self.cluttered_table = random_setting.get("cluttered_table", False)
+        self.clean_background_rate = random_setting.get("clean_background_rate", 1)
+        self.random_head_camera_dis = random_setting.get("random_head_camera_dis", 0)
+        self.random_table_height = random_setting.get("random_table_height", 0)
+        self.random_light = random_setting.get("random_light", False)
+        self.crazy_random_light_rate = random_setting.get("crazy_random_light_rate", 0)
+        self.crazy_random_light = (0 if not self.random_light else np.random.rand() < self.crazy_random_light_rate)
+        self.random_embodiment = random_setting.get("random_embodiment", False)  # TODO
+
+        self.file_path = []
+        self.plan_success = True
+        self.fix_gripper = False
+        self.setup_scene()
+
+        self.left_js = None
+        self.right_js = None
+        self.raw_head_pcl = None
+        self.real_head_pcl = None
+        self.real_head_pcl_color = None
+
+        self.now_obs = {}
+        self.take_action_cnt = 0
+        self.eval_video_path = kwags.get("eval_video_save_dir", None)
+
+        self.save_freq = kwags.get("save_freq")
+        self.world_pcd = None
+
+        self.size_dict = list()
+        self.cluttered_objs = list()
+        self.prohibited_area = list()  # [x_min, y_min, x_max, y_max]
+        self.record_cluttered_objects = list()  # record cluttered objects info
+
+        self.eval_success = False
+        self.table_z_bias = (np.random.uniform(low=-self.random_table_height, high=0) + table_height_bias)  # TODO
+        self.need_plan = kwags.get("need_plan", True)
+        self.left_joint_path = kwags.get("left_joint_path", [])
+        self.right_joint_path = kwags.get("right_joint_path", [])
+        self.left_cnt = 0
+        self.right_cnt = 0
+
+        self.instruction = kwags.get("instruction", None)  # for Eval
+
+        self.create_table_and_wall(table_xy_bias=table_xy_bias, table_height=0.74)
+        self.load_robot(**kwags)
+        self.load_camera(**kwags)
+        self.robot.move_to_homestate()
+
+        render_freq = self.render_freq
+        self.render_freq = 0
+        self.together_open_gripper(save_freq=None)
+        self.render_freq = render_freq
+
+        self.robot.set_origin_endpose()
+        self.load_actors()
+
+        if self.cluttered_table:
+            self.get_cluttered_table()
+        self.run_steps = 0
+        is_stable, unstable_list = self.check_stable()
+        if not is_stable:
+            raise UnStableError(
+                f'Objects is unstable in seed({kwags.get("seed", 0)}), unstable objects: {", ".join(unstable_list)}')
+
+        if self.eval_mode:
+            with open(os.path.join(CONFIGS_PATH, "_eval_step_limit.yml"), "r") as f:
+                try:
+                    data = yaml.safe_load(f)
+                    self.step_lim = data[self.task_name]
+                except:
+                    print(f"{self.task_name} not in step limit file, set to 1000")
+                    self.step_lim = 1000
+import importlib
+import os
+import gc
+import sys
+
+import cv2
+import torch
+import yaml
+from envs import *
+
+sys.path.append("../../")
+
+import logging
+import multiprocessing as mp
+import threading
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import gymnasium as gym
+import numpy as np
+from sapien.render import clear_cache as sapien_clear_cache
+from description.utils.generate_episode_instructions import (
+    generate_episode_descriptions,
+)
+from envs._GLOBAL_CONFIGS import *
+from envs.utils.create_actor import UnStableError
+
+
+LOG_LEVEL = os.getenv("VECTOR_ENV_LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.WARNING),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logging.getLogger("concurrent.futures").setLevel(logging.WARNING)
+logging.getLogger("curobo").setLevel(logging.ERROR)
+
+
+def class_decorator(task_name):
+    envs_module = importlib.import_module(f"envs.{task_name}")
+    try:
+        env_class = getattr(envs_module, task_name)
+        env_instance = env_class()
+    except:
+        raise SystemExit("No Task")
+    return env_instance
+
+
+def update_obs(observation):
+    full_image = observation["observation"]["head_camera"]["rgb"]
+    left_wrist_image = (
+        observation["observation"].get("left_camera", {}).get("rgb", None)
+    )
+    right_wrist_image = (
+        observation["observation"].get("right_camera", {}).get("rgb", None)
+    )
+    state = observation["joint_action"]["vector"]
+
+    return {
+        "full_image": full_image,
+        "left_wrist_image": left_wrist_image,
+        "right_wrist_image": right_wrist_image,
+        "state": state,
+    }
+
+
+class SubEnv:
+    def __init__(
+        self,
+        env_id: int,
+        task_name: str,
+        args: dict,
+        env_seed: int = None,
+        instruction_type = "seen",
+        global_lock=None,
+    ):
+        self.env_id = env_id
+        self.task_name = task_name
+        self.args = args
+        self.env_seed = env_seed
+        if self.env_seed is None:
+            self.env_seed = self.env_id
+        self.instruction = None
+        self.task = class_decorator(self.task_name)
+        self.instruction_type = instruction_type
+        self.global_lock = global_lock
+        self.lock = threading.Lock()
+
+    def setup_task(self):
+        self.close()
+        self.task = class_decorator(self.task_name)
+
+        with self.global_lock:
+            with self.lock:
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        task = class_decorator(self.task_name)
+                        task.setup_demo(
+                            now_ep_num=trial_seed,
+                            seed=trial_seed,
+                            is_test=True,
+                            **self.args,
+                        )
+                        episode_info = task.get_info()
+                        is_valid = True
+                    except Exception as e:
+                        task.close_env(clear_cache=False)
+                        trial_seed += 1
+                        continue
+                    task.close_env(clear_cache=False)
+
+                self.episode_info_list = [episode_info]
+
+    def create_instruction(self):
+        task_descriptions = generate_episode_descriptions(
+            self.task_name, self.episode_info_list, 1, self.env_seed
+        )
+        instruction = np.random.choice(task_descriptions[0][self.instruction_type])
+        return instruction
+
+    def step(self, actions):
+        if self.get_instruction() is None:
+            self.reset(env_seed=None)
+
+        with self.lock:
+            reward, termination, truncation, info = self.task.gen_sparse_reward_data(actions)
+            obs = update_obs(self.task.get_obs())
+            obs["instruction"] = self.task.get_instruction()
+
+        return {
+            "obs": obs,
+            "reward": reward,
+            "terminated": termination,
+            "truncated": truncation,
+            "info": info,
+        }
+
+    def reset(self, env_seed=None, close_current=True):
+        with self.global_lock:
+            with self.lock:
+                if close_current and self.task is not None:
+                    self.task.close_env(clear_cache=False)
+                if env_seed is not None:
+                    self.env_seed = env_seed
+
+                if self.task is None:
+                    self.task = class_decorator(self.task_name)
+
+                self.instruction = self.create_instruction()
+                self.args["instruction"] = self.instruction
+
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        self.task.setup_demo(
+                            now_ep_num=trial_seed, seed=trial_seed, **self.args
+                        )
+                        self.task.step_lim = self.args["step_lim"]
+                        self.task.run_steps = 0
+                        self.task.reward_step = 0
+                        is_valid = True
+                    except UnStableError as e:
+                        logging.warning(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                        )
+                        self.task.close_env(clear_cache=False)
+                        trial_seed += 1
+                        continue
+                    except Exception as e:
+                        logging.error(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                        )
+                        self.task.close_env(clear_cache=False)
+                        raise
+
+        return
+

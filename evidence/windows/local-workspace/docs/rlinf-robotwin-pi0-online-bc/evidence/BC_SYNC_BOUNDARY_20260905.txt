@@ -1,0 +1,497 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+9876c28de25bba429d10e2c8b4c85fb19b24c387
+FAILURE_STACK
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 92, in async_func
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 1367, in wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py", line 140, in sync_model_to_rollout
+    state_dict = self.get_rollout_state_dict()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/scheduler/worker/worker.py", line 82, in sync_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/embodied_fsdp_actor_worker.py", line 129, in get_rollout_state_dict
+    return self.get_model_state_dict(cpu_offload=False, full_state_dict=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py", line 337, in get_model_state_dict
+    state_dict = self._strategy.get_model_state_dict(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/strategy/base.py", line 380, in get_model_state_dict
+    state_dict = get_model_state_dict(model=model, options=opts)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/checkpoint/state_dict.py", line 1191, in get_model_state_dict
+    model_state_dict = _get_model_state_dict(model, info)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/checkpoint/state_dict.py", line 483, in _get_model_state_dict
+    state_dict = _state_dict_fn(model, "state_dict")()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 2276, in state_dict
+    hook_result = hook(self, destination, prefix, local_metadata)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 724, in _post_state_dict_hook
+    processed_state_dict = _post_state_dict_hook_fn[fsdp_state._state_dict_type](
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 344, in _full_post_state_dict_hook
+    return _common_unshard_post_state_dict_hook(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_state_dict_utils.py", line 223, in _common_unshard_post_state_dict_hook
+    raise AssertionError(
+AssertionError: FSDP assumes paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.layer_norm1.weight is in the state_dict but the state_dict only has odict_keys(['paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias', 'paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.position_embedding.weight', 'paligemma_with_expert.paligemma.model.language_model.embed_tokens.weight', 'paligemma_with_expert.paligem
+
+FILE rlinf/hybrid_engines/fsdp/fsdp_model_manager.py EXISTS True
+321:         self.grad_scaler = self.build_grad_scaler(
+322:             self._cfg.fsdp_config.grad_scaler.get("enabled", False), **kwargs
+323:         )
+324: 
+325:     def get_model_state_dict(self, cpu_offload: bool, full_state_dict: bool) -> dict:
+326:         """
+327:         Get the model state dict according to the specified options.
+328: 
+329:         Args:
+330:             - cpu_offload (bool): Whether returned state_dict's value will be offloaded to CPU
+331:                 If true, will be copied to CPU memory, or just keep a reference to the original GPU tensor.
+332:             - full_state_dict (bool): Whether to get the full state dict.
+333: 
+334:         Returns:
+335:             - dict: The state dict of the FSDP wrapped model according to the specified options
+336:         """
+337:         state_dict = self._strategy.get_model_state_dict(
+338:             self.model, cpu_offload, full_state_dict
+339:         )
+340:         return state_dict
+341: 
+342:     def load_model_with_state_dict(
+343:         self,
+344:         state_dict: dict,
+345:         cpu_offload: bool,
+346:         full_state_dict: bool,
+347:     ) -> None:
+348:         """Load a state dict into the managed FSDP model through its strategy."""
+349:         self._strategy.load_model_with_state_dict(
+350:             self.model,
+351:             state_dict,
+352:             cpu_offload,
+353:             full_state_dict,
+354:         )
+355: 
+356:     def load_checkpoint(self, load_path: str) -> None:
+357:         """
+358:         Load checkpoint from local path.
+359: 
+360:         Args:
+361:             load_path: the directory to load checkpoint.
+362:         """
+363:         if self.is_weight_offloaded:
+364:             self.load_param_and_grad(self.device)
+365:             self.is_weight_offloaded = False
+366:         if self.is_optimizer_offloaded:
+367:             self.load_optimizer(self.device)
+368:             self.is_optimizer_offloaded = False
+369: 
+370:         self._strategy.load_checkpoint(
+371:             self.model, self.optimizer, self.lr_scheduler, load_path
+372:         )
+373: 
+374:     def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+375:         """
+376:         Save checkpoint to local path.
+377:         Every rank will save its own model and optim shard.
+378: 
+379:         Args:
+380:             save_path: the directory to save checkpoint.
+381:         """
+382:         restore_weight_offload = self.is_weight_offloaded
+383:         restore_optimizer_offload = self.is_optimizer_offloaded
+384: 
+385:         if restore_weight_offload:
+386:             self.load_param_and_grad(self.device)
+397:             ),
+398:         )
+399: 
+400:         if restore_weight_offload:
+401:             self.offload_param_and_grad()
+402:         if restore_optimizer_offload:
+403:             self.offload_optimizer()
+404: 
+405:     def offload_param_and_grad(self, offload_grad: bool = False) -> None:
+406:         """
+407:         Offload FSDP parameters and gradients(options) to CPU.
+408: 
+409:         Args:
+410:             offload_grad: whether to offload gradients.
+411:         """
+412:         self._strategy.offload_param_and_grad(self.model, offload_grad)
+413:         self.is_weight_offloaded = True
+414: 
+415:     def load_param_and_grad(self, device_id: int, load_grad: bool = False) -> None:
+416:         """
+417:         Load FSDP parameters and gradients(options) to the specified device.
+418: 
+419:         Args:
+420:             device_id: the target device id to load parameters and gradients.
+421:             load_grad: whether to load gradients.
+422:         """
+423:         self._strategy.onload_param_and_grad(self.model, device_id, load_grad)
+424:         self.is_weight_offloaded = False
+425: 
+426:     def offload_optimizer(self) -> None:
+427:         """
+428:         Offload optimizer states to CPU.
+429:         """
+430:         self._strategy.offload_optimizer(self.optimizer)
+431:         self.is_optimizer_offloaded = True
+432: 
+433:     def load_optimizer(self, device_id: int) -> None:
+434:         """
+435:         Load optimizer states to the specified device.
+436: 
+437:         Args:
+438:             device_id: the target device id to load optimizer states.
+439:         """
+440:         self._strategy.onload_optimizer(self.optimizer, device_id)
+441:         self.is_optimizer_offloaded = False
+442: 
+443:     def optimizer_step(self) -> tuple[float, list[float]]:
+444:         """
+445:         Perform optimizer step using its optimizer, lr_scheduler and grad_scaler.
+446: 
+447:         Returns:
+448:             A tuple of (grad_norm, lr_list), lr_list contains learning rates for all param groups.
+449:         """
+450:         self.optimizer_steps += 1
+451:         self.grad_scaler.unscale_(self.optimizer)
+452:         grad_norm = self._strategy.clip_grad_norm_(
+453:             model=self.model,
+454:         )
+455: 
+456:         if not torch.isfinite(torch.as_tensor(grad_norm)):
+457:             self._logger.warning(
+458:                 f"[FSDP] Non-finite grad norm {grad_norm} detected. Skipping optimizer step."
+459:             )
+460:         else:
+461:             self.grad_scaler.step(optimizer=self.optimizer)
+618:                 weight_decay=weight_decay,
+619:             )
+620: 
+621:         # run optimizer empty step to initialize optimizer.state
+622:         # to avoid KeyError during get_state_dict/set_state_dict
+623:         # in save/load_checkpoint calls
+624:         warmup_optimizer_state(optimizer)
+625:         return optimizer
+626: 
+627:     def build_optimizers(
+628:         self,
+629:         model: Union[nn.Module, FSDPModule, FSDP],
+630:         main_optim_config: DictConfig,
+631:         param_filters: dict[str, list[str]],
+632:         filtered_optim_config: dict[str, DictConfig],
+633:     ):
+634:         main_betas = (
+635:             main_optim_config.get("adam_beta1", 0.9),
+636:             main_optim_config.get("adam_beta2", 0.999),
+637:         )
+638:         main_adam_eps = main_optim_config.get("adam_eps", 1e-8)
+639:         main_lr = main_optim_config.lr
+640: 
+641:         filtered_optim_batas_map = {}
+642:         filtered_optim_adam_eps_map = {}
+643:         filtered_optim_lr_map = {}
+644:         for key, config in filtered_optim_config.items():
+645:             filtered_optim_batas_map[key] = (
+646:                 config.get("adam_beta1", 0.9),
+647:                 config.get("adam_beta2", 0.999),
+648:             )
+649:             filtered_optim_adam_eps_map[key] = config.get("adam_eps", 1e-8)
+650:             filtered_optim_lr_map[key] = config.lr
+651: 
+652:         main_optim_params = []
+653: 
+654:         filtered_params_dict = {}
+655:         for key in param_filters.keys():
+656:             filtered_params_dict[key] = []
+657: 
+658:         # ISSUE: currently the net weight still bind with the actor.
+659:         for name, param in model.named_parameters():
+660:             if not param.requires_grad:
+661:                 continue
+662: 
+663:             is_matched = False
+664:             for key, filters in param_filters.items():
+665:                 for f in filters:
+666:                     if f in name:
+667:                         filtered_params_dict[key].append(param)
+668:                         is_matched = True
+669:                         break
+670:                 if is_matched:
+671:                     break
+
+FILE rlinf/hybrid_engines/fsdp/strategy/fsdp_strategy.py EXISTS False
+
+FILE rlinf/workers/actor/fsdp_actor_worker.py EXISTS True
+247:             self.offload_param_and_grad()
+248: 
+249:         torch.distributed.barrier()
+250: 
+251:     @Worker.timer("actor/sync_model_to_rollout")
+252:     def sync_model_to_rollout(self):
+253:         """
+254:         Sync the model's full state dict to the rollout worker.
+255:         """
+256:         if self.enable_offload:
+257:             if not self.is_optimizer_offloaded:
+258:                 self.offload_optimizer()
+259: 
+260:             if self.is_weight_offloaded:
+261:                 self.load_param_and_grad(self.device, False)
+262: 
+263:         rollout_dtype = None
+264:         if self._cfg.get("sync_precision", None) is not None:
+265:             rollout_dtype = torch_dtype_from_precision(self._cfg.sync_precision)
+266: 
+267:         rollout_state_dict = self.get_model_state_dict(
+268:             cpu_offload=False, full_state_dict=False
+269:         )
+270:         has_visual = any("visual." in k for k in rollout_state_dict.keys())
+271:         model_bucket_list = self.divide_model_to_bucket(rollout_state_dict, has_visual)
+272:         del rollout_state_dict
+273:         send_handles = []
+274:         buffer = {}
+275:         for bucket_idx, model_bucket in enumerate(model_bucket_list):
+276:             for k, v in model_bucket.items():
+277:                 if isinstance(v, DTensor):
+278:                     v = v.full_tensor()
+279:                 if rollout_dtype is not None:
+280:                     v = v.to(rollout_dtype)
+281:                 if not self.is_pipeline:
+282:                     v = reduce_tensor(v)
+283:                 buffer[k] = v
+284:             if bucket_idx == 0:
+285:                 buffer["bucket_length"] = len(model_bucket_list)
+286: 
+287:             for send_handle in send_handles:
+288:                 send_handle.wait()
+289:             send_handles = []
+290: 
+291:             if not self.is_pipeline:
+292:                 send_handle = self.send(
+293:                     buffer,
+294:                     self._rollout_group_name,
+295:                     self._weight_dst_rank_in_rollout,
+296:                     async_op=True,
+297:                 )
+298:                 send_handles.append(send_handle)
+299:             else:
+300:                 for rank in self._weight_dst_rank_in_rollout:
+301:                     send_handle = self.send(
+311:             send_handle.wait()
+312: 
+313:         if self.enable_offload:
+314:             assert not self.is_weight_offloaded, (
+315:                 "weight should be offloaded in sync_model_to_rollout"
+316:             )
+317:             self.offload_param_and_grad()
+318: 
+319:         clear_memory(sync=False)
+320: 
+321:     def get_batch(
+322:         self, channel: Channel
+323:     ) -> tuple[dict[str, torch.Tensor], RolloutResult]:
+324:         result: RolloutResult = channel.get()
+325: 
+326:         batch = result.to_actor_batch(
+327:             self.cfg.data.max_prompt_length,
+328:             self.cfg.actor.model.encoder_seq_length,
+329:             self.tokenizer.eos_token_id,
+330:         )
+331:         return batch, result
+332: 
+333:     def get_dynamic_batch_as_much(
+334:         self,
+335:         input_channel: Channel,
+336:         min_result_len: int,
+337:         max_result_len: int,
+338:         cliped_results=[],
+339:         unfinished_result=None,
+340:     ):
+341:         assert not input_channel.is_local
+342:         rollout_results = cliped_results
+343:         # get min_result_len
+344:         while len(rollout_results) < min_result_len:
+345:             if unfinished_result is not None:
+346:                 rollout_result: RolloutResult = unfinished_result.wait()
+347:                 unfinished_result = None
+348:             else:
+349:                 rollout_result: RolloutResult = input_channel.get()
+350:             rollout_results.append(rollout_result)
+351: 
+352:         # try to get result as much
+353:         # get result in every 0.1s and do all reduce to get the min result between dp (result_len)
+354:         # stop at: the min result between dp (result_len) is same as the last min result
+355:         last_result_len = 0
+356:         result_len = len(rollout_results)
+357:         time_until = time.time() + 0.1
+358:         while last_result_len < result_len:
+359:             if len(rollout_results) < max_result_len:
+360:                 if unfinished_result is None:
+361:                     unfinished_result = input_channel.get(async_op=True)
+362:                 else:
+363:                     time.sleep(0.001)
+364:                 if unfinished_result.done():
+
+FILE rlinf/models/embodiment/openpi/openpi_action_model.py EXISTS True
+121: 
+122:     config: OpenPi0Config
+123: 
+124:     @property
+125:     def _no_split_modules(self) -> list[str]:
+126:         if self.config.train_expert_only:
+127:             no_split_modules = [
+128:                 "GemmaDecoderLayer",
+129:                 "SiglipVisionEmbeddings",
+130:                 "GemmaRMSNorm",
+131:                 "GemmaRotaryEmbedding",
+132:             ]
+133:         else:
+134:             no_split_modules = [
+135:                 "GemmaMLP",
+136:                 "SiglipVisionEmbeddings",
+137:                 "GemmaRMSNorm",
+138:                 "GemmaRotaryEmbedding",
+139:             ]
+140:         if self.config.noise_method == "flow_noise":
+141:             no_split_modules.append("ExploreNoiseNet")
+142:         if self.config.use_rlt:
+143:             no_split_modules.append("RLTSelfAttentionLayer")
+144:         return no_split_modules
+145: 
+146:     @property
+147:     def _no_split_names(self) -> list[str]:
+148:         return [
+149:             "action_in_proj",
+150:             "action_out_proj",
+151:             "lm_head",
+152:             # --pi0 only--
+153:             "state_proj",
+154:             "action_time_mlp_in",
+155:             "action_time_mlp_out",
+156:             # --pi05 only--
+157:             "time_mlp_in",
+158:             "time_mlp_out",
+159:         ]
+160: 
+161:     def __init__(
+162:         self,
+163:         config: OpenPi0Config,
+164:     ):
+165:         # Override `sample_actions` to prevent parent class polymorphic call
+166:         sample_actions_func = self.sample_actions
+167:         super().__init__(config)
+168:         self.sample_actions = sample_actions_func
+169:         self.logger = get_logger()
+170:         self.global_step = 0
+171:         # assert
+172:         assert not (self.config.double_layer and self.config.joint_logprob), (
+173:             "double_layer and joint_logprob can not be set at the same time"
+174:         )
+175: 
+176:         # rl model init
+177:         if self.config.value_after_vlm:
+178:             proj_width = 2048
+179:         else:
+180:             proj_width = 1024
+181:         # value head
+182:         if self.config.add_value_head:
+183:             if self.config.config_name in [
+184:                 "pi05_maniskill",
+185:                 "pi05_libero",
+186:                 "pi05_droid_polaris",
+187:             ]:
+188:                 value_head_hidden_sizes = (1024, 512, 256)
+189:             else:
+190:                 value_head_hidden_sizes = (512, 256, 128)
+191:             value_head_activation = "relu"
+192:             self.value_head = ValueHead(
+193:                 input_dim=proj_width,
+194:                 hidden_sizes=value_head_hidden_sizes,
+195:                 output_dim=1,
+196:                 activation=value_head_activation,
+
+FILE rlinf/workers/actor/fsdp_dagger_policy_worker.py EXISTS True
+627:         )
+628:         return True
+629: 
+630:     @Worker.timer("run_training")
+631:     def run_training(self):
+632:         """Run DAgger updates with replay-buffer samples."""
+633:         if self.cfg.actor.get("enable_offload", False):
+634:             self.load_param_and_grad(self.device)
+635:             self.load_optimizer(self.device)
+636:         if not self.enable_online_lerobot:
+637:             min_buffer_size = self.cfg.algorithm.replay_buffer.get(
+638:                 "min_buffer_size", 100
+639:             )
+640:             if not self.replay_buffer.is_ready(min_buffer_size):
+641:                 self.log_on_first_rank(
+642:                     f"Replay buffer size {len(self.replay_buffer)} < {min_buffer_size}, skipping training"
+643:                 )
+644:                 return {}
+645:         elif self._skip_lerobot_training():
+646:             return {}
+647:         assert (
+648:             self.cfg.actor.global_batch_size
+649:             % (self.cfg.actor.micro_batch_size * self._world_size)
+650:             == 0
+651:         )
+652:         self.gradient_accumulation = (
+653:             self.cfg.actor.global_batch_size
+654:             // self.cfg.actor.micro_batch_size
+655:             // self._world_size
+656:         )
+657: 
+658:         self.model.train()
+659:         metrics = {}
+660:         update_epoch = self.cfg.algorithm.get("update_epoch", 1)
+661:         for _ in range(update_epoch):
+662:             metrics_data = self.update_one_epoch()
+663:             append_to_dict(metrics, metrics_data)
+664:             self.update_step += 1
+665: 
+666:         torch.cuda.synchronize()
+667:         torch.distributed.barrier()
+668:         torch.cuda.empty_cache()
+669:         return self.process_train_metrics(metrics)
+670: 
+671:     @Worker.timer("actor/compute_adv")
+672:     def compute_advantages_and_returns(self):
+673:         """Skip advantage computation for supervised DAgger updates."""
+674:         return {}
+675: 
+676:     def save_checkpoint(self, save_base_path, step):
+677:         if self.is_weight_offloaded:
+678:             self.load_param_and_grad(self.device)
+679:             self.is_weight_offloaded = False
+680:         if self.is_optimizer_offloaded:
+RELATED_FILES
+rlinf/hybrid_engines/fsdp/strategy/fsdp.py
+rlinf/hybrid_engines/fsdp/strategy/base.py
+rlinf/hybrid_engines/fsdp/strategy/fsdp2.py
+rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+rlinf/hybrid_engines/fsdp/strategy/__init__.py
+rlinf/workers/actor/ma_fsdp_actor_worker.py
+rlinf/workers/actor/fsdp_actor_worker_pipeline.py
+rlinf/workers/actor/fsdp_actor_worker.py
+rlinf/workers/actor/embodied_fsdp_actor_worker.py

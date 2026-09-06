@@ -1,0 +1,62 @@
+<div id="ogpo-training-35k" class="ogpo-viz">
+<style>
+#ogpo-training-35k { color: var(--foreground); width: 100%; }
+#ogpo-training-35k .plot-section { margin: 0 0 18px; }
+#ogpo-training-35k .plot-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-weight: 500; margin-bottom: 4px; }
+#ogpo-training-35k .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted-foreground); font-weight: 400; }
+#ogpo-training-35k .legend span { display: inline-flex; align-items: center; gap: 5px; }
+#ogpo-training-35k .swatch { display: inline-block; width: 18px; height: 3px; background: var(--viz-series-1); }
+#ogpo-training-35k .swatch.series-2 { background: var(--viz-series-2); }
+#ogpo-training-35k .swatch.series-3 { background: var(--viz-series-3); }
+#ogpo-training-35k .plot { width: 100%; height: auto; display: block; overflow: visible; }
+#ogpo-training-35k .grid { stroke: var(--border); stroke-width: 1; }
+#ogpo-training-35k .axis-line { stroke: var(--muted-foreground); stroke-width: 1; }
+#ogpo-training-35k .axis, #ogpo-training-35k .mark-label { fill: var(--muted-foreground); font-size: 12px; }
+#ogpo-training-35k .mark-label { fill: var(--foreground); font-weight: 500; }
+#ogpo-training-35k .line { fill: none; stroke: var(--viz-series-1); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+#ogpo-training-35k .line.series-2 { stroke: var(--viz-series-2); }
+#ogpo-training-35k .line.series-3 { stroke: var(--viz-series-3); }
+#ogpo-training-35k .point { fill: var(--background); stroke: var(--viz-series-1); stroke-width: 3; vector-effect: non-scaling-stroke; }
+#ogpo-training-35k .point.series-2 { stroke: var(--viz-series-2); }
+#ogpo-training-35k .reference { stroke: var(--muted-foreground); stroke-width: 1.5; stroke-dasharray: 5 5; vector-effect: non-scaling-stroke; }
+#ogpo-training-35k .allocation { display: grid; grid-template-columns: 68.9fr 28.5fr 1.9fr .7fr; height: 28px; margin: 6px 0; overflow: hidden; }
+#ogpo-training-35k .allocation span { min-width: 2px; background: var(--viz-series-1); }
+#ogpo-training-35k .allocation span:nth-child(2) { background: var(--viz-series-2); }
+#ogpo-training-35k .allocation span:nth-child(3) { background: var(--viz-series-3); }
+#ogpo-training-35k .allocation span:nth-child(4) { background: var(--muted); }
+#ogpo-training-35k .allocation-labels { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted-foreground); }
+#ogpo-training-35k .allocation-labels b { color: var(--foreground); font-weight: 500; }
+@media (max-width: 520px) { #ogpo-training-35k .plot-label { align-items: flex-start; } #ogpo-training-35k .legend { width: 100%; } }
+</style>
+
+<section class="plot-section">
+  <div class="plot-label"><span>Policy success vs replay rows</span><span class="legend"><span><i class="swatch series-1"></i>train wave</span><span><i class="swatch series-3"></i>5-wave mean</span></span></div>
+  <svg class="plot" viewBox="0 0 920 220" role="img" aria-label="Noisy per-wave train success, five-wave moving average, and three fixed-policy evaluation points.">
+    <title>Policy success vs replay rows</title><desc>Noisy per-wave train success, five-wave moving average, and three fixed-policy evaluation points.</desc>
+    <line class="grid" x1="62" y1="178.00" x2="898" y2="178.00" /><text class="axis" x="53" y="182.00" text-anchor="end">0%</text><line class="grid" x1="62" y1="132.29" x2="898" y2="132.29" /><text class="axis" x="53" y="136.29" text-anchor="end">20%</text><line class="grid" x1="62" y1="86.57" x2="898" y2="86.57" /><text class="axis" x="53" y="90.57" text-anchor="end">40%</text><line class="grid" x1="62" y1="40.86" x2="898" y2="40.86" /><text class="axis" x="53" y="44.86" text-anchor="end">60%</text><text class="axis" x="62.00" y="212" text-anchor="middle">0k</text><text class="axis" x="271.00" y="212" text-anchor="middle">8.75k</text><text class="axis" x="480.00" y="212" text-anchor="middle">17.5k</text><text class="axis" x="689.00" y="212" text-anchor="middle">26.25k</text><text class="axis" x="898.00" y="212" text-anchor="middle">35k</text>
+    <line class="axis-line" x1="62" y1="178" x2="898" y2="178" />
+    <path class="line series-1" d="M100.22,178.00 L138.43,178.00 L169.58,92.29 L199.30,63.71 L235.36,149.43 L267.18,92.29 L303.10,149.43 L335.35,92.29 L366.73,92.29 L400.27,120.86 L436.15,149.43 L469.73,120.86 L503.43,120.86 L541.65,178.00 L571.32,63.71 L605.21,120.86 L637.14,92.29 L667.10,63.71 L701.40,120.86 L732.09,63.71 L764.10,92.29 L796.01,92.29 L834.23,178.00 L870.79,149.43 L897.24,35.14 L898.00,149.43" stroke-dasharray="2 5" /><path class="line series-3" d="M100.22,178.00 L138.43,178.00 L169.58,149.43 L199.30,128.00 L235.36,132.29 L267.18,115.14 L303.10,109.43 L335.35,109.43 L366.73,115.14 L400.27,109.43 L436.15,120.86 L469.73,115.14 L503.43,120.86 L541.65,138.00 L571.32,126.57 L605.21,120.86 L637.14,115.14 L667.10,103.71 L701.40,92.29 L732.09,92.29 L764.10,86.57 L796.01,86.57 L834.23,109.43 L870.79,115.14 L897.24,109.43 L898.00,120.86" />
+    <circle class="point series-2" cx="62.00" cy="166.57" r="5" /><text class="mark-label" x="62.00" y="157.57" text-anchor="middle">5%</text><circle class="point series-2" cx="541.65" cy="98.00" r="5" /><text class="mark-label" x="541.65" y="89.00" text-anchor="middle">35%</text><circle class="point series-2" cx="898.00" cy="166.57" r="5" /><text class="mark-label" x="898.00" y="157.57" text-anchor="middle">5%</text>
+  </svg>
+</section>
+<section class="plot-section">
+  <div class="plot-label"><span>Online / EMA same-chain ratio</span><span class="legend"><span><i class="swatch series-1"></i>ratio</span></span></div>
+  <svg class="plot" viewBox="0 0 920 220" role="img" aria-label="Mean probability ratio per update burst. It fell early and recovered to 0.942, still below the 1.0 identity line.">
+    <title>Online / EMA same-chain ratio</title><desc>Mean probability ratio per update burst. It fell early and recovered to 0.942, still below the 1.0 identity line.</desc>
+    <line class="grid" x1="62" y1="178.00" x2="898" y2="178.00" /><text class="axis" x="53" y="182.00" text-anchor="end">0</text><line class="grid" x1="62" y1="139.90" x2="898" y2="139.90" /><text class="axis" x="53" y="143.90" text-anchor="end">0.25</text><line class="grid" x1="62" y1="101.81" x2="898" y2="101.81" /><text class="axis" x="53" y="105.81" text-anchor="end">0.5</text><line class="grid" x1="62" y1="63.71" x2="898" y2="63.71" /><text class="axis" x="53" y="67.71" text-anchor="end">0.75</text><line class="grid" x1="62" y1="25.62" x2="898" y2="25.62" /><text class="axis" x="53" y="29.62" text-anchor="end">1</text><text class="axis" x="62.00" y="212" text-anchor="middle">0k</text><text class="axis" x="271.00" y="212" text-anchor="middle">8.75k</text><text class="axis" x="480.00" y="212" text-anchor="middle">17.5k</text><text class="axis" x="689.00" y="212" text-anchor="middle">26.25k</text><text class="axis" x="898.00" y="212" text-anchor="middle">35k</text>
+    <line class="axis-line" x1="62" y1="178" x2="898" y2="178" />
+    <path class="line series-1" d="M303.10,65.24 L335.35,157.73 L366.73,148.29 L400.27,127.87 L436.15,90.38 L469.73,64.48 L503.43,51.52 L541.65,43.90 L571.32,41.92 L605.21,39.64 L637.14,39.03 L667.10,38.72 L701.40,36.59 L732.09,36.90 L764.10,35.98 L796.01,35.22 L834.23,36.29 L870.79,34.30 L897.24,33.54 L898.00,34.46" /><line class="reference" x1="62" y1="25.62" x2="898" y2="25.62" />
+    
+  </svg>
+</section>
+<section class="plot-section">
+  <div class="plot-label"><span>BC and critic losses after warmup</span><span class="legend"><span><i class="swatch series-1"></i>success BC</span><span><i class="swatch series-2"></i>critic (first spike capped)</span></span></div>
+  <svg class="plot" viewBox="0 0 920 220" role="img" aria-label="Success behavior-cloning loss and critic loss. The first critic spike is capped at 0.12 so the stable region remains visible.">
+    <title>BC and critic losses after warmup</title><desc>Success behavior-cloning loss and critic loss. The first critic spike is capped at 0.12 so the stable region remains visible.</desc>
+    <line class="grid" x1="62" y1="178.00" x2="898" y2="178.00" /><text class="axis" x="53" y="182.00" text-anchor="end">0</text><line class="grid" x1="62" y1="138.00" x2="898" y2="138.00" /><text class="axis" x="53" y="142.00" text-anchor="end">0.03</text><line class="grid" x1="62" y1="98.00" x2="898" y2="98.00" /><text class="axis" x="53" y="102.00" text-anchor="end">0.06</text><line class="grid" x1="62" y1="58.00" x2="898" y2="58.00" /><text class="axis" x="53" y="62.00" text-anchor="end">0.09</text><line class="grid" x1="62" y1="18.00" x2="898" y2="18.00" /><text class="axis" x="53" y="22.00" text-anchor="end">0.12</text><text class="axis" x="62.00" y="212" text-anchor="middle">0k</text><text class="axis" x="271.00" y="212" text-anchor="middle">8.75k</text><text class="axis" x="480.00" y="212" text-anchor="middle">17.5k</text><text class="axis" x="689.00" y="212" text-anchor="middle">26.25k</text><text class="axis" x="898.00" y="212" text-anchor="middle">35k</text>
+    <line class="axis-line" x1="62" y1="178" x2="898" y2="178" />
+    <path class="line series-1" d="M303.10,24.67 L335.35,79.33 L366.73,118.00 L400.27,124.67 L436.15,130.00 L469.73,130.00 L503.43,134.00 L541.65,136.67 L571.32,138.00 L605.21,136.67 L637.14,139.33 L667.10,139.33 L701.40,142.00 L732.09,142.00 L764.10,142.00 L796.01,142.00 L834.23,142.00 L870.79,142.00 L897.24,143.33 L898.00,151.33" /><path class="line series-2" d="M303.10,18.00 L335.35,128.67 L366.73,155.33 L400.27,160.67 L436.15,164.80 L469.73,165.87 L503.43,166.00 L541.65,163.33 L571.32,165.07 L605.21,164.67 L637.14,163.33 L667.10,162.00 L701.40,163.33 L732.09,160.67 L764.10,163.33 L796.01,163.33 L834.23,162.00 L870.79,166.00 L897.24,164.67 L898.00,165.33" />
+    
+  </svg>
+</section>
+</div>

@@ -1,0 +1,73 @@
+:job_id:01000000
+:actor_name:RLTACFSDPPolicy
+[INFO 17:18:41 FlexiblePlacementStrategy] 
+[INFO 17:18:41 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+:actor_name:ActorGroup(rank=1)
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/distributed/fsdp/wrap.py:492: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+  return wrapper_cls(module, **kwargs)
+/root/autodl-tmp/RLinf_rlt_teacher_dvac/rlinf/hybrid_engines/fsdp/strategy/fsdp.py:173: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+  fsdp_model = FSDP(
+[rank1]:[E824 17:52:00.191603020 ProcessGroupNCCL.cpp:629] [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=44, OpType=ALLREDUCE, NumelIn=105, NumelOut=105, Timeout(ms)=1800000) ran for 1800045 milliseconds before timing out.
+[rank1]:[E824 17:52:00.192570995 ProcessGroupNCCL.cpp:2168] [PG ID 0 PG GUID 0(default_pg) Rank 1]  failure detected by watchdog at work sequence id: 44 PG status: last enqueued work: 44, last completed work: 43
+[rank1]:[E824 17:52:00.192614608 ProcessGroupNCCL.cpp:667] Stack trace of the failed collective not found, potentially because FlightRecorder is disabled. You can enable it by setting TORCH_NCCL_TRACE_BUFFER_SIZE to a non-zero value.
+[rank1]:[E824 17:52:00.192626796 ProcessGroupNCCL.cpp:681] [Rank 1] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[rank1]:[E824 17:52:00.192637980 ProcessGroupNCCL.cpp:695] [Rank 1] To avoid data inconsistency, we are taking the entire process down.
+[rank1]:[E824 17:52:00.197553046 ProcessGroupNCCL.cpp:1895] [PG ID 0 PG GUID 0(default_pg) Rank 1] Process group watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=44, OpType=ALLREDUCE, NumelIn=105, NumelOut=105, Timeout(ms)=1800000) ran for 1800045 milliseconds before timing out.
+Exception raised from checkTimeout at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:632 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x96 (0x7fb94816c1b6 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b4 (0x7fa64ef9ac74 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::watchdogHandler() + 0x890 (0x7fa64ef9c7d0 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x14d (0x7fa64ef9d6ed in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xdc253 (0x7fb9636f6253 in /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x7fb965ce2ac3 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+frame #6: clone + 0x44 (0x7fb965d73a04 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+
+[2026-08-24 17:52:00,848 E 7894 9088] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 0 PG GUID 0(default_pg) Rank 1] Process group watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=44, OpType=ALLREDUCE, NumelIn=105, NumelOut=105, Timeout(ms)=1800000) ran for 1800045 milliseconds before timing out.
+Exception raised from checkTimeout at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:632 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x96 (0x7fb94816c1b6 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b4 (0x7fa64ef9ac74 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: c10d::ProcessGroupNCCL::watchdogHandler() + 0x890 (0x7fa64ef9c7d0 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x14d (0x7fa64ef9d6ed in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xdc253 (0x7fb9636f6253 in /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
+frame #5: <unknown function> + 0x94ac3 (0x7fb965ce2ac3 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+frame #6: clone + 0x44 (0x7fb965d73a04 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+
+Exception raised from ncclCommWatchdog at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1901 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::string) + 0x96 (0x7fb94816c1b6 in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0xe5c6fc (0x7fa64ebf86fc in /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+frame #2: <unknown function> + 0xdc253 (0x7fb9636f6253 in /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
+frame #3: <unknown function> + 0x94ac3 (0x7fb965ce2ac3 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+frame #4: clone + 0x44 (0x7fb965d73a04 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+ /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x178014a) [0x7fb964fd914a] ray::operator<<()
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x1780bfc) [0x7fb964fd9bfc] ray::RayLog::operator<< <>()
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x8be937) [0x7fb964117937] ray::TerminateHandler()
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7fb9636c820c]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7fb9636c8277]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7fb9636c81fe]
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so(+0xe5c7aa) [0x7fa64ebf87aa] c10d::ProcessGroupNCCL::ncclCommWatchdog()
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7fb9636f6253]
+/usr/lib/x86_64-linux-gnu/libc.so.6(+0x94ac3) [0x7fb965ce2ac3]
+/usr/lib/x86_64-linux-gnu/libc.so.6(clone+0x44) [0x7fb965d73a04] __clone
+
+[2026-08-24 17:52:00,860 E 7894 9088] logging.cc:125: Stack trace: 
+ /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x178014a) [0x7fb964fd914a] ray::operator<<()
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x1780bfc) [0x7fb964fd9bfc] ray::RayLog::operator<< <>()
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/ray/_raylet.so(+0x17831b8) [0x7fb964fdc1b8] ray::TerminateHandler()
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7fb9636c820c]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7fb9636c8277]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7fb9636c81fe]
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so(+0xe5c7aa) [0x7fa64ebf87aa] c10d::ProcessGroupNCCL::ncclCommWatchdog()
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7fb9636f6253]
+/usr/lib/x86_64-linux-gnu/libc.so.6(+0x94ac3) [0x7fb965ce2ac3]
+/usr/lib/x86_64-linux-gnu/libc.so.6(clone+0x44) [0x7fb965d73a04] __clone
+
+*** SIGABRT received at time=1787565120 on cpu 128 ***
+PC: @     0x7fb965ce49fc  (unknown)  pthread_kill
+    @     0x7fb965c90520  (unknown)  (unknown)
+[2026-08-24 17:52:00,860 E 7894 9088] logging.cc:474: *** SIGABRT received at time=1787565120 on cpu 128 ***
+[2026-08-24 17:52:00,860 E 7894 9088] logging.cc:474: PC: @     0x7fb965ce49fc  (unknown)  pthread_kill
+[2026-08-24 17:52:00,861 E 7894 9088] logging.cc:474:     @     0x7fb965c90520  (unknown)  (unknown)
+Fatal Python error: Aborted
+
+
+Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, simplejson._speedups, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet, numpy.core._multiarray_umath, numpy.core._multiarray_tests, numpy.linalg._umath_linalg, numpy.fft._pocketfft_internal, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._mt19937, numpy.random.mtrand, numpy.random._philox, numpy.random._pcg64, numpy.random._sfc64, numpy.random._generator, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, regex._regex, markupsafe._speedups, PIL._imaging, sklearn.__check_build._check_build, _cyutility, scipy._cyutility, scipy._lib._ccallback_c, scipy.sparse._sparsetools, _csparsetools, scipy.sparse._csparsetools, scipy.special._ufuncs_cxx, scipy.special._ellip_harm_2, scipy.special._special_ufuncs, scipy.special._gufuncs, scipy.special._ufuncs, scipy.special._specfun, scipy.special._comb, scipy.linalg._fblas, scipy.linalg._flapack, scipy.linalg.cython_lapack, scipy.linalg._cythonized_array_utils, scipy.linalg._solve_toeplitz, scipy.linalg._batched_linalg, scipy.linalg._decomp_lu_cython, scipy.linalg._matfuncs_schur_sqrtm, scipy.linalg._matfuncs_expm, scipy.linalg._linalg_pythran, scipy.linalg.cython_blas, scipy.linalg._decomp_update, scipy.sparse.linalg._dsolve._superlu, scipy.sparse.linalg._eigen.arpack._arpacklib, scipy.sparse.linalg._propack, scipy.spatial._ckdtree, scipy._lib.messagestream, scipy.spatial._qhull, scipy.spatial._voronoi, scipy.spatial._hausdorff, scipy.spatial._distance_wrap, scipy.spatial.transform._rotation_cy, scipy.spatial.transform._rigid_transform_cy, scipy.optimize._group_columns, scipy.optimize._trlib._trlib, scipy.optimize._lbfgsb, _moduleTNC, scipy.optimize._moduleTNC, scipy.optimize._slsqplib, scipy.optimize._minpack, scipy.optimize._lsq.givens_elimination, scipy.optimize._zeros, scipy._lib._uarray._uarray, scipy.linalg._decomp_interpolative, scipy.optimize._bglu_dense, scipy.optimize._lsap, scipy.optimize._direct, scipy.integrate._odepack, scipy.integrate._quadpack, scipy.integrate._vode, scipy.integrate._dop, scipy.interpolate._fitpack, scipy.interpolate._dfitpack, scipy.interpolate._dierckx, scipy.interpolate._ppoly, scipy.interpolate._interpnd, scipy.interpolate._rbfinterp_pythran, scipy.interpolate._rgi_cython, scipy.special.cython_special, scipy.stats._stats, scipy.stats._biasedurn, scipy.stats._stats_pythran, scipy.stats._levy_stable.levyst, scipy.stats._ansari_swilk_statistics, scipy.sparse.csgraph._tools, scipy.sparse.csgraph._shortest_path, scipy.sparse.csgraph._traversal, scipy.sparse.csgraph._min_spanning_tree, scipy.sparse.csgraph._flow, scipy.sparse.csgraph._matching, scipy.sparse.csgraph._reordering, scipy.stats._sobol, scipy.stats._qmc_cy, scipy.stats._rcont.rcont, scipy.stats._qmvnt_cy, scipy.ndimage._nd_image, scipy.ndimage._rank_filter_1d, _ni_label, scipy.ndimage._ni_label, pyarrow.lib, pandas._libs._cyutility, pandas._libs.tslibs.ccalendar, pandas._libs.tslibs.np_datetime, pandas._libs.tslibs.dtypes, pandas._libs.tslibs.base, pandas._libs.tslibs.nattype, pandas._libs.tslibs.timezones, pandas._libs.properties, pandas._libs.tslibs.fields, pandas._libs.tslibs.timedeltas, pandas._libs.tslibs.tzconversion, pandas._libs.tslibs.timestamps, pandas._libs.tslibs.offsets, pandas._libs.tslibs.strptime, pandas._libs.tslibs.parsing, pandas._libs.tslibs.conversion, pandas._libs.tslibs.period, pandas._libs.tslibs.vectorized, pandas._libs.ops_dispatch, pandas._libs.missing, pandas._libs.hashtable, pandas._libs.algos, pandas._libs.interval, pandas._libs.lib, pyarrow._compute, pandas._libs.ops, pandas._libs.hashing, pandas._libs.arrays, pandas._libs.tslib, pandas._libs.sparse, pandas._libs.internals, pandas._libs.indexing, pandas._libs.index, pandas._libs.writers, pandas._libs.join, pandas._libs.window.aggregations, pandas._libs.window.indexers, pandas._libs.reshape, pandas._libs.groupby, pandas._libs.json, pandas._libs.parsers, pandas._libs.testing, sklearn._cyutility, sklearn.utils._isfinite, sklearn.utils.sparsefuncs_fast, sklearn.utils.murmurhash, sklearn.utils._openmp_helpers, sklearn.metrics.cluster._expected_mutual_info_fast, sklearn.metrics._dist_metrics, sklearn.metrics._pairwise_distances_reduction._datasets_pair, sklearn.utils._cython_blas, sklearn.metrics._pairwise_distances_reduction._base, sklearn.metrics._pairwise_distances_reduction._middle_term_computer, sklearn.utils._heap, sklearn.utils._sorting, sklearn.metrics._pairwise_distances_reduction._argkmin, sklearn.metrics._pairwise_distances_reduction._argkmin_classmode, sklearn.utils._vector_sentinel, sklearn.metrics._pairwise_distances_reduction._radius_neighbors, sklearn.metrics._pairwise_distances_reduction._radius_neighbors_classmode, sklearn.metrics._pairwise_fast, sklearn.preprocessing._csr_polynomial_expansion, sklearn.preprocessing._target_encoder_fast, pyarrow._json (total: 187)

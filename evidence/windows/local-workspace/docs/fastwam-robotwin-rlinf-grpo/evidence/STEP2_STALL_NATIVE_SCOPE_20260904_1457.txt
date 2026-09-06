@@ -1,0 +1,1249 @@
+2026-09-04T06:54:37+00:00
+Process 1053120: ray::EnvWorker.interact
+Python v3.11.14 (/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11)
+
+Thread 1053120 (idle): "MainThread"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    _raylet_check_signals (ray/_raylet.so)
+    std::_Function_handler<ray::Status(), ray::Status (*)()>::_M_invoke (ray/_raylet.so)
+    ray::core::CoreWorker::RunTaskExecutionLoop()::{lambda()#1}::operator() const (ray/_raylet.so)
+    ray::PeriodicalRunner::DoRunFnPeriodicallyInstrumented (ray/_raylet.so)
+    ray::PeriodicalRunner::DoRunFnPeriodicallyInstrumented(std::function<void ()>, boost::date_time::subsecond_duration<boost::posix_time::time_duration, (long)1000>, std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::any_io_executor> >, std::string)::{lambda(boost::system::error_code const&)#1}::operator()(boost::system::error_code const&)::{lambda()#1}::operator() (ray/_raylet.so)
+    EventTracker::RecordExecution (ray/_raylet.so)
+    ray::PeriodicalRunner::DoRunFnPeriodicallyInstrumented(std::function<void ()>, boost::date_time::subsecond_duration<boost::posix_time::time_duration, (long)1000>, std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::any_io_executor> >, std::string)::{lambda(boost::system::error_code const&)#1}::operator() (ray/_raylet.so)
+    boost::asio::detail::wait_handler<ray::PeriodicalRunner::DoRunFnPeriodicallyInstrumented(std::function<void ()>, boost::date_time::subsecond_duration<boost::posix_time::time_duration, (long)1000>, std::shared_ptr<boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::any_io_executor> >, std::string)::{lambda(boost::system::error_code const&)#1}, boost::asio::any_io_executor>::do_complete (ray/_raylet.so)
+    boost::asio::detail::scheduler::do_run_one (ray/_raylet.so)
+    boost::asio::detail::scheduler::run (ray/_raylet.so)
+    boost::asio::io_context::run (ray/_raylet.so)
+    ray::core::CoreWorker::RunTaskExecutionLoop (ray/_raylet.so)
+    ray::core::CoreWorkerProcessImpl::RunWorkerTaskExecutionLoop (ray/_raylet.so)
+    run_task_loop (ray/_raylet.so)
+    main_loop (ray/_private/worker.py:1066)
+    <module> (ray/_private/workers/default_worker.py:323)
+    0x7fcc2174ad90 (libc.so.6)
+Thread 1053712 (idle): "PythonGCThread"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    wait (threading.py:629)
+    run (ray/_private/gc_collect_manager.py:29)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1054081 (idle): "AsyncIO Thread: default"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:331)
+    result (concurrent/futures/_base.py:451)
+    step (robotwin/envs/vector_env.py:367)
+    chunk_step (rlinf/envs/robotwin/robotwin_env.py:332)
+    env_interact_step (rlinf/workers/env/env_worker.py:491)
+    wrapper (rlinf/scheduler/worker/worker.py:1372)
+    sync_func (rlinf/scheduler/worker/worker.py:81)
+    _resume_span (ray/util/tracing/tracing_helper.py:487)
+    _run_interact_once (rlinf/workers/env/env_worker.py:1182)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    interact (rlinf/workers/env/env_worker.py:1359)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    async_func (rlinf/scheduler/worker/worker.py:91)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    __Pyx_Coroutine_Yield_From (ray/_raylet.so)
+    __pyx_gb_3ray_7_raylet_10CoreWorker_36run_async_func_or_coro_in_event_loop_2generator7 (ray/_raylet.so)
+    __Pyx_Coroutine_SendEx (ray/_raylet.so)
+    __Pyx_Coroutine_Send (ray/_raylet.so)
+    _run (asyncio/events.py:84)
+    _run_once (asyncio/base_events.py:1936)
+    run_forever (asyncio/base_events.py:608)
+    initialize_eventloops_for_actor_concurrency_group_lambda2 (ray/_raylet.so)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1054141 (idle): "Thread-1 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1054142 (idle): "Thread-2 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1054143 (idle): "Thread-3 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1065920 (idle): "ThreadPoolExecutor-0_0"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    raw_array_assign_array (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    PyArray_AssignArray (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    PyArray_CastToType (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    ufunc_generic_fastcall (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    array_richcompare (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066014 (idle): "ThreadPoolExecutor-0_1"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock (python3.11)
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066016 (idle): "ThreadPoolExecutor-0_2"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066017 (idle): "ThreadPoolExecutor-0_3"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066018 (idle): "ThreadPoolExecutor-0_4"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066019 (idle): "ThreadPoolExecutor-0_5"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock (python3.11)
+    __enter__ (<frozen importlib._bootstrap>:1028)
+    _find_spec (<frozen importlib._bootstrap>:1070)
+    _find_and_load_unlocked (<frozen importlib._bootstrap>:1138)
+    _find_and_load (<frozen importlib._bootstrap>:1176)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066020 (idle): "ThreadPoolExecutor-0_6"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066194 (idle): "ThreadPoolExecutor-0_7"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066195 (idle): "ThreadPoolExecutor-0_8"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    execute_ufunc_loop (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    ufunc_generic_fastcall (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    array_multiply (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    canlinear_colloc_to_interpolate (toppra/constraint/linear_constraint.py:171)
+    compute_constraint_params (toppra/constraint/linear_joint_acceleration.py:92)
+    seidelWrapper___init__ (cy_seidel_solverwrapper.c:23080)
+    __init__ (cy_seidel_solverwrapper.c:22726)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:123)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066196 (idle): "ThreadPoolExecutor-0_9"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066197 (idle): "ThreadPoolExecutor-0_10"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066198 (idle): "ThreadPoolExecutor-0_11"
+    poll (libc.so.6)
+    0x7f983179bad4 (libnvidia-eglcore.so.575.57.08)
+    0x7f9831af8429 (libnvidia-eglcore.so.575.57.08)
+    0x7f9831af7fbd (libnvidia-eglcore.so.575.57.08)
+    0x7f9831af8270 (libnvidia-eglcore.so.575.57.08)
+    sapien::sapien_renderer::SapienRenderCameraInternal::waitForRender (libsapien.so)
+    sapien::sapien_renderer::SapienRenderCameraComponent::getImage (libsapien.so)
+    0x7f99344ce161 (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)
+    0x7f9934381a9f (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)
+    _get_rgba (envs/camera/camera.py:335)
+    get_rgba (envs/camera/camera.py:350)
+    get_rgb (envs/camera/camera.py:324)
+    get_obs (envs/_base_task.py:476)
+    step (robotwin/envs/vector_env.py:130)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066199 (idle): "ThreadPoolExecutor-0_12"
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_timedwait (libc.so.6)
+    raw_array_assign_array (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    PyArray_AssignArray (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    PyArray_CastToType (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    ufunc_generic_fastcall (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    array_richcompare (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066200 (idle): "ThreadPoolExecutor-0_13"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066201 (idle): "ThreadPoolExecutor-0_14"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1066202 (idle): "ThreadPoolExecutor-0_15"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072222 (idle): "Thread-4 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072223 (idle): "Thread-5 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072224 (idle): "Thread-6 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072426 (idle): "Thread-7 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072427 (idle): "Thread-8 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1072428 (idle): "Thread-9 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1156618 (idle): "Thread-10 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1156619 (idle): "Thread-11 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1156620 (idle): "Thread-12 (_run_queue)"
+    0x7fcc217b20d7 (libc.so.6)
+    0x7fcc217bdc38 (libc.so.6)
+    PyThread_acquire_lock_timed (python3.11)
+    lock_PyThread_acquire_lock (python3.11)
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+    thread_run (python3.11)
+    0x7fcc217b5a83 (libc.so.6)
+    0x7fcc21847890 (libc.so.6)
+Thread 1054135 (idle)
+    0x7fcc217b20d7 (libc.so.6)
+    pthread_cond_wait (libc.so.6)
+    std::condition_variable::wait (libstdc++.so.6.0.30)
+    boost::fibers::algo::round_robin::suspend_until (ray/_raylet.so)
+    boost::fibers::scheduler::dispatch (ray/_raylet.so)
+    boost::fibers::dispatcher_context::run_ (ray/_raylet.so)
+    boost::context::detail::fiber_entry<boost::context::detail::fiber_record<boost::context::fiber, boost::context::basic_fixedsize_stack<boost::context::stack_traits>&, std::_Bind<boost::context::fiber (boost::fibers::dispatcher_context(boost::fibers::dispatcher_context*, std::_Placeholder<1>)::*)(boost::context::fiber&&)> > > (ray/_raylet.so)
+    0x7fcc1fd2c58f (ray/_raylet.so)
+VECTOR_FILE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/robotwin/envs/vector_env.py
+1: import importlib
+2: import os
+3: import gc
+4: import sys
+5: 
+6: import cv2
+7: import torch
+8: import yaml
+9: from envs import *
+10: 
+11: sys.path.append("../../")
+12: 
+13: import logging
+14: import multiprocessing as mp
+15: import threading
+16: import time
+17: from collections import defaultdict
+18: from concurrent.futures import ThreadPoolExecutor, as_completed
+19: 
+20: import gymnasium as gym
+21: import numpy as np
+22: from description.utils.generate_episode_instructions import (
+23:     generate_episode_descriptions,
+24: )
+25: from envs._GLOBAL_CONFIGS import *
+26: from envs.utils.create_actor import UnStableError
+27: 
+28: 
+29: LOG_LEVEL = os.getenv("VECTOR_ENV_LOG_LEVEL", "WARNING").upper()
+30: logging.basicConfig(
+31:     level=getattr(logging, LOG_LEVEL, logging.WARNING),
+32:     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+33: )
+34: logging.getLogger("concurrent.futures").setLevel(logging.WARNING)
+35: logging.getLogger("curobo").setLevel(logging.ERROR)
+36: 
+37: 
+38: def class_decorator(task_name):
+39:     envs_module = importlib.import_module(f"envs.{task_name}")
+40:     try:
+41:         env_class = getattr(envs_module, task_name)
+42:         env_instance = env_class()
+43:     except:
+44:         raise SystemExit("No Task")
+45:     return env_instance
+46: 
+47: 
+48: def update_obs(observation):
+49:     full_image = observation["observation"]["head_camera"]["rgb"]
+50:     left_wrist_image = (
+51:         observation["observation"].get("left_camera", {}).get("rgb", None)
+52:     )
+53:     right_wrist_image = (
+54:         observation["observation"].get("right_camera", {}).get("rgb", None)
+55:     )
+56:     state = observation["joint_action"]["vector"]
+57: 
+58:     return {
+59:         "full_image": full_image,
+60:         "left_wrist_image": left_wrist_image,
+61:         "right_wrist_image": right_wrist_image,
+62:         "state": state,
+63:     }
+64: 
+65: 
+66: class SubEnv:
+67:     def __init__(
+68:         self,
+69:         env_id: int,
+70:         task_name: str,
+71:         args: dict,
+72:         env_seed: int = None,
+73:         instruction_type = "seen",
+74:         global_lock=None,
+75:     ):
+76:         self.env_id = env_id
+77:         self.task_name = task_name
+78:         self.args = args
+79:         self.env_seed = env_seed
+80:         if self.env_seed is None:
+81:             self.env_seed = self.env_id
+82:         self.instruction = None
+83:         self.task = class_decorator(self.task_name)
+84:         self.instruction_type = instruction_type
+85:         self.global_lock = global_lock
+86:         self.lock = threading.Lock()
+87:         self.reset_count = 0
+88:         self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+89: 
+90:     def setup_task(self):
+91:         self.close()
+92:         self.task = class_decorator(self.task_name)
+93: 
+94:         with self.global_lock:
+95:             with self.lock:
+96:                 trial_seed = self.env_seed
+97:                 is_valid = False
+98:                 while not is_valid:
+99:                     try:
+100:                         task = class_decorator(self.task_name)
+101:                         task.setup_demo(
+102:                             now_ep_num=trial_seed,
+103:                             seed=trial_seed,
+104:                             is_test=True,
+105:                             **self.args,
+106:                         )
+107:                         episode_info = task.get_info()
+108:                         is_valid = True
+109:                     except Exception as e:
+110:                         task.close_env()
+111:                         trial_seed += 1
+112:                         continue
+113:                     task.close_env()
+114: 
+115:                 self.episode_info_list = [episode_info]
+116: 
+117:     def create_instruction(self):
+118:         task_descriptions = generate_episode_descriptions(
+119:             self.task_name, self.episode_info_list, 1, self.env_seed
+120:         )
+121:         instruction = np.random.choice(task_descriptions[0][self.instruction_type])
+122:         return instruction
+123: 
+124:     def step(self, actions):
+125:         if self.get_instruction() is None:
+126:             self.reset(env_seed=None)
+127: 
+128:         with self.lock:
+129:             reward, termination, truncation, info = self.task.gen_sparse_reward_data(actions)
+130:             obs = update_obs(self.task.get_obs())
+131:             obs["instruction"] = self.task.get_instruction()
+132: 
+133:         return {
+134:             "obs": obs,
+135:             "reward": reward,
+136:             "terminated": termination,
+137:             "truncated": truncation,
+138:             "info": info,
+139:         }
+140: 
+141:     def reset(self, env_seed=None):
+142:         with self.global_lock:
+143:             with self.lock:
+144:                 if self.task is not None:
+145:                     self.reset_count += 1
+146:                     should_clear_cache = self.reset_count % self.clear_cache_freq == 0
+147:                     self.task.close_env(clear_cache=should_clear_cache)
+148:                 if env_seed is not None:
+149:                     self.env_seed = env_seed
+150: 
+151:                 self.instruction = self.create_instruction()
+152:                 self.args["instruction"] = self.instruction
+153: 
+154:                 trial_seed = self.env_seed
+155:                 is_valid = False
+156:                 while not is_valid:
+157:                     try:
+158:                         self.task.setup_demo(
+159:                             now_ep_num=trial_seed, seed=trial_seed, **self.args
+160:                         )
+161:                         self.task.step_lim = self.args["step_lim"]
+162:                         self.task.run_steps = 0
+163:                         self.task.reward_step = 0
+164:                         is_valid = True
+165:                     except UnStableError as e:
+166:                         logging.warning(
+167:                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+168:                         )
+169:                         self.task.close_env(clear_cache=True)
+170:                         trial_seed += 1
+171:                         continue
+172:                     except Exception as e:
+173:                         logging.error(
+174:                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+175:                         )
+176:                         self.task.close_env(clear_cache=True)
+177:                         raise
+178: 
+179:         return
+180: 
+181:     def get_obs(self):
+182:         with self.lock:
+183:             obs = self.task.get_obs()
+184:             obs = update_obs(obs)
+185:             obs["instruction"] = self.task.get_instruction()
+186: 
+187:         return obs
+188: 
+189:     def get_instruction(self):
+190:         with self.lock:
+191:             if self.task is None:
+192:                 return None
+193:             return self.instruction
+194: 
+195:     def close(self, clear_cache=True):
+196:         if self.task is not None:
+197:             with self.lock:
+198:                 self.task.close_env(clear_cache=clear_cache)
+199: 
+200:     def check_seed(self, seed):
+201:         setup_demo_success = False
+202:         play_once_success = False
+203: 
+204:         t1 = time.time()
+205:         with self.global_lock:
+206:             with self.lock:
+207:                 try:
+208:                     self.task.setup_demo(now_ep_num=seed, seed=seed, **self.args)
+209:                     setup_demo_success = True
+210:                     _ = self.task.get_obs()
+211:                     _ = self.task.play_once()
+212:                     if self.task.plan_success and self.task.check_success():
+213:                         play_once_success = True
+214:                 except Exception as e:
+215:                     logging.warning(
+216:                         f"RoboTwin SubEnv {self.env_id} check_seed error with seed {seed}, error: {e}"
+217:                     )
+218:         t2 = time.time()
+219:         result = {
+220:             "setup_demo_success": setup_demo_success,
+221:             "play_once_success": play_once_success,
+222:             "cost_time": t2 - t1,
+223:         }
+224:         return result
+225: 
+226: 
+227: class VectorEnv(gym.Env):
+228:     def __init__(
+229:         self,
+230:         task_config,
+231:         n_envs,
+232:         env_seeds=None,
+233:         instruction_type="seen",
+234:     ):
+235:         self.env_seeds = env_seeds
+236:         if self.env_seeds is not None:
+237:             assert len(self.env_seeds) == n_envs
+238:         assets_path = os.getenv("ASSETS_PATH")
+239:         self.task_name = task_config.get("task_name")
+240: 
+241:         head_camera_type = "D435"
+242:         rdt_step = 10
+243:         args = task_config
+244: 
+245:         args["planner_backend"] = args.get("planner_backend", "curobo") # Choices: [curobo, mplib]
+246:         args["clear_cache_freq"] = max(1, int(args.get("clear_cache_freq", 8)))
+247: 
+248:         embodiment_type = args.get("embodiment")
+249:         embodiment_config_path = os.path.join(CONFIGS_PATH, "_embodiment_config.yml")
+250: 
+251:         with open(embodiment_config_path, "r", encoding="utf-8") as f:
+252:             _embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
+253: 
+254:         with open(CONFIGS_PATH + "_camera_config.yml", "r", encoding="utf-8") as f:
+255:             _camera_config = yaml.load(f.read(), Loader=yaml.FullLoader)
+256: 
+257:         args["head_camera_h"] = _camera_config[head_camera_type]["h"]
+258:         args["head_camera_w"] = _camera_config[head_camera_type]["w"]
+259: 
+260:         def get_embodiment_file(embodiment_type):
+261:             robot_file = _embodiment_types[embodiment_type]["file_path"]
+262:             if robot_file is None:
+263:                 raise "No embodiment files"
+264:             return robot_file
+265: 
+266:         def get_embodiment_config(robot_file):
+267:             robot_config_file = os.path.join(robot_file, "config.yml")
+268:             with open(robot_config_file, "r", encoding="utf-8") as f:
+269:                 embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+270:             return embodiment_args
+271: 
+272:         if len(embodiment_type) == 1:
+273:             args["left_robot_file"] = os.path.join(
+274:                 assets_path, get_embodiment_file(embodiment_type[0])
+275:             )
+276:             args["right_robot_file"] = os.path.join(
+277:                 assets_path, get_embodiment_file(embodiment_type[0])
+278:             )
+279:             args["dual_arm_embodied"] = True
+280:         elif len(embodiment_type) == 3:
+281:             args["left_robot_file"] = os.path.join(
+282:                 assets_path, get_embodiment_file(embodiment_type[0])
+283:             )
+284:             args["right_robot_file"] = os.path.join(
+285:                 assets_path, get_embodiment_file(embodiment_type[1])
+286:             )
+287:             args["embodiment_dis"] = embodiment_type[2]
+288:             args["dual_arm_embodied"] = False
+289:         else:
+290:             raise "embodiment items should be 1 or 3"
+291: 
+292:         args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
+293:         args["right_embodiment_config"] = get_embodiment_config(
+294:             args["right_robot_file"]
+295:         )
+296: 
+297:         if len(embodiment_type) == 1:
+298:             embodiment_name = str(embodiment_type[0])
+299:         else:
+300:             embodiment_name = str(embodiment_type[0]) + "_" + str(embodiment_type[1])
+301: 
+302:         args["embodiment_name"] = embodiment_name
+303: 
+304:         args["rdt_step"] = rdt_step
+305:         args["save_path"] += f"/{args['task_name']}_reward"
+306: 
+307:         args["n_envs"] = n_envs
+308:         args["action_dim"] = 14
+309: 
+310:         args["eval_mode"] = True
+311:         args["eval_video_log"] = False
+312:         args["render_freq"] = 0
+313: 
+314:         self.args = args
+315:         self.n_envs = n_envs
+316: 
+317:         self.envs = []
+318:         self.instruction_type = instruction_type
+319: 
+320:         self.global_lock = threading.Lock()
+321: 
+322:         self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
+323: 
+324:         self._init_envs()
+325: 
+326:     def _init_envs(self):
+327:         for i in range(self.n_envs):
+328:             sub_env = SubEnv(
+329:                 env_id=i,
+330:                 task_name=self.task_name,
+331:                 args=self.args,
+332:                 env_seed=self.env_seeds[i] if self.env_seeds else None,
+333:                 instruction_type=self.instruction_type,
+334:                 global_lock=self.global_lock,
+335:             )
+336:             sub_env.setup_task()
+337:             self.envs.append(sub_env)
+338: 
+339:     def transform(self, results):
+340:         res_dict = defaultdict(list)
+341:         for res in results:
+342:             for k, v in res.items():
+343:                 res_dict[k].append(v)
+344: 
+345:         res_dict = dict(res_dict)
+346:         return (
+347:             res_dict["obs"],
+348:             res_dict["reward"],
+349:             res_dict["terminated"],
+350:             res_dict["truncated"],
+351:             res_dict["info"],
+352:         )
+353: 
+354:     def step(self, actions):
+355:         if len(self.envs) == 0:
+356:             self._init_envs()
+357: 
+358:         step_futures = {}
+359:         for i in range(self.n_envs):
+360:             future = self.env_thread_pool.submit(self.envs[i].step, actions[i])
+361:             step_futures[i] = future
+362: 
+363:         results = []
+364:         for i in range(self.n_envs):
+365:             future = step_futures[i]
+366:             try:
+367:                 result = future.result(timeout=120)
+368:                 results.append(result)
+369:             except Exception as e:
+370:                 raise RuntimeError(f"SubEnv {i} step error: {e}")
+371: 
+372:         obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv = (
+373:             self.transform(results)
+374:         )
+375: 
+376:         return obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv
+377: 
+378:     def reset(self, env_idx=None, env_seeds=None):
+379:         if len(self.envs) == 0:
+380:             self._init_envs()
+381: 
+382:         if env_idx is None:
+383:             env_idx = list(range(self.n_envs))
+384:         elif isinstance(env_idx, (list, tuple)):
+385:             env_idx = list(env_idx)
+386:         elif isinstance(env_idx, torch.Tensor):
+387:             env_idx = env_idx.tolist()
+388:         else:
+389:             env_idx = [env_idx]
+390: 
+391:         reset_futures = {}
+392:         for idx in env_idx:
+393:             if 0 <= idx < self.n_envs:
+394:                 seed = None
+395:                 if env_seeds is not None and len(env_seeds) == len(env_idx):
+396:                     seed_idx = env_idx.index(idx)
+397:                     seed = env_seeds[seed_idx]
+398: 
+399:                 future = self.env_thread_pool.submit(
+400:                     self.envs[idx].reset, env_seed=seed
+401:                 )
+402:                 reset_futures[idx] = future
+403: 
+404:         for idx in env_idx:
+405:             if 0 <= idx < self.n_envs:
+406:                 future = reset_futures[idx]
+407:                 try:
+408:                     future.result(timeout=120)
+409:                 except Exception as e:
+410:                     raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+411: 
+412:     def get_obs(self):
+413:         obs_venv = []
+414:         for env in self.envs:
+415:             obs_venv.append(env.get_obs())
+416: 
+417:         return obs_venv
+418: 
+419:     def close(self, clear_cache=True):
+420:         for env in self.envs:
+421:             env.close(clear_cache=clear_cache)
+422: 
+423:         if clear_cache:
+424:             for env in self.envs:
+425:                 env = None
+426:             self.envs = []
+427:             gc.collect()
+428:             torch.cuda.empty_cache()
+429: 
+430:     def check_seeds(self, seeds: list[int]):
+431:         assert len(seeds) == self.n_envs
+432:         check_futures = {}
+433:         for i in range(self.n_envs):
+434:             future = self.env_thread_pool.submit(self.envs[i].check_seed, seeds[i])
+435:             check_futures[i] = future
+436: 
+437:         results = [None] * self.n_envs
+438:         for future in as_completed(check_futures.values(), timeout=120):
+439:             for idx, f in check_futures.items():
+440:                 if f == future:
+441:                     try:
+442:                         result = future.result()
+443:                         results[idx] = result
+444:                     except Exception as e:
+445:                         raise RuntimeError(f"SubEnv {idx} check seed error: {e}")
+446:                     break
+447: 
+448:         return results
+449: 
+450: 
+451: if __name__ == "__main__":
+452:     mp.set_start_method("spawn")  # solve CUDA compatibility problem
+453:     task_name = "place_shoe"
+454:     n_envs = 4
+455:     steps = 30
+456:     horizon = 10
+457:     action_dim = 14
+458:     times = 10
+459:     env = VectorEnv(task_name, n_envs, horizon)
+460:     actions = np.zeros((n_envs, horizon, action_dim))
+461:     for t in range(times):
+462:         prev_obs_venv, reward_venv, truncation, termination, info_venv = (
+463:             env.reset()
+464:         )
+465:         for step in range(steps):
+466:             actions += np.random.randn(n_envs, horizon, action_dim) * 0.05
+467:             actions = np.clip(actions, 0, 1)
+468:             obs_venv, reward_venv, truncation, termination, info_venv = env.step(
+469:                 actions
+470:             )
+471: 
+472:             # 测试partial reset功能
+473:             if step % 10 == 0:
+474:                 # 重置所有环境
+475:                 env.reset()
+476:             elif step % 5 == 0:
+477:                 # 只重置环境0和2
+478:                 env.reset(env_idx=[0, 2])
+479:             
+480:             obs = (
+481:                 env.get_obs()
+482:             )
+483:         env.close()
+OLD_PATCH diff --git a/robotwin/envs/vector_env.py b/robotwin/envs/vector_env.py
+index c55d3b4..94043ab 100644
+--- a/robotwin/envs/vector_env.py
++++ b/robotwin/envs/vector_env.py
+@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
+ 
+ import gymnasium as gym
+ import numpy as np
++from sapien.render import clear_cache as sapien_clear_cache
+ from description.utils.generate_episode_instructions import (
+     generate_episode_descriptions,
+ )
+@@ -84,8 +85,6 @@ class SubEnv:
+         self.instruction_type = instruction_type
+         self.global_lock = global_lock
+         self.lock = threading.Lock()
+-        self.reset_count = 0
+-        self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+ 
+     def setup_task(self):
+         self.close()
+@@ -107,10 +106,10 @@ class SubEnv:
+                         episode_info = task.get_info()
+                         is_valid = True
+                     except Exception as e:
+-                        task.close_env()
++                        task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+-                    task.close_env()
++                    task.close_env(clear_cache=False)
+ 
+                 self.episode_info_list = [episode_info]
+ 
+@@ -138,16 +137,17 @@ class SubEnv:
+             "info": info,
+         }
+ 
+-    def reset(self, env_seed=None):
++    def reset(self, env_seed=None, close_current=True):
+         with self.global_lock:
+             with self.lock:
+-                if self.task is not None:
+-                    self.reset_count += 1
+-                    should_clear_cache = self.reset_count % self.clear_cache_freq == 0
+-                    self.task.close_env(clear_cache=should_clear_cache)
++                if close_current and self.task is not None:
++                    self.task.close_env(clear_cache=False)
+                 if env_seed is not None:
+                     self.env_seed = env_seed
+ 
++                if self.task is None:
++                    self.task = class_decorator(self.task_name)
++
+                 self.instruction = self.create_instruction()
+                 self.args["instruction"] = self.instruction
+ 
+@@ -166,14 +166,14 @@ class SubEnv:
+                         logging.warning(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+                     except Exception as e:
+                         logging.error(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         raise
+ 
+         return
+@@ -192,10 +192,11 @@ class SubEnv:
+                 return None
+             return self.instruction
+ 
+-    def close(self, clear_cache=True):
++    def close(self):
+         if self.task is not None:
+             with self.lock:
+-                self.task.close_env(clear_cache=clear_cache)
++                self.task.close_env(clear_cache=False)
++                self.task = None
+ 
+     def check_seed(self, seed):
+         setup_demo_success = False
+@@ -318,6 +319,8 @@ class VectorEnv(gym.Env):
+         self.instruction_type = instruction_type
+ 
+         self.global_lock = threading.Lock()
++        self.full_reset_count = 0
++        self.clear_cache_freq = args["clear_cache_freq"]
+ 
+         self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
+ 
+@@ -388,26 +391,37 @@ class VectorEnv(gym.Env):
+         else:
+             env_idx = [env_idx]
+ 
+-        reset_futures = {}
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                seed = None
+-                if env_seeds is not None and len(env_seeds) == len(env_idx):
+-                    seed_idx = env_idx.index(idx)
+-                    seed = env_seeds[seed_idx]
++        valid_idx = [idx for idx in env_idx if 0 <= idx < self.n_envs]
++        seeds = {}
++        if env_seeds is not None and len(env_seeds) == len(env_idx):
++            seeds = {idx: env_seeds[pos] for pos, idx in enumerate(env_idx)}
+ 
+-                future = self.env_thread_pool.submit(
+-                    self.envs[idx].reset, env_seed=seed
++        # SAPIEN's renderer cache is process-global. It is only safe to clear it
++        # after every child renderer in this VectorEnv has released its local
++        # references. Partial episode resets therefore never clear this cache.
++        full_reset = len(valid_idx) == self.n_envs and set(valid_idx) == set(
++            range(self.n_envs)
++        )
++        if full_reset:
++            for env in self.envs:
++                env.close()
++            self.full_reset_count += 1
++            if self.full_reset_count % self.clear_cache_freq == 0:
++                gc.collect()
++                sapien_clear_cache()
++                torch.cuda.empty_cache()
++
++        # reset() was previously submitted to the pool, but a process-wide
++        # lock serialized every reset already. Keeping lifecycle operations on
++        # this caller thread avoids renderer creation/destruction affinity
++        # ambiguity while step() remains parallel.
++        for idx in valid_idx:
++            try:
++                self.envs[idx].reset(
++                    env_seed=seeds.get(idx), close_current=not full_reset
+                 )
+-                reset_futures[idx] = future
+-
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                future = reset_futures[idx]
+-                try:
+-                    future.result(timeout=120)
+-                except Exception as e:
+-                    raise RuntimeError(f"SubEnv {idx} reset error: {e}")
++            except Exception as e:
++                raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+ 
+     def get_obs(self):
+         obs_venv = []
+@@ -418,13 +432,12 @@ class VectorEnv(gym.Env):
+ 
+     def close(self, clear_cache=True):
+         for env in self.envs:
+-            env.close(clear_cache=clear_cache)
++            env.close()
+ 
+         if clear_cache:
+-            for env in self.envs:
+-                env = None
+             self.envs = []
+             gc.collect()
++            sapien_clear_cache()
+             torch.cuda.empty_cache()
+ 
+     def check_seeds(self, seeds: list[int]):
+@@ -480,4 +493,4 @@ if __name__ == "__main__":
+             obs = (
+                 env.get_obs()
+             )
+-        env.close()
+\ No newline at end of file
++        env.close()
+
+PROCESS_SCOPE 1052633 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo', 'PYTHONPATH': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo:/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904'}
+PROCESS_SCOPE 1053118 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo', 'CLUSTER_NAMESPACE': 'RLinf_1', 'CUDA_VISIBLE_DEVICES': '6', 'PYTHONPATH': '/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_d10bda6d90b6e84f:/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_d10bda6d90b6e84f', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904'}
+PROCESS_SCOPE 1053120 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo', 'CLUSTER_NAMESPACE': 'RLinf_1', 'CUDA_VISIBLE_DEVICES': '7', 'PYTHONPATH': '/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_d10bda6d90b6e84f:/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_d10bda6d90b6e84f', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904'}
+PROCESS_SCOPE 3176215 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf', 'PYTHONPATH': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support'}
+PROCESS_SCOPE 3177205 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf', 'CLUSTER_NAMESPACE': 'RLinf', 'CUDA_VISIBLE_DEVICES': '4', 'PYTHONPATH': '/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support'}
+PROCESS_SCOPE 3177207 {'RLINF_CODE_WORKING_DIR': '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf', 'CLUSTER_NAMESPACE': 'RLinf', 'CUDA_VISIBLE_DEVICES': '5', 'PYTHONPATH': '/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae', 'RAY_ADDRESS': '172.17.0.1:6389', 'ROBOTWIN_PATH': '/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support'}
+RAY_NAMED_ACTORS
+[{"name": "ActorGroup:0", "namespace": "RLinf_1"}, {"name": "Actor:0", "namespace": "RLinf_1"}, {"name": "EnvGroup:1", "namespace": "RLinf_1"}, {"name": "EnvGroup:0", "namespace": "RLinf_1"}, {"name": "NodeManager", "namespace": "RLinf_1"}, {"name": "ActorGroup:1", "namespace": "RLinf_1"}, {"name": "RolloutGroup:0", "namespace": "RLinf_1"}, {"name": "CollectiveManager", "namespace": "RLinf_1"}, {"name": "WorkerManager", "namespace": "RLinf_1"}, {"name": "Rollout:0", "namespace": "RLinf_1"}, {"name": "RolloutGroup:1", "namespace": "RLinf_1"}, {"name": "DeviceLockManager", "namespace": "RLinf_1"}, {"name": "Env:0", "namespace": "RLinf_1"}, {"name": "NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54", "namespace": "RLinf_1"}, {"name": "PortLockManager", "namespace": "RLinf_1"}, {"name": "ActorGroup:1", "namespace": "RLinf"}, {"name": "RolloutGroup:0", "namespace": "RLinf"}, {"name": "Env:0", "namespace": "RLinf"}, {"name": "NodeManager", "namespace": "RLinf"}, {"name": "DeviceLockManager", "namespace": "RLinf"}, {"name": "RolloutGroup:1", "namespace": "RLinf"}, {"name": "ActorGroup:0", "namespace": "RLinf"}, {"name": "PortLockManager", "namespace": "RLinf"}, {"name": "NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54", "namespace": "RLinf"}, {"name": "EnvGroup:0", "namespace": "RLinf"}, {"name": "EnvGroup:1", "namespace": "RLinf"}, {"name": "Actor:0", "namespace": "RLinf"}, {"name": "WorkerManager", "namespace": "RLinf"}, {"name": "Rollout:0", "namespace": "RLinf"}, {"name": "CollectiveManager", "namespace": "RLinf"}]
+2026-09-04T06:54:38+00:00

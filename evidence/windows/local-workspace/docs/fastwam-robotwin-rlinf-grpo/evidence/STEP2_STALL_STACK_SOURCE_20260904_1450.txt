@@ -1,0 +1,1172 @@
+2026-09-04T06:51:44+00:00
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+Dumps stack traces for a target program to stdout
+
+Usage: py-spy dump [OPTIONS]
+
+Options:
+  -p, --pid <pid>       PID of a running python program to spy on, in decimal or hex
+  -c, --core <core>     Filename of coredump to display python stack traces from
+      --full-filenames  Show full Python filenames, instead of shortening to show only the package
+                        part
+  -l, --locals...       Show local variables for each frame. Passing multiple times (-ll) increases
+                        verbosity
+  -j, --json            Format output as JSON
+  -s, --subprocesses    Profile subprocesses of the original process
+  -n, --native          Collect stack traces from native extensions written in Cython, C or C++
+      --nonblocking     Don't pause the python process when collecting samples. Setting this option
+                        will reduce the performance impact of sampling, but may lead to inaccurate
+                        results
+  -h, --help            Print help
+Process 1053120: ray::EnvWorker.interact
+Python v3.11.14 (/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11)
+
+Thread 1053120 (idle): "MainThread"
+    main_loop (ray/_private/worker.py:1066)
+    <module> (ray/_private/workers/default_worker.py:323)
+Thread 1053712 (idle): "PythonGCThread"
+    wait (threading.py:327)
+    wait (threading.py:629)
+    run (ray/_private/gc_collect_manager.py:29)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054081 (idle): "AsyncIO Thread: default"
+    wait (threading.py:331)
+    result (concurrent/futures/_base.py:451)
+    step (robotwin/envs/vector_env.py:367)
+    chunk_step (rlinf/envs/robotwin/robotwin_env.py:332)
+    env_interact_step (rlinf/workers/env/env_worker.py:491)
+    wrapper (rlinf/scheduler/worker/worker.py:1372)
+    sync_func (rlinf/scheduler/worker/worker.py:81)
+    _resume_span (ray/util/tracing/tracing_helper.py:487)
+    _run_interact_once (rlinf/workers/env/env_worker.py:1182)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    interact (rlinf/workers/env/env_worker.py:1359)
+    wrapper (rlinf/scheduler/worker/worker.py:1364)
+    async_func (rlinf/scheduler/worker/worker.py:91)
+    _resume_span (ray/util/tracing/tracing_helper.py:520)
+    _run (asyncio/events.py:84)
+    _run_once (asyncio/base_events.py:1936)
+    run_forever (asyncio/base_events.py:608)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054141 (idle): "Thread-1 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054142 (idle): "Thread-2 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054143 (idle): "Thread-3 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1065920 (idle): "ThreadPoolExecutor-0_0"
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066014 (idle): "ThreadPoolExecutor-0_1"
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066016 (idle): "ThreadPoolExecutor-0_2"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066017 (idle): "ThreadPoolExecutor-0_3"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066018 (idle): "ThreadPoolExecutor-0_4"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066019 (idle): "ThreadPoolExecutor-0_5"
+    __enter__ (<frozen importlib._bootstrap>:1028)
+    _find_spec (<frozen importlib._bootstrap>:1070)
+    _find_and_load_unlocked (<frozen importlib._bootstrap>:1138)
+    _find_and_load (<frozen importlib._bootstrap>:1176)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066020 (idle): "ThreadPoolExecutor-0_6"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066194 (idle): "ThreadPoolExecutor-0_7"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066195 (idle): "ThreadPoolExecutor-0_8"
+    canlinear_colloc_to_interpolate (toppra/constraint/linear_constraint.py:171)
+    compute_constraint_params (toppra/constraint/linear_joint_acceleration.py:92)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:123)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066196 (idle): "ThreadPoolExecutor-0_9"
+    _get_module_lock (<frozen importlib._bootstrap>:185)
+    __enter__ (<frozen importlib._bootstrap>:170)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066197 (idle): "ThreadPoolExecutor-0_10"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066198 (idle): "ThreadPoolExecutor-0_11"
+    _get_rgba (envs/camera/camera.py:335)
+    get_rgba (envs/camera/camera.py:350)
+    get_rgb (envs/camera/camera.py:324)
+    get_obs (envs/_base_task.py:476)
+    step (robotwin/envs/vector_env.py:130)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066199 (idle): "ThreadPoolExecutor-0_12"
+    check_success (envs/move_stapler_pad.py:127)
+    gen_sparse_reward_data (envs/_base_task.py:1932)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066200 (idle): "ThreadPoolExecutor-0_13"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066201 (idle): "ThreadPoolExecutor-0_14"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1825)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1066202 (idle): "ThreadPoolExecutor-0_15"
+    acquire (<frozen importlib._bootstrap>:120)
+    __enter__ (<frozen importlib._bootstrap>:171)
+    _find_and_load (<frozen importlib._bootstrap>:1173)
+    available_solvers (toppra/solverwrapper/solverwrapper.py:20)
+    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)
+    TOPP (mplib/planner.py:369)
+    gen_sparse_reward_data (envs/_base_task.py:1844)
+    step (robotwin/envs/vector_env.py:129)
+    run (concurrent/futures/thread.py:58)
+    _worker (concurrent/futures/thread.py:83)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072222 (idle): "Thread-4 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072223 (idle): "Thread-5 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072224 (idle): "Thread-6 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072426 (idle): "Thread-7 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072427 (idle): "Thread-8 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1072428 (idle): "Thread-9 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156618 (idle): "Thread-10 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156619 (idle): "Thread-11 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1156620 (idle): "Thread-12 (_run_queue)"
+    wait (threading.py:327)
+    get (queue.py:171)
+    _run_queue (rlinf/scheduler/collective/collective_group.py:169)
+    run (threading.py:982)
+    _bootstrap_inner (threading.py:1045)
+    _bootstrap (threading.py:1002)
+Thread 1054135 (idle)
+
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/toppra/solverwrapper/solverwrapper.py 1 110
+    1: """This module provides different solverwrapper implementations."""
+    2: import logging
+    3: import numpy as np
+    4: 
+    5: logger = logging.getLogger(__name__)
+    6: 
+    7: 
+    8: # pylint: disable=unused-import
+    9: def available_solvers(output_msg=True):
+   10:     """Check for available solvers."""
+   11:     # try:
+   12:     #     import ecos
+   13: 
+   14:     #     IMPORT_ECOS = True
+   15:     # except ImportError as err:
+   16:     #     IMPORT_ECOS = False
+   17:     IMPORT_ECOS = False  # ecos solver is currently failing
+   18: 
+   19:     try:
+   20:         import qpoases
+   21: 
+   22:         IMPORT_QPOASES = True
+   23:     except ImportError as err:
+   24:         IMPORT_QPOASES = False
+   25:     try:
+   26:         import cvxpy
+   27: 
+   28:         IMPORT_CVXPY = True
+   29:     except ImportError as err:
+   30:         IMPORT_CVXPY = False
+   31:     solver_availability = (
+   32:         ("seidel", True),
+   33:         ("hotqpoases", IMPORT_QPOASES),
+   34:         ("qpoases", IMPORT_QPOASES),
+   35:         ("ecos", IMPORT_ECOS),
+   36:         ("cvxpy", IMPORT_CVXPY),
+   37:     )
+   38: 
+   39:     if output_msg:
+   40:         print(solver_availability)
+   41:     return solver_availability
+   42: 
+   43: def check_solver_availability(solver):
+   44:     check = available_solvers(False)
+   45:     for sname, avail in check:
+   46:         if sname == solver and avail:
+   47:             return True
+   48:     return False
+   49: 
+   50: 
+   51: class SolverWrapper(object):
+   52:     """The base class for all solver wrappers.
+   53: 
+   54:     All SolverWrapper have to implement a core method needed by all
+   55:     Reachability Analysis-based algorithms:
+   56:     `solve_stagewise_optim`. This methods solves a Linear/Quadratic
+   57:     Program subject to linear constraints at the given stage, and
+   58:     possibly with additional auxiliary constraints.
+   59: 
+   60:     Note that some SolverWrappers only handle Linear Program while
+   61:     some handle both.
+   62: 
+   63:     Certain solver wrappers need to be setup and close down before and
+   64:     after usage. For instance, the wrappers for mosek and qpOASES with
+   65:     warmstart capability. To provide this functionality, this class
+   66:     contains two abstract methods `setup_solver` and `close_solver`,
+   67:     which should be called before and after any call to
+   68:     `solve_stagewise_optim`, so that necessary setups can be made.
+   69: 
+   70:     Each solver wrapper should provide solver-specific constraint,
+   71:     such as ultimate bound the variable u, x. For some solvers such as
+   72:     ECOS, this is very important.
+   73: 
+   74:     Attributes
+   75:     ----------
+   76:     constraints : :class:`toppra.Constraint` []
+   77:         Constraints on the robot system.
+   78:     path : Interpolator
+   79:         The geometric path to be time-parametrized.
+   80:     path_discretization: array
+   81:         The discretization grid use to discretize the geometric path.
+   82: 
+   83:     """
+   84: 
+   85:     def __init__(self, constraint_list, path, path_discretization):
+   86:         # Main attributes
+   87:         self.constraints = constraint_list
+   88:         self.path = path
+   89:         self.path_discretization = np.array(path_discretization)
+   90:         # End main attributes
+   91:         self.N = (
+   92:             len(path_discretization) - 1
+   93:         )  # Number of stages. Number of point is _N + 1
+   94:         self.deltas = self.path_discretization[1:] - self.path_discretization[:-1]
+   95:         for i in range(self.N):
+   96:             assert path_discretization[i + 1] > path_discretization[i]
+   97: 
+   98:         self.params = [
+   99:             c.compute_constraint_params(
+  100:                 self.path, self.path_discretization
+  101:             )
+  102:             for c in self.constraints
+  103:         ]
+  104:         self.nV = 2 + sum([c.get_no_extra_vars() for c in self.constraints])
+  105: 
+  106:     def get_no_stages(self):
+  107:         """Return the number of stages.
+  108: 
+  109:         The number of gridpoints equals N + 1, where N is the number
+  110:         of stages.
+
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/toppra/algorithm/reachabilitybased/reachability_algorithm.py 30 135
+   30:     -----
+   31:     There are two patterns this class implements.
+   32: 
+   33:     1) Together with `SolverWrapper`, it uses a Strategy pattern to achieve different
+   34:        solver configuration.
+   35: 
+   36:     2) The class itself implements a `Template` pattern.
+   37: 
+   38:     RA-based algorithm uses a `SolverWrapper` for most, if not all, computations.
+   39:     During initialization, a solver wrapper is constructed from the given variables
+   40:     and is used afterward.
+   41: 
+   42:     In addition to a generic path parameterization algorithm, a RA-based algorithm
+   43:     implement additionally three methods:
+   44:     - compute_controllable_sets
+   45:     - compute_reachable_sets
+   46:     - compute_feasible_sets
+   47:     """
+   48: 
+   49:     def __init__(
+   50:             self, constraint_list, path, gridpoints=None, solver_wrapper=None, parametrizer=None, **kwargs
+   51:     ):
+   52:         super(ReachabilityAlgorithm, self).__init__(
+   53:             constraint_list, path, gridpoints=gridpoints, parametrizer=parametrizer, **kwargs
+   54:         )
+   55: 
+   56:         # Check for conic constraints
+   57:         has_conic = False
+   58:         for c in constraint_list:
+   59:             if c.get_constraint_type() == ConstraintType.CanonicalConic:
+   60:                 has_conic = True
+   61: 
+   62:         # Select solver wrapper automatically
+   63:         available_solvers = toppra.solverwrapper.available_solvers(output_msg=False)
+   64:         if solver_wrapper is None:
+   65:             logger.info(
+   66:                 "Solver wrapper not supplied. Choose solver wrapper automatically!"
+   67:             )
+   68:             if has_conic:
+   69:                 if not available_solvers["ecos"]:
+   70:                     raise exceptions.ToppraError("Solverwrapper not available.")
+   71:                 solver_wrapper = "ecos"
+   72:             else:
+   73:                 valid_solver = [solver for solver, avail in available_solvers if avail]
+   74:                 solver_wrapper = valid_solver[0]
+   75:             logger.info("Select solver {:}".format(solver_wrapper))
+   76: 
+   77:         # Check solver-wrapper suitability
+   78:         if has_conic:
+   79:             assert solver_wrapper.lower() in [
+   80:                 "cvxpy",
+   81:                 "ecos",
+   82:             ], "Problem has conic constraints, solver {:} is not suitable".format(
+   83:                 solver_wrapper
+   84:             )
+   85:         else:
+   86:             assert solver_wrapper.lower() in [
+   87:                 "cvxpy",
+   88:                 "qpoases",
+   89:                 "ecos",
+   90:                 "hotqpoases",
+   91:                 "seidel",
+   92:             ], "Solver {:} not found".format(solver_wrapper)
+   93: 
+   94:         if solver_wrapper.lower() == "cvxpy":
+   95:             from toppra.solverwrapper.cvxpy_solverwrapper import cvxpyWrapper
+   96: 
+   97:             self.solver_wrapper = cvxpyWrapper(
+   98:                 self.constraints, self.path, self.gridpoints
+   99:             )
+  100:         elif solver_wrapper.lower() == "qpoases":
+  101:             from toppra.solverwrapper.qpoases_solverwrapper import qpOASESSolverWrapper
+  102: 
+  103:             self.solver_wrapper = qpOASESSolverWrapper(
+  104:                 self.constraints, self.path, self.gridpoints
+  105:             )
+  106:         elif solver_wrapper.lower() == "hotqpoases":
+  107:             from toppra.solverwrapper.hot_qpoases_solverwrapper import (
+  108:                 hotqpOASESSolverWrapper,
+  109:             )
+  110: 
+  111:             self.solver_wrapper = hotqpOASESSolverWrapper(
+  112:                 self.constraints, self.path, self.gridpoints
+  113:             )
+  114:         elif solver_wrapper.lower() == "ecos":
+  115:             from toppra.solverwrapper.ecos_solverwrapper import ecosWrapper
+  116: 
+  117:             self.solver_wrapper = ecosWrapper(
+  118:                 self.constraints, self.path, self.gridpoints
+  119:             )
+  120:         elif solver_wrapper.lower() == "seidel":
+  121:             from toppra.solverwrapper.cy_seidel_solverwrapper import seidelWrapper
+  122: 
+  123:             self.solver_wrapper = seidelWrapper(
+  124:                 self.constraints, self.path, self.gridpoints, solve_lp1d=True
+  125:             )
+  126:         else:
+  127:             raise NotImplementedError(
+  128:                 "Solver wrapper {:} not found!".format(solver_wrapper)
+  129:             )
+  130: 
+  131:     def compute_feasible_sets(self):
+  132:         """Compute the sets of feasible squared velocities.
+  133: 
+  134:         Returns
+  135:         -------
+
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/mplib/planner.py 325 380
+  325:         elif min_dist != 1e9:
+  326:             status = f"IK Failed! Distance {min_dist} is greater than {threshold=}."
+  327:             return status, None
+  328:         else:
+  329:             status = "IK Failed! Cannot find valid solution."
+  330:             return status, None
+  331: 
+  332:         if return_closest:
+  333:             q_goals = np.asarray(q_goals)  # [N, ndof]
+  334:             start_qpos = np.asarray(start_qpos)[None]  # [1, ndof]
+  335: 
+  336:             # Consider equivalent joint values
+  337:             q1 = q_goals[:, self.equiv_joint_mask]  # [N, n_equiv_joint]
+  338:             q2 = q1 + 2 * np.pi  # equivalent joints
+  339:             start_q = start_qpos[:, self.equiv_joint_mask]  # [1, n_equiv_joint]
+  340: 
+  341:             # Mask where q2 is valid and closer to start_q
+  342:             q2_closer_mask = (
+  343:                 q2 < self.joint_limits[:, 1][None, self.equiv_joint_mask]
+  344:             ) & (np.abs(q1 - start_q) > np.abs(q2 - start_q))  # [N, n_equiv_joint]
+  345:             # Convert q_goals to equivalent joint values closest to start_qpos
+  346:             q_goals[:, self.equiv_joint_mask] = np.where(q2_closer_mask, q2, q1)
+  347: 
+  348:             q_goals = q_goals[np.linalg.norm(q_goals - start_qpos, axis=1).argmin()]
+  349:         return status, q_goals
+  350: 
+  351:     def TOPP(self, path, step=0.1, verbose=False):
+  352:         """
+  353:         Time-Optimal Path Parameterization
+  354: 
+  355:         Args:
+  356:             path: numpy array of shape (n, dof)
+  357:             step: step size for the discretization
+  358:             verbose: if True, will print the log of TOPPRA
+  359:         """
+  360: 
+  361:         N_samples = path.shape[0]
+  362:         dof = path.shape[1]
+  363:         assert dof == len(self.joint_vel_limits)
+  364:         assert dof == len(self.joint_acc_limits)
+  365:         ss = np.linspace(0, 1, N_samples)
+  366:         path = ta.SplineInterpolator(ss, path)
+  367:         pc_vel = constraint.JointVelocityConstraint(self.joint_vel_limits)
+  368:         pc_acc = constraint.JointAccelerationConstraint(self.joint_acc_limits)
+  369:         instance = algo.TOPPRA(
+  370:             [pc_vel, pc_acc], path, parametrizer="ParametrizeConstAccel"
+  371:         )
+  372:         jnt_traj = instance.compute_trajectory()
+  373:         if jnt_traj is None:
+  374:             raise RuntimeError("Fail to parameterize path")
+  375:         ts_sample = np.linspace(0, jnt_traj.duration, int(jnt_traj.duration / step))  # type: ignore
+  376:         qs_sample = jnt_traj(ts_sample)
+  377:         qds_sample = jnt_traj(ts_sample, 1)
+  378:         qdds_sample = jnt_traj(ts_sample, 2)
+  379:         return ts_sample, qs_sample, qds_sample, qdds_sample, jnt_traj.duration  # type: ignore
+  380: 
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/envs/vector_env.py 1 430
+[Errno 2] No such file or directory: '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/envs/vector_env.py'
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/envs/_base_task.py 1800 1945
+ 1800:         )
+ 1801:         left_current_qpos, right_current_qpos = (
+ 1802:             current_jointstate[:left_arm_dim],
+ 1803:             current_jointstate[left_arm_dim + 1 : left_arm_dim + right_arm_dim + 1],
+ 1804:         )
+ 1805:         left_current_gripper, right_current_gripper = (
+ 1806:             current_jointstate[left_arm_dim : left_arm_dim + 1],
+ 1807:             current_jointstate[
+ 1808:                 left_arm_dim + right_arm_dim + 1 : left_arm_dim + right_arm_dim + 2
+ 1809:             ],
+ 1810:         )
+ 1811: 
+ 1812:         left_path = np.vstack((left_current_qpos, left_arm_actions))
+ 1813:         left_gripper_path = np.hstack((left_current_gripper, left_gripper_actions))
+ 1814:         right_path = np.vstack((right_current_qpos, right_arm_actions))
+ 1815:         right_gripper_path = np.hstack((right_current_gripper, right_gripper_actions))
+ 1816: 
+ 1817:         left_path = self.compress_path(left_path)
+ 1818:         right_path = self.compress_path(right_path)
+ 1819: 
+ 1820:         # ========== TOPP ==========
+ 1821:         topp_left_flag, topp_right_flag = True, True
+ 1822: 
+ 1823:         try:
+ 1824:             times, left_pos, left_vel, acc, duration = (
+ 1825:                 self.robot.left_mplib_planner.TOPP(left_path, 1 / 250, verbose=True)
+ 1826:             )
+ 1827: 
+ 1828:             left_pos, left_vel = self.downsample_trajectory(left_pos, left_vel)
+ 1829: 
+ 1830:             left_result = dict()
+ 1831:             left_result["position"], left_result["velocity"] = left_pos, left_vel
+ 1832:             left_n_step = left_result["position"].shape[0]
+ 1833:         except Exception as e:
+ 1834:             # print("left arm TOPP error: ", e)
+ 1835:             topp_left_flag = False
+ 1836:             left_n_step = 50  # fixed
+ 1837: 
+ 1838:         if left_n_step == 0:
+ 1839:             topp_left_flag = False
+ 1840:             left_n_step = 50  # fixed
+ 1841: 
+ 1842:         try:
+ 1843:             times, right_pos, right_vel, acc, duration = (
+ 1844:                 self.robot.right_mplib_planner.TOPP(right_path, 1 / 250, verbose=True)
+ 1845:             )
+ 1846: 
+ 1847:             right_pos, right_vel = self.downsample_trajectory(right_pos, right_vel)
+ 1848: 
+ 1849:             right_result = dict()
+ 1850:             right_result["position"], right_result["velocity"] = right_pos, right_vel
+ 1851:             right_n_step = right_result["position"].shape[0]
+ 1852:         except Exception as e:
+ 1853:             # print("right arm TOPP error: ", e)
+ 1854:             topp_right_flag = False
+ 1855:             right_n_step = 50  # fixed
+ 1856: 
+ 1857:         if right_n_step == 0:
+ 1858:             topp_right_flag = False
+ 1859:             right_n_step = 50  # fixed
+ 1860: 
+ 1861:         # ========== Gripper ==========
+ 1862: 
+ 1863:         left_mod_num = left_n_step % len(left_gripper_actions)
+ 1864:         right_mod_num = right_n_step % len(right_gripper_actions)
+ 1865:         left_gripper_step = [0] + [
+ 1866:             left_n_step // len(left_gripper_actions) + (1 if i < left_mod_num else 0)
+ 1867:             for i in range(len(left_gripper_actions))
+ 1868:         ]
+ 1869:         right_gripper_step = [0] + [
+ 1870:             right_n_step // len(right_gripper_actions) + (1 if i < right_mod_num else 0)
+ 1871:             for i in range(len(right_gripper_actions))
+ 1872:         ]
+ 1873: 
+ 1874:         left_gripper = []
+ 1875:         for gripper_step in range(1, left_gripper_path.shape[0]):
+ 1876:             region_left_gripper = np.linspace(
+ 1877:                 left_gripper_path[gripper_step - 1],
+ 1878:                 left_gripper_path[gripper_step],
+ 1879:                 left_gripper_step[gripper_step] + 1,
+ 1880:             )[1:]
+ 1881:             left_gripper = left_gripper + region_left_gripper.tolist()
+ 1882:         left_gripper = np.array(left_gripper)
+ 1883: 
+ 1884:         right_gripper = []
+ 1885:         for gripper_step in range(1, right_gripper_path.shape[0]):
+ 1886:             region_right_gripper = np.linspace(
+ 1887:                 right_gripper_path[gripper_step - 1],
+ 1888:                 right_gripper_path[gripper_step],
+ 1889:                 right_gripper_step[gripper_step] + 1,
+ 1890:             )[1:]
+ 1891:             right_gripper = right_gripper + region_right_gripper.tolist()
+ 1892:         right_gripper = np.array(right_gripper)
+ 1893: 
+ 1894:         now_left_id, now_right_id = 0, 0
+ 1895: 
+ 1896:         # ========== Control Loop ==========
+ 1897:         steps_executed = 0
+ 1898: 
+ 1899:         while now_left_id < left_n_step or now_right_id < right_n_step:
+ 1900:             if (
+ 1901:                 now_left_id < left_n_step
+ 1902:                 and now_left_id / left_n_step <= now_right_id / right_n_step
+ 1903:             ):
+ 1904:                 if topp_left_flag:
+ 1905:                     self.robot.set_arm_joints(
+ 1906:                         left_result["position"][now_left_id],
+ 1907:                         left_result["velocity"][now_left_id],
+ 1908:                         "left",
+ 1909:                     )
+ 1910:                 self.robot.set_gripper(left_gripper[now_left_id], "left")
+ 1911: 
+ 1912:                 now_left_id += 1
+ 1913: 
+ 1914:             if (
+ 1915:                 now_right_id < right_n_step
+ 1916:                 and now_right_id / right_n_step <= now_left_id / left_n_step
+ 1917:             ):
+ 1918:                 if topp_right_flag:
+ 1919:                     self.robot.set_arm_joints(
+ 1920:                         right_result["position"][now_right_id],
+ 1921:                         right_result["velocity"][now_right_id],
+ 1922:                         "right",
+ 1923:                     )
+ 1924:                 self.robot.set_gripper(right_gripper[now_right_id], "right")
+ 1925: 
+ 1926:                 now_right_id += 1
+ 1927: 
+ 1928:             self.scene.step()
+ 1929:             self._update_render()
+ 1930:             steps_executed += 1
+ 1931: 
+ 1932:             if self.check_success():
+ 1933:                 self.eval_success = True
+ 1934: 
+ 1935:                 infos["success"] = True
+ 1936:                 reward = np.array([1], dtype=np.float32)
+ 1937:                 termination = np.array([1], dtype=np.int32)
+ 1938:                 return reward, termination, truncation, infos
+ 1939: 
+ 1940:         if getattr(self, "eval_success", False):
+ 1941:             infos["success"] = True
+ 1942:             reward = np.array([1], dtype=np.float32)
+ 1943:             termination = np.array([1], dtype=np.int32)
+ 1944: 
+ 1945:         if self.take_action_cnt >= self.step_lim:
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/envs/camera/camera.py 305 360
+  305:                 "cam2world_gl": camera_model_matrix,
+  306:             }
+  307: 
+  308:         if self.collect_wrist_camera:
+  309:             res["left_camera"] = _get_config(self.left_camera)
+  310:             res["right_camera"] = _get_config(self.right_camera)
+  311: 
+  312:         for camera, camera_name in zip(self.static_camera_list, self.static_camera_name):
+  313:             if camera_name == "head_camera":
+  314:                 if self.collect_head_camera:
+  315:                     res[camera_name] = _get_config(camera)
+  316:             else:
+  317:                 res[camera_name] = _get_config(camera)
+  318:         # ================================= sensor camera =================================
+  319:         # res['head_sensor'] = res['head_camera']
+  320:         # print(res)
+  321:         return res
+  322: 
+  323:     def get_rgb(self) -> dict:
+  324:         rgba = self.get_rgba()
+  325:         rgb = {}
+  326:         for camera_name, camera_data in rgba.items():
+  327:             rgb[camera_name] = {}
+  328:             rgb[camera_name]["rgb"] = camera_data["rgba"][:, :, :3]  # Exclude alpha channel
+  329:         return rgb
+  330:     
+  331:     # Get Camera RGBA
+  332:     def get_rgba(self) -> dict:
+  333: 
+  334:         def _get_rgba(camera):
+  335:             camera_rgba = camera.get_picture("Color")
+  336:             camera_rgba_img = (camera_rgba * 255).clip(0, 255).astype("uint8")
+  337:             return camera_rgba_img
+  338: 
+  339:         # ================================= sensor camera =================================
+  340:         # def _get_sensor_rgba(sensor):
+  341:         #     camera_rgba = sensor.get_rgb()
+  342:         #     camera_rgba_img = (camera_rgba * 255).clip(0, 255).astype("uint8")[:,:,:3]
+  343:         #     return camera_rgba_img
+  344: 
+  345:         res = {}
+  346: 
+  347:         if self.collect_wrist_camera:
+  348:             res["left_camera"] = {}
+  349:             res["right_camera"] = {}
+  350:             res["left_camera"]["rgba"] = _get_rgba(self.left_camera)
+  351:             res["right_camera"]["rgba"] = _get_rgba(self.right_camera)
+  352: 
+  353:         for camera, camera_name in zip(self.static_camera_list, self.static_camera_name):
+  354:             if camera_name == "head_camera":
+  355:                 if self.collect_head_camera:
+  356:                     res[camera_name] = {}
+  357:                     res[camera_name]["rgba"] = _get_rgba(camera)
+  358:             else:
+  359:                 res[camera_name] = {}
+  360:                 res[camera_name]["rgba"] = _get_rgba(camera)
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904/envs/move_stapler_pad.py 105 140
+  105: 
+  106:         self.info["info"] = {
+  107:             "{A}": f"048_stapler/base{self.stapler_id}",
+  108:             "{B}": self.color_name,
+  109:             "{a}": str(arm_tag),
+  110:         }
+  111:         return self.info
+  112: 
+  113:     def get_info(self):
+  114:         arm_tag = ArmTag("right" if self.stapler.get_pose().p[0] > 0 else "left")
+  115:         info = {
+  116:             "{A}": f"048_stapler/base{self.stapler_id}",
+  117:             "{B}": self.color_name,
+  118:             "{a}": str(arm_tag),
+  119:         }
+  120:         return info
+  121: 
+  122:     def check_success(self):
+  123:         stapler_pose = self.stapler.get_pose().p
+  124:         stapler_qpose = np.abs(self.stapler.get_pose().q)
+  125:         target_pos = self.pad.get_pose().p
+  126:         eps = [0.02, 0.02, 0.01]
+  127:         return (np.all(abs(stapler_pose - target_pos) < np.array(eps))
+  128:                 and (stapler_qpose.max() - stapler_qpose.min()) < 0.02 and self.robot.is_left_gripper_open()
+  129:                 and self.robot.is_right_gripper_open())
+THREAD 1065920
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd5b70b7c 0x89 0x0 0x7f9828f00e20 0x0 0xffffffff 0x7f9828f00ce0 0x7fcc217b20d7
+THREAD 1066014
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd8db78b0 0x189 0x0 0x0 0x0 0xffffffff 0x7f98287015e0 0x7fcc217b20d7
+THREAD 1066016
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f98276ff550 0x7fcc217b20d7
+THREAD 1066017
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f9827f00550 0x7fcc217b20d7
+THREAD 1066018
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f982f0e8550 0x7fcc217b20d7
+THREAD 1066019
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd8db78b0 0x189 0x0 0x0 0x0 0xffffffff 0x7f983e3df5e0 0x7fcc217b20d7
+THREAD 1066020
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f983dbde550 0x7fcc217b20d7
+THREAD 1066194
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f98254dc550 0x7fcc217b20d7
+THREAD 1066195
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd5b70b7c 0x89 0x0 0x7f9824cd9150 0x0 0xffffffff 0x7f9824cd9010 0x7fcc217b20d7
+THREAD 1066196
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd5b70b7c 0x89 0x0 0x7f980fffd640 0x0 0xffffffff 0x7f980fffd500 0x7fcc217b20d7
+THREAD 1066197
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f980d3fc550 0x7fcc217b20d7
+THREAD 1066198
+comm ray::IDLE
+wchan do_poll.constprop.0
+syscall 7 0x7f97b8990ec0 0x1 0xa 0x7f980cbfbe40 0x0 0xa 0x7f980cbfbc90 0x7fcc21839c0f
+THREAD 1066199
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x55bdd5b70b7c 0x89 0x0 0x7f97f9815e20 0x0 0xffffffff 0x7f97f9815ce0 0x7fcc217b20d7
+THREAD 1066200
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f97f9016550 0x7fcc217b20d7
+THREAD 1066201
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f97f8815550 0x7fcc217b20d7
+THREAD 1066202
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97b8121340 0x189 0x0 0x0 0x0 0xffffffff 0x7f97e3ffd550 0x7fcc217b20d7
+THREAD 1072222
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97132f7c60 0x189 0x0 0x0 0x0 0xffffffff 0x7f97e0ff8560 0x7fcc217b20d7
+THREAD 1072223
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f93b989a070 0x189 0x0 0x0 0x0 0xffffffff 0x7f97e27fb560 0x7fcc217b20d7
+THREAD 1072224
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f94d849b3c0 0x189 0x0 0x0 0x0 0xffffffff 0x7f97ceb4c560 0x7fcc217b20d7
+THREAD 1072229
+comm pt_tcpstore_uv
+wchan ep_poll
+syscall 281 0x186 0x7f97e1ff7830 0x400 0xffffffff 0x0 0x8 0x7f97e1ff6ab0 0x7fcc21846ba8
+THREAD 1072383
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f96cb703610 0x189 0x0 0x7f9777ffe8e0 0x0 0xffffffff 0x7f9777ffe530 0x7fcc217b20d7
+THREAD 1072385
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f96cb7038e0 0x189 0x0 0x7f97777fdc50 0x0 0xffffffff 0x7f97777fd830 0x7fcc217b20d7
+THREAD 1072387
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f961f002130 0x189 0x0 0x7f9776ffc8e0 0x0 0xffffffff 0x7f9776ffc530 0x7fcc217b20d7
+THREAD 1072388
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f9526983530 0x189 0x0 0x7f97767fbc50 0x0 0xffffffff 0x7f97767fb830 0x7fcc217b20d7
+THREAD 1072389
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x194 0x7f9775ffab00 0x40 0xa 0x0 0x0 0x7f9775ffa8c0 0x7fcc21846e6e
+THREAD 1072392
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f97006e7b04 0x189 0x0 0x0 0x0 0xffffffff 0x7f97757f9c60 0x7fcc217b20d7
+THREAD 1072393
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f97006e7b00 0x189 0x0 0x0 0x0 0xffffffff 0x7f9774ff8c60 0x7fcc217b20d7
+THREAD 1072396
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x199 0x7f976fffeb00 0x40 0xa 0x0 0x7f95e81ff5d8 0x7f976fffe8c0 0x7fcc21846e6e
+THREAD 1072397
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f95b0c5f470 0x189 0x0 0x0 0x0 0xffffffff 0x7f976f7fdc60 0x7fcc217b20d7
+THREAD 1072398
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f95b0c5f470 0x189 0x0 0x0 0x0 0xffffffff 0x7f976effcc60 0x7fcc217b20d7
+THREAD 1072402
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f95aaed5c40 0x189 0x0 0x7f976e7fb8e0 0x0 0xffffffff 0x7f976e7fb530 0x7fcc217b20d7
+THREAD 1072405
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f95aaed5ba0 0x189 0x0 0x7f976dffac50 0x0 0xffffffff 0x7f976dffa830 0x7fcc217b20d7
+THREAD 1072406
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x19e 0x7f976d7f9b00 0x40 0xa 0x0 0x7f97210a4688 0x7f976d7f98c0 0x7fcc21846e6e
+THREAD 1072409
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f95a2595490 0x189 0x0 0x0 0x0 0xffffffff 0x7f976cff8c60 0x7fcc217b20d7
+THREAD 1072410
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f95a2595490 0x189 0x0 0x0 0x0 0xffffffff 0x7f9767ffec60 0x7fcc217b20d7
+THREAD 1072426
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f9350000ba0 0x189 0x0 0x0 0x0 0xffffffff 0x7f97677fd560 0x7fcc217b20d7
+THREAD 1072427
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f935416df90 0x189 0x0 0x0 0x0 0xffffffff 0x7f9766ffc560 0x7fcc217b20d7
+THREAD 1072428
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f9348000ba0 0x189 0x0 0x0 0x0 0xffffffff 0x7f97667fb560 0x7fcc217b20d7
+THREAD 1072802
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f935423d750 0x189 0x0 0x7f9765ffa8e0 0x0 0xffffffff 0x7f9765ffa530 0x7fcc217b20d7
+THREAD 1072803
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f935423e090 0x189 0x0 0x7f9764ff88e0 0x0 0xffffffff 0x7f9764ff8530 0x7fcc217b20d7
+THREAD 1072804
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f935423cc90 0x189 0x0 0x7f97657f9c50 0x0 0xffffffff 0x7f97657f9830 0x7fcc217b20d7
+THREAD 1072805
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f935423dff0 0x189 0x0 0x7f9727ffec50 0x0 0xffffffff 0x7f9727ffe830 0x7fcc217b20d7
+THREAD 1072806
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x1a5 0x7f97277fdb00 0x40 0xa 0x0 0x0 0x7f97277fd8c0 0x7fcc21846e6e
+THREAD 1072813
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354242064 0x189 0x0 0x0 0x0 0xffffffff 0x7f9726ffcc60 0x7fcc217b20d7
+THREAD 1072815
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354242064 0x189 0x0 0x0 0x0 0xffffffff 0x7f97267fbc60 0x7fcc217b20d7
+THREAD 1072817
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x1aa 0x7f9725ffab00 0x40 0xa 0x0 0x7f9354240848 0x7f9725ffa8c0 0x7fcc21846e6e
+THREAD 1072819
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354241b50 0x189 0x0 0x0 0x0 0xffffffff 0x7f97257f9c60 0x7fcc217b20d7
+THREAD 1072820
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354241b50 0x189 0x0 0x0 0x0 0xffffffff 0x7f9724ff8c60 0x7fcc217b20d7
+THREAD 1072823
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f9354293d00 0x189 0x0 0x7f971fffe8e0 0x0 0xffffffff 0x7f971fffe530 0x7fcc217b20d7
+THREAD 1072826
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x1af 0x7f971f7fdb00 0x40 0xa 0x0 0x7f9354297e28 0x7f971f7fd8c0 0x7fcc21846e6e
+THREAD 1072827
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f9354293c60 0x189 0x0 0x7f971effcc50 0x0 0xffffffff 0x7f971effc830 0x7fcc217b20d7
+THREAD 1072829
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354297960 0x189 0x0 0x0 0x0 0xffffffff 0x7f971e7fbc60 0x7fcc217b20d7
+THREAD 1072831
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f9354297960 0x189 0x0 0x0 0x0 0xffffffff 0x7f971dffac60 0x7fcc217b20d7
+THREAD 1156618
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f8f93baa8d0 0x189 0x0 0x0 0x0 0xffffffff 0x7f971cff8560 0x7fcc217b20d7
+THREAD 1156619
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f9386b61ee0 0x189 0x0 0x0 0x0 0xffffffff 0x7f96fcffc560 0x7fcc217b20d7
+THREAD 1156620
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f93ec03e110 0x189 0x0 0x0 0x0 0xffffffff 0x7f96fdffe560 0x7fcc217b20d7
+THREAD 1156704
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f915e8a1e00 0x189 0x0 0x7f96fd7fd8e0 0x0 0xffffffff 0x7f96fd7fd530 0x7fcc217b20d7
+THREAD 1156705
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f909c8f84b0 0x189 0x0 0x7f971d7f9c50 0x0 0xffffffff 0x7f971d7f9830 0x7fcc217b20d7
+THREAD 1156706
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f92f2ee4740 0x189 0x0 0x7f96e7ffe8e0 0x0 0xffffffff 0x7f96e7ffe530 0x7fcc217b20d7
+THREAD 1156707
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f918530f100 0x189 0x0 0x7f96e77fdc50 0x0 0xffffffff 0x7f96e77fd830 0x7fcc217b20d7
+THREAD 1156708
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0xd6 0x7f96e6ffcb00 0x40 0xa 0x0 0x7f907fffee78 0x7f96e6ffc8c0 0x7fcc21846e6e
+THREAD 1156711
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f929fed01d0 0x189 0x0 0x0 0x0 0xffffffff 0x7f96e67fbc60 0x7fcc217b20d7
+THREAD 1156712
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f929fed01d0 0x189 0x0 0x0 0x0 0xffffffff 0x7f96e5ffac60 0x7fcc217b20d7
+THREAD 1156714
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0xdb 0x7f96e57f9b00 0x40 0xa 0x0 0x0 0x7f96e57f98c0 0x7fcc21846e6e
+THREAD 1156717
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f90d7a33db4 0x189 0x0 0x0 0x0 0xffffffff 0x7f96e4ff8c60 0x7fcc217b20d7
+THREAD 1156718
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f90d7a33db0 0x189 0x0 0x0 0x0 0xffffffff 0x7f96dfffec60 0x7fcc217b20d7
+THREAD 1156722
+comm pt_nccl_watchdg
+wchan futex_wait_queue_me
+syscall 202 0x7f91585f7170 0x189 0x0 0x7f96df7fd8e0 0x0 0xffffffff 0x7f96df7fd530 0x7fcc217b20d7
+THREAD 1156723
+comm pt_nccl_heartbt
+wchan futex_wait_queue_me
+syscall 202 0x7f8fb425d570 0x189 0x0 0x7f96deffcc50 0x0 0xffffffff 0x7f96deffc830 0x7fcc217b20d7
+THREAD 1156732
+comm ray::IDLE
+wchan ep_poll
+syscall 232 0x85 0x7f9834ce9b00 0x40 0xa 0x0 0x7f902d7b2448 0x7f9834ce98c0 0x7fcc21846e6e
+THREAD 1156733
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f8ffcd954f0 0x189 0x0 0x0 0x0 0xffffffff 0x7f9830582c60 0x7fcc217b20d7
+THREAD 1156734
+comm pt_gloo_runloop
+wchan futex_wait_queue_me
+syscall 202 0x7f8ffcd954f0 0x189 0x0 0x0 0x0 0xffffffff 0x7f9830d83c60 0x7fcc217b20d7
+THREAD 1168981
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f97ec028728 0x189 0x0 0x7f9826effd70 0x0 0xffffffff 0x7f9826effc50 0x7fcc217b20d7
+THREAD 1168982
+comm [vkrt] Analysis
+wchan futex_wait_queue_me
+syscall 202 0x7f98040b7a48 0x189 0x0 0x7f982fd81db0 0x0 0xffffffff 0x7f982fd81c90 0x7fcc217b20d7
+THREAD 1168983
+comm [vkcf] Analysis
+wchan futex_wait_queue_me
+syscall 202 0x7f97f00015a8 0x189 0x0 0x0 0x0 0xffffffff 0x7f9829dcfc70 0x7fcc217b20d7
+THREAD 1168985
+comm [vkps] Update
+wchan futex_wait_queue_me
+syscall 202 0x7f9458001118 0x189 0x0 0x7f98266fed90 0x0 0xffffffff 0x7f98266fec70 0x7fcc217b20d7
+THREAD 1168989
+comm cuda-EvtHandlr
+wchan do_poll.constprop.0
+syscall 7 0x7f981c1613f0 0x2 0x64 0x7ffe247c8170 0x0 0x7f945c000b70 0x7f9825efdcc0 0x7fcc21839c0f
+THREAD 1169008
+comm ray::IDLE
+wchan futex_wait_queue_me
+syscall 202 0x7f8b88000f18 0x189 0x0 0x7f97e37fdd80 0x0 0xffffffff 0x7f97e37fdc60 0x7fcc217b20d7
+2026-09-04T06:51:44+00:00

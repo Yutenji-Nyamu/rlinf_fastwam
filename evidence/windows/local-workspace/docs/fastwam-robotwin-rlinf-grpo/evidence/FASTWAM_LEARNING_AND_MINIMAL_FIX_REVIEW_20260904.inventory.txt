@@ -1,0 +1,533 @@
+CST 2026-09-04T10:42:34.459953+08:00
+COMMAND ['id']
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+
+COMMAND ['uptime']
+ 02:42:34 up 15 days, 22:21, 14 users,  load average: 5.31, 5.37, 5.47
+
+COMMAND ['free', '-b']
+               total        used        free      shared  buff/cache   available
+Mem:     2164140818432 845114392576 786921508864 27732054016 532104916992 1280455790592
+Swap:     6413086720  2732863488  3680223232
+
+COMMAND ['nvidia-smi', '--query-gpu=index,memory.used,memory.total,utilization.gpu', '--format=csv,noheader,nounits']
+0, 9728, 81559, 0
+1, 4, 81559, 0
+2, 4, 81559, 0
+3, 4, 81559, 0
+4, 68678, 81559, 0
+5, 68970, 81559, 99
+6, 5, 81559, 0
+7, 5, 81559, 0
+
+COMMAND ['ps', '-u', 'chenyiteng', '-o', 'pid,ppid,etime,stat,rss,comm']
+    PID    PPID     ELAPSED STAT   RSS COMMAND
+ 321829       1 11-10:14:42 Ss    4984 systemd
+ 321830  321829 11-10:14:42 S      568 (sd-pam)
+ 321906       1 11-10:14:41 Ssl   9804 ray
+ 321933  321906 11-10:14:41 Sl   2684572 gcs_server
+ 322129  321906 11-10:14:40 Sl   20928 python3
+ 322130  321906 11-10:14:40 Sl   15604 python3
+ 322131  321906 11-10:14:40 Sl   74764 python3
+ 322193  322131 11-10:14:39 S     2756 python3
+ 322194  322131 11-10:14:39 Sl   13828 ray-dashboard-M
+ 322195  322131 11-10:14:39 Sl   13660 ray-dashboard-D
+ 322196  322131 11-10:14:39 Sl   64916 ray-dashboard-E
+ 322197  322131 11-10:14:39 Sl   13856 ray-dashboard-J
+ 322198  322131 11-10:14:39 Sl   107940 ray-dashboard-N
+ 322199  322131 11-10:14:39 Sl   22616 ray-dashboard-R
+ 322200  322131 11-10:14:39 Sl   13608 ray-dashboard-S
+ 322201  322131 11-10:14:39 Sl   184412 ray-dashboard-S
+ 322202  322131 11-10:14:39 Sl   13972 ray-dashboard-T
+ 322684  321906 11-10:14:39 Sl   17156 python3
+ 322685  321906 11-10:14:39 Sl   67276 raylet
+ 322760  322685 11-10:14:39 Sl   288160 ray::DashboardA
+ 322762  322685 11-10:14:39 Sl   69192 ray::RuntimeEnv
+ 323562  322685 11-10:13:27 SNl  48564 ray::IDLE
+ 323564  322685 11-10:13:27 SNl  48344 ray::IDLE
+ 323566  322685 11-10:13:27 SNl  48144 ray::IDLE
+ 323567  322685 11-10:13:27 SNl  48360 ray::IDLE
+ 323568  322685 11-10:13:27 SNl  48156 ray::IDLE
+ 323569  322685 11-10:13:27 SNl  48336 ray::IDLE
+ 323570  322685 11-10:13:27 SNl  48384 ray::IDLE
+ 323571  322685 11-10:13:27 SNl  48124 ray::IDLE
+ 323572  322685 11-10:13:27 SNl  48364 ray::IDLE
+ 323573  322685 11-10:13:27 SNl  48260 ray::IDLE
+ 323574  322685 11-10:13:27 SNl  48652 ray::IDLE
+ 323575  322685 11-10:13:27 SNl  48492 ray::IDLE
+ 323576  322685 11-10:13:27 SNl  48180 ray::IDLE
+ 323577  322685 11-10:13:27 SNl  48096 ray::IDLE
+ 323578  322685 11-10:13:27 SNl  48452 ray::IDLE
+ 323579  322685 11-10:13:27 SNl  48340 ray::IDLE
+ 323580  322685 11-10:13:27 SNl  48180 ray::IDLE
+ 323581  322685 11-10:13:27 SNl  48332 ray::IDLE
+ 323582  322685 11-10:13:27 SNl  48264 ray::IDLE
+ 323583  322685 11-10:13:27 SNl  48348 ray::IDLE
+ 323584  322685 11-10:13:27 SNl  48300 ray::IDLE
+ 323585  322685 11-10:13:27 SNl  48612 ray::IDLE
+ 323586  322685 11-10:13:27 SNl  48492 ray::IDLE
+ 323587  322685 11-10:13:27 SNl  48292 ray::IDLE
+ 323588  322685 11-10:13:27 SNl  48228 ray::IDLE
+ 323589  322685 11-10:13:27 SNl  48300 ray::IDLE
+ 323590  322685 11-10:13:27 SNl  48312 ray::IDLE
+ 323591  322685 11-10:13:27 RNl  48432 ray::IDLE
+ 323592  322685 11-10:13:27 SNl  48344 ray::IDLE
+ 323593  322685 11-10:13:27 SNl  48236 ray::IDLE
+ 323594  322685 11-10:13:27 SNl  48536 ray::IDLE
+ 323595  322685 11-10:13:27 SNl  48164 ray::IDLE
+ 323596  322685 11-10:13:27 SNl  48184 ray::IDLE
+ 323597  322685 11-10:13:27 SNl  48296 ray::IDLE
+ 323598  322685 11-10:13:27 SNl  48292 ray::IDLE
+ 323599  322685 11-10:13:27 SNl  48348 ray::IDLE
+ 323600  322685 11-10:13:27 SNl  48240 ray::IDLE
+ 323601  322685 11-10:13:27 SNl  48316 ray::IDLE
+ 323602  322685 11-10:13:27 SNl  48276 ray::IDLE
+ 323603  322685 11-10:13:27 SNl  48320 ray::IDLE
+ 323604  322685 11-10:13:27 SNl  48128 ray::IDLE
+ 323605  322685 11-10:13:27 SNl  48068 ray::IDLE
+ 323607  322685 11-10:13:27 SNl  48268 ray::IDLE
+ 323608  322685 11-10:13:27 SNl  48348 ray::IDLE
+ 323609  322685 11-10:13:27 SNl  48168 ray::IDLE
+ 323610  322685 11-10:13:27 SNl  48232 ray::IDLE
+ 323611  322685 11-10:13:27 SNl  48176 ray::IDLE
+ 323612  322685 11-10:13:27 SNl  48400 ray::IDLE
+ 323613  322685 11-10:13:27 SNl  48036 ray::IDLE
+ 323614  322685 11-10:13:27 SNl  48260 ray::IDLE
+ 323615  322685 11-10:13:27 SNl  48308 ray::IDLE
+ 323616  322685 11-10:13:27 SNl  48244 ray::IDLE
+ 323617  322685 11-10:13:27 SNl  48200 ray::IDLE
+ 323618  322685 11-10:13:27 SNl  48232 ray::IDLE
+ 323619  322685 11-10:13:27 SNl  48356 ray::IDLE
+ 323620  322685 11-10:13:27 SNl  48624 ray::IDLE
+ 323621  322685 11-10:13:27 SNl  48392 ray::IDLE
+ 323622  322685 11-10:13:27 SNl  48212 ray::IDLE
+ 323623  322685 11-10:13:27 SNl  47964 ray::IDLE
+ 323624  322685 11-10:13:27 SNl  48144 ray::IDLE
+ 323625  322685 11-10:13:27 SNl  48292 ray::IDLE
+ 323626  322685 11-10:13:27 SNl  48224 ray::IDLE
+ 323627  322685 11-10:13:27 SNl  48488 ray::IDLE
+ 323628  322685 11-10:13:27 SNl  48328 ray::IDLE
+ 323629  322685 11-10:13:27 SNl  48204 ray::IDLE
+ 323630  322685 11-10:13:27 SNl  48216 ray::IDLE
+ 323631  322685 11-10:13:27 SNl  48360 ray::IDLE
+ 323632  322685 11-10:13:27 SNl  48272 ray::IDLE
+ 323633  322685 11-10:13:27 SNl  48364 ray::IDLE
+ 323634  322685 11-10:13:27 SNl  47344 ray::IDLE
+ 323635  322685 11-10:13:27 SNl  47352 ray::IDLE
+ 323636  322685 11-10:13:27 SNl  48264 ray::IDLE
+ 323664  322685 11-10:13:27 SNl  47992 ray::IDLE
+ 323665  322685 11-10:13:27 SNl  48460 ray::IDLE
+ 323666  322685 11-10:13:27 SNl  48536 ray::IDLE
+ 323667  322685 11-10:13:27 SNl  48464 ray::IDLE
+ 323668  322685 11-10:13:27 SNl  47376 ray::IDLE
+ 323669  322685 11-10:13:27 SNl  48408 ray::IDLE
+ 323670  322685 11-10:13:27 SNl  48304 ray::IDLE
+ 323671  322685 11-10:13:27 SNl  48244 ray::IDLE
+ 323672  322685 11-10:13:27 SNl  48164 ray::IDLE
+ 323673  322685 11-10:13:27 SNl  48168 ray::IDLE
+ 323674  322685 11-10:13:27 SNl  48600 ray::IDLE
+ 323675  322685 11-10:13:27 SNl  48396 ray::IDLE
+ 323676  322685 11-10:13:27 SNl  48152 ray::IDLE
+ 323678  322685 11-10:13:27 RNl  48256 ray::IDLE
+ 323788  322685 11-10:13:27 SNl  48304 ray::IDLE
+ 323821  322685 11-10:13:27 SNl  48292 ray::IDLE
+ 323868  322685 11-10:13:27 SNl  48216 ray::IDLE
+ 323884  322685 11-10:13:27 SNl  48292 ray::IDLE
+ 323914  322685 11-10:13:27 SNl  48240 ray::IDLE
+ 323921  322685 11-10:13:27 SNl  48280 ray::IDLE
+ 323924  322685 11-10:13:27 SNl  48404 ray::IDLE
+ 323928  322685 11-10:13:27 SNl  48160 ray::IDLE
+ 323929  322685 11-10:13:27 SNl  48244 ray::IDLE
+ 323930  322685 11-10:13:27 SNl  48328 ray::IDLE
+ 323953  322685 11-10:13:26 SNl  48128 ray::IDLE
+ 323954  322685 11-10:13:26 SNl  48272 ray::IDLE
+ 323957  322685 11-10:13:26 SNl  48204 ray::IDLE
+ 323980  322685 11-10:13:26 SNl  48272 ray::IDLE
+ 324008  322685 11-10:13:26 SNl  48420 ray::IDLE
+ 324017  322685 11-10:13:26 SNl  48176 ray::IDLE
+ 324037  322685 11-10:13:26 SNl  48356 ray::IDLE
+ 324073  322685 11-10:13:26 SNl  48280 ray::IDLE
+ 324110  322685 11-10:13:26 SNl  48508 ray::IDLE
+ 324186  322685 11-10:13:26 SNl  48276 ray::IDLE
+ 324199  322685 11-10:13:26 SNl  48696 ray::IDLE
+ 324203  322685 11-10:13:26 SNl  48236 ray::IDLE
+ 324213  322685 11-10:13:26 RNl  48172 ray::IDLE
+ 324214  322685 11-10:13:26 SNl  48308 ray::IDLE
+ 324215  322685 11-10:13:26 SNl  47256 ray::IDLE
+ 324260  322685 11-10:13:26 SNl  47296 ray::IDLE
+ 324330  322685 11-10:13:26 SNl  48176 ray::IDLE
+ 324360  322685 11-10:13:26 SNl  48088 ray::IDLE
+ 324407  322685 11-10:13:26 SNl  48352 ray::IDLE
+ 324470  322685 11-10:13:26 SNl  48068 ray::IDLE
+ 324500  322685 11-10:13:26 SNl  48164 ray::IDLE
+ 324580  322685 11-10:13:26 SNl  48248 ray::IDLE
+ 324638  322685 11-10:13:26 SNl  47320 ray::IDLE
+ 324667  322685 11-10:13:26 SNl  48540 ray::IDLE
+ 324719  322685 11-10:13:26 SNl  48320 ray::IDLE
+ 324786  322685 11-10:13:26 SNl  47360 ray::IDLE
+ 324834  322685 11-10:13:26 SNl  48460 ray::IDLE
+ 324881  322685 11-10:13:26 SNl  47364 ray::IDLE
+ 324940  322685 11-10:13:26 SNl  48208 ray::IDLE
+ 812043 3176204       00:40 S     1000 sleep
+ 812942  812758       00:00 S     8256 sshd
+ 812943  812942       00:00 Ss    3580 bash
+ 812944  812943       00:00 S    10812 python3
+ 812957  812944       00:00 R     1592 ps
+3176203       1    14:18:53 Ss    3596 bash
+3176204       1    14:18:53 Ss    4136 bash
+3176214 3176203    14:18:53 S      940 timeout
+3176215 3176214    14:18:53 Sl   1687472 python
+3176818  322685    14:18:46 SNl  647448 ray::_RemoteNod
+3177190  322685    14:18:44 SNl  662692 ray::Collective
+3177192  322685    14:18:44 SNl  651152 ray::WorkerMana
+3177193  322685    14:18:44 SNl  649080 ray::DeviceLock
+3177194  322685    14:18:44 SNl  648364 ray::NodeManage
+3177195  322685    14:18:44 SNl  649780 ray::PortLockMa
+3177199  322685    14:18:44 SNl  19612544 ray::EmbodiedFS
+3177201  322685    14:18:44 SNl  17910172 ray::EmbodiedFS
+3177202  322685    14:18:44 SNl  6316508 ray::MultiStepR
+3177204  322685    14:18:43 SNl  6685800 ray::MultiStepR
+3177205  322685    14:18:43 SNl  390550748 ray::EnvWorker
+3177207  322685    14:18:43 SNl  376652948 ray::EnvWorker
+3177209  322685    14:18:43 SNl  735076 ray::ChannelWor
+3177211  322685    14:18:43 SNl  1095768 ray::ChannelWor
+3177370  322685    14:18:43 SNl  686400 ray::ChannelWor
+
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/bootstrap-7d07-20260821
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/fastwam-action-dvac-adv
+RUN fastwam-action-dvac-adv-w05to15-smoke2-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v2
+exit_code.txt 0
+finished_at.txt 2026-08-31T15:27:39+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8646)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8808), ('tensorboard/events.out.tfevents.1788189021.admin.1020084.0', 3569)]
+*/checkpoints/global_step_* [('fastwam_action_dvac_adv_smoke_fresh/checkpoints/global_step_1', 4096)]
+RUN fastwam-action-dvac-adv-w05to15-smoke2-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v2-reload-step2
+exit_code.txt 0
+finished_at.txt 2026-08-31T15:46:31+00:00
+runtime/*resolved* []
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 9096), ('tensorboard/events.out.tfevents.1788190094.admin.1099948.0', 3687)]
+*/checkpoints/global_step_* [('fastwam_action_dvac_adv_smoke_reload_step2/checkpoints/global_step_2', 4096)]
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo
+RUN fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3
+exit_code.txt 255
+finished_at.txt 2026-09-03T07:33:18+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8278)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8440), ('tensorboard/events.out.tfevents.1788406401.admin.2153017.0', 12642)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1
+exit_code.txt 255
+finished_at.txt 2026-09-02T06:52:25+00:00
+runtime/*resolved* [('runtime/resolved.sha256', 225), ('runtime/resolved.yaml', 8216)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8378), ('tensorboard/events.out.tfevents.1788311193.admin.3589674.0', 34996)]
+*/checkpoints/global_step_* [('fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10', 4096)]
+RUN fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v1
+exit_code.txt 255
+finished_at.txt 2026-09-02T10:43:59+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8216)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8378), ('tensorboard/events.out.tfevents.1788345834.admin.815655.0', 88)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v2
+runtime/*resolved* [('runtime/resolved.yaml', 8216)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8378), ('tensorboard/events.out.tfevents.1788346129.admin.826985.0', 7298)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+exit_code.txt 255
+finished_at.txt 2026-09-03T15:51:49+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8560)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8722), ('tensorboard/events.out.tfevents.1788430499.admin.2812516.0', 57914)]
+*/checkpoints/global_step_* [('fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2/checkpoints/global_step_20', 4096), ('fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2/checkpoints/global_step_30', 4096)]
+RUN fastwam-grpo-pi0style-offload-smoke1-2gpu16x16-g8-b2048-u2-m10-phys67-v1
+exit_code.txt 0
+finished_at.txt 2026-09-02T15:22:06+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8150)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8312), ('tensorboard/events.out.tfevents.1788359499.admin.1358525.0', 2904)]
+*/checkpoints/global_step_* [('fastwam_grpo_pi0style_offload_smoke1_2gpu16x16_g8_b2048_u2_m10_phys67_v1/checkpoints/global_step_1', 4096)]
+RUN fastwam-grpo-pi0style-offload-smoke1-2gpu32x8-g8-b2048-u2-m10-phys67-v1
+exit_code.txt 255
+finished_at.txt 2026-09-02T14:23:42+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8143)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8305), ('tensorboard/events.out.tfevents.1788356609.admin.1277587.0', 88)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v3-roundtrip
+exit_code.txt 1
+finished_at.txt 2026-08-31T11:57:03+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8121)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8283), ('tensorboard/events.out.tfevents.1788176804.admin.282093.0', 88)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v4-roundtrip
+exit_code.txt 0
+finished_at.txt 2026-08-31T12:20:23+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8119)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8281), ('tensorboard/events.out.tfevents.1788177719.admin.350862.0', 2904)]
+*/checkpoints/global_step_* [('fastwam_grpo_smoke1_dcp_fresh/checkpoints/global_step_1', 4096)]
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v4-roundtrip-reloadcheck
+exit_code.txt 0
+finished_at.txt 2026-08-31T12:39:39+00:00
+runtime/*resolved* []
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1788178857.admin.427114.0', 3002), ('tensorboard/config.yaml', 8533)]
+*/checkpoints/global_step_* [('fastwam_grpo_smoke1_dcp_reload_step2/checkpoints/global_step_2', 4096)]
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v1
+exit_code.txt 255
+finished_at.txt 2026-08-31T10:46:11+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8157)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8274), ('tensorboard/events.out.tfevents.1788172640.admin.22296.0', 88)]
+*/checkpoints/global_step_* []
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v2-envoffload
+exit_code.txt 0
+finished_at.txt 2026-08-31T11:16:44+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8221)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8327), ('tensorboard/events.out.tfevents.1788173933.admin.102825.0', 2904)]
+*/checkpoints/global_step_* [('fastwam_grpo_smoke1_current/checkpoints/global_step_1', 4096)]
+RUN fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v2-envoffload-reloadcheck
+exit_code.txt 255
+finished_at.txt 2026-08-31T11:24:25+00:00
+runtime/*resolved* []
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8582), ('tensorboard/events.out.tfevents.1788175210.admin.184641.0', 88)]
+*/checkpoints/global_step_* []
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/grpo
+RUN dvac-action-adv-fix-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7927), ('runtime/control_same_code_resolved.yaml', 7846)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8115), ('tensorboard/events.out.tfevents.1788059407.admin.1413912.0', 198926)]
+*/checkpoints/global_step_* [('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_40', 4096), ('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_20', 4096), ('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_30', 4096), ('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_60', 4096), ('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_10', 4096), ('robotwin_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_50', 4096)]
+RUN dvac-action-adv-fix-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7895), ('runtime/control_same_code_resolved.yaml', 7822)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8083), ('tensorboard/events.out.tfevents.1787928683.admin.2230007.0', 260047)]
+*/checkpoints/global_step_* [('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_70', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_40', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_20', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_30', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_60', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_80', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_10', 4096), ('robotwin_dvac_action_adv_fix_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_50', 4096)]
+RUN dvac-action-adv-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7855), ('runtime/control_same_code_resolved.yaml', 7782)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8043), ('tensorboard/events.out.tfevents.1787886155.admin.105746.0', 92743)]
+*/checkpoints/global_step_* [('robotwin_dvac_action_adv_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_20', 4096), ('robotwin_dvac_action_adv_w0to2_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_v1/checkpoints/global_step_10', 4096)]
+RUN dvac-action-adv-w0to2-smoke2-2gpu64x4-b1024-noeval-phys23-v1
+exit_code.txt 0
+finished_at.txt 2026-08-27T09:53:28+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7774), ('runtime/control_same_code_resolved.yaml', 7769)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7962), ('tensorboard/events.out.tfevents.1787821101.admin.769096.0', 6218)]
+*/checkpoints/global_step_* [('robotwin_dvac_action_adv_w0to2_smoke2_2gpu64x4_b1024_noeval_phys23_v1/checkpoints/global_step_2', 4096)]
+RUN dvac-global-z-formal100-4gpu32x8-g8-phys2367-v2
+runtime/*resolved* [('runtime/resolved.yaml', 7584)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1787569190.admin.2461031.0', 37852), ('tensorboard/config.yaml', 7772)]
+*/checkpoints/global_step_* [('robotwin_adjust_bottle_dvac_global_z_formal100/checkpoints/global_step_10', 4096)]
+RUN dvac-global-z-formal100-4gpu32x8-g8-phys4567-v3
+runtime/*resolved* [('runtime/resolved.yaml', 7584)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7772), ('tensorboard/events.out.tfevents.1787573494.admin.2743599.0', 21793)]
+*/checkpoints/global_step_* []
+RUN dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v4
+exit_code.txt 255
+finished_at.txt 2026-08-25T03:17:54+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7678)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7866), ('tensorboard/events.out.tfevents.1787580145.admin.3268055.0', 104235)]
+*/checkpoints/global_step_* [('robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_20', 4096), ('robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_30', 4096), ('robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_10', 4096)]
+RUN dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30
+runtime/*resolved* [('runtime/resolved.yaml', 7912)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8100), ('tensorboard/events.out.tfevents.1787632978.admin.4182265.0', 34837)]
+*/checkpoints/global_step_* [('robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_40', 4096)]
+RUN dvac-global-z-smoke2-4gpu128train64eval-v1
+exit_code.txt 0
+finished_at.txt 2026-08-24T10:11:07+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7542)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7730), ('tensorboard/events.out.tfevents.1787562846.admin.2120320.0', 6702)]
+*/checkpoints/global_step_* [('robotwin_adjust_bottle_dvac_global_z_smoke2/checkpoints/global_step_2', 4096)]
+RUN dvac-global-z-w0to2-formal100-2gpu64x4-b1024-eval5-phys67-v1
+exit_code.txt 255
+finished_at.txt 2026-08-26T05:03:04+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7714)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7902), ('tensorboard/events.out.tfevents.1787714310.admin.360405.0', 12448)]
+*/checkpoints/global_step_* []
+RUN dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2
+runtime/*resolved* [('runtime/resolved.yaml', 7784)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7972), ('tensorboard/events.out.tfevents.1787731321.admin.3884412.0', 166808)]
+*/checkpoints/global_step_* [('robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_40', 4096), ('robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_20', 4096), ('robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_30', 4096), ('robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_10', 4096), ('robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_50', 4096)]
+RUN dvac-global-z-w0to5-formal100-grpo-matched-4gpu128x4-b2048-eval5-phys4567-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7813)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8001), ('tensorboard/events.out.tfevents.1787651937.admin.1509472.0', 144519)]
+*/checkpoints/global_step_* [('robotwin_grpo_openpi_dvac_global_z_w0to5_matched_eval5/checkpoints/global_step_40', 4096), ('robotwin_grpo_openpi_dvac_global_z_w0to5_matched_eval5/checkpoints/global_step_20', 4096), ('robotwin_grpo_openpi_dvac_global_z_w0to5_matched_eval5/checkpoints/global_step_30', 4096), ('robotwin_grpo_openpi_dvac_global_z_w0to5_matched_eval5/checkpoints/global_step_10', 4096)]
+RUN dvac-st-global-z-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1
+exit_code.txt 255
+finished_at.txt 2026-08-29T15:06:15+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7862), ('runtime/control_same_code_resolved.yaml', 7780)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8050), ('tensorboard/events.out.tfevents.1787928708.admin.2232771.0', 169923)]
+*/checkpoints/global_step_* [('robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_40', 4096), ('robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_20', 4096), ('robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_30', 4096), ('robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_10', 4096), ('robotwin_dvac_st_global_z_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_50', 4096)]
+RUN dvac-st-global-z-w0p8to1p2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-localshard-v2
+runtime/*resolved* [('runtime/resolved.yaml', 7981)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8169), ('tensorboard/events.out.tfevents.1788079645.admin.2655637.0', 147634)]
+*/checkpoints/global_step_* [('robotwin_dvac_st_global_z_w0p8to1p2_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_40', 4096), ('robotwin_dvac_st_global_z_w0p8to1p2_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_20', 4096), ('robotwin_dvac_st_global_z_w0p8to1p2_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_30', 4096), ('robotwin_dvac_st_global_z_w0p8to1p2_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_10', 4096)]
+RUN dvac-st-global-z-w0p8to1p2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7862), ('runtime/control_same_code_resolved.yaml', 7780)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8050), ('tensorboard/events.out.tfevents.1788059420.admin.1416026.0', 28830)]
+*/checkpoints/global_step_* [('robotwin_dvac_st_global_z_w0p8to1p2_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_10', 4096)]
+RUN grpo-control-formal100-2gpu64x4-b1024-eval5-phys45-v1
+exit_code.txt 255
+finished_at.txt 2026-08-26T05:01:48+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7648)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7836), ('tensorboard/events.out.tfevents.1787714297.admin.356714.0', 9728)]
+*/checkpoints/global_step_* []
+RUN grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2
+runtime/*resolved* [('runtime/resolved.yaml', 7718)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7906), ('tensorboard/events.out.tfevents.1787731308.admin.3882382.0', 242484)]
+*/checkpoints/global_step_* [('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_70', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_40', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_20', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_30', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_60', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_80', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_90', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_10', 4096), ('robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/checkpoints/global_step_50', 4096)]
+RUN grpo-formal100-current-4gpu128train64eval-ppo-matched-v1
+runtime/*resolved* []
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7179), ('tensorboard/events.out.tfevents.1787406261.admin.641978.0', 2438)]
+*/checkpoints/global_step_* []
+RUN grpo-formal100-current-4gpu128train64eval-ppo-matched-v2
+runtime/*resolved* []
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7179), ('tensorboard/events.out.tfevents.1787412552.admin.824881.0', 128788)]
+*/checkpoints/global_step_* [('robotwin_grpo_openpi/checkpoints/global_step_40', 4096), ('robotwin_grpo_openpi/checkpoints/global_step_20', 4096), ('robotwin_grpo_openpi/checkpoints/global_step_30', 4096), ('robotwin_grpo_openpi/checkpoints/global_step_10', 4096), ('robotwin_grpo_openpi/checkpoints/global_step_50', 4096)]
+RUN prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-localshard-phys67-v2
+runtime/*resolved* [('runtime/resolved.yaml', 8039), ('runtime/control_same_code_resolved.yaml', 8033)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8227), ('tensorboard/events.out.tfevents.1787846502.admin.2485093.0', 170428)]
+*/checkpoints/global_step_* [('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_localshard_phys67_v2/checkpoints/global_step_40', 4096), ('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_localshard_phys67_v2/checkpoints/global_step_20', 4096), ('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_localshard_phys67_v2/checkpoints/global_step_30', 4096), ('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_localshard_phys67_v2/checkpoints/global_step_10', 4096), ('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_localshard_phys67_v2/checkpoints/global_step_50', 4096)]
+RUN prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7916), ('runtime/control_same_code_resolved.yaml', 7910)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1787815738.admin.399136.0', 27819), ('tensorboard/config.yaml', 8104)]
+*/checkpoints/global_step_* [('robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/checkpoints/global_step_10', 4096)]
+RUN prism-dvac-rank-rloo-smoke1-2gpu64x4-b1024-noeval-phys23-v1
+exit_code.txt 0
+finished_at.txt 2026-08-26T14:08:05+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7835), ('runtime/control_same_code_resolved.yaml', 7829)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1787751465.admin.1487850.0', 2996), ('tensorboard/config.yaml', 8023)]
+*/checkpoints/global_step_* [('robotwin_prism_dvac_rank_rloo_smoke1_2gpu64x4_b1024_noeval_phys23_v1/checkpoints/global_step_1', 4096)]
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/pi05
+RUN pi05-grpo-control-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys45-localshard-v2
+runtime/*resolved* [('runtime/resolved.yaml', 8068)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8256), ('tensorboard/events.out.tfevents.1788269627.admin.1477583.0', 146272)]
+*/checkpoints/global_step_* [('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/checkpoints/global_step_40', 4096), ('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/checkpoints/global_step_20', 4096), ('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/checkpoints/global_step_30', 4096), ('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/checkpoints/global_step_10', 4096), ('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys45_localshard_v2/checkpoints/global_step_50', 4096)]
+RUN pi05-grpo-control-formal100-2gpu64x4-g8-b512-u5-m5-fixed32-eval5-phys45-localshard-v1
+runtime/*resolved* [('runtime/resolved.yaml', 8059)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8247), ('tensorboard/events.out.tfevents.1788237343.admin.3969103.0', 47630)]
+*/checkpoints/global_step_* [('robotwin_pi05_grpo_control_formal100_2gpu64x4_g8_b512_u5_m5_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_10', 4096)]
+RUN pi05-grpo-dvac-action-adv-w0p5to1p5-formal100-2gpu64x4-g8-b1024-u2-m5-fixed32-eval5-phys67-localshard-v2
+runtime/*resolved* [('runtime/resolved.yaml', 8217)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8405), ('tensorboard/events.out.tfevents.1788269645.admin.1479734.0', 83398)]
+*/checkpoints/global_step_* [('robotwin_pi05_grpo_dvac_action_adv_w0p5to1p5_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_20', 4096), ('robotwin_pi05_grpo_dvac_action_adv_w0p5to1p5_formal100_2gpu64x4_g8_b1024_u2_m5_fixed32_eval5_phys67_localshard_v2/checkpoints/global_step_10', 4096)]
+RUN pi05-grpo-dvac-action-adv-w0p5to1p5-formal100-2gpu64x4-g8-b512-u5-m5-fixed32-eval5-phys67-localshard-v1
+runtime/*resolved* [('runtime/resolved.yaml', 8208)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8396), ('tensorboard/events.out.tfevents.1788237357.admin.3971456.0', 60625)]
+*/checkpoints/global_step_* [('robotwin_pi05_grpo_dvac_action_adv_w0p5to1p5_formal100_2gpu64x4_g8_b512_u5_m5_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_10', 4096)]
+RUN pi05-grpo-dvac-action-adv-w0p5to1p5-smoke2-2gpu64x4-g8-b512-u5-m5-phys23-localshard-v2
+exit_code.txt 0
+finished_at.txt 2026-08-31T08:07:13+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7966)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1788160537.admin.3264713.0', 6218), ('tensorboard/config.yaml', 8154)]
+*/checkpoints/global_step_* [('pi05_grpo_dvac_action_adv_w0p5to1p5_smoke2/checkpoints/global_step_2', 4096), ('pi05_grpo_dvac_action_adv_w0p5to1p5_smoke2/checkpoints/global_step_1', 4096)]
+RUN pi05-grpo-smoke1-2gpu64x4-g8-b512-u5-m5-phys23-localshard-v2
+exit_code.txt 0
+finished_at.txt 2026-08-31T07:15:08+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7753)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7941), ('tensorboard/events.out.tfevents.1788158649.admin.3143323.0', 2438)]
+*/checkpoints/global_step_* [('pi05_grpo_smoke1/checkpoints/global_step_1', 4096)]
+RUN pi05-ppo-smoke1-2gpu64x4-b512-u5-m5-phys23-localshard-v2
+exit_code.txt 0
+finished_at.txt 2026-08-31T06:37:27+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7305)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 7493), ('tensorboard/events.out.tfevents.1788156449.admin.2933172.0', 2846)]
+*/checkpoints/global_step_* [('pi05_ppo_smoke1/checkpoints/global_step_1', 4096)]
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/pi05-sidney
+RUN move-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1
+runtime/*resolved* [('runtime/resolved.yaml', 8920)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 9108), ('tensorboard/events.out.tfevents.1788425742.admin.2660167.0', 19932)]
+*/checkpoints/global_step_* []
+RUN move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1
+runtime/*resolved* [('runtime/resolved.yaml', 9046)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1788438233.admin.3176215.0', 93306), ('tensorboard/config.yaml', 9234)]
+*/checkpoints/global_step_* [('pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_20', 4096), ('pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_30', 4096), ('pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_10', 4096)]
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/ppo
+RUN ppo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-localshard-v1
+runtime/*resolved* [('runtime/resolved.yaml', 7897)]
+*events* []
+tensorboard/* [('tensorboard/events.out.tfevents.1788148443.admin.2512251.0', 176922), ('tensorboard/config.yaml', 8085)]
+*/checkpoints/global_step_* [('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_40', 4096), ('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_20', 4096), ('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_30', 4096), ('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_60', 4096), ('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_10', 4096), ('robotwin_ppo_control_formal100_2gpu64x4_b1024_fixed32_eval5_phys45_localshard_v1/checkpoints/global_step_50', 4096)]
+RUN ppo-control-smoke1-2gpu64x4-b1024-noeval-localshard-phys23-v1
+exit_code.txt 0
+finished_at.txt 2026-08-30T14:49:24+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7818)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8006), ('tensorboard/events.out.tfevents.1788099679.admin.3731950.0', 2846)]
+*/checkpoints/global_step_* [('robotwin_ppo_control_smoke1_2gpu64x4_b1024_noeval_localshard_phys23_v1/checkpoints/global_step_1', 4096)]
+RUN ppo-dvac-action-adv-fix-w0p5to1p5-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-localshard-v1
+exit_code.txt 255
+finished_at.txt 2026-09-01T04:13:37+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 8078)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8266), ('tensorboard/events.out.tfevents.1788148457.admin.2514344.0', 210444)]
+*/checkpoints/global_step_* [('robotwin_ppo_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_40', 4096), ('robotwin_ppo_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_20', 4096), ('robotwin_ppo_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_30', 4096), ('robotwin_ppo_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_10', 4096), ('robotwin_ppo_dvac_action_adv_fix_w0p5to1p5_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_localshard_v1/checkpoints/global_step_50', 4096)]
+RUN ppo-dvac-action-adv-fix-w0to2-smoke2-2gpu64x4-b1024-noeval-localshard-phys23-v1
+exit_code.txt 0
+finished_at.txt 2026-08-30T15:42:23+00:00
+runtime/*resolved* [('runtime/resolved.yaml', 7967)]
+*events* []
+tensorboard/* [('tensorboard/config.yaml', 8155), ('tensorboard/events.out.tfevents.1788101550.admin.3854980.0', 7048)]
+*/checkpoints/global_step_* [('robotwin_ppo_dvac_action_adv_fix_w0to2_smoke2_2gpu64x4_b1024_noeval_localshard_phys23_v1/checkpoints/global_step_2', 4096)]
+RESULT_GROUP /data/chenyiteng/results/rlinf-shenzhen/sidney-pi05-parity-preflight
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-action-dvac-adv
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+
+
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv-fix
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-pi0-robotwin-7d07a421
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-observe-7d07a421
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-robotwin-rl
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-dvac-action-adv-fix
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/prism-dvac-rank-rloo
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-checkpoint-diagnosis-7d07a421
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-dvac-pure-single-gpu-7d07a421
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+
+
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf
+f50e235c5ab1f4390f0ba92bfb13390ed0a86810
+
+
+WORKTREE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/st-dvac-local-shard

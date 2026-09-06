@@ -1,0 +1,156 @@
+diff --git a/examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml b/examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml
+--- a/examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml
++++ b/examples/sft/config/robotwin_rlt_stage1_sft_openpi.yaml
+@@ -9,8 +9,6 @@ hydra:
+   run:
+     dir: .
+   output_subdir: null
+-  searchpath:
+-    - file://${oc.env:EMBODIED_PATH}/config/
+ 
+ cluster:
+   num_nodes: 1
+@@ -73,7 +71,6 @@ actor:
+       rlt_num_layers: 2
+       rlt_num_heads: 8
+       rlt_mlp_ratio: 4.0
+-      rlt_encoder_type: "append_self_attention"
+       rlt_image_only: True
+       rlt_use_mask: True
+       rlt_action_adapter: "robotwin_aloha_canonical_v1"
+@@ -94,8 +91,9 @@ actor:
+ 
+   fsdp_config:
+     strategy: "fsdp"
+-    # Stage1 only trains the small RLT module. Replication keeps the port close
+-    # to the official ManiSkill Stage1 route and avoids mixed freeze/shard risk.
++    # Stage1 trains only RLT parameters, but the verified module is 743M params.
++    # Replication follows ManiSkill Stage1; micro1/global2 must pass before the
++    # candidate micro16/global32 batch is approved.
+     sharding_strategy: "no_shard"
+     use_orig_params: True
+     gradient_checkpointing: False
+diff --git a/examples/sft/config/robotwin_rlt_stage1_sft_openpi_a800_2gpu_smoke.yaml b/examples/sft/config/robotwin_rlt_stage1_sft_openpi_a800_2gpu_smoke.yaml
+new file mode 100644
+--- /dev/null
++++ b/examples/sft/config/robotwin_rlt_stage1_sft_openpi_a800_2gpu_smoke.yaml
+@@ -0,0 +1,21 @@
++defaults:
++  - robotwin_rlt_stage1_sft_openpi
++  - _self_
++
++runner:
++  logger:
++    experiment_name: "robotwin_adjust_bottle_rlt_stage1_sft_openpi_a800_2gpu_smoke"
++  # Two real optimizer steps test memory, frozen-parameter deltas, loss, and
++  # endpoint serialization without pretending to establish convergence.
++  max_steps: 2
++  save_interval: 2
++
++actor:
++  # The RLT module has 743M trainable parameters. Prove this minimum batch
++  # first; micro16/global32 remains a candidate for the fixed 2k endpoint.
++  micro_batch_size: 1
++  global_batch_size: 2
++
++  optim:
++    total_training_steps: 2
++    lr_warmup_steps: 1
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml
+--- a/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml
++++ b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp.yaml
+@@ -47,7 +47,10 @@ algorithm:
+ 
+   # warmup_min_size is per actor rank: 500/rank is about 1000 global rows.
+   # update_epoch=5 and train_every_transitions=1 implement global UTD=5.
+   rlt_schedule:
++    # This cap intentionally spreads the 5000-update critic floor across
++    # collection cycles. At full-length failure rollouts, steady-state UTD=5
++    # holds while pending budget remains about 4600; it is not a catch-up SLA.
+     enable: True
+     max_updates_per_train_step: 400
+     warmup_min_size: 500
+@@ -54,7 +57,7 @@ algorithm:
+     train_every_episodes: 0
+     train_every_transitions: 1
+ 
+-  # RLT actor objective: -q_weight * Q + bc_weight * BC.
++  # Fallback values only; the enabled schedule below supplies live weights.
+   q_weight: 1.0
+   bc_weight: 1.0
+   reference_dropout_prob: 0.5
+@@ -83,6 +86,7 @@ algorithm:
+ 
+   replay_buffer:
+     enable_cache: True
++    # Per actor rank: two ranks expose about 30k rows of aggregate cache/window.
+     cache_size: 15000
+     sample_window_size: 15000
+     # Readiness is owned by rlt_schedule; this only guards the local loader.
+@@ -196,7 +200,6 @@ rollout:
+       rlt_num_layers: 2
+       rlt_num_heads: 8
+       rlt_mlp_ratio: 4.0
+-      rlt_encoder_type: "append_self_attention"
+       rlt_image_only: True
+       rlt_use_mask: True
+       rlt_action_adapter: "robotwin_aloha_canonical_v1"
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke.yaml b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke.yaml
+--- a/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke.yaml
++++ b/examples/embodiment/config/robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke.yaml
+@@ -12,7 +12,9 @@ runner:
+ algorithm:
+   rlt_schedule:
+     max_updates_per_train_step: 20
+-    warmup_min_size: 4
++    # Two envs per actor rank guarantee at least two first-chunk rows even when
++    # an episode terminates early; avoid a no-update false smoke.
++    warmup_min_size: 2
+     warmup_post_collect_updates: 8
+     train_every_episodes: 0
+     train_every_transitions: 1
+diff --git a/toolkits/rlt/probe_robotwin_rlt_prefix_contract.py b/toolkits/rlt/probe_robotwin_rlt_prefix_contract.py
+--- a/toolkits/rlt/probe_robotwin_rlt_prefix_contract.py
++++ b/toolkits/rlt/probe_robotwin_rlt_prefix_contract.py
+@@ -160,6 +160,31 @@ def main() -> None:
+             reconstruction_loss, rlt_outputs = model.rlt_module.loss(
+                 rlt_prefix, rlt_mask
+             )
++            rlt_obs, decode_context = model.extract_rlt_obs(
++                env_obs, return_decode_context=True
++            )
++            decoded_reference = model.decode_rlt_action(
++                rlt_obs["ref_chunk"], decode_context
++            )
++            raw_template = decode_context["raw_action_template"]
++            processed_state = decode_context["processed_state"]
++            legacy_decoded = model.output_transform(
++                {"actions": raw_template, "state": processed_state}
++            )["actions"]
++            legacy_decoded = legacy_decoded[
++                :,
++                : model.config.action_chunk,
++                : model.config.action_env_dim,
++            ]
++            canonical_parity_max_abs = float(
++                (decoded_reference - legacy_decoded).abs().max().item()
++            )
++            torch.testing.assert_close(
++                decoded_reference,
++                legacy_decoded,
++                rtol=1.0e-6,
++                atol=1.0e-6,
++            )
+         result.update(
+             {
+                 "rlt_z_shape": list(rlt_outputs["z_rl"].shape),
+@@ -173,6 +196,10 @@ def main() -> None:
+                     if parameter.requires_grad
+                 ),
+                 "all_trainable_under_rlt_module": True,
++                "canonical_reference_shape": list(rlt_obs["ref_chunk"].shape),
++                "decoded_reference_shape": list(decoded_reference.shape),
++                "canonical_legacy_decode_parity": True,
++                "canonical_legacy_decode_max_abs": canonical_parity_max_abs,
+             }
+         )

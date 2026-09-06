@@ -1,0 +1,164 @@
+    def save_checkpoint(
+        cls,
+        model: Union[FSDP, FSDPModule],
+        optimizers: Union[Optimizer, Iterable[Optimizer]],
+        lr_schedulers: Union[LRScheduler, Iterable[LRScheduler]],
+        save_path: str,
+        save_full_model_weights: bool = True,
+        checkpoint_format: str = "dcp",
+    ) -> None:
+        """
+        Save the training state checkpoint.
+
+        Assumes:
+        cls must have get_fsdp_version method,
+        and torch.distributed has been initialized. Most importantly,
+        optimizers should have all state(by calling `fake_optimizer_step`),
+        this is done in `init_worker`.
+
+        Args:
+            model (Union[FSDP, FSDPModule]): The model to be saved.
+            optimizers (Union[Optimizer, Iterable[Optimizer]]): The optimizers to be saved.
+            lr_schedulers (LRScheduler): The learning rate scheduler to be saved.
+            save_path (str): The path to save the checkpoint.
+            save_full_model_weights (bool): Whether to save full model weights.
+            checkpoint_format (str): "dcp" or "local_shard".
+        """
+        clear_memory()
+        torch.distributed.barrier()
+        opts = StateDictOptions(full_state_dict=False, cpu_offload=True)
+        try:
+            training_state = Checkpoint(
+                model,
+                optimizers,
+                lr_schedulers,
+                opts,
+                fsdp_version=cls.get_fsdp_version(),
+                checkpoint_format=checkpoint_format,
+            )
+            if checkpoint_format == "local_shard":
+                local_shard_save_path = os.path.join(
+                    save_path, "local_shard_checkpoint"
+                )
+                rank = torch.distributed.get_rank()
+                os.makedirs(local_shard_save_path, exist_ok=True)
+                torch.save(
+                    training_state.state_dict(),
+                    os.path.join(local_shard_save_path, f"checkpoint_rank_{rank}.pt"),
+                )
+            else:
+                from torch.distributed import checkpoint as dcp
+
+                dcp_save_path = os.path.join(save_path, "dcp_checkpoint")
+                dcp.save(
+                    {"fsdp_checkpoint": training_state},
+                    checkpoint_id=dcp_save_path,
+                )
+
+        except BaseException as e:
+            import traceback
+
+            if hasattr(cls, "logger") and cls.logger is not None:
+                cls.logger.error(f"Failed to save checkpoint to {save_path}: {e}")
+            traceback.print_exc()
+            raise e
+        torch.distributed.barrier()
+
+        if save_full_model_weights:
+            opts = StateDictOptions(full_state_dict=True, cpu_offload=True)
+            sd_save_path = os.path.join(save_path, "model_state_dict")
+            model_state_dict = get_model_state_dict(model=model, options=opts)
+            if torch.distributed.get_rank() == 0:
+                os.makedirs(sd_save_path, exist_ok=True)
+                # npu requires a specific model parameter save
+                if Worker.torch_device_type == "npu":
+                    cls.save_npu_weight(
+                        model_state_dict, os.path.join(sd_save_path, "full_weights.pt")
+                    )
+
+                else:
+                    torch.save(
+                        model_state_dict, os.path.join(sd_save_path, "full_weights.pt")
+                    )
+
+            torch.distributed.barrier()
+
+    @classmethod
+    def load_checkpoint(
+        cls,
+        model: Union[FSDP, FSDPModule],
+        optimizers: Union[Optimizer, Iterable[Optimizer]],
+        lr_schedulers: Union[LRScheduler, Iterable[LRScheduler]],
+        load_path: str,
+        checkpoint_format: str = "dcp",
+    ) -> None:
+        """
+        Load the training state checkpoint.
+
+        Assumes:
+        cls must have logger attribute and get_fsdp_version method,
+        and torch.distributed has been initialized. Most importantly,
+        optimizer should have all state(by calling `fake_optimizer_step`),
+        this is done in `init_worker`.
+
+        Args:
+            model (Union[FSDP, FSDPModule]): The model to load the checkpoint into.
+            optimizers (Union[Optimizer, Iterable[Optimizer]]): The optimizer to load the checkpoint into.
+            lr_schedulers (Union[LRScheduler, Iterable[LRScheduler]]): The learning rate scheduler to load the checkpoint into.
+            load_path (str): The path to load the checkpoint from.
+            checkpoint_format (str): "dcp" or "local_shard".
+        """
+        opts = StateDictOptions(full_state_dict=False, cpu_offload=True)
+        training_state = Checkpoint(
+            model=model,
+            optimizers=optimizers,
+            lr_schedulers=lr_schedulers,
+            opts=opts,
+            fsdp_version=cls.get_fsdp_version(),
+            checkpoint_format=checkpoint_format,
+        )
+        try:
+            if checkpoint_format == "local_shard":
+                rank = torch.distributed.get_rank()
+                local_ckpt_file = os.path.join(
+                    load_path, "local_shard_checkpoint", f"checkpoint_rank_{rank}.pt"
+                )
+                if not os.path.isfile(local_ckpt_file):
+                    raise FileNotFoundError(
+                        f"Expected local shard checkpoint '{local_ckpt_file}' not found"
+                    )
+
+                if hasattr(cls, "logger") and cls.logger is not None:
+                    cls.logger.info(
+                        f"[Checkpoint] loading local shard checkpoint from {local_ckpt_file}"
+                    )
+
+                checkpoint = torch.load(local_ckpt_file, weights_only=False)
+
+                # version check
+                ckpt_fsdp_version = FSDPVersion(checkpoint["fsdp_version"])
+                if ckpt_fsdp_version != cls.get_fsdp_version():
+                    raise ValueError(
+                        f"FSDP version mismatch: {ckpt_fsdp_version} != {cls.get_fsdp_version()}"
+                    )
+
+                training_state.load_state_dict(checkpoint)
+            else:
+                import glob
+
+                from torch.distributed import checkpoint as dcp
+
+                dcp_dir = os.path.join(load_path, "dcp_checkpoint")
+                dcp_load_path = dcp_dir if os.path.isdir(dcp_dir) else load_path
+
+                distcp_files = glob.glob(os.path.join(dcp_load_path, "*.distcp"))
+                if len(distcp_files) == 0:
+                    raise FileNotFoundError(
+                        f"Could not find a valid DCP checkpoint under '{dcp_load_path}'. "
+                    )
+
+8065002471	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sft-leaf-wrap-nativeopt-local-orig-false-20260905/checkpoint/model_state_dict/full_weights.pt
+10390434174	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sft-leaf-wrap-nativeopt-local-orig-false-20260905/checkpoint/local_shard_checkpoint/checkpoint_rank_0.pt
+9338808918	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sync-probe-orig-false-20260905/checkpoint/dcp_checkpoint/__0_0.distcp
+8065002471	/data/chenyiteng/results/rlinf-shenzhen/online-bc/sync-probe-orig-false-20260905/checkpoint/model_state_dict/full_weights.pt
+

@@ -1,0 +1,91 @@
+#
+# Copyright 2025 Hillbot Inc.
+# Copyright 2020-2024 UCSD SU Lab
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import ctypes
+import platform
+import os
+
+if platform.system() == "Linux":
+    try:
+        oidn_dll = ctypes.CDLL(
+            os.path.join(
+                os.path.dirname(__file__),
+                "oidn_library/libOpenImageDenoise_core.so.2.0.1",
+            ),
+            ctypes.RTLD_LOCAL,
+        )
+
+        oidn_dll = ctypes.CDLL(
+            os.path.join(
+                os.path.dirname(__file__), "oidn_library/libOpenImageDenoise.so.2.0.1"
+            ),
+            ctypes.RTLD_LOCAL,
+        )
+    except Exception:
+        pass
+if platform.system() == "Windows":
+    try:
+        oidn_dll = ctypes.CDLL(
+            os.path.join(
+                os.path.dirname(__file__),
+                "oidn_library/OpenImageDenoise_core.dll",
+            ),
+        )
+
+        oidn_dll = ctypes.CDLL(
+            os.path.join(
+                os.path.dirname(__file__), "oidn_library/OpenImageDenoise.dll"
+            ),
+        )
+    except Exception:
+        pass
+total 22308
+-rwxrwxr-x 2 chenyiteng chenyiteng 18847176 Aug 21 14:03 libOpenImageDenoise_core.so.2.0.1
+-rw-rw-r-- 2 chenyiteng chenyiteng  3863896 Aug 21 14:03 libOpenImageDenoise_device_cuda.so.2.0.1
+-rwxrwxr-x 2 chenyiteng chenyiteng   123440 Aug 21 14:03 libOpenImageDenoise.so.2.0.1
+
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1
+ 0x0000000000000001 (NEEDED)             Shared library: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libpthread.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000000e (SONAME)             Library soname: [libOpenImageDenoise_core.so.2.0.1]
+ 0x000000000000001d (RUNPATH)            Library runpath: [/__w/SAPIEN/SAPIEN/docker_sapien_build/_sapien_install/lib64]
+
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_device_cuda.so.2.0.1
+ 0x0000000000000001 (NEEDED)             Shared library: [libOpenImageDenoise_core.so.2.0.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [librt.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libpthread.so.0]
+ 0x0000000000000001 (NEEDED)             Shared library: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000000e (SONAME)             Library soname: [libOpenImageDenoise_device_cuda.so.2.0.1]
+ 0x000000000000001d (RUNPATH)            Library runpath: [/__w/SAPIEN/SAPIEN/docker_sapien_build/_sapien_install/lib64]
+
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise.so.2.0.1
+ 0x0000000000000001 (NEEDED)             Shared library: [libOpenImageDenoise_core.so.2.0.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x000000000000000e (SONAME)             Library soname: [libOpenImageDenoise.so.2]
+ 0x000000000000001d (RUNPATH)            Library runpath: [/__w/SAPIEN/SAPIEN/docker_sapien_build/_sapien_install/lib64]

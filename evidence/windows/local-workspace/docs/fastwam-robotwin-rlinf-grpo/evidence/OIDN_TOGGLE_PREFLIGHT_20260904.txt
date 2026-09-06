@@ -1,0 +1,356 @@
+2026-09-04T03:50:58+00:00
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+0, GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 9728, 81559, 0
+1, GPU-a5db195a-ea49-b641-5355-ea060827f70c, 4, 81559, 0
+2, GPU-4ec384bf-4828-063b-a26e-6812eca09f75, 4, 81559, 0
+3, GPU-2f0e1a8f-d784-6388-4e12-d211c97e9174, 4, 81559, 0
+4, GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 41816, 81559, 53
+5, GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 42068, 81559, 0
+6, GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 5, 81559, 0
+7, GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 5, 81559, 0
+GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 916861, 9686
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177202, 7962
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177199, 2444
+GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 3177205, 31345
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177201, 1832
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177204, 8868
+GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 3177207, 31305
+               total        used        free      shared  buff/cache   available
+Mem:     2164140818432 853394124800 791825850368 27732054016 518920843264 1272171810816
+Swap:     6413086720  2734698496  3678388224
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/nvme1n1                     3.5T  2.0T  1.3T  61% /data
+/dev/mapper/ubuntu--vg-home--lv  2.3T  971G  1.4T  42% /home
+ 321933  321906 11-11:23:05 2693952 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs --config_list=eyJhdXRvbWF0aWNfb2JqZWN0X3NwaWxsaW5nX2VuYWJsZWQiOiB0cnVlLCAib2JqZWN0X3NwaWxsaW5nX2NvbmZpZyI6ICJ7XCJ0eXBlXCI6IFwiZmlsZXN5c3RlbVwiLCBcInBhcmFtc1wiOiB7XCJkaXJlY3RvcnlfcGF0aFwiOiBcIi9kYXRhL2NoZW55aXRlbmcvcmF5L3JsdC1kc3JsLXYzL3Nlc3Npb25fMjAyNi0wOC0yM18xNi0yNy01M185MTExNjFfMzIxOTA2XCJ9fSIsICJpc19leHRlcm5hbF9zdG9yYWdlX3R5cGVfZnMiOiB0cnVlfQ== --gcs_server_port=6389 --metrics-agent-port=0 --node-ip-addres
+ 322685  321906 11-11:23:03 68816 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet --raylet_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/raylet --store_socket_name=/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/sockets/plasma_store --object_manager_port=0 --min_worker_port=10002 --max_worker_port=19999 --node_manager_port=0 --node_id=2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54 --node_ip_address=172.17.0.1 --maximum_startup_concurrency=128 --static_resource_list=node:172.17.0.1,1.0,node:__inter
+ 947092  947092       00:00  3528 bash -c #!/usr/bin/env bash set -eu export PYTHONDONTWRITEBYTECODE=1 date -Is id nvidia-smi --query-gpu=index,uuid,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits nvidia-smi --query-compute-apps=gpu_uuid,pid,used_memory --format=csv,noheader,nounits free -b df -h /data /home ps -u chenyiteng -o pid,pgid,etime,rss,args | grep -E 'gcs_server|raylet|train_embodied|EnvWorker|RolloutWorker' | cut -c1-650 python3 - <<'PY' from pathlib import Path import re,subprocess,json,datetime base=Path('/data/chenyiteng/results/rlinf-shenzhen') runs=[base/'pi05-sidney/runs/move-pillbottle-pad-grpo-formal
+ 947105  947092       00:00  2184 grep -E gcs_server|raylet|train_embodied|EnvWorker|RolloutWorker
+3176214 3176214    15:27:17   940 timeout --signal=TERM --kill-after=180s 345600s bash -lc /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_openpi_pi05_sidney cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"4\,5\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8
+3176215 3176214    15:27:17 1686304 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_openpi_pi05_sidney cluster.component_placement={actor\, env\, rollout:"4,5"} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1 run
+3177202 3177202    15:27:08 6315128 ray::MultiStepRolloutWorker.generate
+3177204 3177204    15:27:07 6463304 ray::MultiStepRolloutWorker.generate
+3177205 3177205    15:27:07 395855708 ray::EnvWorker.interact
+3177207 3177207    15:27:07 378513628 ray::EnvWorker.interact
+RUN /data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1
+wrapper.pid 3176203
+exit_code.txt absent
+finished_at.txt absent
+LAST_STEPS ['│ Global Step:   39/100 │ Progress: ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │  39.0%                                  │', '│ Global Step:   40/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  40.0%                                  │']
+LAST_EVAL []
+ERROR pthread_key_create failed 0
+ERROR Fatal Python error 0
+ERROR CUDA out of memory 0
+ERROR Traceback 0
+RUN /data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+wrapper.pid 2812508
+exit_code.txt 255
+finished_at.txt 2026-09-03T15:51:49+00:00
+LAST_STEPS ['│ Global Step:   32/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  32.0%                                  │', '│ Global Step:   33/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  33.0%                                  │']
+LAST_EVAL []
+ERROR pthread_key_create failed 2
+ERROR Fatal Python error 2
+ERROR CUDA out of memory 0
+ERROR Traceback 1
+command.txt /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/train_embodied_agent.py --config-path /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment/config --config-name robotwin_move_stapler_pad_grpo_fastwam cluster.component_placement=\{actor\\\,\ env\\\,\ rollout:\"6\,7\"\} runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2 runner.logger.experiment_name=fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2 runner.max_epochs=1000 runner.max_steps=100 runner.val_check_interval=5 runner.save_interval=10 runner.resume_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10 env.train.total_num_envs=32 env.train.rollout_epoch=4 env.train.max_episode_steps=192 env.train.max_steps_per_rollout_epoch=192 env.train.enable_offload=true env.train.video_cfg.save_video=false env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train env.eval.total_num_envs=32 env.eval.rollout_epoch=1 env.eval.max_episode_steps=192 env.eval.max_steps_per_rollout_epoch=192 env.eval.enable_offload=true env.eval.use_fixed_reset_state_ids=true env.eval.video_cfg.save_video=true env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval actor.micro_batch_size=2 actor.global_batch_size=1024 algorithm.group_size=8 algorithm.update_epoch=2 actor.fsdp_config.checkpoint_format=dcp actor.fsdp_config.cast_forward_inputs=false 
+
+contract.json {
+  "scientific_config": "identical to original v1",
+  "allowed_resolved_differences": {
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/eval"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/eval"
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/robotwin_data/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/robotwin_data/train"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/video/train"
+    ],
+    "runner.logger.experiment_name": [
+      "fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1",
+      "fastwam_grpo_control_resume10_to100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_renderlife_v2"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2"
+    ],
+    "runner.resume_dir": [
+      null,
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10"
+    ]
+  },
+  "rlinf_head": "7b2331c55d14397cfb4cb16181470ddc8afae44a",
+  "robotwin_base": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+  "robotwin_fix": "8c7380c118ce7ca8a4ea4df53d753adc8fab0df2",
+  "resume_checkpoint": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1/fastwam_grpo_control_formal100_2gpu32x4_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_v1/checkpoints/global_step_10",
+  "acceptance_boundary": "complete Step-15 fixed evaluation without OIDN/Python/Ray fatal"
+}
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+4faade1d50bf21d1caf1b8a4e5f89282a810208a
+
+
+REPO /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6
+8c7380c118ce7ca8a4ea4df53d753adc8fab0df2
+
+
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/_base_task.py
+170: 
+171:         is_stable, unstable_list = True, []
+172: 
+173:         def check(times):
+174:             nonlocal self, is_stable, actors_list, actors_pose_list
+175:             for _ in range(times):
+176:                 self.scene.step()
+177:                 for idx, actor in enumerate(actors_list):
+178:                     actors_pose_list[idx].append(actor.get_pose())
+179: 
+180:             for idx, actor in enumerate(actors_list):
+181:                 final_pose = actors_pose_list[idx][-1]
+182:                 for pose in actors_pose_list[idx][-200:]:
+183:                     if get_sim(final_pose, pose) > 3.0:
+184:                         is_stable = False
+185:                         unstable_list.append(actor.get_name())
+186:                         break
+187: 
+188:         is_stable = True
+189:         for _ in range(2000):
+190:             self.scene.step()
+191:         for idx, actor in enumerate(actors_list):
+192:             actors_pose_list.append([actor.get_pose()])
+193:         check(500)
+194:         return is_stable, unstable_list
+195: 
+196:     def play_once(self):
+197:         pass
+198: 
+199:     def check_success(self):
+200:         pass
+201: 
+202:     def setup_scene(self, **kwargs):
+203:         """
+204:         Set the scene
+205:             - Set up the basic scene: light source, viewer.
+206:         """
+207:         self.engine = sapien.Engine()
+208:         # declare sapien renderer
+209:         from sapien.render import set_global_config
+210: 
+211:         set_global_config(max_num_materials=50000, max_num_textures=50000)
+212:         self.renderer = sapien.SapienRenderer()
+213:         # give renderer to sapien sim
+214:         self.engine.set_renderer(self.renderer)
+215: 
+216:         sapien.render.set_camera_shader_dir("rt")
+217:         sapien.render.set_ray_tracing_samples_per_pixel(32)
+218:         sapien.render.set_ray_tracing_path_depth(8)
+219:         sapien.render.set_ray_tracing_denoiser("oidn")
+220: 
+221:         # declare sapien scene
+222:         scene_config = sapien.SceneConfig()
+223:         self.scene = self.engine.create_scene(scene_config)
+224:         # set simulation timestep
+225:         self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
+226:         # add ground to scene
+227:         self.scene.add_ground(kwargs.get("ground_height", 0))
+228:         # set default physical material
+229:         self.scene.default_physical_material = self.scene.create_physical_material(
+230:             kwargs.get("static_friction", 0.5),
+231:             kwargs.get("dynamic_friction", 0.5),
+232:             kwargs.get("restitution", 0),
+233:         )
+234:         # give some white ambient light of moderate intensity
+235:         self.scene.set_ambient_light(kwargs.get("ambient_light", [0.5, 0.5, 0.5]))
+236:         # default enable shadow unless specified otherwise
+237:         shadow = kwargs.get("shadow", True)
+238:         # default spotlight angle and intensity
+239:         direction_lights = kwargs.get("direction_lights", [[[0, 0.5, -1], [0.5, 0.5, 0.5]]])
+240:         self.direction_light_lst = []
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py
+1: # Copyright 2025 The RLinf Authors.
+2: #
+3: # Licensed under the Apache License, Version 2.0 (the "License");
+4: # you may not use this file except in compliance with the License.
+5: # You may obtain a copy of the License at
+6: #
+7: #     https://www.apache.org/licenses/LICENSE-2.0
+8: #
+9: # Unless required by applicable law or agreed to in writing, software
+10: # distributed under the License is distributed on an "AS IS" BASIS,
+11: # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+12: # See the License for the specific language governing permissions and
+13: # limitations under the License.
+14: 
+15: import json
+16: import os
+17: from typing import Optional, Union
+18: 
+19: import gymnasium as gym
+20: import numpy as np
+21: import torch
+22: import torch.multiprocessing as mp
+23: from omegaconf import OmegaConf
+24: from PIL import Image
+25: 
+26: from rlinf.envs.robotwin.seed_utils import partition_success_seeds
+27: from rlinf.envs.utils import center_crop_image, list_of_dict_to_dict_of_list
+28: 
+29: __all__ = ["RoboTwinEnv"]
+30: 
+31: 
+32: class RoboTwinEnv(gym.Env):
+33:     def __init__(
+34:         self,
+35:         cfg,
+36:         num_envs,
+37:         seed_offset,
+38:         total_num_processes,
+39:         worker_info,
+40:         record_metrics=True,
+41:     ):
+42:         env_seed = cfg.seed
+43:         self.seed = env_seed + seed_offset
+44:         self.base_seed = env_seed
+45:         self.num_envs = num_envs
+46:         self.seed_offset = seed_offset
+47:         self.total_num_processes = total_num_processes
+48:         self.worker_info = worker_info
+49:         self.auto_reset = cfg.auto_reset
+50:         self.use_rel_reward = cfg.use_rel_reward
+51:         self.ignore_terminations = cfg.ignore_terminations
+52: 
+53:         self.group_size = cfg.group_size
+54:         self.num_group = self.num_envs // self.group_size
+55:         self.use_fixed_reset_state_ids = cfg.use_fixed_reset_state_ids
+56:         self.use_custom_reward = cfg.use_custom_reward
+57: 
+58:         self.video_cfg = cfg.video_cfg
+59: 
+60:         self.cfg = cfg
+61:         self.record_metrics = record_metrics
+62:         self._is_start = True
+63: 
+64:         self.task_name = cfg.task_config.task_name
+65: 
+66:         self.center_crop = cfg.get("center_crop", False)
+67:         self._init_reset_state_ids()
+68: 
+69:         self._init_env()
+70: 
+71:         self.prev_step_reward = torch.zeros(
+72:             self.num_envs, dtype=torch.float32, device=self.device
+73:         )
+74:         if self.record_metrics:
+75:             self._init_metrics()
+76:             self._elapsed_steps = torch.zeros(
+77:                 self.num_envs, dtype=torch.long, device=self.device
+78:             )
+79: 
+80:     def _init_env(self):
+81:         mp.set_start_method("spawn", force=True)
+82:         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+83: 
+84:         from robotwin.envs.vector_env import VectorEnv
+85: 
+86:         env_seeds = self.reset_state_ids.tolist()
+87: 
+88:         self.venv = VectorEnv(
+89:             task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+90:             n_envs=self.num_envs,
+91:             env_seeds=env_seeds,
+92:         )
+93: 
+94:     @property
+95:     def device(self):
+96:         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+97: 
+98:     @property
+99:     def elapsed_steps(self):
+100:         return self._elapsed_steps
+101: 
+102:     @property
+103:     def is_start(self):
+104:         return self._is_start
+105: 
+106:     @is_start.setter
+107:     def is_start(self, value):
+108:         self._is_start = value
+109: 
+110:     def _init_metrics(self):
+111:         self.success_once = torch.zeros(
+112:             self.num_envs, device=self.device, dtype=torch.bool
+113:         )
+114:         self.fail_once = torch.zeros(
+115:             self.num_envs, device=self.device, dtype=torch.bool
+116:         )
+117:         self.returns = torch.zeros(
+118:             self.num_envs, device=self.device, dtype=torch.float32
+119:         )
+120: 
+121:     def _reset_metrics(self, env_idx=None):
+122:         if env_idx is not None:
+123:             mask = torch.zeros(self.num_envs, dtype=bool, device=self.device)
+124:             mask[env_idx] = True
+125:             self.prev_step_reward[mask] = 0.0
+126:             if self.record_metrics:
+127:                 self.success_once[mask] = False
+128:                 self.fail_once[mask] = False
+129:                 self.returns[mask] = 0
+130:                 self._elapsed_steps[env_idx] = 0
+131:         else:
+132:             self.prev_step_reward[:] = 0
+133:             if self.record_metrics:
+134:                 self.success_once[:] = False
+135:                 self.fail_once[:] = False
+136:                 self.returns[:] = 0.0
+137:                 self._elapsed_steps[:] = 0
+138: 
+139:     def _record_metrics(self, step_reward, infos):
+140:         episode_info = {}
+141:         self.returns += step_reward
+142:         if "success" in infos:
+143:             if isinstance(infos["success"], list):
+144:                 infos["success"] = torch.as_tensor(
+145:                     np.array(infos["success"]).reshape(-1), device=self.device
+146:                 )
+147:             self.success_once = self.success_once | infos["success"]
+148:             episode_info["success_once"] = self.success_once.clone()
+149:         episode_info["return"] = self.returns.clone()
+150:         episode_info["episode_len"] = self.elapsed_steps.clone()
+151:         episode_info["reward"] = episode_info["return"] / episode_info["episode_len"]
+152:         infos["episode"] = episode_info
+153:         return infos
+154: 
+155:     def center_and_crop(self, image, center_crop=False):
+156:         image = np.array(image)
+157: 
+158:         image = Image.fromarray(image).convert("RGB")
+159:         if center_crop:
+160:             image = center_crop_image(image)
+161:         return np.array(image)
+162: 
+163:     def _extract_obs_image(self, raw_obs):
+164:         batch_images = []
+165:         batch_wrist_images = []
+166:         batch_states = []
+167:         batch_instructions = []
+168:         for obs in raw_obs:
+169:             batch_images.append(
+170:                 self.center_and_crop(obs["full_image"], center_crop=self.center_crop)
+171:             )
+172:             wrist_images = []
+173:             if "left_wrist_image" in obs and obs["left_wrist_image"] is not None:
+174:                 wrist_images.append(
+175:                     self.center_and_crop(
+176:                         obs["left_wrist_image"], center_crop=self.center_crop
+177:                     )
+178:                 )
+179:             if "right_wrist_image" in obs and obs["right_wrist_image"] is not None:
+180:                 wrist_images.append(
+INFERENCE_CANDIDATES

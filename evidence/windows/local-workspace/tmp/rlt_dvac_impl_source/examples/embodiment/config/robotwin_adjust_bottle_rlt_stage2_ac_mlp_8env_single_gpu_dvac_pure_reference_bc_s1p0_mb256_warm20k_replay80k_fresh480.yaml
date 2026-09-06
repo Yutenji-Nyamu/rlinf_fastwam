@@ -1,0 +1,13 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_dvac_pure_reference_bc_s0p5_mb256_warm20k_replay80k_fresh480
+  - _self_
+
+# Pure03: with z_clip=2, strength=1 is the nominal pre-normalization [0,3]
+# setting; final successful-query weights remain non-negative and mean-one.
+algorithm:
+  rlt_dvac:
+    strength: 1.0
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_dvac_pure03_reference_bc_s1p0_matched_width_fresh480_v1"

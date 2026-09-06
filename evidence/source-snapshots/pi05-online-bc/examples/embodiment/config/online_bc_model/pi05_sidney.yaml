@@ -1,0 +1,22 @@
+# @package _global_
+# Append to the original BC primary config with +online_bc_model=pi05_sidney.
+# Only model/task fields change; learning and resource settings stay in BC.
+
+runner:
+  logger:
+    experiment_name: pi05-pillbottle-bc-u10-eval8x4-smoke-gpu6
+
+env:
+  train:
+    task_config:
+      task_name: move_pillbottle_pad
+  eval:
+    # Same 32 physical initial states as the existing two-rank Sidney GRPO.
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json
+
+actor:
+  model:
+    model_path: ${oc.env:PI05_MODEL_PATH}
+    num_steps: 10  # Sidney's checkpoint contract, not the generic pi05 default.
+    openpi:
+      config_name: pi05_sidney_robotwin

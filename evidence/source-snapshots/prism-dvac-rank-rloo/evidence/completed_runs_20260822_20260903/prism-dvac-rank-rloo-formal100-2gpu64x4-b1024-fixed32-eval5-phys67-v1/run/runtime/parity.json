@@ -1,0 +1,99 @@
+{
+  "source_head": "3f977ce7f0c9271a4e164b4d602166286a9ad9f3",
+  "reference": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/runtime/resolved.yaml",
+  "same_code_control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/packets/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/control_same_code_resolved.yaml",
+  "method": "/data/chenyiteng/results/rlinf-shenzhen/grpo/packets/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/resolved.yaml",
+  "reference_diff": {
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1/dvac_train"
+    },
+    "algorithm.prism_dvac.enabled": {
+      "left": "<MISSING>",
+      "right": false
+    },
+    "algorithm.prism_dvac.log_eps": {
+      "left": "<MISSING>",
+      "right": 1e-12
+    },
+    "algorithm.prism_dvac.quality_lambda": {
+      "left": "<MISSING>",
+      "right": 0.2
+    },
+    "algorithm.prism_dvac.selected_l": {
+      "left": "<MISSING>",
+      "right": 3
+    },
+    "cluster.component_placement.actor, env, rollout": {
+      "left": "4,5",
+      "right": "6,7"
+    },
+    "env.eval.seeds_path": {
+      "left": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "right": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/prism-dvac-rank-rloo/rlinf/envs/robotwin/seeds/eval_seeds.json"
+    },
+    "env.eval.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/eval",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/video/eval"
+    },
+    "env.train.seeds_path": {
+      "left": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "right": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/prism-dvac-rank-rloo/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/train",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "left": "robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2",
+      "right": "robotwin_prism_dvac_rank_rloo_formal100_2gpu64x4_b1024_fixed32_eval5_phys67_v1"
+    },
+    "runner.logger.log_path": {
+      "left": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+      "right": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/prism-dvac-rank-rloo-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v1"
+    }
+  },
+  "unexpected_reference_diff": [],
+  "method_diff": {
+    "algorithm.adv_type": {
+      "left": "grpo",
+      "right": "prism_rloo"
+    },
+    "algorithm.filter_rewards": {
+      "left": true,
+      "right": false
+    },
+    "algorithm.prism_dvac.enabled": {
+      "left": false,
+      "right": true
+    }
+  },
+  "unexpected_method_diff": [],
+  "budget": {
+    "physical_gpus": [
+      6,
+      7
+    ],
+    "outer_steps": 100,
+    "train_envs": 64,
+    "rollout_epochs": 4,
+    "trajectories": 256,
+    "group_size": 8,
+    "groups": 32,
+    "max_chunk_records": 1024,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "update_epoch": 2,
+    "optimizer_calls_per_step_per_rank": 2,
+    "fixed_eval": "32 x 1 every 5 steps",
+    "checkpoint": "every 10 steps"
+  }
+}

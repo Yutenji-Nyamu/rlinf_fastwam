@@ -1,0 +1,365 @@
+SOURCE https://raw.githubusercontent.com/haosulab/sapien-vulkan-2/d8516a4f1467167122ae85f53a8532dbceb1eec2/src/renderer/denoiser.h
+1: /*
+2:  * Copyright 2025 Hillbot Inc.
+3:  * Copyright 2020-2024 UCSD SU Lab
+4:  * 
+5:  * Licensed under the Apache License, Version 2.0 (the "License");
+6:  * you may not use this file except in compliance with the License.
+7:  * You may obtain a copy of the License at:
+8:  * 
+9:  *     http://www.apache.org/licenses/LICENSE-2.0
+10:  * 
+11:  * Unless required by applicable law or agreed to in writing, software
+12:  * distributed under the License is distributed on an "AS IS" BASIS,
+13:  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14:  * See the License for the specific language governing permissions and
+15:  * limitations under the License.
+16:  */
+17: #ifdef SVULKAN2_CUDA_INTEROP
+18: 
+19: #pragma once
+20: #include "svulkan2/core/buffer.h"
+21: #include "svulkan2/core/command_pool.h"
+22: #include "svulkan2/core/image.h"
+23: #include <OpenImageDenoise/oidn.hpp>
+24: #include <cstdio>
+25: #include <cuda.h>
+26: #include <cuda_runtime.h>
+27: #include <memory>
+28: #include <optix.h>
+29: 
+30: static_assert(OPTIX_VERSION == 70600);
+31: 
+32: namespace svulkan2 {
+33: namespace renderer {
+34: 
+35: class Denoiser {
+36: public:
+37:   virtual bool init(bool albedo, bool normal, bool hdr) = 0;
+38:   virtual void allocate(uint32_t width, uint32_t height) = 0;
+39:   virtual void free() = 0;
+40:   virtual void denoise(core::Image &color, core::Image *albedo, core::Image *normal) = 0;
+41: 
+42:   virtual uint32_t getWidth() const = 0;
+43:   virtual uint32_t getHeight() const = 0;
+44: 
+45:   virtual ~Denoiser(){};
+46: };
+47: 
+48: class DenoiserOptix : public Denoiser {
+49: public:
+50:   bool init(bool albedo, bool normal, bool hdr) override;
+51:   void allocate(uint32_t width, uint32_t height) override;
+52:   void free() override;
+53:   void denoise(core::Image &color, core::Image *albedo, core::Image *normal) override;
+54: 
+55:   uint32_t getWidth() const override { return mWidth; }
+56:   uint32_t getHeight() const override { return mHeight; }
+57: 
+58:   ~DenoiserOptix();
+59: 
+60: private:
+61:   class Context {
+62:   public:
+63:     Context();
+64:     ~Context();
+65: 
+66:     OptixDeviceContext optixDevice{};
+67:   };
+68: 
+69:   static std::weak_ptr<Context> gContext;
+70:   std::shared_ptr<Context> mContext;
+71: 
+72:   CUstream mCudaStream{};
+73:   OptixDenoiser mDenoiser{};
+74:   OptixDenoiserOptions mOptions{};
+75: 
+76:   bool useAlbedo();
+77:   bool useNormal();
+78: 
+79:   OptixPixelFormat mPixelFormat{};
+80:   uint32_t mPixelSize{};
+81:   OptixDenoiserSizes mSizes{};
+82: 
+83:   OptixDenoiserParams mParams{};
+84: 
+85:   CUdeviceptr mStatePtr{};
+86:   CUdeviceptr mScratchPtr{};
+87: 
+88:   OptixDenoiserGuideLayer mGuideLayer;
+89:   OptixDenoiserLayer mLayer;
+90: 
+91:   uint32_t mWidth{};
+92:   uint32_t mHeight{};
+93: 
+94:   std::unique_ptr<core::Buffer> mInputBuffer;
+95:   CUdeviceptr mInputPtr{};
+96:   std::unique_ptr<core::Buffer> mOutputBuffer;
+97:   CUdeviceptr mOutputPtr{};
+98: 
+99:   std::unique_ptr<core::Buffer> mAlbedoBuffer;
+100:   CUdeviceptr mAlbedoPtr{};
+101:   std::unique_ptr<core::Buffer> mNormalBuffer;
+102:   CUdeviceptr mNormalPtr{};
+103: 
+104:   std::unique_ptr<core::CommandPool> mCommandPool;
+105:   vk::UniqueCommandBuffer mCommandBufferIn;
+106:   vk::UniqueCommandBuffer mCommandBufferOut;
+107: 
+108:   vk::UniqueSemaphore mSem{};
+109:   cudaExternalSemaphore_t mCudaSem{};
+110:   uint64_t mSemValue{0};
+111: };
+112: 
+113: class DenoiserOidn : public Denoiser {
+114: public:
+115:   bool init(bool albedo, bool normal, bool hdr) override;
+116:   void allocate(uint32_t width, uint32_t height) override;
+117:   void free() override;
+118:   void denoise(core::Image &color, core::Image *albedo, core::Image *normal) override;
+119: 
+120:   uint32_t getWidth() const override { return mWidth; }
+121:   uint32_t getHeight() const override { return mHeight; }
+122:   bool useAlbedo() const { return mAlbedo; }
+123:   bool useNormal() const { return mAlbedo; }
+124: 
+125:   ~DenoiserOidn();
+126: 
+127: private:
+128:   bool mAlbedo{};
+129:   bool mNormal{};
+130:   bool mHdr{};
+131: 
+132:   uint32_t mPixelSize{};
+133: 
+134:   uint32_t mWidth;
+135:   uint32_t mHeight;
+136: 
+137:   cudaStream_t mCudaStream{};
+138:   oidn::DeviceRef mDevice;
+139:   oidn::FilterRef mFilter;
+140: 
+141:   std::unique_ptr<core::Buffer> mInputBuffer;
+142:   oidn::BufferRef mInputBufferOidn;
+143: 
+144:   std::unique_ptr<core::Buffer> mAlbedoBuffer;
+145:   oidn::BufferRef mAlbedoBufferOidn;
+146: 
+147:   std::unique_ptr<core::Buffer> mNormalBuffer;
+148:   oidn::BufferRef mNormalBufferOidn;
+149: 
+150:   std::unique_ptr<core::CommandPool> mCommandPool;
+151:   vk::UniqueCommandBuffer mCommandBufferIn;
+152:   vk::UniqueCommandBuffer mCommandBufferOut;
+153: 
+154:   vk::UniqueSemaphore mSem{};
+155:   cudaExternalSemaphore_t mCudaSem{};
+156:   uint64_t mSemValue{0};
+157: };
+158: 
+159: } // namespace renderer
+160: }; // namespace svulkan2
+161: 
+162: #endif
+SOURCE https://raw.githubusercontent.com/haosulab/sapien-vulkan-2/d8516a4f1467167122ae85f53a8532dbceb1eec2/src/renderer/denoiser_oidn.cpp
+1: /*
+2:  * Copyright 2025 Hillbot Inc.
+3:  * Copyright 2020-2024 UCSD SU Lab
+4:  * 
+5:  * Licensed under the Apache License, Version 2.0 (the "License");
+6:  * you may not use this file except in compliance with the License.
+7:  * You may obtain a copy of the License at:
+8:  * 
+9:  *     http://www.apache.org/licenses/LICENSE-2.0
+10:  * 
+11:  * Unless required by applicable law or agreed to in writing, software
+12:  * distributed under the License is distributed on an "AS IS" BASIS,
+13:  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+14:  * See the License for the specific language governing permissions and
+15:  * limitations under the License.
+16:  */
+17: #ifdef SVULKAN2_CUDA_INTEROP
+18: #include "../common/logger.h"
+19: #include "denoiser.h"
+20: #include "svulkan2/core/context.h"
+21: #include <OpenImageDenoise/oidn.hpp>
+22: #include <cuda_runtime.h>
+23: 
+24: namespace svulkan2 {
+25: namespace renderer {
+26: 
+27: static inline bool checkCudaRuntime(cudaError_t error, std::string const &message = "") {
+28:   if (error != cudaSuccess) {
+29:     logger::error("{} CUDA Error: {}", message, cudaGetErrorName(error));
+30:     return false;
+31:   }
+32:   return true;
+33: }
+34: 
+35: bool DenoiserOidn::init(bool albedo, bool normal, bool hdr) {
+36:   int device;
+37:   if (!checkCudaRuntime(cudaGetDevice(&device))) {
+38:     return false;
+39:   }
+40:   if (!checkCudaRuntime(cudaStreamCreate(&mCudaStream))) {
+41:     return false;
+42:   }
+43:   mDevice = oidn::newCUDADevice(device, mCudaStream);
+44:   mDevice.commit();
+45: 
+46:   mCommandPool = core::Context::Get()->createCommandPool();
+47:   mCommandBufferIn = mCommandPool->allocateCommandBuffer();
+48:   mCommandBufferOut = mCommandPool->allocateCommandBuffer();
+49: 
+50:   mPixelSize = 16;
+51: 
+52:   mAlbedo = albedo;
+53:   mNormal = normal;
+54:   mHdr = hdr;
+55: 
+56:   return true;
+57: }
+58: 
+59: void DenoiserOidn::allocate(uint32_t width, uint32_t height) {
+60:   mWidth = width;
+61:   mHeight = height;
+62:   free();
+63: 
+64:   mFilter = mDevice.newFilter("RT");
+65: 
+66:   mInputBuffer = core::Buffer::Create(width * height * mPixelSize,
+67:                                       vk::BufferUsageFlagBits::eTransferDst |
+68:                                           vk::BufferUsageFlagBits::eTransferSrc,
+69:                                       VMA_MEMORY_USAGE_GPU_ONLY, VmaAllocationCreateFlags{}, true);
+70:   mInputBufferOidn = mDevice.newBuffer(mInputBuffer->getCudaPtr(), mInputBuffer->getSize());
+71:   mFilter.setImage("color", mInputBufferOidn, oidn::Format::Float3, mWidth, mHeight, 0, 16);
+72: 
+73:   mFilter.setImage("output", mInputBufferOidn, oidn::Format::Float3, mWidth, mHeight, 0, 16);
+74: 
+75:   if (useAlbedo()) {
+76:     mAlbedoBuffer = core::Buffer::Create(
+77:         width * height * mPixelSize,
+78:         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+79:         VMA_MEMORY_USAGE_GPU_ONLY, VmaAllocationCreateFlags{}, true);
+80:     mAlbedoBufferOidn = mDevice.newBuffer(mAlbedoBuffer->getCudaPtr(), mAlbedoBuffer->getSize());
+81:     mFilter.setImage("albedo", mAlbedoBufferOidn, oidn::Format::Float3, mWidth, mHeight, 0, 16);
+82:   }
+83:   if (useNormal()) {
+84:     mNormalBuffer = core::Buffer::Create(
+85:         width * height * mPixelSize,
+86:         vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eTransferSrc,
+87:         VMA_MEMORY_USAGE_GPU_ONLY, VmaAllocationCreateFlags{}, true);
+88:     mNormalBufferOidn = mDevice.newBuffer(mNormalBuffer->getCudaPtr(), mNormalBuffer->getSize());
+89:     mFilter.setImage("normal", mNormalBufferOidn, oidn::Format::Float3, mWidth, mHeight, 0, 16);
+90:   }
+91:   mFilter.set("hdr", mHdr);
+92:   mFilter.commit();
+93: 
+94:   vk::Device device = core::Context::Get()->getDevice();
+95:   // create timeline semaphore with value 0
+96:   vk::SemaphoreTypeCreateInfo timelineCreateInfo(vk::SemaphoreType::eTimeline, 0);
+97:   vk::SemaphoreCreateInfo createInfo{};
+98:   vk::ExportSemaphoreCreateInfo exportCreateInfo(
+99:       vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd);
+100:   createInfo.setPNext(&exportCreateInfo);
+101:   exportCreateInfo.setPNext(&timelineCreateInfo);
+102:   mSem = device.createSemaphoreUnique(createInfo);
+103: 
+104:   // export vulkan semaphore as cuda semaphore
+105:   int fd =
+106:       device.getSemaphoreFdKHR({mSem.get(), vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd});
+107:   cudaExternalSemaphoreHandleDesc desc = {};
+108:   desc.flags = 0;
+109:   desc.handle.fd = fd;
+110:   desc.type = cudaExternalSemaphoreHandleTypeTimelineSemaphoreFd;
+111:   checkCudaRuntime(cudaImportExternalSemaphore(&mCudaSem, &desc));
+112: }
+113: 
+114: void DenoiserOidn::free() {
+115:   core::Context::Get()->getDevice().waitIdle();
+116:   if (mCudaSem) {
+117:     cudaDestroyExternalSemaphore(mCudaSem);
+118:     mCudaSem = {};
+119:   }
+120: 
+121:   mFilter = {};
+122:   mNormalBufferOidn = {};
+123:   mNormalBuffer = {};
+124:   mAlbedoBufferOidn = {};
+125:   mAlbedoBuffer = {};
+126:   mInputBufferOidn = {};
+127:   mInputBuffer = {};
+128: }
+129: 
+130: void DenoiserOidn::denoise(core::Image &color, core::Image *albedo, core::Image *normal) {
+131: 
+132:   if (color.getFormat() != vk::Format::eR32G32B32A32Sfloat ||
+133:       (albedo && albedo->getFormat() != vk::Format::eR32G32B32A32Sfloat) ||
+134:       (normal && normal->getFormat() != vk::Format::eR32G32B32A32Sfloat)) {
+135:     throw std::runtime_error("denoiser only supports R32G32B32A32Sfloat format");
+136:   }
+137: 
+138:   // copy external image to buffer
+139:   mCommandBufferIn->reset();
+140:   mCommandBufferIn->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+141: 
+142:   color.recordCopyToBuffer(mCommandBufferIn.get(), mInputBuffer->getVulkanBuffer(), 0,
+143:                            mInputBuffer->getSize(), {0, 0, 0}, color.getExtent());
+144: 
+145:   if (useAlbedo() && albedo) {
+146:     albedo->recordCopyToBuffer(mCommandBufferIn.get(), mAlbedoBuffer->getVulkanBuffer(), 0,
+147:                                mAlbedoBuffer->getSize(), {0, 0, 0}, color.getExtent());
+148:   }
+149:   if (useNormal() && normal) {
+150:     normal->recordCopyToBuffer(mCommandBufferIn.get(), mNormalBuffer->getVulkanBuffer(), 0,
+151:                                mNormalBuffer->getSize(), {0, 0, 0}, color.getExtent());
+152:   }
+153: 
+154:   mCommandBufferIn->end();
+155: 
+156:   core::Context::Get()->getQueue().submit(mCommandBufferIn.get(), {}, {}, {}, mSem.get(),
+157:                                           ++mSemValue, {});
+158: 
+159:   cudaExternalSemaphoreWaitParams waitParams{};
+160:   waitParams.params.fence.value = mSemValue;
+161:   cudaWaitExternalSemaphoresAsync(&mCudaSem, &waitParams, 1, mCudaStream);
+162: 
+163:   // run
+164:   // mFilter.executeAsync();
+165:   mFilter.execute();
+166: 
+167:   char const *err;
+168:   if (mDevice.getError(err) != oidn::Error::None) {
+169:     logger::error("OIDN Error: {}", err);
+170:   }
+171: 
+172:   // copy output buffer to external image
+173:   cudaExternalSemaphoreSignalParams sigParams{};
+174:   sigParams.flags = 0;
+175:   sigParams.params.fence.value = ++mSemValue;
+176:   cudaSignalExternalSemaphoresAsync(&mCudaSem, &sigParams, 1, mCudaStream);
+177: 
+178:   mCommandBufferOut->reset();
+179:   mCommandBufferOut->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+180:   color.recordCopyFromBuffer(mCommandBufferOut.get(), mInputBuffer->getVulkanBuffer(), 0,
+181:                              mInputBuffer->getSize(), {0, 0, 0}, color.getExtent());
+182:   mCommandBufferOut->end();
+183: 
+184:   vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eTransfer;
+185:   core::Context::Get()->getQueue().submit(mCommandBufferOut.get(), mSem.get(), waitStage,
+186:                                           mSemValue, {}, {}, {});
+187: }
+188: 
+189: DenoiserOidn::~DenoiserOidn() {
+190:   logger::info("OIDN finished");
+191:   free();
+192: 
+193:   mDevice = {};
+194:   if (mCudaStream) {
+195:     checkCudaRuntime(cudaStreamDestroy(mCudaStream));
+196:   }
+197: }
+198: } // namespace renderer
+199: } // namespace svulkan2
+200: 
+201: #endif

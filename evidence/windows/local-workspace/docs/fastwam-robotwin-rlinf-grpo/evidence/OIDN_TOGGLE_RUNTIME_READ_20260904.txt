@@ -1,0 +1,610 @@
+        for i in range(self.n_envs):
+            sub_env = SubEnv(
+                env_id=i,
+                task_name=self.task_name,
+                args=self.args,
+                env_seed=self.env_seeds[i] if self.env_seeds else None,
+                instruction_type=self.instruction_type,
+                global_lock=self.global_lock,
+            )
+            sub_env.setup_task()
+            self.envs.append(sub_env)
+
+    def transform(self, results):
+        res_dict = defaultdict(list)
+        for res in results:
+            for k, v in res.items():
+                res_dict[k].append(v)
+
+        res_dict = dict(res_dict)
+        return (
+            res_dict["obs"],
+            res_dict["reward"],
+            res_dict["terminated"],
+            res_dict["truncated"],
+            res_dict["info"],
+        )
+
+    def step(self, actions):
+        if len(self.envs) == 0:
+            self._init_envs()
+
+        step_futures = {}
+        for i in range(self.n_envs):
+            future = self.env_thread_pool.submit(self.envs[i].step, actions[i])
+            step_futures[i] = future
+
+        results = []
+        for i in range(self.n_envs):
+            future = step_futures[i]
+            try:
+                result = future.result(timeout=120)
+                results.append(result)
+            except Exception as e:
+                raise RuntimeError(f"SubEnv {i} step error: {e}")
+
+        obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv = (
+            self.transform(results)
+        )
+
+        return obs_venv, reward_venv, terminated_venv, truncated_venv, info_venv
+
+    def reset(self, env_idx=None, env_seeds=None):
+        if len(self.envs) == 0:
+            self._init_envs()
+
+        if env_idx is None:
+            env_idx = list(range(self.n_envs))
+        elif isinstance(env_idx, (list, tuple)):
+            env_idx = list(env_idx)
+        elif isinstance(env_idx, torch.Tensor):
+            env_idx = env_idx.tolist()
+        else:
+            env_idx = [env_idx]
+
+        valid_idx = [idx for idx in env_idx if 0 <= idx < self.n_envs]
+        seeds = {}
+        if env_seeds is not None and len(env_seeds) == len(env_idx):
+            seeds = {idx: env_seeds[pos] for pos, idx in enumerate(env_idx)}
+
+        # SAPIEN's renderer cache is process-global. It is only safe to clear it
+        # after every child renderer in this VectorEnv has released its local
+        # references. Partial episode resets therefore never clear this cache.
+        full_reset = len(valid_idx) == self.n_envs and set(valid_idx) == set(
+            range(self.n_envs)
+        )
+        if full_reset:
+            for env in self.envs:
+                env.close()
+            self.full_reset_count += 1
+            if self.full_reset_count % self.clear_cache_freq == 0:
+                gc.collect()
+                sapien_clear_cache()
+                torch.cuda.empty_cache()
+
+        # reset() was previously submitted to the pool, but a process-wide
+        # lock serialized every reset already. Keeping lifecycle operations on
+        # this caller thread avoids renderer creation/destruction affinity
+        # ambiguity while step() remains parallel.
+        for idx in valid_idx:
+            try:
+                self.envs[idx].reset(
+                    env_seed=seeds.get(idx), close_current=not full_reset
+                )
+            except Exception as e:
+                raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+
+    def get_obs(self):
+        obs_venv = []
+        for env in self.envs:
+            obs_venv.append(env.get_obs())
+
+        return obs_venv
+
+    def close(self, clear_cache=True):
+        for env in self.envs:
+            env.close()
+
+        if clear_cache:
+            self.envs = []
+            gc.collect()
+            sapien_clear_cache()
+            torch.cuda.empty_cache()
+
+    def check_seeds(self, seeds: list[int]):
+        assert len(seeds) == self.n_envs
+        check_futures = {}
+        for i in range(self.n_envs):
+            future = self.env_thread_pool.submit(self.envs[i].check_seed, seeds[i])
+            check_futures[i] = future
+
+        results = [None] * self.n_envs
+        for future in as_completed(check_futures.values(), timeout=120):
+            for idx, f in check_futures.items():
+                if f == future:
+                    try:
+                        result = future.result()
+                        results[idx] = result
+                    except Exception as e:
+                        raise RuntimeError(f"SubEnv {idx} check seed error: {e}")
+                    break
+
+        return results
+
+
+if __name__ == "__main__":
+    mp.set_start_method("spawn")  # solve CUDA compatibility problem
+26:from rlinf.envs.robotwin.seed_utils import partition_success_seeds
+33:    def __init__(
+39:        worker_info,
+48:        self.worker_info = worker_info
+80:    def _init_env(self):
+95:    def device(self):
+99:    def elapsed_steps(self):
+103:    def is_start(self):
+107:    def is_start(self, value):
+110:    def _init_metrics(self):
+111:        self.success_once = torch.zeros(
+121:    def _reset_metrics(self, env_idx=None):
+127:                self.success_once[mask] = False
+134:                self.success_once[:] = False
+139:    def _record_metrics(self, step_reward, infos):
+142:        if "success" in infos:
+143:            if isinstance(infos["success"], list):
+144:                infos["success"] = torch.as_tensor(
+145:                    np.array(infos["success"]).reshape(-1), device=self.device
+147:            self.success_once = self.success_once | infos["success"]
+148:            episode_info["success_once"] = self.success_once.clone()
+155:    def center_and_crop(self, image, center_crop=False):
+163:    def _extract_obs_image(self, raw_obs):
+208:    def _calc_step_reward(self, terminations):
+219:    def _cal_chunk_rewards(self, step_reward, chunk_step, terminations, infos):
+241:    def reset(
+261:    def step(
+311:                if "success" in infos:
+312:                    infos["episode"]["success_at_end"] = infos["success"].clone()
+322:    def chunk_step(self, chunk_actions):
+371:                if "success" in infos:
+372:                    infos["episode"]["success_at_end"] = infos["success"].clone()
+394:    def _handle_auto_reset(self, dones, extracted_obs, infos):
+410:    def offload(self, clear_cache=True):
+414:    def sample_action_space(self):
+417:    def _init_reset_state_ids(self):
+423:            success_seeds = data[self.task_name].get("success_seeds", None)
+424:            if success_seeds is not None:
+425:                success_seeds = torch.as_tensor(success_seeds, dtype=torch.long)
+426:                self.success_seeds = partition_success_seeds(
+427:                    success_seeds,
+435:                self.success_seeds = None
+438:            self.success_seeds = None
+446:    def update_reset_state_ids(self, env_idx=None):
+451:            if self.success_seeds is not None:
+452:                total_seeds = self.success_seeds.numel()
+454:                    torch.arange(self.num_group, device=self.success_seeds.device)
+457:                reset_state_ids = self.success_seeds[indices]
+477:            if self.success_seeds is not None:
+478:                total_seeds = self.success_seeds.numel()
+480:                    torch.arange(self.num_group, device=self.success_seeds.device)
+483:                reset_state_ids = self.success_seeds[indices]
+502:    def check_seeds(self, seeds):
+            if len(wrist_images) > 0:
+                batch_wrist_images.append(
+                    torch.stack([torch.from_numpy(img) for img in wrist_images])
+                )
+            batch_states.append(obs["state"])
+            batch_instructions.append(obs["instruction"])
+
+        batch_images = torch.stack([torch.from_numpy(img) for img in batch_images])
+        if len(batch_wrist_images) > 0:
+            batch_wrist_images = torch.stack(batch_wrist_images)
+        else:
+            batch_wrist_images = None
+        batch_states = torch.stack([torch.from_numpy(state) for state in batch_states])
+
+        extracted_obs = {
+            "main_images": batch_images,
+            "wrist_images": batch_wrist_images,
+            "states": batch_states,
+            "task_descriptions": batch_instructions,
+        }
+
+        return extracted_obs
+
+    def _calc_step_reward(self, terminations):
+        reward = self.cfg.reward_coef * terminations
+
+        reward_diff = reward - self.prev_step_reward
+        self.prev_step_reward = reward
+
+        if self.use_rel_reward:
+            return reward_diff
+        else:
+            return reward
+
+    def _cal_chunk_rewards(self, step_reward, chunk_step, terminations, infos):
+        n_steps_to_run = np.array(
+            [[0] for i in range(self.num_envs)]
+        )  # infos.get("n_steps_to_run", np.array([[0] for i in range(self.num_envs)]))
+
+        n_steps_to_run = torch.as_tensor(
+            np.array(n_steps_to_run).reshape(-1), device=self.device
+        )
+        chunk_rewards = torch.zeros(self.num_envs, chunk_step, device=self.device)
+        for env_id in range(self.num_envs):
+            steps_left = n_steps_to_run[env_id]
+            reward = step_reward[env_id]
+            start_idx = chunk_step - steps_left - 1
+
+            if terminations[env_id] and start_idx > 0:
+                if self.use_rel_reward:
+                    chunk_rewards[env_id, start_idx] = reward
+                else:
+                    chunk_rewards[env_id, start_idx:] = reward
+
+        return chunk_rewards
+
+    def reset(
+        self,
+        env_idx: Optional[Union[int, list[int]]] = None,
+        env_seeds=None,
+    ):
+        if self._is_start:
+            self._is_start = False
+
+        env_seeds = self.reset_state_ids.tolist() if env_seeds is None else env_seeds
+
+        self.venv.reset(env_idx=env_idx, env_seeds=env_seeds)
+        raw_obs = self.venv.get_obs()
+        infos = {}
+
+        self._reset_metrics(env_idx)
+
+        extracted_obs = self._extract_obs_image(raw_obs)
+
+        return extracted_obs, infos
+
+    def step(
+        self, actions: Union[torch.Tensor, np.ndarray, dict] = None, auto_reset=True
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+        if actions is None:
+            assert self._is_start, "Actions must be provided after the first reset."
+
+        if isinstance(actions, torch.Tensor):
+            actions = actions.cpu().numpy()
+        elif isinstance(actions, dict):
+            actions = actions.get("actions", actions)
+
+        # [n_envs, horizon, action_dim]
+        if len(actions.shape) == 2:
+            # [n_envs, action_dim] -> [n_envs, 1, action_dim]
+            actions = actions[:, None, :]
+
+        raw_obs, step_reward, terminations, truncations, info_list = self.venv.step(
+            actions
+        )
+        extracted_obs = self._extract_obs_image(raw_obs)
+        infos = list_of_dict_to_dict_of_list(info_list)
+
+        if isinstance(terminations, list):
+            terminations = torch.as_tensor(
+                np.array(terminations).reshape(-1), device=self.device
+            )
+        if isinstance(truncations, list):
+            truncations = torch.as_tensor(
+                np.array(truncations).reshape(-1), device=self.device
+            )
+
+        if self.use_custom_reward:
+            step_reward = self._calc_step_reward(terminations)
+        else:
+            if isinstance(step_reward, list):
+                step_reward = torch.as_tensor(
+                    np.array(step_reward, dtype=np.float32).reshape(-1),
+                    device=self.device,
+                )
+
+        self._elapsed_steps += actions.shape[1]
+        truncated = self._elapsed_steps >= self.cfg.max_episode_steps
+        if truncated.any():
+            truncations = torch.logical_or(truncated, truncations)
+
+        infos = self._record_metrics(step_reward, infos)
+
+        if self.ignore_terminations:
+            terminations[:] = False
+            if self.record_metrics:
+                if "success" in infos:
+                    infos["episode"]["success_at_end"] = infos["success"].clone()
+
+        dones = torch.logical_or(terminations, truncations)
+
+        _auto_reset = auto_reset and self.auto_reset
+        if dones.any() and _auto_reset:
+            extracted_obs, infos = self._handle_auto_reset(dones, extracted_obs, infos)
+
+        return extracted_obs, step_reward, terminations, truncations, infos
+
+    def chunk_step(self, chunk_actions):
+        if isinstance(chunk_actions, torch.Tensor):
+            chunk_actions = chunk_actions.cpu().numpy()
+
+        # chunk_actions: [num_envs, chunk_step, action_dim]
+        num_envs = chunk_actions.shape[0]
+        chunk_step = chunk_actions.shape[1]
+        obs_list = []
+        infos_list = []
+        infos_list = []
+
+        raw_obs, step_reward, terminations, truncations, info_list = self.venv.step(
+            chunk_actions
+        )
+        extracted_obs = self._extract_obs_image(raw_obs)
+        infos = list_of_dict_to_dict_of_list(info_list)
+        obs_list.append(extracted_obs)
+        infos_list.append(infos)
+        if isinstance(terminations, list):
+            terminations = torch.as_tensor(
+                np.array(terminations).reshape(-1), device=self.device
+            )
+        if isinstance(truncations, list):
+            truncations = torch.as_tensor(
+                np.array(truncations).reshape(-1), device=self.device
+            )
+
+        if self.use_custom_reward:
+            step_reward = self._calc_step_reward(terminations)
+        else:
+            if isinstance(step_reward, list):
+                step_reward = torch.as_tensor(
+                    np.array(step_reward, dtype=np.float32).reshape(-1),
+                    device=self.device,
+                )
+
+        chunk_rewards = self._cal_chunk_rewards(
+            step_reward, chunk_step, terminations, infos
+        )
+
+        self._elapsed_steps += chunk_actions.shape[1]
+        truncated = self._elapsed_steps >= self.cfg.max_episode_steps
+        if truncated.any():
+            truncations = torch.logical_or(truncated, truncations)
+
+        infos = self._record_metrics(step_reward, infos)
+
+        if self.ignore_terminations:
+            terminations[:] = False
+            if self.record_metrics:
+                if "success" in infos:
+                    infos["episode"]["success_at_end"] = infos["success"].clone()
+
+        past_dones = torch.logical_or(terminations, truncations)
+        if past_dones.any() and self.auto_reset:
+            obs_list[-1], infos_list[-1] = self._handle_auto_reset(
+                past_dones, obs_list[-1], infos_list[-1]
+            )
+
+        chunk_terminations = torch.zeros((num_envs, chunk_step), dtype=bool)
+        chunk_terminations[:, -1] = terminations
+
+        chunk_truncations = torch.zeros((num_envs, chunk_step), dtype=bool)
+        chunk_truncations[:, -1] = truncations
+
+        return (
+            obs_list,
+            chunk_rewards,
+            chunk_terminations,
+            chunk_truncations,
+            infos_list,
+        )
+
+    def _handle_auto_reset(self, dones, extracted_obs, infos):
+        final_obs = extracted_obs.copy()
+        env_idx = torch.arange(0, self.num_envs, device=self.device)[dones]
+        final_info = infos.copy()
+        if self.cfg.is_eval:
+            self.update_reset_state_ids(env_idx=env_idx)
+
+        extracted_obs, infos = self.reset(env_idx=env_idx.tolist())
+        # gymnasium calls it final observation but it really is just o_{t+1} or the true next observation
+        infos["final_observation"] = final_obs
+        infos["final_info"] = final_info
+        infos["_final_info"] = dones
+        infos["_final_observation"] = dones
+        infos["_elapsed_steps"] = dones
+        return extracted_obs, infos
+
+    def offload(self, clear_cache=True):
+        if hasattr(self, "venv"):
+            self.venv.close(clear_cache)
+
+    def sample_action_space(self):
+        return np.random.randn(self.num_envs, self.horizon, 14)
+
+    def _init_reset_state_ids(self):
+        if self.cfg.get("seeds_path", None) is not None and os.path.exists(
+            self.cfg.seeds_path
+        ):
+            with open(self.cfg.seeds_path, "r") as f:
+                data = json.load(f)
+            success_seeds = data[self.task_name].get("success_seeds", None)
+            if success_seeds is not None:
+                success_seeds = torch.as_tensor(success_seeds, dtype=torch.long)
+                self.success_seeds = partition_success_seeds(
+                    success_seeds,
+                    base_seed=self.base_seed,
+                    seed_offset=self.seed_offset,
+                    total_num_processes=self.total_num_processes,
+                    num_group=self.num_group,
+                )
+                self._current_seed_index = 0
+            else:
+                self.success_seeds = None
+import sapien.core as sapien
+import numpy as np
+import pdb
+from PIL import Image, ImageColor
+import open3d as o3d
+import json
+import transforms3d as t3d
+import cv2
+import torch
+import yaml
+import trimesh
+import math
+from .._GLOBAL_CONFIGS import CONFIGS_PATH
+import os
+from sapien.sensor import StereoDepthSensor, StereoDepthSensorConfig
+
+try:
+    import pytorch3d.ops as torch3d_ops
+
+    def fps(points, num_points=1024, use_cuda=True):
+        K = [num_points]
+        if use_cuda:
+            points = torch.from_numpy(points).cuda()
+            sampled_points, indices = torch3d_ops.sample_farthest_points(points=points.unsqueeze(0), K=K)
+            sampled_points = sampled_points.squeeze(0)
+            sampled_points = sampled_points.cpu().numpy()
+        else:
+            points = torch.from_numpy(points)
+            sampled_points, indices = torch3d_ops.sample_farthest_points(points=points.unsqueeze(0), K=K)
+            sampled_points = sampled_points.squeeze(0)
+            sampled_points = sampled_points.numpy()
+
+        return sampled_points, indices
+
+except:
+    print("missing pytorch3d")
+
+    def fps(points, num_points=1024, use_cuda=True):
+        print("fps error: missing pytorch3d")
+        exit()
+
+
+class Camera:
+
+    def __init__(self, bias=0, random_head_camera_dis=0, **kwags):
+        """ """
+        self.pcd_crop = kwags.get("pcd_crop", False)
+        self.pcd_down_sample_num = kwags.get("pcd_down_sample_num", 0)
+        self.pcd_crop_bbox = kwags.get("bbox", [[-0.6, -0.35, 0.7401], [0.6, 0.35, 2]])
+        self.pcd_crop_bbox[0][2] += bias
+        self.table_z_bias = bias
+        self.random_head_camera_dis = random_head_camera_dis
+
+        self.static_camera_config = []
+        self.head_camera_type = kwags["camera"].get("head_camera_type", "D435")
+        self.wrist_camera_type = kwags["camera"].get("wrist_camera_type", "D435")
+
+        self.collect_head_camera = kwags["camera"].get("collect_head_camera", True)
+        self.collect_wrist_camera = kwags["camera"].get("collect_wrist_camera", True)
+
+        # embodiment = kwags.get('embodiment')
+        # embodiment_config_path = os.path.join(CONFIGS_PATH, '_embodiment_config.yml')
+        # with open(embodiment_config_path, 'r', encoding='utf-8') as f:
+        #     embodiment_types = yaml.load(f.read(), Loader=yaml.FullLoader)
+        # robot_file = embodiment_types[embodiment]['file_path']
+        # if robot_file is None:
+        #     raise "No embodiment files"
+
+        # robot_config_file = os.path.join(robot_file, 'config.yml')
+        # with open(robot_config_file, 'r', encoding='utf-8') as f:
+        #     embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+        # TODO
+        self.static_camera_info_list = kwags["left_embodiment_config"]["static_camera_list"]
+        self.static_camera_num = len(self.static_camera_info_list)
+
+    def load_camera(self, scene):
+        """
+        Add cameras and set camera parameters
+            - Including four cameras: left, right, front, head.
+        """
+        near, far = 0.1, 100
+        camera_config_path = os.path.join(CONFIGS_PATH, "_camera_config.yml")
+
+        assert os.path.isfile(camera_config_path), "task config file is missing"
+
+        with open(camera_config_path, "r", encoding="utf-8") as f:
+            camera_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+
+        # sensor_mount_actor = scene.create_actor_builder().build_kinematic()
+
+        # camera_args = get_camera_config()
+        def create_camera(camera_info, random_head_camera_dis=0):
+            if camera_info["type"] not in camera_args.keys():
+                raise ValueError(f"Camera type {camera_info['type']} not supported")
+
+            camera_config = camera_args[camera_info["type"]]
+            cam_pos = np.array(camera_info["position"])
+            vector = np.random.randn(3)
+            random_dir = vector / np.linalg.norm(vector)
+            cam_pos = cam_pos + random_dir * np.random.uniform(low=0, high=random_head_camera_dis)
+            cam_forward = np.array(camera_info["forward"]) / np.linalg.norm(np.array(camera_info["forward"]))
+            cam_left = np.array(camera_info["left"]) / np.linalg.norm(np.array(camera_info["left"]))
+            up = np.cross(cam_forward, cam_left)
+            mat44 = np.eye(4)
+            mat44[:3, :3] = np.stack([cam_forward, cam_left, up], axis=1)
+            mat44[:3, 3] = cam_pos
+
+            # ========================= sensor camera =========================
+            # sensor_config = StereoDepthSensorConfig()
+            # sensor_config.rgb_resolution = (camera_config['w'], camera_config['h'])
+
+            camera = scene.add_camera(
+                name=camera_info["name"],
+                width=camera_config["w"],
+                height=camera_config["h"],
+                fovy=np.deg2rad(camera_config["fovy"]),
+                near=near,
+                far=far,
+            )
+            camera.entity.set_pose(sapien.Pose(mat44))
+
+            # ========================= sensor camera =========================
+            # sensor_camera = StereoDepthSensor(
+            #     sensor_config,
+            #     sensor_mount_actor,
+            #     sapien.Pose(mat44)
+            # )
+            # camera.entity.set_pose(sapien.Pose(camera_info['position']))
+            # return camera, sensor_camera, camera_config
+            return camera, camera_config
+
+        # ================================= wrist camera =================================
+        if self.collect_wrist_camera:
+            wrist_camera_config = camera_args[self.wrist_camera_type]
+            self.left_camera = scene.add_camera(
+                name="left_camera",
+                width=wrist_camera_config["w"],
+                height=wrist_camera_config["h"],
+                fovy=np.deg2rad(wrist_camera_config["fovy"]),
+                near=near,
+                far=far,
+            )
+
+            self.right_camera = scene.add_camera(
+                name="right_camera",
+                width=wrist_camera_config["w"],
+                height=wrist_camera_config["h"],
+                fovy=np.deg2rad(wrist_camera_config["fovy"]),
+                near=near,
+                far=far,
+d /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets 
+l /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/embodiments /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets/embodiments
+d /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/files 
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/files/50_tasks.gif 
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/files/domain_randomization.png 
+l /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/background_texture /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets/background_texture
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/_download.py 
+l /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets/objects /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets/objects
+d /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/assets 
+d /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/assets/files 
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/assets/files/50_tasks.gif 
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/assets/files/domain_randomization.png 
+f /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/assets/_download.py 
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/source_head.txt
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/contract.json
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/packet_complete.txt
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/sha256.txt
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/resolved.yaml
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2/command.txt

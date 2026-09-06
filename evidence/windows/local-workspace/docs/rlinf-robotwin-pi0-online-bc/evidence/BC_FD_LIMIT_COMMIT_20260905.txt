@@ -1,0 +1,56 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+2026-09-05T05:05:30+00:00
+ docs/online_bc.md                                  |  8 ++++
+ .../robotwin_adjust_bottle_online_bc_openpi.yaml   |  1 +
+ rlinf/workers/env/env_worker.py                    | 17 +++++++++
+ tests/unit_tests/test_online_bc.py                 | 44 ++++++++++++++++++++++
+ 4 files changed, 70 insertions(+)
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+index 1ba809fb..32b738a0 100644
+--- a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
++++ b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+@@ -52,6 +52,7 @@ algorithm:
+ 
+ env:
+   group_name: EnvGroup
++  min_open_files: 4096  # 32 train + 32 eval cameras exceed Ray's inherited 1024.
+   train:
+     total_num_envs: 32
+     rollout_epoch: 1
+diff --git a/rlinf/workers/env/env_worker.py b/rlinf/workers/env/env_worker.py
+index ec89a543..bf271a05 100644
+--- a/rlinf/workers/env/env_worker.py
++++ b/rlinf/workers/env/env_worker.py
+@@ -267,6 +267,23 @@ class EnvWorker(Worker):
+         ]
+ 
+     def init_worker(self):
++        # Ray workers inherit the head's limits, not the launch shell's ulimit.
++        # Apply an explicit opt-in only to this environment worker process.
++        minimum = self.cfg.env.get("min_open_files", None)
++        if minimum is not None:
++            import resource
++
++            minimum = int(minimum)
++            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
++            if minimum <= 0 or (hard != resource.RLIM_INFINITY and minimum > hard):
++                raise ValueError(
++                    f"env.min_open_files={minimum} exceeds allowed range (hard={hard})."
++                )
++            if soft != resource.RLIM_INFINITY and soft < minimum:
++                resource.setrlimit(resource.RLIMIT_NOFILE, (minimum, hard))
++            self.log_info(
++                f"EnvWorker RLIMIT_NOFILE={resource.getrlimit(resource.RLIMIT_NOFILE)}"
++            )
+         # This is a barrier to ensure all envs' initial setup upon import is done
+         # Essential for RealWorld env to ensure initial ROS node setup is done
+         self.broadcast(
+[codex/sz-pi0-online-bc 72a92604] Set explicit per-EnvWorker file descriptor capacity for BC camera concurrency
+ 4 files changed, 70 insertions(+)
+VERIFIED_HEAD=72a926041867cbdbf2565ab66a14d742c59a0dad
+6, 4, 0
+               total        used        free      shared  buff/cache   available
+Mem:           2.0Ti        85Gi       1.1Ti        96Mi       835Gi       1.9Ti
+Swap:          6.0Gi       2.7Gi       3.3Gi
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1    3.5T  2.7T  626G  82% /data

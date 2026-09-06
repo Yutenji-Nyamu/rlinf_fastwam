@@ -1,0 +1,20 @@
+diff --git a/tools/fastwam_scene_fence/build.sh b/tools/fastwam_scene_fence/build.sh
+--- a/tools/fastwam_scene_fence/build.sh
++++ b/tools/fastwam_scene_fence/build.sh
+@@ -10,3 +10,8 @@
+ test ! -e "$out"
+ mkdir -p "$out"
++mkdir "$out/loader-libs"
++# The wheel normally preloads these exact files from Python before pysapien.
++# Native process-start loading needs their SONAMEs resolvable first.
++ln -s "$site/sapien/oidn_library/libOpenImageDenoise.so.2.0.1" "$out/loader-libs/libOpenImageDenoise.so.2"
++ln -s "$site/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1" "$out/loader-libs/libOpenImageDenoise_core.so.2.0.1"
+ # The current wheel uses the C++11 string ABI and CUDA interop class layout.
+@@ -29,4 +34,6 @@
+-printf 'export LD_PRELOAD=%q\n' "$out/librlinf_scene_fence.so" > "$out/enable.sh"
++printf 'export LD_LIBRARY_PATH=%q${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}\n' "$out/loader-libs" > "$out/enable.sh"
++printf 'export LD_PRELOAD=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
+ printf 'export RLINF_SCENE_FENCE_LIBRARY=%q\n' "$out/librlinf_scene_fence.so" >> "$out/enable.sh"
+ cat "$out/build.sha256"
+ cat "$out/exports.txt"
++(source "$out/enable.sh"; /bin/true)

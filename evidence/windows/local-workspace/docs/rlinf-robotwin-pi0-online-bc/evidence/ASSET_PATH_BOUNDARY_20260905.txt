@@ -1,0 +1,278 @@
+        cfg,
+        num_envs,
+        seed_offset,
+        total_num_processes,
+        worker_info,
+        record_metrics=True,
+    ):
+        env_seed = cfg.seed
+        self.seed = env_seed + seed_offset
+        self.base_seed = env_seed
+        self.num_envs = num_envs
+        self.seed_offset = seed_offset
+        self.total_num_processes = total_num_processes
+        self.worker_info = worker_info
+        self.auto_reset = cfg.auto_reset
+        self.use_rel_reward = cfg.use_rel_reward
+        self.ignore_terminations = cfg.ignore_terminations
+
+        self.group_size = cfg.group_size
+        self.num_group = self.num_envs // self.group_size
+        self.use_fixed_reset_state_ids = cfg.use_fixed_reset_state_ids
+        self.use_custom_reward = cfg.use_custom_reward
+
+        self.video_cfg = cfg.video_cfg
+
+        self.cfg = cfg
+        self.record_metrics = record_metrics
+        self._is_start = True
+
+        self.task_name = cfg.task_config.task_name
+
+        self.center_crop = cfg.get("center_crop", False)
+        self._init_reset_state_ids()
+
+        self._init_env()
+
+        self.prev_step_reward = torch.zeros(
+            self.num_envs, dtype=torch.float32, device=self.device
+        )
+        if self.record_metrics:
+            self._init_metrics()
+            self._elapsed_steps = torch.zeros(
+                self.num_envs, dtype=torch.long, device=self.device
+            )
+
+    def _init_env(self):
+        mp.set_start_method("spawn", force=True)
+        os.environ["ASSETS_PATH"] = self.cfg.assets_path
+
+        from robotwin.envs.vector_env import VectorEnv
+
+        env_seeds = self.reset_state_ids.tolist()
+
+        self.venv = VectorEnv(
+            task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+            n_envs=self.num_envs,
+            env_seeds=env_seeds,
+        )
+
+    @property
+    def device(self):
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    @property
+    def elapsed_steps(self):
+        return self._elapsed_steps
+
+    @property
+    def is_start(self):
+        return self._is_start
+
+    @is_start.setter
+    def is_start(self, value):
+        self._is_start = value
+
+    def _init_metrics(self):
+        self.success_once = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.fail_once = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.returns = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.float32
+        )
+
+    def _reset_metrics(self, env_idx=None):
+        if env_idx is not None:
+            mask = torch.zeros(self.num_envs, dtype=bool, device=self.device)
+            mask[env_idx] = True
+            self.prev_step_reward[mask] = 0.0
+            if self.record_metrics:
+                self.success_once[mask] = False
+                self.fail_once[mask] = False
+                self.returns[mask] = 0
+                self._elapsed_steps[env_idx] = 0
+        else:
+            self.prev_step_reward[:] = 0
+            if self.record_metrics:
+                self.success_once[:] = False
+                self.fail_once[:] = False
+                self.returns[:] = 0.0
+                self._elapsed_steps[:] = 0
+
+    def _record_metrics(self, step_reward, infos):
+        episode_info = {}
+        self.returns += step_reward
+        if "success" in infos:
+            if isinstance(infos["success"], list):
+                infos["success"] = torch.as_tensor(
+                    np.array(infos["success"]).reshape(-1), device=self.device
+                )
+            self.success_once = self.success_once | infos["success"]
+            episode_info["success_once"] = self.success_once.clone()
+        episode_info["return"] = self.returns.clone()
+        episode_info["episode_len"] = self.elapsed_steps.clone()
+# global configs
+import os
+
+ROOT_PATH = os.path.abspath(__file__)
+ROOT_PATH = ROOT_PATH[:ROOT_PATH.rfind("/")]
+ROOT_PATH = ROOT_PATH[:ROOT_PATH.rfind("/") + 1]
+
+ASSETS_PATH = os.path.join(ROOT_PATH, "assets/")
+EMBODIMENTS_PATH = os.path.join(ASSETS_PATH, "embodiments/")
+TEXTURES_PATH = os.path.join(ASSETS_PATH, "background_texture/")
+CONFIGS_PATH = os.path.join(ROOT_PATH, "task_config/")
+SCRIPT_PATH = os.path.join(ROOT_PATH, "script/")
+DESCRIPTION_PATH = os.path.join(ROOT_PATH, "description/")
+
+# Euler angles in world coordinates
+# t3d.euler.quat2euler(quat) returns (theta_x, theta_y, theta_z)
+# theta_y controls the pitch, and theta_z controls rotation around the axis perpendicular to the tabletop plane
+GRASP_DIRECTION_DIC = {
+    "left": [0, 0, 0, -1],
+    "front_left": [-0.383, 0, 0, -0.924],
+    "front": [-0.707, 0, 0, -0.707],
+    "front_right": [-0.924, 0, 0, -0.383],
+    "right": [-1, 0, 0, 0],
+    "top_down": [-0.5, 0.5, -0.5, -0.5],
+    "down_right": [-0.707, 0, -0.707, 0],
+    "down_left": [0, 0.707, 0, -0.707],
+    "top_down_little_left": [-0.353523, 0.61239, -0.353524, -0.61239],
+    "top_down_little_right": [-0.61239, 0.353523, -0.61239, -0.353524],
+    "left_arm_perf": [-0.853532, 0.146484, -0.353542, -0.3536],
+    "right_arm_perf": [-0.353518, 0.353564, -0.14642, -0.853568],
+}
+
+WORLD_DIRECTION_DIC = {
+    "left": [0, -0.707, 0, 0.707],  # -z  -y  -x
+    "front": [0.5, -0.5, 0.5, 0.5],  # y   z   -x
+    "right": [0.707, 0, 0.707, 0],  # z   y   -x
+    "top_down": [0, 0.707, -0.707, 0],  # -x  -y  -z
+}
+
+ROTATE_NUM = 10
+import sapien.core as sapien
+import numpy as np
+import transforms3d as t3d
+import sapien.physx as sapienp
+from .create_actor import *
+
+import os
+import re
+import json
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+assets_path = os.getenv("ASSETS_PATH")
+if os.getenv("ASSETS_PATH"):
+    BASE_DIR = Path(assets_path)
+
+def get_all_cluttered_objects():
+    cluttered_objects_info = {}
+    cluttered_objects_name = []
+
+    # load from cluttered_objects
+    cluttered_objects_config = json.load(open(BASE_DIR / "assets/objects/objaverse/list.json", "r", encoding="utf-8"))
+    cluttered_objects_name += cluttered_objects_config["item_names"]
+    for model_name, model_ids in cluttered_objects_config["list_of_items"].items():
+        cluttered_objects_info[model_name] = {
+            "ids": model_ids,
+            "type": "urdf",
+            "root": f"objects/objaverse/{model_name}",
+        }
+        params = {}
+        for model_id in model_ids:
+            model_full_name = f"{model_name}_{model_id}"
+            params[model_id] = {
+                "z_max": cluttered_objects_config["z_max"][model_full_name],
+                "radius": cluttered_objects_config["radius"][model_full_name],
+                "z_offset": cluttered_objects_config["z_offset"][model_full_name],
+            }
+        cluttered_objects_info[model_name]["params"] = params
+
+    # load from objects
+    objects_dir = BASE_DIR / "assets/objects"
+    for model_dir in objects_dir.iterdir():
+drwxrwxr-x 6 chenyiteng chenyiteng  4096 Aug 21 14:18 /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets
+-rw-rw-r-- 1 chenyiteng chenyiteng 22531 Nov 17  2025 /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/assets/objects/objaverse/list.json
+worktree /data/chenyiteng/projects/rlinf-shenzhen/RLinf
+HEAD 7d07a4212ee6858cc333e1d4fab7a37256d1f839
+detached
+
+worktree /data/chenyiteng/projects/rlinf-current-dsrl/RLinf-7d07-dsrl-robotwin
+HEAD 4ec52bd8d3dad1744b3f61c76636314b9d69c7a6
+branch refs/heads/codex/sz-current-dsrl-pi0-robotwin
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-action-dvac-adv
+HEAD b816d6d32355977d6c42d6dee9ed732e2ab317ae
+branch refs/heads/codex/sz-fastwam-action-dvac-adv
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+HEAD 62526cc95047c8a4a6e948a76be8eeec8a3926de
+branch refs/heads/codex/sz-fastwam-current-rlinf-grpo
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv
+HEAD 9fc8b403d9158f19d3d5c15065453e275e803e87
+branch refs/heads/codex/sz-grpo-dvac-action-adv
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv-fix
+HEAD 7006ad20a6ad7357c48e6d20e3fcabed6c5609e4
+branch refs/heads/codex/sz-grpo-dvac-action-adv-fix
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-pi0-robotwin-7d07a421
+HEAD 02b9488329bf0e141a4dc3527e5885bfeae87088
+branch refs/heads/codex/sz-7d07a421-grpo-pi0-robotwin
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current
+HEAD ab0988498a04311385600210c5b5ad34f16df1ce
+branch refs/heads/codex/sz-current-pi0-dvac-grpo-w0to5
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-observe-7d07a421
+HEAD 800baf80d6eab64169cf0e691eb04a681a093ee9
+branch refs/heads/codex/sz-current-pi0-dvac-observe
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc
+HEAD 2bb8bd4048362f342e8c0f4fa4cad53697dd3495
+branch refs/heads/codex/sz-pi0-online-bc
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-robotwin-rl
+HEAD ae7e5da72acf4a47a54cecff4f802ebc174b397a
+branch refs/heads/codex/sz-pi05-robotwin-rl
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-dvac-action-adv-fix
+HEAD 036e6bca07a84ff7cfe0c0578f7a81b6afc7355e
+branch refs/heads/codex/sz-ppo-dvac-action-adv-fix
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/ppo-pi0-robotwin
+HEAD 8d00c408f8bbf981851c0e7fc9fc39ccde332255
+branch refs/heads/codex/sz-ppo-pi0-robotwin
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/prism-dvac-rank-rloo
+HEAD 76723092146e17fbb32094267f68cb2de8979828
+branch refs/heads/codex/sz-prism-dvac-rank-rloo
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-checkpoint-diagnosis-7d07a421
+HEAD f3ea5f691b99fe39e024e5571c0e6ee3d83c51b4
+branch refs/heads/codex/sz-rlt-checkpoint-diagnosis
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-dvac-pure-single-gpu-7d07a421
+HEAD 30349428c37a008b95342121c1455debfeb4805e
+branch refs/heads/codex/sz-rlt-dvac-pure-single-gpu
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pi0-robotwin-ar-7d07a421
+HEAD 3adc0d6426419692a23ac4f89c9349ee293e9abf
+branch refs/heads/codex/sz-rlt-pi0-robotwin-ar
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf
+HEAD f50e235c5ab1f4390f0ba92bfb13390ed0a86810
+branch refs/heads/codex/sz-sidney-pi05-current-rlinf
+
+worktree /data/chenyiteng/projects/rlinf-shenzhen/worktrees/st-dvac-local-shard
+HEAD 51dbeaebe94cb218908b388193315a69a9a6c99a
+branch refs/heads/codex/sz-st-dvac-local-shard
+
+17:    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+80:    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support

@@ -1,0 +1,323 @@
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+2026-07-29 16:03:41,238	WARNING utils.py:461 -- Detecting docker specified CPUs. In previous versions of Ray, CPU detection in containers was incorrect. Please ensure that Ray has enough CPUs allocated. As a temporary workaround to revert to the prior behavior, set `RAY_USE_MULTIPROCESSING_CPU_COUNT=1` as an env var before starting Ray. Set the env var: `RAY_DISABLE_DOCKER_CPU_WARNING=1` to mute this warning.
+2026-07-29 16:03:43,504	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[INFO 16:03:45 RLinf] RLinf is running on a cluster with 1 node and 2 accelerators. The nodes' details are:
+node_labels: []
+node_rank: 0
+ray_id: f1caf84e911ee22bedc99dbe798e2f245525e5ddf41362f24ed29439
+node_ip: 172.17.0.5
+num_cpus: 36
+python_interpreter_path: /root/autodl-tmp/RLinf/.venv/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+profiler_backends: []
+
+Node groups' details are:
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[INFO 16:03:45 FlexiblePlacementStrategy]
+[INFO 16:03:45 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+{
+  "actor": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle",
+      "precision": null,
+      "num_action_chunks": 10,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 4,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi0_aloha_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 10,
+        "num_steps": 4,
+        "train_expert_only": false,
+        "action_env_dim": 14,
+        "noise_method": "flow_ode",
+        "add_value_head": false,
+        "detach_critic_input": true,
+        "action_horizon": 50,
+        "use_rlt": true,
+        "rlt_train_vla": false,
+        "rlt_alpha": 0.0,
+        "rlt_input_dim": 2048,
+        "rlt_embed_dim": 2048,
+        "rlt_num_rl_tokens": 1,
+        "rlt_prefix_seq_len": 768,
+        "rlt_num_layers": 2,
+        "rlt_num_heads": 8,
+        "rlt_mlp_ratio": 4.0,
+        "rlt_image_only": true,
+        "rlt_use_mask": true,
+        "rlt_action_adapter": "robotwin_aloha_canonical_v1"
+      },
+      "openpi_data": {
+        "repo_id": "physical-intelligence/robotwin",
+        "default_prompt": "adjust the bottle",
+        "norm_stats_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin/norm_stats.json"
+      }
+    },
+    "fsdp_config": {
+      "strategy": "fsdp",
+      "sharding_strategy": "no_shard",
+      "gradient_checkpointing": false,
+      "cpu_offload": false,
+      "offload_pin_memory": false,
+      "reshard_after_forward": true,
+      "enable_gradient_accumulation": true,
+      "forward_prefetch": false,
+      "limit_all_gathers": false,
+      "backward_prefetch": null,
+      "use_orig_params": true,
+      "use_liger_kernel": false,
+      "mixed_precision": {
+        "param_dtype": null,
+        "reduce_dtype": null,
+        "buffer_dtype": null
+      },
+      "amp_autocast": {
+        "enabled": false,
+        "precision": "bf16"
+      },
+      "grad_scaler": {
+        "enabled": false,
+        "init_scale": null,
+        "growth_interval": null
+      }
+    },
+    "group_name": "ActorGroup",
+    "training_backend": "fsdp",
+    "micro_batch_size": 1,
+    "global_batch_size": 2,
+    "seed": 0,
+    "optim": {
+      "lr": 2.5e-05,
+      "adam_beta1": 0.9,
+      "adam_beta2": 0.95,
+      "adam_eps": 1e-08,
+      "weight_decay": 1e-10,
+      "clip_grad": 1.0,
+      "total_training_steps": 2,
+      "lr_warmup_steps": 1,
+      "lr_scheduler": "cosine",
+      "num_cycles": 0.5,
+      "min_lr": 2.5e-06
+    }
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "actor,env,rollout": "0-1"
+    }
+  },
+  "runner": {
+    "task_type": "sft",
+    "logger": {
+      "log_path": "/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1a_reload",
+      "project_name": "rlinf-rlt",
+      "experiment_name": "robotwin_adjust_bottle_rlt_stage1_s1a_reload_only_v1",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": -1,
+    "max_steps": 2,
+    "val_check_interval": -1,
+    "save_interval": 2,
+    "resume_dir": "/root/autodl-tmp/experiments/rlt_stage1_smoke_20260729_v1/s1a/robotwin_adjust_bottle_rlt_stage1_s1a_2step_v1/checkpoints/global_step_2",
+    "per_worker_log": false,
+    "per_worker_log_path": null
+  },
+  "data": {
+    "train_data_paths": [
+      {
+        "dataset_path": "/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1",
+        "weight": 1.0
+      }
+    ]
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}
+[INFO 16:03:45 FlexiblePlacementStrategy]
+[INFO 16:03:45 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[INFO 16:03:45 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[36m(FSDPVlaSftWorker pid=624733)[0m [INFO 16:03:52 FlexiblePlacementStrategy]
+[36m(FSDPVlaSftWorker pid=624733)[0m [INFO 16:03:52 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(FSDPVlaSftWorker pid=624724)[0m [INFO 16:03:52 FlexiblePlacementStrategy]
+[36m(FSDPVlaSftWorker pid=624724)[0m [INFO 16:03:52 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(FSDPVlaSftWorker pid=624724)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(FSDPVlaSftWorker pid=624724)[0m I0000 00:00:1785312234.139805  624724 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(FSDPVlaSftWorker pid=624733)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(FSDPVlaSftWorker pid=624733)[0m I0000 00:00:1785312234.109238  624733 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(FSDPVlaSftWorker pid=624724)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(FSDPVlaSftWorker pid=624724)[0m I0000 00:00:1785312235.577090  624724 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(FSDPVlaSftWorker pid=624733)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(FSDPVlaSftWorker pid=624733)[0m I0000 00:00:1785312235.594686  624733 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:root:data_config: DataConfig(repo_id='/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1', asset_id='robotwin', norm_stats={'state': NormStats(mean=array([-0.37269428,  1.08887184,  0.79279578, -0.35919762, -0.02610701,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.22499833,  0.64269018,  0.23795684,  0.62063372,  0.46329799,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -0.20929499,  0.06419949, -0.17094751,  0.79596072,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ]), std=array([0.34980512, 1.00222015, 0.86443967, 0.73001003, 0.10888387,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.76813078, 0.46929929, 0.3448658 , 0.92157054, 0.75397348,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.51303798, 0.14587735, 0.3099938 , 0.39570677, 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        ]), q01=array([-9.00384021e-01,  0.00000000e+00,  0.00000000e+00, -1.52062890e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -3.47128082e-01, -5.43473701e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00, -1.36539769e+00, -2.44176247e-04,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -1.09445095e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00]), q99=array([-1.86530769e-04,  2.49017542e+00,  2.40379296e+00,  1.30121382e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         1.54464186e-01,  1.07646944e+00,  9.99800000e-01,  8.96572170e-01,
+[36m(FSDPVlaSftWorker pid=624724)[0m         2.42695506e+00,  2.17473286e+00,  8.67978024e-01,  6.17147152e-01,
+[36m(FSDPVlaSftWorker pid=624724)[0m         4.00951712e-02,  9.99800000e-01,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00])), 'actions': NormStats(mean=array([ 0.00408599, -0.00787947, -0.08375353,  0.16289274, -0.0386843 ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -0.03061429,  0.53260964,  0.0101    , -0.00439622, -0.04245002,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.07746358,  0.03711355,  0.02269779,  0.7283929 ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ]), std=array([0.21047416, 0.58606899, 0.6555385 , 0.66479874, 0.08059189,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.43395448, 0.48930675, 0.15679045, 0.47293714, 0.49419206,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.46433994, 0.10185625, 0.21491235, 0.43818018, 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        ]), q01=array([-0.77475793, -1.27072401, -1.98408549, -1.27838521, -0.32134282,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -0.96186098,  0.        , -0.3981804 , -1.28169406, -1.78005335,
+[36m(FSDPVlaSftWorker pid=624724)[0m        -1.0706417 , -0.0042707 , -0.68166342,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m         0.        ,  0.        ]), q99=array([0.51784254, 2.17720464, 1.8797254 , 2.38334729, 0.06408176,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.90891721, 0.9998    , 0.73773328, 2.07212337, 1.71755021,
+[36m(FSDPVlaSftWorker pid=624724)[0m        1.98658438, 0.47471707, 0.85856522, 0.9998    , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624724)[0m        0.        , 0.        ]))}, repack_transforms=Group(inputs=[RepackTransform(structure={'images': {'cam_high': 'observation.images.cam_high', 'cam_left_wrist': 'observation.images.cam_left_wrist', 'cam_right_wrist': 'observation.images.cam_right_wrist'}, 'state': 'observation.state', 'actions': 'action', 'prompt': 'prompt'})], outputs=()), data_transforms=Group(inputs=(AlohaInputs(adapt_to_pi=False), DeltaActions(mask=array([ True,  True,  True,  True,  True,  True, False,  True,  True,
+[36m(FSDPVlaSftWorker pid=624724)[0m         True,  True,  True,  True, False]))), outputs=(AbsoluteActions(mask=array([ True,  True,  True,  True,  True,  True, False,  True,  True,
+[36m(FSDPVlaSftWorker pid=624724)[0m         True,  True,  True,  True, False])), AlohaOutputs(adapt_to_pi=False))), model_transforms=Group(inputs=[InjectDefaultPrompt(prompt='adjust the bottle'), ResizeImages(height=224, width=224), TokenizePrompt(tokenizer=<openpi.models.tokenizer.PaligemmaTokenizer object at 0x7fccc352add0>, discrete_state_input=False), PadStatesAndActions(model_action_dim=32)], outputs=()), use_quantile_norm=False, action_sequence_keys=('action',), prompt_from_task=True, rlds_data_dir=None, action_space=None, filter_dict_path=None)
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:root:data_config: DataConfig(repo_id='/root/autodl-tmp/datasets/robotwin2/canonical/pi0-aloha-clean50-contract-ep0-v1', asset_id='robotwin', norm_stats={'state': NormStats(mean=array([-0.37269428,  1.08887184,  0.79279578, -0.35919762, -0.02610701,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.22499833,  0.64269018,  0.23795684,  0.62063372,  0.46329799,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -0.20929499,  0.06419949, -0.17094751,  0.79596072,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ]), std=array([0.34980512, 1.00222015, 0.86443967, 0.73001003, 0.10888387,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.76813078, 0.46929929, 0.3448658 , 0.92157054, 0.75397348,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.51303798, 0.14587735, 0.3099938 , 0.39570677, 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        ]), q01=array([-9.00384021e-01,  0.00000000e+00,  0.00000000e+00, -1.52062890e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -3.47128082e-01, -5.43473701e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00, -1.36539769e+00, -2.44176247e-04,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -1.09445095e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00]), q99=array([-1.86530769e-04,  2.49017542e+00,  2.40379296e+00,  1.30121382e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         1.54464186e-01,  1.07646944e+00,  9.99800000e-01,  8.96572170e-01,
+[36m(FSDPVlaSftWorker pid=624733)[0m         2.42695506e+00,  2.17473286e+00,  8.67978024e-01,  6.17147152e-01,
+[36m(FSDPVlaSftWorker pid=624733)[0m         4.00951712e-02,  9.99800000e-01,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00])), 'actions': NormStats(mean=array([ 0.00408599, -0.00787947, -0.08375353,  0.16289274, -0.0386843 ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -0.03061429,  0.53260964,  0.0101    , -0.00439622, -0.04245002,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.07746358,  0.03711355,  0.02269779,  0.7283929 ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ]), std=array([0.21047416, 0.58606899, 0.6555385 , 0.66479874, 0.08059189,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.43395448, 0.48930675, 0.15679045, 0.47293714, 0.49419206,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.46433994, 0.10185625, 0.21491235, 0.43818018, 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        ]), q01=array([-0.77475793, -1.27072401, -1.98408549, -1.27838521, -0.32134282,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -0.96186098,  0.        , -0.3981804 , -1.28169406, -1.78005335,
+[36m(FSDPVlaSftWorker pid=624733)[0m        -1.0706417 , -0.0042707 , -0.68166342,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m         0.        ,  0.        ]), q99=array([0.51784254, 2.17720464, 1.8797254 , 2.38334729, 0.06408176,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.90891721, 0.9998    , 0.73773328, 2.07212337, 1.71755021,
+[36m(FSDPVlaSftWorker pid=624733)[0m        1.98658438, 0.47471707, 0.85856522, 0.9998    , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        , 0.        , 0.        , 0.        ,
+[36m(FSDPVlaSftWorker pid=624733)[0m        0.        , 0.        ]))}, repack_transforms=Group(inputs=[RepackTransform(structure={'images': {'cam_high': 'observation.images.cam_high', 'cam_left_wrist': 'observation.images.cam_left_wrist', 'cam_right_wrist': 'observation.images.cam_right_wrist'}, 'state': 'observation.state', 'actions': 'action', 'prompt': 'prompt'})], outputs=()), data_transforms=Group(inputs=(AlohaInputs(adapt_to_pi=False), DeltaActions(mask=array([ True,  True,  True,  True,  True,  True, False,  True,  True,
+[36m(FSDPVlaSftWorker pid=624733)[0m         True,  True,  True,  True, False]))), outputs=(AbsoluteActions(mask=array([ True,  True,  True,  True,  True,  True, False,  True,  True,
+[36m(FSDPVlaSftWorker pid=624733)[0m         True,  True,  True,  True, False])), AlohaOutputs(adapt_to_pi=False))), model_transforms=Group(inputs=[InjectDefaultPrompt(prompt='adjust the bottle'), ResizeImages(height=224, width=224), TokenizePrompt(tokenizer=<openpi.models.tokenizer.PaligemmaTokenizer object at 0x7f99bbc1b410>, discrete_state_input=False), PadStatesAndActions(model_action_dim=32)], outputs=()), use_quantile_norm=False, action_sequence_keys=('action',), prompt_from_task=True, rlds_data_dir=None, action_space=None, filter_dict_path=None)
+[36m(FSDPVlaSftWorker pid=624724)[0m INFO:root:local_batch_size: 1
+[36m(FSDPVlaSftWorker pid=624733)[0m INFO:root:local_batch_size: 1
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1785312237.635190  621060 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1785312237.687056  621060 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1785312239.265224  621060 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=624733)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=624724)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=624733)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/distributed/fsdp/wrap.py:492: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+[36m(ActorGroup(rank=1) pid=624733)[0m   return wrapper_cls(module, **kwargs)
+[36m(ActorGroup(rank=0) pid=624724)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/torch/distributed/fsdp/wrap.py:492: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+[36m(ActorGroup(rank=0) pid=624724)[0m   return wrapper_cls(module, **kwargs)
+[36m(ActorGroup(rank=0) pid=624724)[0m /root/autodl-tmp/RLinf_rlt_pi0_robotwin/rlinf/hybrid_engines/fsdp/strategy/fsdp.py:173: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+[36m(ActorGroup(rank=0) pid=624724)[0m   fsdp_model = FSDP(
+[36m(ActorGroup(rank=1) pid=624733)[0m /root/autodl-tmp/RLinf_rlt_pi0_robotwin/rlinf/hybrid_engines/fsdp/strategy/fsdp.py:173: FutureWarning: The `NO_SHARD` sharding strategy is deprecated. If having issues, please use `DistributedDataParallel` instead.
+[36m(ActorGroup(rank=1) pid=624733)[0m   fsdp_model = FSDP(
+[36m(FSDPVlaSftWorker pid=624724)[0m [WARNING 16:03:51 ActorGroup-Rank-0][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(FSDPVlaSftWorker pid=624733)[0m [WARNING 16:03:51 ActorGroup-Rank-1][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(FSDPVlaSftWorker pid=624733)[0m [INFO 16:03:52 ActorGroup-Rank-1][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(FSDPVlaSftWorker pid=624724)[0m [INFO 16:03:52 ActorGroup-Rank-0][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(ActorGroup(rank=1) pid=624733)[0m [INFO 16:05:07 ActorGroup-Rank-1][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=0) pid=624724)[0m [INFO 16:05:09 ActorGroup-Rank-0][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+Global Step: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<?, ?it/s]Global Step: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<?, ?it/s]

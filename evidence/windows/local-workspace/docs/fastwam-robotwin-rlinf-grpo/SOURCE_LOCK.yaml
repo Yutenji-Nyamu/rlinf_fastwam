@@ -1,0 +1,229 @@
+schema_version: 1
+updated_at: "2026-07-17"
+project: fastwam-robotwin-rlinf-grpo
+
+server_baseline:
+  path: /root/autodl-tmp/RLinf
+  repository: https://github.com/RLinf/RLinf.git
+  branch_last_verified: local/openpi-a800-2gpu-migration
+  commit_last_verified: 6d0db56bf26f972cd27fa29535f5eb939e80e5bf
+  commit_verified_from: C:/Users/86136/Documents/Codex/2026-07-13/n/rlinf-official-migration-plan-20260714.md
+  live_head_verified_this_round: true
+  live_refresh_attempted_at: "2026-07-17T20:05:00+08:00"
+  live_refresh_result: "read_only_verified"
+  live_status: "branch local/openpi-a800-2gpu-migration; only existing untracked pi0 configs and local_scripts; no Fast-WAM integration changes"
+  note: "服务器现场 HEAD/branch/origin 已只读复核；实施前仍做一次短 status/diff 检查，但当前设计不再依赖未验证的本地快照假设。"
+
+rlinf_upstream:
+  repository: https://github.com/RLinf/RLinf.git
+  v0_3_tag:
+    commit: 0505431899574619da86f551bad70b71e0ea2177
+    checked_at: "2026-07-17"
+  main:
+    commit: c5ca51cc21c007a41d287159f9e1b14e0200000e
+    checked_at: "2026-07-17"
+  local_snapshot: C:/Users/86136/Documents/rl/.research-rlinf
+  pinned_dcp_model_state_converter:
+    commit: 6d0db56bf26f972cd27fa29535f5eb939e80e5bf
+    path: rlinf/utils/ckpt_convertor/fsdp_convertor/convert_dcp_to_pt.py
+    blob: a35d13607f20df0d1809bb6c4f3d415ce20272c4
+    contract: "FileSystemReader + _EmptyStateDictLoadPlanner(keys={fsdp_checkpoint.model}) + no_dist=true"
+
+fastwam_official:
+  repository: https://github.com/yuantianyuan01/FastWAM.git
+  branch: main
+  commit: 45d8e1458921d83f8ad6cf9ce993d371208dabd0
+  branch_head_checked_at: "2026-07-17"
+  local_snapshot: C:/Users/86136/Documents/Codex/2026-07-13/n/fastwam-readonly-audit
+  standalone_runbook: C:/Users/86136/Documents/rl/docs/fastwam-robotwin-rlinf-grpo/07_OFFICIAL_STANDALONE_RUNBOOK.md
+  standalone_status:
+    state: passed_live_verified
+    confirmed_at: "2026-07-17"
+    live_verified_this_round: true
+    live_verified_at: "2026-07-17T20:05:00+08:00"
+    successful_run_dir: /root/autodl-tmp/FastWAM/evaluate_results/robotwin/robotwin_uncond_3cam_384/20260717_164855
+    successful_log: /root/autodl-tmp/FastWAM/evaluate_results/robotwin/robotwin_uncond_3cam_384/20260717_164855/eval_adjust_bottle_20260717_164855.log
+    successful_result: "adjust_bottle 1/1, success_rate 100%, success video present"
+    model_probe_evidence: "official B1 and B2 permutation exact; train replay exact; non-FSDP peak 23.8102 GiB"
+    pending_evidence: "FSDP runner ratio/clip, gradients, sync, checkpoint, and peak resources will be measured in P2"
+  standalone_environment:
+    python: "3.10"
+    torch: 2.7.1+cu128
+    torchvision: 0.22.1+cu128
+    server_path: /root/autodl-tmp/conda/envs/FastWAM-official
+  robotwin_vendor:
+    upstream_commit: bf44be51cf5717a5595ce59447f2cf5263d2aa95
+    code_path: third_party/RoboTwin
+    task_config_source: "exact upstream vendor commit"
+  curobo_compatibility_pin:
+    tag: v0.7.8
+    commit: d64c4b005459db10c5dd867d8b30a87d5bda9bdb
+    authority: compatibility_pin_not_fastwam_official_lock
+  warp_compatibility_pin:
+    distribution: warp-lang
+    version: 1.11.1
+    reason: "CuRobo v0.7.8 uses the legacy wp.torch namespace; Warp 1.13+ removes its compatibility forwarding. RLinf official RoboTwin install also pins 1.11.1."
+    authority: compatibility_pin_and_rlinf_official_robotwin_install
+  release_smoke:
+    repository: https://huggingface.co/yuanty/fastwam
+    checkpoint: robotwin_uncond_3cam_384.pt
+    dataset_stats: robotwin_uncond_3cam_384_dataset_stats.json
+    entrypoint: experiments/robotwin/eval_robotwin_single.py
+    resolved_horizon: 32
+    resolved_replan_steps: 24
+    resolved_denoise_steps: 10
+    resolved_infer_shift: 5.0
+    resolved_mot_checkpoint_mixed_attn: false
+    resolved_action_state_key: default
+    resolved_action_state_dim: 14
+    resolved_num_cameras: 3
+  standalone_component_download:
+    provider: modelscope
+    converted_repository: DiffSynth-Studio/Wan-Series-Converted-Safetensors
+    converted_files:
+      - Wan2.2_VAE.safetensors
+      - models_t5_umt5-xxl-enc-bf16.safetensors
+    tokenizer_repository: Wan-AI/Wan2.1-T2V-1.3B
+    tokenizer_pattern: google/umt5-xxl/*
+    reason: "Pinned Fast-WAM io.py defaults to ModelScope and the redirected converted repository is hosted there; do not force DIFFSYNTH_DOWNLOAD_SOURCE=huggingface."
+  investigation: p0_interface_and_call_graph
+  known_integration_hazard: "同一 expert 经 video_expert/action_expert/mot/dit 多路径注册；接入 RLinf FSDP/sync 前必须 canonicalize 并做推理与 state-dict parity。"
+
+fastwam_rlinf_community:
+  repository: https://github.com/wzii/RLinf.git
+  branch: feat/per-rollout-report
+  base_commit: 5d75412a245847a2b293a7498574dc67b46dea78
+  commit: fd780f076d4c6b03d3b17b79b2b17e85922091a3
+  local_snapshot: C:/Users/86136/Documents/rl/.research-fastwam-rlinf
+  investigation: p0_commit_chain_and_fastwam_subtree
+  authority: community_experiment_not_upstream
+  known_gap: "RL factory enables proprio_encoder, but no-grad rollout caches encoded context and actor replay does not rerun the encoder; proprio receives no RL gradient."
+  proven_scope: "LIBERO critic-free GRPO, root FSDP2 with block/expert wrapping disabled, RLinf default non-tied Embedding wraps, and bucket sync ran end-to-end; effective learning runs trained the action expert in practice."
+
+robotwin_rlinf_support:
+  repository: https://github.com/RoboTwin-Platform/RoboTwin.git
+  branch: RLinf_support
+  commit: 0008ae6800df9f75fc8de7098bacb01735fd8fd2
+  local_snapshot: C:/Users/86136/Documents/Codex/2026-07-13/n/robotwin-official-rlinf-support
+
+motus_official:
+  repository: https://github.com/thu-ml/Motus.git
+  commit: f771216802b8a1601599422f12088bee3c068c14
+  local_snapshot: C:/Users/86136/Documents/rl/.research-motus
+
+motus_rlinf_project_code:
+  repository: https://github.com/Yutenji-Nyamu/wamxxpo.git
+  commit: 7a5296a3bb7cb18176d9b13182f9f9f346b027f0
+  local_snapshot: C:/Users/86136/Documents/Codex/2026-07-13/n/wamxxpo-rlinf-fork
+  proven_scope: "official inference, batched rollout, tensor replay, model-side old/new logprob, FSDP, sync, DCP and GRPO/PPO backward mostly ran; learning quality and critic were not validated."
+
+lawam_official:
+  repository: https://github.com/RLinf/LaWAM.git
+  commit: 1add20a376126eacab02f19a62d726072a322cae
+  local_snapshot: C:/Users/86136/Documents/rl/.research-lawam
+
+motus_lawam_rlinf_project_code:
+  repository: https://github.com/Yutenji-Nyamu/wamppo.git
+  commit: 481380fbd97cbf9ff830aedfb2279851e1e58969
+  local_snapshot: C:/Users/86136/Documents/Codex/2026-07-13/n/wamppo-fork
+
+project_evidence:
+  pi0_grpo_analysis: C:/Users/86136/Documents/rl/audits/20260717-084926-grpo-current/analysis.json
+  pi0_grpo_resolved_config: C:/Users/86136/Documents/rl/audits/20260717-084926-grpo-current/resolved-config.yaml
+  dynamic_handoff: C:/Users/86136/Documents/Codex/2026-07-13/n/autodl-rlinf-fastwam-handoff-20260716.md
+  integration_process: C:/Users/86136/Documents/rl/docs/fastwam-robotwin-rlinf-grpo/05_IMPLEMENTATION_PLAN.md
+
+integration_design:
+  first_smoke:
+    replan_steps: 24
+    action_horizon: 32
+    denoise_steps: 10
+    scheduler_infer_shift: 5.0
+    episode_steps: 192
+    rollout_steps: 192
+    user_confirmed_at: "2026-07-17"
+  probability_core:
+    target_symbol: flow_sde_rollout
+    train_eval_shared_function: true
+    mode_parameter: deterministic
+    official_singleton_infer_action_is_test_oracle_only: true
+    schedule_authority: fastwam_official_45d8e145_scheduler_continuous
+    probability_authority: rlinf_server_pin_6d0db56_openpi_sample_mean_var_val
+    signed_delta_contract: "assert delta < 0; dt = -delta"
+    first_step_sigma_denominator: next_schedule_t
+    community_t_max_clamp_0_98: rejected
+    std_floor_in_first_version: rejected
+    stochastic_transition: single_shared_k_per_rollout_batch
+    stochastic_k_range: all_steps_0_to_S_minus_1_uniform
+    stochastic_k_status: user_selected_2026_07_17
+    sigma_shift_source: standalone_resolved_config
+    deterministic_state_dtype: model_dtype_official_scheduler_step
+    stochastic_chain_dtype: float32
+    model_forward_boundary: cast_latent_and_raw_timestep_to_model_dtype_then_upcast_velocity
+  batch_core:
+    official_public_infer_action_max_batch: 1
+    model_internals_batch_native: true
+    first_version_vae_path: official_wrapper_list_input_returns_stacked_batch
+    singleton_fallback: forbidden
+    fixed_resource_chunking: allowed_fail_fast
+    randomness_scope: logical_rollout_batch_before_chunking
+    chunk_inputs: shared_k_and_sliced_initial_latents_and_sde_epsilon
+    partition_invariance_check: required_in_consolidated_parity_test
+  fsdp2:
+    authority: rlinf_server_pin_6d0db56_apply_fsdp2_to_model
+    block_or_expert_wrap: disabled
+    root_shard: true
+    non_tied_embedding_wrap: preserve_pin_default
+    use_orig_params_as_mechanism: false
+    runtime_wrap_inventory_check: required_in_integration_smoke
+    save_full_model_weights: false
+  export:
+    dcp_first_no_dist: true
+    full_weights_input_compatibility_only: true
+    official_payload_keys: [mot, proprio_encoder_optional, step, torch_dtype]
+    schema_validation: exact_keys_shapes_dtypes_against_official_base_checkpoint
+    p3_action_parity: resumed_rlinf_vs_exported_official_from_same_dcp
+  registration:
+    mechanism: builtin_register_model
+    mechanism_authority: "rlinf server pin 6d0db56 _register_builtin_models + new_model_fsdp.rst"
+    package_path: rlinf/models/embodiment/fastwam
+    package_path_status: user_selected_2026_07_17
+    external_alternative: RLINF_EXT_MODULE_for_rlinf_as_dependency_only
+    maintain_both_paths: false
+  environment:
+    python: "3.11"
+    torch: 2.7.1+cu128
+    strategy: "keep pi0 golden and FastWAM-official oracle read-only; inspect pi0 freeze/list only as a reference; create a third joint venv from scratch at the final worktree path; pin final Torch before rebuilding CuRobo/CUDA extensions"
+    joint_venv: /root/autodl-tmp/conda/envs/FastWAM-RLinf
+    pi0_golden_backup: /root/autodl-tmp/backups/RLinf-pi0-venv-golden-20260717
+    toppra: "0.6.3; Python 3.11 compatible adaptation, verified by render and adjust_bottle scripted expert"
+  first_nonzero_exploration_smoke:
+    noise_level: 0.1
+    status: user_selected_2026_07_17
+  implementation_validation_style:
+    strategy: coherent_implementation_first_then_consolidated_high_information_checks
+    micro_gate_per_symbol: false
+  frozen_implementation_choices:
+    bucket_device:
+      selected: cpu
+      status: runtime_adapted_2026_07_18
+      reason: "community Fast-WAM proved accelerator bucket, but current AutoDL CUDA IPC rejects pidfd_getfd; RLinf-native CPU bucket preserves synchronized values and matches the proven local pi0 transport direction"
+    fixed_eval_latent:
+      selected: shared_singleton_seeded_latent_across_batch_eval_only
+      status: user_selected_2026_07_17
+    p2_resource_table:
+      status: user_selected_2026_07_17
+      selected:
+        train_envs: 16
+        group_size: 8
+        rollout_epoch: 1
+        global_batch_size: 128
+        micro_batch_size: 2
+        model_forward_batch_size: 2
+        actor_offload: false
+        rollout_offload: false
+        train_env_offload: true
+
+secrets_policy:
+  store_passwords_tokens_or_private_keys: false
+  copy_weights_datasets_or_large_logs_into_docs: false

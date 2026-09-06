@@ -1,0 +1,104 @@
+unset CUDA_VISIBLE_DEVICES http_proxy HTTP_PROXY https_proxy HTTPS_PROXY all_proxy ALL_PROXY
+export PATH=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+export VIRTUAL_ENV=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin
+export RAY_ADDRESS=172.17.0.1:6389
+export ROBOTWIN_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904
+export ROBOT_PLATFORM=ALOHA
+export REPO_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+export EMBODIED_PATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/examples/embodiment
+export RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+export PYTHONPATH=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo:/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-clean-oidn-off-20260904
+export DIFFSYNTH_DOWNLOAD_SOURCE=modelscope
+export DIFFSYNTH_MODEL_BASE_PATH=/data/chenyiteng/models/fastwam/diffsynth
+export MODELSCOPE_CACHE=/home/chenyiteng/cache/fastwam-7faa/modelscope
+export TMPDIR=/home/chenyiteng/cache/fastwam-7faa/tmp
+export HF_HOME=/data/chenyiteng/cache/huggingface
+export XDG_CACHE_HOME=/data/chenyiteng/cache
+export MUJOCO_GL=egl
+export PYOPENGL_PLATFORM=egl
+export HYDRA_FULL_ERROR=1
+export PYTHONUNBUFFERED=1
+export PYTHONDONTWRITEBYTECODE=1
+        head_node = next(
+            (node for node in self._nodes if node.ray_id == current_id), None
+        )
+        assert head_node is not None, (
+            f"Head node with Ray ID {current_id} not found in the cluster nodes: {[node.ray_id for node in self._nodes]}"
+        )
+        return head_node
+
+    def _configure_node_envs(self):
+        """Configure each node's environments based on the cluster configuration.
+
+        The environment variables follow the following precedence, with the later ones overriding the previous ones if set:
+        1. Default environment variables on the node (set before ray start).
+        2. Environment variables set between ray start and RLinf initialization on the head node (usually via bash scripts). These env vars are likely set by users intended to configure all nodes in the cluster.
+        3. The env_vars field in the ClusterConfig, which are set in yaml config files to configure each node in the cluster. This is set in Cluster.allocate.
+        """
+        from .cluster import Cluster
+
+        # Overwrite the head node's python interpreter path as the current interpreter unless specified in the cluster config
+        self.head_node.python_interpreter_path = sys.executable
+
+        # First find env vars set between ray start and RLinf initialization on the head node
+        head_node_default_env_vars = self.head_node.default_env_vars
+        current_env_vars = os.environ
+        modified_env_vars = {}
+        for key, value in current_env_vars.items():
+            if (
+                key not in head_node_default_env_vars
+                or head_node_default_env_vars[key] != value
+            ):
+                modified_env_vars[key] = value
+
+        for node in self._nodes:
+            # Start with default env vars on the node
+            node.env_vars = node.default_env_vars.copy()
+
+            # Update with modified env vars on the head node
+            node.env_vars = Cluster.merge_worker_env_vars(
+                base_env_vars=node.env_vars,
+                incoming_env_vars=modified_env_vars,
+                mode=Cluster.get_path_env_merge_mode(node.env_vars),
+            )
+
+    def _sort_nodes(self, cluster_num_nodes: int):
+        """Sort the node info list by node rank if available, otherwise by accelerator type and IP."""
+        from .cluster import Cluster, ClusterEnvVar
+
+        # Sort the node info list by node rank if available
+        if all(node_info.node_rank != -1 for node_info in self._nodes):
+            # NODE_RANK should be larger than 0
+            assert all(node_info.node_rank >= 0 for node_info in self._nodes), (
+        ClusterEnvVar.CATCH_FAILURE: "0",
+        ClusterEnvVar.LOG_LEVEL: "INFO",
+        ClusterEnvVar.TIMEOUT: "180",
+        ClusterEnvVar.NODE_RANK: None,
+        ClusterEnvVar.COMM_NET_DEVICES: None,
+        ClusterEnvVar.EXT_MODULE: None,
+        ClusterEnvVar.NET_EMULATION: "0",
+        ClusterEnvVar.PATH_ENV_MERGE_MODE: PathEnvMergeMode.APPEND.value,
+        ClusterEnvVar.CODE_WORKING_DIR: "0",
+    }
+    PATH_LIKE_ENV_VARS = {
+        "PYTHONPATH",
+        "LD_LIBRARY_PATH",
+        "PATH",
+        "LIBRARY_PATH",
+        "CMAKE_PREFIX_PATH",
+        "PKG_CONFIG_PATH",
+        "CPATH",
+    }
+
+    class NamespaceConflictError(Exception):
+        """Raised when there is a namespace conflict in Ray initialization."""
+
+    @classmethod
+    def find_free_port(cls, max_port_num: Optional[int] = None):
+        """Find a free port on the node.
+
+        Args:
+            max_port_num (Optional[int]): Largest acceptable port. Use it for servers that
+                derive a second port from this one and would overflow past 65535.
+        """
+2026-09-04T07:57:11+00:00

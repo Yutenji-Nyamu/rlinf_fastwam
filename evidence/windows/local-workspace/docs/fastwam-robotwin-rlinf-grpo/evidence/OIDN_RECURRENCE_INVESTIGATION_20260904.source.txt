@@ -1,0 +1,835 @@
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/_base_task.py
+198: 
+199:     def check_success(self):
+200:         pass
+201: 
+202:     def setup_scene(self, **kwargs):
+203:         """
+204:         Set the scene
+205:             - Set up the basic scene: light source, viewer.
+206:         """
+207:         self.engine = sapien.Engine()
+208:         # declare sapien renderer
+209:         from sapien.render import set_global_config
+210: 
+211:         set_global_config(max_num_materials=50000, max_num_textures=50000)
+212:         self.renderer = sapien.SapienRenderer()
+213:         # give renderer to sapien sim
+214:         self.engine.set_renderer(self.renderer)
+215: 
+216:         sapien.render.set_camera_shader_dir("rt")
+217:         sapien.render.set_ray_tracing_samples_per_pixel(32)
+218:         sapien.render.set_ray_tracing_path_depth(8)
+219:         sapien.render.set_ray_tracing_denoiser("oidn")
+220: 
+221:         # declare sapien scene
+222:         scene_config = sapien.SceneConfig()
+223:         self.scene = self.engine.create_scene(scene_config)
+224:         # set simulation timestep
+225:         self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
+226:         # add ground to scene
+227:         self.scene.add_ground(kwargs.get("ground_height", 0))
+228:         # set default physical material
+229:         self.scene.default_physical_material = self.scene.create_physical_material(
+230:             kwargs.get("static_friction", 0.5),
+231:             kwargs.get("dynamic_friction", 0.5),
+232:             kwargs.get("restitution", 0),
+233:         )
+234:         # give some white ambient light of moderate intensity
+235:         self.scene.set_ambient_light(kwargs.get("ambient_light", [0.5, 0.5, 0.5]))
+236:         # default enable shadow unless specified otherwise
+237:         shadow = kwargs.get("shadow", True)
+238:         # default spotlight angle and intensity
+239:         direction_lights = kwargs.get("direction_lights", [[[0, 0.5, -1], [0.5, 0.5, 0.5]]])
+240:         self.direction_light_lst = []
+241:         for direction_light in direction_lights:
+242:             if self.random_light:
+243:                 direction_light[1] = [
+244:                     np.random.rand(),
+245:                     np.random.rand(),
+246:                     np.random.rand(),
+247:                 ]
+248:             self.direction_light_lst.append(
+249:                 self.scene.add_directional_light(direction_light[0], direction_light[1], shadow=shadow))
+250:         # default point lights position and intensity
+251:         point_lights = kwargs.get("point_lights", [[[1, 0, 1.8], [1, 1, 1]], [[-1, 0, 1.8], [1, 1, 1]]])
+252:         self.point_light_lst = []
+253:         for point_light in point_lights:
+254:             if self.random_light:
+255:                 point_light[1] = [np.random.rand(), np.random.rand(), np.random.rand()]
+256:             self.point_light_lst.append(self.scene.add_point_light(point_light[0], point_light[1], shadow=shadow))
+257: 
+258:         # initialize viewer with camera position and orientation
+259:         if self.render_freq:
+260:             self.viewer = Viewer(self.renderer)
+261:             self.viewer.set_scene(self.scene)
+262:             self.viewer.set_camera_xyz(
+263:                 x=kwargs.get("camera_xyz_x", 0.4),
+264:                 y=kwargs.get("camera_xyz_y", 0.22),
+265:                 z=kwargs.get("camera_xyz_z", 1.5),
+266:             )
+267:             self.viewer.set_camera_rpy(
+268:                 r=kwargs.get("camera_rpy_r", 0),
+269:                 p=kwargs.get("camera_rpy_p", -0.8),
+270:                 y=kwargs.get("camera_rpy_y", 2.45),
+271:             )
+272: 
+273:     def create_table_and_wall(self, table_xy_bias=[0, 0], table_height=0.74):
+274:         self.table_xy_bias = table_xy_bias
+275:         wall_texture, table_texture = None, None
+276:         table_height += self.table_z_bias
+277: 
+278:         if self.random_background:
+279:             texture_type = "seen" if not self.eval_mode else "unseen"
+280:             directory_path = f"./assets/background_texture/{texture_type}"
+281:             assets_path = os.getenv("ASSETS_PATH")
+282:             if assets_path:
+283:                 directory_path = (
+284:                     Path(assets_path) / f"assets/background_texture/{texture_type}"
+285:                 )
+286:             file_count = len(
+287:                 [name for name in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, name))])
+288: 
+289:             # wall_texture, table_texture = random.randint(0, file_count - 1), random.randint(0, file_count - 1)
+290:             wall_texture, table_texture = np.random.randint(0, file_count), np.random.randint(0, file_count)
+291: 
+292:             self.wall_texture, self.table_texture = (
+293:                 f"{texture_type}/{wall_texture}",
+294:                 f"{texture_type}/{table_texture}",
+295:             )
+296:             if np.random.rand() <= self.clean_background_rate:
+297:                 self.wall_texture = None
+298:             if np.random.rand() <= self.clean_background_rate:
+299:                 self.table_texture = None
+300:         else:
+301:             self.wall_texture, self.table_texture = None, None
+302: 
+303:         self.wall = create_box(
+626: 
+627:     def _set_eval_video_ffmpeg(self, ffmpeg):
+628:         self.eval_video_ffmpeg = ffmpeg
+629: 
+630:     def close_env(self, clear_cache=False):
+631:         if hasattr(self, "eval_video_ffmpeg"):
+632:             try:
+633:                 self._del_eval_video_ffmpeg()
+634:             except Exception:
+635:                 pass
+636: 
+637:         if hasattr(self, "viewer"):
+638:             try:
+639:                 self.viewer.close()
+640:             except Exception:
+641:                 pass
+642:             self.viewer = None
+643: 
+644:         if hasattr(self, "cameras"):
+645:             self.cameras = None
+646: 
+647:         if hasattr(self, "robot"):
+648:             self.robot = None
+649: 
+650:         if hasattr(self, "scene"):
+651:             self.scene = None
+652: 
+653:         if hasattr(self, "renderer"):
+654:             self.renderer = None
+655: 
+656:         if hasattr(self, "engine"):
+657:             self.engine = None
+658: 
+659:         if clear_cache:
+660:             # for actor in self.scene.get_all_actors():
+661:             #     self.scene.remove_actor(actor)
+662:             sapien_clear_cache()
+663:         self.close()
+664: 
+665:     def _del_eval_video_ffmpeg(self):
+666:         if self.eval_video_ffmpeg:
+667:             self.eval_video_ffmpeg.stdin.close()
+668:             self.eval_video_ffmpeg.wait()
+669:             del self.eval_video_ffmpeg
+670: 
+671:     def delay(self, delay_time, save_freq=None):
+672:         render_freq = self.render_freq
+673:         self.render_freq = 0
+674: 
+675:         left_gripper_val = self.robot.get_left_gripper_val()
+676:         right_gripper_val = self.robot.get_right_gripper_val()
+677:         for i in range(delay_time):
+678:             self.together_close_gripper(
+679:                 left_pos=left_gripper_val,
+680:                 right_pos=right_gripper_val,
+681:                 save_freq=save_freq,
+682:             )
+683: 
+684:         self.render_freq = render_freq
+685: 
+686:     def set_gripper(self, set_tag="together", left_pos=None, right_pos=None):
+687:         """
+688:         Set gripper posture
+689:         - `left_pos`: Left gripper pose
+690:         - `right_pos`: Right gripper pose
+691:         - `set_tag`: "left" to set the left gripper, "right" to set the right gripper, "together" to set both grippers simultaneously.
+692:         """
+693:         alpha = 0.5
+694: 
+695:         left_result, right_result = None, None
+696: 
+697:         if set_tag == "left" or set_tag == "together":
+698:             left_result = self.robot.left_plan_grippers(self.robot.get_left_gripper_val(), left_pos)
+699:             left_gripper_step = left_result["per_step"]
+700:             left_gripper_res = left_result["result"]
+701:             num_step = left_result["num_step"]
+702:             left_result["result"] = np.pad(
+703:                 left_result["result"],
+704:                 (0, int(alpha * num_step)),
+705:                 mode="constant",
+706:                 constant_values=left_gripper_res[-1],
+707:             )  # append
+708:             left_result["num_step"] += int(alpha * num_step)
+709:             if set_tag == "left":
+710:                 return left_result
+711: 
+712:         if set_tag == "right" or set_tag == "together":
+713:             right_result = self.robot.right_plan_grippers(self.robot.get_right_gripper_val(), right_pos)
+714:             right_gripper_step = right_result["per_step"]
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py
+29: __all__ = ["RoboTwinEnv"]
+30: 
+31: 
+32: class RoboTwinEnv(gym.Env):
+33:     def __init__(
+34:         self,
+35:         cfg,
+36:         num_envs,
+37:         seed_offset,
+38:         total_num_processes,
+39:         worker_info,
+40:         record_metrics=True,
+41:     ):
+42:         env_seed = cfg.seed
+43:         self.seed = env_seed + seed_offset
+44:         self.base_seed = env_seed
+45:         self.num_envs = num_envs
+46:         self.seed_offset = seed_offset
+47:         self.total_num_processes = total_num_processes
+48:         self.worker_info = worker_info
+49:         self.auto_reset = cfg.auto_reset
+50:         self.use_rel_reward = cfg.use_rel_reward
+51:         self.ignore_terminations = cfg.ignore_terminations
+52: 
+53:         self.group_size = cfg.group_size
+54:         self.num_group = self.num_envs // self.group_size
+55:         self.use_fixed_reset_state_ids = cfg.use_fixed_reset_state_ids
+56:         self.use_custom_reward = cfg.use_custom_reward
+57: 
+58:         self.video_cfg = cfg.video_cfg
+59: 
+60:         self.cfg = cfg
+61:         self.record_metrics = record_metrics
+62:         self._is_start = True
+63: 
+64:         self.task_name = cfg.task_config.task_name
+65: 
+66:         self.center_crop = cfg.get("center_crop", False)
+67:         self._init_reset_state_ids()
+68: 
+69:         self._init_env()
+70: 
+71:         self.prev_step_reward = torch.zeros(
+72:             self.num_envs, dtype=torch.float32, device=self.device
+73:         )
+74:         if self.record_metrics:
+75:             self._init_metrics()
+76:             self._elapsed_steps = torch.zeros(
+77:                 self.num_envs, dtype=torch.long, device=self.device
+78:             )
+79: 
+80:     def _init_env(self):
+81:         mp.set_start_method("spawn", force=True)
+82:         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+83: 
+84:         from robotwin.envs.vector_env import VectorEnv
+85: 
+86:         env_seeds = self.reset_state_ids.tolist()
+87: 
+88:         self.venv = VectorEnv(
+89:             task_config=OmegaConf.to_container(self.cfg.task_config, resolve=True),
+90:             n_envs=self.num_envs,
+91:             env_seeds=env_seeds,
+92:         )
+93: 
+94:     @property
+95:     def device(self):
+96:         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+97: 
+98:     @property
+99:     def elapsed_steps(self):
+100:         return self._elapsed_steps
+101: 
+102:     @property
+103:     def is_start(self):
+104:         return self._is_start
+105: 
+106:     @is_start.setter
+107:     def is_start(self, value):
+108:         self._is_start = value
+109: 
+110:     def _init_metrics(self):
+111:         self.success_once = torch.zeros(
+112:             self.num_envs, device=self.device, dtype=torch.bool
+113:         )
+114:         self.fail_once = torch.zeros(
+115:             self.num_envs, device=self.device, dtype=torch.bool
+116:         )
+117:         self.returns = torch.zeros(
+118:             self.num_envs, device=self.device, dtype=torch.float32
+119:         )
+120: 
+121:     def _reset_metrics(self, env_idx=None):
+122:         if env_idx is not None:
+123:             mask = torch.zeros(self.num_envs, dtype=bool, device=self.device)
+124:             mask[env_idx] = True
+125:             self.prev_step_reward[mask] = 0.0
+126:             if self.record_metrics:
+127:                 self.success_once[mask] = False
+128:                 self.fail_once[mask] = False
+129:                 self.returns[mask] = 0
+130:                 self._elapsed_steps[env_idx] = 0
+131:         else:
+132:             self.prev_step_reward[:] = 0
+133:             if self.record_metrics:
+134:                 self.success_once[:] = False
+135:                 self.fail_once[:] = False
+136:                 self.returns[:] = 0.0
+137:                 self._elapsed_steps[:] = 0
+138: 
+139:     def _record_metrics(self, step_reward, infos):
+140:         episode_info = {}
+141:         self.returns += step_reward
+142:         if "success" in infos:
+143:             if isinstance(infos["success"], list):
+144:                 infos["success"] = torch.as_tensor(
+145:                     np.array(infos["success"]).reshape(-1), device=self.device
+146:                 )
+147:             self.success_once = self.success_once | infos["success"]
+148:             episode_info["success_once"] = self.success_once.clone()
+149:         episode_info["return"] = self.returns.clone()
+150:         episode_info["episode_len"] = self.elapsed_steps.clone()
+151:         episode_info["reward"] = episode_info["return"] / episode_info["episode_len"]
+152:         infos["episode"] = episode_info
+153:         return infos
+154: 
+155:     def center_and_crop(self, image, center_crop=False):
+156:         image = np.array(image)
+157: 
+158:         image = Image.fromarray(image).convert("RGB")
+159:         if center_crop:
+160:             image = center_crop_image(image)
+161:         return np.array(image)
+162: 
+163:     def _extract_obs_image(self, raw_obs):
+164:         batch_images = []
+165:         batch_wrist_images = []
+166:         batch_states = []
+167:         batch_instructions = []
+168:         for obs in raw_obs:
+169:             batch_images.append(
+170:                 self.center_and_crop(obs["full_image"], center_crop=self.center_crop)
+171:             )
+172:             wrist_images = []
+173:             if "left_wrist_image" in obs and obs["left_wrist_image"] is not None:
+174:                 wrist_images.append(
+175:                     self.center_and_crop(
+176:                         obs["left_wrist_image"], center_crop=self.center_crop
+177:                     )
+178:                 )
+179:             if "right_wrist_image" in obs and obs["right_wrist_image"] is not None:
+180:                 wrist_images.append(
+181:                     self.center_and_crop(
+182:                         obs["right_wrist_image"], center_crop=self.center_crop
+183:                     )
+184:                 )
+185:             if len(wrist_images) > 0:
+186:                 batch_wrist_images.append(
+187:                     torch.stack([torch.from_numpy(img) for img in wrist_images])
+188:                 )
+189:             batch_states.append(obs["state"])
+190:             batch_instructions.append(obs["instruction"])
+191: 
+192:         batch_images = torch.stack([torch.from_numpy(img) for img in batch_images])
+193:         if len(batch_wrist_images) > 0:
+194:             batch_wrist_images = torch.stack(batch_wrist_images)
+237:                     chunk_rewards[env_id, start_idx:] = reward
+238: 
+239:         return chunk_rewards
+240: 
+241:     def reset(
+242:         self,
+243:         env_idx: Optional[Union[int, list[int]]] = None,
+244:         env_seeds=None,
+245:     ):
+246:         if self._is_start:
+247:             self._is_start = False
+248: 
+249:         env_seeds = self.reset_state_ids.tolist() if env_seeds is None else env_seeds
+250: 
+251:         self.venv.reset(env_idx=env_idx, env_seeds=env_seeds)
+252:         raw_obs = self.venv.get_obs()
+253:         infos = {}
+254: 
+255:         self._reset_metrics(env_idx)
+256: 
+257:         extracted_obs = self._extract_obs_image(raw_obs)
+258: 
+259:         return extracted_obs, infos
+260: 
+261:     def step(
+262:         self, actions: Union[torch.Tensor, np.ndarray, dict] = None, auto_reset=True
+263:     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict]:
+264:         if actions is None:
+265:             assert self._is_start, "Actions must be provided after the first reset."
+266: 
+267:         if isinstance(actions, torch.Tensor):
+268:             actions = actions.cpu().numpy()
+269:         elif isinstance(actions, dict):
+270:             actions = actions.get("actions", actions)
+271: 
+272:         # [n_envs, horizon, action_dim]
+273:         if len(actions.shape) == 2:
+274:             # [n_envs, action_dim] -> [n_envs, 1, action_dim]
+275:             actions = actions[:, None, :]
+276: 
+277:         raw_obs, step_reward, terminations, truncations, info_list = self.venv.step(
+278:             actions
+279:         )
+280:         extracted_obs = self._extract_obs_image(raw_obs)
+281:         infos = list_of_dict_to_dict_of_list(info_list)
+282: 
+283:         if isinstance(terminations, list):
+284:             terminations = torch.as_tensor(
+285:                 np.array(terminations).reshape(-1), device=self.device
+286:             )
+287:         if isinstance(truncations, list):
+288:             truncations = torch.as_tensor(
+289:                 np.array(truncations).reshape(-1), device=self.device
+290:             )
+291: 
+292:         if self.use_custom_reward:
+293:             step_reward = self._calc_step_reward(terminations)
+294:         else:
+295:             if isinstance(step_reward, list):
+296:                 step_reward = torch.as_tensor(
+297:                     np.array(step_reward, dtype=np.float32).reshape(-1),
+298:                     device=self.device,
+299:                 )
+300: 
+301:         self._elapsed_steps += actions.shape[1]
+302:         truncated = self._elapsed_steps >= self.cfg.max_episode_steps
+303:         if truncated.any():
+304:             truncations = torch.logical_or(truncated, truncations)
+305: 
+306:         infos = self._record_metrics(step_reward, infos)
+307: 
+308:         if self.ignore_terminations:
+309:             terminations[:] = False
+310:             if self.record_metrics:
+311:                 if "success" in infos:
+312:                     infos["episode"]["success_at_end"] = infos["success"].clone()
+313: 
+314:         dones = torch.logical_or(terminations, truncations)
+315: 
+316:         _auto_reset = auto_reset and self.auto_reset
+317:         if dones.any() and _auto_reset:
+318:             extracted_obs, infos = self._handle_auto_reset(dones, extracted_obs, infos)
+319: 
+320:         return extracted_obs, step_reward, terminations, truncations, infos
+321: 
+322:     def chunk_step(self, chunk_actions):
+323:         if isinstance(chunk_actions, torch.Tensor):
+324:             chunk_actions = chunk_actions.cpu().numpy()
+325: 
+390:             chunk_truncations,
+391:             infos_list,
+392:         )
+393: 
+394:     def _handle_auto_reset(self, dones, extracted_obs, infos):
+395:         final_obs = extracted_obs.copy()
+396:         env_idx = torch.arange(0, self.num_envs, device=self.device)[dones]
+397:         final_info = infos.copy()
+398:         if self.cfg.is_eval:
+399:             self.update_reset_state_ids(env_idx=env_idx)
+400: 
+401:         extracted_obs, infos = self.reset(env_idx=env_idx.tolist())
+402:         # gymnasium calls it final observation but it really is just o_{t+1} or the true next observation
+403:         infos["final_observation"] = final_obs
+404:         infos["final_info"] = final_info
+405:         infos["_final_info"] = dones
+406:         infos["_final_observation"] = dones
+407:         infos["_elapsed_steps"] = dones
+408:         return extracted_obs, infos
+409: 
+410:     def offload(self, clear_cache=True):
+411:         if hasattr(self, "venv"):
+412:             self.venv.close(clear_cache)
+413: 
+414:     def sample_action_space(self):
+415:         return np.random.randn(self.num_envs, self.horizon, 14)
+416: 
+417:     def _init_reset_state_ids(self):
+418:         if self.cfg.get("seeds_path", None) is not None and os.path.exists(
+419:             self.cfg.seeds_path
+420:         ):
+421:             with open(self.cfg.seeds_path, "r") as f:
+422:                 data = json.load(f)
+423:             success_seeds = data[self.task_name].get("success_seeds", None)
+424:             if success_seeds is not None:
+425:                 success_seeds = torch.as_tensor(success_seeds, dtype=torch.long)
+426:                 self.success_seeds = partition_success_seeds(
+427:                     success_seeds,
+428:                     base_seed=self.base_seed,
+429:                     seed_offset=self.seed_offset,
+430:                     total_num_processes=self.total_num_processes,
+431:                     num_group=self.num_group,
+432:                 )
+433:                 self._current_seed_index = 0
+434:             else:
+435:                 self.success_seeds = None
+436:                 self._current_seed_index = 0
+437:         else:
+438:             self.success_seeds = None
+439:             self._current_seed_index = 0
+440: 
+441:         if not hasattr(self, "_generator"):
+442:             self._generator = torch.Generator()
+443:             self._generator.manual_seed(self.seed)
+444:         self.update_reset_state_ids()
+445: 
+446:     def update_reset_state_ids(self, env_idx=None):
+447:         if self.use_fixed_reset_state_ids and hasattr(self, "reset_state_ids"):
+448:             return
+449: 
+450:         if env_idx is not None and hasattr(self, "reset_state_ids"):
+451:             if self.success_seeds is not None:
+452:                 total_seeds = self.success_seeds.numel()
+453:                 indices = (
+454:                     torch.arange(self.num_group, device=self.success_seeds.device)
+455:                     + self._current_seed_index
+456:                 ) % total_seeds
+457:                 reset_state_ids = self.success_seeds[indices]
+458:                 reset_state_ids = reset_state_ids.repeat_interleave(
+459:                     repeats=self.group_size
+460:                 )
+461:                 self._current_seed_index = (
+462:                     self._current_seed_index + self.num_group
+463:                 ) % total_seeds
+464:             else:
+465:                 reset_state_ids = torch.randint(
+466:                     low=10000,
+467:                     high=200000,
+468:                     size=(self.num_group,),
+469:                     generator=self._generator,
+470:                 )
+471:                 reset_state_ids = reset_state_ids.repeat_interleave(
+472:                     repeats=self.group_size
+473:                 )
+474:             for idx in env_idx:
+475:                 self.reset_state_ids[idx] = reset_state_ids[idx]
+476:         else:
+477:             if self.success_seeds is not None:
+478:                 total_seeds = self.success_seeds.numel()
+479:                 indices = (
+480:                     torch.arange(self.num_group, device=self.success_seeds.device)
+481:                     + self._current_seed_index
+482:                 ) % total_seeds
+483:                 reset_state_ids = self.success_seeds[indices]
+484:                 reset_state_ids = reset_state_ids.repeat_interleave(
+485:                     repeats=self.group_size
+486:                 )
+487:                 self._current_seed_index = (
+488:                     self._current_seed_index + self.num_group
+489:                 ) % total_seeds
+490:             else:
+491:                 reset_state_ids = torch.randint(
+492:                     low=10000,
+493:                     high=200000,
+494:                     size=(self.num_group,),
+495:                     generator=self._generator,
+496:                 )
+497:                 reset_state_ids = reset_state_ids.repeat_interleave(
+498:                     repeats=self.group_size
+499:                 )
+500:             self.reset_state_ids = reset_state_ids
+501: 
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py
+1348: 
+1349:         return env_metrics
+1350: 
+1351:     @Worker.timer("interact")
+1352:     async def interact(
+1353:         self,
+1354:         input_channel: Channel,
+1355:         rollout_channel: Channel,
+1356:         reward_channel: Channel | None,
+1357:         actor_channel: Channel | None = None,
+1358:     ):
+1359:         env_metrics = await self._run_interact_once(
+1360:             input_channel,
+1361:             rollout_channel,
+1362:             reward_channel,
+1363:             actor_channel,
+1364:             cooperative_yield=False,
+1365:         )
+1366: 
+1367:         for env in self.env_list:
+1368:             if self.train_enable_offload:
+1369:                 get_env_attr(env, "offload")()
+1370: 
+1371:         return env_metrics
+1372: 
+1373:     @Worker.timer("evaluate")
+1374:     def evaluate(self, input_channel: Channel, rollout_channel: Channel):
+1375:         eval_metrics = defaultdict(list)
+1376:         for eval_rollout_epoch in range(self.eval_rollout_epoch):
+1377:             if not self.cfg.env.eval.auto_reset or eval_rollout_epoch == 0:
+1378:                 for stage_id in range(self.stage_num):
+1379:                     self.eval_env_list[stage_id].is_start = True
+1380:                     self.eval_prev_done[stage_id] = torch.zeros(
+1381:                         self.eval_num_envs_per_stage, dtype=torch.bool
+1382:                     )
+1383:                     extracted_obs, infos = self.eval_env_list[stage_id].reset()
+1384:                     env_output = EnvOutput(
+1385:                         obs=extracted_obs,
+1386:                         final_obs=(
+1387:                             infos["final_observation"]
+1388:                             if "final_observation" in infos
+1389:                             else None
+1390:                         ),
+1391:                         env_infos=infos if isinstance(infos, dict) else None,
+1392:                     )
+1393:                     env_batch = env_output.to_dict()
+1394:                     self.send_to(
+1395:                         group_name=self.cfg.rollout.group_name,
+1396:                         channel=rollout_channel,
+1397:                         data=self._build_rollout_input_data(env_batch),
+1398:                         mode="eval",
+1399:                         tag="rollout_results",
+1400:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1401:                         decoupled_mode=self.env_decoupled_mode,
+1402:                     )
+1403: 
+1404:             for eval_step in range(self.n_eval_chunk_steps):
+1405:                 for stage_id in range(self.stage_num):
+1406:                     policy_output = self.recv_from(
+1407:                         group_name=self.cfg.rollout.group_name,
+1408:                         channel=input_channel,
+1409:                         tag="eval_rollout_results",
+1410:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1411:                         batch_size=self.eval_batch_size,
+1412:                         infer_batch_size_fn=self._infer_rollout_batch_size
+1413:                         if self.env_decoupled_mode
+1414:                         else None,
+1415:                         decoupled_mode=self.env_decoupled_mode,
+1416:                     )
+1417:                     raw_chunk_actions = (
+1418:                         policy_output.actions
+1419:                         if hasattr(policy_output, "actions")
+1420:                         else policy_output
+1421:                     )
+1422:                     if isinstance(raw_chunk_actions, torch.Tensor):
+1423:                         raw_chunk_actions = raw_chunk_actions.detach().cpu().numpy()
+1424:                     else:
+1425:                         raw_chunk_actions = np.asarray(raw_chunk_actions)
+1426:                     env_output, env_info = self.env_evaluate_step(
+1427:                         raw_chunk_actions, stage_id
+1428:                     )
+1429: 
+1430:                     for key, value in env_info.items():
+1431:                         eval_metrics[key].append(value)
+1432: 
+1433:                     if self.cfg.env.eval.auto_reset:
+1434:                         if (
+1435:                             eval_rollout_epoch == self.eval_rollout_epoch - 1
+1436:                             and eval_step == self.n_eval_chunk_steps - 1
+1437:                         ):
+1438:                             continue
+1439:                     else:
+1440:                         if eval_step == self.n_eval_chunk_steps - 1:
+1441:                             continue
+1442:                     env_batch = env_output.to_dict()
+1443:                     self.send_to(
+1444:                         group_name=self.cfg.rollout.group_name,
+1445:                         channel=rollout_channel,
+1446:                         data=self._build_rollout_input_data(env_batch),
+1447:                         mode="eval",
+1448:                         tag="rollout_results",
+1449:                         route_key=stage_id if not self.env_decoupled_mode else None,
+1450:                         decoupled_mode=self.env_decoupled_mode,
+1451:                     )
+1452: 
+1453:             self.finish_rollout(mode="eval")
+1454:         for stage_id in range(self.stage_num):
+1455:             if self.eval_enable_offload:
+1456:                 get_env_attr(self.eval_env_list[stage_id], "offload")()
+1457: 
+1458:         for key, value in eval_metrics.items():
+STACK_CONCISE /data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs/old/worker-d734f6621f783c0b0749e732d56215132e018144a6c7e667c94dad18-62010000-3590591.err
+68: [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+69: [2026-09-02 06:52:12.407] [svulkan2] [error] OIDN Error: invalid handle
+70: Fatal Python error: PyGILState_Release: auto-releasing thread-state, but no thread-state for this thread
+71: Python runtime state: initialized
+72: 
+73: Thread 0x00007fa7fbe16640 (most recent call first):
+87: 
+88: Thread 0x00007fa6912d8640 (most recent call first):
+89:   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/_base_task.py", line 653 in close_env
+90:   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 147 in reset
+91:   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 58 in run
+92:   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/thread.py", line 83 in _worker
+93:   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982 in run
+374:   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 331 in wait
+375:   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/concurrent/futures/_base.py", line 451 in result
+376:   File "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py", line 408 in reset
+377:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 251 in reset
+378:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 401 in _handle_auto_reset
+379:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/robotwin/robotwin_env.py", line 376 in chunk_step
+380:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/envs/wrappers/record_video.py", line 434 in chunk_step
+381:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/workers/env/env_worker.py", line 576 in env_evaluate_step
+382:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+383:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+384:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/workers/env/env_worker.py", line 1426 in evaluate
+385:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 1372 in wrapper
+386:   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_c35ef154d72ec33b/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+387:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+STACK_CONCISE /data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs/worker-c170b7d2866e8d8d525ddad911f4de9917e90526e1b3c920e078469c-8c010000-2813140.err
+76: [2026-09-03 15:51:36.554] [svulkan2] [error] OIDN Error: invalid handle
+77: [2026-09-03 15:51:36.554] [svulkan2] [error] OIDN Error: invalid handle
+78: Fatal Python error: _PyGILState_NoteThreadState: Couldn't create autoTSSkey mapping
+79: Python runtime state: initialized
+80: 
+81: Thread 0x00007fd89a9d9740 (most recent call first):
+381: Thread 0x00007fa5c6fff640 (most recent call first):
+382:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/wrapper/scene.py", line 424 in __del__
+383:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/_base_task.py", line 651 in close_env
+384:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py", line 198 in close
+385:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py", line 407 in reset
+386:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py", line 251 in reset
+387:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 911 in bootstrap_step
+388:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1372 in wrapper
+389:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+390:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+391:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 991 in _bootstrap_and_send_train
+392:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+393:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 1079 in _run_interact_once
+394:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1364 in wrapper
+395:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520 in _resume_span
+396:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 1359 in interact
+397:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1364 in wrapper
+398:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 91 in async_func
+399:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520 in _resume_span
+STACK_CONCISE /data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/logs/worker-e50446f211c632d46e059882c6b282783089c8eb03233f30810d777d-8c010000-2813142.err
+76: [2026-09-03 15:51:39.406] [svulkan2] [error] OIDN Error: invalid handle
+77: [2026-09-03 15:51:39.406] [svulkan2] [error] OIDN Error: invalid handle
+78: Fatal Python error: _PyGILState_NoteThreadState: Couldn't create autoTSSkey mapping
+79: Python runtime state: initialized
+80: 
+81: Thread 0x00007f69fa3c7740 (most recent call first):
+381: Thread 0x00007f37269ff640 (most recent call first):
+382:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/wrapper/scene.py", line 424 in __del__
+383:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/envs/_base_task.py", line 651 in close_env
+384:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py", line 198 in close
+385:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py", line 407 in reset
+386:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/envs/robotwin/robotwin_env.py", line 251 in reset
+387:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 911 in bootstrap_step
+388:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1372 in wrapper
+389:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 81 in sync_func
+390:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+391:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 991 in _bootstrap_and_send_train
+392:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487 in _resume_span
+393:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 1079 in _run_interact_once
+394:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1364 in wrapper
+395:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520 in _resume_span
+396:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/workers/env/env_worker.py", line 1359 in interact
+397:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 1364 in wrapper
+398:   File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo/rlinf/scheduler/worker/worker.py", line 91 in async_func
+399:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520 in _resume_span
+METADATA /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien-3.0.1.dist-info/METADATA Metadata-Version: 2.2
+Name: sapien
+Version: 3.0.1
+Summary: ['SAPIEN: A SimulAted Parted based Interactive ENvironment']
+Home-page: https://sapien.ucsd.edu
+Author: Sapien
+Author-email: sapienaicontact@gmail.com
+License: MIT
+Project-URL: Documentation, https://sapien.ucsd.edu/docs
+Keywords: robotics simulator dataset articulation partnet
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Other Audience
+Classifier: Intended Audience :: Science/Research
+NATIVE_LIB /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_oidn_tricks.py 1587
+NATIVE_LIB /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/__pycache__/_oidn_tricks.cpython-311.pyc 1638
+NATIVE_LIB /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise.so.2.0.1 123440
+NATIVE_LIB /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_core.so.2.0.1 18847176
+NATIVE_LIB /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/oidn_library/libOpenImageDenoise_device_cuda.so.2.0.1 3863896
+SIDNEY_ENV_PROC 3177205
+State:	S (sleeping)
+VmSize:	643451608 kB
+VmRSS:	383402040 kB
+Threads:	188
+{"ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support", "PYTHONPATH": "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae", "RLINF_CODE_WORKING_DIR": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf", "CUDA_VISIBLE_DEVICES": "4"}
+CGROUP 0::/user.slice/user-1003.slice/session-1419.scope
+
+LIMITS Limit                     Soft Limit           Hard Limit           Units     
+Max cpu time              unlimited            unlimited            seconds   
+Max file size             unlimited            unlimited            bytes     
+Max data size             unlimited            unlimited            bytes     
+Max stack size            8388608              unlimited            bytes     
+Max core file size        0                    unlimited            bytes     
+Max resident set          unlimited            unlimited            bytes     
+Max processes             8255084              8255084              processes 
+Max open files            1024                 1048576              files     
+Max locked memory         270517600256         270517600256         bytes     
+Max address space         unlimited            unlimited            bytes     
+Max file locks            unlimited            unlimited            locks     
+Max pending signals       8255084              8255084              signals   
+Max msgqueue size         819200               819200               bytes     
+Max nice priority         0                    0                    
+Max realtime priority     0                    0                    
+Max realtime timeout      unlimited            unlimited            us        
+
+SIDNEY_ENV_PROC 3177207
+State:	S (sleeping)
+VmSize:	636234408 kB
+VmRSS:	376718868 kB
+Threads:	187
+{"ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support", "PYTHONPATH": "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_75fd8455ab8169ae", "RLINF_CODE_WORKING_DIR": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf", "CUDA_VISIBLE_DEVICES": "5"}
+CGROUP 0::/user.slice/user-1003.slice/session-1419.scope
+
+LIMITS Limit                     Soft Limit           Hard Limit           Units     
+Max cpu time              unlimited            unlimited            seconds   
+Max file size             unlimited            unlimited            bytes     
+Max data size             unlimited            unlimited            bytes     
+Max stack size            8388608              unlimited            bytes     
+Max core file size        0                    unlimited            bytes     
+Max resident set          unlimited            unlimited            bytes     
+Max processes             8255084              8255084              processes 
+Max open files            1024                 1048576              files     
+Max locked memory         270517600256         270517600256         bytes     
+Max address space         unlimited            unlimited            bytes     
+Max file locks            unlimited            unlimited            locks     
+Max pending signals       8255084              8255084              signals   
+Max msgqueue size         819200               819200               bytes     
+Max nice priority         0                    0                    
+Max realtime priority     0                    0                    
+Max realtime timeout      unlimited            unlimited            us        
+
+NETWORK_HEADERS
+direct https://github.com rc 0 200 0.244706 20.205.243.166 
+direct https://huggingface.co rc 28 000 2.720185  curl: (28) Failed to connect to huggingface.co port 443 after 2720 ms: Connection timed out
+
+proxy https://github.com rc 28 000 5.000254 127.0.0.1 curl: (28) SSL connection timeout
+
+proxy https://huggingface.co rc 0 200 0.187743 127.0.0.1 

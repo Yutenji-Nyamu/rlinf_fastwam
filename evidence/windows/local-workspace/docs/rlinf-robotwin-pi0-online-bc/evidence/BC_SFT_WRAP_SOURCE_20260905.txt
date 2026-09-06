@@ -1,0 +1,466 @@
+SOURCE /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/hybrid_engines/fsdp/utils.py
+def get_fsdp_wrap_policy(module, config=None, is_lora=False, model_type=None):
+    """
+    FSDP wrap policy that handles both standard transformer models and VLA models.
+
+    Args:
+        module: The model to wrap
+        config: Configuration dictionary for wrap policy
+        is_lora: Whether to enable LoRA-specific wrapping
+
+    Returns:
+        FSDP auto wrap policy function
+    """
+    if config is None:
+        config = {}
+
+    if config.get("disable", False):
+        return None
+    wrap_policy_config = config.get("wrap_policy", {}) or {}
+    use_custom_wrap_policy = any(
+        key in wrap_policy_config
+        for key in (
+            "transformer_layer_cls_to_wrap",
+            "module_classes_to_wrap",
+            "no_split_names",
+        )
+    )
+
+    if use_custom_wrap_policy:
+        fsdp_transformer_layer_cls_to_wrap = _normalize_wrap_targets(
+            wrap_policy_config.get("transformer_layer_cls_to_wrap")
+        )
+        module_classes_to_wrap = wrap_policy_config.get("module_classes_to_wrap")
+        no_split_names = _normalize_wrap_targets(
+            wrap_policy_config.get("no_split_names")
+        )
+
+    else:
+        if hasattr(module, "language_model"):
+            # For VLA models, get transformer classes from language_model submodule
+            default_transformer_cls_names_to_wrap = getattr(
+                module.language_model, "_no_split_modules", None
+            )
+            if hasattr(module, "visual"):
+                default_transformer_cls_names_to_wrap.extend(
+                    getattr(module.visual, "_no_split_modules", [])
+                )
+
+        else:
+            # For standard models, get transformer classes directly from module
+            default_transformer_cls_names_to_wrap = getattr(
+                module, "_no_split_modules", None
+            )
+
+        fsdp_transformer_layer_cls_to_wrap = _normalize_wrap_targets(
+            default_transformer_cls_names_to_wrap
+        )
+        module_classes_to_wrap = None
+        no_split_names = getattr(module, "_no_split_names", None)
+
+    # Build policies list
+    policies = []
+
+    if SupportedModel(model_type) in [
+        SupportedModel.CNN_POLICY,
+        SupportedModel.FLOW_POLICY,
+    ]:
+        from rlinf.models.embodiment.modules.resnet_utils import ResNet10
+
+        resnet_policy = functools.partial(
+            _module_wrap_policy, module_classes={ResNet10}
+        )
+        policies.append(resnet_policy)
+
+    # Add vision transformer policies for OpenVLA models
+    if SupportedModel(model_type) in [
+        SupportedModel.OPENVLA,
+        SupportedModel.OPENVLA_OFT,
+    ]:
+        from prismatic.extern.hf.modeling_prismatic import PrismaticProjector
+        from timm.models.vision_transformer import VisionTransformer
+
+        # Vision transformer policies
+        vit_wrap_policy = functools.partial(
+            _module_wrap_policy, module_classes={VisionTransformer}
+        )
+        policies.append(vit_wrap_policy)
+
+        # Prismatic projector policy for VLA models
+        # The prismatic package initializes a DistributedOverwatch by default,
+        # which initializes accelerate.PartialState, which in turn
+        # initializes a torch.distributed process group in gloo.
+        # This results in default group being gloo, which does not support CUDA tensors and allreduce average.
+
+        prismatic_fsdp_wrapping_policy = functools.partial(
+            _module_wrap_policy,
+            module_classes={PrismaticProjector},
+        )
+        policies.append(prismatic_fsdp_wrapping_policy)
+
+    if (
+        SupportedModel(model_type) == SupportedModel.CNN_POLICY
+        and not config.use_orig_params
+    ):
+        from torch.distributed.fsdp.wrap import lambda_auto_wrap_policy
+
+        from rlinf.models.embodiment.modules.resnet_utils import ResNetEncoder
+
+        encoder_policy = functools.partial(
+            _module_wrap_policy, module_classes={ResNetEncoder}
+        )
+        policies.append(encoder_policy)
+
+        def is_state_proj(m):
+            return getattr(m, "_fsdp_wrap_name", None) == "state_proj"
+
+        policies.append(
+            functools.partial(lambda_auto_wrap_policy, lambda_fn=is_state_proj)
+        )
+
+    if hasattr(module, "value_head"):
+        from rlinf.models.embodiment.modules.value_head import ValueHead
+
+        value_head_policy = functools.partial(
+            _module_wrap_policy, module_classes={ValueHead}
+        )
+        policies.append(value_head_policy)
+
+    if hasattr(module, "q_head"):
+        from rlinf.models.embodiment.modules.q_head import MultiCrossQHead, MultiQHead
+
+        if isinstance(module.q_head, MultiCrossQHead):
+            q_head_policy = functools.partial(
+                _module_wrap_policy, module_classes={MultiCrossQHead}
+            )
+        else:
+            q_head_policy = functools.partial(
+                _module_wrap_policy, module_classes={MultiQHead}
+            )
+        policies.append(q_head_policy)
+
+    if module_classes_to_wrap:
+        module_classes_to_wrap = _resolve_module_classes_to_wrap(
+            module, module_classes_to_wrap
+        )
+        custom_module_policy = functools.partial(
+            _module_wrap_policy, module_classes=module_classes_to_wrap
+        )
+        policies.append(custom_module_policy)
+
+    # Add transformer layer policies
+    if fsdp_transformer_layer_cls_to_wrap is not None:
+        transformer_cls_to_wrap = set()
+        for layer_class in fsdp_transformer_layer_cls_to_wrap:
+            transformer_cls = get_module_class_from_name(module, layer_class)
+            if transformer_cls is None:
+                raise Exception(
+                    "Could not find the transformer layer class to wrap in the model."
+                )
+            else:
+                transformer_cls_to_wrap.add(transformer_cls)
+
+        llm_wrap_policy = functools.partial(
+            transformer_auto_wrap_policy,
+            # Transformer layer class to wrap
+            transformer_layer_cls=transformer_cls_to_wrap,
+        )
+        policies.append(llm_wrap_policy)
+
+    if no_split_names is not None:
+        from torch.distributed.fsdp.wrap import lambda_auto_wrap_policy
+
+        no_split_names = set(_normalize_wrap_targets(no_split_names))
+
+        def lambda_policy_fn(module):
+            return (
+                hasattr(module, "_fsdp_wrap_name")
+                and module._fsdp_wrap_name in no_split_names
+            )
+
+        lambda_policy = functools.partial(
+            lambda_auto_wrap_policy, lambda_fn=lambda_policy_fn
+        )
+        policies.append(lambda_policy)
+
+    # Add LoRA lambda policy if enabled
+    if is_lora:
+        from torch.distributed.fsdp.wrap import lambda_auto_wrap_policy
+
+        def lambda_policy_fn(module):
+            return bool(
+                len(list(module.named_children())) == 0
+                and getattr(module, "weight", None) is not None
+                and module.weight.requires_grad
+                and getattr(module, "_to_lora", True) is True
+            )
+
+        lambda_policy = functools.partial(
+            lambda_auto_wrap_policy, lambda_fn=lambda_policy_fn
+        )
+        policies.append(lambda_policy)
+
+    # Return appropriate policy based on number of policies
+    if len(policies) == 0:
+        return None
+    elif len(policies) == 1:
+        return policies[0]
+    else:
+        # Multiple policies - combine with _or_policy
+        from torch.distributed.fsdp.wrap import _or_policy
+
+        return functools.partial(_or_policy, policies=policies)
+
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/pi0_pytorch.py
+    def forward(self, observation, actions, noise=None, time=None) -> Tensor:
+        """Do a full training forward pass and compute the loss (batch_size x num_steps x num_motors)"""
+        images, img_masks, lang_tokens, lang_masks, state = self._preprocess_observation(observation, train=True)
+
+        if noise is None:
+            noise = self.sample_noise(actions.shape, actions.device)
+
+        if time is None:
+            time = self.sample_time(actions.shape[0], actions.device)
+
+        time_expanded = time[:, None, None]
+        x_t = time_expanded * noise + (1 - time_expanded) * actions
+        u_t = noise - actions
+
+        prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, lang_tokens, lang_masks)
+        suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(state, x_t, time)
+        if (
+            self.paligemma_with_expert.paligemma.language_model.layers[0].self_attn.q_proj.weight.dtype
+            == torch.bfloat16
+        ):
+            suffix_embs = suffix_embs.to(dtype=torch.bfloat16)
+            prefix_embs = prefix_embs.to(dtype=torch.bfloat16)
+
+        pad_masks = torch.cat([prefix_pad_masks, suffix_pad_masks], dim=1)
+        att_masks = torch.cat([prefix_att_masks, suffix_att_masks], dim=1)
+
+        att_2d_masks = make_att_2d_masks(pad_masks, att_masks)
+        position_ids = torch.cumsum(pad_masks, dim=1) - 1
+
+        # Prepare attention masks
+        att_2d_masks_4d = self._prepare_attention_masks_4d(att_2d_masks)
+
+        # Apply gradient checkpointing if enabled
+        def forward_func(prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond):
+            (_, suffix_out), _ = self.paligemma_with_expert.forward(
+                attention_mask=att_2d_masks_4d,
+                position_ids=position_ids,
+                past_key_values=None,
+                inputs_embeds=[prefix_embs, suffix_embs],
+                use_cache=False,
+                adarms_cond=[None, adarms_cond],
+            )
+            return suffix_out
+
+        suffix_out = self._apply_checkpoint(
+            forward_func, prefix_embs, suffix_embs, att_2d_masks_4d, position_ids, adarms_cond
+        )
+
+        suffix_out = suffix_out[:, -self.config.action_horizon :]
+        suffix_out = suffix_out.to(dtype=torch.float32)
+
+        # Apply gradient checkpointing to final action projection if enabled
+        def action_out_proj_func(suffix_out):
+            return self.action_out_proj(suffix_out)
+
+        v_t = self._apply_checkpoint(action_out_proj_func, suffix_out)
+
+        return F.mse_loss(u_t, v_t, reduction="none")
+
+SOURCE /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/gemma_pytorch.py
+    def forward(
+        self,
+        attention_mask: torch.Tensor | None = None,
+        position_ids: torch.LongTensor | None = None,
+        past_key_values: list[torch.FloatTensor] | pytest.Cache | None = None,
+        inputs_embeds: list[torch.FloatTensor] | None = None,
+        use_cache: bool | None = None,
+        adarms_cond: list[torch.Tensor] | None = None,
+    ):
+        if adarms_cond is None:
+            adarms_cond = [None, None]
+        if inputs_embeds[1] is None:
+            prefix_output = self.paligemma.language_model.forward(
+                inputs_embeds=inputs_embeds[0],
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_values=past_key_values,
+                use_cache=use_cache,
+                adarms_cond=adarms_cond[0] if adarms_cond is not None else None,
+            )
+            prefix_past_key_values = prefix_output.past_key_values
+            prefix_output = prefix_output.last_hidden_state
+            suffix_output = None
+        elif inputs_embeds[0] is None:
+            suffix_output = self.gemma_expert.model.forward(
+                inputs_embeds=inputs_embeds[1],
+                attention_mask=attention_mask,
+                position_ids=position_ids,
+                past_key_values=past_key_values,
+                use_cache=use_cache,
+                adarms_cond=adarms_cond[1] if adarms_cond is not None else None,
+            )
+            suffix_output = suffix_output.last_hidden_state
+            prefix_output = None
+            prefix_past_key_values = None
+        else:
+            models = [self.paligemma.language_model, self.gemma_expert.model]
+            num_layers = self.paligemma.config.text_config.num_hidden_layers
+
+            # Check if gradient checkpointing is enabled for any of the models
+            use_gradient_checkpointing = (
+                hasattr(self.gemma_expert.model, "gradient_checkpointing")
+                and self.gemma_expert.model.gradient_checkpointing
+                and self.training
+            ) or (hasattr(self, "gradient_checkpointing") and self.gradient_checkpointing and self.training)
+
+            # Force enable gradient checkpointing if we're in training mode and the model supports it
+            if self.training and hasattr(self.gemma_expert.model, "gradient_checkpointing"):
+                if not self.gemma_expert.model.gradient_checkpointing:
+                    print("Forcing gradient checkpointing to be enabled for Gemma expert model")
+                    self.gemma_expert.model.gradient_checkpointing = True
+                use_gradient_checkpointing = True
+
+            # Debug gradient checkpointing status
+            if hasattr(self, "_debug_gc_printed") and not self._debug_gc_printed:
+                print(f"Gemma expert model gradient checkpointing: {use_gradient_checkpointing}")
+                print(f"Model training mode: {self.training}")
+                print(
+                    f"Gemma expert model has gradient_checkpointing attr: {hasattr(self.gemma_expert.model, 'gradient_checkpointing')}"
+                )
+                if hasattr(self.gemma_expert.model, "gradient_checkpointing"):
+                    print(
+                        f"Gemma expert model gradient_checkpointing value: {self.gemma_expert.model.gradient_checkpointing}"
+                    )
+                self._debug_gc_printed = True
+
+            # Define the complete layer computation function for gradient checkpointing
+            def compute_layer_complete(layer_idx, inputs_embeds, attention_mask, position_ids, adarms_cond):
+                models = [self.paligemma.language_model, self.gemma_expert.model]
+
+                query_states = []
+                key_states = []
+                value_states = []
+                gates = []
+                for i, hidden_states in enumerate(inputs_embeds):
+                    layer = models[i].layers[layer_idx]
+                    hidden_states, gate = layer.input_layernorm(hidden_states, cond=adarms_cond[i])  # noqa: PLW2901
+                    gates.append(gate)
+
+                    input_shape = hidden_states.shape[:-1]
+                    hidden_shape = (*input_shape, -1, layer.self_attn.head_dim)
+                    query_state = layer.self_attn.q_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+                    key_state = layer.self_attn.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+                    value_state = layer.self_attn.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+
+                    query_states.append(query_state)
+                    key_states.append(key_state)
+                    value_states.append(value_state)
+
+                # Concatenate and process attention
+                query_states = torch.cat(query_states, dim=2)
+                key_states = torch.cat(key_states, dim=2)
+                value_states = torch.cat(value_states, dim=2)
+
+                dummy_tensor = torch.zeros(
+                    query_states.shape[0],
+                    query_states.shape[2],
+                    query_states.shape[-1],
+                    device=query_states.device,
+                    dtype=query_states.dtype,
+                )
+                cos, sin = self.paligemma.model.language_model.rotary_emb(dummy_tensor, position_ids)
+                query_states, key_states = modeling_gemma.apply_rotary_pos_emb(
+                    query_states, key_states, cos, sin, unsqueeze_dim=1
+                )
+
+                batch_size = query_states.shape[0]
+                scaling = self.paligemma.language_model.layers[layer_idx].self_attn.scaling
+
+                # Attention computation
+                att_output, _ = modeling_gemma.eager_attention_forward(
+                    self.paligemma.language_model.layers[layer_idx].self_attn,
+                    query_states,
+                    key_states,
+                    value_states,
+                    attention_mask,
+                    scaling,
+                )
+                # Get head_dim from the current layer, not from the model
+                head_dim = self.paligemma.language_model.layers[layer_idx].self_attn.head_dim
+                att_output = att_output.reshape(batch_size, -1, 1 * 8 * head_dim)
+
+                # Process layer outputs
+                outputs_embeds = []
+                start_pos = 0
+                for i, hidden_states in enumerate(inputs_embeds):
+                    layer = models[i].layers[layer_idx]
+                    end_pos = start_pos + hidden_states.shape[1]
+
+                    if att_output.dtype != layer.self_attn.o_proj.weight.dtype:
+                        att_output = att_output.to(layer.self_attn.o_proj.weight.dtype)
+                    out_emb = layer.self_attn.o_proj(att_output[:, start_pos:end_pos])
+
+                    # first residual
+                    out_emb = modeling_gemma._gated_residual(hidden_states, out_emb, gates[i])  # noqa: SLF001
+                    after_first_residual = out_emb.clone()
+                    out_emb, gate = layer.post_attention_layernorm(out_emb, cond=adarms_cond[i])
+                    # Convert to bfloat16 if the next layer (mlp) uses bfloat16
+                    if layer.mlp.up_proj.weight.dtype == torch.bfloat16:
+                        out_emb = out_emb.to(dtype=torch.bfloat16)
+
+                    out_emb = layer.mlp(out_emb)
+                    # second residual
+                    out_emb = modeling_gemma._gated_residual(after_first_residual, out_emb, gate)  # noqa: SLF001
+                    outputs_embeds.append(out_emb)
+                    start_pos = end_pos
+
+                return outputs_embeds
+
+            # Process all layers with gradient checkpointing if enabled
+            for layer_idx in range(num_layers):
+                if use_gradient_checkpointing:
+                    inputs_embeds = torch.utils.checkpoint.checkpoint(
+                        compute_layer_complete,
+                        layer_idx,
+                        inputs_embeds,
+                        attention_mask,
+                        position_ids,
+                        adarms_cond,
+                        use_reentrant=False,
+                        preserve_rng_state=False,
+                    )
+                else:
+                    inputs_embeds = compute_layer_complete(
+                        layer_idx, inputs_embeds, attention_mask, position_ids, adarms_cond
+                    )
+
+                # Old code removed - now using compute_layer_complete function above
+
+            # final norm
+            # Define final norm computation function for gradient checkpointing
+            def compute_final_norms(inputs_embeds, adarms_cond):
+                outputs_embeds = []
+                for i, hidden_states in enumerate(inputs_embeds):
+                    out_emb, _ = models[i].norm(hidden_states, cond=adarms_cond[i])
+                    outputs_embeds.append(out_emb)
+                return outputs_embeds
+
+            # Apply gradient checkpointing to final norm if enabled
+            if use_gradient_checkpointing:
+                outputs_embeds = torch.utils.checkpoint.checkpoint(
+                    compute_final_norms, inputs_embeds, adarms_cond, use_reentrant=False, preserve_rng_state=False
+                )
+            else:
+                outputs_embeds = compute_final_norms(inputs_embeds, adarms_cond)
+
+            prefix_output = outputs_embeds[0]
+            suffix_output = outputs_embeds[1]
+            prefix_past_key_values = None
+
+        return [prefix_output, suffix_output], prefix_past_key_values
+

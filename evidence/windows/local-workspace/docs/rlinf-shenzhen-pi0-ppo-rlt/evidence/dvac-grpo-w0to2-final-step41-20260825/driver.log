@@ -1,0 +1,1271 @@
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/examples/embodiment/train_embodied_agent.py:35: Hydra14MigrationWarning: 
+version_base="1.1" selects Hydra 1.1 compatibility behavior.
+Hydra 1.4 will remove this compatibility behavior.
+Before upgrading to Hydra 1.4, set version_base="1.3" and test your application.
+See https://hydra.cc/docs/upgrades/1.3_to_1.4/prepare_for_1_4/ for preparation instructions.
+  @hydra.main(
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/defaults_list.py:251: UserWarning: In 'robotwin_adjust_bottle_grpo_openpi': Defaults list is missing `_self_`. See https://hydra.cc/docs/1.2/upgrades/1.0_to_1.1/default_composition_order for more information
+  warnings.warn(msg, UserWarning)
+/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+[INFO 04:42:53 RLinf] RLinf Ray code sync is enabled (py_modules=('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf',)); workers receive only the rlinf package from the launch node. Disable with RLINF_CODE_WORKING_DIR=0.
+2026-08-25 04:42:53,001	INFO worker.py:1683 -- Using address 172.17.0.1:6389 set in the environment variable RAY_ADDRESS
+2026-08-25 04:42:53,008	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: 172.17.0.1:6389...
+2026-08-25 04:42:53,086	INFO worker.py:2015 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8266 [39m[22m
+2026-08-25 04:42:53,137	INFO packaging.py:734 -- Creating a file package for local module '/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf'.
+2026-08-25 04:42:53,216	INFO packaging.py:434 -- Pushing file package 'gcs://_ray_pkg_10f6b7c3d5e1596a.zip' (10.14MiB) to Ray cluster...
+2026-08-25 04:42:53,251	INFO packaging.py:447 -- Successfully pushed file package 'gcs://_ray_pkg_10f6b7c3d5e1596a.zip'.
+[INFO 04:42:55 RLinf] RLinf is running on a cluster with 1 node and 8 accelerators. The nodes' details are: 
+node_labels: []
+node_rank: 0
+ray_id: 2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54
+node_ip: 172.17.0.1
+num_cpus: 128
+python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+  - type: Accelerator
+    model: NV_GPU:H100 80GB HBM3
+profiler_backends: []
+
+Node groups' details are: 
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[36m(_RemoteNodeProbe pid=4182663)[0m /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/scheduler/cluster/node.py:532: UserWarning: Python interpreter used to launch Ray on node with IP 172.17.0.1 is different from that on the head node /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python. Keep using the current interpreter /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python3 on this node.
+[36m(_RemoteNodeProbe pid=4182663)[0m   warnings.warn(
+[INFO 04:42:55 FlexiblePlacementStrategy] 
+[INFO 04:42:55 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[INFO 04:42:55 FlexiblePlacementStrategy] 
+[INFO 04:42:55 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+{
+  "env": {
+    "train": {
+      "env_type": "robotwin",
+      "total_num_envs": 128,
+      "auto_reset": false,
+      "ignore_terminations": false,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 8,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": false,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "video_cfg": {
+        "save_video": true,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/video/train"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/robotwin_data/train",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 4
+    },
+    "eval": {
+      "env_type": "robotwin",
+      "total_num_envs": 64,
+      "auto_reset": true,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": true,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": true,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "video_cfg": {
+        "save_video": true,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/video/eval"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/robotwin_data/eval",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 1
+    },
+    "group_name": "EnvGroup",
+    "enable_offload": true
+  },
+  "actor": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+      "precision": null,
+      "num_action_chunks": 50,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 4,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi0_aloha_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 50,
+        "num_steps": 4,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_sde",
+        "add_value_head": false,
+        "detach_critic_input": false,
+        "use_dsrl": false,
+        "dsrl_state_dim": 8,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    "fsdp_config": {
+      "strategy": "fsdp",
+      "sharding_strategy": "full_shard",
+      "gradient_checkpointing": false,
+      "cpu_offload": false,
+      "offload_pin_memory": false,
+      "reshard_after_forward": true,
+      "enable_gradient_accumulation": true,
+      "forward_prefetch": false,
+      "limit_all_gathers": false,
+      "backward_prefetch": null,
+      "use_orig_params": false,
+      "use_liger_kernel": false,
+      "mixed_precision": {
+        "param_dtype": null,
+        "reduce_dtype": null,
+        "buffer_dtype": null
+      },
+      "amp_autocast": {
+        "enabled": false,
+        "precision": "bf16"
+      },
+      "grad_scaler": {
+        "enabled": false,
+        "init_scale": null,
+        "growth_interval": null
+      }
+    },
+    "group_name": "ActorGroup",
+    "training_backend": "fsdp",
+    "micro_batch_size": 32,
+    "global_batch_size": 2048,
+    "seed": 1234,
+    "enable_offload": true,
+    "optim": {
+      "lr": 5.6e-06,
+      "value_lr": 0.00011,
+      "adam_beta1": 0.9,
+      "adam_beta2": 0.95,
+      "adam_eps": 1e-08,
+      "weight_decay": 0.01,
+      "clip_grad": 1.0,
+      "critic_warmup_steps": 0
+    }
+  },
+  "weight_syncer": {
+    "type": "patch",
+    "patch": {
+      "snapshot_device": "cpu",
+      "delta_encoding": true,
+      "compression": "none",
+      "init_sync": {
+        "enabled": true,
+        "prefixes": null,
+        "bucket_size": 134217728
+      }
+    }
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "actor, env, rollout": "4,5,6,7"
+    },
+    "tracer": {
+      "enable": false
+    }
+  },
+  "runner": {
+    "task_type": "embodied",
+    "logger": {
+      "log_path": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30",
+      "project_name": "rlinf",
+      "experiment_name": "robotwin_grpo_openpi_dvac_global_z_matched",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": 1000,
+    "max_steps": 100,
+    "only_eval": false,
+    "val_check_interval": 10,
+    "save_interval": 10,
+    "resume_dir": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v4/robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_30",
+    "ckpt_path": null,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "weight_sync_interval": 1,
+    "overlap_env_bootstrap": false
+  },
+  "algorithm": {
+    "normalize_advantages": true,
+    "kl_penalty": "kl",
+    "group_size": 8,
+    "reward_coef": 1.0,
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "update_epoch": 2,
+    "adv_type": "grpo",
+    "loss_type": "actor",
+    "loss_agg_func": "token-mean",
+    "kl_beta": 0.0,
+    "entropy_bonus": 0,
+    "clip_ratio_high": 0.2,
+    "clip_ratio_low": 0.2,
+    "clip_ratio_c": 3.0,
+    "value_clip": 0.2,
+    "huber_delta": 10.0,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "filter_rewards": true,
+    "rewards_lower_bound": 0.1,
+    "rewards_upper_bound": 0.9,
+    "dvac_gradient_weighting": {
+      "mode": "apply",
+      "selected_l": 3,
+      "warmup_steps": 1,
+      "window_steps": 5,
+      "log_eps": 1e-12,
+      "std_floor": 1e-06,
+      "z_clip": 2.0,
+      "strength": 0.5,
+      "save_step_tensors": true,
+      "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/robotwin_grpo_openpi_dvac_global_z_matched/dvac_train"
+    }
+  },
+  "rollout": {
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "recompute_logprobs": false,
+    "enable_offload": true,
+    "pipeline_stage_num": 1,
+    "model": {
+      "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+      "precision": null
+    }
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}
+[INFO 04:42:55 FlexiblePlacementStrategy] 
+[INFO 04:42:55 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[INFO 04:42:55 FlexiblePlacementStrategy] Generated 4 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=4, accelerator_type='NV_GPU', local_rank=0, local_world_size=4, visible_accelerators=['4'], isolate_accelerator=True, local_hardware_ranks=[4], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=5, accelerator_type='NV_GPU', local_rank=1, local_world_size=4, visible_accelerators=['5'], isolate_accelerator=True, local_hardware_ranks=[5], node_group_label='cluster'), Placement(rank=2, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=2, local_world_size=4, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=3, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=3, local_world_size=4, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 04:42:55 FlexiblePlacementStrategy] Generated 4 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=4, accelerator_type='NV_GPU', local_rank=0, local_world_size=4, visible_accelerators=['4'], isolate_accelerator=True, local_hardware_ranks=[4], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=5, accelerator_type='NV_GPU', local_rank=1, local_world_size=4, visible_accelerators=['5'], isolate_accelerator=True, local_hardware_ranks=[5], node_group_label='cluster'), Placement(rank=2, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=2, local_world_size=4, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=3, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=3, local_world_size=4, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 04:42:56 FlexiblePlacementStrategy] Generated 4 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=4, accelerator_type='NV_GPU', local_rank=0, local_world_size=4, visible_accelerators=['4'], isolate_accelerator=True, local_hardware_ranks=[4], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=5, accelerator_type='NV_GPU', local_rank=1, local_world_size=4, visible_accelerators=['5'], isolate_accelerator=True, local_hardware_ranks=[5], node_group_label='cluster'), Placement(rank=2, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=2, local_world_size=4, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster'), Placement(rank=3, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=7, accelerator_type='NV_GPU', local_rank=3, local_world_size=4, visible_accelerators=['7'], isolate_accelerator=True, local_hardware_ranks=[7], node_group_label='cluster')].
+[INFO 04:42:56 NodePlacementStrategy] 
+[INFO 04:42:56 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 04:42:56 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 04:42:56 NodePlacementStrategy] 
+[INFO 04:42:56 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 04:42:56 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 04:42:56 NodePlacementStrategy] 
+[INFO 04:42:56 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 04:42:56 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787632976.854901 4182265 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1787632976.911871 4182265 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787632978.517096 4182265 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(MultiStepRolloutWorker pid=4182866)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=4182866)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=4182868)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=4182868)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=4182870)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=4182870)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=4182945)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=4182945)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=4182797)[0m [WARNING 04:43:03 ActorGroup-Rank-0][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedFSDPActor pid=4182823)[0m [WARNING 04:43:03 ActorGroup-Rank-1][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedFSDPActor pid=4182843)[0m [WARNING 04:43:03 ActorGroup-Rank-2][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EnvWorker pid=4183139)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=4183139)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=4183140)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=4183140)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=4183194)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=4183194)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EnvWorker pid=4183249)[0m [INFO 04:43:03 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=4183249)[0m [INFO 04:43:03 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=4182860)[0m [WARNING 04:43:05 ActorGroup-Rank-3][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(RolloutGroup(rank=0) pid=4182866)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=4182866)[0m I0000 00:00:1787632985.504265 4184132 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=4182868)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=4182868)[0m I0000 00:00:1787632985.670522 4184134 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=3) pid=4182945)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=3) pid=4182945)[0m I0000 00:00:1787632985.635114 4184139 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=2) pid=4182870)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=2) pid=4182870)[0m I0000 00:00:1787632985.643716 4184114 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=0) pid=4182866)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=4182866)[0m I0000 00:00:1787632986.536571 4184132 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=3) pid=4182945)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=3) pid=4182945)[0m I0000 00:00:1787632986.672183 4184139 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=2) pid=4182870)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=2) pid=4182870)[0m I0000 00:00:1787632986.889225 4184114 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=4182868)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=4182868)[0m I0000 00:00:1787632986.949087 4184134 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EmbodiedFSDPActor pid=4182797)[0m [W825 04:43:13.032178176 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(EnvGroup(rank=0) pid=4183139)[0m [W825 04:43:14.129293131 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(EmbodiedFSDPActor pid=4182797)[0m [INFO 04:43:15 ActorGroup-Rank-0][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=4182823)[0m [INFO 04:43:15 ActorGroup-Rank-1][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=4182797)[0m [INFO 04:43:15 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=4182797)[0m [INFO 04:43:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=4182823)[0m [INFO 04:43:15 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=4182823)[0m [INFO 04:43:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=4182843)[0m [INFO 04:43:15 ActorGroup-Rank-2][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=4182843)[0m [INFO 04:43:15 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=4182843)[0m [INFO 04:43:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=4182860)[0m [INFO 04:43:15 ActorGroup-Rank-3][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=4182860)[0m [INFO 04:43:15 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=4182860)[0m [INFO 04:43:15 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[4], [5], [6], [7]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=4182866)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=4182866)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=3) pid=4182945)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=3) pid=4182945)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=4182868)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=4182868)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=2) pid=4182870)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=2) pid=4182870)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=4182797)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=4182797)[0m I0000 00:00:1787633037.711149 4184152 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=4182823)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=4182823)[0m I0000 00:00:1787633037.665855 4184101 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=2) pid=4182843)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=2) pid=4182843)[0m I0000 00:00:1787633037.661363 4184145 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=3) pid=4182860)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=3) pid=4182860)[0m I0000 00:00:1787633037.717798 4184182 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=4182823)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=4182823)[0m I0000 00:00:1787633039.136045 4184101 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=4182797)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=4182797)[0m I0000 00:00:1787633039.151580 4184152 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=2) pid=4182843)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=2) pid=4182843)[0m I0000 00:00:1787633039.156958 4184145 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=3) pid=4182860)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=3) pid=4182860)[0m I0000 00:00:1787633039.165788 4184182 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=3) pid=4182860)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=3) pid=4182860)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=4182797)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=4182797)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=4182823)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=4182823)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=2) pid=4182843)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=2) pid=4182843)[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin
+[36m(ActorGroup(rank=3) pid=4182860)[0m [INFO 04:44:40 ActorGroup-Rank-3][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=0) pid=4182797)[0m [INFO 04:44:40 ActorGroup-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=1) pid=4182823)[0m [INFO 04:44:40 ActorGroup-Rank-1][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=2) pid=4182843)[0m [INFO 04:44:41 ActorGroup-Rank-2][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled
+[INFO 04:44:44 RLinf] Resuming training from checkpoint directory /data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v4/robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_30.
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=0) pid=4182797)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=1) pid=4182823)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=1) pid=4182823)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=2) pid=4182843)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=2) pid=4182843)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=3) pid=4182860)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=3) pid=4182860)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=4182797)[0m   return func(*args, **kwargs)
+[36m(ActorGroup(rank=3) pid=4182860)[0m [rank3]:[W825 04:45:04.412788445 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:57<17:52, 357.59s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [12:11<12:13, 366.96s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [18:06<06:01, 361.78s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [24:03<00:00, 359.76s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [24:03<00:00, 360.85s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   31/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  31.0%                                  │
+│ Elapsed: 25:09 │ ETA: 28:56:02 │ Step Time: 1509.600s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.028          │actor/actor/recv_traj=1466.5           │actor/actor/sync_model_to_rollout=17.…│
+│actor/run_training=24.380              │actor_training=24.386                  │cal_adv_and_returns=0.036             │
+│env/compute_bootstrap_rewards=0.0021   │env/env/bootstrap_step=1087.7          │env/env/send_rollout_trajectories=1.1…│
+│env/env_interact_step=357.1            │env/interact=1465.2                    │env/run_interact_once=1465.2          │
+│generate_rollouts=1467.1               │rollout/generate_one_epoch=1460.6      │rollout/predict=10.840                │
+│rollout/rollout/generate=1467.1        │rollout/sync_model_from_actor=17.519   │step=1509.5                           │
+│sync_weights=17.985                    │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9238281                      │
+│reward=0.00461914                      │success_once=0.9238281                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=0.935                   │advantages_mean=-0.122                 │advantages_min=-2.475                 │
+│rewards=0.0043                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.016                  │actor/clip_fraction=0.046              │actor/clipped_ratio=0.729             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.260         │actor/dvac_current_std=0.527          │
+│actor/dvac_history_mean=-4.286         │actor/dvac_history_std=0.557           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.844   │actor/dvac_weight_mean=1.012           │actor/dvac_weight_sq_mean=1.213       │
+│actor/dvac_z_high_clip_fraction=0.036  │actor/dvac_z_low_clip_fraction=0.0036  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=12.517                 │actor/lr=5.60e-06                      │actor/policy_loss=1.14e-04            │
+│actor/policy_loss_abs=0.124            │actor/ratio=0.731                      │actor/ratio_abs=0.054                 │
+│actor/total_loss=7.14e-06              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:56<17:49, 356.40s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [11:30<11:26, 343.07s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [16:48<05:31, 331.63s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [22:10<00:00, 327.88s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [22:10<00:00, 332.57s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   32/100 │ Progress: ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  32.0%                                  │
+│ Elapsed: 47:51 │ ETA: 27:07:12 │ Step Time: 1435.778s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.019          │actor/actor/recv_traj=1337.4           │actor/actor/sync_model_to_rollout=1.9…│
+│actor/run_training=22.056              │actor_training=22.061                  │cal_adv_and_returns=0.025             │
+│env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=931.5           │env/env/send_rollout_trajectories=1.2…│
+│env/env_interact_step=378.7            │env/interact=1336.7                    │env/run_interact_once=1336.7          │
+│generate_rollouts=1337.5               │rollout/generate_one_epoch=1330.3      │rollout/predict=10.048                │
+│rollout/rollout/generate=1336.8        │rollout/sync_model_from_actor=2.354    │step=1361.9                           │
+│sync_weights=2.358                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9472656                      │
+│reward=0.004736328                     │success_once=0.9472656                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=1.620                   │advantages_mean=-0.124                 │advantages_min=-2.475                 │
+│rewards=0.0046                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.012                  │actor/clip_fraction=0.033              │actor/clipped_ratio=0.920             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.223         │actor/dvac_current_std=0.549          │
+│actor/dvac_history_mean=-4.272         │actor/dvac_history_std=0.550           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.843   │actor/dvac_weight_mean=1.026           │actor/dvac_weight_sq_mean=1.250       │
+│actor/dvac_z_high_clip_fraction=0.043  │actor/dvac_z_low_clip_fraction=0.0037  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=14.549                 │actor/lr=5.60e-06                      │actor/policy_loss=0.0015              │
+│actor/policy_loss_abs=0.149            │actor/ratio=0.920                      │actor/ratio_abs=0.056                 │
+│actor/total_loss=9.50e-05              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:55<17:45, 355.05s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [12:00<12:02, 361.45s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [17:55<05:58, 358.45s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [23:12<00:00, 342.03s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [23:12<00:00, 348.18s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   33/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  33.0%                                  │
+│ Elapsed: 01:11:35 │ ETA: 26:38:55 │ Step Time: 1431.873s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0090         │actor/actor/recv_traj=1401.6           │actor/actor/sync_model_to_rollout=1.9…│
+│actor/run_training=19.982              │actor_training=19.986                  │cal_adv_and_returns=0.013             │
+│env/compute_bootstrap_rewards=0.0023   │env/env/bootstrap_step=1002.0          │env/env/send_rollout_trajectories=0.7…│
+│env/env_interact_step=368.9            │env/interact=1400.9                    │env/run_interact_once=1400.9          │
+│generate_rollouts=1401.7               │rollout/generate_one_epoch=1395.9      │rollout/predict=10.166                │
+│rollout/rollout/generate=1400.4        │rollout/sync_model_from_actor=2.372    │step=1424.0                           │
+│sync_weights=2.376                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9296875                      │
+│reward=0.004648437                     │success_once=0.9296875                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.111                 │advantages_min=-2.475                 │
+│rewards=0.0039                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.0030                 │actor/clip_fraction=0.052              │actor/clipped_ratio=0.935             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.229         │actor/dvac_current_std=0.533          │
+│actor/dvac_history_mean=-4.257         │actor/dvac_history_std=0.549           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.843   │actor/dvac_weight_mean=1.010           │actor/dvac_weight_sq_mean=1.210       │
+│actor/dvac_z_high_clip_fraction=0.037  │actor/dvac_z_low_clip_fraction=0.0039  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=13.875                 │actor/lr=5.60e-06                      │actor/policy_loss=-1.46e-04           │
+│actor/policy_loss_abs=0.150            │actor/ratio=0.943                      │actor/ratio_abs=0.061                 │
+│actor/total_loss=-9.15e-06             │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:37<16:51, 337.20s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [11:31<11:34, 347.33s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [17:10<05:43, 343.70s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [23:17<00:00, 352.68s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [23:17<00:00, 349.36s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   34/100 │ Progress: █████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  34.0%                                  │
+│ Elapsed: 01:36:21 │ ETA: 26:29:59 │ Step Time: 1445.446s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0092         │actor/actor/recv_traj=1461.5           │actor/actor/sync_model_to_rollout=1.4…│
+│actor/run_training=22.779              │actor_training=22.784                  │cal_adv_and_returns=0.015             │
+│env/compute_bootstrap_rewards=0.0025   │env/env/bootstrap_step=1033.2          │env/env/send_rollout_trajectories=1.2…│
+│env/env_interact_step=389.7            │env/interact=1460.6                    │env/run_interact_once=1460.6          │
+│generate_rollouts=1461.5               │rollout/generate_one_epoch=1453.1      │rollout/predict=10.194                │
+│rollout/rollout/generate=1458.8        │rollout/sync_model_from_actor=1.786    │step=1486.1                           │
+│sync_weights=1.789                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9316406                      │
+│reward=0.0046582026                    │success_once=0.9316406                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.111                 │advantages_min=-2.475                 │
+│rewards=0.0047                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.016                  │actor/clip_fraction=0.071              │actor/clipped_ratio=0.993             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.242         │actor/dvac_current_std=0.509          │
+│actor/dvac_history_mean=-4.247         │actor/dvac_history_std=0.541           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.840   │actor/dvac_weight_mean=0.993           │actor/dvac_weight_sq_mean=1.174       │
+│actor/dvac_z_high_clip_fraction=0.031  │actor/dvac_z_low_clip_fraction=0.0048  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=17.561                 │actor/lr=5.60e-06                      │actor/policy_loss=9.96e-04            │
+│actor/policy_loss_abs=0.200            │actor/ratio=1.001                      │actor/ratio_abs=0.083                 │
+│actor/total_loss=6.23e-05              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:44<17:14, 344.80s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [11:23<11:22, 341.15s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [16:46<05:32, 332.91s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [22:40<00:00, 341.41s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [22:40<00:00, 340.24s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   35/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  35.0%                                  │
+│ Elapsed: 02:00:16 │ ETA: 26:03:30 │ Step Time: 1443.234s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.010          │actor/actor/recv_traj=1411.5           │actor/actor/sync_model_to_rollout=1.7…│
+│actor/run_training=20.457              │actor_training=20.462                  │cal_adv_and_returns=0.017             │
+│env/compute_bootstrap_rewards=0.0021   │env/env/bootstrap_step=1019.8          │env/env/send_rollout_trajectories=1.3…│
+│env/env_interact_step=355.2            │env/interact=1410.7                    │env/run_interact_once=1410.7          │
+│generate_rollouts=1411.5               │rollout/generate_one_epoch=1401.6      │rollout/predict=10.206                │
+│rollout/rollout/generate=1407.5        │rollout/sync_model_from_actor=2.334    │step=1434.4                           │
+│sync_weights=2.338                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9667969                      │
+│reward=0.004833984                     │success_once=0.9667969                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=0.540                   │advantages_mean=-0.107                 │advantages_min=-2.475                 │
+│rewards=0.0053                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.012                  │actor/clip_fraction=0.026              │actor/clipped_ratio=0.730             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.188         │actor/dvac_current_std=0.514          │
+│actor/dvac_history_mean=-4.244         │actor/dvac_history_std=0.534           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.849   │actor/dvac_weight_mean=1.038           │actor/dvac_weight_sq_mean=1.268       │
+│actor/dvac_z_high_clip_fraction=0.041  │actor/dvac_z_low_clip_fraction=0.0032  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=10.605                 │actor/lr=5.60e-06                      │actor/policy_loss=-4.72e-04           │
+│actor/policy_loss_abs=0.072            │actor/ratio=0.728                      │actor/ratio_abs=0.040                 │
+│actor/total_loss=-2.95e-05             │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:56<14:49, 296.43s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:59<10:01, 300.63s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:58<04:59, 299.58s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [20:03<00:00, 301.64s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [20:03<00:00, 300.78s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   36/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  36.0%                                  │
+│ Elapsed: 02:20:48 │ ETA: 25:01:59 │ Step Time: 1408.122s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0065         │actor/actor/recv_traj=1210.3           │actor/actor/sync_model_to_rollout=1.4…│
+│actor/run_training=19.998              │actor_training=20.002                  │cal_adv_and_returns=0.012             │
+│env/compute_bootstrap_rewards=0.0019   │env/env/bootstrap_step=856.0           │env/env/send_rollout_trajectories=0.7…│
+│env/env_interact_step=338.0            │env/interact=1209.6                    │env/run_interact_once=1209.6          │
+│generate_rollouts=1210.4               │rollout/generate_one_epoch=1203.8      │rollout/predict=9.898                 │
+│rollout/rollout/generate=1208.1        │rollout/sync_model_from_actor=2.128    │step=1232.5                           │
+│sync_weights=2.132                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.94921875                     │
+│reward=0.0047460934                    │success_once=0.94921875                │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=0.935                   │advantages_mean=-0.108                 │advantages_min=-2.475                 │
+│rewards=0.0052                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.013                  │actor/clip_fraction=0.042              │actor/clipped_ratio=0.991             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.202         │actor/dvac_current_std=0.514          │
+│actor/dvac_history_mean=-4.228         │actor/dvac_history_std=0.527           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.838   │actor/dvac_weight_mean=1.012           │actor/dvac_weight_sq_mean=1.222       │
+│actor/dvac_z_high_clip_fraction=0.038  │actor/dvac_z_low_clip_fraction=0.0046  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=15.758                 │actor/lr=5.60e-06                      │actor/policy_loss=1.13e-04            │
+│actor/policy_loss_abs=0.192            │actor/ratio=0.998                      │actor/ratio_abs=0.063                 │
+│actor/total_loss=7.05e-06              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:45<14:16, 285.38s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:32<09:32, 286.21s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [14:50<05:00, 300.79s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [20:10<00:00, 308.58s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [20:10<00:00, 302.71s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   37/100 │ Progress: ██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░ │  37.0%                                  │
+│ Elapsed: 02:42:03 │ ETA: 24:18:35 │ Step Time: 1389.136s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0069         │actor/actor/recv_traj=1253.4           │actor/actor/sync_model_to_rollout=1.4…│
+│actor/run_training=19.841              │actor_training=19.844                  │cal_adv_and_returns=0.011             │
+│env/compute_bootstrap_rewards=0.0020   │env/env/bootstrap_step=885.6           │env/env/send_rollout_trajectories=0.7…│
+│env/env_interact_step=333.3            │env/interact=1252.7                    │env/run_interact_once=1252.7          │
+│generate_rollouts=1253.5               │rollout/generate_one_epoch=1246.7      │rollout/predict=9.803                 │
+│rollout/rollout/generate=1250.5        │rollout/sync_model_from_actor=1.820    │step=1275.2                           │
+│sync_weights=1.824                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.921875                       │
+│reward=0.0046093743                    │success_once=0.921875                  │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.108                 │advantages_min=-2.475                 │
+│rewards=0.0049                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.015                  │actor/clip_fraction=0.083              │actor/clipped_ratio=0.995             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.178         │actor/dvac_current_std=0.517          │
+│actor/dvac_history_mean=-4.217         │actor/dvac_history_std=0.524           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.842   │actor/dvac_weight_mean=1.021           │actor/dvac_weight_sq_mean=1.237       │
+│actor/dvac_z_high_clip_fraction=0.038  │actor/dvac_z_low_clip_fraction=0.0040  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=23.203                 │actor/lr=5.60e-06                      │actor/policy_loss=-2.22e-04           │
+│actor/policy_loss_abs=0.246            │actor/ratio=1.001                      │actor/ratio_abs=0.087                 │
+│actor/total_loss=-1.39e-05             │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [04:45<14:15, 285.20s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [09:57<10:01, 300.93s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [16:14<05:35, 335.82s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [22:26<00:00, 350.24s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [22:26<00:00, 336.71s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   38/100 │ Progress: ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │  38.0%                                  │
+│ Elapsed: 03:05:20 │ ETA: 23:56:25 │ Step Time: 1390.092s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0093         │actor/actor/recv_traj=1371.1           │actor/actor/sync_model_to_rollout=1.6…│
+│actor/run_training=23.600              │actor_training=23.606                  │cal_adv_and_returns=0.016             │
+│env/compute_bootstrap_rewards=0.0020   │env/env/bootstrap_step=978.1           │env/env/send_rollout_trajectories=1.3…│
+│env/env_interact_step=363.9            │env/interact=1370.2                    │env/run_interact_once=1370.2          │
+│generate_rollouts=1371.2               │rollout/generate_one_epoch=1363.7      │rollout/predict=10.049                │
+│rollout/rollout/generate=1369.7        │rollout/sync_model_from_actor=1.936    │step=1396.8                           │
+│sync_weights=1.938                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9238281                      │
+│reward=0.0046191406                    │success_once=0.9238281                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.110                 │advantages_min=-2.475                 │
+│rewards=0.0044                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.016                  │actor/clip_fraction=0.054              │actor/clipped_ratio=0.743             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.153         │actor/dvac_current_std=0.511          │
+│actor/dvac_history_mean=-4.208         │actor/dvac_history_std=0.518           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.842   │actor/dvac_weight_mean=1.037           │actor/dvac_weight_sq_mean=1.278       │
+│actor/dvac_z_high_clip_fraction=0.044  │actor/dvac_z_low_clip_fraction=0.0028  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=14.373                 │actor/lr=5.60e-06                      │actor/policy_loss=1.78e-04            │
+│actor/policy_loss_abs=0.156            │actor/ratio=0.748                      │actor/ratio_abs=0.065                 │
+│actor/total_loss=1.12e-05              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [06:01<18:04, 361.63s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [12:16<12:18, 369.27s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [18:26<06:09, 369.54s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [24:53<00:00, 376.73s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [24:53<00:00, 373.47s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   39/100 │ Progress: ███████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │  39.0%                                  │
+│ Elapsed: 03:30:49 │ ETA: 23:48:54 │ Step Time: 1405.490s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0078         │actor/actor/recv_traj=1503.4           │actor/actor/sync_model_to_rollout=2.0…│
+│actor/run_training=22.743              │actor_training=22.749                  │cal_adv_and_returns=0.014             │
+│env/compute_bootstrap_rewards=0.0021   │env/env/bootstrap_step=1070.6          │env/env/send_rollout_trajectories=1.3…│
+│env/env_interact_step=390.9            │env/interact=1502.5                    │env/run_interact_once=1502.5          │
+│generate_rollouts=1503.5               │rollout/generate_one_epoch=1493.9      │rollout/predict=10.246                │
+│rollout/rollout/generate=1500.1        │rollout/sync_model_from_actor=2.352    │step=1528.6                           │
+│sync_weights=2.357                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.91796875                     │
+│reward=0.004589843                     │success_once=0.91796875                │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.107                 │advantages_min=-2.475                 │
+│rewards=0.0042                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.013                  │actor/clip_fraction=0.047              │actor/clipped_ratio=0.700             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.161         │actor/dvac_current_std=0.499          │
+│actor/dvac_history_mean=-4.193         │actor/dvac_history_std=0.514           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.845   │actor/dvac_weight_mean=1.015           │actor/dvac_weight_sq_mean=1.220       │
+│actor/dvac_z_high_clip_fraction=0.038  │actor/dvac_z_low_clip_fraction=0.0044  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=16.875                 │actor/lr=5.60e-06                      │actor/policy_loss=9.60e-04            │
+│actor/policy_loss_abs=0.194            │actor/ratio=0.701                      │actor/ratio_abs=0.053                 │
+│actor/total_loss=6.00e-05              │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [05:55<17:45, 355.19s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [11:58<11:59, 359.88s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [17:59<06:00, 360.31s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [23:59<00:00, 360.45s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [23:59<00:00, 359.96s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Evaluating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Evaluating Rollout Epochs: 100%|██████████| 1/1 [02:57<00:00, 177.91s/it]Evaluating Rollout Epochs: 100%|██████████| 1/1 [02:57<00:00, 177.91s/it]
+[INFO 08:46:16 RLinf] Saving checkpoint at step 40.
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=4182797)[0m   return func(*args, **kwargs)
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=0) pid=4182797)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=1) pid=4182823)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=1) pid=4182823)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=2) pid=4182843)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=2) pid=4182843)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=3) pid=4182860)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/fsdp/_optim_utils.py:1173: UserWarning: `_get_pg_default_device` will be deprecated, it only stays for backward-compatibility reason. If you need to find a device for object collectives, please use `_get_object_coll_device`. If you need to query the device types supported by group, please use `_device_capability(group)`. 
+[36m(ActorGroup(rank=3) pid=4182860)[0m   device = _get_pg_default_device(group)
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=4182797)[0m   return func(*args, **kwargs)
+[36m(ActorGroup(rank=0) pid=4182797)[0m /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+[36m(ActorGroup(rank=0) pid=4182797)[0m   return func(*args, **kwargs)
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   40/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  40.0%                                  │
+│ Elapsed: 04:01:45 │ ETA: 24:10:35 │ Step Time: 1450.593s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0067         │actor/actor/recv_traj=1470.6           │actor/actor/sync_model_to_rollout=3.9…│
+│actor/run_training=23.090              │actor_training=23.095                  │cal_adv_and_returns=0.014             │
+│env/compute_bootstrap_rewards=0.0019   │env/env/bootstrap_step=1073.8          │env/env/send_rollout_trajectories=1.1…│
+│env/env_interact_step=351.4            │env/evaluate=336.0                     │env/interact=1469.6                   │
+│env/run_interact_once=1469.6           │eval=338.4                             │generate_rollouts=1470.7              │
+│rollout/evaluate=184.4                 │rollout/generate_one_epoch=1459.4      │rollout/predict=11.571                │
+│rollout/rollout/generate=1465.7        │rollout/sync_model_from_actor=4.665    │step=1856.5                           │
+│sync_weights=2.301                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.9902344                      │
+│reward=0.0049511716                    │success_once=0.9902344                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=0.540                   │advantages_mean=-0.106                 │advantages_min=-2.475                 │
+│rewards=0.0053                         │                                       │                                      │
+│                                                                                                                      │
+├───────────────────────────────────────────────────── Evaluation ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=64                    │return=0.984375                       │
+│reward=0.0049218745                    │success_at_end=0.984375                │success_once=0.984375                 │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.014                  │actor/clip_fraction=0.034              │actor/clipped_ratio=0.602             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.163         │actor/dvac_current_std=0.464          │
+│actor/dvac_history_mean=-4.177         │actor/dvac_history_std=0.511           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.848   │actor/dvac_weight_mean=1.005           │actor/dvac_weight_sq_mean=1.191       │
+│actor/dvac_z_high_clip_fraction=0.030  │actor/dvac_z_low_clip_fraction=0.0030  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=6.406                  │actor/lr=5.60e-06                      │actor/policy_loss=-6.36e-04           │
+│actor/policy_loss_abs=0.041            │actor/ratio=0.602                      │actor/ratio_abs=0.039                 │
+│actor/total_loss=-3.97e-05             │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [06:00<18:02, 360.97s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [12:28<12:32, 376.35s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  75%|███████▌  | 3/4 [19:10<06:28, 388.07s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs: 100%|██████████| 4/4 [25:46<00:00, 391.44s/it]Generating Rollout Epochs: 100%|██████████| 4/4 [25:46<00:00, 386.68s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:   41/100 │ Progress: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░ │  41.0%                                  │
+│ Elapsed: 04:28:09 │ ETA: 23:58:18 │ Step Time: 1462.680s                                                             │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0081         │actor/actor/recv_traj=1558.0           │actor/actor/sync_model_to_rollout=1.3…│
+│actor/run_training=24.076              │actor_training=24.081                  │cal_adv_and_returns=0.015             │
+│env/compute_bootstrap_rewards=0.0032   │env/env/bootstrap_step=1144.2          │env/env/send_rollout_trajectories=1.2…│
+│env/env_interact_step=368.1            │env/interact=1557.1                    │env/run_interact_once=1557.1          │
+│generate_rollouts=1558.1               │rollout/generate_one_epoch=1546.7      │rollout/predict=10.242                │
+│rollout/rollout/generate=1553.8        │rollout/sync_model_from_actor=1.322    │step=1583.5                           │
+│sync_weights=1.338                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=512                   │return=0.94921875                     │
+│reward=0.0047460934                    │success_once=0.94921875                │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=0.935                   │advantages_mean=-0.107                 │advantages_min=-2.475                 │
+│rewards=0.0051                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.023                  │actor/clip_fraction=0.082              │actor/clipped_ratio=0.992             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.155         │actor/dvac_current_std=0.486          │
+│actor/dvac_history_mean=-4.171         │actor/dvac_history_std=0.502           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_ess_fraction=0.839   │actor/dvac_weight_mean=1.002           │actor/dvac_weight_sq_mean=1.197       │
+│actor/dvac_z_high_clip_fraction=0.036  │actor/dvac_z_low_clip_fraction=0.0044  │actor/entropy_loss=0.0000             │
+│actor/grad_norm=15.671                 │actor/lr=5.60e-06                      │actor/policy_loss=-2.64e-04           │
+│actor/policy_loss_abs=0.189            │actor/ratio=0.997                      │actor/ratio_abs=0.090                 │
+│actor/total_loss=-1.65e-05             │                                       │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  25%|██▌       | 1/4 [06:35<19:47, 395.88s/it]
+[36m(RolloutGroup(rank=0) pid=4182866)[0m Generating Rollout Epochs:  50%|█████     | 2/4 [13:03<13:02, 391.14s/it]
+Exception occurred while running EmbodiedFSDPActor's function recv_rollout_trajectories: exception is The actor died unexpectedly before finishing this task.
+	class_name: EmbodiedFSDPActor
+	actor_id: 6f78936d306cddba9f33164220000000
+	pid: 4182797
+	name: ActorGroup:0
+	namespace: RLinf
+	ip: 172.17.0.1
+The actor is dead because it was killed by `ray.kill`.
+Exception occurred while running EnvWorker's function interact: exception is The actor died unexpectedly before finishing this task.
+	class_name: EnvWorker
+	actor_id: 456bec19b7d70cae045fe48c20000000
+	pid: 4183139
+	name: EnvGroup:0
+	namespace: RLinf
+	ip: 172.17.0.1
+The actor is dead because it was killed by `ray.kill`.
+[36m(ActorGroup(rank=2) pid=4182843)[0m [ERROR 09:28:27 ActorGroup-Rank-2][multi_channel_pg.py:521] Broadcast failed on ProcessGroup cg-Actor:0-ActorGroup:2gloo_send_0 rank 1 with error: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:29348. Args - tensor: tensor([-1609866848], dtype=torch.int32), src: 0, group: <torch.distributed.distributed_c10d.ProcessGroup object at 0x7f1046315f70>, async_op: False.
+[36m(ActorGroup(rank=2) pid=4182843)[0m Exception in thread Thread-5 (_run_queue):
+[36m(ActorGroup(rank=2) pid=4182843)[0m Traceback (most recent call last):
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[36m(ActorGroup(rank=2) pid=4182843)[0m     self.run()
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982, in run
+[36m(ActorGroup(rank=2) pid=4182843)[0m     self._target(*self._args, **self._kwargs)
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 192, in _run_queue
+[36m(ActorGroup(rank=2) pid=4182843)[0m     work(None)
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/async_work.py", line 118, in __call__
+[36m(ActorGroup(rank=2) pid=4182843)[0m     self._result = self._func(self, *self._args, **self._kwargs)
+[36m(ActorGroup(rank=2) pid=4182843)[0m                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 485, in _atomic_recv
+[36m(ActorGroup(rank=2) pid=4182843)[0m     self._recv(object_type_tensor, CollectiveGroup.CPU, comm_id)
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 1161, in _recv
+[36m(ActorGroup(rank=2) pid=4182843)[0m     return self._mc_group.recv(
+[36m(ActorGroup(rank=2) pid=4182843)[0m            ^^^^^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 386, in recv
+[36m(ActorGroup(rank=2) pid=4182843)[0m     work = self._broadcast(
+[36m(ActorGroup(rank=2) pid=4182843)[0m            ^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=2) pid=4182843)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 517, in _broadcast
+[36m(ActorGroup(rank=2) pid=4182843)[0m     work.wait()
+[36m(ActorGroup(rank=2) pid=4182843)[0m RuntimeError: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:29348
+[36m(ActorGroup(rank=3) pid=4182860)[0m [ERROR 09:28:27 ActorGroup-Rank-3][multi_channel_pg.py:521] Broadcast failed on ProcessGroup cg-Actor:0-ActorGroup:3gloo_send_0 rank 1 with error: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:23169. Args - tensor: tensor([0], dtype=torch.int32), src: 0, group: <torch.distributed.distributed_c10d.ProcessGroup object at 0x7fa030115bb0>, async_op: False.
+[36m(ActorGroup(rank=3) pid=4182860)[0m Exception in thread Thread-5 (_run_queue):
+[36m(ActorGroup(rank=3) pid=4182860)[0m Traceback (most recent call last):
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[36m(ActorGroup(rank=3) pid=4182860)[0m     self.run()
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982, in run
+[36m(ActorGroup(rank=3) pid=4182860)[0m     self._target(*self._args, **self._kwargs)
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 192, in _run_queue
+[36m(ActorGroup(rank=3) pid=4182860)[0m     work(None)
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/async_work.py", line 118, in __call__
+[36m(ActorGroup(rank=3) pid=4182860)[0m     self._result = self._func(self, *self._args, **self._kwargs)
+[36m(ActorGroup(rank=3) pid=4182860)[0m                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 485, in _atomic_recv
+[36m(ActorGroup(rank=3) pid=4182860)[0m     self._recv(object_type_tensor, CollectiveGroup.CPU, comm_id)
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 1161, in _recv
+[36m(ActorGroup(rank=3) pid=4182860)[0m     return self._mc_group.recv(
+[36m(ActorGroup(rank=3) pid=4182860)[0m            ^^^^^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 386, in recv
+[36m(ActorGroup(rank=3) pid=4182860)[0m     work = self._broadcast(
+[36m(ActorGroup(rank=3) pid=4182860)[0m            ^^^^^^^^^^^^^^^^
+[36m(ActorGroup(rank=3) pid=4182860)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 517, in _broadcast
+[36m(ActorGroup(rank=3) pid=4182860)[0m     work.wait()
+[36m(ActorGroup(rank=3) pid=4182860)[0m RuntimeError: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:23169
+Exception occurred while running MultiStepRolloutWorker's function generate: exception is The actor died unexpectedly before finishing this task.
+	class_name: MultiStepRolloutWorker
+	actor_id: 053ffa46c7c3baf235d91ef620000000
+	pid: 4182866
+	name: RolloutGroup:0
+	namespace: RLinf
+	ip: 172.17.0.1
+The actor is dead because it was killed by `ray.kill`.
+Error executing job with overrides: ['cluster.component_placement={actor\\, env\\, rollout:"4,5,6,7"}', 'runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30', 'runner.logger.experiment_name=robotwin_grpo_openpi_dvac_global_z_matched', 'runner.max_epochs=1000', 'runner.max_steps=100', 'runner.val_check_interval=10', 'runner.save_interval=10', 'runner.resume_dir=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v4/robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_30', 'algorithm.update_epoch=2', 'algorithm.dvac_gradient_weighting.mode=apply', 'env.train.total_num_envs=128', 'env.train.rollout_epoch=4', 'env.train.max_episode_steps=200', 'env.train.max_steps_per_rollout_epoch=200', 'env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support', 'env.train.video_cfg.save_video=true', 'env.train.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/video/train', 'env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/robotwin_data/train', 'env.eval.total_num_envs=64', 'env.eval.rollout_epoch=1', 'env.eval.max_episode_steps=200', 'env.eval.max_steps_per_rollout_epoch=200', 'env.eval.use_fixed_reset_state_ids=true', 'env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support', 'env.eval.video_cfg.save_video=true', 'env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/video/eval', 'env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v5-resume30/robotwin_data/eval', 'actor.micro_batch_size=32', 'actor.global_batch_size=2048', 'actor.model.model_path=/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50']
+Traceback (most recent call last):
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/http/client.py", line 1395, in getresponse
+    response.begin()
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/http/client.py", line 325, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/http/client.py", line 286, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/socket.py", line 718, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/scheduler/cluster/cluster.py", line 477, in signal_handler
+    actor = ray.get_actor(actor_state.name)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/worker.py", line 3446, in get_actor
+    return worker.core_worker.get_named_actor_handle(name, namespace or "")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "python/ray/_raylet.pyx", line 4514, in ray._raylet.CoreWorker.get_named_actor_handle
+  File "python/ray/includes/common.pxi", line 109, in ray._raylet.check_status
+ValueError: Failed to look up actor with name 'RolloutGroup:0'. This could because 1. You are trying to look up a named actor you didn't create. 2. The named actor died. 3. You did not use a namespace matching the namespace of the actor.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/examples/embodiment/train_embodied_agent.py", line 183, in <module>
+    main()
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+           ^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+            ^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+        ^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/examples/embodiment/train_embodied_agent.py", line 172, in main
+    runner.run()
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/runners/embodied_runner.py", line 520, in run
+    ).wait()
+      ^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/scheduler/worker/worker_group.py", line 546, in wait
+    self._wait_thread.join()
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1119, in join
+    self._wait_for_tstate_lock()
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1139, in _wait_for_tstate_lock
+    if lock.acquire(block, timeout):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/scheduler/cluster/cluster.py", line 470, in signal_handler
+    alive_actors = list_actors(
+                   ^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/state/api.py", line 827, in list_actors
+    return StateApiClient(address=address).list(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/state/api.py", line 505, in list
+    list_api_response = self._make_http_get_request(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/util/state/api.py", line 197, in _make_http_get_request
+    response = self._do_request(
+               ^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/dashboard/modules/dashboard_sdk.py", line 326, in _do_request
+    response = requests.request(
+               ^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/requests/api.py", line 71, in request
+    return session.request(method=method, url=url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/requests/sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/requests/sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/requests/adapters.py", line 696, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/urllib3/connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/http/client.py", line 1411, in getresponse
+    response.close()
+  File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/http/client.py", line 424, in close
+    def close(self):
+
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-dvac-grpo-current/rlinf/scheduler/cluster/cluster.py", line 477, in signal_handler
+    actor = ray.get_actor(actor_state.name)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/worker.py", line 3446, in get_actor
+    return worker.core_worker.get_named_actor_handle(name, namespace or "")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "python/ray/_raylet.pyx", line 4514, in ray._raylet.CoreWorker.get_named_actor_handle
+  File "python/ray/includes/common.pxi", line 109, in ray._raylet.check_status
+ValueError: Failed to look up actor with name 'CollectiveManager'. This could because 1. You are trying to look up a named actor you didn't create. 2. The named actor died. 3. You did not use a namespace matching the namespace of the actor.
+[36m(RolloutGroup(rank=1) pid=4182868)[0m [ERROR 09:28:27 RolloutGroup-Rank-1][multi_channel_pg.py:521] Broadcast failed on ProcessGroup cg-Rollout:0-RolloutGroup:1gloo_send_0 rank 1 with error: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:17575. Args - tensor: tensor([-325713368], dtype=torch.int32), src: 0, group: <torch.distributed.distributed_c10d.ProcessGroup object at 0x7ecd01e6ea30>, async_op: False.
+[36m(RolloutGroup(rank=1) pid=4182868)[0m Exception in thread Thread-8 (_run_queue):
+[36m(RolloutGroup(rank=1) pid=4182868)[0m Traceback (most recent call last):
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     self.run()
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982, in run
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     self._target(*self._args, **self._kwargs)
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 192, in _run_queue
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     work(None)
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/async_work.py", line 118, in __call__
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     self._result = self._func(self, *self._args, **self._kwargs)
+[36m(RolloutGroup(rank=1) pid=4182868)[0m                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 485, in _atomic_recv
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     self._recv(object_type_tensor, CollectiveGroup.CPU, comm_id)
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 1161, in _recv
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     return self._mc_group.recv(
+[36m(RolloutGroup(rank=1) pid=4182868)[0m            ^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 386, in recv
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     work = self._broadcast(
+[36m(RolloutGroup(rank=1) pid=4182868)[0m            ^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=1) pid=4182868)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 517, in _broadcast
+[36m(RolloutGroup(rank=1) pid=4182868)[0m     work.wait()
+[36m(RolloutGroup(rank=1) pid=4182868)[0m RuntimeError: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:17575
+[36m(RolloutGroup(rank=2) pid=4182870)[0m [ERROR 09:28:27 RolloutGroup-Rank-2][multi_channel_pg.py:521] Broadcast failed on ProcessGroup cg-Rollout:0-RolloutGroup:2gloo_send_0 rank 1 with error: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:19613. Args - tensor: tensor([1946157344], dtype=torch.int32), src: 0, group: <torch.distributed.distributed_c10d.ProcessGroup object at 0x7f6c16f56070>, async_op: False.
+[36m(RolloutGroup(rank=3) pid=4182945)[0m Exception in thread Thread-8 (_run_queue):
+[36m(RolloutGroup(rank=3) pid=4182945)[0m Traceback (most recent call last):
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     self.run()
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982, in run
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     self._target(*self._args, **self._kwargs)
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 192, in _run_queue
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     work(None)
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/async_work.py", line 118, in __call__
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     self._result = self._func(self, *self._args, **self._kwargs)
+[36m(RolloutGroup(rank=3) pid=4182945)[0m                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 485, in _atomic_recv
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     self._recv(object_type_tensor, CollectiveGroup.CPU, comm_id)
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 1161, in _recv
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     return self._mc_group.recv(
+[36m(RolloutGroup(rank=3) pid=4182945)[0m            ^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 386, in recv
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     work = self._broadcast(
+[36m(RolloutGroup(rank=3) pid=4182945)[0m            ^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=3) pid=4182945)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 517, in _broadcast
+[36m(RolloutGroup(rank=3) pid=4182945)[0m     work.wait()
+[36m(RolloutGroup(rank=3) pid=4182945)[0m RuntimeError: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.1.1]:57778
+[36m(RolloutGroup(rank=3) pid=4182945)[0m [ERROR 09:28:27 RolloutGroup-Rank-3][multi_channel_pg.py:521] Broadcast failed on ProcessGroup cg-Rollout:0-RolloutGroup:3gloo_send_0 rank 1 with error: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.1.1]:57778. Args - tensor: tensor([0], dtype=torch.int32), src: 0, group: <torch.distributed.distributed_c10d.ProcessGroup object at 0x7eda0025e0f0>, async_op: False.
+[36m(RolloutGroup(rank=2) pid=4182870)[0m Exception in thread Thread-8 (_run_queue):
+[36m(RolloutGroup(rank=2) pid=4182870)[0m Traceback (most recent call last):
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     self.run()
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/threading.py", line 982, in run
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     self._target(*self._args, **self._kwargs)
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 192, in _run_queue
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     work(None)
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/async_work.py", line 118, in __call__
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     self._result = self._func(self, *self._args, **self._kwargs)
+[36m(RolloutGroup(rank=2) pid=4182870)[0m                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 485, in _atomic_recv
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     self._recv(object_type_tensor, CollectiveGroup.CPU, comm_id)
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/collective_group.py", line 1161, in _recv
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     return self._mc_group.recv(
+[36m(RolloutGroup(rank=2) pid=4182870)[0m            ^^^^^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 386, in recv
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     work = self._broadcast(
+[36m(RolloutGroup(rank=2) pid=4182870)[0m            ^^^^^^^^^^^^^^^^
+[36m(RolloutGroup(rank=2) pid=4182870)[0m   File "/data/chenyiteng/ray/rlt-dsrl-v3/session_2026-08-23_16-27-53_911161_321906/runtime_resources/py_modules_files/_ray_pkg_10f6b7c3d5e1596a/rlinf/scheduler/collective/multi_channel_pg.py", line 517, in _broadcast
+[36m(RolloutGroup(rank=2) pid=4182870)[0m     work.wait()
+[36m(RolloutGroup(rank=2) pid=4182870)[0m RuntimeError: [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:547] Connection closed by peer [127.0.0.1]:19613

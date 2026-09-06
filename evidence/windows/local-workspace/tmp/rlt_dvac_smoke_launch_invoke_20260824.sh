@@ -1,0 +1,1 @@
+bash -x /root/autodl-tmp/experiment_exports/rlt_teacher_dvac_w0to2_smoke_8env1c_20260824_v1/runtime/launch_background.sh

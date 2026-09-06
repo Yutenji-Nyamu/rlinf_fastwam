@@ -1,0 +1,39 @@
+Usage stats collection is disabled.
+
+[37mLocal node IP[39m: [1m120.241.223.9[22m
+Traceback (most recent call last):
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/ray", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/scripts/scripts.py", line 3010, in main
+    return cli()
+           ^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/click/core.py", line 1569, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/click/core.py", line 1490, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/click/core.py", line 1970, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/click/core.py", line 1353, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/click/core.py", line 907, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/autoscaler/_private/cli_logger.py", line 812, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/scripts/scripts.py", line 1071, in start
+    node = ray._private.node.Node(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/node.py", line 325, in __init__
+    self._plasma_store_socket_name = self._prepare_socket_file(
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/node.py", line 1258, in _prepare_socket_file
+    validate_socket_filepath(result.split("://", 1)[-1])
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/ray/_private/utils.py", line 1756, in validate_socket_filepath
+    raise OSError(
+OSError: validate_socket_filename failed: AF_UNIX path length cannot exceed 107 bytes: /data/chenyiteng/results/rlinf-shared-ray/formal-rlt-dsrl-20260823-v1/tmp/session_2026-08-23_15-55-59_711867_315117/sockets/plasma_store

@@ -1,0 +1,17 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env250
+  - _self_
+
+# Fresh single-GPU control for the paired single-GPU RLT experiment.
+# CUDA_VISIBLE_DEVICES selects the physical card; RLinf sees one logical GPU 0.
+cluster:
+  component_placement:
+    actor, env, rollout: 0
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_control_fresh480_v1"
+  max_steps: 480
+  val_check_interval: 25
+  save_interval: 25
+  resume_dir: null

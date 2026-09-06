@@ -1,0 +1,598 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787409461.542664   70614 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1787409461.594603   70614 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787409463.028655   70614 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+/root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/hydra/_internal/hydra.py:119: UserWarning: Future Hydra versions will no longer change working directory at job runtime by default.
+See https://hydra.cc/docs/1.2/upgrades/1.1_to_1.2/changes_to_job_working_dir/ for more information.
+  ret = run_job(
+2026-08-22 22:37:49,365	WARNING utils.py:461 -- Detecting docker specified CPUs. In previous versions of Ray, CPU detection in containers was incorrect. Please ensure that Ray has enough CPUs allocated. As a temporary workaround to revert to the prior behavior, set `RAY_USE_MULTIPROCESSING_CPU_COUNT=1` as an env var before starting Ray. Set the env var: `RAY_DISABLE_DOCKER_CPU_WARNING=1` to mute this warning.
+2026-08-22 22:37:51,704	INFO worker.py:2003 -- Started a local Ray instance. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[INFO 22:37:53 RLinf] RLinf is running on a cluster with 1 node and 2 accelerators. The nodes' details are: 
+node_labels: []
+node_rank: 0
+ray_id: 36d9e255274a01221acfae29bace1fc73f04a132084fcaa7b88b29d8
+node_ip: 172.17.0.4
+num_cpus: 36
+python_interpreter_path: /root/autodl-tmp/RLinf/.venv/bin/python
+hardware_resources:
+- type: Accelerator
+  infos:
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+  - type: Accelerator
+    model: NV_GPU:A800-SXM4-80GB
+profiler_backends: []
+
+Node groups' details are: 
+label: cluster
+nodes: '0'
+hardware_type: Accelerator
+ignore_hardware: false
+env_configs: null
+
+label: node
+nodes: '0'
+hardware_type: null
+ignore_hardware: true
+env_configs: null
+
+[INFO 22:37:53 FlexiblePlacementStrategy] 
+[INFO 22:37:53 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[INFO 22:37:53 FlexiblePlacementStrategy] 
+[INFO 22:37:53 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+{
+  "env": {
+    "train": {
+      "env_type": "robotwin",
+      "total_num_envs": 16,
+      "auto_reset": false,
+      "ignore_terminations": false,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 8,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": false,
+      "assets_path": "/root/autodl-tmp/idea2_dvac_train_wamppo/RoboTwin_RLinf",
+      "seeds_path": "/root/autodl-tmp/RLinf_idea2_dvac_residual_downweight/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822/video/train"
+      },
+      "enable_offload": true,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "./data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true,
+        "control_trace": {
+          "enabled": true,
+          "output_dir": "/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822/control_trace",
+          "worker_indices": [
+            0
+          ],
+          "env_slots": [
+            0
+          ],
+          "max_episodes_per_slot": 1,
+          "camera": "head_camera",
+          "fps": 10,
+          "crf": 32,
+          "output_width": 160,
+          "output_height": 120,
+          "max_frames_per_episode": 200,
+          "max_frames_per_query": 50
+        }
+      },
+      "rollout_epoch": 16
+    },
+    "eval": {
+      "env_type": "robotwin",
+      "total_num_envs": 4,
+      "auto_reset": true,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": true,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": true,
+      "assets_path": "/root/autodl-tmp/idea2_dvac_train_wamppo/RoboTwin_RLinf",
+      "seeds_path": "/root/autodl-tmp/RLinf_idea2_dvac_residual_downweight/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822/video/eval"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "adjust_bottle",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "./data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 16
+    },
+    "group_name": "EnvGroup",
+    "enable_offload": false
+  },
+  "actor": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle",
+      "precision": null,
+      "num_action_chunks": 50,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 4,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi0_aloha_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 50,
+        "num_steps": 4,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_sde",
+        "add_value_head": false,
+        "detach_critic_input": false,
+        "use_dsrl": false,
+        "dsrl_state_dim": 8,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    "fsdp_config": {
+      "strategy": "fsdp",
+      "sharding_strategy": "full_shard",
+      "gradient_checkpointing": false,
+      "cpu_offload": false,
+      "offload_pin_memory": false,
+      "reshard_after_forward": true,
+      "enable_gradient_accumulation": true,
+      "forward_prefetch": false,
+      "limit_all_gathers": false,
+      "backward_prefetch": null,
+      "use_orig_params": false,
+      "use_liger_kernel": false,
+      "mixed_precision": {
+        "param_dtype": null,
+        "reduce_dtype": null,
+        "buffer_dtype": null
+      },
+      "amp_autocast": {
+        "enabled": false,
+        "precision": "bf16"
+      },
+      "grad_scaler": {
+        "enabled": false,
+        "init_scale": null,
+        "growth_interval": null
+      },
+      "save_full_model_weights": false
+    },
+    "group_name": "ActorGroup",
+    "training_backend": "fsdp",
+    "micro_batch_size": 32,
+    "global_batch_size": 512,
+    "seed": 1234,
+    "enable_offload": false,
+    "optim": {
+      "lr": 5.6e-06,
+      "value_lr": 0.00011,
+      "adam_beta1": 0.9,
+      "adam_beta2": 0.95,
+      "adam_eps": 1e-08,
+      "weight_decay": 0.01,
+      "clip_grad": 1.0,
+      "critic_warmup_steps": 0
+    }
+  },
+  "weight_syncer": {
+    "type": "patch",
+    "patch": {
+      "snapshot_device": "cpu",
+      "delta_encoding": true,
+      "compression": "none",
+      "init_sync": {
+        "enabled": true,
+        "prefixes": null,
+        "bucket_size": 134217728
+      },
+      "transport_device": "cpu"
+    }
+  },
+  "cluster": {
+    "num_nodes": 1,
+    "component_placement": {
+      "actor, env, rollout": "0-1"
+    }
+  },
+  "runner": {
+    "task_type": "embodied",
+    "logger": {
+      "log_path": "/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822",
+      "project_name": "rlinf",
+      "experiment_name": "idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822",
+      "logger_backends": [
+        "tensorboard"
+      ]
+    },
+    "max_epochs": 1000,
+    "max_steps": 100,
+    "only_eval": false,
+    "val_check_interval": -1,
+    "save_interval": 10,
+    "resume_dir": null,
+    "ckpt_path": null,
+    "per_worker_log": false,
+    "per_worker_log_path": null,
+    "weight_sync_interval": 1,
+    "overlap_env_bootstrap": false
+  },
+  "algorithm": {
+    "normalize_advantages": true,
+    "kl_penalty": "kl",
+    "group_size": 8,
+    "reward_coef": 1.0,
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "update_epoch": 2,
+    "adv_type": "grpo",
+    "loss_type": "actor",
+    "loss_agg_func": "token-mean",
+    "kl_beta": 0.0,
+    "entropy_bonus": 0,
+    "clip_ratio_high": 0.2,
+    "clip_ratio_low": 0.2,
+    "clip_ratio_c": 3.0,
+    "value_clip": 0.2,
+    "huber_delta": 10.0,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "filter_rewards": true,
+    "rewards_lower_bound": 0.1,
+    "rewards_upper_bound": 0.9,
+    "dvac_gradient_weighting": {
+      "mode": "apply",
+      "signal_mode": "per_h_robust_residual",
+      "l_values": [
+        2,
+        3,
+        4
+      ],
+      "selected_l": 3,
+      "warmup_steps": 1,
+      "window_steps": 5,
+      "stats_scope": "per_h_recent_median_mad_all_queries",
+      "log_eps": 1e-12,
+      "scale_floor": 1e-06,
+      "mad_consistency": 1.4826,
+      "residual_clip": 2.0,
+      "weight_mapping": "asymmetric_linear",
+      "weight_min": 0.0,
+      "weight_max": 2.0,
+      "output_dir": "/root/autodl-tmp/idea2_dvac_train_runs/idea2_dvac_r_only_v3_w0to2_formal_100step_2gpu16env_20260822/dvac_train"
+    }
+  },
+  "rollout": {
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "recompute_logprobs": false,
+    "enable_offload": false,
+    "pipeline_stage_num": 1,
+    "model": {
+      "model_path": "/root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle",
+      "precision": null
+    }
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}[INFO 22:37:53 FlexiblePlacementStrategy] 
+[INFO 22:37:53 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[INFO 22:37:53 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 22:37:54 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 22:37:54 FlexiblePlacementStrategy] Generated 2 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=0, accelerator_type='NV_GPU', local_rank=0, local_world_size=2, visible_accelerators=['0'], isolate_accelerator=True, local_hardware_ranks=[0], node_group_label='cluster'), Placement(rank=1, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=1, accelerator_type='NV_GPU', local_rank=1, local_world_size=2, visible_accelerators=['1'], isolate_accelerator=True, local_hardware_ranks=[1], node_group_label='cluster')].
+[INFO 22:37:54 NodePlacementStrategy] 
+[INFO 22:37:54 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 22:37:54 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 22:37:54 NodePlacementStrategy] 
+[INFO 22:37:54 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 22:37:54 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 22:37:54 NodePlacementStrategy] 
+[INFO 22:37:54 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 22:37:54 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[36m(MultiStepRolloutWorker pid=74238)[0m [INFO 22:37:58 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=74238)[0m [INFO 22:37:58 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(MultiStepRolloutWorker pid=74249)[0m [INFO 22:37:58 FlexiblePlacementStrategy] 
+[36m(MultiStepRolloutWorker pid=74249)[0m [INFO 22:37:58 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(pid=74262)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=74262)[0m I0000 00:00:1787409478.270229   74262 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(pid=74268)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=74268)[0m I0000 00:00:1787409478.487871   74268 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EmbodiedFSDPActor pid=74235)[0m [INFO 22:37:59 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=74235)[0m [INFO 22:37:59 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(EmbodiedFSDPActor pid=74237)[0m [INFO 22:37:59 FlexiblePlacementStrategy] 
+[36m(EmbodiedFSDPActor pid=74237)[0m [INFO 22:37:59 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(pid=74262)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=74262)[0m I0000 00:00:1787409479.851824   74262 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=0) pid=74238)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=74238)[0m I0000 00:00:1787409480.030106   75293 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=74249)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=74249)[0m I0000 00:00:1787409480.057667   75291 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(pid=74268)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(pid=74268)[0m I0000 00:00:1787409480.070905   74268 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EnvWorker pid=74262)[0m [INFO 22:38:01 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=74262)[0m [INFO 22:38:01 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(RolloutGroup(rank=0) pid=74238)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=0) pid=74238)[0m I0000 00:00:1787409481.507385   75293 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(RolloutGroup(rank=1) pid=74249)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(RolloutGroup(rank=1) pid=74249)[0m I0000 00:00:1787409481.520085   75291 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(EnvWorker pid=74268)[0m [INFO 22:38:01 FlexiblePlacementStrategy] 
+[36m(EnvWorker pid=74268)[0m [INFO 22:38:01 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[0], [1]], node groups: ['cluster'].
+[36m(EnvGroup(rank=0) pid=74262)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=0) pid=74262)[0m   warn(
+[36m(EnvGroup(rank=1) pid=74268)[0m /root/autodl-tmp/RLinf/.venv/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:73: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+[36m(EnvGroup(rank=1) pid=74268)[0m   warn(
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(EnvGroup(rank=0) pid=74262)[0m Traceback (most recent call last):
+[36m(EnvGroup(rank=0) pid=74262)[0m   File "/root/autodl-tmp/idea2_dvac_train_wamppo/RoboTwin_RLinf/envs/robot/planner.py", line 297, in <module>
+[36m(EnvGroup(rank=0) pid=74262)[0m     from curobo.types.math import Pose as CuroboPose
+[36m(EnvGroup(rank=0) pid=74262)[0m ModuleNotFoundError: No module named 'curobo.types.math'; 'curobo.types' is not a package
+[36m(EnvGroup(rank=1) pid=74268)[0m Traceback (most recent call last):
+[36m(EnvGroup(rank=1) pid=74268)[0m   File "/root/autodl-tmp/idea2_dvac_train_wamppo/RoboTwin_RLinf/envs/robot/planner.py", line 297, in <module>
+[36m(EnvGroup(rank=1) pid=74268)[0m     from curobo.types.math import Pose as CuroboPose
+[36m(EnvGroup(rank=1) pid=74268)[0m ModuleNotFoundError: No module named 'curobo.types.math'; 'curobo.types' is not a package
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=74238)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=1) pid=74249)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=74237)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=74237)[0m I0000 00:00:1787409542.125636   75321 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=74235)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=74235)[0m I0000 00:00:1787409542.143931   75320 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=74235)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=0) pid=74235)[0m I0000 00:00:1787409543.299122   75320 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=1) pid=74237)[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+[36m(ActorGroup(rank=1) pid=74237)[0m I0000 00:00:1787409543.323904   75321 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:datasets:PyTorch version 2.6.0 available.
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:datasets:Polars version 1.41.2 available.
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:datasets:TensorFlow version 2.21.0 available.
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:datasets:JAX version 0.5.3 available.
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=0) pid=74235)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(ActorGroup(rank=1) pid=74237)[0m INFO:root:Loaded norm stats from /root/autodl-tmp/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle/physical-intelligence/robotwin
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:   0%|          | 0/16 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:   6%|▋         | 1/16 [02:30<37:36, 150.43s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  12%|█▎        | 2/16 [03:56<26:14, 112.45s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  19%|█▉        | 3/16 [05:20<21:35, 99.68s/it] 
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  25%|██▌       | 4/16 [06:43<18:36, 93.07s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  31%|███▏      | 5/16 [08:14<16:55, 92.35s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  38%|███▊      | 6/16 [09:45<15:19, 91.91s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  44%|████▍     | 7/16 [11:18<13:48, 92.11s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  50%|█████     | 8/16 [12:45<12:03, 90.41s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  56%|█████▋    | 9/16 [14:15<10:31, 90.26s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  62%|██████▎   | 10/16 [15:47<09:04, 90.81s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  69%|██████▉   | 11/16 [17:28<07:50, 94.05s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  75%|███████▌  | 12/16 [19:05<06:19, 94.92s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  81%|████████▏ | 13/16 [20:32<04:38, 92.69s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  88%|████████▊ | 14/16 [22:00<03:02, 91.01s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  94%|█████████▍| 15/16 [23:28<01:30, 90.27s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs: 100%|██████████| 16/16 [25:01<00:00, 91.07s/it]Generating Rollout Epochs: 100%|██████████| 16/16 [25:01<00:00, 93.85s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:   0%|          | 0/16 [00:00<?, ?it/s]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:   6%|▋         | 1/16 [01:39<24:49, 99.29s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  12%|█▎        | 2/16 [03:07<21:39, 92.84s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  19%|█▉        | 3/16 [04:33<19:27, 89.82s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  25%|██▌       | 4/16 [06:12<18:41, 93.45s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  31%|███▏      | 5/16 [07:44<17:00, 92.81s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  38%|███▊      | 6/16 [09:12<15:12, 91.29s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  44%|████▍     | 7/16 [10:44<13:42, 91.42s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  50%|█████     | 8/16 [12:19<12:19, 92.47s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  56%|█████▋    | 9/16 [13:47<10:36, 90.99s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  62%|██████▎   | 10/16 [15:13<08:58, 89.72s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  69%|██████▉   | 11/16 [16:37<07:19, 87.96s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  75%|███████▌  | 12/16 [18:11<05:59, 89.82s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  81%|████████▏ | 13/16 [19:43<04:30, 90.25s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  88%|████████▊ | 14/16 [21:09<02:58, 89.02s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:  94%|█████████▍| 15/16 [22:46<01:31, 91.43s/it]
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs: 100%|██████████| 16/16 [24:27<00:00, 94.25s/it]Generating Rollout Epochs: 100%|██████████| 16/16 [24:27<00:00, 91.70s/it]
+
+[36m(EmbodiedFSDPActor pid=74235)[0m [WARNING 22:37:59 ActorGroup-Rank-0][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedFSDPActor pid=74237)[0m [WARNING 22:37:59 ActorGroup-Rank-1][fsdp_model_manager.py:70] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+[36m(EmbodiedFSDPActor pid=74235)[0m [INFO 22:37:59 ActorGroup-Rank-0][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(EmbodiedFSDPActor pid=74237)[0m [INFO 22:37:59 ActorGroup-Rank-1][fsdp_model_manager.py:124] [FSDP] AMP is disabled.
+[36m(EnvGroup(rank=0) pid=74262)[0m [planner.py]: Something wrong happened when importing CuroboPlanner! Please check if Curobo is installed correctly. If the problem still exists, you can install Curobo from https://github.com/NVlabs/curobo manually.
+[36m(EnvGroup(rank=0) pid=74262)[0m Exception traceback:
+[36m(EnvGroup(rank=0) pid=74262)[0m missing pytorch3d
+[36m(EnvGroup(rank=1) pid=74268)[0m [planner.py]: Something wrong happened when importing CuroboPlanner! Please check if Curobo is installed correctly. If the problem still exists, you can install Curobo from https://github.com/NVlabs/curobo manually.
+[36m(EnvGroup(rank=1) pid=74268)[0m Exception traceback:
+[36m(EnvGroup(rank=1) pid=74268)[0m missing pytorch3d
+[36m(ActorGroup(rank=0) pid=74235)[0m [INFO 22:40:00 ActorGroup-Rank-0][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+[36m(ActorGroup(rank=1) pid=74237)[0m [INFO 22:40:03 ActorGroup-Rank-1][fsdp_model_manager.py:282] [FSDP] Gradient checkpointing is disabled
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    1/100 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   1.0%                                  │
+│ Elapsed: 25:50 │ ETA: 42:37:47 │ Step Time: 1550.181s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.021          │actor/actor/recv_traj=1503.9           │actor/actor/sync_model_to_rollout=11.…│
+│actor/run_training=34.266              │cal_adv_and_returns=0.025              │env/compute_bootstrap_rewards=0.0067  │
+│env/env/bootstrap_step=858.8           │env/env/send_rollout_trajectories=0.759│env/env_interact_step=610.5           │
+│env/interact=1503.1                    │env/run_interact_once=1502.4           │generate_rollouts=1503.9              │
+│rollout/generate_one_epoch=1501.6      │rollout/predict=26.765                 │rollout/rollout/generate=1501.6       │
+│step=1550.2                            │sync_weights=11.922                    │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=256                   │return=0.8515625                      │
+│reward=0.004257812                     │success_once=0.8515625                 │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=1.208                   │advantages_mean=-0.111                 │advantages_min=-2.475                 │
+│rewards=0.0048                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.162                  │actor/clip_fraction=0.184              │actor/clipped_ratio=0.975             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.473         │actor/dvac_current_std=0.624          │
+│actor/dvac_history_mean=0.0000         │actor/dvac_history_std=0.0000          │actor/dvac_warmup=1.000               │
+│actor/dvac_weight_mean_rank_local=1.000│actor/entropy_loss=0.0000              │actor/grad_norm=34.840                │
+│actor/lr=5.60e-06                      │actor/policy_loss=0.011                │actor/policy_loss_abs=0.445           │
+│actor/ratio=0.986                      │actor/ratio_abs=0.279                  │actor/total_loss=0.0014               │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    2/100 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   2.0%                                  │
+│ Elapsed: 50:58 │ ETA: 41:38:09 │ Step Time: 1529.488s                                                                │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=0.0031         │actor/actor/recv_traj=1473.3           │actor/actor/sync_model_to_rollout=0.9…│
+│actor/run_training=33.842              │cal_adv_and_returns=0.0069             │env/compute_bootstrap_rewards=0.0063  │
+│env/env/bootstrap_step=862.2           │env/env/send_rollout_trajectories=0.735│env/env_interact_step=580.1           │
+│env/interact=1472.6                    │env/run_interact_once=1471.7           │generate_rollouts=1473.4              │
+│rollout/generate_one_epoch=1470.9      │rollout/predict=26.223                 │rollout/rollout/generate=1470.9       │
+│step=1508.8                            │sync_weights=1.505                     │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=256                   │return=0.69140625                     │
+│reward=0.003457031                     │success_once=0.69140625                │                                      │
+│                                                                                                                      │
+├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│advantages_max=2.475                   │advantages_mean=-0.115                 │advantages_min=-2.475                 │
+│rewards=0.0038                         │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/approx_kl=0.052                  │actor/clip_fraction=0.151              │actor/clipped_ratio=0.986             │
+│actor/dual_cliped_ratio=0.0000         │actor/dvac_current_mean=-4.391         │actor/dvac_current_std=0.674          │
+│actor/dvac_history_mean=-4.473         │actor/dvac_history_std=0.624           │actor/dvac_warmup=0.0000              │
+│actor/dvac_weight_mean_rank_local=1.174│actor/entropy_loss=0.0000              │actor/grad_norm=47.279                │
+│actor/lr=5.60e-06                      │actor/policy_loss=-8.36e-04            │actor/policy_loss_abs=0.589           │
+│actor/ratio=1.000                      │actor/ratio_abs=0.174                  │actor/total_loss=-1.05e-04            │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+[36m(RolloutGroup(rank=0) pid=74238)[0m Generating Rollout Epochs:   0%|          | 0/16 [00:00<?, ?it/s]

@@ -1,0 +1,283 @@
+output_dir: ./runs/train/${now:%Y-%m-%d}_${now:%H-%M-%S}
+batch_size: 16
+num_workers: 8
+lr_scheduler_type: cosine
+learning_rate: 0.0001
+num_epochs: 5
+max_steps: null
+log_every: 10
+save_every: 0
+eval_every: 0
+eval_num_inference_steps: 10
+gradient_accumulation_steps: 1
+mixed_precision: bf16
+seed: 0
+max_grad_norm: 1.0
+weight_decay: 0.01
+resume: null
+wandb:
+  enabled: false
+  workspace: null
+  project: fasterwam
+  name: train
+  group: null
+  mode: online
+data:
+  train:
+    _target_: fasterwam.datasets.lerobot.robot_video_dataset.RobotVideoDataset
+    dataset_dirs:
+    - ./data/robotwin2.0/robotwin2.0
+    shape_meta:
+      images:
+      - key: cam_high
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      - key: cam_left_wrist
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      - key: cam_right_wrist
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      action:
+      - key: default
+        raw_shape: 14
+        shape: 14
+      state:
+      - key: default
+        raw_shape: 14
+        shape: 14
+    num_frames: 33
+    global_sample_stride: 1
+    action_video_freq_ratio: 4
+    video_size:
+    - 384
+    - 320
+    camera_key: null
+    val_set_proportion: 0.01
+    is_training_set: true
+    pretrained_norm_stats: ./data/robotwin2.0/dataset_stats.json
+    skip_padding_as_possible: false
+    concat_multi_camera: robotwin
+    processor:
+      _target_: fasterwam.datasets.lerobot.processors.fastwam_processor.FastWAMProcessor
+      shape_meta: ${data.train.shape_meta}
+      num_obs_steps: ${data.train.num_frames}
+      num_output_cameras: 3
+      action_output_dim: 14
+      proprio_output_dim: 14
+      action_state_transforms: null
+      use_stepwise_action_norm: false
+      norm_default_mode: z-score
+      norm_exception_mode: null
+      action_state_merger:
+        _target_: fasterwam.datasets.lerobot.transforms.action_state_merger.ConcatLeftAlign
+      train_transforms:
+      - _target_: fasterwam.datasets.lerobot.transforms.image.ToTensor
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 240
+        - 320
+      val_transforms:
+      - _target_: fasterwam.datasets.lerobot.transforms.image.ToTensor
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 240
+        - 320
+    text_embedding_cache_dir: ./data/text_embeds_cache_fasterwam/robotwin
+    context_len: 128
+  val:
+    _target_: fasterwam.datasets.lerobot.robot_video_dataset.RobotVideoDataset
+    dataset_dirs:
+    - ./data/robotwin2.0/robotwin2.0
+    shape_meta:
+      images:
+      - key: cam_high
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      - key: cam_left_wrist
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      - key: cam_right_wrist
+        raw_shape:
+        - 3
+        - 480
+        - 640
+        shape:
+        - 3
+        - 240
+        - 320
+      action:
+      - key: default
+        raw_shape: 14
+        shape: 14
+      state:
+      - key: default
+        raw_shape: 14
+        shape: 14
+    num_frames: 33
+    global_sample_stride: 1
+    action_video_freq_ratio: 4
+    video_size:
+    - 384
+    - 320
+    camera_key: null
+    val_set_proportion: 0.01
+    is_training_set: false
+    pretrained_norm_stats: ./data/robotwin2.0/dataset_stats.json
+    skip_padding_as_possible: false
+    concat_multi_camera: robotwin
+    processor:
+      _target_: fasterwam.datasets.lerobot.processors.fastwam_processor.FastWAMProcessor
+      shape_meta: ${data.train.shape_meta}
+      num_obs_steps: ${data.train.num_frames}
+      num_output_cameras: 3
+      action_output_dim: 14
+      proprio_output_dim: 14
+      action_state_transforms: null
+      use_stepwise_action_norm: false
+      norm_default_mode: z-score
+      norm_exception_mode: null
+      action_state_merger:
+        _target_: fasterwam.datasets.lerobot.transforms.action_state_merger.ConcatLeftAlign
+      train_transforms:
+      - _target_: fasterwam.datasets.lerobot.transforms.image.ToTensor
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 240
+        - 320
+      val_transforms:
+      - _target_: fasterwam.datasets.lerobot.transforms.image.ToTensor
+      - _target_: torchvision.transforms.Resize
+        size:
+        - 240
+        - 320
+    text_embedding_cache_dir: ./data/text_embeds_cache_fasterwam/robotwin
+    context_len: 128
+model:
+  _target_: fasterwam.runtime.create_fasterwam
+  model_id: Wan-AI/Wan2.2-TI2V-5B
+  tokenizer_model_id: Wan-AI/Wan2.1-T2V-1.3B
+  tokenizer_max_len: 128
+  load_text_encoder: true
+  proprio_dim: ${data.train.processor.proprio_output_dim}
+  redirect_common_files: true
+  mot_checkpoint_mixed_attn: false
+  condition_layers:
+  - 0
+  - 4
+  - 8
+  - 12
+  - 16
+  - 20
+  - 24
+  - 28
+  video_kv_fusion: interval_weighted_sum
+  video_kv_fusion_init: current_layer
+  action_dit_pretrained_path: null
+  skip_dit_load_from_pretrain: true
+  video_dit_config:
+    has_image_input: false
+    patch_size:
+    - 1
+    - 2
+    - 2
+    in_dim: 48
+    hidden_dim: 3072
+    ffn_dim: 14336
+    freq_dim: 256
+    text_dim: 4096
+    out_dim: 48
+    num_heads: 24
+    attn_head_dim: 128
+    num_layers: 30
+    eps: 1.0e-06
+    seperated_timestep: true
+    require_clip_embedding: false
+    require_vae_embedding: false
+    fuse_vae_embedding_in_latents: true
+    use_gradient_checkpointing: ${model.mot_checkpoint_mixed_attn}
+    video_attention_mask_mode: first_frame_causal
+    action_conditioned: false
+    action_dim: ${data.train.processor.action_output_dim}
+    action_group_causal_mask_mode: group_diagonal
+  action_dit_config:
+    action_dim: ${data.train.processor.action_output_dim}
+    hidden_dim: 1024
+    ffn_dim: 4096
+    num_layers: 30
+    num_heads: 24
+    noncondition_num_heads: 8
+    attn_head_dim: 128
+    text_dim: 4096
+    freq_dim: 256
+    eps: 1.0e-06
+    condition_layers: ${model.condition_layers}
+    use_gradient_checkpointing: ${model.mot_checkpoint_mixed_attn}
+  video_scheduler:
+    train_shift: 5.0
+    infer_shift: 5.0
+    num_train_timesteps: 1000
+  action_scheduler:
+    train_shift: 5.0
+    infer_shift: 5.0
+    num_train_timesteps: 1000
+  loss:
+    lambda_action: 1.0
+default_action_infer_mode: one_pass_future_cache
+ckpt: /data/chenyiteng/models/fasterwam/release-6bf9471/robotwin/step_029355.pt
+gpu_id: 3
+EVALUATION:
+  robotwin_root: /data/chenyiteng/projects/fasterwam-standalone/FasterWAM-hustvl-official/third_party/RoboTwin
+  policy_name: fasterwam_policy
+  task_name: move_stapler_pad
+  task_config: demo_randomized
+  instruction_type: unseen
+  eval_num_episodes: 1
+  output_dir: /data/chenyiteng/results/fasterwam-standalone/official-move-stapler-pad-random1-20260902-v1
+  action_horizon: null
+  replan_steps: 28
+  num_inference_steps: 10
+  action_infer_mode: one_pass_future_cache
+  sigma_shift: null
+  text_cfg_scale: 1.0
+  negative_prompt: ''
+  rand_device: cpu
+  tiled: false
+  timing_enabled: true
+  skip_get_obs_within_replan: true
+  dataset_stats_path: /data/chenyiteng/models/fasterwam/release-6bf9471/robotwin/dataset_stats.json
+  device: cuda
+MULTIRUN:
+  enabled: false
+  num_gpus: 8
+  max_tasks_per_gpu: 2

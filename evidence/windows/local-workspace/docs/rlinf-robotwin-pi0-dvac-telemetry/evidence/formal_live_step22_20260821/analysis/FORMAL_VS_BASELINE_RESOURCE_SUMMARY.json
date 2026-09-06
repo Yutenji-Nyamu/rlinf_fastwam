@@ -1,0 +1,202 @@
+{
+  "sources": {
+    "formal_resources": "C:\\Users\\86136\\Documents\\rl\\docs\\rlinf-robotwin-pi0-dvac-telemetry\\evidence\\formal_live_step22_20260821\\runtime\\resources.csv",
+    "formal_process_rss": "C:\\Users\\86136\\Documents\\rl\\docs\\rlinf-robotwin-pi0-dvac-telemetry\\evidence\\formal_live_step22_20260821\\runtime\\process_rss.tsv",
+    "baseline_resources": "C:\\Users\\86136\\Documents\\rl\\audits\\20260717-084926-grpo-current\\resources.csv",
+    "baseline_analysis": "C:\\Users\\86136\\Documents\\rl\\audits\\20260717-084926-grpo-current\\analysis.json"
+  },
+  "alignment": {
+    "x_axis": "hours since each resource monitor's first sample",
+    "formal_observed_hours": 9.862,
+    "comparison_window_hours": 10.0,
+    "cgroup_comparability": "Same memory.current-style cgroup total and 240 GiB limit; formal bytes were converted to GiB, baseline monitor MiB to GiB.",
+    "gpu_comparability": "Both use nvidia-smi per-GPU used memory; formal samples are long-form per GPU, baseline samples are wide-form.",
+    "env_rss_comparability": "Both are aggregate EnvWorker RSS. Formal is reconstructed from process_rss.tsv sampled about every 11 s; baseline env_rss_mb was emitted directly in its about-2 s resource monitor. RSS can double-count shared pages.",
+    "time_alignment_limit": "Elapsed zero is monitor start, not optimizer-step alignment. Formal snapshot ends before 10 h; baseline first-10-h and matched-9.862-h views are both reported.",
+    "baseline_start_offset": "Baseline cgroup starts materially higher because it includes pre-existing container memory; compare both raw totals and growth relative to each run's first sample."
+  },
+  "comparison": {
+    "formal_observed_window": {
+      "cgroup_current_gib": {
+        "start": 12.792,
+        "median": 146.155,
+        "peak": 182.686,
+        "peak_elapsed_h": 8.75,
+        "end": 174.078,
+        "peak_growth_from_start": 169.893,
+        "growth_end_minus_start": 161.286
+      },
+      "gpu0_memory_gib": {
+        "start": 0.0,
+        "median": 26.275,
+        "peak": 30.368,
+        "peak_elapsed_h": 5.862,
+        "end": 27.493,
+        "peak_growth_from_start": 30.368,
+        "growth_end_minus_start": 27.493
+      },
+      "gpu1_memory_gib": {
+        "start": 0.0,
+        "median": 26.002,
+        "peak": 30.218,
+        "peak_elapsed_h": 5.439,
+        "end": 26.905,
+        "peak_growth_from_start": 30.218,
+        "growth_end_minus_start": 26.905
+      },
+      "env_rss_gib": {
+        "start": 4.114,
+        "median": 100.659,
+        "peak": 126.633,
+        "peak_elapsed_h": 8.758,
+        "end": 123.616,
+        "peak_growth_from_start": 122.519,
+        "growth_end_minus_start": 119.502
+      }
+    },
+    "baseline_first_10h": {
+      "cgroup_current_gib": {
+        "start": 41.849,
+        "median": 176.91,
+        "peak": 212.44,
+        "peak_elapsed_h": 9.462,
+        "end": 205.686,
+        "peak_growth_from_start": 170.592,
+        "growth_end_minus_start": 163.837
+      },
+      "gpu0_memory_gib": {
+        "start": 0.004,
+        "median": 25.211,
+        "peak": 29.337,
+        "peak_elapsed_h": 8.629,
+        "end": 23.694,
+        "peak_growth_from_start": 29.333,
+        "growth_end_minus_start": 23.69
+      },
+      "gpu1_memory_gib": {
+        "start": 0.004,
+        "median": 25.017,
+        "peak": 29.306,
+        "peak_elapsed_h": 5.305,
+        "end": 23.212,
+        "peak_growth_from_start": 29.302,
+        "growth_end_minus_start": 23.208
+      },
+      "env_rss_gib": {
+        "start": 0.0,
+        "median": 103.656,
+        "peak": 127.432,
+        "peak_elapsed_h": 9.462,
+        "end": 120.562,
+        "peak_growth_from_start": 127.432,
+        "growth_end_minus_start": 120.562
+      }
+    },
+    "baseline_matched_elapsed": {
+      "elapsed_h": 9.862,
+      "cgroup_current_gib": {
+        "start": 41.849,
+        "median": 176.378,
+        "peak": 212.44,
+        "peak_elapsed_h": 9.462,
+        "end": 204.817,
+        "peak_growth_from_start": 170.592,
+        "growth_end_minus_start": 162.969
+      },
+      "gpu0_memory_gib": {
+        "start": 0.004,
+        "median": 25.216,
+        "peak": 29.337,
+        "peak_elapsed_h": 8.629,
+        "end": 27.29,
+        "peak_growth_from_start": 29.333,
+        "growth_end_minus_start": 27.286
+      },
+      "gpu1_memory_gib": {
+        "start": 0.004,
+        "median": 25.065,
+        "peak": 29.306,
+        "peak_elapsed_h": 5.305,
+        "end": 27.744,
+        "peak_growth_from_start": 29.302,
+        "growth_end_minus_start": 27.74
+      },
+      "env_rss_gib": {
+        "start": 0.0,
+        "median": 103.255,
+        "peak": 127.432,
+        "peak_elapsed_h": 9.462,
+        "end": 119.703,
+        "peak_growth_from_start": 127.432,
+        "growth_end_minus_start": 119.703
+      }
+    },
+    "baseline_full_run": {
+      "duration_h": 40.328,
+      "cgroup_current_gib": {
+        "start": 41.849,
+        "median": 228.282,
+        "peak": 236.327,
+        "peak_elapsed_h": 32.429,
+        "end": 73.76,
+        "peak_growth_from_start": 194.479,
+        "growth_end_minus_start": 31.911
+      },
+      "gpu0_memory_gib": {
+        "start": 0.004,
+        "median": 25.253,
+        "peak": 29.337,
+        "peak_elapsed_h": 8.629,
+        "end": 0.521,
+        "peak_growth_from_start": 29.333,
+        "growth_end_minus_start": 0.518
+      },
+      "gpu1_memory_gib": {
+        "start": 0.004,
+        "median": 25.138,
+        "peak": 29.557,
+        "peak_elapsed_h": 34.389,
+        "end": 0.0,
+        "peak_growth_from_start": 29.553,
+        "growth_end_minus_start": -0.004
+      },
+      "env_rss_gib": {
+        "start": 0.0,
+        "median": 128.398,
+        "peak": 138.819,
+        "peak_elapsed_h": 33.601,
+        "end": 0.0,
+        "peak_growth_from_start": 138.819,
+        "growth_end_minus_start": 0.0
+      }
+    }
+  },
+  "deltas": {
+    "formal_minus_baseline_matched": {
+      "cgroup_peak_gib": -29.754,
+      "cgroup_end_gib": -30.739,
+      "cgroup_growth_from_own_start_gib": -1.683,
+      "cgroup_peak_growth_from_own_start_gib": -0.699,
+      "env_rss_peak_gib": -0.799,
+      "env_rss_end_gib": 3.913,
+      "gpu0_peak_gib": 1.031,
+      "gpu1_peak_gib": 0.912
+    }
+  },
+  "baseline_analysis_json_peak_check": {
+    "analysis_json_target_completed": 100,
+    "analysis_json_target_step": 100,
+    "cgroup_peak_gib": 236.327,
+    "gpu0_peak_gib": 29.337,
+    "gpu1_peak_gib": 29.557,
+    "env_rss_peak_gib": 138.819,
+    "cgroup_oom": 0,
+    "cgroup_oom_kill": 0
+  },
+  "interpretation": {
+    "gpu": "Formal per-GPU peaks are close to the successful baseline and remain far below 80 GiB capacity.",
+    "cgroup": "At matched elapsed time, formal raw cgroup total is lower because it began with less pre-existing container memory; growth from each run's own start is nearly identical. Both runs show strong host-memory growth, and the successful baseline later operated near the 240 GiB limit.",
+    "env_rss": "Formal aggregate EnvWorker RSS is already close to the baseline's matched first-10-h level and below the baseline full-run peak; this is the main growth source to keep watching.",
+    "causal_boundary": "This observational comparison does not isolate DVAC overhead because monitor start state, exact phase timing, and instrumentation differ."
+  }
+}

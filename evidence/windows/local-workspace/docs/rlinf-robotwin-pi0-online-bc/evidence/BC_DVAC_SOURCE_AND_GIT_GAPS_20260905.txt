@@ -1,0 +1,134 @@
+2026-09-05T08:47:31+00:00
+73331da6d55a71fb521963eacd3c022b0571b8527cb9cd473a8483002a7fb84b  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/data/online_bc.py
+e6c5fc3e42eb0dbd02c3a7d4ddccd9f097ecdf68bad3f088f4cb61380e67738d  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/models/embodiment/openpi/openpi_action_model.py
+1d1fd85a2e8b9529e5f1069c8da67a464fc29fc1222c7c10056716ad0d608043  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+4890631d8a84189e13a617fb71d45cbca9b0bc2feab448de62c88ebdf2a1467b  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi0-online-bc/rlinf/workers/env/env_worker.py
+eaa18fe28a8065fb31da08f6ecd665d11b485f2a93f1100aefb0998889dc7c77  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv-fix/rlinf/algorithms/dvac_train_weighting.py
+188c36b8dc6f6c29beff34aab990e6d706077a7024d6b11fbff554ee99623985  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/grpo-dvac-action-adv-fix/rlinf/models/embodiment/openpi/openpi_action_model.py
+7c0de26d2fd47eae6d2871e6c95555ff03c3b9ec3181584a37b4763098548c9c  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-dvac-pure-single-gpu-7d07a421/rlinf/algorithms/rlt/dvac_weighting.py
+ rlinf/hybrid_engines/fsdp/fsdp_model_manager.py  |  2 ++
+ rlinf/hybrid_engines/fsdp/strategy/checkpoint.py | 33 ++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+diff --git a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+index c1daa572..7c2f01b0 100644
+--- a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
++++ b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+@@ -670,6 +670,8 @@ class FSDPModelManager:
+                     ]
+                 )
+             )
++        for optimizer in optimizers:
++            warmup_optimizer_state(optimizer)
+         return optimizers
+ 
+     def build_grad_scaler(self, enabled: bool, **kwargs) -> ShardedGradScaler:
+diff --git a/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py b/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+index 7f198b9f..9d8e9a6d 100644
+--- a/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
++++ b/rlinf/hybrid_engines/fsdp/strategy/checkpoint.py
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ from collections.abc import Iterable
++import os
+ from typing import Union
+ 
+ import torch
+@@ -63,6 +64,36 @@ class Checkpoint(Stateful):
+             for opt, opt_sd in zip(self.optimizers, optim_state_dicts):
+                 opt.load_state_dict(opt_sd)
+ 
++    def _log_optimizer_state(self, marker):
++        if os.environ.get("RLINF_CKPT_DIAG") != "1":
++            return
++        optimizers = (
++            (self.optimizers,)
++            if isinstance(self.optimizers, Optimizer)
++            else tuple(self.optimizers)
++        )
++        rank = torch.distributed.get_rank() if torch.distributed.is_initialized() else -1
++        for index, optimizer in enumerate(optimizers):
++            params = [param for group in optimizer.param_groups for param in group["params"]]
++            missing = [param for param in params if param not in optimizer.state]
++            empty = [param for param in params if not optimizer.state.get(param)]
++            steps = []
++            for param in params:
++                step = optimizer.state.get(param, {}).get("step")
++                if step is not None:
++                    steps.append(float(step.item() if isinstance(step, torch.Tensor) else step))
++            print(
++                "RLINF_CKPT_DIAG "
++                f"marker={marker} rank={rank} optimizer={index} "
++                f"params={len(params)} state_entries={len(optimizer.state)} "
++                f"missing={len(missing)} empty={len(empty)} "
++                f"step_zero={sum(step == 0 for step in steps)} "
++                f"step_gt0={sum(step > 0 for step in steps)} "
++                f"step_min={min(steps) if steps else 'none'} "
++                f"step_max={max(steps) if steps else 'none'}",
++                flush=True,
++            )
++
+     def state_dict(self):
+         if self.checkpoint_format == "local_shard":
+             model_sd = self.model.state_dict()
+@@ -84,11 +115,13 @@ class Checkpoint(Stateful):
+                 "rng": get_rng_state(),
+             }
+         else:
++            self._log_optimizer_state("before_get_state_dict")
+             model_sd, optim_sd = get_state_dict(
+                 model=self.model,
+                 optimizers=self.optimizers,
+                 options=self.opts,
+             )
++            self._log_optimizer_state("after_get_state_dict")
+ 
+             lr_sched_sd = [lr.state_dict() for lr in self.lr_schedulers]
+ 
+f3ea5f69 feat(rlt): add current RoboTwin formal protocol
+bdd87528 feat(rlt): port RoboTwin pi0 RLT to current RLinf
+7d07a421 chore: pin hf_hub<1.0 and reorganize env helpers (#1489)
+7153 /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/oidn_toggle_trial.py
+evidence/smoke_20260903/MANIFEST.sha256
+evidence/smoke_20260903/README.md
+evidence/smoke_20260903/b1_eval/command-sha256.txt
+evidence/smoke_20260903/b1_eval/command.txt
+evidence/smoke_20260903/b1_eval/driver.key.log
+evidence/smoke_20260903/b1_eval/events.out.tfevents
+evidence/smoke_20260903/b1_eval/exit_code.txt
+evidence/smoke_20260903/b1_eval/gpu-before.csv
+evidence/smoke_20260903/b1_eval/memory-before.txt
+evidence/smoke_20260903/b1_eval/metrics.log
+evidence/smoke_20260903/b1_eval/resolved.yaml
+evidence/smoke_20260903/b1_eval/resources.csv
+evidence/smoke_20260903/b1_eval/resources.log
+evidence/smoke_20260903/b1_eval/run-sha256.txt
+evidence/smoke_20260903/b1_eval/run.sh
+evidence/smoke_20260903/b1_eval/source-head.txt
+evidence/smoke_20260903/b1_eval/tensorboard-config.yaml
+evidence/smoke_20260903/grpo_step1/checkpoint-layout.txt
+evidence/smoke_20260903/grpo_step1/checkpoint-server-path.txt
+evidence/smoke_20260903/grpo_step1/command.txt
+evidence/smoke_20260903/grpo_step1/contract.json
+evidence/smoke_20260903/grpo_step1/driver.key.log
+evidence/smoke_20260903/grpo_step1/events.out.tfevents
+evidence/smoke_20260903/grpo_step1/exit_code.txt
+evidence/smoke_20260903/grpo_step1/gpu-before.csv
+evidence/smoke_20260903/grpo_step1/memory-before.txt
+evidence/smoke_20260903/grpo_step1/metrics.log
+evidence/smoke_20260903/grpo_step1/model-sha256.txt
+evidence/smoke_20260903/grpo_step1/resolved.yaml
+evidence/smoke_20260903/grpo_step1/resources.csv
+evidence/smoke_20260903/grpo_step1/resources.log
+evidence/smoke_20260903/grpo_step1/run-sha256.txt
+evidence/smoke_20260903/grpo_step1/run.sh
+evidence/smoke_20260903/grpo_step1/source-head.txt
+evidence/smoke_20260903/grpo_step1/tensorboard-config.yaml
+evidence/smoke_20260903/parity/report.json
+evidence/smoke_20260903/source-lock.txt
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/ppo/ppo-oneopt-4gpu128train64eval-v1", "small_files": [["metrics.log", 7628], ["resolved.yaml", 6875], ["driver.log", 47233], ["tensorboard/config.yaml", 7063]]}
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/ppo/ppo-reload-fixed64-4gpu4567-v1", "small_files": [["resolved.yaml", 3430], ["driver.log", 23205], ["tensorboard/config.yaml", 3567]]}
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/ppo/sft-fixed64-4gpu4567-official-half-v1", "small_files": [["metrics.log", 2240], ["resolved.yaml", 3287], ["driver.log", 22879], ["tensorboard/config.yaml", 3424]]}
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/scene-fence-env-local-smoke-20260904", "small_files": [["result.json", 2225], ["resolved.yaml", 2067], ["native_binding.txt", 547], ["smoke.log", 2777]]}
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/scene-fence-smoke-20260904", "small_files": [["result.json", 2184], ["resolved.yaml", 2047], ["native_binding.txt", 3759], ["smoke.log", 2738]]}
+{"run": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/oidn-toggle-20260904", "small_files": [["oidn/summary.json", 40075], ["oidn/exit_code.txt", 2], ["oidn/finished_at.txt", 26], ["oidn/resolved.yaml", 2826], ["oidn/official_resolved.yaml", 2733], ["oidn/started_at.txt", 26], ["oidn/trial.log", 14691], ["oidn/episode_2_seed_100100018/result.json", 11307], ["oidn/episode_1_seed_100100005/result.json", 11411], ["oidn/episode_0_seed_100100001/result.json", 11399], ["none/summary.json", 40209], ["none/exit_code.txt", 2], ["none/finished_at.txt", 26], ["none/resolved.yaml", 2826], ["none/official_resolved.yaml", 2733], ["none/started_at.txt", 26], ["none/trial.log", 14820], ["none/episode_2_seed_100100018/result.json", 11451], ["none/episode_1_seed_100100005/result.json", 11409], ["none/episode_0_seed_100100001/result.json", 11359]]}

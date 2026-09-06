@@ -1,0 +1,319 @@
+diff --git a/rlinf/algorithms/qam/contracts.py b/rlinf/algorithms/qam/contracts.py
+index 824d4d64..0a1fbf3a 100644
+--- a/rlinf/algorithms/qam/contracts.py
++++ b/rlinf/algorithms/qam/contracts.py
+@@ -16,6 +16,7 @@
+ 
+ import hashlib
+ import math
++from collections.abc import Sequence
+ from dataclasses import dataclass
+ from typing import Any
+ 
+@@ -28,6 +29,59 @@ PLANNED_HORIZON = 20
+ ACTIVE_ACTION_DIM = 14
+ PREFIX_BLOCKS = 4
+ QAM_REPLAY_SCHEMA_VERSION = 1
++QAM_PROMPT_BYTES = 256
++
++
++def encode_qam_prompt_batch(
++    prompts: Sequence[str],
++    *,
++    device: torch.device | str | None = None,
++) -> tuple[Tensor, Tensor]:
++    """Encode exact rollout prompts as fixed-width tensors for Trajectory."""
++    if isinstance(prompts, (str, bytes)) or len(prompts) == 0:
++        raise ValueError("QAM prompts must be a non-empty sequence of strings")
++    encoded = torch.zeros(
++        len(prompts),
++        QAM_PROMPT_BYTES,
++        dtype=torch.uint8,
++        device=device,
++    )
++    lengths = torch.zeros(len(prompts), dtype=torch.long, device=device)
++    for index, prompt in enumerate(prompts):
++        if not isinstance(prompt, str) or not prompt:
++            raise ValueError("each QAM prompt must be a non-empty string")
++        payload = prompt.encode("utf-8")
++        if len(payload) > QAM_PROMPT_BYTES:
++            raise ValueError(
++                f"QAM prompt uses {len(payload)} UTF-8 bytes; "
++                f"the fixed trajectory limit is {QAM_PROMPT_BYTES}"
++            )
++        encoded[index, : len(payload)] = torch.tensor(
++            list(payload),
++            dtype=torch.uint8,
++            device=device,
++        )
++        lengths[index] = len(payload)
++    return encoded, lengths
++
++
++def decode_qam_prompt(encoded: Tensor, length: Tensor | int) -> str:
++    """Decode one exact prompt row received through Trajectory."""
++    row = encoded.detach().cpu().to(dtype=torch.uint8).reshape(-1)
++    size = int(length.detach().cpu().reshape(-1)[0].item()) if isinstance(
++        length, Tensor
++    ) else int(length)
++    if row.numel() != QAM_PROMPT_BYTES:
++        raise ValueError(
++            f"QAM prompt row must contain {QAM_PROMPT_BYTES} bytes, "
++            f"got {row.numel()}"
++        )
++    if size <= 0 or size > QAM_PROMPT_BYTES:
++        raise ValueError(f"invalid QAM prompt byte length: {size}")
++    try:
++        return bytes(row[:size].tolist()).decode("utf-8")
++    except UnicodeDecodeError as exc:
++        raise ValueError("QAM prompt tensor is not valid UTF-8") from exc
+ 
+ 
+ def _expect_shape(tensor: Tensor, shape: tuple[int, ...], name: str) -> None:
+diff --git a/rlinf/models/embodiment/openpi/openpi_action_model.py b/rlinf/models/embodiment/openpi/openpi_action_model.py
+index 6b04e319..d6969275 100644
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -1304,6 +1304,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             forward_inputs["action"] = forward_action
+ 
+         if is_qam_active:
++            from rlinf.algorithms.qam.contracts import encode_qam_prompt_batch
+             from rlinf.models.embodiment.modules.qam_modules import (
+                 projection_fingerprint_tensor,
+             )
+@@ -1311,6 +1312,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+             assert canonical_planned_action is not None
+             planned_action = canonical_planned_action.to(dtype=torch.float32)
+             batch_size = planned_action.shape[0]
++            prompt_bytes, prompt_lengths = encode_qam_prompt_batch(
++                env_obs["task_descriptions"],
++                device=planned_action.device,
++            )
+             forward_inputs.update(
+                 {
+                     "qam_planned_action_normalized": planned_action.contiguous(),
+@@ -1318,6 +1323,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+                     "qam_proprio_normalized": outputs[
+                         "qam_proprio_normalized"
+                     ].contiguous(),
++                    "qam_prompt_utf8": prompt_bytes.contiguous(),
++                    "qam_prompt_length": prompt_lengths.contiguous(),
+                     "qam_prefix_block_lengths": outputs[
+                         "qam_prefix_block_lengths"
+                     ].contiguous(),
+diff --git a/rlinf/workers/actor/fsdp_qam_policy_worker.py b/rlinf/workers/actor/fsdp_qam_policy_worker.py
+index 9879ecab..3b42393f 100644
+--- a/rlinf/workers/actor/fsdp_qam_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_qam_policy_worker.py
+@@ -40,6 +40,7 @@ from rlinf.algorithms.qam.contracts import (
+     PLANNED_HORIZON,
+     QAMMacroTransition,
+     QAMPolicyObservation,
++    decode_qam_prompt,
+     fixed_slot_bootstrap_discount,
+     fixed_slot_discounted_return,
+     macro_bootstrap_mask,
+@@ -386,6 +387,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+         step: int,
+         env: int,
+         transform_fingerprint: str,
++        prompt: str,
+     ) -> QAMPolicyObservation:
+         cameras = extract_qam_camera_triplet(
+             obs,
+@@ -404,7 +406,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+         return QAMPolicyObservation(
+             cameras_uint8=cameras,
+             proprio=proprio,
+-            prompt=str(self.qam_cfg.task_prompt),
++            prompt=prompt,
+             task_id=str(self.cfg.env.train.task_config.task_name),
+             transform_fingerprint=transform_fingerprint,
+         )
+@@ -499,6 +501,8 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+         required = {
+             "qam_planned_action_normalized",
+             "qam_obs_feature",
++            "qam_prompt_utf8",
++            "qam_prompt_length",
+             "qam_prefix_block_lengths",
+             "qam_proprio_normalized",
+             "qam_projection_contract",
+@@ -544,6 +548,18 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+                     projection_fingerprint=fingerprint,
+                     prefix_block_lengths=block_lengths,
+                 )
++                prompt = decode_qam_prompt(
++                    self._row(
++                        forward_inputs["qam_prompt_utf8"],
++                        step=step,
++                        env=env,
++                    ),
++                    self._row(
++                        forward_inputs["qam_prompt_length"],
++                        step=step,
++                        env=env,
++                    ),
++                )
+ 
+                 terminated = self._trajectory_end_flag(
+                     trajectory.terminations,
+@@ -572,6 +588,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+                     step=step,
+                     env=env,
+                     transform_fingerprint=worker_fingerprint,
++                    prompt=prompt,
+                 )
+                 next_observation = None
+                 if next_state_valid:
+@@ -580,6 +597,7 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+                         step=step,
+                         env=env,
+                         transform_fingerprint=worker_fingerprint,
++                        prompt=prompt,
+                     )
+ 
+                 planned = self._row(
+@@ -997,24 +1015,38 @@ class QAMFSDPPolicy(EmbodiedFSDPActor):
+     ) -> dict[str, float]:
+         assert self.target_critic is not None
+         observations = [sample.observation for sample in samples]
+-        conditioning = self.model(
+-            forward_type=ForwardType.QAM_FLOW,
+-            operation="conditioning",
+-            env_obs=self._observations_to_env_obs(observations),
+-        )
++        was_training = self.model.training
++        try:
++            self.model.eval()
++            conditioning = self.model(
++                forward_type=ForwardType.QAM_FLOW,
++                operation="conditioning",
++                env_obs=self._observations_to_env_obs(observations),
++            )
++        finally:
++            self.model.train(was_training)
+         replay_feature = critic_batch["feature"]
+         recomputed_feature = conditioning["critic_feature"].to(
+             device=self.device,
+             dtype=torch.float32,
+         )
+-        if recomputed_feature.shape != replay_feature.shape or not torch.allclose(
++        if recomputed_feature.shape != replay_feature.shape:
++            raise ValueError(
++                "QAM frozen-prefix replay round-trip changed feature shape: "
++                f"replay={tuple(replay_feature.shape)} "
++                f"recomputed={tuple(recomputed_feature.shape)}"
++            )
++        if not torch.allclose(
+             recomputed_feature,
+             replay_feature,
+             atol=2e-3,
+             rtol=2e-3,
+         ):
++            absolute_error = (recomputed_feature - replay_feature).abs()
+             raise ValueError(
+-                "QAM frozen-prefix replay round-trip changed the critic feature"
++                "QAM frozen-prefix replay round-trip changed the critic feature: "
++                f"max_abs={absolute_error.max().item():.6g} "
++                f"mean_abs={absolute_error.mean().item():.6g}"
+             )
+ 
+         batch_size = len(samples)
+diff --git a/tests/embodiment/test_robotwin_qam_contract.py b/tests/embodiment/test_robotwin_qam_contract.py
+index 226d541a..f8ed67f9 100644
+--- a/tests/embodiment/test_robotwin_qam_contract.py
++++ b/tests/embodiment/test_robotwin_qam_contract.py
+@@ -26,7 +26,9 @@ from rlinf.algorithms.qam.contracts import (
+     QAMMacroTransition,
+     QAMPolicyObservation,
+     canonicalize_model_action,
++    decode_qam_prompt,
+     embed_planned_adjoint,
++    encode_qam_prompt_batch,
+     fixed_slot_bootstrap_discount,
+     fixed_slot_discounted_return,
+     macro_bootstrap_mask,
+@@ -38,6 +40,21 @@ CONTRACT_FINGERPRINT = "base+norm+pooling+action-v1"
+ TEST_PREFIX_FEATURE_DIM = 8
+ 
+ 
++def test_qam_prompt_tensor_round_trip_preserves_exact_language() -> None:
++    prompts = [
++        "Lift the red bottle head-up.",
++        "用右臂把蓝色瓶子直立拿起。",
++    ]
++    encoded, lengths = encode_qam_prompt_batch(prompts)
++    assert encoded.shape == (2, 256)
++    assert encoded.dtype == torch.uint8
++    assert lengths.dtype == torch.long
++    assert [
++        decode_qam_prompt(encoded[index], lengths[index])
++        for index in range(len(prompts))
++    ] == prompts
++
++
+ def _observation(value: int) -> QAMPolicyObservation:
+     return QAMPolicyObservation(
+         cameras_uint8=torch.full((3, 2, 2, 3), value, dtype=torch.uint8),
+diff --git a/tests/workers/test_qam_worker_helpers.py b/tests/workers/test_qam_worker_helpers.py
+index fbf75375..1d8f7ce0 100644
+--- a/tests/workers/test_qam_worker_helpers.py
++++ b/tests/workers/test_qam_worker_helpers.py
+@@ -21,6 +21,7 @@ from omegaconf import OmegaConf
+ 
+ from rlinf.algorithms.qam.contracts import (
+     QAMPolicyObservation,
++    encode_qam_prompt_batch,
+     project_planned_action,
+ )
+ from rlinf.algorithms.qam.core import terminal_mean_q_adjoint
+@@ -357,6 +358,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
+         dtype=torch.float32,
+     ).reshape(1, 1, 4, 5)
+     obs_proprio = torch.arange(14, dtype=torch.float32).reshape(1, 1, 14)
++    actual_prompt = "Lift the blue bottle head-up with the right arm."
++    prompt_bytes, prompt_lengths = encode_qam_prompt_batch([actual_prompt])
+ 
+     trajectory = Trajectory(
+         actions=planned_env,
+@@ -369,6 +372,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
+         forward_inputs={
+             "qam_planned_action_normalized": planned_normalized,
+             "qam_obs_feature": obs_feature,
++            "qam_prompt_utf8": prompt_bytes.unsqueeze(0),
++            "qam_prompt_length": prompt_lengths.unsqueeze(0),
+             "qam_prefix_block_lengths": torch.tensor([[[[3, 3, 3, 2]]]]).reshape(
+                 1, 1, 4
+             ),
+@@ -407,6 +412,8 @@ def test_qam_ingest_builds_one_causal_m2_replay_row(monkeypatch) -> None:
+     assert torch.equal(transition.chunk_rewards_native, rewards[0, 0])
+     assert transition.reward_macro_discounted == pytest.approx(2.0 * 0.9**19)
+     assert transition.policy_version == 7
++    assert sample.observation.prompt == actual_prompt
++    assert sample.next_observation.prompt == actual_prompt
+     assert transition.query_index == 0
+     assert not transition.success_terminated
+     assert transition.next_state_valid
+@@ -476,6 +483,7 @@ def test_qam_ingest_skips_rows_after_first_episode_end(monkeypatch) -> None:
+     )
+ 
+     trajectory_steps = 3
++    prompt_bytes, prompt_lengths = encode_qam_prompt_batch(["actual prompt"])
+     trajectory = Trajectory(
+         actions=torch.zeros(trajectory_steps, 1, 20, 14),
+         rewards=torch.zeros(trajectory_steps, 1, 20),
+@@ -491,6 +499,12 @@ def test_qam_ingest_skips_rows_after_first_episode_end(monkeypatch) -> None:
+                 14,
+             ),
+             "qam_obs_feature": torch.zeros(trajectory_steps, 1, 4, 5),
++            "qam_prompt_utf8": prompt_bytes.unsqueeze(0).repeat(
++                trajectory_steps, 1, 1
++            ),
++            "qam_prompt_length": prompt_lengths.unsqueeze(0).repeat(
++                trajectory_steps, 1
++            ),
+             "qam_prefix_block_lengths": torch.tensor([3, 3, 3, 2])
+             .reshape(1, 1, 4)
+             .repeat(trajectory_steps, 1, 1),

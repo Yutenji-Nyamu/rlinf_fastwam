@@ -1,0 +1,68 @@
+{
+  "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/packets/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/resolved.yaml",
+  "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/packets/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/resolved.yaml",
+  "differences": {
+    "algorithm.dvac_gradient_weighting.mode": {
+      "control": "off",
+      "dvac": "apply"
+    },
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2/dvac_train"
+    },
+    "cluster.component_placement.actor, env, rollout": {
+      "control": "4,5",
+      "dvac": "6,7"
+    },
+    "env.eval.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/eval",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/eval",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/video/eval"
+    },
+    "env.train.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/robotwin_data/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "control": "robotwin_grpo_control_2gpu64x4_b1024_fixed32_eval5_v2",
+      "dvac": "robotwin_grpo_dvac_global_z_w0to2_2gpu64x4_b1024_fixed32_eval5_v2"
+    },
+    "runner.logger.log_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/grpo-control-formal100-2gpu64x4-b1024-fixed32-eval5-phys45-v2",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-w0to2-formal100-2gpu64x4-b1024-fixed32-eval5-phys67-v2"
+    }
+  },
+  "allowed_differences": [
+    "actor.model.output_dir",
+    "algorithm.dvac_gradient_weighting.mode",
+    "algorithm.dvac_gradient_weighting.output_dir",
+    "cluster.component_placement.actor, env, rollout",
+    "env.eval.task_config.save_path",
+    "env.eval.video_cfg.video_base_dir",
+    "env.train.task_config.save_path",
+    "env.train.video_cfg.video_base_dir",
+    "runner.logger.experiment_name",
+    "runner.logger.log_path"
+  ],
+  "unexpected_differences": [],
+  "budget": {
+    "world_size": 2,
+    "train_env_per_rank": 32,
+    "trajectories_per_step": 256,
+    "groups_g8": 32,
+    "max_chunk_records": 1024,
+    "records_per_rank": 512,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "optimizer_calls_per_step": 2,
+    "fixed_eval": "32 x 1"
+  },
+  "conclusion": "control and DVAC differ only in method mode, placement, and run-scoped paths"
+}

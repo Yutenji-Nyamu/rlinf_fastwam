@@ -1,0 +1,127 @@
+{
+  "snapshot": {
+    "live_probe_time": "2026-08-22T21:12:19+08:00",
+    "latest_complete_global_step": 50,
+    "next_phase_at_detail_probe": "g50 complete; subsequent rollout active",
+    "controllers": "wrapper/driver/observer alive",
+    "checkpoints": [
+      "global_step_10",
+      "global_step_20",
+      "global_step_30",
+      "global_step_40"
+    ],
+    "run_size_reported": "49 GiB",
+    "runtime_size_reported": "110 MiB",
+    "resource_csv_through": "2026-08-22T21:21:20+08:00"
+  },
+  "three_run_training": {
+    "common_window_end": 50,
+    "runs": {
+      "Original GRPO": {
+        "latest_available_step": 100,
+        "latest_success_pct": 98.4375,
+        "own_window_success_mean_pct": 91.70703125,
+        "common_g1_to_g50_success_mean_pct": 88.2265625,
+        "common_latest5_success_pct": 91.71875,
+        "common_latest10_success_pct": 90.46875,
+        "common_approx_kl_mean": 0.04678,
+        "common_clip_pct_mean": 15.017999999999999,
+        "common_grad_norm_mean": 30.69634,
+        "common_step_minutes_mean": 24.609466666666666
+      },
+      "DVAC v1 global-z": {
+        "latest_available_step": 54,
+        "latest_success_pct": 88.671875,
+        "own_window_success_mean_pct": 86.66087962962963,
+        "common_g1_to_g50_success_mean_pct": 86.328125,
+        "common_latest5_success_pct": 88.046875,
+        "common_latest10_success_pct": 88.9453125,
+        "common_approx_kl_mean": 0.04543799999999999,
+        "common_clip_pct_mean": 14.836000000000002,
+        "common_grad_norm_mean": 34.13305999999999,
+        "common_step_minutes_mean": 24.76646666666667
+      },
+      "DVAC v2 R-only": {
+        "latest_available_step": 50,
+        "latest_success_pct": 94.140625,
+        "own_window_success_mean_pct": 87.2578125,
+        "common_g1_to_g50_success_mean_pct": 87.2578125,
+        "common_latest5_success_pct": 92.1875,
+        "common_latest10_success_pct": 90.8984375,
+        "common_approx_kl_mean": 0.038119999999999994,
+        "common_clip_pct_mean": 14.35,
+        "common_grad_norm_mean": 30.736639999999998,
+        "common_step_minutes_mean": 24.891233333333336
+      }
+    },
+    "deltas_vs_grpo_common_window": {
+      "DVAC v1 global-z": {
+        "g1_to_g50_mean_success_pp": -1.8984375,
+        "latest5_success_pp": -3.671875,
+        "latest10_success_pp": -1.5234375
+      },
+      "DVAC v2 R-only": {
+        "g1_to_g50_mean_success_pp": -0.96875,
+        "latest5_success_pp": 0.46875,
+        "latest10_success_pp": 0.4296875
+      }
+    }
+  },
+  "v2_method_g2_to_g50": {
+    "weight_mean": 0.9951490720608258,
+    "weight_p05_mean": 0.6924594251476989,
+    "weight_median_mean": 1.0289563877241952,
+    "weight_p95_mean": 1.1989717118594112,
+    "downweighted_fraction_mean": 0.38965328346855554,
+    "upweighted_fraction_mean": 0.6103459529399857,
+    "lower_bound_fraction_mean": 0.006018974250203654,
+    "upper_bound_fraction_mean": 0.08414726615840183,
+    "positive_adv_weight_mean": 0.9844626650518301,
+    "negative_adv_weight_mean": 1.017637843380169,
+    "latest_horizon": {
+      "valid_queries": 207,
+      "valid_weight_points": 10350,
+      "weight_mean": 0.9446288347244263,
+      "weight_p05": 0.563242495059967,
+      "weight_p50": 1.0005155801773071,
+      "weight_p95": 1.2000000476837158,
+      "weight_below_one_fraction": 0.4983574879227053,
+      "weight_above_one_fraction": 0.5016425120772947,
+      "weight_at_min_fraction": 0.028888888888888888,
+      "weight_at_max_fraction": 0.0829951690821256,
+      "positive_adv_query_weight_mean": 0.9324629306793213,
+      "negative_adv_query_weight_mean": 0.9744351506233215,
+      "raw_log_v_back_minus_front": 0.28375816345214844,
+      "position_center_back_minus_front": 0.09558876037597619,
+      "residual_back_minus_front": 0.3882595896720886,
+      "weight_back_minus_front": 0.061416804790496826,
+      "weight_h_spearman": 0.9103961584633853,
+      "center_rank_max_abs_difference": 0.0,
+      "scale_rank_max_abs_difference": 0.0
+    },
+    "latest_weight_geometry": {
+      "valid_queries": 207,
+      "weight_ess_ratio_mean": 0.9723507866181328,
+      "effective_h_mean": 48.61753933090664,
+      "per_query_coefficient_angle_deg_mean": 9.116995099107362,
+      "advantage_weighted_coefficient_cosine": 0.9800253676580413,
+      "advantage_weighted_coefficient_angle_deg": 11.471034750411215,
+      "pooled_top20_weight_mass": 0.2481335485643533
+    }
+  },
+  "v2_resources": {
+    "gpu0_peak_gib": 30.3681640625,
+    "gpu1_peak_gib": 30.2177734375,
+    "cgroup_peak_gib": 239.99992752075195,
+    "cgroup_latest_gib": 239.10571670532227,
+    "cgroup_limit_gib": 240.0,
+    "anon_peak_gib": 159.59886932373047,
+    "file_peak_gib": 84.90475463867188,
+    "event_max_latest": 36140,
+    "event_max_first_nonzero_timestamp": "2026-08-22T16:51:53+08:00",
+    "event_oom_latest": 0,
+    "event_oom_kill_latest": 0,
+    "host_ram_available_min_gib": 818.2888145446777,
+    "disk_available_min_gib": 704.8972930908203
+  }
+}

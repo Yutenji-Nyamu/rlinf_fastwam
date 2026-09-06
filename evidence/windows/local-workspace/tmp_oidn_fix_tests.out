@@ -1,0 +1,180 @@
+lifecycle_event_order=PASS
+vector_env=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/robotwin/envs/vector_env.py
+ robotwin/envs/vector_env.py | 83 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 48 insertions(+), 35 deletions(-)
+diff --git a/robotwin/envs/vector_env.py b/robotwin/envs/vector_env.py
+index c55d3b4..94043ab 100644
+--- a/robotwin/envs/vector_env.py
++++ b/robotwin/envs/vector_env.py
+@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
+ 
+ import gymnasium as gym
+ import numpy as np
++from sapien.render import clear_cache as sapien_clear_cache
+ from description.utils.generate_episode_instructions import (
+     generate_episode_descriptions,
+ )
+@@ -84,8 +85,6 @@ class SubEnv:
+         self.instruction_type = instruction_type
+         self.global_lock = global_lock
+         self.lock = threading.Lock()
+-        self.reset_count = 0
+-        self.clear_cache_freq = max(1, int(self.args.get("clear_cache_freq", 8)))
+ 
+     def setup_task(self):
+         self.close()
+@@ -107,10 +106,10 @@ class SubEnv:
+                         episode_info = task.get_info()
+                         is_valid = True
+                     except Exception as e:
+-                        task.close_env()
++                        task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+-                    task.close_env()
++                    task.close_env(clear_cache=False)
+ 
+                 self.episode_info_list = [episode_info]
+ 
+@@ -138,16 +137,17 @@ class SubEnv:
+             "info": info,
+         }
+ 
+-    def reset(self, env_seed=None):
++    def reset(self, env_seed=None, close_current=True):
+         with self.global_lock:
+             with self.lock:
+-                if self.task is not None:
+-                    self.reset_count += 1
+-                    should_clear_cache = self.reset_count % self.clear_cache_freq == 0
+-                    self.task.close_env(clear_cache=should_clear_cache)
++                if close_current and self.task is not None:
++                    self.task.close_env(clear_cache=False)
+                 if env_seed is not None:
+                     self.env_seed = env_seed
+ 
++                if self.task is None:
++                    self.task = class_decorator(self.task_name)
++
+                 self.instruction = self.create_instruction()
+                 self.args["instruction"] = self.instruction
+ 
+@@ -166,14 +166,14 @@ class SubEnv:
+                         logging.warning(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         trial_seed += 1
+                         continue
+                     except Exception as e:
+                         logging.error(
+                             f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                         )
+-                        self.task.close_env(clear_cache=True)
++                        self.task.close_env(clear_cache=False)
+                         raise
+ 
+         return
+@@ -192,10 +192,11 @@ class SubEnv:
+                 return None
+             return self.instruction
+ 
+-    def close(self, clear_cache=True):
++    def close(self):
+         if self.task is not None:
+             with self.lock:
+-                self.task.close_env(clear_cache=clear_cache)
++                self.task.close_env(clear_cache=False)
++                self.task = None
+ 
+     def check_seed(self, seed):
+         setup_demo_success = False
+@@ -318,6 +319,8 @@ class VectorEnv(gym.Env):
+         self.instruction_type = instruction_type
+ 
+         self.global_lock = threading.Lock()
++        self.full_reset_count = 0
++        self.clear_cache_freq = args["clear_cache_freq"]
+ 
+         self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
+ 
+@@ -388,26 +391,37 @@ class VectorEnv(gym.Env):
+         else:
+             env_idx = [env_idx]
+ 
+-        reset_futures = {}
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                seed = None
+-                if env_seeds is not None and len(env_seeds) == len(env_idx):
+-                    seed_idx = env_idx.index(idx)
+-                    seed = env_seeds[seed_idx]
++        valid_idx = [idx for idx in env_idx if 0 <= idx < self.n_envs]
++        seeds = {}
++        if env_seeds is not None and len(env_seeds) == len(env_idx):
++            seeds = {idx: env_seeds[pos] for pos, idx in enumerate(env_idx)}
+ 
+-                future = self.env_thread_pool.submit(
+-                    self.envs[idx].reset, env_seed=seed
++        # SAPIEN's renderer cache is process-global. It is only safe to clear it
++        # after every child renderer in this VectorEnv has released its local
++        # references. Partial episode resets therefore never clear this cache.
++        full_reset = len(valid_idx) == self.n_envs and set(valid_idx) == set(
++            range(self.n_envs)
++        )
++        if full_reset:
++            for env in self.envs:
++                env.close()
++            self.full_reset_count += 1
++            if self.full_reset_count % self.clear_cache_freq == 0:
++                gc.collect()
++                sapien_clear_cache()
++                torch.cuda.empty_cache()
++
++        # reset() was previously submitted to the pool, but a process-wide
++        # lock serialized every reset already. Keeping lifecycle operations on
++        # this caller thread avoids renderer creation/destruction affinity
++        # ambiguity while step() remains parallel.
++        for idx in valid_idx:
++            try:
++                self.envs[idx].reset(
++                    env_seed=seeds.get(idx), close_current=not full_reset
+                 )
+-                reset_futures[idx] = future
+-
+-        for idx in env_idx:
+-            if 0 <= idx < self.n_envs:
+-                future = reset_futures[idx]
+-                try:
+-                    future.result(timeout=120)
+-                except Exception as e:
+-                    raise RuntimeError(f"SubEnv {idx} reset error: {e}")
++            except Exception as e:
++                raise RuntimeError(f"SubEnv {idx} reset error: {e}")
+ 
+     def get_obs(self):
+         obs_venv = []
+@@ -418,13 +432,12 @@ class VectorEnv(gym.Env):
+ 
+     def close(self, clear_cache=True):
+         for env in self.envs:
+-            env.close(clear_cache=clear_cache)
++            env.close()
+ 
+         if clear_cache:
+-            for env in self.envs:
+-                env = None
+             self.envs = []
+             gc.collect()
++            sapien_clear_cache()
+             torch.cuda.empty_cache()
+ 
+     def check_seeds(self, seeds: list[int]):
+@@ -480,4 +493,4 @@ if __name__ == "__main__":
+             obs = (
+                 env.get_obs()
+             )
+-        env.close()
+\ No newline at end of file
++        env.close()

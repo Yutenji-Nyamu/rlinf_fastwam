@@ -1,0 +1,11 @@
+diff --git a/tools/fastwam_scene_fence/build.sh b/tools/fastwam_scene_fence/build.sh
+--- a/tools/fastwam_scene_fence/build.sh
++++ b/tools/fastwam_scene_fence/build.sh
+@@ -18,6 +18,7 @@ g++ -std=c++20 -O2 -DNDEBUG -fPIC -shared -fvisibility=hidden \
+   -I"$site/sapien/include" "$here/scene_fence.cpp" \
+   -Wl,--no-as-needed "$base" -Wl,--as-needed \
+   -Wl,-z,defs -Wl,-rpath,"$site/sapien.libs" \
++  -Wl,--version-script="$here/exports.map" \
+   -Wl,-soname,librlinf_scene_fence.so \
+   -o "$out/librlinf_scene_fence.so"
+ sha256sum "$base" "$out/librlinf_scene_fence.so" \

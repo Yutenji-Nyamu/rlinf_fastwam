@@ -1,0 +1,171 @@
+{
+  "L3_dimension_variance_share": {
+    "d0": 0.05029767006635666,
+    "d1": 0.04391099885106087,
+    "d10": 0.06697041541337967,
+    "d11": 0.0871795043349266,
+    "d12": 0.062605120241642,
+    "d13": 0.13387279212474823,
+    "d2": 0.050428472459316254,
+    "d3": 0.036019839346408844,
+    "d4": 0.04166566580533981,
+    "d5": 0.10309027135372162,
+    "d6": 0.11208508163690567,
+    "d7": 0.08119641244411469,
+    "d8": 0.06029795855283737,
+    "d9": 0.0703798159956932
+  },
+  "L_horizon_level_spearman_descriptive_only": {
+    "L2_L3": 0.7412002008008006,
+    "L2_L4": 0.45001369889507675,
+    "L3_L4": 0.7522058971348721
+  },
+  "L_query_level_spearman": {
+    "L2_L3": 0.8266483516483515,
+    "L2_L4": 0.6292582417582417,
+    "L3_L4": 0.8079670329670329
+  },
+  "by_outcome_descriptive_only": {
+    "failure": {
+      "L2_median_log10_V_total": -0.7595111131668091,
+      "L3_median_log10_V_total": 0.028830822557210922,
+      "L4_median_log10_V_total": 1.0184017419815063,
+      "episode_count": 2,
+      "query_count": 8
+    },
+    "success": {
+      "L2_median_log10_V_total": -0.8113610744476318,
+      "L3_median_log10_V_total": -0.24037370085716248,
+      "L4_median_log10_V_total": 0.24093332886695862,
+      "episode_count": 14,
+      "query_count": 56
+    }
+  },
+  "by_query_idx": {
+    "0": {
+      "L2_median_V_total": 0.17290198802947998,
+      "L2_median_log10_V_total": -0.7622487545013428,
+      "L3_median_V_total": 0.6949483156204224,
+      "L3_median_log10_V_total": -0.15805241465568542,
+      "L4_median_V_total": 4.285947799682617,
+      "L4_median_log10_V_total": 0.6283634305000305
+    },
+    "1": {
+      "L2_median_V_total": 0.18120397627353668,
+      "L2_median_log10_V_total": -0.7418373823165894,
+      "L3_median_V_total": 0.8457503318786621,
+      "L3_median_log10_V_total": -0.07305686920881271,
+      "L4_median_V_total": 2.9090027809143066,
+      "L4_median_log10_V_total": 0.4635125398635864
+    },
+    "2": {
+      "L2_median_V_total": 0.1299615353345871,
+      "L2_median_log10_V_total": -0.8863486647605896,
+      "L3_median_V_total": 0.4395909309387207,
+      "L3_median_log10_V_total": -0.35695189237594604,
+      "L4_median_V_total": 1.4523320198059082,
+      "L4_median_log10_V_total": 0.16185997426509857
+    },
+    "3": {
+      "L2_median_V_total": 0.09270444512367249,
+      "L2_median_log10_V_total": -1.0343676805496216,
+      "L3_median_V_total": 0.36838042736053467,
+      "L3_median_log10_V_total": -0.4349249601364136,
+      "L4_median_V_total": 1.2290538549423218,
+      "L4_median_log10_V_total": 0.08953818678855896
+    }
+  },
+  "coarse_success_boundary": "All 14 successful episodes have success_before=False at q2 and True at q3; the task predicate first becomes true during the executed q2 C50 chunk.",
+  "counts": {
+    "active_action_dim": 14,
+    "denoising_steps": 4,
+    "episodes": 16,
+    "failure_episodes": 2,
+    "horizon": 50,
+    "queries": 64,
+    "queries_per_episode": {
+      "0": 4,
+      "1": 4,
+      "2": 4,
+      "3": 4,
+      "4": 4,
+      "5": 4,
+      "6": 4,
+      "7": 4,
+      "8": 4,
+      "9": 4,
+      "10": 4,
+      "11": 4,
+      "12": 4,
+      "13": 4,
+      "14": 4,
+      "15": 4
+    },
+    "success_episodes": 14
+  },
+  "evidence_limits": [
+    "Four C50 queries per episode are query-level time points, not per-control-step phase resolution.",
+    "No simulator contact or externally annotated MOVING/OPERATING label is present.",
+    "Only two failed episodes; success/failure summaries are descriptive, not inferential.",
+    "L2/L3/L4 use different denoising tails and their absolute scales are not interchangeable.",
+    "No online adaptive execution occurred; N_exec effects cannot be estimated causally from this fixed-C50 run."
+  ],
+  "formula": {
+    "V_L_h": "sum_d coordinate_variance",
+    "V_total": "sum_h V_L_h",
+    "coordinate_variance": "var(z[-L:,h,d], axis=denoise, ddof=0)",
+    "tail_lengths": [
+      2,
+      3,
+      4
+    ]
+  },
+  "generated_at_utc": "2026-08-20T12:01:28.745859+00:00",
+  "representatives": {
+    "episode_ids": [
+      7,
+      6,
+      5,
+      9
+    ],
+    "failure_episodes": [
+      5,
+      9
+    ],
+    "high_query_uid": "ep000005_q000_reset100100081",
+    "high_variance_success_episode": 6,
+    "low_query_uid": "ep000002_q003_reset100100113",
+    "typical_success_episode": 7
+  },
+  "schema_version": 1,
+  "source_csv_sha256": {
+    "episode_index_env_rank00.csv": "7702abf3040d325501c984585b03afd8b8d6f75be35fcc01ae4d9abd44976f93",
+    "episode_index_env_rank01.csv": "b488a39321fbbb1d40ae6d27e023ca88feae797954a8e1c75dbd6ea13436c237",
+    "query_index_rollout_rank00.csv": "8b69f855669713161962e7e9eea3d1b3e12f29542b96ba9c1b640faa98f6b391",
+    "query_index_rollout_rank01.csv": "a38b764b6e27b698df80bbc757241f62ecbd25449517fbd4f161fd777abe6fb2"
+  },
+  "source_directory": "/root/autodl-tmp/RLinf_idea2_dvac_pi0_robotwin/outputs/idea2_dvac_sft_smoke_2gpu_16env_v1/dvac_telemetry",
+  "source_trace_sha256": {
+    "trace_rollout_rank00.npz": "cf4bfd1978c6874efa66d6f2d49136262eae4ee7951cf5efb75a40c9c8f7cc2b",
+    "trace_rollout_rank01.npz": "c7081042d9087a026ad1a0a5a914d4da58e2fbcaeccf61ec2b728a05f8b8f911"
+  },
+  "success_before_counts": {
+    "q0_pre_success": 16,
+    "q1_pre_success": 16,
+    "q2_pre_success": 16,
+    "q3_post_success": 14,
+    "q3_pre_success": 2
+  },
+  "timesteps": [
+    1.0,
+    0.75,
+    0.5,
+    0.25
+  ],
+  "validation": {
+    "all_trace_arrays_finite": true,
+    "max_abs_x_chain_final_vs_final_model_action": 0.0,
+    "query_episode_join_complete": true,
+    "unique_query_uid": true
+  }
+}

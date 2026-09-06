@@ -1,0 +1,88 @@
+uid=1003(chenyiteng) gid=1003(chenyiteng) groups=1003(chenyiteng),27(sudo),1005(labdata)
+2026-09-05T04:33:40+00:00
+ docs/online_bc.md                                           | 11 +++++++++++
+ .../config/robotwin_adjust_bottle_online_bc_openpi.yaml     |  8 +++++++-
+ rlinf/workers/actor/fsdp_online_bc_policy_worker.py         | 13 +++++++------
+ tests/unit_tests/test_online_bc.py                          |  9 +++++++++
+ 4 files changed, 34 insertions(+), 7 deletions(-)
+diff --git a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+index 8e707049..1ba809fb 100644
+--- a/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
++++ b/examples/embodiment/config/robotwin_adjust_bottle_online_bc_openpi.yaml
+@@ -143,7 +143,13 @@ actor:
+     min_lr: 2.5e-5
+   fsdp_config:
+     sharding_strategy: no_shard
+-    use_orig_params: true
++    use_orig_params: false  # Match validated pi0 GRPO / official pi0 DAgger.
++    checkpoint_format: local_shard  # Same topology on resume; explicit, not dtype-dependent.
++    # Joint-prefix/suffix SFT calls inside GemmaDecoderLayer.forward; wrap the
++    # MLP/norm/projections actually invoked, keeping frozen and trained flats separate.
++    wrap_policy:
++      transformer_layer_cls_to_wrap: [GemmaMLP, SiglipVisionEmbeddings, GemmaRMSNorm, GemmaRotaryEmbedding]
++      no_split_names: [q_proj, k_proj, v_proj, o_proj, action_in_proj, action_out_proj, lm_head, state_proj, action_time_mlp_in, action_time_mlp_out, time_mlp_in, time_mlp_out]
+     mixed_precision:
+       param_dtype: ${actor.model.precision}
+       reduce_dtype: ${actor.model.precision}
+diff --git a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+index 5155a281..3e29c112 100644
+--- a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+@@ -37,6 +37,11 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         # Only the generic supervised update loop is inherited; no teacher,
+         # intervention extraction, LeRobot collector or DAgger loss is used.
+         bc = self.cfg.algorithm.online_bc
++        self.checkpoint_format = self.cfg.actor.fsdp_config.get(
++            "checkpoint_format", "local_shard"
++        )
++        if self.checkpoint_format not in ("local_shard", "dcp"):
++            raise ValueError("Online BC checkpoint_format must be local_shard or dcp.")
+         self.demo_weight = float(bc.demo_weight)
+         if self.demo_weight < 0:
+             raise ValueError("online_bc.demo_weight must be non-negative.")
+@@ -136,9 +141,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+             optimizers=[self.optimizer],
+             lr_schedulers=[self.lr_scheduler],
+             save_path=save_base_path,
+-            checkpoint_format="local_shard"
+-            if self.cfg.actor.fsdp_config.use_orig_params
+-            else "dcp",
++            checkpoint_format=self.checkpoint_format,
+         )
+         target = Path(save_base_path) / "online_bc" / f"rank_{self._rank}"
+         self.replay_buffer.save_checkpoint(target)
+@@ -150,9 +153,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+             optimizers=[self.optimizer],
+             lr_schedulers=[self.lr_scheduler],
+             load_path=load_base_path,
+-            checkpoint_format="local_shard"
+-            if self.cfg.actor.fsdp_config.use_orig_params
+-            else "dcp",
++            checkpoint_format=self.checkpoint_format,
+         )
+         target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
+         self.replay_buffer.load_checkpoint(target)
+[codex/sz-pi0-online-bc 5ae809d5] Align expert-only joint SFT FSDP wrapping and explicit BC checkpoint format
+ 4 files changed, 34 insertions(+), 7 deletions(-)
+VERIFIED_HEAD=5ae809d5a8c8c293540b57d14e423050c2c1e8d2
+0, 9828, 0
+1, 4, 0
+2, 4, 0
+3, 6, 0
+4, 57956, 0
+5, 59406, 69
+6, 8, 0
+7, 6, 0
+               total        used        free      shared  buff/cache   available
+Mem:           2.0Ti       883Gi       303Gi        25Gi       828Gi       1.1Ti
+Swap:          6.0Gi       6.0Gi       0.0Ki
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1    3.5T  2.7T  665G  81% /data
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+13  0 6262772 317976320 2835516 865976832    0    0     9    31    0    0  3  2 95  0  0
+ 9  0 6262772 317528928 2835516 866057088    0    0     0   296 70352 165386  2  3 94  0  0
+USER         PID     ELAPSED STAT COMMAND
+chenyit+  321933 12-12:05:59 Sl   gcs_server
+chenyit+  322685 12-12:05:57 Sl   raylet
+chenyit+ 3176215  1-16:10:11 Sl   python

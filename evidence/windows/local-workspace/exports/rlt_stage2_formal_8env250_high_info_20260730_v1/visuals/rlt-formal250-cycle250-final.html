@@ -1,0 +1,304 @@
+﻿<div id="rlt-verified-progress" style="position:relative">
+  <style>
+    #rlt-verified-progress .rlt-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      color: var(--foreground);
+    }
+    #rlt-verified-progress .rlt-axis {
+      stroke: var(--border);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-grid {
+      stroke: var(--border);
+      stroke-width: 1;
+      opacity: 0.65;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-label {
+      fill: var(--muted-foreground);
+      font-size: 11px;
+      font-weight: 400;
+    }
+    #rlt-verified-progress .rlt-phase-label {
+      fill: var(--foreground);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    #rlt-verified-progress .rlt-train {
+      fill: none;
+      stroke: var(--viz-series-1);
+      stroke-width: 2.5;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-eval {
+      fill: none;
+      stroke: var(--viz-series-2);
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-updates {
+      fill: none;
+      stroke: var(--viz-series-4);
+      stroke-width: 2.25;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-current {
+      stroke: var(--foreground);
+      stroke-width: 1.25;
+      stroke-dasharray: 5 4;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-guide {
+      stroke: var(--muted-foreground);
+      stroke-width: 1;
+      stroke-dasharray: 3 4;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-hit {
+      fill: transparent;
+      cursor: crosshair;
+    }
+    #rlt-verified-progress .rlt-focus {
+      stroke: var(--foreground);
+      stroke-width: 1;
+      opacity: 0;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-dot {
+      fill: var(--viz-series-2);
+      stroke: var(--background);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
+    }
+    #rlt-verified-progress .rlt-legend {
+      margin-bottom: 0.5rem;
+    }
+    #rlt-verified-progress .rlt-swatch {
+      width: 1.2rem;
+      height: 0.18rem;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 0.25rem;
+      background: var(--viz-series-1);
+    }
+    #rlt-verified-progress .rlt-swatch.eval {
+      background: var(--viz-series-2);
+    }
+    #rlt-verified-progress .rlt-swatch.updates {
+      background: var(--viz-series-4);
+    }
+    #rlt-verified-progress .rlt-detail {
+      min-height: 1.5rem;
+      margin-top: 0.35rem;
+    }
+  </style>
+  <div class="viz-row rlt-legend text-small" aria-label="Legend">
+    <span><span class="rlt-swatch"></span>Train success, rolling 10 cycles</span>
+    <span><span class="rlt-swatch eval"></span>Deterministic eval, 20 episodes</span>
+    <span><span class="rlt-swatch updates"></span>Cumulative critic updates</span>
+  </div>
+  <svg
+    id="rlt-verified-svg"
+    class="rlt-chart"
+    viewBox="0 0 736 430"
+    role="img"
+    aria-labelledby="rlt-verified-title rlt-verified-desc"
+  >
+    <title id="rlt-verified-title">RLT Stage 2 success and optimization progress</title>
+    <desc id="rlt-verified-desc">
+      Full training history with four actual phases, deterministic evaluations,
+      and cumulative critic updates through the latest complete cycle.
+    </desc>
+  </svg>
+  <div id="rlt-verified-detail" class="rlt-detail text-small text-muted"></div>
+  <div class="table-responsive">
+    <table class="table table-sm" aria-label="Observed phase success summary">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>Observed cycles</th>
+          <th class="text-end">Train success</th>
+        </tr>
+      </thead>
+      <tbody id="rlt-verified-phase-table"></tbody>
+    </table>
+  </div>
+  <script>
+    (() => {
+      const data = {"currentCycle":250,"plannedCycles":250,"boundaries":{"p2":136,"p3":155,"p4":192},"train":[[1,1],[2,2],[3,1],[4,3],[5,3],[6,0],[7,0],[8,1],[9,2],[10,0],[11,2],[12,2],[13,1],[14,2],[15,1],[16,0],[17,1],[18,1],[19,2],[20,0],[21,3],[22,2],[23,1],[24,2],[25,1],[26,2],[27,2],[28,0],[29,0],[30,3],[31,0],[32,0],[33,0],[34,1],[35,0],[36,2],[37,1],[38,2],[39,2],[40,1],[41,1],[42,1],[43,1],[44,1],[45,1],[46,2],[47,1],[48,3],[49,0],[50,2],[51,0],[52,1],[53,2],[54,0],[55,1],[56,2],[57,2],[58,2],[59,1],[60,1],[61,1],[62,1],[63,0],[64,1],[65,1],[66,1],[67,2],[68,2],[69,0],[70,0],[71,1],[72,1],[73,1],[74,3],[75,0],[76,1],[77,0],[78,1],[79,0],[80,0],[81,2],[82,1],[83,0],[84,0],[85,1],[86,0],[87,1],[88,1],[89,2],[90,1],[91,1],[92,1],[93,0],[94,0],[95,1],[96,1],[97,1],[98,3],[99,3],[100,0],[101,2],[102,1],[103,1],[104,4],[105,2],[106,4],[107,0],[108,0],[109,1],[110,1],[111,2],[112,0],[113,0],[114,1],[115,0],[116,0],[117,1],[118,3],[119,0],[120,2],[121,0],[122,0],[123,0],[124,1],[125,2],[126,1],[127,1],[128,5],[129,2],[130,2],[131,0],[132,1],[133,1],[134,3],[135,0],[136,1],[137,1],[138,3],[139,1],[140,2],[141,0],[142,1],[143,2],[144,0],[145,1],[146,0],[147,3],[148,1],[149,0],[150,2],[151,2],[152,2],[153,0],[154,0],[155,0],[156,1],[157,0],[158,0],[159,0],[160,2],[161,0],[162,0],[163,0],[164,1],[165,0],[166,0],[167,3],[168,0],[169,1],[170,1],[171,1],[172,3],[173,3],[174,4],[175,2],[176,2],[177,3],[178,2],[179,4],[180,3],[181,2],[182,5],[183,6],[184,4],[185,7],[186,5],[187,6],[188,5],[189,6],[190,5],[191,7],[192,8],[193,8],[194,4],[195,6],[196,6],[197,8],[198,6],[199,5],[200,4],[201,5],[202,7],[203,6],[204,7],[205,8],[206,7],[207,7],[208,6],[209,7],[210,5],[211,5],[212,6],[213,5],[214,8],[215,7],[216,7],[217,7],[218,6],[219,4],[220,8],[221,7],[222,4],[223,6],[224,6],[225,8],[226,5],[227,4],[228,6],[229,4],[230,8],[231,7],[232,6],[233,6],[234,4],[235,6],[236,8],[237,7],[238,7],[239,7],[240,8],[241,6],[242,6],[243,7],[244,7],[245,6],[246,5],[247,8],[248,7],[249,8],[250,8]],"eval":[[25,0],[50,0],[75,0],[100,0],[125,0],[150,1],[175,6],[200,16],[225,11],[250,18]],"criticUpdates":[[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[13,0],[14,0],[15,0],[16,0],[17,0],[18,0],[19,0],[20,0],[21,0],[22,0],[23,0],[24,0],[25,0],[26,0],[27,0],[28,0],[29,0],[30,0],[31,0],[32,0],[33,0],[34,0],[35,0],[36,0],[37,0],[38,0],[39,0],[40,0],[41,0],[42,0],[43,0],[44,0],[45,0],[46,0],[47,0],[48,0],[49,0],[50,0],[51,0],[52,0],[53,0],[54,0],[55,0],[56,0],[57,0],[58,0],[59,0],[60,0],[61,0],[62,0],[63,0],[64,0],[65,0],[66,0],[67,0],[68,0],[69,0],[70,0],[71,0],[72,0],[73,0],[74,0],[75,0],[76,0],[77,0],[78,0],[79,0],[80,0],[81,0],[82,0],[83,0],[84,0],[85,0],[86,0],[87,0],[88,0],[89,0],[90,0],[91,0],[92,0],[93,0],[94,0],[95,0],[96,0],[97,0],[98,0],[99,0],[100,0],[101,0],[102,0],[103,0],[104,0],[105,0],[106,0],[107,0],[108,0],[109,0],[110,0],[111,0],[112,0],[113,0],[114,0],[115,0],[116,0],[117,0],[118,0],[119,0],[120,0],[121,0],[122,0],[123,0],[124,0],[125,0],[126,0],[127,0],[128,0],[129,0],[130,0],[131,0],[132,0],[133,0],[134,0],[135,0],[136,1600],[137,3200],[138,4800],[139,6400],[140,8000],[141,9600],[142,11200],[143,12800],[144,14400],[145,16000],[146,17600],[147,19200],[148,20800],[149,22400],[150,24000],[151,25600],[152,27200],[153,28800],[154,30400],[155,32000],[156,33600],[157,35200],[158,36800],[159,38400],[160,40000],[161,41600],[162,43200],[163,44800],[164,46400],[165,48000],[166,49600],[167,51200],[168,52800],[169,54400],[170,56000],[171,56795],[172,57500],[173,58225],[174,58910],[175,59640],[176,60390],[177,61090],[178,61810],[179,62475],[180,63180],[181,63905],[182,64555],[183,65160],[184,65830],[185,66425],[186,67085],[187,67730],[188,68370],[189,68965],[190,69570],[191,70115],[192,70615],[193,71120],[194,71780],[195,72360],[196,72930],[197,73405],[198,73975],[199,74575],[200,75215],[201,75825],[202,76360],[203,76895],[204,77400],[205,77870],[206,78390],[207,78940],[208,79480],[209,79985],[210,80575],[211,81165],[212,81725],[213,82310],[214,82795],[215,83305],[216,83815],[217,84310],[218,84890],[219,85520],[220,85980],[221,86490],[222,87125],[223,87680],[224,88230],[225,88690],[226,89300],[227,89945],[228,90490],[229,91115],[230,91595],[231,92105],[232,92670],[233,93235],[234,93875],[235,94435],[236,94930],[237,95460],[238,95995],[239,96515],[240,97010],[241,97560],[242,98120],[243,98630],[244,99135],[245,99690],[246,100285],[247,100770],[248,101300],[249,101745],[250,102260]],"summary":{"boundaries":{"p2":136,"p3":155,"p4":192},"success":{"current_cycle":250,"phase_rows":[{"phase":"P1","start":1,"end":135,"successes":156,"episodes":1080,"rate":0.14444444444444443},{"phase":"P2","start":136,"end":154,"successes":22,"episodes":152,"rate":0.14473684210526316},{"phase":"P3","start":155,"end":191,"successes":94,"episodes":296,"rate":0.31756756756756754},{"phase":"P4","start":192,"end":250,"successes":375,"episodes":472,"rate":0.7944915254237288}],"latest_rolling10":0.85,"eval":[{"cycle":25,"successes":0,"episodes":20},{"cycle":50,"successes":0,"episodes":20},{"cycle":75,"successes":0,"episodes":20},{"cycle":100,"successes":0,"episodes":20},{"cycle":125,"successes":0,"episodes":20},{"cycle":150,"successes":1,"episodes":20},{"cycle":175,"successes":6,"episodes":20},{"cycle":200,"successes":16,"episodes":20},{"cycle":225,"successes":11,"episodes":20},{"cycle":250,"successes":18,"episodes":20}],"critic_updates":102260},"optimization":{"actor_loss":{"cycle":250,"value":-0.08118563145399094},"critic_loss":{"cycle":250,"value":0.0012855050154030323},"bc_loss":{"cycle":250,"value":0.012801920995116234},"weighted_bc":{"cycle":250,"value":0.03200480341911316},"weighted_q":{"cycle":250,"value":0.1131904348731041},"actor_grad":{"cycle":250,"value":2.820908784866333},"critic_grad":{"cycle":250,"value":0.1704103946685791},"q0":{"cycle":250,"value":0.2515343129634857},"q1":{"cycle":250,"value":0.23831701278686523},"q_data":{"cycle":250,"value":0.21228060126304626},"bc_weight":{"cycle":250,"value":2.5},"q_weight":{"cycle":250,"value":0.44999998807907104},"ramp":{"cycle":250,"value":1.0},"pending":{"cycle":250,"value":0.0}},"resources":{"snapshot_unix_time":1785421421.0,"cgroup_current_gib":{"latest":158.18456649780273,"peak":240.0},"cgroup_anon_gib":{"latest":0.5995903015136719,"peak":82.43412399291992},"cgroup_file_gib":{"latest":155.73052215576172,"peak":191.00858306884766},"matched_rss_gib":{"latest":0.0,"peak":87.41513061523438},"env_rss_gib":{"latest":0.0012969970703125,"peak":62.05216979980469},"gpu0_used_gib":{"latest":0.0048828125,"peak":19.3671875},"gpu1_used_gib":{"latest":0.0048828125,"peak":19.5078125},"gpu0_mean_util":30.029356505401598,"gpu1_mean_util":27.665159699389385,"memory_max_event_delta":249188,"oom_delta":0,"oom_kill_delta":0}}};
+      const root = document.getElementById("rlt-verified-progress");
+      const svg = document.getElementById("rlt-verified-svg");
+      const detail = document.getElementById("rlt-verified-detail");
+      const table = document.getElementById("rlt-verified-phase-table");
+      const ns = "http://www.w3.org/2000/svg";
+      const W = 736;
+      const left = 48;
+      const right = 18;
+      const width = W - left - right;
+      const successTop = 30;
+      const successBottom = 275;
+      const updateTop = 318;
+      const updateBottom = 395;
+      const x = cycle => left + ((cycle - 1) / (data.plannedCycles - 1)) * width;
+      const ySuccess = value => successBottom - (value / 100) * (successBottom - successTop);
+      const updateMax = Math.max(76000, data.criticUpdates.at(-1)[1] * 1.05);
+      const yUpdate = value => updateBottom - (value / updateMax) * (updateBottom - updateTop);
+      const make = (tag, attrs = {}, text = "") => {
+        const node = document.createElementNS(ns, tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        if (text) node.textContent = text;
+        return node;
+      };
+      const linePath = points =>
+        points.map((point, index) => `${index ? "L" : "M"}${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(" ");
+      const rolling = data.train.map((entry, index) => {
+        const start = Math.max(0, index - 9);
+        const window = data.train.slice(start, index + 1);
+        return [
+          entry[0],
+          (window.reduce((sum, item) => sum + item[1], 0) / (window.length * 8)) * 100,
+        ];
+      });
+      const colors = getComputedStyle(root);
+      const phaseDefs = [
+        [1, data.boundaries.p2 - 1, "P1", "--viz-series-1"],
+        [data.boundaries.p2, data.boundaries.p3 - 1, "P2", "--viz-series-3"],
+        [data.boundaries.p3, data.boundaries.p4 - 1, "P3", "--viz-series-5"],
+        [data.boundaries.p4, data.plannedCycles, "P4", "--viz-series-4"],
+      ];
+      for (const [start, end, label, token] of phaseDefs) {
+        const rect = make("rect", {
+          x: x(start),
+          y: successTop,
+          width: Math.max(0, x(end + 1) - x(start)),
+          height: updateBottom - successTop,
+          fill: colors.getPropertyValue(token).trim(),
+          opacity: "0.08",
+        });
+        svg.appendChild(rect);
+        const center = (x(start) + x(end)) / 2;
+        svg.appendChild(make("text", {
+          x: center,
+          y: 20,
+          "text-anchor": "middle",
+          class: "rlt-phase-label",
+        }, label));
+      }
+      for (const tick of [0, 25, 50, 75, 100]) {
+        const yy = ySuccess(tick);
+        svg.appendChild(make("line", {x1: left, y1: yy, x2: W - right, y2: yy, class: "rlt-grid"}));
+        svg.appendChild(make("text", {x: left - 8, y: yy + 4, "text-anchor": "end", class: "rlt-label"}, `${tick}%`));
+      }
+      for (const tick of [1, 50, 100, 150, 200, 250]) {
+        const xx = x(tick);
+        svg.appendChild(make("line", {x1: xx, y1: successTop, x2: xx, y2: updateBottom, class: "rlt-grid"}));
+        svg.appendChild(make("text", {x: xx, y: 416, "text-anchor": "middle", class: "rlt-label"}, String(tick)));
+      }
+      svg.appendChild(make("line", {x1: left, y1: successBottom, x2: W - right, y2: successBottom, class: "rlt-axis"}));
+      svg.appendChild(make("line", {x1: left, y1: updateBottom, x2: W - right, y2: updateBottom, class: "rlt-axis"}));
+      for (const gate of [30000, 70000]) {
+        const yy = yUpdate(gate);
+        svg.appendChild(make("line", {x1: left, y1: yy, x2: W - right, y2: yy, class: "rlt-guide"}));
+        svg.appendChild(make("text", {x: left + 4, y: yy - 4, class: "rlt-label"}, `${gate / 1000}k`));
+      }
+      svg.appendChild(make("path", {
+        d: linePath(rolling.map(entry => [x(entry[0]), ySuccess(entry[1])])),
+        class: "rlt-train",
+      }));
+      const evalPoints = data.eval.map(entry => [x(entry[0]), ySuccess((entry[1] / 20) * 100)]);
+      svg.appendChild(make("path", {d: linePath(evalPoints), class: "rlt-eval"}));
+      for (let index = 0; index < data.eval.length; index += 1) {
+        const entry = data.eval[index];
+        const point = evalPoints[index];
+        svg.appendChild(make("circle", {cx: point[0], cy: point[1], r: 4, class: "rlt-dot"}));
+        svg.appendChild(make("text", {
+          x: point[0],
+          y: point[1] - 8,
+          "text-anchor": "middle",
+          class: "rlt-label",
+        }, `${entry[1]}/20`));
+      }
+      svg.appendChild(make("path", {
+        d: linePath(data.criticUpdates.map(entry => [x(entry[0]), yUpdate(entry[1])])),
+        class: "rlt-updates",
+      }));
+      const currentX = x(data.currentCycle);
+      svg.appendChild(make("line", {
+        x1: currentX,
+        y1: successTop,
+        x2: currentX,
+        y2: updateBottom,
+        class: "rlt-current",
+      }));
+      svg.appendChild(make("text", {
+        x: currentX - 5,
+        y: updateTop - 7,
+        "text-anchor": "end",
+        class: "rlt-label",
+      }, `complete cycle ${data.currentCycle}`));
+      const focus = make("line", {
+        x1: currentX,
+        y1: successTop,
+        x2: currentX,
+        y2: updateBottom,
+        class: "rlt-focus",
+      });
+      svg.appendChild(focus);
+      const evalMap = new Map(data.eval.map(entry => [entry[0], entry[1]]));
+      const updateMap = new Map(data.criticUpdates.map(entry => [entry[0], entry[1]]));
+      const showCycle = cycle => {
+        const trainEntry = data.train[Math.max(0, Math.min(data.train.length - 1, cycle - 1))];
+        const rollEntry = rolling[Math.max(0, Math.min(rolling.length - 1, cycle - 1))];
+        const evalValue = evalMap.get(cycle);
+        let updateValue = 0;
+        for (const entry of data.criticUpdates) {
+          if (entry[0] > cycle) break;
+          updateValue = entry[1];
+        }
+        detail.textContent =
+          `Cycle ${cycle}: train ${trainEntry[1]}/8; rolling-10 ${rollEntry[1].toFixed(1)}%; ` +
+          `critic updates ${updateValue.toLocaleString()}` +
+          (evalValue === undefined ? "" : `; deterministic eval ${evalValue}/20`);
+      };
+      const hit = make("rect", {
+        x: left,
+        y: successTop,
+        width,
+        height: updateBottom - successTop,
+        class: "rlt-hit",
+      });
+      hit.addEventListener("pointermove", event => {
+        const bounds = svg.getBoundingClientRect();
+        const px = ((event.clientX - bounds.left) / bounds.width) * W;
+        const cycle = Math.max(1, Math.min(data.currentCycle, Math.round(1 + ((px - left) / width) * (data.plannedCycles - 1))));
+        const xx = x(cycle);
+        focus.setAttribute("x1", xx);
+        focus.setAttribute("x2", xx);
+        focus.style.opacity = "0.75";
+        showCycle(cycle);
+      });
+      hit.addEventListener("pointerleave", () => {
+        focus.style.opacity = "0";
+        showCycle(data.currentCycle);
+      });
+      svg.appendChild(hit);
+      showCycle(data.currentCycle);
+      for (const row of data.summary.success.phase_rows) {
+        const tr = document.createElement("tr");
+        const phase = document.createElement("td");
+        const cyclesCell = document.createElement("td");
+        const rate = document.createElement("td");
+        phase.textContent = row.phase;
+        cyclesCell.textContent = `${row.start}-${row.end}`;
+        rate.textContent = `${row.successes}/${row.episodes} (${(row.rate * 100).toFixed(1)}%)`;
+        rate.className = "text-end";
+        tr.append(phase, cyclesCell, rate);
+        table.appendChild(tr);
+      }
+    })();
+  </script>
+</div>
+

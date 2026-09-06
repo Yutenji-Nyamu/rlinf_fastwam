@@ -1,0 +1,1 @@
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader,nounits; ps -eo user,pid,etimes,args --sort=pid | grep -E 'train_embodied_agent.py|fastwam_grpo_smoke1' | grep -v grep || true; /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/ray status --address=172.17.0.1:6389 | sed -n '1,40p'

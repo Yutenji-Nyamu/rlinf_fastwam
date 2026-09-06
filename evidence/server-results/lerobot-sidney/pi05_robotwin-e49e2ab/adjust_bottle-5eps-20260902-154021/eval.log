@@ -1,0 +1,169 @@
+WARNING 2026-09-02 15:40:31 figs/eval.py:69 No job name provided, using 'robotwin_pi05' as job name.
+INFO 2026-09-02 15:40:31 bot_eval.py:727 {'env': {'action_mode': 'joint',
+         'camera_names': 'head_camera,left_camera,right_camera',
+         'disable_env_checker': True,
+         'episode_length': 1200,
+         'features': {'action': {'shape': (14,),
+                                 'type': <FeatureType.ACTION: 'ACTION'>},
+                      'agent_pos': {'shape': (14,),
+                                    'type': <FeatureType.STATE: 'STATE'>},
+                      'pixels/head_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/left_camera': {'shape': (240, 320, 3),
+                                             'type': <FeatureType.VISUAL: 'VISUAL'>},
+                      'pixels/right_camera': {'shape': (240, 320, 3),
+                                              'type': <FeatureType.VISUAL: 'VISUAL'>}},
+         'features_map': {'action': 'action',
+                          'agent_pos': 'observation.state',
+                          'pixels/head_camera': 'observation.images.head_camera',
+                          'pixels/left_camera': 'observation.images.left_camera',
+                          'pixels/right_camera': 'observation.images.right_camera'},
+         'fps': 25,
+         'max_parallel_tasks': 1,
+         'obs_type': 'pixels_agent_pos',
+         'observation_height': 240,
+         'observation_width': 320,
+         'render_mode': 'rgb_array',
+         'task': 'adjust_bottle'},
+ 'eval': {'batch_size': 1,
+          'n_episodes': 5,
+          'recording': False,
+          'recording_private': False,
+          'recording_repo_id': None,
+          'use_async_envs': True},
+ 'job_name': 'robotwin_pi05',
+ 'output_dir': PosixPath('/data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-5eps-20260902-154021/eval'),
+ 'policy': {'action_expert_variant': 'gemma_300m',
+            'action_feature_names': ['motors'],
+            'chunk_size': 50,
+            'compile_mode': 'max-autotune',
+            'compile_model': True,
+            'device': 'cuda',
+            'dtype': 'bfloat16',
+            'empty_cameras': 0,
+            'freeze_vision_encoder': False,
+            'gradient_checkpointing': True,
+            'image_resolution': (224, 224),
+            'input_features': {'observation.images.cam_high': {'shape': (480,
+                                                                         640,
+                                                                         3),
+                                                               'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_left_wrist': {'shape': (480,
+                                                                               640,
+                                                                               3),
+                                                                     'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.images.cam_right_wrist': {'shape': (480,
+                                                                                640,
+                                                                                3),
+                                                                      'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.state': {'shape': (14,),
+                                                     'type': <FeatureType.STATE: 'STATE'>}},
+            'license': None,
+            'max_action_dim': 32,
+            'max_period': 4.0,
+            'max_state_dim': 32,
+            'min_period': 0.004,
+            'n_action_steps': 50,
+            'n_obs_steps': 1,
+            'normalization_mapping': {'ACTION': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'STATE': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'VISUAL': <NormalizationMode.IDENTITY: 'IDENTITY'>},
+            'num_inference_steps': 10,
+            'optimizer_betas': (0.9, 0.95),
+            'optimizer_eps': 1e-08,
+            'optimizer_grad_clip_norm': 1.0,
+            'optimizer_lr': 2.5e-05,
+            'optimizer_weight_decay': 0.01,
+            'output_features': {'action': {'shape': (14,),
+                                           'type': <FeatureType.ACTION: 'ACTION'>}},
+            'paligemma_variant': 'gemma_2b',
+            'pretrained_path': PosixPath('/data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab'),
+            'pretrained_revision': None,
+            'private': None,
+            'push_to_hub': True,
+            'relative_exclude_joints': ['gripper'],
+            'repo_id': 'SidneyXie/pi05_robotwin',
+            'rtc_config': None,
+            'scheduler_decay_lr': 2.5e-06,
+            'scheduler_decay_steps': 30000,
+            'scheduler_warmup_steps': 1000,
+            'tags': None,
+            'time_sampling_beta_alpha': 1.5,
+            'time_sampling_beta_beta': 1.0,
+            'time_sampling_offset': 0.001,
+            'time_sampling_scale': 0.999,
+            'tokenizer_max_length': 200,
+            'train_expert_only': False,
+            'use_amp': False,
+            'use_peft': False,
+            'use_relative_actions': False},
+ 'rename_map': {'observation.images.head_camera': 'observation.images.cam_high',
+                'observation.images.left_camera': 'observation.images.cam_left_wrist',
+                'observation.images.right_camera': 'observation.images.cam_right_wrist'},
+ 'seed': 1000,
+ 'trust_remote_code': False}
+INFO 2026-09-02 15:40:31 bot_eval.py:736 Output dir: /data/chenyiteng/results/lerobot-sidney/pi05_robotwin-e49e2ab/adjust_bottle-5eps-20260902-154021/eval
+INFO 2026-09-02 15:40:31 bot_eval.py:738 Making environment (batch_size=1, async=True).
+INFO 2026-09-02 15:40:31 robotwin.py:618 Creating RoboTwin envs | tasks=['adjust_bottle'] | n_envs(per task)=1
+INFO 2026-09-02 15:40:31 robotwin.py:649 Built vec env | task=adjust_bottle | n_envs=1
+INFO 2026-09-02 15:40:31 bot_eval.py:746 Making policy.
+INFO 2026-09-02 15:42:03 ing_pi05.py:612 Enabled gradient checkpointing for PI05Pytorch model
+WARNING 2026-09-02 15:42:05 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING 2026-09-02 15:42:05 ng_pi05.py:1110 Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+Stepping through eval batches:   0%|          | 0/5 [00:00<?, ?it/s]/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/sapien/_vulkan_tricks.py:37: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+  warn(
+Stepping through eval batches:   0%|          | 0/5 [00:02<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/bin/lerobot-eval", line 7, in <module>
+    sys.exit(main())
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 1089, in main
+    eval_main()
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/configs/parser.py", line 320, in wrapper_inner
+    response = fn(cfg, *args, **kwargs)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 776, in eval_main
+    info = eval_policy_all(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 1021, in eval_policy_all
+    tg, tid, metrics = task_runner(task_group, task_id, env)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 910, in run_one
+    metrics = eval_one(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 845, in eval_one
+    task_result = eval_policy(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 522, in eval_policy
+    rollout_data = rollout(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/scripts/lerobot_eval.py", line 212, in rollout
+    observation, info = env.reset(seed=seeds)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/gymnasium/vector/sync_vector_env.py", line 228, in reset
+    self._env_obs[i], env_info = env.reset(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/envs/robotwin.py", line 464, in reset
+    self._ensure_env()
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/envs/robotwin.py", line 417, in _ensure_env
+    task_cls = _load_robotwin_task(self.task_name)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/envs/robotwin.py", line 305, in _load_robotwin_task
+    module = importlib.import_module(f"envs.{task_name}")
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 992, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/third_party/RoboTwin/envs/__init__.py", line 1, in <module>
+    from .utils import *
+  File "/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/third_party/RoboTwin/envs/utils/__init__.py", line 5, in <module>
+    from .rand_create_cluttered_actor import *
+  File "/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/third_party/RoboTwin/envs/utils/rand_create_cluttered_actor.py", line 90, in <module>
+    cluttered_objects_info, cluttered_objects_list, same_obj = get_all_cluttered_objects()
+  File "/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/third_party/RoboTwin/envs/utils/rand_create_cluttered_actor.py", line 17, in get_all_cluttered_objects
+    cluttered_objects_config = json.load(open(Path("./assets/objects/objaverse/list.json"), "r", encoding="utf-8"))
+FileNotFoundError: [Errno 2] No such file or directory: 'assets/objects/objaverse/list.json'

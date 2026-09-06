@@ -1,0 +1,35 @@
+/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/sapien/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/sapien/_vulkan_tricks.py:37: UserWarning: Failed to find Vulkan ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.
+  warn(
+[32mRender Well[0m
+============= Config =============
+
+[95mMessy Table:[0m False
+[95mRandom Background:[0m False
+[95mRandom Light:[0m False
+[95mRandom Table Height:[0m 0
+[95mRandom Head Camera Distance:[0m 0
+[94mHead Camera Config:[0m D435, True
+[94mWrist Camera Config:[0m D435, True
+[94mEmbodiment Config:[0m aloha-agilex
+
+==================================
+missing pytorch3d
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/third_party/RoboTwin/script/eval_policy.py", line 449, in <module>
+    main(usr_args)
+  File "/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/third_party/RoboTwin/script/eval_policy.py", line 210, in main
+    model = get_model(usr_args)
+  File "/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/third_party/RoboTwin/./policy/fastwam_policy/deploy_policy.py", line 421, in get_model
+    dvac_writer = FastWAMDvacTelemetryWriter(
+  File "/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/experiments/robotwin/fastwam_policy/dvac_telemetry.py", line 120, in __init__
+    raise FileExistsError(f"DVAC telemetry output already exists: {self.output_dir}")
+FileExistsError: DVAC telemetry output already exists: /data/chenyiteng/results/dvac-observation/fastwam-adjust_bottle-p1-16ep-c63dc9b5-v1
+Error executing job with overrides: ['task=robotwin_uncond_3cam_384_1e-4', 'ckpt=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt', 'EVALUATION.dataset_stats_path=/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json', 'EVALUATION.task_name=adjust_bottle', 'EVALUATION.task_config=demo_clean', 'EVALUATION.eval_num_episodes=16', 'EVALUATION.instruction_type=unseen', 'EVALUATION.action_horizon=null', 'EVALUATION.num_inference_steps=10', 'EVALUATION.sigma_shift=5.0', 'EVALUATION.replan_steps=24', 'EVALUATION.rand_device=cpu', 'EVALUATION.tiled=false', 'EVALUATION.skip_get_obs_within_replan=false', 'EVALUATION.dvac_telemetry.enabled=true', 'EVALUATION.dvac_telemetry.output_dir=/data/chenyiteng/results/dvac-observation/fastwam-adjust_bottle-p1-16ep-c63dc9b5-v1', 'EVALUATION.dvac_telemetry.run_id=fastwam-adjust_bottle-p1-16ep-c63dc9b5-v1', 'EVALUATION.output_dir=fastwam-adjust_bottle-p1-16ep-c63dc9b5-v1', 'mixed_precision=bf16', 'seed=42', 'gpu_id=3']
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/experiments/robotwin/eval_robotwin_single.py", line 278, in main
+    raise RuntimeError(f"RoboTwin evaluation failed with return code {return_code}. Log: {log_file}")
+RuntimeError: RoboTwin evaluation failed with return code 1. Log: /data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/evaluate_results/robotwin/robotwin_uncond_3cam_384/fastwam-adjust_bottle-p1-16ep-c63dc9b5-v1/eval_adjust_bottle_20260822_132722.log
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

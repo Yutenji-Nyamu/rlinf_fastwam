@@ -1,0 +1,61 @@
+--- /root/autodl-tmp/qam_source_resolved_20260731_formal_v1.yaml	2026-07-31 17:27:13.738487168 +0800
++++ /root/autodl-tmp/qam_formal_resolved_20260731_v1.yaml	2026-07-31 17:27:23.217520243 +0800
+@@ -19,7 +19,7 @@
+     video_cfg:
+       save_video: true
+       info_on_video: true
+-      video_base_dir: /root/autodl-tmp/experiments/qam_pi0_robotwin/video/train
++      video_base_dir: /root/autodl-tmp/experiments/qam_formal_20260731_v1/video/train
+     enable_offload: false
+     task_config:
+       task_name: adjust_bottle
+@@ -82,7 +82,7 @@
+     video_cfg:
+       save_video: false
+       info_on_video: true
+-      video_base_dir: /root/autodl-tmp/experiments/qam_pi0_robotwin/video/eval
++      video_base_dir: /root/autodl-tmp/experiments/qam_formal_20260731_v1/video/eval
+     enable_offload: false
+     task_config:
+       task_name: adjust_bottle
+@@ -192,6 +192,7 @@
+       precision: bf16
+     grad_scaler:
+       enabled: false
++    save_full_model_weights: false
+   group_name: ActorGroup
+   training_backend: fsdp
+   micro_batch_size: 32
+@@ -230,13 +231,13 @@
+   overlap_env_bootstrap: false
+   weight_sync_interval: 1
+   logger:
+-    log_path: /root/autodl-tmp/experiments/qam_pi0_robotwin
++    log_path: /root/autodl-tmp/experiments/qam_formal_20260731_v1
+     project_name: rlinf
+-    experiment_name: robotwin_adjust_bottle_qam_openpi_formal_v1
++    experiment_name: robotwin_adjust_bottle_qam_formal_20260731_v1
+     logger_backends:
+     - tensorboard
+   max_epochs: 1000
+-  max_steps: 0
++  max_steps: 500
+   only_eval: false
+   val_check_interval: -1
+   save_interval: 25
+@@ -248,13 +249,13 @@
+   gamma: 0.99
+   reward_coef: 1.0
+   qam:
+-    phase: collect
++    phase: am_on
+     online_only: true
+     task_prompt: adjust the bottle
+     flow_steps: 10
+     gamma_slot: 0.99
+     rho: 0.5
+-    inv_temp: 0.0
++    inv_temp: 1.0
+     target_tau: 0.005
+     num_q_heads: 10
+     critic_hidden_dims:

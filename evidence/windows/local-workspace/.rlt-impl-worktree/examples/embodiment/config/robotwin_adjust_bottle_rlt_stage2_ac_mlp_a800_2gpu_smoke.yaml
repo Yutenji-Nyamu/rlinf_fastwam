@@ -1,0 +1,41 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp
+  - _self_
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_stage2_ac_mlp_a800_2gpu_smoke"
+  # One collection -> warmup-update -> deterministic-student eval -> save cycle.
+  max_steps: 1
+  val_check_interval: 1
+  save_interval: 1
+
+algorithm:
+  rlt_schedule:
+    max_updates_per_train_step: 20
+    # Two envs per actor rank guarantee at least two first-chunk rows even when
+    # an episode terminates early; avoid a no-update false smoke.
+    warmup_min_size: 2
+    warmup_post_collect_updates: 8
+    train_every_episodes: 0
+    train_every_transitions: 1
+
+  actor_weight_schedule:
+    warmup_updates: 4
+    ramp_updates: 8
+
+  replay_buffer:
+    cache_size: 64
+    sample_window_size: 64
+    min_buffer_size: 1
+
+env:
+  train:
+    rollout_epoch: 1
+    max_episode_steps: 20
+    max_steps_per_rollout_epoch: 20
+  eval:
+    rollout_epoch: 1
+    max_episode_steps: 20
+    max_steps_per_rollout_epoch: 20
+    use_fixed_reset_state_ids: True

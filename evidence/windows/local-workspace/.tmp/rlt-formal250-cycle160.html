@@ -1,0 +1,204 @@
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<div id="rlt-cycle162-visual">
+  <div class="viz-row text-small" aria-label="Stage legend">
+    <span><strong>P1</strong> reference collect · cycles 1–135</span>
+    <span><strong>P2</strong> reference + SAC · 136–154</span>
+    <span><strong>P3</strong> student + ramp · 155–about 190</span>
+    <span><strong>P4</strong> stable online · projected from about 191</span>
+    <span><strong>Current</strong> cycle 162</span>
+  </div>
+  <div id="rlt-phase-success" class="rlt-plot" role="img" aria-label="Training and evaluation success with four RLT phases, cumulative critic updates, student gate, current cycle, and projected phase four boundary"></div>
+  <div id="rlt-learning-metrics" class="rlt-plot rlt-plot-tall" role="img" aria-label="Actor, behavior cloning, critic, gradient, and twin-Q metrics from cycle 136 through cycle 160"></div>
+</div>
+<style>
+  #rlt-cycle162-visual {
+    color: var(--foreground);
+    width: 100%;
+  }
+  #rlt-cycle162-visual .viz-row {
+    justify-content: flex-start;
+    gap: 0.85rem 1.35rem;
+    margin-bottom: 0.5rem;
+  }
+  #rlt-cycle162-visual .rlt-plot {
+    width: 100%;
+    min-height: 500px;
+  }
+  #rlt-cycle162-visual .rlt-plot-tall {
+    min-height: 680px;
+  }
+  @media (max-width: 560px) {
+    #rlt-cycle162-visual .rlt-plot {
+      min-height: 560px;
+    }
+    #rlt-cycle162-visual .rlt-plot-tall {
+      min-height: 760px;
+    }
+  }
+</style>
+<script>
+(() => {
+  const root = document.getElementById("rlt-cycle162-visual");
+  const style = getComputedStyle(root);
+  const color = (name, fallback) => style.getPropertyValue(name).trim() || fallback;
+  const palette = {
+    fg: color("--foreground", "#202124"),
+    muted: color("--muted-foreground", "#6b7280"),
+    grid: color("--border", "#d1d5db"),
+    s1: color("--viz-series-1", "#2563eb"),
+    s2: color("--viz-series-2", "#dc2626"),
+    s3: color("--viz-series-3", "#059669"),
+    s4: color("--viz-series-4", "#7c3aed"),
+    s5: color("--viz-series-5", "#ea580c"),
+    s6: color("--viz-series-6", "#0891b2")
+  };
+
+  const success = [[1,1],[2,2],[3,1],[4,3],[5,3],[6,0],[7,0],[8,1],[9,2],[10,0],[11,2],[12,2],[13,1],[14,2],[15,1],[16,0],[17,1],[18,1],[19,2],[20,0],[21,3],[22,2],[23,1],[24,2],[25,1],[26,2],[27,2],[28,0],[29,0],[30,3],[31,0],[32,0],[33,0],[34,1],[35,0],[36,2],[37,1],[38,2],[39,2],[40,1],[41,1],[42,1],[43,1],[44,1],[45,1],[46,2],[47,1],[48,3],[49,0],[50,2],[51,0],[52,1],[53,2],[54,0],[55,1],[56,2],[57,2],[58,2],[59,1],[60,1],[61,1],[62,1],[63,0],[64,1],[65,1],[66,1],[67,2],[68,2],[69,0],[70,0],[71,1],[72,1],[73,1],[74,3],[75,0],[76,1],[77,0],[78,1],[79,0],[80,0],[81,2],[82,1],[83,0],[84,0],[85,1],[86,0],[87,1],[88,1],[89,2],[90,1],[91,1],[92,1],[93,0],[94,0],[95,1],[96,1],[97,1],[98,3],[99,3],[100,0],[101,2],[102,1],[103,1],[104,4],[105,2],[106,4],[107,0],[108,0],[109,1],[110,1],[111,2],[112,0],[113,0],[114,1],[115,0],[116,0],[117,1],[118,3],[119,0],[120,2],[121,0],[122,0],[123,0],[124,1],[125,2],[126,1],[127,1],[128,5],[129,2],[130,2],[131,0],[132,1],[133,1],[134,3],[135,0],[136,1],[137,1],[138,3],[139,1],[140,2],[141,0],[142,1],[143,2],[144,0],[145,1],[146,0],[147,3],[148,1],[149,0],[150,2],[151,2],[152,2],[153,0],[154,0],[155,0],[156,1],[157,0],[158,0],[159,0],[160,2],[161,0],[162,0]];
+  const evalSuccess = [[25,0],[50,0],[75,0],[100,0],[125,0],[150,1]];
+  const cycle = success.map(d => d[0]);
+  const successRate = success.map(d => d[1] * 12.5);
+  const rolling = successRate.map((_, index) => {
+    const start = Math.max(0, index - 9);
+    const values = successRate.slice(start, index + 1);
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  });
+  const updateCycle = Array.from({length: 162}, (_, index) => index + 1);
+  const criticUpdates = updateCycle.map(value => value < 136 ? 0 : (value - 135) * 1600);
+
+  const phaseShapes = (xref, yref) => [
+    {type:"rect",xref,yref,x0:0.5,x1:135.5,y0:0,y1:1,fillcolor:palette.s1,opacity:0.07,line:{width:0}},
+    {type:"rect",xref,yref,x0:135.5,x1:154.5,y0:0,y1:1,fillcolor:palette.s5,opacity:0.08,line:{width:0}},
+    {type:"rect",xref,yref,x0:154.5,x1:190.5,y0:0,y1:1,fillcolor:palette.s3,opacity:0.08,line:{width:0}},
+    {type:"rect",xref,yref,x0:190.5,x1:250.5,y0:0,y1:1,fillcolor:palette.s4,opacity:0.07,line:{width:0}},
+    {type:"line",xref,yref,x0:136,x1:136,y0:0,y1:1,line:{color:palette.s5,width:1}},
+    {type:"line",xref,yref,x0:155,x1:155,y0:0,y1:1,line:{color:palette.s3,width:1}},
+    {type:"line",xref,yref,x0:162,x1:162,y0:0,y1:1,line:{color:palette.fg,width:2,dash:"dash"}},
+    {type:"line",xref,yref,x0:191,x1:191,y0:0,y1:1,line:{color:palette.s4,width:2,dash:"dot"}}
+  ];
+  const phaseAnnotations = [
+    {x:68,y:1.04,text:"P1 collect",xref:"x",yref:"paper"},
+    {x:145,y:1.04,text:"P2 ref + SAC",xref:"x",yref:"paper"},
+    {x:173,y:1.04,text:"P3 student + ramp",xref:"x",yref:"paper"},
+    {x:220,y:1.04,text:"P4 projected",xref:"x",yref:"paper"}
+  ].map(item => ({...item,showarrow:false,font:{color:palette.fg,size:11}}));
+
+  const commonAxis = {
+    color: palette.fg,
+    gridcolor: palette.grid,
+    zerolinecolor: palette.grid,
+    linecolor: palette.grid,
+    tickfont: {color: palette.muted}
+  };
+  const config = {responsive:true,displayModeBar:false,scrollZoom:false};
+
+  Plotly.newPlot("rlt-phase-success", [
+    {
+      x:cycle,y:successRate,type:"scatter",mode:"markers",name:"train / cycle",
+      marker:{color:palette.s1,size:6,opacity:0.42},
+      hovertemplate:"cycle %{x}<br>train %{y:.1f}%<extra></extra>"
+    },
+    {
+      x:cycle,y:rolling,type:"scatter",mode:"lines",name:"rolling 10 cycles",
+      line:{color:palette.s1,width:3},
+      hovertemplate:"cycle %{x}<br>rolling-10 %{y:.1f}%<extra></extra>"
+    },
+    {
+      x:evalSuccess.map(d=>d[0]),y:evalSuccess.map(d=>d[1]*5),type:"scatter",
+      mode:"lines+markers",name:"deterministic eval",
+      line:{color:palette.s2,width:2},marker:{color:palette.s2,size:9,symbol:"diamond"},
+      hovertemplate:"cycle %{x}<br>eval %{y:.1f}% (20 episodes)<extra></extra>"
+    },
+    {
+      x:updateCycle,y:criticUpdates,type:"scatter",mode:"lines",name:"critic updates",
+      xaxis:"x2",yaxis:"y2",line:{color:palette.s4,width:3},
+      hovertemplate:"cycle %{x}<br>%{y:,} critic updates<extra></extra>"
+    }
+  ], {
+    autosize:true,
+    margin:{l:58,r:18,t:38,b:50},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)",
+    font:{color:palette.fg},
+    hovermode:"x unified",
+    legend:{orientation:"h",x:0,y:1.12,font:{color:palette.fg}},
+    xaxis:{...commonAxis,domain:[0,1],range:[1,250],showticklabels:false},
+    yaxis:{...commonAxis,domain:[0.47,1],range:[-2,70],title:"success rate (%)"},
+    xaxis2:{...commonAxis,domain:[0,1],range:[1,250],title:"outer cycle"},
+    yaxis2:{...commonAxis,domain:[0,0.35],range:[0,76000],title:"critic updates"},
+    shapes:[
+      ...phaseShapes("x","paper"),
+      ...phaseShapes("x2","paper"),
+      {type:"line",xref:"x2",yref:"y2",x0:1,x1:250,y0:30000,y1:30000,line:{color:palette.s3,width:1.5,dash:"dash"}},
+      {type:"line",xref:"x2",yref:"y2",x0:1,x1:250,y0:70000,y1:70000,line:{color:palette.s4,width:1.5,dash:"dot"}},
+      {type:"rect",xref:"x2",yref:"y2",x0:155,x1:162,y0:0,y1:7000,fillcolor:palette.s3,opacity:0.22,line:{width:0}}
+    ],
+    annotations:[
+      ...phaseAnnotations,
+      {x:162,y:43200,text:"current: 43.2k / student online",xref:"x2",yref:"y2",showarrow:true,ax:95,ay:-35,font:{color:palette.fg,size:11},arrowcolor:palette.fg},
+      {x:191,y:70000,text:"P4 when update ≥70k<br>projected about 190–191",xref:"x2",yref:"y2",showarrow:true,ax:100,ay:35,font:{color:palette.fg,size:11},arrowcolor:palette.s4}
+    ]
+  }, config);
+
+  const metricCycle = Array.from({length:27}, (_, index) => 136 + index);
+  const metrics = {
+    actorLoss:[0.2558494,0.088198,0.077256,0.0721235,0.0696796,0.067425,0.0663,0.0651305,0.0643872,0.063381,0.0631013,0.0627102,0.0621109,0.0604704,0.0582959,0.0564396,0.0545263,0.0528309,0.0508742,0.0496698,0.0483869,0.0461461,0.0448854,0.0430066,0.0416034,0.0397073,0.0380672],
+    criticLoss:[0.0028905,0.0028569,0.0030821,0.0027342,0.0023918,0.0021115,0.0019922,0.001763,0.0016366,0.0015496,0.0014473,0.001421,0.0014069,0.0013932,0.0013716,0.0013671,0.0013656,0.0013153,0.0013002,0.001278,0.0012357,0.0011338,0.0011049,0.0010647,0.001042,0.001018,0.0009284],
+    bcLoss:[0.0365752,0.0126977,0.0111787,0.0104837,0.0101545,0.0098463,0.0096945,0.0095399,0.0094366,0.0092947,0.0092505,0.0091892,0.0091264,0.0090947,0.0090202,0.0089931,0.0089495,0.0089274,0.0088597,0.0089171,0.0089858,0.0088806,0.0089388,0.008873,0.0089255,0.0088613,0.0088691],
+    actorGrad:[0.9399682,0.9171405,0.8947145,0.8412181,0.8715666,0.8228409,0.8310794,0.7991584,0.7820801,0.7736914,0.7524712,0.754945,0.7539706,0.7876016,0.8529783,0.9248669,1.0229833,1.0949659,1.1656039,1.2704791,1.3812821,1.4545063,1.559332,1.6604698,1.7544515,1.8491447,1.9490081],
+    criticGrad:[0.7898782,0.7809379,0.7629851,0.7057315,0.7416488,0.6874474,0.6952237,0.6586788,0.6388286,0.630171,0.6039085,0.6069601,0.5939896,0.5581851,0.5355299,0.5126721,0.5258201,0.4889722,0.4403204,0.4476334,0.4728439,0.4049116,0.4149393,0.4027718,0.3870166,0.3614172,0.343576],
+    q0:[0.0035351,0.0137157,0.0199044,0.025246,0.0280398,0.0299772,0.0312378,0.0329757,0.0333803,0.0336374,0.0330395,0.0322873,0.0312097,0.0300034,0.0297512,0.029762,0.029314,0.0284205,0.0274974,0.0269636,0.0273051,0.0272941,0.0270431,0.0264541,0.0267832,0.026497,0.0267639],
+    q1:[0.0048757,0.0137146,0.019753,0.0251425,0.0282059,0.0302541,0.0314594,0.0332102,0.0334776,0.0337954,0.0332949,0.0326021,0.0314715,0.0302133,0.0300353,0.0300289,0.0295384,0.0284904,0.0274979,0.0267616,0.0270421,0.0269008,0.0268048,0.0259877,0.0261525,0.0257438,0.025804],
+    qData:[0.0035757,0.0134171,0.0196153,0.024784,0.0281966,0.0300335,0.0315008,0.0333045,0.0335163,0.0336993,0.0332078,0.032629,0.0313866,0.0299295,0.0296677,0.0290736,0.0285175,0.0271197,0.0259846,0.0253161,0.0254327,0.0251554,0.0248692,0.0244381,0.0243753,0.0239604,0.0240209]
+  };
+  const metricTrace = (values, name, series, axis) => ({
+    x:metricCycle,y:values,type:"scatter",mode:"lines",name,
+    xaxis:axis.x,yaxis:axis.y,line:{color:series,width:2},
+    hovertemplate:"cycle %{x}<br>" + name + " %{y:.5f}<extra></extra>"
+  });
+  const learningTraces = [
+    metricTrace(metrics.actorLoss,"actor loss",palette.s1,{x:"x",y:"y"}),
+    metricTrace(metrics.bcLoss,"BC loss",palette.s3,{x:"x",y:"y"}),
+    metricTrace(metrics.criticLoss,"critic loss",palette.s4,{x:"x",y:"y"}),
+    metricTrace(metrics.actorGrad,"actor grad",palette.s5,{x:"x2",y:"y2"}),
+    metricTrace(metrics.criticGrad,"critic grad",palette.s1,{x:"x2",y:"y2"}),
+    metricTrace(metrics.q0,"Q0(policy)",palette.s1,{x:"x3",y:"y3"}),
+    metricTrace(metrics.q1,"Q1(policy)",palette.s4,{x:"x3",y:"y3"}),
+    metricTrace(metrics.qData,"Q(data)",palette.s3,{x:"x3",y:"y3"})
+  ];
+  const metricShapes = [];
+  for (const suffix of ["","2","3"]) {
+    const xref = "x" + suffix;
+    const yref = suffix ? "y" + suffix + " domain" : "y domain";
+    metricShapes.push(
+      {type:"rect",xref,yref,x0:135.5,x1:154.5,y0:0,y1:1,fillcolor:palette.s5,opacity:0.08,line:{width:0}},
+      {type:"rect",xref,yref,x0:154.5,x1:190.5,y0:0,y1:1,fillcolor:palette.s3,opacity:0.08,line:{width:0}},
+      {type:"line",xref,yref,x0:155,x1:155,y0:0,y1:1,line:{color:palette.s3,width:1}},
+      {type:"line",xref,yref,x0:162,x1:162,y0:0,y1:1,line:{color:palette.fg,width:2,dash:"dash"}},
+      {type:"line",xref,yref,x0:191,x1:191,y0:0,y1:1,line:{color:palette.s4,width:2,dash:"dot"}}
+    );
+  }
+  metricShapes.push({type:"line",xref:"x2",yref:"y2",x0:135,x1:191,y0:10,y1:10,line:{color:palette.s2,width:1.5,dash:"dash"}});
+
+  Plotly.newPlot("rlt-learning-metrics", learningTraces, {
+    autosize:true,
+    margin:{l:62,r:22,t:28,b:50},
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)",
+    font:{color:palette.fg},
+    hovermode:"x unified",
+    legend:{orientation:"h",x:0,y:1.08,font:{color:palette.fg}},
+    xaxis:{...commonAxis,domain:[0,1],range:[135,191],showticklabels:false},
+    yaxis:{...commonAxis,domain:[0.70,1],type:"log",title:"loss (log)"},
+    xaxis2:{...commonAxis,domain:[0,1],range:[135,191],showticklabels:false},
+    yaxis2:{...commonAxis,domain:[0.36,0.64],type:"log",range:[-0.65,1.08],title:"grad norm (log)"},
+    xaxis3:{...commonAxis,domain:[0,1],range:[135,191],title:"outer cycle"},
+    yaxis3:{...commonAxis,domain:[0,0.29],title:"Q value"},
+    shapes:metricShapes,
+    annotations:[
+      {x:148,y:1.03,text:"actor-weight ramp begins",xref:"x",yref:"paper",showarrow:false,font:{color:palette.fg,size:11}},
+      {x:155,y:1.03,text:"student switch",xref:"x",yref:"paper",showarrow:true,ax:35,ay:-18,font:{color:palette.fg,size:11},arrowcolor:palette.s3},
+      {x:162,y:1.03,text:"current",xref:"x",yref:"paper",showarrow:true,ax:28,ay:-18,font:{color:palette.fg,size:11},arrowcolor:palette.fg}
+    ]
+  }, config);
+})();
+</script>

@@ -1,0 +1,23 @@
+const fs=require('fs');
+const {chromium}=require('C:/Users/86136/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const base='C:/Users/86136/Documents/rl/docs/rlinf-shenzhen-multitask-pi05/evidence/sidney-live-20260904/';
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ const page=await browser.newPage({viewport:{width:1200,height:950}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('file:///'+base+'dashboard.html');
+ await page.locator('.hoverarea').first().hover({position:{x:400,y:70}});
+ const tip=await page.locator('.tip').innerText();
+ if(!tip.includes('Fixed eval'))throw new Error('Hover not populated');
+ await page.mouse.move(5,5);
+ await page.screenshot({path:base+'dashboard-check.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+ if(overflow||errors.length)throw new Error(JSON.stringify({overflow,errors}));
+ console.log(JSON.stringify({chartCount:await page.locator('.hoverarea').count(),hover:tip,pageErrors:errors,mobileOverflow:overflow}));
+ await browser.close();
+ const d=JSON.parse(fs.readFileSync(base+'data.json','utf8')),a=d.scalars['env/success_once'];
+ const latest=a.at(-1),minutes=(latest.wall_time-a.at(-11).wall_time)/600;
+ const eta=new Date((latest.wall_time+(100-latest.step)*minutes*60)*1000).toISOString();
+ console.log(JSON.stringify({cst:d.cst,latest,previous:a.at(-11),recentMinutesPerStep:minutes,etaUTC:eta,last_progress:d.last_progress,last_rollout:d.last_rollout,wrapper_alive:d.wrapper_alive,exit:d.exit,fatal:d.fatal,checkpoints:d.checkpoints},null,2));
+})().catch(e=>{console.error(e);process.exit(1)});

@@ -1,0 +1,16 @@
+diff --git a/rlinf/workers/env/env_worker.py b/rlinf/workers/env/env_worker.py
+--- a/rlinf/workers/env/env_worker.py
++++ b/rlinf/workers/env/env_worker.py
+@@ -1432,7 +1432,11 @@ class EnvWorker(Worker):
+                         truncated,
+                     ) = self.env_evaluate_step(raw_chunk_actions, stage_id)
+ 
+-                    if newly_done.any() and eval_step != self.n_eval_chunk_steps - 1:
++                    if (
++                        self.dvac_telemetry_enabled
++                        and newly_done.any()
++                        and eval_step != self.n_eval_chunk_steps - 1
++                    ):
+                         raise RuntimeError(
+                             "DVAC telemetry v1 observed an early episode reset; "
+                             "stopping instead of emitting an ambiguous episode join."

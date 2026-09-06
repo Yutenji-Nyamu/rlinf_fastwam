@@ -1,0 +1,45 @@
+diff --git a/envs/robot/planner.py b/envs/robot/planner.py
+index 09291e8..cbd68d3 100644
+--- a/envs/robot/planner.py
++++ b/envs/robot/planner.py
+@@ -25,6 +25,24 @@ try:
+     from curobo.util import logger
+     logger.setup_logger(level="error", logger_name="curobo")
+ 
++    def _disable_hopper_cuda121_fused_lbfgs(config):
++        """Avoid cuRobo's fused LBFGS kernel on Hopper with a pre-12.6 CUDA runtime."""
++        cuda_version = tuple(int(part) for part in torch.version.cuda.split(".")[:2])
++        if torch.cuda.get_device_capability()[0] < 9 or cuda_version >= (12, 6):
++            return
++        for field in (
++            "ik_solver",
++            "trajopt_solver",
++            "js_trajopt_solver",
++            "finetune_js_trajopt_solver",
++            "finetune_trajopt_solver",
++        ):
++            solver = getattr(config, field, None)
++            inner = getattr(solver, "solver", None)
++            for optimizer in getattr(inner, "optimizers", ()):
++                if hasattr(optimizer, "use_cuda_kernel"):
++                    optimizer.use_cuda_kernel = False
++
+     class CuroboPlanner:
+ 
+         def __init__(
+@@ -77,6 +95,7 @@ try:
+                 interpolation_dt=1 / 250,
+                 num_trajopt_seeds=1,
+             )
++            _disable_hopper_cuda121_fused_lbfgs(motion_gen_config)
+ 
+             self.motion_gen = MotionGen(motion_gen_config)
+             self.motion_gen.warmup()
+@@ -87,6 +106,7 @@ try:
+                 num_trajopt_seeds=1,
+                 num_graph_seeds=1,
+             )
++            _disable_hopper_cuda121_fused_lbfgs(motion_gen_config)
+             self.motion_gen_batch = MotionGen(motion_gen_config)
+             self.motion_gen_batch.warmup(batch=CONFIGS.ROTATE_NUM)
+ 

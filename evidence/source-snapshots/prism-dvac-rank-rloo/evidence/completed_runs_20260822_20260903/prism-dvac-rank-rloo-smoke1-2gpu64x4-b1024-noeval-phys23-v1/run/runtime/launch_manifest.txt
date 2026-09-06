@@ -1,0 +1,9 @@
+started_at=2026-08-26T21:37:30+08:00
+source_head=3f977ce7f0c9271a4e164b4d602166286a9ad9f3
+physical_gpus=2,3
+fresh_start=true; target_step=1
+train=64 env x 4 epochs = 256 trajectories; G8; max 1024 chunk records
+actor=GB1024/MB32/update2; 512 records/rank; 2 optimizer calls/rank
+method=mean log V_L3 -> G8 reverse rank q -> success+0.2q -> RLOO/no-std
+eval=disabled only for smoke; terminal checkpoint global_step_1
+normal_stop=complete step1/checkpoint/exit0; hard_timeout=7200s

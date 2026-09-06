@@ -1,0 +1,594 @@
+from rlinf.utils.utils import (
+    collect_param_names_need_sync,
+    warmup_optimizer_state,
+)
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*NO_SHARD.*full_state_dict.*",
+    category=UserWarning,
+)
+
+
+class FSDPModelManager:
+    """
+    FSDP Model Manager for RL training
+    """
+
+    def __init__(self, cfg: DictConfig, world_size: int, rank: int) -> None:
+        """
+        Initialize FSDP Model Manager.
+
+        Args:
+            cfg: actor config in yaml file.
+            world_size: total number of FSDP actor processes.
+        """
+        self._cfg = cfg
+        self._logger = get_logger()
+        self.torch_dtype = torch_dtype_from_precision(self._cfg.model.precision)
+        if self.torch_dtype != torch.float32:
+            self._logger.warning(
+                "Provided there is sufficient GPU memory, "
+                "set the actor.model.precision parameter to fp32 "
+                "to allow the optimizer to run in fp32 for better convergence. "
+                "Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype "
+                "can help maximize speed, as it will automatically "
+                "convert fp32 to fp16 during operator execution."
+            )
+
+        self.optimizer_steps = 0
+        self.critic_warmup_steps = 0
+        if self._cfg.get("optim", {}).get(
+            "critic_warmup_steps", None
+        ) and self._cfg.model.get("add_value_head", False):
+            self.critic_warmup_steps = self._cfg.optim.critic_warmup_steps
+        self.store_requires_grad_param_name = []
+
+        if cfg.get("tokenizer", {}).get("tokenizer_model", None) is not None:
+            self.tokenizer = hf_tokenizer(cfg.tokenizer.tokenizer_model)
+
+        self._device_mesh = create_device_mesh(world_size)
+        self._dp_group = (
+            self._device_mesh["ddp"].get_group()
+            if "ddp" in self._device_mesh.mesh_dim_names
+            else None
+        )
+
+        self._strategy = FSDPStrategyBase.create(
+            self._cfg, world_size, self._dp_group, self._logger
+        )
+        self.amp_context = self._create_amp_context()
+
+        Worker.torch_platform.set_device(int(os.environ["LOCAL_RANK"]))
+        self.device = Worker.torch_platform.current_device()
+
+        self.is_weight_offloaded = False
+        self.is_optimizer_offloaded = False
+
+        # Bucket capacity for weight sync (in bytes), default 128MB
+        self.bucket_capacity = cfg.get("sync_bucket_capacity", 128 * 1024 * 1024)
+
+        self.param_names_need_sync: list[str] = None
+
+    def _create_amp_context(self) -> ContextManager:
+        """
+        Create AMP context manager based on configuration.
+
+        Returns:
+            A context manager for automatic mixed precision (AMP) if enabled,
+            otherwise a null context manager.
+        """
+        from contextlib import nullcontext
+
+        if not self._cfg.fsdp_config.amp_autocast.enabled:
+            self._logger.info("[FSDP] AMP is disabled.")
+            return nullcontext()
+
+        precision = torch_dtype_from_precision(
+            self._cfg.fsdp_config.amp_autocast.precision
+        )
+
+        self._logger.info(f"[FSDP] AMP is enabled with precision: {precision}.")
+
+        return torch.amp.autocast(device_type="cuda", dtype=precision)
+
+    def model_provider_func(self) -> torch.nn.Module:
+        """
+        """
+        Wrap the model with FSDP using the specified configuration,
+        it will apply mixed precision, sharding strategy, and wrapping policy.
+
+        Args:
+            - model (nn.Module): The model to be wrapped.
+            - device_mesh (DeviceMesh): The device mesh for distributed training.
+
+        Returns:
+            - FSDP: The wrapped FSDP model.
+        """
+        mixed_precision_config = self.cfg.fsdp_config.mixed_precision
+        param_dtype = torch_dtype_from_precision(mixed_precision_config.param_dtype)
+        reduce_dtype = torch_dtype_from_precision(mixed_precision_config.reduce_dtype)
+        buffer_dtype = torch_dtype_from_precision(mixed_precision_config.buffer_dtype)
+        mixed_precision = MixedPrecision(
+            param_dtype=param_dtype,
+            reduce_dtype=reduce_dtype,
+            buffer_dtype=buffer_dtype,
+        )
+
+        sharding_strategy = get_sharding_strategy(
+            self.cfg.fsdp_config.sharding_strategy
+        )
+
+        auto_wrap_policy = get_fsdp_wrap_policy(
+            module=model,
+            config=self.cfg.fsdp_config,
+            is_lora=self.cfg.model.is_lora,
+            model_type=self.cfg.model.model_type,
+        )
+
+        backward_prefetch = get_backward_prefetch_strategy(
+            self.cfg.fsdp_config.backward_prefetch
+        )
+
+        cpu_offload = CPUOffload(offload_params=self.cfg.fsdp_config.cpu_offload)
+
+        fsdp_model = FSDP(
+            module=model,
+            param_init_fn=init_fn,
+defaults:
+  - env/robotwin_adjust_bottle@env.train
+  - env/robotwin_adjust_bottle@env.eval
+  - model/pi0@actor.model
+  - hybrid_engines/fsdp@actor.fsdp_config
+  - weight_syncer/patch_syncer@weight_syncer
+  - override hydra/job_logging: stdout
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  searchpath:
+    - file://${oc.env:EMBODIED_PATH}/config/
+
+cluster:
+  num_nodes: 1
+  component_placement:
+    actor: 0-3
+    env: 4-7
+    rollout: 4-7
+
+runner:
+  task_type: embodied
+  logger:
+    log_path: "../results"
+    project_name: rlinf
+    experiment_name: "robotwin_adjust_bottle_dagger_openpi"
+    logger_backends: ["tensorboard"]
+
+  max_epochs: 8000
+  max_steps: -1
+
+  only_eval: False
+  val_check_interval: 20
+  save_interval: -1
+
+  resume_dir: null
+  ckpt_path: null
+
+algorithm:
+  reward_coef: 1.0
+
+  dagger:
+    # Expert acts with probability beta, student acts with probability 1 - beta.
+    init_beta: 1.0
+    beta_schedule: "exponential"
+    beta_decay: 0.99
+    # False enables classic DAgger: student-acted data is re-labeled by expert.
+    only_save_expert: False
+
+  gamma: 0.99
+
+  update_epoch: 1
+  adv_type: gae
+  loss_type: embodied_dagger
+
+  replay_buffer:
+    enable_cache: True
+    cache_size: 2000
+    min_buffer_size: 16
+    sample_window_size: 2000
+    auto_save: False
+
+env:
+  group_name: "EnvGroup"
+  # enable_offload: False
+  train:
+    rollout_epoch: 1
+    total_num_envs: 64
+    reward_coef: ${algorithm.reward_coef}
+    max_episode_steps: 200
+    max_steps_per_rollout_epoch: 200
+    group_size: 1
+    assets_path: "/path/to/robotwin_assets"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/train_seeds.json
+    center_crop: False
+    task_config:
+      task_name: adjust_bottle
+      step_lim: 200
+      planner_backend: mplib
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+  eval:
+    rollout_epoch: 1
+    total_num_envs: 64
+    auto_reset: True
+    ignore_terminations: True
+    max_episode_steps: 200
+    reward_coef: ${algorithm.reward_coef}
+    max_steps_per_rollout_epoch: 200
+    group_size: 1
+    use_fixed_reset_state_ids: True
+    is_eval: True
+    assets_path: "/path/to/robotwin_assets"
+    seeds_path: ${oc.env:REPO_PATH}/rlinf/envs/robotwin/seeds/eval_seeds.json
+    video_cfg:
+      save_video: False
+      video_base_dir: ${runner.logger.log_path}/video/eval
+    center_crop: False
+    task_config:
+      task_name: adjust_bottle
+      step_lim: 200
+      planner_backend: mplib
+      embodiment: [aloha-agilex]
+      camera:
+        collect_wrist_camera: true
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+
+rollout:
+  group_name: "RolloutGroup"
+  backend: "huggingface"
+  recompute_logprobs: False
+  enable_offload: False
+  pipeline_stage_num: 1
+  collect_prev_infos: False
+
+  model:
+    model_path: "/path/to/model"
+    precision: ${actor.model.precision}
+
+  expert_model:
+    model_path: "/path/to/model"
+    precision: ${actor.model.precision}
+
+actor:
+  group_name: "ActorGroup"
+  training_backend: "fsdp"
+  micro_batch_size: 32
+  global_batch_size: 1024
+  seed: 1234
+  enable_offload: False
+
+  model:
+    precision: null
+    model_path: "/path/to/model"
+    num_action_chunks: 50
+    add_value_head: False
+    action_dim: 14
+    openpi:
+      config_name: "pi0_aloha_robotwin"
+      num_images_in_input: 3
+      train_expert_only: False
+      detach_critic_input: True
+      action_chunk: ${actor.model.num_action_chunks}
+      action_env_dim: ${actor.model.action_dim}
+
+  optim:
+    lr: 2.5e-5
+    value_lr: 1.55e-4
+    adam_beta1: 0.9
+    adam_beta2: 0.95
+    adam_eps: 1.0e-08
+    weight_decay: 1e-10
+    clip_grad: 1.0
+    total_training_steps: 30000
+    lr_warmup_steps: 1000
+    lr_scheduler: "cosine"
+    num_cycles: 0.5
+    min_lr: 2.5e-6
+
+  fsdp_config:
+    strategy: "fsdp"
+    sharding_strategy: "no_shard"
+    use_orig_params: False
+    gradient_checkpointing: False
+    mixed_precision:
+      param_dtype: ${actor.model.precision}
+      reduce_dtype: ${actor.model.precision}
+      buffer_dtype: ${actor.model.precision}
+
+reward:
+  use_reward_model: False
+
+critic:
+  use_critic_model: False
+model_type: "openpi"
+
+# Model path - should be set in specific config files
+model_path: "/path/to/model/openpi"
+
+precision: null
+
+# Action and chunk settings
+num_action_chunks: 10
+action_dim: 7
+
+# LoRA settings
+is_lora: False
+lora_rank: 32
+
+# Training settings
+use_proprio: True
+num_steps: 4
+add_value_head: False
+
+# openpi specific parameters
+openpi:
+  config_name: "pi0_libero"
+  num_images_in_input: 2
+  noise_level: 0.5
+  action_chunk: ${..num_action_chunks}
+  num_steps: ${..num_steps}
+  train_expert_only: True
+  action_env_dim: ${..action_dim}
+  noise_method: "flow_sde"
+  add_value_head: ${..add_value_head}
+  detach_critic_input: False
+  # DSRL specific configurations (disabled by default)
+  use_dsrl: False
+  dsrl_state_dim: 8
+  dsrl_action_noise_dim: 32
+  dsrl_num_q_heads: 10
+  dsrl_agg_q: "mean"
+  dsrl_image_latent_dim: 64
+  dsrl_state_latent_dim: 64
+  dsrl_hidden_dims: [128, 128, 128]
+class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
+    """
+    Pi0 model for reinforcement learning action prediction.
+    """
+
+    config: OpenPi0Config
+
+    @property
+    def _no_split_modules(self) -> list[str]:
+        if self.config.train_expert_only:
+            no_split_modules = [
+                "GemmaDecoderLayer",
+                "SiglipVisionEmbeddings",
+                "GemmaRMSNorm",
+                "GemmaRotaryEmbedding",
+            ]
+        else:
+            no_split_modules = [
+                "GemmaMLP",
+                "SiglipVisionEmbeddings",
+                "GemmaRMSNorm",
+                "GemmaRotaryEmbedding",
+            ]
+        if self.config.noise_method == "flow_noise":
+            no_split_modules.append("ExploreNoiseNet")
+        if self.config.use_rlt:
+            no_split_modules.append("RLTSelfAttentionLayer")
+        return no_split_modules
+
+    @property
+    def _no_split_names(self) -> list[str]:
+        return [
+            "action_in_proj",
+            "action_out_proj",
+            "lm_head",
+            # --pi0 only--
+            "state_proj",
+            "action_time_mlp_in",
+            "action_time_mlp_out",
+            # --pi05 only--
+            "time_mlp_in",
+            "time_mlp_out",
+        ]
+
+    def __init__(
+        self,
+        config: OpenPi0Config,
+    ):
+        # Override `sample_actions` to prevent parent class polymorphic call
+        sample_actions_func = self.sample_actions
+        super().__init__(config)
+        self.sample_actions = sample_actions_func
+        self.logger = get_logger()
+        self.global_step = 0
+        # assert
+        assert not (self.config.double_layer and self.config.joint_logprob), (
+            "double_layer and joint_logprob can not be set at the same time"
+        )
+
+        # rl model init
+        if self.config.value_after_vlm:
+            proj_width = 2048
+        else:
+            proj_width = 1024
+        # value head
+        if self.config.add_value_head:
+            if self.config.config_name in [
+                "pi05_maniskill",
+                "pi05_libero",
+                "pi05_droid_polaris",
+            ]:
+                value_head_hidden_sizes = (1024, 512, 256)
+            else:
+                value_head_hidden_sizes = (512, 256, 128)
+            value_head_activation = "relu"
+            self.value_head = ValueHead(
+                input_dim=proj_width,
+                hidden_sizes=value_head_hidden_sizes,
+                output_dim=1,
+                activation=value_head_activation,
+                bias_last=True,
+            )
+        self.use_vlm_value = getattr(self.config, "value_after_vlm", False) and getattr(
+            self.config, "add_value_head", False
+        )
+        # noise head for flow-noise
+        if self.config.noise_method == "flow_noise":
+            self.noise_head = ExploreNoiseNet(
+                in_dim=1024,
+                out_dim=self.config.action_dim,
+                hidden_dims=[128, 64],
+                activation_type="tanh",
+                noise_logvar_range=self.config.noise_logvar_range,
+                noise_scheduler_type="learn",
+            )
+
+        if self.config.use_rlt:
+            from rlinf.models.embodiment.modules.rlt_token_transformer import (
+                RLTTokenTransformer,
+            )
+
+            self.rlt_module = RLTTokenTransformer(
+                input_dim=self.config.rlt_input_dim,
+                embed_dim=self.config.rlt_embed_dim,
+                prefix_seq_len=self.config.rlt_prefix_seq_len,
+                num_layers=self.config.rlt_num_layers,
+                num_heads=self.config.rlt_num_heads,
+                mlp_ratio=self.config.rlt_mlp_ratio,
+            ).to(dtype=torch.bfloat16)
+
+        # ===== DSRL components initialization =====
+        if self.config.use_dsrl:
+            from rlinf.models.embodiment.modules.compact_encoders import (
+                CompactMultiQHead,
+                CompactStateEncoder,
+                LightweightImageEncoder64,
+            )
+            from rlinf.models.embodiment.modules.gaussian_policy import GaussianPolicy
+
+            # Use explicit bfloat16 to match the backbone dtype that will be
+            # loaded from the checkpoint later.  At __init__ time the backbone
+            # parameters are still float32 (weights are loaded afterwards by
+            # safetensors.torch.load_model), so next(self.parameters()).dtype
+            # would incorrectly return float32.  Hardcoding bfloat16 here
+            # ensures all parameters share a single dtype when FSDP creates
+23:def get_model(cfg: DictConfig, torch_dtype=None):
+67:    if actor_model_config.train_expert_only:
+      mask_ar: int32[B, N] mask that's 1 where previous tokens cannot depend on
+        it and 0 where it shares the same attention mask as the previous token.
+    """
+    if att_masks.ndim != 2:
+        raise ValueError(att_masks.ndim)
+    if pad_masks.ndim != 2:
+        raise ValueError(pad_masks.ndim)
+
+    cumsum = torch.cumsum(att_masks, dim=1)
+    att_2d_masks = cumsum[:, None, :] <= cumsum[:, :, None]
+    pad_2d_masks = pad_masks[:, None, :] * pad_masks[:, :, None]
+    return att_2d_masks & pad_2d_masks
+
+
+class PI0Pytorch(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.pi05 = config.pi05
+
+        paligemma_config = _gemma.get_config(config.paligemma_variant)
+        action_expert_config = _gemma.get_config(config.action_expert_variant)
+
+        self.paligemma_with_expert = PaliGemmaWithExpertModel(
+            paligemma_config,
+            action_expert_config,
+            use_adarms=[False, True] if self.pi05 else [False, False],
+            precision=config.dtype,
+        )
+
+        self.action_in_proj = nn.Linear(32, action_expert_config.width)
+        self.action_out_proj = nn.Linear(action_expert_config.width, 32)
+
+        if self.pi05:
+            self.time_mlp_in = nn.Linear(action_expert_config.width, action_expert_config.width)
+            self.time_mlp_out = nn.Linear(action_expert_config.width, action_expert_config.width)
+        else:
+            self.state_proj = nn.Linear(32, action_expert_config.width)
+            self.action_time_mlp_in = nn.Linear(2 * action_expert_config.width, action_expert_config.width)
+            self.action_time_mlp_out = nn.Linear(action_expert_config.width, action_expert_config.width)
+
+        torch.set_float32_matmul_precision("high")
+        self.sample_actions = torch.compile(self.sample_actions, mode="max-autotune")
+
+        # Initialize gradient checkpointing flag
+        self.gradient_checkpointing_enabled = False
+
+        msg = "transformers_replace is not installed correctly. Please install it with `uv pip install transformers==4.53.2` and `cp -r ./src/openpi/models_pytorch/transformers_replace/* .venv/lib/python3.11/site-packages/transformers/`."
+        try:
+            from transformers.models.siglip import check
+
+            if not check.check_whether_transformers_replace_is_installed_correctly():
+                raise ValueError(msg)
+        except ImportError:
+            raise ValueError(msg) from None
+
+    def gradient_checkpointing_enable(self):
+        """Enable gradient checkpointing for memory optimization."""
+        self.gradient_checkpointing_enabled = True
+        self.paligemma_with_expert.paligemma.language_model.gradient_checkpointing = True
+        self.paligemma_with_expert.paligemma.vision_tower.gradient_checkpointing = True
+        self.paligemma_with_expert.gemma_expert.model.gradient_checkpointing = True
+
+        logging.info("Enabled gradient checkpointing for PI0Pytorch model")
+
+    def gradient_checkpointing_disable(self):
+        """Disable gradient checkpointing."""
+        self.gradient_checkpointing_enabled = False
+        self.paligemma_with_expert.paligemma.language_model.gradient_checkpointing = False
+        self.paligemma_with_expert.paligemma.vision_tower.gradient_checkpointing = False
+        self.paligemma_with_expert.gemma_expert.model.gradient_checkpointing = False
+
+        logging.info("Disabled gradient checkpointing for PI0Pytorch model")
+
+    def is_gradient_checkpointing_enabled(self):
+        """Check if gradient checkpointing is enabled."""
+        return self.gradient_checkpointing_enabled
+
+    def _apply_checkpoint(self, func, *args, **kwargs):
+        """Helper method to apply gradient checkpointing if enabled."""
+        if self.gradient_checkpointing_enabled and self.training:
+            return torch.utils.checkpoint.checkpoint(
+                func, *args, use_reentrant=False, preserve_rng_state=False, **kwargs
+            )
+        return func(*args, **kwargs)
+
+    def _prepare_attention_masks_4d(self, att_2d_masks):
+        """Helper method to prepare 4D attention masks for transformer."""
+        att_2d_masks_4d = att_2d_masks[:, None, :, :]
+        return torch.where(att_2d_masks_4d, 0.0, -2.3819763e38)
+
+    def _preprocess_observation(self, observation, *, train=True):
+        """Helper method to preprocess observation."""
+        observation = _preprocessing.preprocess_observation_pytorch(observation, train=train)
+        return (
+            list(observation.images.values()),
+FSDP signature: (param_dtype: torch.dtype | None = None, reduce_dtype: torch.dtype | None = None, buffer_dtype: torch.dtype | None = None, keep_low_precision_grads: bool = False, cast_forward_inputs: bool = False, cast_root_forward_inputs: bool = True, _module_classes_to_ignore: collections.abc.Sequence[type[torch.nn.modules.module.Module]] = (<class 'torch.nn.modules.batchnorm._BatchNorm'>,)) -> None

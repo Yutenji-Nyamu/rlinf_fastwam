@@ -1,0 +1,240 @@
+diff --git a/envs/_base_task.py b/envs/_base_task.py
+index 79fc885..20dec30 100644
+--- a/envs/_base_task.py
++++ b/envs/_base_task.py
+@@ -89,6 +89,7 @@ class Base_Task(gym.Env):
+         self.file_path = []
+         self.plan_success = True
+         self.fix_gripper = False
++        self.ray_tracing_denoiser = kwags.get("ray_tracing_denoiser", "oidn")
+         self.setup_scene()
+ 
+         self.left_js = None
+@@ -216,7 +217,7 @@ class Base_Task(gym.Env):
+         sapien.render.set_camera_shader_dir("rt")
+         sapien.render.set_ray_tracing_samples_per_pixel(32)
+         sapien.render.set_ray_tracing_path_depth(8)
+-        sapien.render.set_ray_tracing_denoiser("oidn")
++        sapien.render.set_ray_tracing_denoiser(self.ray_tracing_denoiser)
+ 
+         # declare sapien scene
+         scene_config = sapien.SceneConfig()
+        global_lock=None,
+    ):
+        self.env_id = env_id
+        self.task_name = task_name
+        self.args = args
+        self.env_seed = env_seed
+        if self.env_seed is None:
+            self.env_seed = self.env_id
+        self.instruction = None
+        self.task = class_decorator(self.task_name)
+        self.instruction_type = instruction_type
+        self.global_lock = global_lock
+        self.lock = threading.Lock()
+
+    def setup_task(self):
+        self.close()
+        self.task = class_decorator(self.task_name)
+
+        with self.global_lock:
+            with self.lock:
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        task = class_decorator(self.task_name)
+                        task.setup_demo(
+                            now_ep_num=trial_seed,
+                            seed=trial_seed,
+                            is_test=True,
+                            **self.args,
+                        )
+                        episode_info = task.get_info()
+                        is_valid = True
+                    except Exception as e:
+                        task.close_env(clear_cache=False)
+                        trial_seed += 1
+                        continue
+                    task.close_env(clear_cache=False)
+
+                self.episode_info_list = [episode_info]
+
+    def create_instruction(self):
+        task_descriptions = generate_episode_descriptions(
+            self.task_name, self.episode_info_list, 1, self.env_seed
+        )
+        instruction = np.random.choice(task_descriptions[0][self.instruction_type])
+        return instruction
+
+    def step(self, actions):
+        if self.get_instruction() is None:
+            self.reset(env_seed=None)
+
+        with self.lock:
+            reward, termination, truncation, info = self.task.gen_sparse_reward_data(actions)
+            obs = update_obs(self.task.get_obs())
+            obs["instruction"] = self.task.get_instruction()
+
+        return {
+            "obs": obs,
+            "reward": reward,
+            "terminated": termination,
+            "truncated": truncation,
+            "info": info,
+        }
+
+    def reset(self, env_seed=None, close_current=True):
+        with self.global_lock:
+            with self.lock:
+                if close_current and self.task is not None:
+                    self.task.close_env(clear_cache=False)
+                if env_seed is not None:
+                    self.env_seed = env_seed
+
+                if self.task is None:
+                    self.task = class_decorator(self.task_name)
+
+                self.instruction = self.create_instruction()
+                self.args["instruction"] = self.instruction
+
+                trial_seed = self.env_seed
+                is_valid = False
+                while not is_valid:
+                    try:
+                        self.task.setup_demo(
+                            now_ep_num=trial_seed, seed=trial_seed, **self.args
+                        )
+                        self.task.step_lim = self.args["step_lim"]
+                        self.task.run_steps = 0
+                        self.task.reward_step = 0
+                        is_valid = True
+                    except UnStableError as e:
+                        logging.warning(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}, trying new seed: {trial_seed + 1}"
+                        )
+                        self.task.close_env(clear_cache=False)
+                        trial_seed += 1
+                        continue
+                    except Exception as e:
+                        logging.error(
+                            f"RoboTwin SubEnv {self.env_id} reset error with seed {trial_seed}, error: {e}"
+                        )
+    mp.set_start_method("spawn")  # solve CUDA compatibility problem
+    task_name = "place_shoe"
+    n_envs = 4
+    steps = 30
+    horizon = 10
+    action_dim = 14
+    times = 10
+    env = VectorEnv(task_name, n_envs, horizon)
+    actions = np.zeros((n_envs, horizon, action_dim))
+    for t in range(times):
+        prev_obs_venv, reward_venv, truncation, termination, info_venv = (
+            env.reset()
+        )
+        for step in range(steps):
+            actions += np.random.randn(n_envs, horizon, action_dim) * 0.05
+            actions = np.clip(actions, 0, 1)
+            obs_venv, reward_venv, truncation, termination, info_venv = env.step(
+                actions
+            )
+
+            # 测试partial reset功能
+            if step % 10 == 0:
+                # 重置所有环境
+                env.reset()
+            elif step % 5 == 0:
+                # 只重置环境0和2
+                env.reset(env_idx=[0, 2])
+            
+            obs = (
+                env.get_obs()
+            )
+        env.close()
+# global configs
+import os
+
+ROOT_PATH = os.path.abspath(__file__)
+ROOT_PATH = ROOT_PATH[:ROOT_PATH.rfind("/")]
+ROOT_PATH = ROOT_PATH[:ROOT_PATH.rfind("/") + 1]
+
+ASSETS_PATH = os.path.join(ROOT_PATH, "assets/")
+EMBODIMENTS_PATH = os.path.join(ASSETS_PATH, "embodiments/")
+TEXTURES_PATH = os.path.join(ASSETS_PATH, "background_texture/")
+CONFIGS_PATH = os.path.join(ROOT_PATH, "task_config/")
+SCRIPT_PATH = os.path.join(ROOT_PATH, "script/")
+DESCRIPTION_PATH = os.path.join(ROOT_PATH, "description/")
+
+# Euler angles in world coordinates
+# t3d.euler.quat2euler(quat) returns (theta_x, theta_y, theta_z)
+# theta_y controls the pitch, and theta_z controls rotation around the axis perpendicular to the tabletop plane
+GRASP_DIRECTION_DIC = {
+    "left": [0, 0, 0, -1],
+    "front_left": [-0.383, 0, 0, -0.924],
+    "front": [-0.707, 0, 0, -0.707],
+    "front_right": [-0.924, 0, 0, -0.383],
+    "right": [-1, 0, 0, 0],
+    "top_down": [-0.5, 0.5, -0.5, -0.5],
+    "down_right": [-0.707, 0, -0.707, 0],
+    "down_left": [0, 0.707, 0, -0.707],
+    "top_down_little_left": [-0.353523, 0.61239, -0.353524, -0.61239],
+    "top_down_little_right": [-0.61239, 0.353523, -0.61239, -0.353524],
+    "left_arm_perf": [-0.853532, 0.146484, -0.353542, -0.3536],
+    "right_arm_perf": [-0.353518, 0.353564, -0.14642, -0.853568],
+}
+
+WORLD_DIRECTION_DIC = {
+    "left": [0, -0.707, 0, 0.707],  # -z  -y  -x
+    "front": [0.5, -0.5, 0.5, 0.5],  # y   z   -x
+    "right": [0.707, 0, 0.707, 0],  # z   y   -x
+    "top_down": [0, 0.707, -0.707, 0],  # -x  -y  -z
+}
+
+ROTATE_NUM = 10
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/envs/camera/camera.py
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-oidn-toggle-20260904/envs/camera/__init__.py
+drwxrwxr-x 3 chenyiteng chenyiteng 4096 Sep  3 10:07 /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/assets
+drwxrwxr-x 2 chenyiteng chenyiteng 4096 Sep  3 09:58 /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-vector-render-lifecycle-fix-0008ae6/task_config
+/data/chenyiteng/projects/fastwam-standalone
+/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711
+/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src/fastwam.egg-info
+/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/src/fastwam
+/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/experiments/robotwin/fastwam_policy
+/data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/.git/worktrees/fastwam-dvac-observe-7faa711
+/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711
+/data/chenyiteng/projects/fastwam-standalone/worktrees/fastwam-dvac-observe-7faa711/src/fastwam
+/data/chenyiteng/projects/rlinf-shenzhen/RLinf/.git/worktrees/fastwam-action-dvac-adv
+/data/chenyiteng/projects/rlinf-shenzhen/RLinf/.git/worktrees/fastwam-current-grpo
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-action-dvac-adv
+/data/chenyiteng/projects/rlinf-shenzhen/worktrees/fastwam-current-grpo
+/data/chenyiteng/projects/robotwin-native/RoboTwin/XPolicyLab/policy/FastWAM
+/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/tests/policies/fastwam
+/data/chenyiteng/projects/lerobot-sidney/lerobot-30da8e687a6d/tests/policies/fastwam
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v2
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v3-roundtrip
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-pi0style-offload-smoke1-2gpu32x8-g8-b2048-u2-m10-phys67-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-pi0style-offload-smoke1-2gpu16x16-g8-b2048-u2-m10-phys67-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v2-envoffload
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/packets/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v4-roundtrip
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v2
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu32x8-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-resume10-to100-2gpu32x4-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-renderlife-v2
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v3-roundtrip
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-pi0style-offload-smoke1-2gpu32x8-g8-b2048-u2-m10-phys67-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v2-envoffload-reloadcheck
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v4-roundtrip-reloadcheck
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-pi0style-offload-smoke1-2gpu16x16-g8-b2048-u2-m10-phys67-v1
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-localshard-v2-envoffload
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-formal100-2gpu16x16-g8-b2048-u2-m10-fixed32-eval5-phys67-dcp-pi0style-v3
+/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-smoke1-current-2gpu32x1-g8-b256-u1-m10-phys23-dcp-v4-roundtrip

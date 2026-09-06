@@ -1,0 +1,19 @@
+defaults:
+  - robotwin_adjust_bottle_dsrl_openpi
+  - _self_
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_dsrl_openpi_a800_2gpu_smoke"
+  max_steps: 1
+  val_check_interval: 1
+  save_interval: 1
+
+algorithm:
+  replay_buffer:
+    warmup_size: 4
+
+env:
+  eval:
+    rollout_epoch: 1
+    use_fixed_reset_state_ids: True

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "machine": "SZ-H100",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/ppo/ppo-formal100-4gpu128train64eval-official-v1",
+  "method": "read-only live snapshots; RSS can double-count shared mappings, cgroup memory.current is authoritative for the run scope",
+  "samples": [
+    {
+      "time_utc": "2026-08-22T02:03:29Z",
+      "phase": "step 22 rollout in progress",
+      "host_mem_available_gib": 600.254,
+      "host_anon_pages_gib": 1365.593,
+      "user_rss_sum_gib": 1408.697,
+      "envworker_rss_sum_gib": 1321.048
+    },
+    {
+      "time_utc": "2026-08-22T02:04:34Z",
+      "phase": "step 22 rollout epoch 3/4 reached",
+      "host_mem_available_gib": 597.7738990783691,
+      "host_anon_pages_gib": 1368.1712760925293,
+      "user_rss_sum_gib": 1411.2680931091309,
+      "envworker_rss_sum_gib": 1323.622760772705
+    },
+    {
+      "time_utc": "2026-08-22T02:08:21Z",
+      "phase": "immediately after complete Global Step 22 metric table",
+      "host_mem_available_gib": 597.001106262207,
+      "host_anon_pages_gib": 1368.6489486694336,
+      "user_rss_sum_gib": 1411.7548789978027,
+      "envworker_rss_sum_gib": 1324.0704650878906,
+      "cgroup_memory_current_bytes": 1535529234432,
+      "cgroup_memory_current_tib": 1.3965557031333447,
+      "cgroup_events": {"low": 0, "high": 0, "max": 0, "oom": 0, "oom_kill": 0},
+      "gpu_memory_used_mib": {"4": 62084, "5": 61446, "6": 60678, "7": 60966},
+      "fatal_counts": {"traceback": 0, "cuda_oom": 0, "nccl_error": 0, "worker_died": 0, "nan_inf": 0}
+    }
+  ],
+  "step_22": {
+    "train_success_once": 0.9277344,
+    "actor_approx_kl": 0.014,
+    "actor_clip_fraction": 0.053,
+    "actor_grad_norm": 28.012,
+    "critic_explained_variance": 0.419,
+    "critic_value_loss": 0.020,
+    "cumulative_mean_step_time_s": 1560.721
+  },
+  "boundary_observation": "No large EnvWorker or cgroup memory release occurred at the complete step-22 boundary; memory still had a small net increase. This establishes a resource-risk signal but is not enough to fit a reliable linear OOM ETA."
+}

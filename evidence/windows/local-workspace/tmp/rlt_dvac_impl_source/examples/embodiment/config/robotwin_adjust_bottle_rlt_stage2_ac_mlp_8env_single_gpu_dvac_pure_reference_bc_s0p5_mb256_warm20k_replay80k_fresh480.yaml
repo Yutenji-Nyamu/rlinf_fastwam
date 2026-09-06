@@ -1,0 +1,31 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_8env_single_gpu_fresh480_mb256_warm20k_replay80k_control
+  - _self_
+
+# Original single-GPU RLT plus success-episode, mean-one teacher-DVAC
+# redistribution inside the existing pi0-reference BC term.
+algorithm:
+  rlt_dvac:
+    mode: apply
+    application: success_episode_bc
+    success_target: reference
+    l_values: [2, 3, 4]
+    selected_l: 3
+    applied_horizon: ${actor.model.num_action_chunks}
+    log_eps: 1.0e-12
+    std_floor: 1.0e-6
+    z_clip: 2.0
+    strength: 0.5
+    success_scale: 1.0
+    raw_trace_interval_updates: 1000
+    raw_trace_queries_per_update: 4
+    output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/rlt_dvac
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}
+
+runner:
+  logger:
+    experiment_name: "robotwin_adjust_bottle_rlt_single_gpu_dvac_pure_reference_bc_s0p5_matched_width_fresh480_v1"

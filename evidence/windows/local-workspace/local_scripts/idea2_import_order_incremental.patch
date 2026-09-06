@@ -1,0 +1,25 @@
+diff --git a/rlinf/utils/dvac_telemetry.py b/rlinf/utils/dvac_telemetry.py
+--- a/rlinf/utils/dvac_telemetry.py
++++ b/rlinf/utils/dvac_telemetry.py
+@@ -20,8 +20,8 @@ from pathlib import Path
+ from typing import Any
+ 
+ import numpy as np
+-import torch
+ from PIL import Image
++import torch
+ 
+ 
+ QUERY_COLUMNS = (
+diff --git a/rlinf/workers/env/env_worker.py b/rlinf/workers/env/env_worker.py
+--- a/rlinf/workers/env/env_worker.py
++++ b/rlinf/workers/env/env_worker.py
+@@ -35,7 +35,7 @@ from rlinf.envs.utils import get_env_attr
+ from rlinf.envs.wrappers import RecordVideo
+ from rlinf.scheduler import Channel, Cluster, CommMapper, Worker
+ from rlinf.utils.data_iter_utils import split_list
+-from rlinf.utils.dvac_telemetry import DVACEpisodeWriter
+ from rlinf.utils.distributed import masked_stats, normalize_from_stats
++from rlinf.utils.dvac_telemetry import DVACEpisodeWriter
+ from rlinf.utils.metric_utils import compute_split_num
+ from rlinf.utils.nested_dict_process import (

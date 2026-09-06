@@ -1,0 +1,10 @@
+started_at=2026-08-28T11:02:21+08:00
+source_head=a5b94b6f10a9212502d6930f07543f61e31af52e
+physical_gpus=4,5
+fresh_start=true; target_step=100
+train=64 env x 4 epochs = 256 trajectories/step; G8; max1024 records
+actor=GB1024/MB32/update2
+method=trajectory GRPO A times raw [0,2] DVAC per-action weight; action-level ratio/clip
+eval=fixed32 every5; checkpoint=DCP every10
+normal_stop=complete step100/checkpoint/exit0; hard_timeout=216000s
+cutover_gap_seconds=2

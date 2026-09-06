@@ -1,0 +1,62 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 386, in <module>
+    main()
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 382, in main
+    args.func(args)
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 135, in export_native
+    model_actions = policy.model.sample_actions(
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/pi05/modeling_pi05.py", line 819, in sample_actions
+    prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(images, img_masks, tokens, masks)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/pi05/modeling_pi05.py", line 668, in embed_prefix
+    img_emb = self._apply_checkpoint(image_embed_func, img)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/pi05/modeling_pi05.py", line 631, in _apply_checkpoint
+    return func(*args, **kwargs)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/pi05/modeling_pi05.py", line 666, in image_embed_func
+    return self.paligemma_with_expert.embed_image(img)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/pi05/modeling_pi05.py", line 452, in embed_image
+    image_outputs = self.paligemma.model.get_image_features(image)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/paligemma/modeling_paligemma.py", line 252, in get_image_features
+    image_outputs = self.vision_tower(pixel_values, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/generic.py", line 952, in wrapper
+    output = func(self, *args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+    outputs = func(self, *args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/siglip/modeling_siglip.py", line 702, in forward
+    return self.vision_model(
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/siglip/modeling_siglip.py", line 607, in forward
+    hidden_states = self.embeddings(pixel_values, interpolate_pos_encoding=interpolate_pos_encoding)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/siglip/modeling_siglip.py", line 178, in forward
+    patch_embeds = self.patch_embedding(pixel_values.to(dtype=target_dtype))  # shape = [*, width, grid, grid]
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/home/chenyiteng/venvs/fastwam-7faa-py310-cu128/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+RuntimeError: Given groups=1, weight of size [1152, 3, 14, 14], expected input[1, 224, 224, 3] to have 3 channels, but got 224 channels instead

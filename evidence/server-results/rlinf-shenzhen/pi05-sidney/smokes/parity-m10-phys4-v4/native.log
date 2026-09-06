@@ -1,0 +1,98 @@
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.bias
+WARNING:root:Vision embedding key might need handling: model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.embeddings.patch_embedding.weight
+The PI05 model is a direct port of the OpenPI implementation. 
+This implementation follows the original OpenPI structure for compatibility. 
+Original implementation: https://github.com/Physical-Intelligence/openpi
+Loading model from: /data/chenyiteng/models/lerobot/sidney-pi05-robotwin-e49e2ab
+✓ Loaded state dict from model.safetensors
+All keys loaded successfully!
+Traceback (most recent call last):
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 422, in cached_files
+    hf_hub_download(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1027, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1174, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1904, in _raise_on_head_call_error
+    raise LocalEntryNotFoundError(
+huggingface_hub.errors.LocalEntryNotFoundError: Cannot find the requested files in the disk cache and outgoing traffic has been disabled. To enable hf.co look-ups and downloads online, set 'local_files_only' to False.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/auto/tokenization_auto.py", line 684, in from_pretrained
+    config = AutoConfig.from_pretrained(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/auto/configuration_auto.py", line 1483, in from_pretrained
+    config_dict, unused_kwargs = PreTrainedConfig.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/configuration_utils.py", line 670, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/configuration_utils.py", line 725, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 278, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 498, in cached_files
+    raise OSError(
+OSError: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 422, in cached_files
+    hf_hub_download(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1027, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1174, in _hf_hub_download_to_cache_dir
+    _raise_on_head_call_error(head_call_error, force_download, local_files_only)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/huggingface_hub/file_download.py", line 1904, in _raise_on_head_call_error
+    raise LocalEntryNotFoundError(
+huggingface_hub.errors.LocalEntryNotFoundError: Cannot find the requested files in the disk cache and outgoing traffic has been disabled. To enable hf.co look-ups and downloads online, set 'local_files_only' to False.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/pipeline.py", line 1126, in _instantiate_step
+    return step_class(**merged_cfg)
+  File "<string>", line 10, in __init__
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/tokenizer_processor.py", line 111, in __post_init__
+    self.input_tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/models/auto/tokenization_auto.py", line 688, in from_pretrained
+    config = PreTrainedConfig.from_pretrained(pretrained_model_name_or_path, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/configuration_utils.py", line 629, in from_pretrained
+    config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/configuration_utils.py", line 670, in get_config_dict
+    config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/configuration_utils.py", line 725, in _get_config_dict
+    resolved_config_file = cached_file(
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 278, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "/home/chenyiteng/venvs/lerobot-v060-sidney-py310/lib/python3.10/site-packages/transformers/utils/hub.py", line 498, in cached_files
+    raise OSError(
+OSError: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 386, in <module>
+    main()
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 382, in main
+    args.func(args)
+  File "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/toolkits/lerobot/sidney_pi05_parity.py", line 109, in export_native
+    preprocessor, postprocessor = make_pre_post_processors(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/policies/factory.py", line 324, in make_pre_post_processors
+    preprocessor = PolicyProcessorPipeline.from_pretrained(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/pipeline.py", line 733, in from_pretrained
+    steps, validated_overrides = cls._build_steps_with_overrides(
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/pipeline.py", line 975, in _build_steps_with_overrides
+    steps, remaining_override_keys = cls._build_steps_from_config(loaded_config, overrides)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/pipeline.py", line 1002, in _build_steps_from_config
+    processor_step = cls._instantiate_step(step_entry, step_class, step_key, overrides)
+  File "/data/chenyiteng/projects/lerobot-sidney/lerobot-v060-py310-compat/src/lerobot/processor/pipeline.py", line 1129, in _instantiate_step
+    raise ValueError(
+ValueError: Failed to instantiate processor step 'tokenizer_processor' with config: {'max_length': 200, 'task_key': 'task', 'padding_side': 'right', 'padding': 'max_length', 'truncation': True, 'tokenizer_name': 'google/paligemma-3b-pt-224'}. Error: We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.

@@ -1,0 +1,184 @@
+{
+  "artifacts": {
+    "fastwam_storyboards": [
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/storyboards/fastwam__adjust_bottle__run-fastwam-adjust_b__episode0002_reset1.png"
+    ],
+    "figures": [
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/01_position_profile.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/02_raw_vs_residual_heatmap.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/03_S_timeline.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/03b_representative_S_phase_timeline.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/04_I_representative_heatmap.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/05_outcome_summary.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort/06_L_sensitivity.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/01_position_profile.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/02_raw_vs_residual_heatmap.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/03_S_timeline.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/03b_representative_S_phase_timeline.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/04_I_representative_heatmap.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/05_outcome_summary.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__co/06_L_sensitivity.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/figures/cross_policy_standardized_panel.png"
+    ],
+    "query_frame_strips": [
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/query_frame_strips/fastwam__adjust_bottle__run-fastwam-adjust_b__episode0002_reset1.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/query_frame_strips/pi0__adjust_bottle__run-pi0-adjust_bottle-fi__ep000033_reset100100005.png",
+      "/data/chenyiteng/results/dvac-observation/analysis/sz-dvac-pi0-fixed64-fastwam-adjust-p1-v1/query_frame_strips/pi0__adjust_bottle__run-pi0-adjust_bottle-fi__ep000050_reset100100017.png"
+    ]
+  },
+  "counts": {
+    "episodes": 80,
+    "fastwam_executed_action_frame_rows": 1852,
+    "groups": 2,
+    "horizon_rows": 43520,
+    "post_success_queries_descriptive_only": 42,
+    "pre_success_queries": 294,
+    "queries": 336,
+    "sources": 2
+  },
+  "formula": {
+    "V_L": "sum_d population_var(z[-L:,h,d])",
+    "baseline": "success_before=false queries only; separately within policy/checkpoint/task/run/cohort/L/h",
+    "common_L": 3,
+    "fastwam_L_sensitivity": [
+      3,
+      5
+    ],
+    "identities": [
+      "y_ln=b_position+r_raw",
+      "y_ln=mu+P_h+S_raw+I_raw",
+      "R_std=S_std+I_std"
+    ],
+    "invalid_identity": "y_ln=b_position+S_std+I_std is invalid because units differ",
+    "pi0_L_sensitivity": [
+      2,
+      3,
+      4
+    ],
+    "position": "b_position=median_eligible(y_ln)",
+    "raw_four_way": "mu=mean_h(b); P_h=b-mu; S_raw=mean_h(r_raw); I_raw=r_raw-S_raw",
+    "residual": "r_raw=y_ln-b_position; R_std=r_raw/mad_scale",
+    "scale": "mad_scale=max(1.4826*MAD_eligible(y_ln),scale_floor)",
+    "scale_floor": 1e-06,
+    "standardized_two_way": "S_std=mean_h(R_std); I_std=R_std-S_std",
+    "y": "natural_log(V_L + 1e-12)"
+  },
+  "generated_at_utc": "2026-08-22T15:35:58.566672+00:00",
+  "groups": [
+    {
+      "checkpoint": "92684e50c8a3dcf13b76a06713e3152625967be1",
+      "cohort_id": "pi0-adjust_bottle-fixed64-800baf80-v1",
+      "denoising_steps": 4,
+      "episodes": 64,
+      "failure_episodes": 22,
+      "group_id": "pi0__adjust_bottle__run-pi0-adjust_bottle-fixed64-800baf__cohort-pi0-adjust_bottle-fixed6__92684e50c8a3dcf13b76a06713e31526-46b40fae",
+      "horizon": 50,
+      "policy": "pi0",
+      "queries": 256,
+      "representatives": [
+        {
+          "episode_uid": "ep000033_reset100100005",
+          "selection_reason": "typical_success_nearest_outcome_median_action_slots"
+        },
+        {
+          "episode_uid": "ep000050_reset100100017",
+          "selection_reason": "typical_failure_nearest_outcome_median_action_slots"
+        }
+      ],
+      "run_id": "pi0-adjust_bottle-fixed64-800baf80-v1",
+      "scale_floored_position_bins_all_L": 0,
+      "success_episodes": 42,
+      "tail_lengths": "2,3,4",
+      "task": "adjust_bottle"
+    },
+    {
+      "checkpoint": "/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt",
+      "cohort_id": "fastwam-adjust_bottle-p1-16ep-c63dc9b5-v2",
+      "denoising_steps": 10,
+      "episodes": 16,
+      "failure_episodes": 0,
+      "group_id": "fastwam__adjust_bottle__run-fastwam-adjust_bottle-p1-16ep-c6__cohort-fastwam-adjust_bottle-p1__robotwin_uncond_3cam_384.pt-1775f391",
+      "horizon": 32,
+      "policy": "fastwam",
+      "queries": 80,
+      "representatives": [
+        {
+          "episode_uid": "episode0002_reset1",
+          "selection_reason": "typical_success_nearest_outcome_median_action_slots"
+        }
+      ],
+      "run_id": "fastwam-adjust_bottle-p1-16ep-c63dc9b5-v2",
+      "scale_floored_position_bins_all_L": 0,
+      "success_episodes": 16,
+      "tail_lengths": "3,5",
+      "task": "adjust_bottle"
+    }
+  ],
+  "identity_checks": {
+    "max_abs_Rstd_minus_Sstd_plus_Istd": 4.440892098500626e-16,
+    "max_abs_y_minus_b_plus_r": 2.220446049250313e-16,
+    "max_abs_y_minus_raw_four_way": 1.7763568394002505e-15
+  },
+  "interpretation_limits": [
+    "Raw V/y remains model-native and is never compared directly across pi0 and Fast-WAM.",
+    "R_std/S_std/I_std support standardized structure, rank, phase, and outcome association only.",
+    "DVAC is an empirical denoising-stability proxy, not calibrated uncertainty or safety.",
+    "Phase labels are independent annotations; missing labels remain UNLABELED.",
+    "Fast-WAM video mapping uses only fresh per-action frame ranges and executed h<24.",
+    "Fast-WAM h=24..31 is an unexecuted future tail and receives no action/video phase.",
+    "pi0 official combined video is query-boundary only; no future-h physics frame is inferred.",
+    "Representative episodes are selected by outcome-class median action duration with fixed tie-breaks, never by DVAC or visual appeal.",
+    "Outcome summaries aggregate within episode before descriptive bootstrap; no causal claim is made."
+  ],
+  "schema_version": 1,
+  "source_inventory": [
+    {
+      "all_finite": true,
+      "episode_join_columns": [
+        "episode_idx",
+        "reset_id"
+      ],
+      "episodes": 64,
+      "max_abs_final_chain_vs_model_action": 0.0,
+      "queries": 256,
+      "root": "/data/chenyiteng/results/dvac-observation/pi0-adjust_bottle-fixed64-800baf80-v1/dvac_telemetry",
+      "run_id": "pi0-adjust_bottle-fixed64-800baf80-v1",
+      "source_kind": "pi0",
+      "success_episodes": 42,
+      "trace_shards": 4,
+      "video_alignment": "query_boundary_only; no future-h-to-physics-frame mapping"
+    },
+    {
+      "action_num_train_timesteps": 1000,
+      "action_num_train_timesteps_source": "run_manifest.action_num_train_timesteps",
+      "all_finite": true,
+      "compatibility_notes": [],
+      "episode_join_columns": [
+        "run_id",
+        "episode_id",
+        "reset_id"
+      ],
+      "episodes": 16,
+      "max_abs_final_chain_vs_model_action": 0.0,
+      "official_seed_map_matched_episodes": 0,
+      "official_seed_map_paths": [],
+      "official_seed_map_used": false,
+      "queries": 80,
+      "root": "/data/chenyiteng/results/dvac-observation/fastwam-adjust_bottle-p1-16ep-c63dc9b5-v2",
+      "run_id": "fastwam-adjust_bottle-p1-16ep-c63dc9b5-v2",
+      "source_kind": "fastwam",
+      "success_episodes": 16,
+      "trace_files": 80,
+      "video_alignment": "fresh pre-action frame; exact only when frame ranges are populated",
+      "x_next_matches_x_chain": true
+    }
+  ],
+  "summary_scopes": {
+    "episode_metrics.csv": "main pre-success queries only",
+    "episode_metrics_all_queries.csv": "all-query descriptive companion",
+    "outcome_summary.csv": "main pre-success episode aggregates",
+    "outcome_summary_all_queries.csv": "all-query descriptive companion",
+    "phase_episode_metrics.csv": "main pre-success, episode-first",
+    "phase_episode_metrics_all_queries.csv": "all-query descriptive companion"
+  }
+}
