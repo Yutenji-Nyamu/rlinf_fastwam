@@ -14,3 +14,5 @@ videos, model/checkpoint weights, large binaries, caches and credentials. Large 
 losslessly gzip-compressed when practical. Original local/remote files are not rewritten.
 This is an evidence backup, not a complete model/data backup or proof of resumability.
 Recent still-running logs reflect the copy time, not final experiment completion.
+
+The final documentation/script delta is recorded in `evidence/windows/late-final/`; its hashes override earlier copies in the full manifest.
