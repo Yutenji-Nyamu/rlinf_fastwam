@@ -13,7 +13,9 @@ assert git('branch','--show-current').stdout.strip()==branch
 assert git('status','--porcelain').stdout.strip()==''
 assert git('remote','get-url','personal').stdout.strip()=='git@github.com:Yutenji-Nyamu/rlinf_fastwam.git'
 dest=wt/'evidence/windows';changed=[]
-with tarfile.open(maintenance/'closeout.tar.gz','r:gz') as tar:
+packet_name=sys.argv[1] if len(sys.argv)>1 else 'closeout.tar.gz'
+assert packet_name in {'closeout.tar.gz','publication-receipt.tar.gz'}
+with tarfile.open(maintenance/packet_name,'r:gz') as tar:
  for item in tar:
   path=PurePosixPath(item.name)
   assert item.isfile() and item.size<50*1024**2 and not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
@@ -23,7 +25,8 @@ with tarfile.open(maintenance/'closeout.tar.gz','r:gz') as tar:
   assert secret not in check
   target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data);changed.append(str(target.relative_to(wt)))
 note='\nThe final documentation/script delta is recorded in `evidence/windows/late-final/`; its hashes override earlier copies in the full manifest.\n'
-with (wt/'README.md').open('a') as f:f.write(note)
+if note.strip() not in (wt/'README.md').read_text():
+ with (wt/'README.md').open('a') as f:f.write(note)
 changed.append('README.md')
 git('add','-f','--',*changed,timeout=300)
 git('commit','-m','Record checkpoint pruning, compact context and BC-DVAC audit closeout',timeout=300)

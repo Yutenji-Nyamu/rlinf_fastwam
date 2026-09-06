@@ -29,6 +29,10 @@
 
 主归档已commit `15c96b50e3c8333b99ba04f30471b103559f4bcb`，105073文件；发布前全树审查：≥50MiB文件0、已知凭据残留0、opaque Git包/私钥文件0。随后加入本轮最终文档/脚本小增量；最终push回执文件`SZ_ARCHIVE_PUBLISH_20260906.txt`以远端SHA一致为准。此处不会将仅本地commit冒充远端发布完成。
 
+**11:49已发布并核验**：`4fd091f9c0870a3e728bfefe2f5d2204e3a48dfe`，105086文件，归档工作树clean，`ls-remote`返回相同SHA。[远端归档分支](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz-experiment-archive-20260906)。后续收尾回执作为小增量保存，不改现役算法分支。Windows根Git未另建remote；它的历史内容已收录在归档分支`evidence/windows/local-workspace/`，不应误解成根工作树从此自动同步。
+
+归档截止为各文件复制时间：服务器结果主要11:27—11:28，本地记录复制至11:35并补本轮收尾delta。活跃日志之后增长、训练之后新生checkpoint不属于这个静态快照；不承诺今后的实验自动归档。完整模型/data恢复仍依赖服务器保留点和数据。
+
 ## 3. 上下文裁剪已生效于后续读取规则
 
 原强制入口约64.55KiB；新AGENTS、PROJECT_CONTEXT、HANDOFF合计约7KiB，减少约89%（约九成）。旧根文件逐字复制并SHA256核验，存`docs/project-history/context-20260906-before-trim/`；研究专题和证据不删。
@@ -43,10 +47,10 @@
 
 见`../rlinf-robotwin-pi0-online-bc/evidence/PI05_BC_DVAC_FULL_DIFFERENCE_AUDIT_20260906.md`：17项预期配置差异、28项CPU回归、真实首轮单位权重、动作RNG缺口和U/范围讨论。现役训练本轮未修改。
 
-## 5. 清理后服务器检查（11:30，不是永续现场）
+## 5. 收尾服务器检查（11:52，不是永续现场）
 
-BC50/100、DVAC49/100、GRPO159/200继续运行；固定初态评估分别Step50=12/32、Step45=16/32、Step155=21/32；所查新fatal/OOM0。
+BC52/100、DVAC50/100、GRPO160/200继续运行；固定初态评估分别Step50=12/32、Step50=16/32、Step160=17/32；最新checkpoint50/50/160，所查新fatal/OOM0。新生checkpoint没有追着删。
 
-GPU4/5使用53.55/54.18GiB，6/7使用72.90/52.71GiB；0卡约9.66GiB有其他用户进程，1—3卡近空闲，未操作他人进程。RAM可用669.22GiB/2015.51GiB；CPU128线程、load约6.3、瞬时96%idle；Swap接近满但采样无换入/换出，PSI内存/IO压力均0。环境RSS仍较大且有增长，不能因整机余量暂足就认定长程内存问题已消失。
+GPU4/5使用55.47/58.13GiB，6/7使用54.74/72.74GiB；0卡约9.66GiB有其他用户进程，1—3卡近空闲，未操作他人进程。RAM可用656.19GiB/2015.51GiB；/data可用约1.375TiB，/home约1.217TiB。11:30 CPU128线程、load约6.3、瞬时96%idle；当时Swap接近满但无换入/换出，PSI内存/IO压力均0。环境RSS仍较大且有增长，不能因整机余量暂足就认定长程内存问题已消失。收尾原始现场`../rlinf-robotwin-pi0-online-bc/evidence/PI05_ARCHIVE_CLOSEOUT_LIVE_20260906.json`。
 
 BC最近10轮（41—50）平均14.14分钟/轮，采集325.6秒、更新447.6秒、同步4.9秒；无评估/保存普通轮12.93分钟。DVAC（40—49）平均13.97分钟，采集315.0秒、更新449.2秒、同步4.6秒；普通轮12.81分钟。差额主要是每5轮评估/每10轮保存摊销，不把差额伪装成精确保存时间。

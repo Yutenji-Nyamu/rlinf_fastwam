@@ -8,7 +8,7 @@
 
 ## 活动实验定位（以下是旧快照，不是当前现场）
 
-09-06 11:30：GPU6 BC50/100，GPU7 DVAC49/100，GPU4/5 GRPO159/200；fixed分别Step50=12/32、45=16/32、155=21/32，ckpt50/40/150，所查fatal/OOM0。RAM可用约669GiB但环境RSS持续增长；必须刷新后再报当前。
+09-06 11:52：GPU6 BC52/100，GPU7 DVAC50/100，GPU4/5 GRPO160/200；fixed分别Step50=12/32、50=16/32、160=17/32，ckpt50/50/160，所查fatal/OOM0。RAM可用约656GiB但环境RSS持续增长；必须刷新后再报当前。
 
 - BC：worktree pi05-online-bc；DVAC：pi05-online-bc-dvac。位于/data/chenyiteng/projects/rlinf-shenzhen/worktrees/；run在/data/chenyiteng/results/rlinf-shenzhen/online-bc/，各正式合同给精确路径。
 - Sidney：worktree sidney-pi05-current-rlinf，run在/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/；当前运行目录runtime-resume100-to200，已从100续至200，勿重复launch。既有heartbeat由原窗口管理。
@@ -31,6 +31,6 @@
 - BC/DVAC只有17项预期配置差异，28项CPU回归通过；真实首轮16对9，DVAC首批权重全1。未见权重接线/预算错误；独立rollout动作RNG未配对控制，不能认定差距唯一由它造成。下一步若授权，修随机协议；不将train固定初态改true来替代。
 - 环境内存增长未定位。参数U10、权重[0.5,1.5]仍按现役合同；本轮只讨论是否改变。
 - 已清103个>1GiB checkpoint文件、852.36GiB；保护清单时正式最新完整代和Sidney活动引用Step100。不删目录/成功数据池，不追删清理中产生的新代；大权重不可恢复。
-- 本地根Git仍为空；已在既有个人RLinf仓库创建codex/sz-experiment-archive-20260906归档分支，发布状态看结果文档，不盲改根remote。
+- 本地根Git仍为空；历史轻量资料已推既有个人RLinf仓库codex/sz-experiment-archive-20260906，远端SHA核验一致。按数据类别排除replay/大权重/视频；最终回执看结果文档，不盲改根remote。
 
 旧根文件已逐字哈希校验归档于docs/project-history/context-20260906-before-trim/。不再强制读09-03窗口交接。结束时用简短结果替换本页当前状态，不继续累加时间线。
