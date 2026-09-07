@@ -83,7 +83,15 @@ class SuccessEpisodeCollector:
 class SuccessReplay:
     """Cumulative query replay, with uniform replacement sampling and restart state."""
 
-    def __init__(self, seed: int, archive_path: str):
+    def __init__(
+        self, seed: int, archive_path: str, max_success_chunks: int | None = None
+    ):
+        if max_success_chunks is not None and (
+            type(max_success_chunks) is not int or max_success_chunks < 1
+        ):
+            raise ValueError("max_success_chunks must be null or a positive integer.")
+        self.max_success_chunks = max_success_chunks
+        self.filtered_success_episodes = 0
         self.records = []
         self.episodes = 0
         self.archive_id = 0
@@ -97,6 +105,12 @@ class SuccessReplay:
         return len(self) >= min_buffer_size
 
     def add_episodes(self, episodes: list[list[dict[str, torch.Tensor]]]) -> None:
+        # Admission only: reject the whole long success, never truncate its label.
+        # Collector success metrics and DVAC moments have already been recorded.
+        if self.max_success_chunks is not None:
+            accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]
+            self.filtered_success_episodes += len(episodes) - len(accepted)
+            episodes = accepted
         if not episodes:
             return
         self.archive_path.mkdir(parents=True, exist_ok=True)
@@ -118,7 +132,10 @@ class SuccessReplay:
         }
 
     def get_stats(self) -> dict[str, int]:
-        return {"success_episodes": self.episodes, "query_records": len(self)}
+        stats = {"success_episodes": self.episodes, "query_records": len(self)}
+        if self.max_success_chunks is not None:
+            stats["filtered_success_episodes"] = self.filtered_success_episodes
+        return stats
 
     def save_checkpoint(self, save_path: str | Path) -> None:
         target = Path(save_path)
@@ -128,6 +145,7 @@ class SuccessReplay:
                 records=self.records,
                 episodes=self.episodes,
                 archive_id=self.archive_id,
+                filtered_success_episodes=self.filtered_success_episodes,
                 rng=self.rng.get_state(),
             ),
             target / "success_replay.pt",
@@ -138,4 +156,6 @@ class SuccessReplay:
         self.records = state["records"]
         self.episodes = state["episodes"]
         self.archive_id = state["archive_id"]
+        # A configured limit applies to new admissions, not existing replay.
+        self.filtered_success_episodes = state.get("filtered_success_episodes", 0)
         self.rng.set_state(state["rng"])

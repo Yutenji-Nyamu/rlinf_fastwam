@@ -48,6 +48,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.replay_buffer = SuccessReplay(
             seed=self.cfg.actor.seed + self._rank,
             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
+            max_success_chunks=bc.get("max_success_chunks"),
         )
         if self.demo_weight:
             self._build_demo_loader()
