@@ -26,6 +26,7 @@ from rlinf.algorithms.dvac_train_weighting import (
     DVACRecentStats,
     DVACStepStats,
     local_log_v_sufficient_statistics,
+    scope_dvac_weights,
     straight_through_scale_logprobs,
 )
 from rlinf.algorithms.expert import build_expert_model_config
@@ -109,6 +110,17 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "algorithm.dvac_gradient_weighting.application must be "
                 "'logprob_st' or 'action_advantage'"
             )
+        self.dvac_advantage_scope = str(
+            self.dvac_train_cfg.get("advantage_scope", "all")
+        ).lower()
+        if self.dvac_advantage_scope not in {"all", "positive"}:
+            raise ValueError("DVAC advantage_scope must be 'all' or 'positive'")
+        if (
+            self.dvac_train_enabled
+            and self.dvac_advantage_scope == "positive"
+            and cfg.algorithm.reward_type != "chunk_level"
+        ):
+            raise ValueError("Positive DVAC scope requires chunk-level advantages.")
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
         self.dvac_recent_stats = (
             self._new_dvac_recent_stats() if self.dvac_train_enabled else None
@@ -588,6 +600,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         weights, clipped_z, warmup, history = self.dvac_recent_stats.compute_weights(
             variance
         )
+        weights = scope_dvac_weights(
+            weights, self.rollout_batch["advantages"], self.dvac_advantage_scope
+        )
         forward_inputs["dvac_weights"] = weights
         self._dvac_pending_step = {
             "runner_step": int(self.version),
@@ -638,6 +653,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "runner_step": int(pending["runner_step"]),
                 "actor_rank": int(self._rank),
                 "application": self.dvac_train_application,
+                "advantage_scope": self.dvac_advantage_scope,
                 "advantage_reduction": (
                     "sum_valid_actions_then_mean_queries"
                     if self.dvac_train_application == "action_advantage"

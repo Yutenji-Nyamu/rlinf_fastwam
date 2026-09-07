@@ -73,6 +73,31 @@ def straight_through_scale_logprobs(
     return detached + scale.unsqueeze(-1) * (logprobs - detached)
 
 
+def scope_dvac_weights(
+    weights: torch.Tensor,
+    advantages: torch.Tensor,
+    scope: str = "all",
+) -> torch.Tensor:
+    """Gate action weights by the original chunk advantage, never its reward.
+
+    all preserves the existing method. positive leaves A<=0 weights at one,
+    retaining baseline negative feedback. Supports [B,H] or [T,B,H].
+    """
+    if scope == "all":
+        return weights
+    if scope != "positive":
+        raise ValueError("DVAC advantage_scope must be 'all' or 'positive'")
+    if advantages.shape != (*weights.shape[:-1], 1):
+        raise ValueError(
+            "positive scope requires one original advantage per chunk: "
+            f"weights={tuple(weights.shape)}, advantages={tuple(advantages.shape)}"
+        )
+    if not torch.isfinite(advantages).all():
+        raise ValueError("DVAC scope advantages contain NaN or Inf")
+    positive = advantages.detach().to(weights.device) > 0
+    return torch.where(positive, weights.detach(), torch.ones_like(weights))
+
+
 @dataclass(frozen=True)
 class DVACStepStats:
     runner_step: int

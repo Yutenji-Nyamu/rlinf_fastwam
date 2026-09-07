@@ -1,0 +1,13 @@
+# @package _global_
+# Baseline chunk ratio/clip; only positive original advantages receive DVAC.
+algorithm:
+  logprob_type: chunk_level
+  dvac_gradient_weighting:
+    mode: apply
+    application: logprob_st
+    advantage_scope: positive
+    selected_l: 3
+    warmup_steps: 1
+    window_steps: 5
+    weight_min: 0.5
+    weight_max: 1.5
