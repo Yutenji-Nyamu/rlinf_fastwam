@@ -41,11 +41,18 @@ class OnlineBCDvac:
     """
 
     def __init__(
-        self, *, window=5, alpha=0.25, z_clip=2.0, log_eps=1e-12, std_floor=1e-6
+        self, *, window=5, alpha=0.25, z_clip=2.0, log_eps=1e-12, std_floor=1e-6,
+        mapping="chunk_centered", weight_min=None, weight_max=None
     ):
         if not all(math.isfinite(x) for x in (alpha, z_clip, log_eps, std_floor)):
             raise ValueError("DVAC settings must be finite.")
-        if window < 1 or z_clip <= 0 or not 0 <= alpha <= 1 / (2 * z_clip):
+        if mapping not in ("chunk_centered", "bounded_linear"):
+            raise ValueError("Unknown BC DVAC mapping.")
+        if window < 1 or z_clip <= 0 or alpha < 0:
+            raise ValueError("Require window>=1, z_clip>0 and alpha>=0.")
+        if mapping == "chunk_centered" and (
+            alpha > 1 / (2 * z_clip) or weight_min is not None or weight_max is not None
+        ):
             raise ValueError(
                 "Require window>=1 and 0<=alpha<=1/(2*z_clip) for [0,2] weights."
             )
@@ -58,6 +65,16 @@ class OnlineBCDvac:
             log_eps=float(log_eps),
             std_floor=float(std_floor),
         )
+        if mapping == "bounded_linear":
+            if (
+                weight_min is None or weight_max is None
+                or not math.isfinite(weight_min) or not math.isfinite(weight_max)
+                or not 0 <= weight_min <= 1 <= weight_max
+            ):
+                raise ValueError("Weight endpoints must satisfy 0 <= min <= 1 <= max.")
+            self.settings.update(
+                mapping=mapping, weight_min=float(weight_min), weight_max=float(weight_max)
+            )
         self.history = deque(maxlen=int(window))
         self.round_id = 0
 
@@ -94,7 +111,13 @@ class OnlineBCDvac:
                 if calibrated:
                     z = ((v + self.settings["log_eps"]).log() - mean) / std
                     z = z.clamp(-self.settings["z_clip"], self.settings["z_clip"])
-                    w = 1 + self.settings["alpha"] * (z - (z * q).sum() / q.sum())
+                    if self.settings.get("mapping") == "bounded_linear":
+                        # Same endpoint mapping as GRPO; no chunk/global re-centering.
+                        negative_slope = (1 - self.settings["weight_min"]) / self.settings["z_clip"]
+                        positive_slope = (self.settings["weight_max"] - 1) / self.settings["z_clip"]
+                        w = 1 + negative_slope * z.clamp_max(0) + positive_slope * z.clamp_min(0)
+                    else:
+                        w = 1 + self.settings["alpha"] * (z - (z * q).sum() / q.sum())
                 row["action_weights"] = w.float()
                 row["dvac_calibration_round"] = torch.tensor(self.round_id)
                 weights.append(w[q > 0])

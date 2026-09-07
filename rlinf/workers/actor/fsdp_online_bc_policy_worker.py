@@ -48,6 +48,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.replay_buffer = SuccessReplay(
             seed=self.cfg.actor.seed + self._rank,
             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
+            max_success_chunks=bc.get("max_success_chunks"),
         )
         self.dvac = None
         self.dvac_metrics = {}
@@ -58,7 +59,11 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             self.dvac = OnlineBCDvac(
                 **{
                     key: dvac_cfg[key]
-                    for key in ("window", "alpha", "z_clip", "log_eps", "std_floor")
+                    for key in (
+                        "window", "alpha", "z_clip", "log_eps", "std_floor",
+                        "mapping", "weight_min", "weight_max",
+                    )
+                    if key in dvac_cfg
                 }
             )
         if self.demo_weight:
