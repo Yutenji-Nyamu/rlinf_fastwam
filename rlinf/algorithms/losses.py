@@ -167,6 +167,39 @@ def compute_decoupled_ppo_actor_loss(
     return pg_loss, metrics_data
 
 
+def _chunk_clipped_action_surrogate(
+    log_ratio, action_logprobs, action_advantages, loss_mask,
+    clip_ratio_low, clip_ratio_high, clip_ratio_c,
+    clip_log_ratio_min, clip_log_ratio_max,
+):
+    """GSPO-token-style action advantages, preserving the Control chunk ratio.
+
+    See arXiv:2507.18071, Sec. 4.3. Unlike GSPO, this Control SUMS logprobs:
+    H compensates the final mean over H. We do not normalize DVAC weights.
+    """
+    if log_ratio.ndim != 1 or action_logprobs.ndim != 2:
+        raise ValueError("Expected chunk [B] ratios and [B,H] action logprobs.")
+    if action_logprobs.shape != action_advantages.shape:
+        raise ValueError("Action logprobs and effective advantages must match.")
+    horizon = action_logprobs.shape[-1]
+    local_log_ratio = log_ratio.detach().unsqueeze(-1) + horizon * (
+        action_logprobs - action_logprobs.detach()
+    )
+    # Apply original numerical clamps here too, preserving their derivatives.
+    if clip_log_ratio_min is not None:
+        local_log_ratio = local_log_ratio.clamp(min=clip_log_ratio_min)
+    if clip_log_ratio_max is not None:
+        local_log_ratio = local_log_ratio.clamp(max=clip_log_ratio_max)
+    ratio = torch.where(loss_mask.reshape(-1, 1), local_log_ratio.exp(), 0)
+    clipped = ratio.clamp(1.0 - clip_ratio_low, 1.0 + clip_ratio_high)
+    loss = torch.maximum(-action_advantages * ratio, -action_advantages * clipped)
+    if clip_ratio_c is not None:
+        loss = torch.minimum(
+            loss, action_advantages.sign() * clip_ratio_c * action_advantages
+        )
+    return loss.mean(dim=-1)
+
+
 def compute_ppo_actor_loss(
     logprobs: torch.Tensor,
     old_logprobs: torch.Tensor,
@@ -183,6 +216,8 @@ def compute_ppo_actor_loss(
     clip_log_ratio_max: Optional[float] = None,
     fast_path_zero_loss_mask: Optional[bool] = False,
     action_level_sum: bool = False,
+    chunk_action_logprobs: Optional[torch.Tensor] = None,
+    chunk_action_advantages: Optional[torch.Tensor] = None,
     **kwargs,
 ) -> tuple[torch.Tensor, dict]:
     """
@@ -274,6 +309,15 @@ def compute_ppo_actor_loss(
         policy_loss = torch.min(policy_loss, policy_loss3)
     else:
         dual_clip_mask = torch.zeros_like(clip_mask)
+
+    if chunk_action_logprobs is not None:
+        if action_level_sum or chunk_action_advantages is None:
+            raise ValueError("Chunk-clipped action advantages require their own mean-H path.")
+        policy_loss = _chunk_clipped_action_surrogate(
+            logprobs - old_logprobs, chunk_action_logprobs, chunk_action_advantages,
+            loss_mask, clip_ratio_low, clip_ratio_high, clip_ratio_c,
+            clip_log_ratio_min, clip_log_ratio_max,
+        )
 
     def aggregate_policy_loss(values: torch.Tensor) -> torch.Tensor:
         if not action_level_sum:

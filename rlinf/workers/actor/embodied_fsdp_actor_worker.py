@@ -105,10 +105,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if self.dvac_train_application not in {
             "logprob_st",
             "action_advantage",
+            "chunk_clipped_action_advantage",
         }:
             raise ValueError(
                 "algorithm.dvac_gradient_weighting.application must be "
-                "'logprob_st' or 'action_advantage'"
+                "'logprob_st', 'action_advantage' or 'chunk_clipped_action_advantage'"
             )
         self.dvac_advantage_scope = str(
             self.dvac_train_cfg.get("advantage_scope", "all")
@@ -181,7 +182,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 raise ValueError("DVAC train weighting requires OpenPI.")
             expected_logprob_type = (
                 "chunk_level"
-                if self.dvac_train_application == "logprob_st"
+                if self.dvac_train_application != "action_advantage"
                 else "action_level"
             )
             if self.cfg.algorithm.logprob_type != expected_logprob_type:
@@ -190,7 +191,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                     f"algorithm.logprob_type={expected_logprob_type}."
                 )
             if (
-                self.dvac_train_application == "action_advantage"
+                self.dvac_train_application != "logprob_st"
                 and self.cfg.algorithm.reward_type != "chunk_level"
             ):
                 raise ValueError(
@@ -657,6 +658,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "advantage_reduction": (
                     "sum_valid_actions_then_mean_queries"
                     if self.dvac_train_application == "action_advantage"
+                    else "mean_actions_with_control_sum_gradient_scale"
+                    if self.dvac_train_application == "chunk_clipped_action_advantage"
                     else None
                 ),
                 "selected_l": int(self.dvac_selected_l),
@@ -897,6 +900,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         ):
             loss_kwargs["dvac_advantage_weights"] = dvac_weights
             loss_kwargs["action_level_sum"] = True
+        elif (
+            self.dvac_train_enabled
+            and self.dvac_train_application == "chunk_clipped_action_advantage"
+        ):
+            loss_kwargs["dvac_chunk_advantage_weights"] = dvac_weights
 
         if SupportedModel(self.cfg.actor.model.model_type) in [
             SupportedModel.GR00T_N1D6,

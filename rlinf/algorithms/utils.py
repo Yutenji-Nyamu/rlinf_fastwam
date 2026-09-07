@@ -291,6 +291,7 @@ def preprocess_loss_inputs(
     reward_type: Optional[str] = None,
     versions: Optional[torch.Tensor] = None,
     dvac_advantage_weights: Optional[torch.Tensor] = None,
+    dvac_chunk_advantage_weights: Optional[torch.Tensor] = None,
     **kwargs,
 ) -> dict:
     if reward_type == "chunk_level":
@@ -307,6 +308,19 @@ def preprocess_loss_inputs(
             returns = returns.flatten()
 
     bsz = logprobs.shape[0]
+    chunk_action_logprobs = None
+    if dvac_chunk_advantage_weights is not None:
+        if logprob_type != "chunk_level" or reward_type != "chunk_level":
+            raise ValueError("Chunk-clipped DVAC requires chunk logprobs and rewards.")
+        if dvac_advantage_weights is not None:
+            raise ValueError("Choose one DVAC advantage application, not both.")
+        chunk_action_logprobs = logprobs.reshape(bsz, -1, single_action_dim).sum(-1)
+        if dvac_chunk_advantage_weights.shape != chunk_action_logprobs.shape:
+            raise ValueError("Chunk DVAC weights must match [B,H] action positions.")
+        if not torch.isfinite(dvac_chunk_advantage_weights).all() or (
+            dvac_chunk_advantage_weights < 0
+        ).any():
+            raise ValueError("Chunk DVAC weights must be finite and non-negative.")
     proximal_logprobs = kwargs.get("proximal_logprobs", None)
     if logprob_type == "token_level":
         # logprobs, old_logprobs: [bsz, num_action_chunks, action_dim] -> [bsz, num_action_chunks, action_dim]
@@ -392,6 +406,11 @@ def preprocess_loss_inputs(
             "returns": returns,
         }
     )
+
+    if chunk_action_logprobs is not None:
+        weights = dvac_chunk_advantage_weights.detach().to(advantages)
+        kwargs["chunk_action_logprobs"] = chunk_action_logprobs
+        kwargs["chunk_action_advantages"] = advantages.unsqueeze(-1) * weights
 
     return kwargs
 
