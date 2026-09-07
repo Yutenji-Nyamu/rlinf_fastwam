@@ -1,0 +1,176 @@
+ rlinf/algorithms/losses.py                        | 44 +++++++++++++++++++++++
+ rlinf/algorithms/utils.py                         | 19 ++++++++++
+ rlinf/workers/actor/embodied_fsdp_actor_worker.py | 14 ++++++--
+ 3 files changed, 74 insertions(+), 3 deletions(-)
+
+diff --git a/rlinf/algorithms/losses.py b/rlinf/algorithms/losses.py
+index f4c6408d..ff57b7b2 100644
+--- a/rlinf/algorithms/losses.py
++++ b/rlinf/algorithms/losses.py
+@@ -167,6 +167,39 @@ def compute_decoupled_ppo_actor_loss(
+     return pg_loss, metrics_data
+ 
+ 
++def _chunk_clipped_action_surrogate(
++    log_ratio, action_logprobs, action_advantages, loss_mask,
++    clip_ratio_low, clip_ratio_high, clip_ratio_c,
++    clip_log_ratio_min, clip_log_ratio_max,
++):
++    """GSPO-token-style action advantages, preserving the Control chunk ratio.
++
++    See arXiv:2507.18071, Sec. 4.3. Unlike GSPO, this Control SUMS logprobs:
++    H compensates the final mean over H. We do not normalize DVAC weights.
++    """
++    if log_ratio.ndim != 1 or action_logprobs.ndim != 2:
++        raise ValueError("Expected chunk [B] ratios and [B,H] action logprobs.")
++    if action_logprobs.shape != action_advantages.shape:
++        raise ValueError("Action logprobs and effective advantages must match.")
++    horizon = action_logprobs.shape[-1]
++    local_log_ratio = log_ratio.detach().unsqueeze(-1) + horizon * (
++        action_logprobs - action_logprobs.detach()
++    )
++    # Apply original numerical clamps here too, preserving their derivatives.
++    if clip_log_ratio_min is not None:
++        local_log_ratio = local_log_ratio.clamp(min=clip_log_ratio_min)
++    if clip_log_ratio_max is not None:
++        local_log_ratio = local_log_ratio.clamp(max=clip_log_ratio_max)
++    ratio = torch.where(loss_mask.reshape(-1, 1), local_log_ratio.exp(), 0)
++    clipped = ratio.clamp(1.0 - clip_ratio_low, 1.0 + clip_ratio_high)
++    loss = torch.maximum(-action_advantages * ratio, -action_advantages * clipped)
++    if clip_ratio_c is not None:
++        loss = torch.minimum(
++            loss, action_advantages.sign() * clip_ratio_c * action_advantages
++        )
++    return loss.mean(dim=-1)
++
++
+ def compute_ppo_actor_loss(
+     logprobs: torch.Tensor,
+     old_logprobs: torch.Tensor,
+@@ -183,6 +216,8 @@ def compute_ppo_actor_loss(
+     clip_log_ratio_max: Optional[float] = None,
+     fast_path_zero_loss_mask: Optional[bool] = False,
+     action_level_sum: bool = False,
++    chunk_action_logprobs: Optional[torch.Tensor] = None,
++    chunk_action_advantages: Optional[torch.Tensor] = None,
+     **kwargs,
+ ) -> tuple[torch.Tensor, dict]:
+     """
+@@ -275,6 +310,15 @@ def compute_ppo_actor_loss(
+     else:
+         dual_clip_mask = torch.zeros_like(clip_mask)
+ 
++    if chunk_action_logprobs is not None:
++        if action_level_sum or chunk_action_advantages is None:
++            raise ValueError("Chunk-clipped action advantages require their own mean-H path.")
++        policy_loss = _chunk_clipped_action_surrogate(
++            logprobs - old_logprobs, chunk_action_logprobs, chunk_action_advantages,
++            loss_mask, clip_ratio_low, clip_ratio_high, clip_ratio_c,
++            clip_log_ratio_min, clip_log_ratio_max,
++        )
++
+     def aggregate_policy_loss(values: torch.Tensor) -> torch.Tensor:
+         if not action_level_sum:
+             return loss_agg_func(values, loss_mask, loss_mask_ratio)
+diff --git a/rlinf/algorithms/utils.py b/rlinf/algorithms/utils.py
+index e4d11f6b..db42c151 100644
+--- a/rlinf/algorithms/utils.py
++++ b/rlinf/algorithms/utils.py
+@@ -291,6 +291,7 @@ def preprocess_loss_inputs(
+     reward_type: Optional[str] = None,
+     versions: Optional[torch.Tensor] = None,
+     dvac_advantage_weights: Optional[torch.Tensor] = None,
++    dvac_chunk_advantage_weights: Optional[torch.Tensor] = None,
+     **kwargs,
+ ) -> dict:
+     if reward_type == "chunk_level":
+@@ -307,6 +308,19 @@ def preprocess_loss_inputs(
+             returns = returns.flatten()
+ 
+     bsz = logprobs.shape[0]
++    chunk_action_logprobs = None
++    if dvac_chunk_advantage_weights is not None:
++        if logprob_type != "chunk_level" or reward_type != "chunk_level":
++            raise ValueError("Chunk-clipped DVAC requires chunk logprobs and rewards.")
++        if dvac_advantage_weights is not None:
++            raise ValueError("Choose one DVAC advantage application, not both.")
++        chunk_action_logprobs = logprobs.reshape(bsz, -1, single_action_dim).sum(-1)
++        if dvac_chunk_advantage_weights.shape != chunk_action_logprobs.shape:
++            raise ValueError("Chunk DVAC weights must match [B,H] action positions.")
++        if not torch.isfinite(dvac_chunk_advantage_weights).all() or (
++            dvac_chunk_advantage_weights < 0
++        ).any():
++            raise ValueError("Chunk DVAC weights must be finite and non-negative.")
+     proximal_logprobs = kwargs.get("proximal_logprobs", None)
+     if logprob_type == "token_level":
+         # logprobs, old_logprobs: [bsz, num_action_chunks, action_dim] -> [bsz, num_action_chunks, action_dim]
+@@ -393,6 +407,11 @@ def preprocess_loss_inputs(
+         }
+     )
+ 
++    if chunk_action_logprobs is not None:
++        weights = dvac_chunk_advantage_weights.detach().to(advantages)
++        kwargs["chunk_action_logprobs"] = chunk_action_logprobs
++        kwargs["chunk_action_advantages"] = advantages.unsqueeze(-1) * weights
++
+     return kwargs
+ 
+ 
+diff --git a/rlinf/workers/actor/embodied_fsdp_actor_worker.py b/rlinf/workers/actor/embodied_fsdp_actor_worker.py
+index 8fe4672f..2418128b 100644
+--- a/rlinf/workers/actor/embodied_fsdp_actor_worker.py
++++ b/rlinf/workers/actor/embodied_fsdp_actor_worker.py
+@@ -105,10 +105,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
+         if self.dvac_train_application not in {
+             "logprob_st",
+             "action_advantage",
++            "chunk_clipped_action_advantage",
+         }:
+             raise ValueError(
+                 "algorithm.dvac_gradient_weighting.application must be "
+-                "'logprob_st' or 'action_advantage'"
++                "'logprob_st', 'action_advantage' or 'chunk_clipped_action_advantage'"
+             )
+         self.dvac_advantage_scope = str(
+             self.dvac_train_cfg.get("advantage_scope", "all")
+@@ -181,7 +182,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
+                 raise ValueError("DVAC train weighting requires OpenPI.")
+             expected_logprob_type = (
+                 "chunk_level"
+-                if self.dvac_train_application == "logprob_st"
++                if self.dvac_train_application != "action_advantage"
+                 else "action_level"
+             )
+             if self.cfg.algorithm.logprob_type != expected_logprob_type:
+@@ -190,7 +191,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
+                     f"algorithm.logprob_type={expected_logprob_type}."
+                 )
+             if (
+-                self.dvac_train_application == "action_advantage"
++                self.dvac_train_application != "logprob_st"
+                 and self.cfg.algorithm.reward_type != "chunk_level"
+             ):
+                 raise ValueError(
+@@ -657,6 +658,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
+                 "advantage_reduction": (
+                     "sum_valid_actions_then_mean_queries"
+                     if self.dvac_train_application == "action_advantage"
++                    else "mean_actions_with_control_sum_gradient_scale"
++                    if self.dvac_train_application == "chunk_clipped_action_advantage"
+                     else None
+                 ),
+                 "selected_l": int(self.dvac_selected_l),
+@@ -897,6 +900,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
+         ):
+             loss_kwargs["dvac_advantage_weights"] = dvac_weights
+             loss_kwargs["action_level_sum"] = True
++        elif (
++            self.dvac_train_enabled
++            and self.dvac_train_application == "chunk_clipped_action_advantage"
++        ):
++            loss_kwargs["dvac_chunk_advantage_weights"] = dvac_weights
+ 
+         if SupportedModel(self.cfg.actor.model.model_type) in [
+             SupportedModel.GR00T_N1D6,
+
+{"unit": "======================= 42 passed, 16 warnings in 9.39s ========================", "tests": {"time": "2026-09-07T08:24:21.506235+00:00", "passed": true, "real": {"application": "chunk_clipped_action_advantage", "advantage_scope": "positive", "source_tensor": "/home/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-st-positive-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260907-v1/pi05_sidney_pillbottle_grpo_dvac_st_positive_w05to15_formal200_phys45_20260907/dvac_train/actor_rank00/runner_step_0007.pt", "shape": [512, 50], "registry_loss": 0.053759828209877014, "gradient_parity": true, "model_or_environment_smoke": false}}, "gpu": "index, memory.used [MiB], utilization.gpu [%]\n0, 9897 MiB, 0 %\n1, 4 MiB, 0 %\n2, 4 MiB, 0 %\n3, 8 MiB, 0 %\n4, 68550 MiB, 99 %\n5, 68968 MiB, 93 %\n6, 50694 MiB, 90 %\n7, 41509 MiB, 1 %\n", "ram": "               total        used        free      shared  buff/cache   available\nMem:     2164140818432 771100610560 674422071296 84871630848 718618136576 1297334054912\nSwap:     6413086720  6311878656   101208064\n", "disk": "Filesystem                          1B-blocks          Used     Available Use% Mounted on\n/dev/mapper/ubuntu--vg-home--lv 2488371159040 1149237862400 1338021306368  47% /home\n/dev/nvme1n1                    3779302981632 2836572848128  750675558400  80% /data\n"}
