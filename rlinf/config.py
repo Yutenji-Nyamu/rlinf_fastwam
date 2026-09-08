@@ -1452,6 +1452,68 @@ def validate_coding_online_rl_cfg(cfg: DictConfig) -> DictConfig:
     return cfg
 
 
+def validate_prism_dvac_cfg(cfg: DictConfig) -> None:
+    """Validate the synchronous, binary-success Prism experiment contract."""
+    prism_cfg = OmegaConf.select(cfg, "algorithm.prism_dvac", default=None)
+    enabled = bool(prism_cfg is not None and prism_cfg.get("enabled", False))
+    is_prism_adv = OmegaConf.select(cfg, "algorithm.adv_type") == "prism_rloo"
+    if enabled != is_prism_adv:
+        raise ValueError("Prism signal and algorithm.adv_type=prism_rloo must agree.")
+    if not enabled:
+        return
+    if cfg.runner.task_type != "embodied" or cfg.runner.get("only_eval", False):
+        raise ValueError("Prism requires an embodied training run.")
+    if cfg.runner.get("use_training_pipeline", False) or cfg.runner.get(
+        "enable_decoupled_mode", False
+    ):
+        raise ValueError("Prism requires synchronous complete trajectory groups.")
+    if cfg.algorithm.get("filter_rewards", False):
+        raise ValueError("Prism must retain binary all-zero and all-one groups.")
+    if cfg.algorithm.get("normalize_advantages", False):
+        raise ValueError("Prism RLOO must not standardize advantages.")
+    if (
+        cfg.algorithm.reward_type != "chunk_level"
+        or cfg.algorithm.logprob_type != "chunk_level"
+    ):
+        raise ValueError("Prism preserves chunk-level rewards and chunk-level PPO clipping.")
+    local_dvac_mode = str(
+        OmegaConf.select(cfg, "algorithm.dvac_gradient_weighting.mode", default="off")
+    ).lower()
+    if local_dvac_mode != "off":
+        raise ValueError("Prism cannot be combined with local DVAC weighting.")
+    if cfg.env.train.auto_reset or cfg.env.train.ignore_terminations:
+        raise ValueError("Prism requires the executed-action termination mask.")
+    if not cfg.env.train.get("use_custom_reward", False) or not cfg.env.train.get(
+        "use_rel_reward", False
+    ):
+        raise ValueError("Prism expects binary relative success rewards.")
+    if (
+        float(cfg.algorithm.reward_coef) != 1.0
+        or float(cfg.env.train.reward_coef) != 1.0
+    ):
+        raise ValueError("Prism requires unscaled binary trajectory success.")
+    if (
+        cfg.algorithm.group_size < 2
+        or cfg.env.train.group_size != cfg.algorithm.group_size
+    ):
+        raise ValueError("Prism group size must match scene grouping and be at least two.")
+    if cfg.actor.get("enable_sft_co_train", False):
+        raise ValueError("Prism does not support simultaneous SFT co-training.")
+    if not 0.0 < float(prism_cfg.get("quality_lambda", 0.2)) < 1.0:
+        raise ValueError("Prism quality_lambda must lie strictly between 0 and 1.")
+    log_eps = float(prism_cfg.get("log_eps", 1e-12))
+    if not 0.0 < log_eps < float("inf"):
+        raise ValueError("Prism log_eps must be finite and positive.")
+    selected_l = int(prism_cfg.get("selected_l", 3))
+    for model_cfg in (cfg.actor.model, cfg.rollout.model):
+        if SupportedModel(model_cfg.model_type) != SupportedModel.OPENPI:
+            raise ValueError("Prism requires native OpenPI actor and rollout models.")
+        if not 2 <= selected_l <= int(model_cfg.openpi.num_steps):
+            raise ValueError("Prism selected_l must be within [2, denoising steps].")
+        if int(model_cfg.num_action_chunks) != int(model_cfg.openpi.action_chunk):
+            raise ValueError("Prism requires matching rollout and executed chunk lengths.")
+
+
 def validate_cfg(cfg: DictConfig) -> DictConfig:
     OmegaConf.set_struct(cfg, True)
 
@@ -1488,6 +1550,8 @@ def validate_cfg(cfg: DictConfig) -> DictConfig:
                 "trace/trace_events.jsonl",
             )
 
+    validate_prism_dvac_cfg(cfg)
+
     # Init cluster
     Cluster(
         cluster_cfg=cfg.cluster,
@@ -1517,7 +1581,12 @@ def validate_cfg(cfg: DictConfig) -> DictConfig:
         cfg = validate_offline_cfg(cfg)
 
     if cfg.runner.task_type != "sft" and not cfg.runner.get("only_eval", False):
-        if cfg.algorithm.adv_type in ("grpo", "grpo_dynamic", "reinpp_baseline"):
+        if cfg.algorithm.adv_type in (
+            "grpo",
+            "grpo_dynamic",
+            "reinpp_baseline",
+            "prism_rloo",
+        ):
             assert cfg.algorithm.group_size > 1
 
     assert cfg.actor.training_backend in SUPPORTED_TRAINING_BACKENDS, (

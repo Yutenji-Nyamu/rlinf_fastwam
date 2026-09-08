@@ -22,6 +22,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.algorithms.dvac_rank_reward import trajectory_dvac_quality
 from rlinf.algorithms.dvac_train_weighting import (
     DVACRecentStats,
     DVACStepStats,
@@ -115,6 +116,17 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         )
         self.dvac_output_dir: Path | None = None
         self._dvac_pending_step: dict | None = None
+        prism_cfg = OmegaConf.select(cfg, "algorithm.prism_dvac", default=None)
+        self.prism_dvac_cfg = (
+            {} if prism_cfg is None else OmegaConf.to_container(prism_cfg, resolve=True)
+        )
+        self.prism_dvac_enabled = bool(self.prism_dvac_cfg.get("enabled", False))
+        self.prism_dvac_selected_l = int(self.prism_dvac_cfg.get("selected_l", 3))
+        self.prism_dvac_lambda = float(self.prism_dvac_cfg.get("quality_lambda", 0.2))
+        self.prism_dvac_log_eps = float(self.prism_dvac_cfg.get("log_eps", 1e-12))
+        if self.prism_dvac_enabled and self.dvac_train_enabled:
+            raise ValueError("Prism cannot be combined with local DVAC weighting.")
+        self._prism_dvac_metrics: dict | None = None
         if self.enable_sft_co_train:
             self._build_sft_data_loader()
 
@@ -367,6 +379,68 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
         return rollout_batch
 
+    def _prepare_prism_dvac_advantage_inputs(self) -> torch.Tensor:
+        """Consume rollout-only variance before shuffling chunks for actor updates."""
+        variance_key = f"dvac_v_l{self.prism_dvac_selected_l}"
+        forward_inputs = self.rollout_batch.get("forward_inputs", {})
+        if variance_key not in forward_inputs:
+            raise ValueError(f"Prism rollout is missing {variance_key}.")
+        variance = forward_inputs.pop(variance_key)
+        action_mask, _ = compute_loss_mask(self.rollout_batch["dones"])
+        cost, quality = trajectory_dvac_quality(
+            variance,
+            action_mask,
+            group_size=self.cfg.algorithm.group_size,
+            log_eps=self.prism_dvac_log_eps,
+        )
+        group_size = self.cfg.algorithm.group_size
+        grouped_cost = cost.reshape(-1, group_size)
+        grouped_quality = quality.reshape(-1, group_size)
+        rewards = self.rollout_batch["rewards"]
+        episode_rewards = (rewards * action_mask.to(rewards.device)).sum(dim=(0, 2))
+        success = torch.isclose(
+            episode_rewards, torch.ones_like(episode_rewards), atol=1e-6, rtol=0
+        ).reshape(-1, group_size)
+        all_success = success.all(dim=-1)
+        all_failure = (~success).all(dim=-1)
+        mixed = ~(all_success | all_failure)
+        spread = grouped_cost.max(dim=-1).values - grouped_cost.min(dim=-1).values
+        sorted_cost = grouped_cost.sort(dim=-1).values
+        tied = (sorted_cost[:, 1:] == sorted_cost[:, :-1]).any(dim=-1)
+        quality_adv = self.prism_dvac_lambda * group_size / (group_size - 1) * (
+            grouped_quality - grouped_quality.mean(dim=-1, keepdim=True)
+        )
+        success = success.to(grouped_quality.device)
+        mixed_quality_gap = (
+            (grouped_quality * success).sum(-1) / success.sum(-1).clamp_min(1)
+            - (grouped_quality * ~success).sum(-1) / (~success).sum(-1).clamp_min(1)
+        )
+        mixed = mixed.to(grouped_quality.device)
+        self._prism_dvac_metrics = {
+            "prism_dvac/trajectory_cost_mean": float(cost.mean().item()),
+            "prism_dvac/group_cost_spread_mean": float(spread.mean().item()),
+            "prism_dvac/tied_group_fraction": float(tied.float().mean().item()),
+            "prism_dvac/constant_quality_group_fraction": float(
+                (spread == 0).float().mean().item()
+            ),
+            "prism_dvac/all_success_group_fraction": float(
+                all_success.float().mean().item()
+            ),
+            "prism_dvac/all_failure_group_fraction": float(
+                all_failure.float().mean().item()
+            ),
+            "prism_dvac/mixed_group_fraction": float(mixed.float().mean().item()),
+            "prism_dvac/rescued_same_outcome_group_fraction": float(
+                ((~mixed) & (spread > 0)).float().mean().item()
+            ),
+            "prism_dvac/quality_adv_abs_mean": float(quality_adv.abs().mean().item()),
+            # Divide after rank reduction; ranks can contain different mixed counts.
+            "prism_dvac/mixed_quality_gap_per_group": float(
+                (mixed_quality_gap * mixed).mean().item()
+            ),
+        }
+        return quality
+
     @Worker.timer("actor/compute_adv")
     def compute_advantages_and_returns(self) -> dict[str, torch.Tensor]:
         """
@@ -393,6 +467,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "advantage_mode": self.cfg.algorithm.get("advantage_mode", None),
         }
 
+        if self.prism_dvac_enabled:
+            kwargs["trajectory_quality"] = self._prepare_prism_dvac_advantage_inputs()
+            kwargs["quality_lambda"] = self.prism_dvac_lambda
         advantages_and_returns = calculate_adv_and_returns(**kwargs)
 
         self.rollout_batch.update(advantages_and_returns)
@@ -755,6 +832,10 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 append_to_dict(metrics, data)
         if self.dvac_train_enabled:
             append_to_dict(metrics, self._dvac_pending_step["metrics"])
+        if self.prism_dvac_enabled:
+            if self._prism_dvac_metrics is None:
+                raise ValueError("Prism advantage metrics were not prepared.")
+            append_to_dict(metrics, self._prism_dvac_metrics)
 
         # put LR scheduler step here
         self.lr_scheduler.step()
@@ -765,6 +846,15 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         mean_metric_dict = all_reduce_dict(
             mean_metric_dict, op=torch.distributed.ReduceOp.AVG
         )
+        if self.prism_dvac_enabled:
+            mixed_fraction = float(mean_metric_dict["prism_dvac/mixed_group_fraction"])
+            gap_per_group = mean_metric_dict.pop(
+                "prism_dvac/mixed_quality_gap_per_group"
+            )
+            mean_metric_dict["prism_dvac/mixed_success_minus_failure_quality"] = (
+                float(gap_per_group) / mixed_fraction if mixed_fraction > 0 else 0.0
+            )
+            self._prism_dvac_metrics = None
         if self.dvac_train_enabled:
             weight_mean = float(mean_metric_dict["actor/dvac_weight_mean"])
             weight_sq_mean = float(mean_metric_dict["actor/dvac_weight_sq_mean"])

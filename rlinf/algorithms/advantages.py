@@ -121,6 +121,48 @@ def compute_grpo_advantages(
     return advantages, None
 
 
+@register_advantage("prism_rloo")
+def compute_prism_rloo_advantages(
+    rewards: torch.Tensor,
+    loss_mask: torch.Tensor,
+    group_size: int,
+    trajectory_quality: torch.Tensor,
+    quality_lambda: float = 0.2,
+    **kwargs,
+):
+    """Binary success plus detached rank quality, with an unscaled LOO baseline."""
+    if group_size < 2 or rewards.numel() % group_size:
+        raise ValueError("Prism requires complete groups with group_size >= 2")
+    if loss_mask is None or loss_mask.shape[-1] != rewards.numel():
+        raise ValueError("Prism requires a termination mask for every trajectory")
+    if trajectory_quality.numel() != rewards.numel():
+        raise ValueError("Prism requires one quality value per trajectory")
+    if not 0.0 < quality_lambda < 1.0:
+        raise ValueError("Prism quality_lambda must lie strictly between 0 and 1")
+    grouped_rewards = rewards.detach().float().reshape(-1, group_size)
+    quality = (
+        trajectory_quality.detach()
+        .to(device=grouped_rewards.device, dtype=grouped_rewards.dtype)
+        .reshape_as(grouped_rewards)
+    )
+    if not torch.isfinite(quality).all() or ((quality < 0) | (quality > 1)).any():
+        raise ValueError("Prism trajectory quality must be finite and within [0, 1]")
+    is_zero = torch.isclose(
+        grouped_rewards, torch.zeros_like(grouped_rewards), atol=1e-6, rtol=0
+    )
+    is_one = torch.isclose(
+        grouped_rewards, torch.ones_like(grouped_rewards), atol=1e-6, rtol=0
+    )
+    if not (is_zero | is_one).all():
+        raise ValueError("Prism requires binary trajectory rewards in {0, 1}")
+    combined_rewards = is_one.to(grouped_rewards.dtype) + quality_lambda * quality
+    sibling_sum = combined_rewards.sum(dim=-1, keepdim=True) - combined_rewards
+    advantages = combined_rewards - sibling_sum / float(group_size - 1)
+    # No standard deviation normalization, including for same-outcome groups.
+    advantages = (torch.zeros_like(loss_mask) + advantages.reshape(1, -1)) * loss_mask
+    return advantages, None
+
+
 @register_advantage("grpo_video")
 def compute_grpo_video_advantages(
     rewards: torch.Tensor,
