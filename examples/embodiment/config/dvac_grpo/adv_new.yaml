@@ -1,0 +1,13 @@
+# @package algorithm.dvac_gradient_weighting
+# pi0.5 GRPO DVAC adv new: current-rollout, group-relative, two-level weights.
+mode: apply
+application: chunk_clipped_action_advantage
+normalization: two_level_group
+scope: both
+selected_l: 3
+alpha_local: 1.0
+alpha_chunk: 1.0
+log_eps: 1.0e-12
+minmax_eps: 1.0e-6
+save_step_tensors: true
+output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_train

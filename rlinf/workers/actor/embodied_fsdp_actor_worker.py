@@ -28,6 +28,7 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
+from rlinf.algorithms.dvac_two_level import compute_dvac_two_level_weights
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.config import SupportedModel
@@ -104,14 +105,56 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if self.dvac_train_application not in {
             "logprob_st",
             "action_advantage",
+            "chunk_clipped_action_advantage",
         }:
             raise ValueError(
                 "algorithm.dvac_gradient_weighting.application must be "
-                "'logprob_st' or 'action_advantage'"
+                "'logprob_st', 'action_advantage', or 'chunk_clipped_action_advantage'"
             )
+        normalization = self.dvac_train_cfg.get("normalization", "recent_stats")
+        if normalization not in {"recent_stats", "two_level_group"}:
+            raise ValueError("Unknown DVAC normalization")
+        self.dvac_two_level_enabled = (
+            self.dvac_train_enabled and normalization == "two_level_group"
+        )
+        if self.dvac_two_level_enabled:
+            if self.dvac_train_application != "chunk_clipped_action_advantage":
+                raise ValueError(
+                    "Two-level DVAC requires chunk_clipped_action_advantage"
+                )
+            if (
+                cfg.algorithm.adv_type != "grpo"
+                or cfg.algorithm.reward_type != "chunk_level"
+            ):
+                raise ValueError(
+                    "Two-level DVAC currently requires baseline chunk-reward GRPO"
+                )
+            if (
+                cfg.algorithm.loss_type != "actor"
+                or cfg.algorithm.loss_agg_func != "token-mean"
+            ):
+                raise ValueError(
+                    "Two-level DVAC requires the audited baseline actor reduction"
+                )
+            if self.dvac_train_cfg.get("scope", "both") not in {
+                "both",
+                "positive",
+                "negative",
+            }:
+                raise ValueError("DVAC scope must be both, positive, or negative")
+            for key in ("alpha_local", "alpha_chunk"):
+                if not 0 <= float(self.dvac_train_cfg.get(key, 1.0)) <= 1:
+                    raise ValueError(f"{key} must be in [0,1]")
+        elif (
+            self.dvac_train_enabled
+            and self.dvac_train_application == "chunk_clipped_action_advantage"
+        ):
+            raise ValueError("chunk_clipped_action_advantage requires two_level_group")
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
         self.dvac_recent_stats = (
-            self._new_dvac_recent_stats() if self.dvac_train_enabled else None
+            self._new_dvac_recent_stats()
+            if self.dvac_train_enabled and not self.dvac_two_level_enabled
+            else None
         )
         self.dvac_output_dir: Path | None = None
         self._dvac_pending_step: dict | None = None
@@ -169,7 +212,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 raise ValueError("DVAC train weighting requires OpenPI.")
             expected_logprob_type = (
                 "chunk_level"
-                if self.dvac_train_application == "logprob_st"
+                if self.dvac_train_application
+                in {"logprob_st", "chunk_clipped_action_advantage"}
                 else "action_level"
             )
             if self.cfg.algorithm.logprob_type != expected_logprob_type:
@@ -284,11 +328,27 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         recv_list = []
         for _ in range(split_num):
             trajectory: Trajectory = await input_channel.get(async_op=True).async_wait()
+            if self.dvac_two_level_enabled:
+                # The native GRPO channel contract sends complete contiguous groups.
+                # Reject split groups before concatenation could hide a boundary error.
+                if trajectory.rewards.shape[1] % self.cfg.algorithm.group_size:
+                    raise ValueError(
+                        "DVAC requires complete GRPO groups in each received packet"
+                    )
             recv_list.append(trajectory)
 
         self.rollout_batch = convert_trajectories_to_batch(recv_list)
 
         self.rollout_batch = self._process_received_rollout_batch(self.rollout_batch)
+        if self.dvac_two_level_enabled:
+            batch_size = self.rollout_batch["rewards"].shape[1]
+            group_size = self.cfg.algorithm.group_size
+            if batch_size % group_size:
+                raise ValueError("Rollout batch contains an incomplete GRPO group")
+            # Freeze native reward-group membership before any training shuffle.
+            self._dvac_rollout_group_ids = torch.arange(
+                batch_size, dtype=torch.int64
+            ) // group_size + self._rank * (batch_size // group_size)
 
     def _process_received_rollout_batch(
         self, rollout_batch: dict[str, torch.Tensor]
@@ -564,7 +624,130 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             )
         return loss
 
+    def _dvac_two_level_contract(self) -> dict:
+        defaults = {
+            "normalization": "two_level_group",
+            "scope": "both",
+            "alpha_local": 1.0,
+            "alpha_chunk": 1.0,
+            "log_eps": 1e-12,
+            "minmax_eps": 1e-6,
+        }
+        return {
+            key: self.dvac_train_cfg.get(key, value) for key, value in defaults.items()
+        }
+
+    @torch.no_grad()
+    def _prepare_dvac_two_level_step(self) -> None:
+        inputs = self.rollout_batch.get("forward_inputs")
+        key = f"dvac_v_l{self.dvac_selected_l}"
+        if not isinstance(inputs, dict) or key not in inputs:
+            raise ValueError(f"Missing rollout DVAC signal {key}")
+        variance = inputs.pop(key).detach()
+        time_steps, batch_size, horizon = variance.shape
+        advantages = (
+            self.rollout_batch["advantages"].detach().reshape(time_steps, batch_size, 1)
+        )
+        mask = self.rollout_batch.get("loss_mask")
+        mask = (
+            torch.ones_like(advantages, dtype=torch.bool)
+            if mask is None
+            else mask.reshape(time_steps, batch_size, 1).bool()
+        )
+        contribution = torch.ones_like(advantages, dtype=torch.float32)
+        lengths = self.rollout_batch.get("loss_mask_sum")
+        if lengths is not None:
+            lengths = lengths.detach().reshape(time_steps, batch_size, 1).float()
+            if not torch.isfinite(lengths[mask]).all() or (lengths[mask] <= 0).any():
+                raise ValueError("Invalid native loss_mask_sum on an active chunk")
+            # The native actor uses (loss / (length/max_episode_steps) * mask).mean().
+            contribution = self.cfg.env.train.max_episode_steps / torch.where(
+                mask, lengths, 1.0
+            )
+        group_ids = self._dvac_rollout_group_ids
+        shape = torch.tensor([time_steps, batch_size, horizon], device=self.device)
+        shapes = [torch.empty_like(shape) for _ in range(self._world_size)]
+        torch.distributed.all_gather(shapes, shape)
+        if any(not torch.equal(shape, other) for other in shapes):
+            raise ValueError("Two-level DVAC requires equal-sized native actor shards")
+
+        def gather(value, dim):
+            value = value.to(self.device).contiguous()
+            parts = [torch.empty_like(value) for _ in range(self._world_size)]
+            torch.distributed.all_gather(parts, value)
+            return torch.cat(parts, dim=dim).cpu()
+
+        full_v = gather(variance.float(), 1)
+        full_mask = gather(mask, 1)
+        full_adv = gather(advantages.float(), 1)
+        full_contribution = gather(contribution, 1)
+        full_groups = gather(group_ids, 0)
+        _, counts = full_groups.unique(return_counts=True)
+        if not torch.all(counts == self.cfg.algorithm.group_size):
+            raise ValueError(
+                "Frozen DVAC group IDs must identify complete native GRPO groups"
+            )
+        contract = self._dvac_two_level_contract()
+        weights, details = compute_dvac_two_level_weights(
+            full_v,
+            full_mask,
+            full_groups,
+            full_adv,
+            chunk_contributions=full_contribution.squeeze(-1),
+            **{k: v for k, v in contract.items() if k != "normalization"},
+        )
+        selected = slice(self._rank * batch_size, (self._rank + 1) * batch_size)
+        inputs["dvac_weights"] = weights[:, selected].to(variance.device).contiguous()
+        mass = full_contribution * full_mask
+        denom = mass.sum().clamp_min(1e-12)
+        chunk_mean = weights.mean(-1, keepdim=True)
+        active_w = weights[full_mask.expand_as(weights)]
+        metrics = {
+            "actor/dvac_weight_mean": float((chunk_mean * mass).sum() / denom),
+            "actor/dvac_weight_sq_mean": float(
+                (weights.square().mean(-1, keepdim=True) * mass).sum() / denom
+            ),
+            "actor/dvac_weight_min": float(active_w.min()) if active_w.numel() else 1.0,
+            "actor/dvac_weight_max": float(active_w.max()) if active_w.numel() else 1.0,
+            "actor/dvac_valid_chunks": float(full_mask.sum()),
+            "actor/dvac_group_count": float(counts.numel()),
+            "actor/dvac_local_center_error": float(
+                (details["local_factors"].mean(-1) - 1).abs().max()
+            ),
+            "actor/dvac_chunk_factor_std": float(
+                details["chunk_factors"][full_mask].std(unbiased=False)
+            )
+            if full_mask.any()
+            else 0.0,
+        }
+        for name, sign_mask in (("positive", full_adv > 0), ("negative", full_adv < 0)):
+            side_mass = mass * torch.where(full_mask & sign_mask, full_adv.abs(), 0.0)
+            side_denom = side_mass.sum()
+            metrics[f"actor/dvac_{name}_adv_mass_ratio"] = (
+                float((side_mass * chunk_mean).sum() / side_denom)
+                if side_denom > 0
+                else 1.0
+            )
+        self._dvac_pending_step = {
+            "runner_step": int(self.version),
+            "config": contract,
+            "group_ids": group_ids.cpu(),
+            "variance": variance.cpu(),
+            "weights": weights[:, selected].contiguous(),
+            "advantages": advantages.cpu(),
+            "loss_mask": mask.cpu(),
+            "metrics": metrics,
+            **{
+                k: v[:, selected].contiguous()
+                for k, v in details.items()
+                if k != "group_ids"
+            },
+        }
+
     def _prepare_dvac_train_step(self) -> None:
+        if self.dvac_two_level_enabled:
+            self._prepare_dvac_two_level_step()
+            return
         forward_inputs = self.rollout_batch.get("forward_inputs")
         if not isinstance(forward_inputs, dict):
             raise ValueError("DVAC gradient weighting requires forward_inputs.")
@@ -632,6 +815,13 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if path.exists():
             raise FileExistsError(f"DVAC step artifact already exists: {path}")
         temporary = path.with_suffix(".partial.pt")
+        if self.dvac_two_level_enabled:
+            torch.save(
+                {"schema_version": 2, "actor_rank": int(self._rank), **pending},
+                temporary,
+            )
+            os.replace(temporary, path)
+            return
         torch.save(
             {
                 "schema_version": 1,
@@ -773,7 +963,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             )
             pending = self._dvac_pending_step
             self._write_dvac_step_artifact(pending)
-            self.dvac_recent_stats.push(pending["current_stats"])
+            if not self.dvac_two_level_enabled:
+                self.dvac_recent_stats.push(pending["current_stats"])
             self._dvac_pending_step = None
         if explained_variance_stats:
             reduced_stats = all_reduce_dict(
@@ -881,6 +1072,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         ):
             loss_kwargs["dvac_advantage_weights"] = dvac_weights
             loss_kwargs["action_level_sum"] = True
+        if self.dvac_two_level_enabled:
+            loss_kwargs["dvac_chunk_advantage_weights"] = dvac_weights
 
         if SupportedModel(self.cfg.actor.model.model_type) in [
             SupportedModel.GR00T_N1D6,
@@ -924,13 +1117,13 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         return Path(checkpoint_path) / f"dvac_state_rank{self._rank:04d}.json"
 
     def save_checkpoint(self, save_path: str, step: int = 0) -> None:
-        super().save_checkpoint(save_path, step)
-        if not self.dvac_train_enabled:
-            return
-        if self._dvac_pending_step is not None:
+        if self.dvac_train_enabled and self._dvac_pending_step is not None:
             raise RuntimeError(
                 "Cannot checkpoint a partially applied DVAC runner step."
             )
+        super().save_checkpoint(save_path, step)
+        if not self.dvac_train_enabled:
+            return
         path = self._dvac_sidecar_path(save_path)
         temporary = path.with_suffix(".partial.json")
         payload = {
@@ -941,8 +1134,12 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "mode": self.dvac_train_mode,
             "application": self.dvac_train_application,
             "selected_l": int(self.dvac_selected_l),
-            "recent_stats": self.dvac_recent_stats.state_dict(),
+            "recent_stats": None
+            if self.dvac_two_level_enabled
+            else self.dvac_recent_stats.state_dict(),
         }
+        if self.dvac_two_level_enabled:
+            payload["two_level_config"] = self._dvac_two_level_contract()
         temporary.write_text(
             json.dumps(payload, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
@@ -975,8 +1172,12 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                         f"DVAC resume mismatch for {key}: "
                         f"checkpoint={checkpoint_value!r}, current={value!r}"
                     )
-            restored_stats = self._new_dvac_recent_stats()
-            restored_stats.load_state_dict(payload["recent_stats"])
+            if self.dvac_two_level_enabled:
+                if payload.get("two_level_config") != self._dvac_two_level_contract():
+                    raise ValueError("DVAC two-level resume configuration mismatch")
+            else:
+                restored_stats = self._new_dvac_recent_stats()
+                restored_stats.load_state_dict(payload["recent_stats"])
 
         super().load_checkpoint(load_path)
         if restored_stats is not None:
