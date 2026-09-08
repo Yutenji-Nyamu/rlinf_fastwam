@@ -30,11 +30,15 @@ def masked_fm_loss(
 class SuccessEpisodeCollector:
     """Collect complete episodes; never retain post-terminal policy queries."""
 
-    def __init__(self, num_envs: int, dvac_log_eps: float | None = None):
+    def __init__(
+        self, num_envs: int, dvac_log_eps: float | None = None,
+        collect_dvac_moments: bool = True,
+    ):
         self.num_envs = num_envs
         self.completed = []
         self.episode_ids = [0] * num_envs
         self.dvac_log_eps = dvac_log_eps
+        self.collect_dvac_moments = collect_dvac_moments
         self.dvac_moments = torch.zeros(3, dtype=torch.float64)
         self.reset()
 
@@ -78,7 +82,8 @@ class SuccessEpisodeCollector:
                 v = forward_inputs["dvac_v"][i].detach().float().cpu().clone()
                 if v.shape != commands[i].shape[:1]:
                     raise ValueError("DVAC signal must match submitted command H.")
-                self.dvac_moments += log_moments(v, self.dvac_log_eps)
+                if self.collect_dvac_moments:
+                    self.dvac_moments += log_moments(v, self.dvac_log_eps)
                 record["dvac_v"] = v
             record["query_idx"] = torch.tensor(len(self.pending[i]))
             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])

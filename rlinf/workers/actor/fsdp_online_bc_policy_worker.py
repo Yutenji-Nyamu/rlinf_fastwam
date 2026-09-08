@@ -52,8 +52,29 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         )
         self.dvac = None
         self.dvac_metrics = {}
+        self.dvac_batch_metrics = {}
         dvac_cfg = bc.get("dvac", {})
-        if dvac_cfg.get("enabled", False):
+        self.dvac_normalization = dvac_cfg.get("normalization", "recent")
+        if self.dvac_normalization not in ("recent", "two_level_batch"):
+            raise ValueError("Unknown online BC DVAC normalization.")
+        if self.dvac_normalization == "two_level_batch":
+            if not dvac_cfg.get("enabled", False) or self._world_size != 1:
+                raise ValueError("Two-level BC DVAC requires enabled DVAC and one actor rank.")
+            if any(key in dvac_cfg for key in ("window", "mapping", "alpha", "z_clip", "weight_min", "weight_max", "std_floor")):
+                raise ValueError("Two-level BC DVAC cannot include legacy calibration settings.")
+            self.dvac_new_settings = {
+                "alpha_local": float(dvac_cfg.get("alpha_local", 1.0)),
+                "alpha_chunk": float(dvac_cfg.get("alpha_chunk", 1.0)),
+                "variance_eps": float(dvac_cfg.get("log_eps", 1e-12)),
+                "range_eps": float(dvac_cfg.get("range_eps", 1e-6)),
+            }
+            from rlinf.algorithms.online_bc_dvac_two_level import compute_two_level_bc_weights
+
+            compute_two_level_bc_weights(torch.ones(1, 1), torch.ones(1, 1, 1), **self.dvac_new_settings)
+            self.dvac_debug_batches = int(dvac_cfg.get("debug_batches", 0))
+            if not 0 <= self.dvac_debug_batches <= 4:
+                raise ValueError("DVAC debug_batches must be between 0 and 4.")
+        elif dvac_cfg.get("enabled", False):
             from rlinf.algorithms.online_bc_dvac import OnlineBCDvac
 
             self.dvac = OnlineBCDvac(
@@ -105,7 +126,15 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         for _ in range(compute_split_num(send_num, recv_num)):
             # Every env stage sends its exact split count, including empty lists.
             packet = await input_channel.get(async_op=True).async_wait()
-            if self.dvac is None:
+            if getattr(self, "dvac_normalization", "recent") == "two_level_batch":
+                episodes = packet["episodes"]
+                for episode in episodes:
+                    for record in episode:
+                        self.validate_dvac_record(record)
+                        if "action_weights" in record:
+                            raise ValueError("New BC DVAC replay must store V, not frozen weights.")
+                self.replay_buffer.add_episodes(episodes)
+            elif self.dvac is None:
                 self.replay_buffer.add_episodes(packet)
             else:
                 new_episodes.extend(packet["episodes"])
@@ -116,6 +145,57 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             self.dvac_metrics = self.dvac.annotate(new_episodes, moments.cpu())
             self.replay_buffer.add_episodes(new_episodes)
             self.log_info(f"Online BC DVAC: {self.dvac_metrics}")
+
+    @staticmethod
+    def validate_dvac_record(record):
+        """Reject malformed online signal before admission or model restoration."""
+        if "dvac_v" not in record:
+            raise ValueError("Two-level BC DVAC online record is missing dvac_v.")
+        variance, mask = record["dvac_v"], record["action_valid_mask"]
+        if mask.ndim != 2 or variance.shape != mask.shape[:1]:
+            raise ValueError("BC DVAC V must align with the command mask [H,D].")
+        if not torch.isfinite(mask).all() or not ((mask == 0) | (mask == 1)).all():
+            raise ValueError("BC command mask must be binary and finite.")
+        valid = mask.bool().any(-1)
+        if not valid.any() or not torch.isfinite(variance[valid]).all() or (variance[valid] < 0).any():
+            raise ValueError("BC DVAC requires valid nonnegative V and nonempty query targets.")
+
+    def prepare_replay_batch(self, batch):
+        if getattr(self, "dvac_normalization", "recent") != "two_level_batch":
+            return batch
+        from rlinf.algorithms.online_bc_dvac_two_level import compute_two_level_bc_weights
+
+        inputs = batch["forward_inputs"]
+        if "dvac_v" not in inputs:
+            raise ValueError("Two-level BC DVAC sampled batch is missing dvac_v.")
+        mask = inputs["action_valid_mask"]
+        if mask.ndim != 3 or mask.shape[0] != self.cfg.actor.global_batch_size:
+            raise ValueError("Two-level BC DVAC must see the complete optimizer batch.")
+        if (mask.sum(dim=(1, 2)) == 0).any():
+            raise ValueError("BC FM loss requires nonempty targets in every query.")
+        weights, diagnostics = compute_two_level_bc_weights(
+            inputs["dvac_v"], mask, **self.dvac_new_settings
+        )
+        # Replace any previous mapping, without mutating the replay records.
+        inputs["action_weights"] = weights
+        self.dvac_batch_metrics = {f"dvac_new/{key}": value for key, value in diagnostics.items()}
+        if self.update_step < self.dvac_debug_batches:
+            target = Path(self.cfg.runner.logger.log_path) / "dvac_new_debug"
+            target.mkdir(parents=True, exist_ok=True)
+            with (target / f"update_{self.update_step:06d}.pt").open("xb") as stream:
+                torch.save({
+                    "variance": inputs["dvac_v"].cpu(), "mask": mask.cpu(),
+                    "weights": weights.cpu(), "settings": self.dvac_new_settings,
+                    "update_step": self.update_step, "diagnostics": diagnostics,
+                }, stream)
+        return batch
+
+    def update_buffer_one_epoch(self):
+        metrics = super().update_buffer_one_epoch()
+        return metrics | getattr(self, "dvac_batch_metrics", {})
+
+    def dvac_new_state(self):
+        return {"normalization": "two_level_batch", "version": 1, "settings": self.dvac_new_settings}
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):
@@ -180,8 +260,22 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         torch.save({"update_step": self.update_step}, target / "learner.pt")
         if self.dvac is not None:
             torch.save(self.dvac.state_dict(), target / "dvac.pt")
+        if getattr(self, "dvac_normalization", "recent") == "two_level_batch":
+            torch.save(self.dvac_new_state(), target / "dvac_new.pt")
 
     def load_checkpoint(self, load_base_path):
+        target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
+        if getattr(self, "dvac_normalization", "recent") == "two_level_batch":
+            state_path = target / "dvac_new.pt"
+            if not state_path.is_file() or (target / "dvac.pt").exists():
+                raise ValueError("BC DVAC new requires its own checkpoint; legacy resume is unsupported.")
+            if torch.load(state_path, weights_only=True) != self.dvac_new_state():
+                raise ValueError("BC DVAC new checkpoint settings/version mismatch.")
+            self.replay_buffer.load_checkpoint(target)
+            for record in self.replay_buffer.records:
+                self.validate_dvac_record(record)
+                if "action_weights" in record:
+                    raise ValueError("BC DVAC new checkpoint contains frozen replay weights.")
         self._strategy.load_checkpoint(
             model=self.model,
             optimizers=[self.optimizer],
@@ -189,8 +283,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             load_path=load_base_path,
             checkpoint_format=self.checkpoint_format,
         )
-        target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
-        self.replay_buffer.load_checkpoint(target)
+        if getattr(self, "dvac_normalization", "recent") != "two_level_batch":
+            self.replay_buffer.load_checkpoint(target)
         self.update_step = torch.load(target / "learner.pt", weights_only=True)[
             "update_step"
         ]

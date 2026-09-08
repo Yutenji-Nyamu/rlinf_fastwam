@@ -177,6 +177,13 @@ class EnvWorker(Worker):
                 self.bc_collectors = [
                     SuccessEpisodeCollector(
                         self.train_num_envs_per_stage,
+                        collect_dvac_moments=(
+                            OmegaConf.select(
+                                self.cfg,
+                                "algorithm.online_bc.dvac.normalization",
+                                default="recent",
+                            ) != "two_level_batch"
+                        ),
                         dvac_log_eps=(
                             self.cfg.algorithm.online_bc.dvac.log_eps
                             if OmegaConf.select(
