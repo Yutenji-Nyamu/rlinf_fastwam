@@ -23,7 +23,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from rlinf.algorithms.registry import calculate_adv_and_returns
 from rlinf.algorithms.rlt.transition import update_rlt_transitions
-from rlinf.data.online_bc import SuccessEpisodeCollector
+from rlinf.data.online_bc import SuccessEpisodeCollector, snapshot_rabc_observation
 from rlinf.data.schema.embodied_trajectory_builder import (
     EmbodiedLerobotTrajectoryBuilder,
     EmbodiedTrajectoryBuilder,
@@ -66,6 +66,7 @@ class EnvWorker(Worker):
     # ``env.obs_compression`` is enabled, ``__init__`` installs the compressing
     # ``split_fn`` (see ``_split_and_compress_obs``).
     _obs_split_fn = None
+    enable_online_bc_rabc = False
 
     def __init__(self, cfg: DictConfig):
         Worker.__init__(self)
@@ -86,6 +87,9 @@ class EnvWorker(Worker):
         self.collect_transitions = self.cfg.rollout.get("collect_transitions", False)
         self.collect_prev_infos = self.cfg.rollout.get("collect_prev_infos", True)
         self.enable_online_bc = cfg.algorithm.get("loss_type") == "online_bc"
+        self.enable_online_bc_rabc = self.enable_online_bc and bool(
+            OmegaConf.select(cfg, "algorithm.online_bc.rabc.enabled", default=False)
+        )
         self.stage_num = self.cfg.rollout.pipeline_stage_num
         self.enable_rlt = OmegaConf.select(
             self.cfg, "algorithm.loss_type", default=""
@@ -175,7 +179,10 @@ class EnvWorker(Worker):
                         "Online BC requires full, chunk-aligned RoboTwin rounds with auto_reset=False."
                     )
                 self.bc_collectors = [
-                    SuccessEpisodeCollector(self.train_num_envs_per_stage)
+                    SuccessEpisodeCollector(
+                        self.train_num_envs_per_stage,
+                        rabc_enabled=self.enable_online_bc_rabc,
+                    )
                     for _ in range(self.stage_num)
                 ]
         else:
@@ -554,7 +561,7 @@ class EnvWorker(Worker):
         chunk_dones = torch.logical_or(chunk_terminations, chunk_truncations)
         final_obs = (
             self._build_chunk_final_obs(obs_list, infos_list)
-            if self.use_external_reward_model
+            if self.use_external_reward_model or self.enable_online_bc_rabc
             else (
                 infos["final_observation"]
                 if isinstance(infos, dict) and "final_observation" in infos
@@ -1258,6 +1265,11 @@ class EnvWorker(Worker):
                             intervene_flags=env_output.intervene_flags,
                         )
 
+                    rabc_pre_observation = (
+                        snapshot_rabc_observation(curr_obs, self.train_num_envs_per_stage)
+                        if self.enable_online_bc_rabc
+                        else None
+                    )
                     env_output, env_info, chunk_step_payload = self.env_interact_step(
                         policy_output.actions,
                         stage_id,
@@ -1269,6 +1281,15 @@ class EnvWorker(Worker):
                             env_output.env_infos["success"],
                             env_output.dones,
                             policy_output.versions,
+                            **(
+                                {
+                                    "pre_observation": rabc_pre_observation,
+                                    "post_observation": env_output.obs,
+                                    "final_observation": env_output.final_obs,
+                                }
+                                if self.enable_online_bc_rabc
+                                else {}
+                            ),
                         )
                     # Emulated observation latency: wait before the obs goes out,
                     # without blocking the other coroutines in this worker.

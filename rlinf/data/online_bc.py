@@ -7,24 +7,79 @@ not a claim about which physical interpolation steps ran before early success.
 """
 
 from pathlib import Path
+import uuid
 
 import torch
 
 
-def masked_fm_loss(loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+def masked_fm_loss(
+    loss: torch.Tensor,
+    mask: torch.Tensor,
+    sample_weights: torch.Tensor | None = None,
+) -> torch.Tensor:
     mask = mask.to(device=loss.device, dtype=loss.dtype)
     if mask.shape != loss.shape or (mask.sum(dim=(1, 2)) == 0).any():
         raise ValueError(
             "SFT mask must match loss and contain valid targets per query."
         )
-    return ((loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))).mean()
+    query_loss = (loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))
+    if sample_weights is not None:
+        if not isinstance(sample_weights, torch.Tensor):
+            raise ValueError("Sample weights must be a finite nonnegative tensor [B].")
+        weights = sample_weights.detach().to(device=loss.device, dtype=loss.dtype)
+        if (
+            weights.shape != query_loss.shape
+            or not torch.isfinite(weights).all()
+            or (weights < 0).any()
+        ):
+            raise ValueError("Sample weights must be finite nonnegative [B].")
+        # Already normalized on the complete Adam batch before microbatch split.
+        # An all-zero microbatch is valid; do not divide by its weight sum.
+        query_loss = query_loss * weights
+    return query_loss.mean()
+
+
+RABC_TASK_CAPACITY = 4096
+
+
+def _rabc_images(observation: dict, num_envs: int) -> torch.Tensor:
+    if not isinstance(observation, dict) or "main_images" not in observation:
+        raise ValueError("RABC requires raw environment main_images.")
+    images = torch.as_tensor(observation["main_images"])
+    if (
+        images.dtype != torch.uint8
+        or images.ndim != 4
+        or images.shape[0] != num_envs
+        or images.shape[-1] != 3
+        or min(images.shape[1:3]) < 1
+    ):
+        raise ValueError("RABC main_images must be uint8 [env,H,W,3] RGB.")
+    return images.detach().cpu()
+
+
+def snapshot_rabc_observation(observation: dict, num_envs: int) -> dict:
+    """Freeze the query's raw environment RGB before stepping mutable buffers.
+
+    The task is the existing environment instruction, before policy tokenization.
+    This function is called only when online_bc.rabc.enabled is true.
+    """
+    images = _rabc_images(observation, num_envs)
+    tasks = observation.get("task_descriptions")
+    if not isinstance(tasks, (list, tuple)) or len(tasks) != num_envs:
+        raise ValueError("RABC requires one environment task_descriptions string per env.")
+    if any(not isinstance(task, str) or not task for task in tasks):
+        raise ValueError("RABC environment instructions must be nonempty strings.")
+    if any(len(task.encode("utf-8")) > RABC_TASK_CAPACITY for task in tasks):
+        raise ValueError("RABC environment instruction exceeds 4096 UTF-8 bytes.")
+    return {"main_images": images.clone(), "task_descriptions": list(tasks)}
 
 
 class SuccessEpisodeCollector:
     """Collect complete episodes; never retain post-terminal policy queries."""
 
-    def __init__(self, num_envs: int):
+    def __init__(self, num_envs: int, *, rabc_enabled: bool = False):
         self.num_envs = num_envs
+        self.rabc_enabled = rabc_enabled
         self.completed = []
         self.episode_ids = [0] * num_envs
         self.reset()
@@ -40,6 +95,10 @@ class SuccessEpisodeCollector:
         success: torch.Tensor,
         dones: torch.Tensor,
         versions: torch.Tensor | None = None,
+        *,
+        pre_observation: dict | None = None,
+        post_observation: dict | None = None,
+        final_observation: dict | None = None,
     ) -> None:
         commands = torch.as_tensor(commands).detach().cpu()
         if commands.ndim != 3 or commands.shape[0] != self.num_envs:
@@ -48,6 +107,20 @@ class SuccessEpisodeCollector:
         dones = (
             torch.as_tensor(dones, dtype=torch.bool).reshape(self.num_envs, -1).any(-1)
         )
+        if self.rabc_enabled:
+            before = snapshot_rabc_observation(pre_observation, self.num_envs)
+            after_images = _rabc_images(post_observation, self.num_envs)
+            terminal_images = (
+                _rabc_images(final_observation, self.num_envs)
+                if final_observation is not None
+                else None
+            )
+            if dones.any() and terminal_images is None:
+                raise ValueError("RABC done observations require the chunk's final_observation.")
+            if before["main_images"].shape != after_images.shape or (
+                terminal_images is not None and terminal_images.shape != after_images.shape
+            ):
+                raise ValueError("RABC pre/post/final RGB dimensions differ.")
         for i in range(self.num_envs):
             if self.finished[i]:
                 continue
@@ -67,6 +140,33 @@ class SuccessEpisodeCollector:
             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])
             if versions is not None:
                 record["policy_version"] = versions[i].detach().cpu().clone()
+            if self.rabc_enabled:
+                task = before["task_descriptions"][i].encode("utf-8")
+                task_tensor = torch.zeros(RABC_TASK_CAPACITY, dtype=torch.uint8)
+                task_tensor[:len(task)] = torch.tensor(list(task), dtype=torch.uint8)
+                pre_image = before["main_images"][i].clone()
+                # Only the terminating env selects its terminal observation;
+                # unfinished neighbours keep their real current post-query RGB.
+                post_image = (terminal_images if bool(dones[i]) else after_images)[i].clone()
+                if self.pending[i]:
+                    first, previous = self.pending[i][0], self.pending[i][-1]
+                    if not torch.equal(first["rabc_task_utf8"], task_tensor):
+                        raise ValueError("RABC task instruction changed within one episode.")
+                    if not torch.equal(previous["rabc_post_image"], pre_image):
+                        raise ValueError("RABC query RGB boundaries are not contiguous.")
+                    episode_key = first["rabc_episode_key"].clone()
+                else:
+                    # OS UUID does not consume policy/env torch or numpy RNG.
+                    # Stored bytes survive retries/checkpoints and do not collide
+                    # across env ranks, pipeline stages or fresh worker sessions.
+                    episode_key = torch.tensor(list(uuid.uuid4().bytes), dtype=torch.uint8)
+                record.update(
+                    rabc_pre_image=pre_image,
+                    rabc_post_image=post_image,
+                    rabc_task_utf8=task_tensor,
+                    rabc_task_length=torch.tensor(len(task), dtype=torch.int64),
+                    rabc_episode_key=episode_key,
+                )
             self.pending[i].append(record)
             if bool(success[i]) or bool(dones[i]):
                 if bool(success[i]):

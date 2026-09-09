@@ -466,6 +466,10 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
             return self.update_buffer_one_epoch()
         return self.update_lerobot_one_epoch()
 
+    def prepare_replay_batch(self, batch):
+        """Optional complete-batch transform before microbatch splitting."""
+        return batch
+
     def update_buffer_one_epoch(self):
         """Run one replay-buffer update epoch for DAgger."""
         global_batch_size_per_rank = (
@@ -475,6 +479,9 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
             global_batch = self.replay_buffer.sample(
                 num_chunks=global_batch_size_per_rank
             )
+            global_batch = self.prepare_replay_batch(global_batch)
+        if global_batch is None:
+            return {"optimizer/skipped": 1.0}
 
         train_micro_batch_list = split_dict_to_chunk(
             global_batch,
@@ -661,7 +668,8 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
         for _ in range(update_epoch):
             metrics_data = self.update_one_epoch()
             append_to_dict(metrics, metrics_data)
-            self.update_step += 1
+            if not metrics_data.get("optimizer/skipped", 0):
+                self.update_step += 1
 
         torch.cuda.synchronize()
         torch.distributed.barrier()
