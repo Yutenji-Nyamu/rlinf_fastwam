@@ -1,0 +1,128 @@
+{
+  "schema": "pi05-iql-two-stage-smoke-verification-v1",
+  "passed": true,
+  "time": "2026-09-10T00:31:49.459539+08:00",
+  "cpu_only": true,
+  "large_actor_weights_loaded": false,
+  "runs": {
+    "bc": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-bc-20260909-v2",
+      "exit_code": 0,
+      "checkpoint": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-bc-20260909-v2/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-bc-20260909-v2/checkpoints/global_step_1/actor",
+      "completed_rounds": 1,
+      "completion_member_count": 5,
+      "contract_hash": "b9fc8c6e083918dd05aced7648d1f64d2cbaf059a96596bad13478855852cd98",
+      "actor_updates": 5,
+      "critic_updates": 5,
+      "slots": 5,
+      "actor_skips": 0,
+      "critic_skips": 0,
+      "critic_tensor_elements": {
+        "critic": 11766904,
+        "value": 11327351,
+        "target_critic": 11766904
+      },
+      "critic_optimizer_and_target_finite": true,
+      "large_actor_weights_loaded": false,
+      "replay": {
+        "attempts": 4,
+        "query_records": 15,
+        "successes": 1,
+        "failures": 3,
+        "attempts_by_round": {
+          "1": 4
+        },
+        "successes_by_round": {
+          "1": 1
+        },
+        "reward_min": -0.10154154151678085,
+        "reward_max": 1.1786361932754517,
+        "shaping_min": -0.10154154151678085,
+        "shaping_max": 0.3773435354232788,
+        "reward_recompute_max_abs_error": 2.0742416340091552e-08,
+        "raw_terminal_remaining_seconds": [
+          0.5531476736068726,
+          0.6374498605728149,
+          2.6846160888671875,
+          1.6156110763549805
+        ],
+        "score_cache_bound_to_raw_final_frames": true,
+        "full_proposal_shape": [
+          50,
+          14
+        ],
+        "contiguous_query_boundaries": true
+      }
+    },
+    "iql": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-iql-20260909-v2",
+      "exit_code": 0,
+      "checkpoint": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-iql-20260909-v2/pi05-bc-rynnvalue-iql-4u5-gpu6-smoke-iql-20260909-v2/checkpoints/global_step_2/actor",
+      "completed_rounds": 2,
+      "completion_member_count": 5,
+      "contract_hash": "b9fc8c6e083918dd05aced7648d1f64d2cbaf059a96596bad13478855852cd98",
+      "actor_updates": 10,
+      "critic_updates": 10,
+      "slots": 10,
+      "actor_skips": 0,
+      "critic_skips": 0,
+      "critic_tensor_elements": {
+        "critic": 11766904,
+        "value": 11327351,
+        "target_critic": 11766904
+      },
+      "critic_optimizer_and_target_finite": true,
+      "large_actor_weights_loaded": false,
+      "replay": {
+        "attempts": 8,
+        "query_records": 30,
+        "successes": 2,
+        "failures": 6,
+        "attempts_by_round": {
+          "1": 4,
+          "2": 4
+        },
+        "successes_by_round": {
+          "1": 1,
+          "2": 1
+        },
+        "reward_min": -0.10154154151678085,
+        "reward_max": 1.2073842287063599,
+        "shaping_min": -0.10154154151678085,
+        "shaping_max": 0.3773435354232788,
+        "reward_recompute_max_abs_error": 2.3841857821338408e-08,
+        "raw_terminal_remaining_seconds": [
+          0.5531476736068726,
+          0.6374498605728149,
+          2.6846160888671875,
+          1.6156110763549805,
+          0.5610425472259521,
+          0.4280494749546051,
+          0.8675752878189087,
+          0.9784146547317505
+        ],
+        "score_cache_bound_to_raw_final_frames": true,
+        "full_proposal_shape": [
+          50,
+          14
+        ],
+        "contiguous_query_boundaries": true
+      }
+    }
+  },
+  "checks": {
+    "both_exit_zero": true,
+    "round_one_to_two_restart": true,
+    "method_and_source_contract_identical": true,
+    "exact_replay_prefix_preserved": true,
+    "attempts_four_to_eight": true,
+    "critic_and_slots_five_to_ten": true,
+    "actor_updates_follow_phase_and_success_pool": true,
+    "phase_zero_to_one": true,
+    "finite_bounded_iql_weights": true,
+    "independent_reward_recomputation": true,
+    "raw_terminal_frames_bound_to_scoring_cache": true
+  },
+  "scope": "Recorded transitions, immutable scoring requests, critic state, restart and scalar diagnostics; no physical replay or policy-quality claim.",
+  "elapsed_seconds": 4.791
+}
