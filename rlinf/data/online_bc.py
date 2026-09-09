@@ -6,17 +6,29 @@ RoboTwin interpolates the entire submitted command with TOPP. A command mask is
 not a claim about which physical interpolation steps ran before early success.
 """
 
+from collections.abc import Callable
 from pathlib import Path
 
 import torch
 
 
-def masked_fm_loss(loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+def masked_fm_loss(
+    loss: torch.Tensor, mask: torch.Tensor, action_weights: torch.Tensor | None = None
+) -> torch.Tensor:
     mask = mask.to(device=loss.device, dtype=loss.dtype)
     if mask.shape != loss.shape or (mask.sum(dim=(1, 2)) == 0).any():
         raise ValueError(
             "SFT mask must match loss and contain valid targets per query."
         )
+    if action_weights is not None:
+        weights = action_weights.detach().to(device=loss.device, dtype=loss.dtype)
+        if (
+            weights.shape != loss.shape[:2]
+            or not torch.isfinite(weights).all()
+            or (weights < 0).any()
+        ):
+            raise ValueError("Action weights must be finite non-negative [B,H].")
+        loss = loss * weights.unsqueeze(-1)
     return ((loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))).mean()
 
 
@@ -84,13 +96,21 @@ class SuccessReplay:
     """Cumulative query replay, with uniform replacement sampling and restart state."""
 
     def __init__(
-        self, seed: int, archive_path: str, max_success_chunks: int | None = None
+        self,
+        seed: int,
+        archive_path: str,
+        max_success_chunks: int | None = None,
+        prepare_record: Callable[[dict[str, torch.Tensor]], dict[str, torch.Tensor]]
+        | None = None,
     ):
         if max_success_chunks is not None and (
             type(max_success_chunks) is not int or max_success_chunks < 1
         ):
             raise ValueError("max_success_chunks must be null or a positive integer.")
+        if prepare_record is not None and not callable(prepare_record):
+            raise TypeError("prepare_record must be callable or None.")
         self.max_success_chunks = max_success_chunks
+        self.prepare_record = prepare_record
         self.filtered_success_episodes = 0
         self.records = []
         self.episodes = 0
@@ -107,17 +127,35 @@ class SuccessReplay:
     def add_episodes(self, episodes: list[list[dict[str, torch.Tensor]]]) -> None:
         # Admission only: reject the whole long success, never truncate its label.
         # Collector success metrics and DVAC moments have already been recorded.
+        filtered = 0
         if self.max_success_chunks is not None:
             accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]
-            self.filtered_success_episodes += len(episodes) - len(accepted)
+            filtered = len(episodes) - len(accepted)
             episodes = accepted
         if not episodes:
+            self.filtered_success_episodes += filtered
             return
+        if self.prepare_record is not None:
+            # Prepare every accepted query before writing or committing counters.
+            # The callback may add tensor fields; existing tensor values are read-only.
+            episodes = [
+                [self.prepare_record(dict(record)) for record in episode]
+                for episode in episodes
+            ]
+            if any(
+                not isinstance(record, dict)
+                or not record
+                or any(not isinstance(value, torch.Tensor) for value in record.values())
+                for episode in episodes
+                for record in episode
+            ):
+                raise ValueError("prepare_record must return a nonempty tensor record.")
         self.archive_path.mkdir(parents=True, exist_ok=True)
         archive = self.archive_path / f"batch_{self.archive_id:06d}.pt"
         # Exclusive creation prevents an accidental fresh run overwriting data.
         with archive.open("xb") as handle:
             torch.save(episodes, handle)
+        self.filtered_success_episodes += filtered
         self.archive_id += 1
         self.episodes += len(episodes)
         self.records.extend(record for episode in episodes for record in episode)
