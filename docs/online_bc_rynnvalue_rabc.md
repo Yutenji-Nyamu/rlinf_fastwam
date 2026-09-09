@@ -31,6 +31,18 @@ threshold, numerical epsilons, statistics scope and admission limit. Resume chec
 raw cached boundary values, unique episode keys and reconstructed replay moments.
 Weights are recomputed when a batch is sampled; model inference is cached.
 
+Start the scorer from a neutral working directory in its dedicated environment:
+
+```sh
+CUDA_VISIBLE_DEVICES=7 /path/to/rynnvalue-env/bin/python -u -B -c \
+  "import runpy; runpy.run_path('/path/to/checkout/rlinf/utils/rynnvalue_scorer.py', run_name='__main__')" \
+  serve --model-path /path/to/locked/RynnValue-8B --manifest /path/to/manifest.json \
+  --device cuda:0 --port 18797
+```
+
+Use this entrypoint rather than invoking the utils file directly: its sibling
+`logging.py` otherwise shadows Python's standard-library logging module.
+
 This packet authorizes only a two-round GPU7 smoke: 4 new attempts/round, U5,
 batch1024/micro32, clean LR2.5e-5, denoise10, horizon50. Success-length admission
 is inherited from clean BC (off). The full resolved snapshot and method-only
