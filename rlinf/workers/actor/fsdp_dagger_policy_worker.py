@@ -476,6 +476,14 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
                 num_chunks=global_batch_size_per_rank
             )
 
+        return self.update_sampled_buffer_batch(global_batch)
+
+    def update_sampled_buffer_batch(self, global_batch):
+        """Update once from an already selected complete optimizer batch."""
+        global_batch_size_per_rank = (
+            self.cfg.actor.global_batch_size // self._world_size
+        )
+
         train_micro_batch_list = split_dict_to_chunk(
             global_batch,
             global_batch_size_per_rank // self.cfg.actor.micro_batch_size,
@@ -504,6 +512,7 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
         actor_grad_norm = self.model.clip_grad_norm_(
             max_norm=self.cfg.actor.optim.clip_grad
         )
+        self.validate_replay_gradients(actor_grad_norm)
         self.optimizer.step()
         self.lr_scheduler.step()
 
@@ -512,6 +521,10 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
             "actor/lr": self.optimizer.param_groups[0]["lr"],
             "actor/grad_norm": actor_grad_norm,
         }
+
+    def validate_replay_gradients(self, actor_grad_norm):
+        """Optional method-specific validation before the optimizer step."""
+        return None
 
     def update_lerobot_one_epoch(self):
         """Run one LeRobot update epoch."""

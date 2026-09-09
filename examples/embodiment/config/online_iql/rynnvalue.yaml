@@ -1,0 +1,27 @@
+# Method-only defaults; inherit the actual clean pi0.5 BC 4/U5 configuration.
+enabled: true
+warmup_rounds: 10
+gamma: 0.99
+potential_scale: 0.1
+critic_batch_size: 64
+critic_updates_per_slot: 1
+episodes_per_round: 4
+data_path: ${runner.logger.log_path}/transition_data
+debug_batches: 0
+critic:
+  critic_lr: 0.0003
+  value_lr: 0.0003
+  discount: 0.99
+  tau: 0.005
+  expectile: 0.8
+  beta: 10.0
+  max_weight: 100.0
+  seed: 20260909
+  inference_batch_size: 64
+scorer:
+  endpoint: http://127.0.0.1:18798
+  cache_path: ${runner.logger.log_path}/value_cache
+  expected_revision: 8738c5e4ce4418ea0266e9fbeffae0eb9bbb230e
+  robot_description: An ALOHA AgileX bimanual robot with two 6-DoF arms and parallel grippers in the RoboTwin simulator.
+  camera_description: Fixed third-person head RGB camera overlooking both arms and the tabletop workspace.
+  timeout_seconds: 900

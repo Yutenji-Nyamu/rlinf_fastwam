@@ -60,6 +60,7 @@ from rlinf.utils.utils import (
 
 
 class EnvWorker(Worker):
+    enable_online_iql = False
     # Class-level default so the observation send path is safe even when the
     # instance is built without running ``__init__`` (e.g. ``object.__new__`` in
     # unit tests). ``None`` means "use the scheduler's default split"; when
@@ -86,6 +87,9 @@ class EnvWorker(Worker):
         self.collect_transitions = self.cfg.rollout.get("collect_transitions", False)
         self.collect_prev_infos = self.cfg.rollout.get("collect_prev_infos", True)
         self.enable_online_bc = cfg.algorithm.get("loss_type") == "online_bc"
+        self.enable_online_iql = self.enable_online_bc and bool(
+            OmegaConf.select(cfg, "algorithm.online_iql.enabled", default=False)
+        )
         self.stage_num = self.cfg.rollout.pipeline_stage_num
         self.enable_rlt = OmegaConf.select(
             self.cfg, "algorithm.loss_type", default=""
@@ -178,6 +182,19 @@ class EnvWorker(Worker):
                     SuccessEpisodeCollector(self.train_num_envs_per_stage)
                     for _ in range(self.stage_num)
                 ]
+                if self.enable_online_iql:
+                    from rlinf.data.online_iql import TransitionEpisodeCollector
+
+                    self.iql_collectors = [
+                        TransitionEpisodeCollector(
+                            self.train_num_envs_per_stage,
+                            run_id=self.cfg.runner.logger.log_path,
+                            source_id=f"env-{self._rank}-stage-{stage}",
+                            max_commands=self.cfg.env.train.max_episode_steps,
+                            auto_reset=self.cfg.env.train.auto_reset,
+                        )
+                        for stage in range(self.stage_num)
+                    ]
         else:
             self.enable_online_lerobot = False
         if self.enable_eval:
@@ -554,7 +571,7 @@ class EnvWorker(Worker):
         chunk_dones = torch.logical_or(chunk_terminations, chunk_truncations)
         final_obs = (
             self._build_chunk_final_obs(obs_list, infos_list)
-            if self.use_external_reward_model
+            if self.use_external_reward_model or self.enable_online_iql
             else (
                 infos["final_observation"]
                 if isinstance(infos, dict) and "final_observation" in infos
@@ -968,6 +985,8 @@ class EnvWorker(Worker):
                 extracted_obs, infos = self.env_list[stage_id].reset()
                 if self.enable_online_bc:
                     self.bc_collectors[stage_id].reset()
+                    if self.enable_online_iql:
+                        self.iql_collectors[stage_id].reset()
                 if self.enable_online_lerobot:
                     trajectory_builders = getattr(self, "trajectory_builders", None)
                     if trajectory_builders is not None:
@@ -1258,6 +1277,13 @@ class EnvWorker(Worker):
                             intervene_flags=env_output.intervene_flags,
                         )
 
+                    iql_pre_observation = None
+                    if self.enable_online_iql:
+                        from rlinf.data.online_iql import snapshot_iql_observation
+
+                        iql_pre_observation = snapshot_iql_observation(
+                            env_output.obs, self.train_num_envs_per_stage
+                        )
                     env_output, env_info, chunk_step_payload = self.env_interact_step(
                         policy_output.actions,
                         stage_id,
@@ -1270,6 +1296,19 @@ class EnvWorker(Worker):
                             env_output.dones,
                             policy_output.versions,
                         )
+                        if self.enable_online_iql:
+                            self.iql_collectors[stage_id].append(
+                                policy_output.forward_inputs,
+                                chunk_step_payload["chunk_actions"],
+                                env_output.env_infos["success"],
+                                env_output.dones,
+                                policy_output.versions,
+                                pre_observation=iql_pre_observation,
+                                post_observation=env_output.obs,
+                                final_observation=env_output.final_obs,
+                                terminations=env_output.terminations,
+                                truncations=env_output.truncations,
+                            )
                     # Emulated observation latency: wait before the obs goes out,
                     # without blocking the other coroutines in this worker.
                     await self._maybe_wait_env_delay(stage_id)
@@ -1422,12 +1461,21 @@ class EnvWorker(Worker):
 
         if not self.use_training_pipeline and actor_channel is not None:
             if self.enable_online_bc:
-                for collector in self.bc_collectors:
+                for stage, collector in enumerate(self.bc_collectors):
                     episodes = collector.drain()
+                    transitions = (
+                        self.iql_collectors[stage].drain()
+                        if self.enable_online_iql
+                        else None
+                    )
                     for split in range(self.actor_split_num):
-                        actor_channel.put(
-                            episodes[split :: self.actor_split_num], async_op=True
-                        )
+                        packet = episodes[split :: self.actor_split_num]
+                        if self.enable_online_iql:
+                            packet = {
+                                "episodes": packet,
+                                "transition_episodes": transitions[split :: self.actor_split_num],
+                            }
+                        actor_channel.put(packet, async_op=True)
                 for builder in self.trajectory_builders:
                     builder.clear()
             elif self.enable_online_lerobot:

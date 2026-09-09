@@ -11,13 +11,29 @@ from pathlib import Path
 import torch
 
 
-def masked_fm_loss(loss: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+def masked_fm_loss(
+    loss: torch.Tensor,
+    mask: torch.Tensor,
+    sample_weights: torch.Tensor | None = None,
+) -> torch.Tensor:
     mask = mask.to(device=loss.device, dtype=loss.dtype)
     if mask.shape != loss.shape or (mask.sum(dim=(1, 2)) == 0).any():
         raise ValueError(
             "SFT mask must match loss and contain valid targets per query."
         )
-    return ((loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))).mean()
+    query_loss = (loss * mask).sum(dim=(1, 2)) / mask.sum(dim=(1, 2))
+    if sample_weights is not None:
+        weights = sample_weights.detach().to(device=loss.device, dtype=loss.dtype)
+        if (
+            weights.shape != query_loss.shape
+            or not torch.isfinite(weights).all()
+            or (weights < 0).any()
+        ):
+            raise ValueError("Sample weights must be finite nonnegative [B].")
+        # Weights are fixed on the full optimizer batch. Preserve the query
+        # denominator, including when a microbatch happens to have zero weights.
+        query_loss = query_loss * weights
+    return query_loss.mean()
 
 
 class SuccessEpisodeCollector:

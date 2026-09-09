@@ -416,13 +416,25 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if use_action_chunk_loss:
             loss = loss[:, : self.config.action_chunk, : self.config.action_env_dim]
         action_valid_mask = kwargs.get("action_valid_mask")
-        if action_valid_mask is None:
+        sample_weights = kwargs.get("sample_weights")
+        if action_valid_mask is None and sample_weights is None:
             vla_loss = loss.mean()
         else:
             from rlinf.data.online_bc import masked_fm_loss
 
-            vla_loss = masked_fm_loss(loss, action_valid_mask)
+            if action_valid_mask is None:
+                action_valid_mask = torch.ones_like(loss, dtype=torch.bool)
+            vla_loss = masked_fm_loss(loss, action_valid_mask, sample_weights)
         if not self.config.use_rlt:
+            if kwargs.get("return_sft_metrics", False):
+                from rlinf.data.online_bc import masked_fm_loss
+
+                unweighted = (
+                    loss.mean()
+                    if action_valid_mask is None
+                    else masked_fm_loss(loss, action_valid_mask)
+                )
+                return {"loss": vla_loss, "unweighted_loss": unweighted.detach()}
             return vla_loss
 
         rlt_param = next(self.rlt_module.parameters())
