@@ -1,0 +1,122 @@
+{
+  "common_round_cap": 72,
+  "paired_fixed": {
+    "reference": "clean8",
+    "candidate": "new8",
+    "rounds": [
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70
+    ],
+    "reference_mean_pct": 62.94642857142857,
+    "candidate_mean_pct": 49.776785714285715,
+    "difference_pp": -13.169642857142858,
+    "wins": 1,
+    "ties": 2,
+    "losses": 11,
+    "tail_five": {
+      "reference": "clean8",
+      "candidate": "new8",
+      "rounds": [
+        50,
+        55,
+        60,
+        65,
+        70
+      ],
+      "reference_mean_pct": 66.875,
+      "candidate_mean_pct": 51.24999999999999,
+      "difference_pp": -15.625,
+      "wins": 0,
+      "ties": 0,
+      "losses": 5
+    }
+  },
+  "runs": {
+    "clean8": {
+      "label": "历史干净BC · 长度过滤off",
+      "total_completed_rounds": 100,
+      "compared_rounds": 72,
+      "training_attempts_compared": 576,
+      "collection_successes_common": 403,
+      "collection_mean_pct_common": 69.96527777777779,
+      "last_matched": {
+        "train": {
+          "step": 72,
+          "value": 0.625,
+          "wall_time": 1788819504.4982738,
+          "window_start": 72
+        },
+        "ma5": {
+          "step": 72,
+          "value": 0.7,
+          "wall_time": 1788819504.4982738,
+          "window_start": 68
+        },
+        "ma10": {
+          "step": 72,
+          "value": 0.7375,
+          "wall_time": 1788819504.4982738,
+          "window_start": 63
+        },
+        "eval": {
+          "step": 70,
+          "value": 0.6875,
+          "wall_time": 1788818436.8851664,
+          "window_start": 70
+        }
+      }
+    },
+    "new8": {
+      "label": "DVAC new · 长度过滤≤3",
+      "total_completed_rounds": 72,
+      "compared_rounds": 72,
+      "training_attempts_compared": 576,
+      "collection_successes_common": 342,
+      "collection_mean_pct_common": 59.375,
+      "last_matched": {
+        "train": {
+          "step": 72,
+          "value": 0.625,
+          "wall_time": 1788925101.5533442,
+          "window_start": 72
+        },
+        "ma5": {
+          "step": 72,
+          "value": 0.6,
+          "wall_time": 1788925101.5533442,
+          "window_start": 68
+        },
+        "ma10": {
+          "step": 72,
+          "value": 0.65,
+          "wall_time": 1788925101.5533442,
+          "window_start": 63
+        },
+        "eval": {
+          "step": 70,
+          "value": 0.5625,
+          "wall_time": 1788924001.7486162,
+          "window_start": 70
+        }
+      }
+    }
+  },
+  "notes": [
+    "Final frozen new8 archive after user-authorized stop; baseline completed R100.",
+    "New also enables <=3 chunk success filtering. Differences are the method/filter combination.",
+    "Fixed32 checkpoints repeat the same scene set with one training seed; descriptive comparisons only.",
+    "Collection counts exclude evaluation; MA5/MA10 are full 40/80-attempt windows."
+  ]
+}

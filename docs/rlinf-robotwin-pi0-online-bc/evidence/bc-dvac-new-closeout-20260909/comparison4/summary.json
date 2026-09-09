@@ -1,0 +1,607 @@
+{
+  "source_snapshot_time_cst": "2026-09-09T11:02:43.490995+08:00",
+  "matched_training_window": "R1–94 = 376 training attempts",
+  "matched_fixed_window": "R5–90, 18 repeated fixed32 checkpoints",
+  "runs": {
+    "clean": {
+      "label": "干净BC · 长度过滤off",
+      "completed_rounds": 100,
+      "collection_successes_first94": 191,
+      "collection_rate_first94_pct": 50.797872340425535,
+      "ma5_at94_pct": 55.00000000000001,
+      "ma10_at94_pct": 50.0,
+      "ma5_at_final_pct": 75.0,
+      "ma10_at_final_pct": 65.0,
+      "latest_fixed": {
+        "step": 100,
+        "value": 0.4375,
+        "wall_time": 1788877469.760011,
+        "window_start": 100
+      },
+      "pool_at94": {
+        "success_episodes": 191.0,
+        "query_records": 597.0,
+        "filtered_success_episodes": null
+      },
+      "pool_final": {
+        "success_episodes": 208.0,
+        "query_records": 653.0,
+        "filtered_success_episodes": null
+      }
+    },
+    "old": {
+      "label": "旧DVAC[0,5] · 长度过滤off",
+      "completed_rounds": 94,
+      "collection_successes_first94": 212,
+      "collection_rate_first94_pct": 56.38297872340425,
+      "ma5_at94_pct": 60.0,
+      "ma10_at94_pct": 52.5,
+      "ma5_at_final_pct": 60.0,
+      "ma10_at_final_pct": 52.5,
+      "latest_fixed": {
+        "step": 90,
+        "value": 0.46875,
+        "wall_time": 1788874745.9277768,
+        "window_start": 90
+      },
+      "pool_at94": {
+        "success_episodes": 212.0,
+        "query_records": 669.0,
+        "filtered_success_episodes": null
+      },
+      "pool_final": {
+        "success_episodes": 212.0,
+        "query_records": 669.0,
+        "filtered_success_episodes": null
+      }
+    },
+    "new": {
+      "label": "DVAC new · 长度过滤≤3",
+      "completed_rounds": 100,
+      "collection_successes_first94": 221,
+      "collection_rate_first94_pct": 58.77659574468085,
+      "ma5_at94_pct": 75.0,
+      "ma10_at94_pct": 62.5,
+      "ma5_at_final_pct": 75.0,
+      "ma10_at_final_pct": 72.5,
+      "latest_fixed": {
+        "step": 100,
+        "value": 0.53125,
+        "wall_time": 1788915191.0580375,
+        "window_start": 100
+      },
+      "pool_at94": {
+        "success_episodes": 202.0,
+        "query_records": 606.0,
+        "filtered_success_episodes": 19.0
+      },
+      "pool_final": {
+        "success_episodes": 216.0,
+        "query_records": 648.0,
+        "filtered_success_episodes": 22.0
+      }
+    }
+  },
+  "paired_fixed": {
+    "old_vs_clean": {
+      "reference": "clean",
+      "candidate": "old",
+      "rounds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+        55,
+        60,
+        65,
+        70,
+        75,
+        80,
+        85,
+        90
+      ],
+      "reference_mean_pct": 42.88194444444444,
+      "candidate_mean_pct": 49.47916666666667,
+      "difference_pp": 6.597222222222222,
+      "wins": 15,
+      "ties": 2,
+      "losses": 1,
+      "tail_five": {
+        "reference": "clean",
+        "candidate": "old",
+        "rounds": [
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 42.5,
+        "candidate_mean_pct": 50.0,
+        "difference_pp": 7.5,
+        "wins": 4,
+        "ties": 0,
+        "losses": 1
+      },
+      "early_six": {
+        "reference": "clean",
+        "candidate": "old",
+        "rounds": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30
+        ],
+        "reference_mean_pct": 39.0625,
+        "candidate_mean_pct": 44.27083333333333,
+        "difference_pp": 5.208333333333334,
+        "wins": 4,
+        "ties": 2,
+        "losses": 0
+      },
+      "middle_six": {
+        "reference": "clean",
+        "candidate": "old",
+        "rounds": [
+          35,
+          40,
+          45,
+          50,
+          55,
+          60
+        ],
+        "reference_mean_pct": 45.83333333333333,
+        "candidate_mean_pct": 53.645833333333336,
+        "difference_pp": 7.8125,
+        "wins": 6,
+        "ties": 0,
+        "losses": 0
+      },
+      "late_six": {
+        "reference": "clean",
+        "candidate": "old",
+        "rounds": [
+          65,
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 43.75,
+        "candidate_mean_pct": 50.520833333333336,
+        "difference_pp": 6.770833333333333,
+        "wins": 5,
+        "ties": 0,
+        "losses": 1
+      }
+    },
+    "new_vs_clean": {
+      "reference": "clean",
+      "candidate": "new",
+      "rounds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+        55,
+        60,
+        65,
+        70,
+        75,
+        80,
+        85,
+        90
+      ],
+      "reference_mean_pct": 42.88194444444444,
+      "candidate_mean_pct": 48.78472222222222,
+      "difference_pp": 5.902777777777778,
+      "wins": 12,
+      "ties": 5,
+      "losses": 1,
+      "tail_five": {
+        "reference": "clean",
+        "candidate": "new",
+        "rounds": [
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 42.5,
+        "candidate_mean_pct": 50.0,
+        "difference_pp": 7.5,
+        "wins": 3,
+        "ties": 2,
+        "losses": 0
+      },
+      "early_six": {
+        "reference": "clean",
+        "candidate": "new",
+        "rounds": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30
+        ],
+        "reference_mean_pct": 39.0625,
+        "candidate_mean_pct": 45.3125,
+        "difference_pp": 6.25,
+        "wins": 5,
+        "ties": 0,
+        "losses": 1
+      },
+      "middle_six": {
+        "reference": "clean",
+        "candidate": "new",
+        "rounds": [
+          35,
+          40,
+          45,
+          50,
+          55,
+          60
+        ],
+        "reference_mean_pct": 45.83333333333333,
+        "candidate_mean_pct": 51.041666666666664,
+        "difference_pp": 5.208333333333334,
+        "wins": 4,
+        "ties": 2,
+        "losses": 0
+      },
+      "late_six": {
+        "reference": "clean",
+        "candidate": "new",
+        "rounds": [
+          65,
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 43.75,
+        "candidate_mean_pct": 50.0,
+        "difference_pp": 6.25,
+        "wins": 3,
+        "ties": 3,
+        "losses": 0
+      }
+    },
+    "new_vs_old": {
+      "reference": "old",
+      "candidate": "new",
+      "rounds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+        55,
+        60,
+        65,
+        70,
+        75,
+        80,
+        85,
+        90
+      ],
+      "reference_mean_pct": 49.47916666666667,
+      "candidate_mean_pct": 48.78472222222222,
+      "difference_pp": -0.6944444444444444,
+      "wins": 7,
+      "ties": 2,
+      "losses": 9,
+      "tail_five": {
+        "reference": "old",
+        "candidate": "new",
+        "rounds": [
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 50.0,
+        "candidate_mean_pct": 50.0,
+        "difference_pp": 0.0,
+        "wins": 2,
+        "ties": 0,
+        "losses": 3
+      },
+      "early_six": {
+        "reference": "old",
+        "candidate": "new",
+        "rounds": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30
+        ],
+        "reference_mean_pct": 44.27083333333333,
+        "candidate_mean_pct": 45.3125,
+        "difference_pp": 1.0416666666666665,
+        "wins": 4,
+        "ties": 0,
+        "losses": 2
+      },
+      "middle_six": {
+        "reference": "old",
+        "candidate": "new",
+        "rounds": [
+          35,
+          40,
+          45,
+          50,
+          55,
+          60
+        ],
+        "reference_mean_pct": 53.645833333333336,
+        "candidate_mean_pct": 51.041666666666664,
+        "difference_pp": -2.604166666666667,
+        "wins": 1,
+        "ties": 2,
+        "losses": 3
+      },
+      "late_six": {
+        "reference": "old",
+        "candidate": "new",
+        "rounds": [
+          65,
+          70,
+          75,
+          80,
+          85,
+          90
+        ],
+        "reference_mean_pct": 50.520833333333336,
+        "candidate_mean_pct": 50.0,
+        "difference_pp": -0.5208333333333333,
+        "wins": 2,
+        "ties": 0,
+        "losses": 4
+      }
+    }
+  },
+  "new_vs_clean_all100": {
+    "reference": "clean",
+    "candidate": "new",
+    "rounds": [
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      90,
+      95,
+      100
+    ],
+    "reference_mean_pct": 43.125,
+    "candidate_mean_pct": 49.53125,
+    "difference_pp": 6.406249999999999,
+    "wins": 14,
+    "ties": 5,
+    "losses": 1
+  },
+  "weight_diagnostics_first94": {
+    "old": {
+      "weight_mean": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 91,
+        "mean_of_logged_values": 1.1021452644369105,
+        "minimum_logged_value": 0.6587564945220947,
+        "maximum_logged_value": 1.9346749782562256,
+        "last": 1.041959285736084
+      },
+      "weight_std": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 91,
+        "mean_of_logged_values": 0.8373635915609506,
+        "minimum_logged_value": 0.0,
+        "maximum_logged_value": 1.4830060005187988,
+        "last": 0.8240927457809448
+      },
+      "weight_min": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 91,
+        "mean_of_logged_values": 0.03022864467949238,
+        "minimum_logged_value": 0.0,
+        "maximum_logged_value": 1.0,
+        "last": 0.0
+      },
+      "weight_max": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 91,
+        "mean_of_logged_values": 4.520053551747249,
+        "minimum_logged_value": 1.0,
+        "maximum_logged_value": 5.0,
+        "last": 5.0
+      }
+    },
+    "new": {
+      "weight_mean": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.9999999911227124,
+        "minimum_logged_value": 0.9999999403953552,
+        "maximum_logged_value": 1.0,
+        "last": 1.0
+      },
+      "weight_std": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.3135576990056545,
+        "minimum_logged_value": 0.3016321361064911,
+        "maximum_logged_value": 0.5091522336006165,
+        "last": 0.31289511919021606
+      },
+      "weight_min": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.2406864120288098,
+        "minimum_logged_value": 0.21937689185142517,
+        "maximum_logged_value": 0.32773998379707336,
+        "last": 0.24691681563854218
+      },
+      "weight_max": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 2.3729867402543414,
+        "minimum_logged_value": 2.0145370960235596,
+        "maximum_logged_value": 2.4781875610351562,
+        "last": 2.4628665447235107
+      },
+      "local_std": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.23569935148066662,
+        "minimum_logged_value": 0.21456220746040344,
+        "maximum_logged_value": 0.23903852701187134,
+        "last": 0.23705045878887177
+      },
+      "chunk_std": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.19838628093612956,
+        "minimum_logged_value": 0.18223528563976288,
+        "maximum_logged_value": 0.44963884353637695,
+        "last": 0.19682453572750092
+      },
+      "coefficient_ess_fraction": {
+        "first_round": 1,
+        "last_round": 94,
+        "logged_points": 94,
+        "mean_of_logged_values": 0.9102902551914783,
+        "minimum_logged_value": 0.7941299676895142,
+        "maximum_logged_value": 0.9166026711463928,
+        "last": 0.9108179211616516
+      }
+    }
+  },
+  "extension_R95_R100": [
+    {
+      "round": 95,
+      "training_attempts": 380,
+      "clean_train_pct": 50.0,
+      "clean_ma5_pct": 55.00000000000001,
+      "clean_ma10_pct": 50.0,
+      "clean_eval_pct": 46.875,
+      "new_train_pct": 50.0,
+      "new_ma5_pct": 70.0,
+      "new_ma10_pct": 62.5,
+      "new_eval_pct": 59.375
+    },
+    {
+      "round": 96,
+      "training_attempts": 384,
+      "clean_train_pct": 75.0,
+      "clean_ma5_pct": 55.00000000000001,
+      "clean_ma10_pct": 57.49999999999999,
+      "clean_eval_pct": null,
+      "new_train_pct": 100.0,
+      "new_ma5_pct": 70.0,
+      "new_ma10_pct": 70.0,
+      "new_eval_pct": null
+    },
+    {
+      "round": 97,
+      "training_attempts": 388,
+      "clean_train_pct": 75.0,
+      "clean_ma5_pct": 60.0,
+      "clean_ma10_pct": 57.49999999999999,
+      "clean_eval_pct": null,
+      "new_train_pct": 100.0,
+      "new_ma5_pct": 70.0,
+      "new_ma10_pct": 72.5,
+      "new_eval_pct": null
+    },
+    {
+      "round": 98,
+      "training_attempts": 392,
+      "clean_train_pct": 75.0,
+      "clean_ma5_pct": 65.0,
+      "clean_ma10_pct": 60.0,
+      "clean_eval_pct": null,
+      "new_train_pct": 25.0,
+      "new_ma5_pct": 65.0,
+      "new_ma10_pct": 70.0,
+      "new_eval_pct": null
+    },
+    {
+      "round": 99,
+      "training_attempts": 396,
+      "clean_train_pct": 75.0,
+      "clean_ma5_pct": 70.0,
+      "clean_ma10_pct": 62.5,
+      "clean_eval_pct": null,
+      "new_train_pct": 100.0,
+      "new_ma5_pct": 75.0,
+      "new_ma10_pct": 75.0,
+      "new_eval_pct": null
+    },
+    {
+      "round": 100,
+      "training_attempts": 400,
+      "clean_train_pct": 75.0,
+      "clean_ma5_pct": 75.0,
+      "clean_ma10_pct": 65.0,
+      "clean_eval_pct": 43.75,
+      "new_train_pct": 50.0,
+      "new_ma5_pct": 75.0,
+      "new_ma10_pct": 72.5,
+      "new_eval_pct": 53.125
+    }
+  ],
+  "cautions": [
+    "New combines a new weighting transform and a <=3 chunk success-episode filter; other two runs have filtering disabled.",
+    "Old logged weight statistics describe newly admitted data, whereas new logs aggregate actual sampled Adam batches: populations differ.",
+    "All runs collect four episodes and use five Adam updates per round; fixed32 episodes are excluded from the sample axis.",
+    "Single seed; repeated fixed32 checkpoints are correlated measurements, not independent replications."
+  ]
+}
