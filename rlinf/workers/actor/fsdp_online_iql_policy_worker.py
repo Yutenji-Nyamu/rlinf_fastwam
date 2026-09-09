@@ -443,6 +443,9 @@ class EmbodiedOnlineIQLFSDPPolicy(EmbodiedOnlineBCFSDPPolicy):
         if base.parent.name.startswith("global_step_"):
             if int(base.parent.name.removeprefix("global_step_")) != completed:
                 raise ValueError("IQL checkpoint directory and completed rounds differ.")
+        # Initialization may offload FSDP parameters and optimizer state to CPU.
+        # FSDP state loading requires its managed parameters on the actor device.
+        self._ensure_actor_loaded()
         self._strategy.load_checkpoint(
             model=self.model,
             optimizers=[self.optimizer],

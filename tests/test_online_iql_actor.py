@@ -294,6 +294,40 @@ def test_complete_round_checkpoint_restores_next_phase_and_rng(actor_module, tmp
     torch.testing.assert_close(restored.transition_replay.sample_actor(16)["forward_inputs"]["action"], expected_actor, rtol=0, atol=0)
 
 
+@pytest.mark.parametrize("weight_offloaded,optimizer_offloaded", [(True, True), (True, False), (False, True), (False, False)])
+def test_resume_restores_offloaded_actor_before_fsdp_load(actor_module, tmp_path, weight_offloaded, optimizer_offloaded):
+    actor = make_actor(actor_module, tmp_path, 10)
+    checkpoint = tmp_path / "global_step_10" / "actor"
+    actor.save_checkpoint(checkpoint, 10)
+    restored = make_actor(actor_module, tmp_path)
+    restored.is_weight_offloaded = weight_offloaded
+    restored.is_optimizer_offloaded = optimizer_offloaded
+    events = []
+
+    def load_parameters(device):
+        assert device == restored.device
+        events.append("parameters")
+
+    def load_optimizer(device):
+        assert device == restored.device
+        events.append("optimizer")
+
+    def load_strategy(**kwargs):
+        assert not restored.is_weight_offloaded
+        assert not restored.is_optimizer_offloaded
+        assert kwargs["model"] is restored.model
+        assert kwargs["optimizers"] == [restored.optimizer]
+        events.append("fsdp_checkpoint")
+
+    restored.load_param_and_grad = load_parameters
+    restored.load_optimizer = load_optimizer
+    restored._strategy.load_checkpoint = load_strategy
+    restored.load_checkpoint(checkpoint)
+    assert events == (["parameters"] if weight_offloaded else []) + (["optimizer"] if optimizer_offloaded else []) + ["fsdp_checkpoint"]
+    assert restored._last_completed_round == 10
+    assert restored._phase == "iql"
+
+
 @pytest.mark.parametrize("damage", ["missing_commit", "member_missing", "member_size", "contract", "round"])
 def test_invalid_checkpoint_rejected_before_loading_model(actor_module, tmp_path, damage):
     actor = make_actor(actor_module, tmp_path, 10)
@@ -311,6 +345,7 @@ def test_invalid_checkpoint_rejected_before_loading_model(actor_module, tmp_path
         receipt["contract_hash" if damage == "contract" else "completed_rounds"] = "bad" if damage == "contract" else 9
         marker.write_text(json.dumps(receipt))
     restored = make_actor(actor_module, tmp_path)
+    restored._ensure_actor_loaded = lambda: pytest.fail("actor moved before contract validation")
     restored._strategy.load_checkpoint = lambda **kwargs: pytest.fail("model loaded before contract validation")
     with pytest.raises(ValueError):
         restored.load_checkpoint(checkpoint)
