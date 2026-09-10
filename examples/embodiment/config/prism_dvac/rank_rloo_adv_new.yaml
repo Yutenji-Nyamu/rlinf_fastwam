@@ -1,0 +1,24 @@
+# @package _global_
+# Method-only composition; inherit the actual clean pi0.5 GRPO runtime budget.
+# One rollout L3 variance supplies both trajectory quality and action weights.
+algorithm:
+  adv_type: prism_rloo
+  normalize_advantages: false
+  filter_rewards: false
+  prism_dvac:
+    enabled: true
+    selected_l: 3
+    quality_lambda: 0.2
+    log_eps: 1.0e-12
+  dvac_gradient_weighting:
+    mode: apply
+    application: chunk_clipped_action_advantage
+    normalization: two_level_group
+    scope: both
+    selected_l: 3
+    alpha_local: 1.0
+    alpha_chunk: 1.0
+    log_eps: 1.0e-12
+    minmax_eps: 1.0e-6
+    save_step_tensors: true
+    output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_train

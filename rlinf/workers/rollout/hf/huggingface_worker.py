@@ -165,15 +165,49 @@ class MultiStepRolloutWorker(Worker):
             if dvac_train_cfg is None
             else OmegaConf.to_container(dvac_train_cfg, resolve=True)
         )
-        self.dvac_train_mode = str(
-            self.dvac_train_cfg.get("mode", "off")
-        ).lower()
+        self.dvac_train_mode = str(self.dvac_train_cfg.get("mode", "off")).lower()
         if self.dvac_train_mode not in {"off", "apply"}:
             raise ValueError(
                 "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        prism_cfg = OmegaConf.select(self.cfg, "algorithm.prism_dvac", default=None)
+        self.prism_dvac_enabled = bool(
+            prism_cfg is not None and prism_cfg.get("enabled", False)
+        )
+        self.prism_dvac_selected_l = int(
+            prism_cfg.get("selected_l", 3) if prism_cfg is not None else 3
+        )
+        if self.prism_dvac_enabled and self.dvac_train_enabled:
+            if (
+                self.algorithm_cfg.get("adv_type") != "prism_rloo"
+                or self.dvac_train_cfg.get("normalization") != "two_level_group"
+                or self.dvac_train_cfg.get("application")
+                != "chunk_clipped_action_advantage"
+            ):
+                raise ValueError(
+                    "Prism supports only the two-level DVAC new combination."
+                )
+            if self.prism_dvac_selected_l != self.dvac_selected_l:
+                raise ValueError("Prism and DVAC new must share selected_l.")
+            prism_eps = float(prism_cfg.get("log_eps", 1e-12))
+            if not 0.0 < prism_eps < float("inf") or prism_eps != float(
+                self.dvac_train_cfg.get("log_eps", 1e-12)
+            ):
+                raise ValueError(
+                    "Prism and DVAC new must share a finite positive log_eps."
+                )
+        self.train_dvac_selected_l = (
+            self.prism_dvac_selected_l
+            if self.prism_dvac_enabled
+            else self.dvac_selected_l
+        )
+        if self.prism_dvac_enabled:
+            if self.only_eval or self.env_decoupled_mode:
+                raise ValueError("Prism requires synchronous training rollouts.")
+            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                raise ValueError("Prism requires native OpenPI endpoint telemetry.")
         if self.dvac_train_enabled:
             if self.only_eval:
                 raise ValueError("DVAC gradient weighting requires a training run.")
@@ -318,7 +352,7 @@ class MultiStepRolloutWorker(Worker):
                 resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
             )
 
-        if self.dvac_train_enabled:
+        if self.dvac_train_enabled or self.prism_dvac_enabled:
             if self.rlt_feature_model is not None or self.expert_model is not None:
                 raise ValueError(
                     "DVAC gradient weighting requires the native OpenPI policy."
@@ -332,6 +366,15 @@ class MultiStepRolloutWorker(Worker):
                 raise ValueError(
                     "DVAC gradient weighting does not support: "
                     + ", ".join(active_modes)
+                )
+        if self.prism_dvac_enabled:
+            if self.hf_model.config.action_horizon != self.hf_model.config.action_chunk:
+                raise ValueError(
+                    "Prism v1 requires the full model horizon to be executed."
+                )
+            if not 2 <= self.prism_dvac_selected_l <= self.hf_model.config.num_steps:
+                raise ValueError(
+                    "Prism selected_l exceeds the denoising endpoint trace."
                 )
 
         if self.cfg.rollout.get("enable_torch_compile", False):
@@ -666,7 +709,7 @@ class MultiStepRolloutWorker(Worker):
             and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
         ):
             kwargs["return_dvac_telemetry"] = True
-        if self.dvac_train_enabled and mode == "train":
+        if (self.dvac_train_enabled or self.prism_dvac_enabled) and mode == "train":
             kwargs["return_dvac_telemetry"] = True
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
@@ -714,14 +757,14 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
 
-        if self.dvac_train_enabled and mode == "train":
+        if (self.dvac_train_enabled or self.prism_dvac_enabled) and mode == "train":
             telemetry = result.pop("dvac_telemetry", None)
             if telemetry is None or "z_endpoint" not in telemetry:
                 raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
             variance = compute_endpoint_variance(
-                telemetry["z_endpoint"], self.dvac_selected_l
+                telemetry["z_endpoint"], self.train_dvac_selected_l
             )
-            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
+            result["forward_inputs"][f"dvac_v_l{self.train_dvac_selected_l}"] = (
                 variance.detach().cpu().contiguous()
             )
 
