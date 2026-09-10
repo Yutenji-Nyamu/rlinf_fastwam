@@ -56,11 +56,7 @@ tests: single-mode compatibility, same-outcome groups, full-advantage weighting,
 identity loss/gradients, masks, grouping/shuffling and joint checkpoint contracts.
 Run the six `test_*` files shipped with this change from `tests/unit_tests`.
 
-The planned real smoke uses two rounds on physical GPUs0/3, a dedicated Ray
-namespace, the full Control per-round budget, and no evaluation or large model
-checkpoint. It ends after two rounds or a 5400-second timeout; only its own
-verified actors are released. Smoke results are reported separately after it
-finishes; passing the independent-method tests alone is not a combination pass.
+The two-round real smoke on physical GPUs 0/3 passed, together with 119 focused CPU tests. Both actor ranks produced independently verified quality, advantage and two-level weighting artifacts. Shared-Ray protection and owned-resource release checks passed. No large checkpoint was saved; full-model GPU restore is outside this smoke. See [metrics and receipts](evidence/pi05-prism-dvac-new-20260910/README.md).
 
 Track rescued same-outcome groups and quality spread alongside W mean/range,
 ESS and positive/negative advantage mass ratios. Mean W=1 does not conserve
