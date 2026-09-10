@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SARM / IQL 诊断 · 2026-09-10</title><style>body{margin:0;background:#f5f7fa;color:#172b3a;font:17px/1.75 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1160px;margin:auto;padding:38px 28px}h1{font-size:29px}figure{margin:38px 0 54px;background:white;padding:20px;border-radius:12px}img{display:block;width:100%;height:auto}figcaption{margin:16px 4px 0;color:#456}a{color:#006d9d}p{max-width:1040px}.lead{background:#e9f3fb;padding:18px 22px;border-radius:10px}</style><main>
+<h1>为什么没超过成功BC：SARM / IQL</h1>
+<p class="lead">两组均已完成R100。共同固定评估均值：clean 43.13%，SARM 42.34%，IQL 30.78%。SARM更接近没有明确收益；IQL退步较明显。单seed、固定32场景重复评估。</p>
+<p><a href="../../BC_SARM_IQL_DIAGNOSIS_20260910.md">主分析与实验优先级</a> · <a href="IQL_CODE_AND_UPSTREAM.md">IQL实现审计</a> · <a href="SARM_CODE_AND_UPSTREAM.md">SARM实现审计</a> · <a href="RELATED_WORK_AND_DECISIONS.md">相关论文与代码</a> · <a href="runtime-analysis.json">完整数值</a></p>
+<figure><img src="fixed-comparison.png" alt="clean、SARM、IQL固定评估对照"><figcaption>相同4/U5、R100预算。灰色区域只表示IQL的成功BC预热阶段；R11起同时切换actor数据池与优势权重。</figcaption></figure>
+<figure><img src="iql-weight-allocation.png" alt="IQL各chunk的数据占比和权重份额"><figcaption>完整1456条unique转移，冻结终点critic复算。第3段得到64.65%总权重，成功来源权重份额57.50%、失败42.50%。这是loss系数份额，不是实际梯度份额；失败轨迹也可能包含好动作。</figcaption></figure>
+<figure><img src="sarm-weight-allocation.png" alt="SARM阶段权重和一半clean混合的离线反事实"><figcaption>552条成功query，以终池统计复算。当前更重第一段、更轻第四段。50%clean混合为尚未训练的消融：检查强加权与零权是否伤害成功动作链。</figcaption></figure>
+<p>以下两例来自IQL实际回放，展示同一RynnValue评分器的局部反例；并非SARM本身训练池，也不是随机样本或失败根因证明。每张图只展示执行边界，不代表完整运动视频。</p>
+<figure><img src="success_negative_first_1.png" alt="R61成功轨迹初始估剩时0.239秒，首段后3.721秒"><figcaption>R61成功轨迹：初始尚未完成却估剩时0.239秒；首段后3.721秒，delta为−3.481秒；最终成功0.483秒。不能直接把负delta当有害动作。</figcaption></figure>
+<figure><img src="success_negative_last_1.png" alt="R61成功轨迹最后一段进展为负0.087秒"><figcaption>另一条R61成功轨迹：最后一段0.958→1.045秒，delta为−0.087秒。可能是预测误差、精细动作或阶段定义差异，需完整视频进一步区分。</figcaption></figure>
+<p>下一组优先：IQL actor回成功池、Q/V仍全池；SARM只加入50%clean混合。其后分别试β、Sparse-IQL与critic预算，避免同时改多个因素。本轮仅分析与CPU前向，无生产训练改动。</p>
+</main></html>

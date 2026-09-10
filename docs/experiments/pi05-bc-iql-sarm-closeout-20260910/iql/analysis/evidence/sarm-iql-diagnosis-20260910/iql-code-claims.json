@@ -1,0 +1,224 @@
+{
+  "scope": "local source audit; cached snapshot; no server actions or training",
+  "snapshot_time": "2026-09-10T11:23:18.476325+08:00",
+  "snapshot_sha256": "419b8f8f1596b5a3a97fd8ffd2f7e4fc8c0c0bbcd42f2e992a7830157f42216a",
+  "official_commit": "10e0d333f5f3811d0d130587e50f1faf48da49e5",
+  "current_confirmed_implementation_defects": [],
+  "known_fixed_defect": "v1 FSDP restore while actor offloaded; fixed before v2 and formal",
+  "deliberate_adaptations": [
+    "online success-only actor warmup to all-transition weighted actor",
+    "success0/1 reward instead of paper step-cost -1/0",
+    "single query discount .99 plus absorbing task-budget terminal",
+    "full50x14 joint proposal and clean FM optimizer budget"
+  ],
+  "hypotheses_ranked": [
+    "failure-heavy actor pool requires stronger critic discrimination",
+    "currentQ-targetQ lag can contaminate currentQ-minus-V advantage",
+    "beta10 amplifies early estimation errors and changes overall weight scale",
+    "small online visual-critic data and budget / missing budget history"
+  ],
+  "official_warmups": {
+    "paper_policy_uniform_weights": 200,
+    "paper_actor_learning_rate": 2000,
+    "robotwin_config_uniform_weights": 2000,
+    "ours_critic_steps_before_switch": 50
+  },
+  "evidence": {
+    "critic_updates": [
+      {
+        "step": 10,
+        "value": 50.0
+      },
+      {
+        "step": 11,
+        "value": 55.0
+      },
+      {
+        "step": 97,
+        "value": 485.0
+      }
+    ],
+    "transition_episodes": [
+      {
+        "step": 10,
+        "value": 40.0
+      },
+      {
+        "step": 11,
+        "value": 44.0
+      },
+      {
+        "step": 97,
+        "value": 388.0
+      }
+    ],
+    "transition_success_episodes": [
+      {
+        "step": 10,
+        "value": 19.0
+      },
+      {
+        "step": 11,
+        "value": 20.0
+      },
+      {
+        "step": 97,
+        "value": 160.0
+      }
+    ],
+    "transition_query_records": [
+      {
+        "step": 10,
+        "value": 143.0
+      },
+      {
+        "step": 11,
+        "value": 159.0
+      },
+      {
+        "step": 97,
+        "value": 1412.0
+      }
+    ],
+    "success_query_records": [
+      {
+        "step": 10,
+        "value": 59.0
+      },
+      {
+        "step": 11,
+        "value": 63.0
+      },
+      {
+        "step": 97,
+        "value": 500.0
+      }
+    ],
+    "weight_mean": [
+      {
+        "step": 11,
+        "value": 24.361417770385742
+      },
+      {
+        "step": 97,
+        "value": 6.637566089630127
+      }
+    ],
+    "weight_cap_fraction": [
+      {
+        "step": 11,
+        "value": 0.16953125596046448
+      },
+      {
+        "step": 97,
+        "value": 0.006640625186264515
+      }
+    ],
+    "weight_ess": [
+      {
+        "step": 11,
+        "value": 313.3198547363281
+      },
+      {
+        "step": 97,
+        "value": 220.36251831054688
+      }
+    ],
+    "advantage_mean": [
+      {
+        "step": 11,
+        "value": 0.21451394259929657
+      },
+      {
+        "step": 97,
+        "value": 0.048594698309898376
+      }
+    ],
+    "q_mean": [
+      {
+        "step": 10,
+        "value": 0.26521462202072144
+      },
+      {
+        "step": 11,
+        "value": 0.30139976739883423
+      },
+      {
+        "step": 97,
+        "value": 0.8066760301589966
+      }
+    ],
+    "v_mean": [
+      {
+        "step": 10,
+        "value": 0.06369756162166595
+      },
+      {
+        "step": 11,
+        "value": 0.03850439935922623
+      },
+      {
+        "step": 97,
+        "value": 0.7470464110374451
+      }
+    ],
+    "q_in_v_mean": [
+      {
+        "step": 10,
+        "value": -0.03435254096984863
+      },
+      {
+        "step": 11,
+        "value": -0.020927991718053818
+      },
+      {
+        "step": 97,
+        "value": 0.6593603491783142
+      }
+    ]
+  },
+  "recommended_single_factors": [
+    {
+      "priority": 1,
+      "change": "actor success pool only; retain IQL weights and all-data critic"
+    },
+    {
+      "priority": 2,
+      "change": "beta10 to3"
+    },
+    {
+      "priority": 3,
+      "change": "potential_scale .1 to0"
+    },
+    {
+      "priority": 4,
+      "change": "critic updates per slot1 to4; keep actor budget"
+    },
+    {
+      "priority": 5,
+      "change": "weights divided by full1024 batch mean only"
+    }
+  ],
+  "final_probe_review": {
+    "snapshot_time": "2026-09-10T11:49:25.659589+08:00",
+    "source": "critic-probe-full.json",
+    "rows": 1456,
+    "critic_updates": 500,
+    "forward_elapsed_seconds": 171.5243967960123,
+    "success_query_fraction": 0.3516483516483517,
+    "success_weight_share": 0.5749865911814821,
+    "failure_weight_share": 0.4250134088185179,
+    "third_query_weight_share": 0.64650361836777,
+    "ess_fraction": 0.09089122599424634,
+    "same_advantage_beta3_failure_share": 0.5742436936244435,
+    "same_advantage_beta3_ess_fraction": 0.7642439064418013,
+    "independent_review": "critic-probe-independent-review.json",
+    "priority": "success-only actor first; beta reduction separately weakens both stage concentration and success-source selection",
+    "limitations": [
+      "Final census is in-sample, not generalization",
+      "Source episode failure is not a per-action badness label",
+      "Current-target Q gap follows official currentQ weighting and is not itself a defect",
+      "Loss coefficient shares are not measured gradient shares"
+    ]
+  }
+}
