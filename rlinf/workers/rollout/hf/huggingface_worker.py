@@ -39,6 +39,7 @@ from rlinf.models.embodiment.base_policy import BasePolicy
 from rlinf.scheduler import Channel, Cluster, Worker, split_channel_message
 from rlinf.utils.dvac_telemetry import DVACTelemetryWriter
 from rlinf.utils.placement import HybridComponentPlacement
+from rlinf.utils.utils import get_rng_state, seed_everything, set_rng_state
 
 
 class MultiStepRolloutWorker(Worker):
@@ -46,6 +47,7 @@ class MultiStepRolloutWorker(Worker):
         Worker.__init__(self)
 
         self.cfg = cfg
+        self.rollout_seed = cfg.rollout.get("seed", None)
         self.should_stop = False
 
         self.only_eval = cfg.runner.get("only_eval", False)
@@ -348,6 +350,18 @@ class MultiStepRolloutWorker(Worker):
         self.setup_sample_params()
         if self.enable_offload:
             self.offload_model()
+
+        self._seed_rollout()
+        if self.rollout_seed is not None:
+            print(
+                f"Rollout RNG seed={int(self.rollout_seed) + self._rank}; "
+                "fresh noise per query; eval RNG isolated",
+                flush=True,
+            )
+
+    def _seed_rollout(self):
+        if self.rollout_seed is not None:
+            seed_everything(int(self.rollout_seed) + self._rank)
 
     def setup_sample_params(self):
         # sampling parameters for rollout
@@ -979,6 +993,16 @@ class MultiStepRolloutWorker(Worker):
 
     @Worker.timer("evaluate")
     async def evaluate(self, input_channel: Channel, output_channel: Channel):
+        if self.rollout_seed is None:
+            return await self._evaluate(input_channel, output_channel)
+        train_rng_state = get_rng_state()
+        try:
+            self._seed_rollout()
+            return await self._evaluate(input_channel, output_channel)
+        finally:
+            set_rng_state(train_rng_state)
+
+    async def _evaluate(self, input_channel: Channel, output_channel: Channel):
         if self.enable_offload:
             self.reload_model()
         if self.env_decoupled_mode:
