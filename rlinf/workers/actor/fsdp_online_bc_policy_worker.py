@@ -12,7 +12,10 @@ from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.scheduler import Channel, Worker
 from rlinf.utils.metric_utils import compute_split_num
 from rlinf.workers.actor.fsdp_dagger_policy_worker import EmbodiedDAGGERFSDPPolicy
-from rlinf.algorithms.online_bc_rabc import RABCConfig, RABCStats, raw_weights, normalized_batch_weights
+from rlinf.algorithms.online_bc_rabc import (
+    RABCConfig, RABCStats, raw_weights, normalized_batch_weights,
+    mix_normalized_batch_weights,
+)
 from rlinf.utils.rynnvalue_client import RynnValueClient
 
 
@@ -61,7 +64,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                 raise ValueError("RA-BC is an independent clean-BC method.")
             rc = bc.rabc
             self.rabc_config = RABCConfig(float(rc.kappa_seconds), float(rc.get("epsilon_signal", 1e-6)),
-                                          float(rc.get("epsilon_weight", 1e-6)))
+                                          float(rc.get("epsilon_weight", 1e-6)),
+                                          clean_mix=rc.get("clean_mix", 0.0))
             self.rabc_stats = RABCStats()
             self.rabc_seen = set()
             self.rabc_client = RynnValueClient(rc.endpoint, Path(bc.data_path) / "value_cache",
@@ -132,12 +136,37 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         return admitted
 
     def rabc_identity(self):
-        return {"version": 1, "scorer": self.rabc_client.identity,
+        return {"version": 2, "scorer": self.rabc_client.identity,
                 "kappa_seconds": self.rabc_config.kappa_seconds,
                 "epsilon_signal": self.rabc_config.epsilon_signal,
                 "epsilon_weight": self.rabc_config.epsilon_weight,
                 "stats_scope": "all_admitted_unique_queries", "loss_scope": "complete_optimizer_batch",
-                "max_success_chunks": self.replay_buffer.max_success_chunks}
+                "max_success_chunks": self.replay_buffer.max_success_chunks,
+                "clean_mix": float(self.rabc_config.clean_mix),
+                "all_zero_policy": self.rabc_config.all_zero_policy,
+                "weight_postprocess": "after_full_batch_normalization"}
+
+    def validate_rabc_checkpoint_identity(self, saved):
+        expected = self.rabc_identity()
+        if not isinstance(saved, dict) or type(saved.get("version")) is not int:
+            raise ValueError("RA-BC resume scorer/method identity mismatch.")
+        legacy = saved["version"] == 1
+        if legacy:
+            if self.rabc_config.clean_mix != 0:
+                raise ValueError("Legacy RA-BC resume requires clean_mix=0; a method fork is explicit.")
+            expected = {k: v for k, v in expected.items()
+                        if k not in ("clean_mix", "all_zero_policy", "weight_postprocess")}
+            expected["version"] = 1
+        # Compare keys as well as values; no unknown schema fields are accepted.
+        if set(saved) != set(expected) or saved != expected:
+            raise ValueError("RA-BC resume scorer/method identity mismatch.")
+        if not legacy and isinstance(saved["clean_mix"], bool):
+            raise ValueError("RA-BC resume clean_mix must be a real number, not bool.")
+        return legacy
+
+    def reset_rabc_round_metrics(self):
+        self.rabc_metrics["rabc/clean_fallback_updates_this_round"] = 0.0
+        self.rabc_metrics["rabc/skipped_updates_this_round"] = 0.0
 
     def validate_rabc_record(self, record):
         if bytes(record["rabc_identity"].tolist()).hex() != self.rabc_client.identity_hash:
@@ -163,14 +192,27 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         deltas = data["rabc_delta_seconds"]
         if deltas.numel() != self.cfg.actor.global_batch_size:
             raise ValueError("RA-BC must normalize the complete optimizer batch.")
+        mask = data["action_valid_mask"]
+        if (not isinstance(mask, torch.Tensor) or mask.dtype != torch.bool
+                or mask.ndim != 3 or mask.shape[0] != deltas.numel()
+                or not mask.flatten(1).any(dim=1).all()):
+            raise ValueError("RA-BC requires a bool action mask with valid targets per query.")
         raw = raw_weights(deltas, self.rabc_stats, self.rabc_config)
-        weights, diagnostics = normalized_batch_weights(raw, self.rabc_config)
+        normalized, diagnostics = normalized_batch_weights(raw, self.rabc_config)
+        weights, final_diagnostics = mix_normalized_batch_weights(normalized, self.rabc_config)
+        diagnostics.update(final_diagnostics)
         self.rabc_metrics.update({"rabc/" + key: float(value) for key, value in diagnostics.items()})
+        for name, flag in (("clean_fallback_updates_this_round", diagnostics["clean_fallback"]),
+                           ("skipped_updates_this_round", diagnostics["skip_update"])):
+            key = "rabc/" + name
+            self.rabc_metrics[key] = self.rabc_metrics.get(key, 0.0) + float(flag)
         if self.rabc_debug_remaining > 0:
             target = Path(self.cfg.algorithm.online_bc.data_path) / "weight_debug"
             target.mkdir(parents=True, exist_ok=True)
             with (target / f"batch_{self.rabc_debug_index:06d}.pt").open("xb") as stream:
-                torch.save({"delta_seconds": deltas, "raw_weights": raw, "sample_weights": weights,
+                torch.save({"delta_seconds": deltas, "raw_weights": raw,
+                            "normalized_weights": normalized, "sample_weights": weights,
+                            "action_valid_mask": mask,
                             "stats": self.rabc_stats.state_dict(), "identity": self.rabc_identity(),
                             "diagnostics": diagnostics}, stream)
             self.rabc_debug_remaining -= 1
@@ -205,6 +247,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
 
     @Worker.timer("run_training")
     def run_training(self):
+        if self.rabc_enabled:
+            self.reset_rabc_round_metrics()
         ready = torch.tensor(
             [
                 int(
@@ -247,8 +291,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
         if self.rabc_enabled:
             state = torch.load(target / "rabc.pt", weights_only=True)
-            if state["identity"] != self.rabc_identity():
-                raise ValueError("RA-BC resume scorer/method identity mismatch.")
+            legacy = self.validate_rabc_checkpoint_identity(state["identity"])
             stats = RABCStats()
             stats.load_state_dict(state["stats"])
             self.replay_buffer.load_checkpoint(target)
@@ -268,6 +311,14 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                 raise ValueError("RA-BC checkpoint episode identities differ.")
             self.rabc_stats, self.rabc_seen = stats, actual_keys
             self.rabc_debug_remaining = 0  # Existing debug receipts remain immutable on resume.
+            self.rabc_metrics["rabc/resume_legacy_identity"] = float(legacy)
+        # Restore requires active-device parameters/optimizer, just as save does.
+        if self.is_weight_offloaded:
+            self.load_param_and_grad(self.device)
+            self.is_weight_offloaded = False
+        if self.is_optimizer_offloaded:
+            self.load_optimizer(self.device)
+            self.is_optimizer_offloaded = False
         self._strategy.load_checkpoint(
             model=self.model,
             optimizers=[self.optimizer],

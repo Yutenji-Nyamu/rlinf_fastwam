@@ -13,6 +13,7 @@ from rlinf.algorithms.online_bc_rabc import (
     RABCConfig,
     RABCStats,
     normalized_batch_weights,
+    mix_normalized_batch_weights,
     raw_weights,
 )
 
@@ -227,3 +228,45 @@ def test_raw_normalization_rejects_out_of_range_weights_and_empty_stats():
             normalized_batch_weights(values, RABCConfig(1))
     with pytest.raises(ValueError):
         raw_weights([0.1], RABCStats(), RABCConfig(1))
+
+
+@pytest.mark.parametrize("value", [-0.1, 1.1, True, False, float("nan"), float("inf"), "0.5", None])
+def test_clean_mix_rejects_invalid_parameters(value):
+    with pytest.raises(ValueError, match="clean_mix"):
+        RABCConfig(2.0, clean_mix=value)
+
+
+def test_mix_preserves_legacy_tensor_and_unclipped_epsilon_normalization():
+    raw = torch.tensor([0.0, 0.0, 0.0, 0.0, 1.0], dtype=torch.float64)
+    normalized, _ = normalized_batch_weights(raw, RABCConfig(2.0))
+    legacy, info0 = mix_normalized_batch_weights(normalized, RABCConfig(2.0))
+    assert legacy.data_ptr() == normalized.data_ptr()
+    torch.testing.assert_close(legacy, normalized, rtol=0, atol=0)
+    mixed, info = mix_normalized_batch_weights(normalized, RABCConfig(2.0, clean_mix=0.5))
+    torch.testing.assert_close(mixed, 0.5 + 0.5 * normalized, rtol=0, atol=0)
+    assert mixed.max() > 2.5  # No post-mix clipping or normalization.
+    assert mixed.mean() < 1.0  # Preserve the original epsilon denominator.
+    assert info["final_weight_zero_fraction"] == 0
+    assert not info["skip_update"] and not info["clean_fallback"]
+    clean, _ = mix_normalized_batch_weights(normalized, RABCConfig(2.0, clean_mix=1.0))
+    torch.testing.assert_close(clean, torch.ones_like(clean), rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("clean_mix", [0.0, 0.5, 1.0])
+def test_all_zero_mix_policy_is_explicit(clean_mix):
+    config = RABCConfig(2.0, clean_mix=clean_mix)
+    normalized, original = normalized_batch_weights(torch.zeros(4), config)
+    result, info = mix_normalized_batch_weights(normalized, config)
+    assert original["skip_update"] and info["base_skip_update"]
+    expected = torch.zeros(4, dtype=torch.float64) if clean_mix == 0 else torch.ones(4, dtype=torch.float64)
+    torch.testing.assert_close(result, expected, rtol=0, atol=0)
+    assert info["skip_update"] == (clean_mix == 0)
+    assert info["clean_fallback"] == (clean_mix > 0)
+    assert info["final_effective_sample_size"] == (0 if clean_mix == 0 else 4)
+
+
+@pytest.mark.parametrize("value", [torch.tensor([]), torch.tensor([float("nan")]),
+                                 torch.tensor([-1.0]), torch.tensor([[1.0]]), torch.tensor([True])])
+def test_mix_does_not_turn_invalid_normalized_input_into_clean(value):
+    with pytest.raises(ValueError):
+        mix_normalized_batch_weights(value, RABCConfig(2.0, clean_mix=0.5))

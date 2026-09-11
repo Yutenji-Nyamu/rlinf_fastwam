@@ -1,0 +1,26 @@
+{
+  "base": "4a3d1222b57ff826b4d4edfff239906596e457c5",
+  "branch": "codex/sz-pi05-bc-sarm-cleanmix-20260911",
+  "budget": {
+    "parallel": 4,
+    "serial": 1,
+    "attempts_per_round": 4,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "updates": 5,
+    "learning_rate": 2.5e-05
+  },
+  "method_only_diff": {
+    "algorithm.online_bc.rabc.clean_mix": {
+      "baseline": "<absent>",
+      "candidate": 0.5
+    }
+  },
+  "model_and_seed": {
+    "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "actor_seed": 1234,
+    "rollout_seed": 42
+  },
+  "baseline_sha256": "adf826e53ea41371b41fca6ed556e1f712d8939492c3fdcd58a34cfea13f3907",
+  "note": "Only composed in memory to audit method inheritance; no candidate launch config or GPU reservation created."
+}

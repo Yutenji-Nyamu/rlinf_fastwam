@@ -4,7 +4,7 @@
 
 The caller updates statistics once per newly admitted unique chunk. Sampling and
 loss weighting never update them. The caller also owns scorer/cache identity and
-must skip the optimizer step when a complete training batch has zero weight.
+must apply the explicit clean-mix/all-zero policy before an optimizer step.
 """
 
 import math
@@ -19,6 +19,7 @@ class RABCConfig:
     kappa_seconds: float
     epsilon_signal: float = 1e-6
     epsilon_weight: float = 1e-6
+    clean_mix: float = 0.0
 
     def __post_init__(self):
         for name in ("kappa_seconds", "epsilon_signal", "epsilon_weight"):
@@ -30,6 +31,17 @@ class RABCConfig:
                 or value <= 0
             ):
                 raise ValueError(f"RA-BC {name} must be finite and positive.")
+        if (
+            isinstance(self.clean_mix, bool)
+            or not isinstance(self.clean_mix, Real)
+            or not math.isfinite(self.clean_mix)
+            or not 0 <= self.clean_mix <= 1
+        ):
+            raise ValueError("RA-BC clean_mix must be finite and in [0, 1].")
+
+    @property
+    def all_zero_policy(self) -> str:
+        return "skip" if self.clean_mix == 0 else "clean"
 
 
 def _vector(values, *, allow_empty=False):
@@ -156,3 +168,43 @@ def normalized_batch_weights(raw, config: RABCConfig) -> tuple[torch.Tensor, dic
         "skip_update": all_zero,
     }
     return normalized.detach(), diagnostics
+
+
+def mix_normalized_batch_weights(
+    normalized: torch.Tensor, config: RABCConfig
+) -> tuple[torch.Tensor, dict]:
+    """Mix *after* the existing full-batch normalization; never renormalize.
+
+    A valid all-zero batch falls back to full clean BC only when clean_mix > 0.
+    Invalid scores/masks must be rejected by their normal validation path, not
+    converted to clean data. With c=0 return the original detached tensor.
+    """
+    if not isinstance(normalized, torch.Tensor):
+        raise ValueError("RA-BC normalized weights must be a tensor.")
+    weights = _vector(normalized)
+    if (weights < 0).any():
+        raise ValueError("RA-BC normalized weights must be nonnegative.")
+    all_zero = bool(weights.sum() == 0)
+    fallback = all_zero and config.clean_mix > 0
+    if config.clean_mix == 0:
+        final = normalized.detach()
+    elif fallback:
+        final = torch.ones_like(weights)
+    else:
+        final = config.clean_mix + (1 - config.clean_mix) * weights
+    total, squared_total = final.sum(), final.square().sum()
+    diagnostics = {
+        "clean_mix": float(config.clean_mix),
+        "base_skip_update": all_zero,
+        "skip_update": all_zero and not fallback,
+        "clean_fallback": fallback,
+        "final_weight_mean": final.mean().item(),
+        "final_weight_min": final.min().item(),
+        "final_weight_max": final.max().item(),
+        "final_weight_std": final.std(unbiased=False).item(),
+        "final_weight_zero_fraction": (final == 0).double().mean().item(),
+        "final_effective_sample_size": (
+            0.0 if bool(squared_total == 0) else (total.square() / squared_total).item()
+        ),
+    }
+    return final.detach(), diagnostics
