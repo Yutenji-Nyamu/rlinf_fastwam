@@ -28,6 +28,12 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
+from rlinf.algorithms.dvac_top20 import (
+    DVACTop20Config,
+    DVACTop20State,
+    distributed_top20_weights,
+    expand_native_mask,
+)
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.config import SupportedModel
@@ -115,6 +121,26 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         )
         self.dvac_output_dir: Path | None = None
         self._dvac_pending_step: dict | None = None
+        top20_cfg = OmegaConf.select(cfg, "algorithm.dvac_top20", default=None)
+        self.dvac_top20_raw_cfg = (
+            {} if top20_cfg is None else OmegaConf.to_container(top20_cfg, resolve=True)
+        )
+        self.dvac_top20_cfg = DVACTop20Config.from_dict(self.dvac_top20_raw_cfg)
+        self.dvac_top20_enabled = self.dvac_top20_cfg.enabled
+        self.dvac_top20_state = DVACTop20State(self.dvac_top20_cfg)
+        self._dvac_top20_pending_update = False
+        self.dvac_top20_output_dir: Path | None = None
+        if self.dvac_top20_enabled:
+            if self.dvac_train_enabled:
+                raise ValueError("dvac_top20 cannot be combined with legacy DVAC weighting")
+            if str(cfg.algorithm.adv_type) != "grpo":
+                raise ValueError("dvac_top20 v1 requires clean GRPO advantages")
+            if cfg.algorithm.get("prism", {}).get("enabled", False):
+                raise ValueError("dvac_top20 v1 is a clean-GRPO method, not Prism composition")
+            if cfg.algorithm.logprob_type != "chunk_level" or cfg.algorithm.reward_type != "chunk_level":
+                raise ValueError("dvac_top20 requires original chunk logprob/reward types")
+            if self.enable_sft_co_train or float(cfg.algorithm.entropy_bonus) != 0 or float(cfg.algorithm.get("kl_beta", 0)) != 0:
+                raise ValueError("dvac_top20 v1 requires clean PG only: SFT/entropy/KL disabled")
         if self.enable_sft_co_train:
             self._build_sft_data_loader()
 
@@ -163,6 +189,15 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if needed, offload model parameters and optimizer states to CPU.
         """
         self.setup_model_and_optimizer()
+
+        if self.dvac_top20_enabled:
+            if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
+                raise ValueError("dvac_top20 requires the native OpenPI policy")
+            output_dir = self.dvac_top20_raw_cfg.get("output_dir")
+            if not output_dir:
+                raise ValueError("algorithm.dvac_top20.output_dir is required when enabled")
+            self.dvac_top20_output_dir = Path(str(output_dir)) / f"actor_rank{self._rank:02d}"
+            self.dvac_top20_output_dir.mkdir(parents=True, exist_ok=True)
 
         if self.dvac_train_enabled:
             if SupportedModel(self.cfg.actor.model.model_type) != SupportedModel.OPENPI:
@@ -662,6 +697,82 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         )
         os.replace(temporary, path)
 
+    def _prepare_dvac_top20_rollout(self) -> None:
+        """Attach canonical per-round IDs before the unchanged native shuffle."""
+        inputs = self.rollout_batch.get("forward_inputs")
+        key = f"dvac_v_l{self.dvac_top20_cfg.selected_l}"
+        if not isinstance(inputs, dict) or key not in inputs:
+            raise ValueError(f"dvac_top20 requires frozen rollout signal {key}")
+        variance = inputs.pop(key)
+        if variance.ndim != 3 or variance.shape[:2] != self.rollout_batch["prev_logprobs"].shape[:2]:
+            raise ValueError("dvac_top20 rollout V must align as [chunk_steps, trajectories, H]")
+        self.rollout_batch["dvac_top20_v"] = variance.detach().cpu().contiguous()
+        # Rank-strided IDs identify the canonical received chunk slot. They are
+        # carried through shuffle/splits and remain unchanged across U epochs.
+        count = variance.shape[0] * variance.shape[1]
+        ids = torch.arange(count, dtype=torch.int64) * self._world_size + self._rank
+        self.rollout_batch["dvac_top20_query_ids"] = ids.reshape(variance.shape[:2])
+
+    def _prepare_dvac_top20_batch(self, batch: dict, metrics: dict) -> None:
+        if self._dvac_top20_pending_update:
+            raise RuntimeError("A previous DVAC top20 Adam update is still pending")
+        variance = batch["dvac_top20_v"]
+        native_mask = batch.get("loss_mask")
+        top_weights, selection_metrics = distributed_top20_weights(
+            variance, native_mask, batch["dvac_top20_query_ids"], self.dvac_top20_cfg
+        )
+        full_update = self.dvac_top20_state.next_full_update()
+        valid = expand_native_mask(variance, native_mask).detach().cpu()
+        weights = valid.float() if full_update else top_weights
+        batch["forward_inputs"]["dvac_top20_weights"] = weights
+        self._dvac_top20_pending_update = True
+        values = {
+            f"actor/dvac_top20_{key}": value for key, value in selection_metrics.items()
+        }
+        values.update({
+            "actor/dvac_top20_full_update": float(full_update),
+            "actor/dvac_top20_update_index": float(self.dvac_top20_state.update_index),
+            "actor/dvac_top20_full_updates_total": float(self.dvac_top20_state.full_updates),
+            "actor/dvac_top20_final_nonzero_fraction": (
+                1.0 if full_update and selection_metrics["valid_positions"] else selection_metrics["selected_fraction"]
+            ),
+        })
+        append_to_dict(metrics, values)
+        # Per-Adam, per-rank small JSONL diagnostics. The sidecar is the source
+        # of truth for exact resume; this audit log is never replayed as state.
+        advantages = batch.get("advantages")
+        loss_mask_sum = batch.get("loss_mask_sum")
+        native_valid_query = valid.any(-1)
+        baseline_contribution = native_valid_query.float()
+        if loss_mask_sum is not None:
+            denominator = loss_mask_sum.detach().cpu().reshape(len(variance), -1)
+            if denominator.shape[-1] != 1:
+                raise ValueError("dvac_top20 expects original chunk loss_mask_sum [B,1]")
+            # Invalid queries contribute zero regardless of their padded length.
+            safe_length = denominator[:, 0].float().clamp_min(1)
+            baseline_contribution *= float(self.cfg.env.train.max_episode_steps) / safe_length
+        record = {
+            "runner_step": int(self.version),
+            "actor_rank": int(self._rank),
+            "update_index": self.dvac_top20_state.update_index,
+            "full_update": full_update,
+            "selection_domain": self.dvac_top20_cfg.selection_domain,
+            "top_fraction": self.dvac_top20_cfg.top_fraction,
+            "query_ids": batch["dvac_top20_query_ids"].detach().cpu().tolist(),
+            "selected_per_query": (top_weights > 0).sum(-1).tolist(),
+            "selected_position_histogram": (top_weights > 0).sum(0).tolist(),
+            "advantages": None if advantages is None else advantages.detach().cpu().tolist(),
+            "native_loss_mask": native_valid_query.tolist(),
+            "native_loss_mask_sum": None if loss_mask_sum is None else loss_mask_sum.detach().cpu().tolist(),
+            "baseline_loss_contribution_per_query": baseline_contribution.tolist(),
+            "top_weight_mean_per_query": top_weights.mean(-1).tolist(),
+            "final_weight_mean_per_query": weights.mean(-1).tolist(),
+            "metrics": selection_metrics,
+        }
+        if self.dvac_top20_output_dir is not None:
+            with (self.dvac_top20_output_dir / "updates.jsonl").open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
+
     @Worker.timer("run_training")
     def run_training(self) -> None:
         """
@@ -688,6 +799,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         self.model.train()
         if self.dvac_train_enabled:
             self._prepare_dvac_train_step()
+        if self.dvac_top20_enabled:
+            self._prepare_dvac_top20_rollout()
         rollout_size = (
             self.rollout_batch["prev_logprobs"].shape[0]
             * self.rollout_batch["prev_logprobs"].shape[1]
@@ -727,6 +840,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                     f"{train_global_batch_size=}, {self.cfg.actor.micro_batch_size}"
                 )
 
+                if self.dvac_top20_enabled:
+                    self._prepare_dvac_top20_batch(train_global_batch, metrics)
+
                 train_micro_batch = split_dict_to_chunk(
                     train_global_batch,
                     train_global_batch_size // self.cfg.actor.micro_batch_size,
@@ -746,6 +862,8 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 self.torch_platform.empty_cache()
 
                 grad_norm, lr_list = self.optimizer_step()
+                if self.dvac_top20_enabled:
+                    self._dvac_top20_pending_update = False
                 data = {
                     "actor/grad_norm": grad_norm,
                     "actor/lr": lr_list[0],
@@ -803,7 +921,15 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         forward_inputs = micro_batch.get("forward_inputs", None)
 
         dvac_weights = None
+        top20_weights = None
         model_forward_inputs = forward_inputs
+        if self.dvac_top20_enabled:
+            if forward_inputs is None or "dvac_top20_weights" not in forward_inputs:
+                raise ValueError("Missing full-Adam DVAC top20 weights in microbatch")
+            top20_weights = forward_inputs["dvac_top20_weights"]
+            model_forward_inputs = {
+                key: value for key, value in forward_inputs.items() if key != "dvac_top20_weights"
+            }
         if self.dvac_train_enabled:
             if forward_inputs is None or "dvac_weights" not in forward_inputs:
                 raise ValueError("Missing frozen per-h DVAC weights during replay.")
@@ -849,6 +975,10 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             prev_logprobs = output_dict["prev_logprobs"]
 
         logprobs_for_loss = output_dict["logprobs"]
+        if self.dvac_top20_enabled:
+            logprobs_for_loss = straight_through_scale_logprobs(
+                logprobs_for_loss, top20_weights
+            )
         if self.dvac_train_enabled and self.dvac_train_application == "logprob_st":
             logprobs_for_loss = straight_through_scale_logprobs(
                 logprobs_for_loss, dvac_weights
@@ -924,7 +1054,22 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         return Path(checkpoint_path) / f"dvac_state_rank{self._rank:04d}.json"
 
     def save_checkpoint(self, save_path: str, step: int = 0) -> None:
+        if self.dvac_top20_enabled and self._dvac_top20_pending_update:
+            raise RuntimeError("Cannot checkpoint a partially applied DVAC top20 Adam update")
         super().save_checkpoint(save_path, step)
+        if self.dvac_top20_enabled:
+            path = self._dvac_top20_sidecar_path(save_path)
+            payload = {
+                "schema_version": 1,
+                "runner_step": int(step),
+                "actor_rank": int(self._rank),
+                "actor_world_size": int(self._world_size),
+                "budget": self._dvac_top20_resume_budget(),
+                "method_state": self.dvac_top20_state.state_dict(),
+            }
+            temporary = path.with_suffix(".partial.json")
+            temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            os.replace(temporary, path)
         if not self.dvac_train_enabled:
             return
         if self._dvac_pending_step is not None:
@@ -951,6 +1096,22 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
 
     def load_checkpoint(self, load_path: str) -> None:
         restored_stats = None
+        restored_top20 = None
+        if self.dvac_top20_enabled:
+            path = self._dvac_top20_sidecar_path(load_path)
+            if not path.is_file():
+                raise FileNotFoundError(f"Exact DVAC top20 resume requires new sidecar: {path}")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            for key, expected in {
+                "schema_version": 1,
+                "actor_rank": int(self._rank),
+                "actor_world_size": int(self._world_size),
+                "budget": self._dvac_top20_resume_budget(),
+            }.items():
+                if payload.get(key) != expected:
+                    raise ValueError(f"DVAC top20 resume mismatch for {key}")
+            restored_top20 = DVACTop20State(self.dvac_top20_cfg)
+            restored_top20.load_state_dict(payload["method_state"])
         if self.dvac_train_enabled:
             path = self._dvac_sidecar_path(load_path)
             if not path.is_file():
@@ -981,6 +1142,22 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         super().load_checkpoint(load_path)
         if restored_stats is not None:
             self.dvac_recent_stats = restored_stats
+        if restored_top20 is not None:
+            self.dvac_top20_state = restored_top20
+            self._dvac_top20_pending_update = False
+
+    def _dvac_top20_sidecar_path(self, checkpoint_path: str) -> Path:
+        return Path(checkpoint_path) / f"dvac_top20_state_rank{self._rank:04d}.json"
+
+    def _dvac_top20_resume_budget(self) -> dict:
+        return {
+            "global_batch_size": int(self.cfg.actor.global_batch_size),
+            "micro_batch_size": int(self.cfg.actor.micro_batch_size),
+            "update_epoch": int(self.cfg.algorithm.get("update_epoch", 1)),
+            "rollout_epoch": int(self.cfg.env.train.rollout_epoch),
+            "group_size": int(self.cfg.algorithm.group_size),
+            "num_action_chunks": int(self.cfg.actor.model.num_action_chunks),
+        }
 
     def set_global_step(self, global_step: int) -> None:
         """

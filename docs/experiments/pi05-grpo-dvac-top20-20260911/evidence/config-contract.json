@@ -1,0 +1,50 @@
+{
+  "base": "1d015a2aa03ec8132d8207ba47a2be3dbe1d9591",
+  "branch": "codex/sz-pi05-grpo-dvac-top20-20260911",
+  "budget": {
+    "parallel": 64,
+    "serial": 4,
+    "attempts_per_round": 256,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "updates": 2,
+    "learning_rate": 5e-06
+  },
+  "method_only_diff": {
+    "algorithm.dvac_top20.enabled": {
+      "baseline": "<absent>",
+      "candidate": true
+    },
+    "algorithm.dvac_top20.full_update_probability": {
+      "baseline": "<absent>",
+      "candidate": 0.1
+    },
+    "algorithm.dvac_top20.method_seed": {
+      "baseline": "<absent>",
+      "candidate": 20260911
+    },
+    "algorithm.dvac_top20.output_dir": {
+      "baseline": "<absent>",
+      "candidate": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/dvac_top20"
+    },
+    "algorithm.dvac_top20.selected_l": {
+      "baseline": "<absent>",
+      "candidate": 3
+    },
+    "algorithm.dvac_top20.selection_domain": {
+      "baseline": "<absent>",
+      "candidate": "batch"
+    },
+    "algorithm.dvac_top20.top_fraction": {
+      "baseline": "<absent>",
+      "candidate": 0.2
+    }
+  },
+  "model_and_seed": {
+    "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "actor_seed": 1234,
+    "rollout_seed": "<original default RNG>"
+  },
+  "baseline_sha256": "0e8c9ce37d37aa1d4a30e352c0612507fb88d366a3e26d94ac5540ed2ff2ef63",
+  "note": "Only composed in memory to audit method inheritance; no candidate launch config or GPU reservation created."
+}

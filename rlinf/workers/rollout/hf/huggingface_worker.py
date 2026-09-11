@@ -26,6 +26,7 @@ from omegaconf import DictConfig, OmegaConf, open_dict
 from tqdm import tqdm
 
 from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variance
+from rlinf.algorithms.dvac_top20 import DVACTop20Config
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.rlt import (
     build_rlt_route,
@@ -174,7 +175,18 @@ class MultiStepRolloutWorker(Worker):
             )
         self.dvac_train_enabled = self.dvac_train_mode == "apply"
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
-        if self.dvac_train_enabled:
+        top20_cfg = OmegaConf.select(self.cfg, "algorithm.dvac_top20", default=None)
+        self.dvac_top20_cfg = DVACTop20Config.from_dict(
+            {} if top20_cfg is None else OmegaConf.to_container(top20_cfg, resolve=True)
+        )
+        self.dvac_top20_enabled = self.dvac_top20_cfg.enabled
+        if self.dvac_top20_enabled and self.dvac_train_enabled:
+            raise ValueError("dvac_top20 cannot be combined with legacy DVAC weighting")
+        self.dvac_signal_enabled = self.dvac_train_enabled or self.dvac_top20_enabled
+        self.dvac_signal_l = (
+            self.dvac_top20_cfg.selected_l if self.dvac_top20_enabled else self.dvac_selected_l
+        )
+        if self.dvac_signal_enabled:
             if self.only_eval:
                 raise ValueError("DVAC gradient weighting requires a training run.")
             if self.env_decoupled_mode:
@@ -318,7 +330,7 @@ class MultiStepRolloutWorker(Worker):
                 resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
             )
 
-        if self.dvac_train_enabled:
+        if self.dvac_signal_enabled:
             if self.rlt_feature_model is not None or self.expert_model is not None:
                 raise ValueError(
                     "DVAC gradient weighting requires the native OpenPI policy."
@@ -666,7 +678,7 @@ class MultiStepRolloutWorker(Worker):
             and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
         ):
             kwargs["return_dvac_telemetry"] = True
-        if self.dvac_train_enabled and mode == "train":
+        if self.dvac_signal_enabled and mode == "train":
             kwargs["return_dvac_telemetry"] = True
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
@@ -714,14 +726,14 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
 
-        if self.dvac_train_enabled and mode == "train":
+        if self.dvac_signal_enabled and mode == "train":
             telemetry = result.pop("dvac_telemetry", None)
             if telemetry is None or "z_endpoint" not in telemetry:
                 raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
             variance = compute_endpoint_variance(
-                telemetry["z_endpoint"], self.dvac_selected_l
+                telemetry["z_endpoint"], self.dvac_signal_l
             )
-            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
+            result["forward_inputs"][f"dvac_v_l{self.dvac_signal_l}"] = (
                 variance.detach().cpu().contiguous()
             )
 

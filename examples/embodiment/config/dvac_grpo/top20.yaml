@@ -1,0 +1,13 @@
+# @package algorithm.dvac_top20
+# Add to ORIGINAL clean two-GPU 256-attempt GRPO (64 parallel x 4 serial,
+# group8, U2, global_batch1024, micro32), keeping every baseline budget/RNG leaf.
+# Enabled only when this explicit method recipe is selected; absent config is off.
+enabled: true
+selection_domain: batch
+top_fraction: 0.2
+selected_l: 3
+# DART-inspired random bypass: one shared decision per actual Adam update.
+# p=0 is strict top20; p=1 gives the original clean direct policy gradient.
+full_update_probability: 0.1
+method_seed: 20260911
+output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_top20
