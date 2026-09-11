@@ -1,0 +1,136 @@
+{
+  "time": "2026-09-12T00:30:56.781567+08:00",
+  "passed": true,
+  "basis": "actual first collection complete and next rollout started",
+  "runs": {
+    "control": {
+      "spec": {
+        "key": "control",
+        "gpu": 6,
+        "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-control-single-gpu600-20260912",
+        "run": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-control-phys6-fresh600-20260912-v1",
+        "branch": "codex/sz-rlt-control-single-gpu600-20260912",
+        "namespace": "RLinf_rlt_control_single_gpu6_fresh600_20260912",
+        "config": "robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_control"
+      },
+      "driver": {
+        "pid": 2058673,
+        "uid": 1003,
+        "start": 203060527,
+        "state": "R",
+        "cmd": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/results/server-maintenance-20260912/rlt-switch/formal_ops.py driver control --config-path /data/chenyiteng/results/rlinf-rlt/current-single-gpu-control-phys6-fresh600-20260912-v1/runtime --config-name resolved hydra.run.dir=. hydra.output_subdir=null hydra.job.chdir=false hydra/job_logging=stdout",
+        "namespace": "RLinf_rlt_control_single_gpu6_fresh600_20260912"
+      },
+      "actors_alive": 12,
+      "completed_cycles": 1,
+      "collection_success": 0.125,
+      "replay_transitions": 151,
+      "actor_updates": 0,
+      "critic_updates": 0,
+      "phase": "collecting initial replay; warmup_min_size=20000",
+      "method": {
+        "mode": "off"
+      },
+      "protected_processes_unchanged": true,
+      "unexpected_actual_config_diff": {}
+    },
+    "pure04": {
+      "spec": {
+        "key": "pure04",
+        "gpu": 7,
+        "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pure04-single-gpu600-20260912",
+        "run": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-pure04-phys7-fresh600-20260912-v1",
+        "branch": "codex/sz-rlt-pure04-single-gpu600-20260912",
+        "namespace": "RLinf_rlt_pure04_single_gpu7_fresh600_20260912",
+        "config": "robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_dvac_pure04"
+      },
+      "driver": {
+        "pid": 2058686,
+        "uid": 1003,
+        "start": 203060567,
+        "state": "R",
+        "cmd": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/results/server-maintenance-20260912/rlt-switch/formal_ops.py driver pure04 --config-path /data/chenyiteng/results/rlinf-rlt/current-single-gpu-pure04-phys7-fresh600-20260912-v1/runtime --config-name resolved hydra.run.dir=. hydra.output_subdir=null hydra.job.chdir=false hydra/job_logging=stdout",
+        "namespace": "RLinf_rlt_pure04_single_gpu7_fresh600_20260912"
+      },
+      "actors_alive": 12,
+      "completed_cycles": 1,
+      "collection_success": 0.25,
+      "replay_transitions": 142,
+      "actor_updates": 0,
+      "critic_updates": 0,
+      "phase": "collecting initial replay; warmup_min_size=20000",
+      "method": {
+        "mode": "apply",
+        "application": "success_episode_bc",
+        "success_target": "reference",
+        "l_values": [
+          2,
+          3,
+          4
+        ],
+        "selected_l": 3,
+        "applied_horizon": 10,
+        "log_eps": 1e-12,
+        "std_floor": 1e-06,
+        "z_clip": 2.0,
+        "strength": 1.5,
+        "success_scale": 1.0
+      },
+      "protected_processes_unchanged": true,
+      "unexpected_actual_config_diff": {}
+    }
+  },
+  "stage1": {
+    "current_base_commit": "7d07a4212ee6858cc333e1d4fab7a37256d1f839",
+    "dataset": {
+      "action_dim": 14,
+      "episodes": 50,
+      "fps": 50,
+      "frames": 7188,
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1",
+      "state_dim": 14,
+      "validation_sha256": "8e9420957ebcd2a1782a5990e9e9d3f5fd2bc16119c7cccee9f4117f103b7df1"
+    },
+    "full_weights": {
+      "path": "/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260824-v2/stage1/robotwin_adjust_bottle_rlt_stage1_current_ar_clean50_2k_v1/checkpoints/global_step_2000/actor/model_state_dict/full_weights.pt",
+      "sha256": "3aee6bea61444b82fc38e60fcd1ceff8c827fcec25a6a1188381dc1709858de7",
+      "size_bytes": 9556454857
+    },
+    "id": "sz-rlt-stage1-current-ar-clean50-2k-v1",
+    "model_contract": {
+      "action_chunk": 10,
+      "action_dim": 14,
+      "action_horizon": 50,
+      "canonical_adapter_version": "robotwin_aloha_canonical_v1",
+      "image_only": true,
+      "prefix_seq_len": 768,
+      "use_mask": true,
+      "z_rl_dim": 2048
+    },
+    "model_identity": "exact_pi0",
+    "norm_stats": {
+      "path": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50/physical-intelligence/robotwin/norm_stats.json",
+      "sha256": "649ed92b431bd70627febdb00b2385e35fcab5088e72a4e4a4845585f8ce4f6a"
+    },
+    "reconstruction": "current_causal_ar",
+    "resolved_config_sha256": "db24b2a3798f0376b3bfa55690d58eefaaf62bcaaf8b74a21753aa2fd3f8d8e8",
+    "source_config_sha256": "63b934af03a0e649256104e986fa1524391d4a6cb319187849f0ad39f1a88329",
+    "source_head": "f3ea5f691b99fe39e024e5571c0e6ee3d83c51b4",
+    "stage1_checkpoint": "/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260824-v2/stage1/robotwin_adjust_bottle_rlt_stage1_current_ar_clean50_2k_v1/checkpoints/global_step_2000",
+    "train_vla": false
+  },
+  "validated_runtime_defaults": {
+    "cluster.tracer.enable": [
+      null,
+      false
+    ],
+    "runner.overlap_env_bootstrap": [
+      null,
+      false
+    ],
+    "runner.per_worker_log": [
+      null,
+      false
+    ]
+  }
+}
