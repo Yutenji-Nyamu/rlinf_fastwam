@@ -1,0 +1,31 @@
+diff --git a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+index 17d4f91d..92f33bf1 100644
+--- a/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_online_bc_policy_worker.py
+@@ -10,6 +10,7 @@ import torch
+ from rlinf.data.online_bc import SuccessReplay
+ from rlinf.models.embodiment.base_policy import ForwardType
+ from rlinf.scheduler import Channel, Worker
++from rlinf.utils.online_bc_resume_audit import audit_online_bc_resume
+ from rlinf.utils.metric_utils import compute_split_num
+ from rlinf.workers.actor.fsdp_dagger_policy_worker import EmbodiedDAGGERFSDPPolicy
+ 
+@@ -149,6 +150,13 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         torch.save({"update_step": self.update_step}, target / "learner.pt")
+ 
+     def load_checkpoint(self, load_base_path):
++        # FSDP restore requires parameters and optimizer on their active device.
++        if self.is_weight_offloaded:
++            self.load_param_and_grad(self.device)
++            self.is_weight_offloaded = False
++        if self.is_optimizer_offloaded:
++            self.load_optimizer(self.device)
++            self.is_optimizer_offloaded = False
+         self._strategy.load_checkpoint(
+             model=self.model,
+             optimizers=[self.optimizer],
+@@ -161,3 +169,4 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+         self.update_step = torch.load(target / "learner.pt", weights_only=True)[
+             "update_step"
+         ]
++        audit_online_bc_resume(self, load_base_path)
