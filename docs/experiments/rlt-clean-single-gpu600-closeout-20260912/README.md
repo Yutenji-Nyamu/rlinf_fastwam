@@ -6,7 +6,7 @@
 
 采集成功率：R1–154为Teacher，R155起为Student。固定评估始终测试Student。R136首次更新，R148开始原BC/Q课程渐变，R193起整轮固定为2.5/0.45。阶段来自本次clean实测历史，不把Teacher早期采集成功率等同Student性能。
 
-[四张单列宽图](plots/index.html) · [完整标量CSV](metrics.csv) · [原始日志](raw/runtime/driver.log) · [实际配置](raw/tensorboard/config.yaml)
+[四张单列宽图](plots/index.html) · [完整标量CSV](metrics.csv) · [完整ZIP（含原始日志和实际配置）](rlt-clean-single-gpu600-R373-closeout-20260912.zip)
 
 本ZIP含完整日志、原始TensorBoard events、全部标量CSV/JSON、运行命令和配置、源码身份及checkpoint文件目录。大模型、optimizer、回放、图像和视频不入包，仍保留在服务器；该ZIP不能独立恢复训练。本次归档没有删除checkpoint。
 
