@@ -1,0 +1,30 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_control
+  - _self_
+
+# Inherit current causal-AR RLT. Only successful reference-BC queries are weighted.
+algorithm:
+  rlt_dvac:
+    mode: apply
+    mapping: two_level_batch
+    outer_scope: successful_batch
+    application: success_episode_bc
+    success_target: reference
+    l_values: [2, 3, 4]
+    selected_l: 3
+    applied_horizon: ${actor.model.num_action_chunks}
+    log_eps: 1.0e-12
+    minmax_eps: 1.0e-6
+    alpha_local: 1.0
+    alpha_chunk: 1.0
+    success_scale: 1.0
+
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: ${algorithm.rlt_dvac.mode}
+
+runner:
+  max_steps: 600
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_current_single_gpu_dvac_new

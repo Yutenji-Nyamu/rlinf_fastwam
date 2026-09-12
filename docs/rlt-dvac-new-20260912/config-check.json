@@ -1,0 +1,119 @@
+{
+  "time": "2026-09-12T05:26:38.932091+00:00",
+  "config_passed": true,
+  "method_only_diff": {
+    "algorithm.rlt_dvac.alpha_chunk": {
+      "control": null,
+      "new": 1.0
+    },
+    "algorithm.rlt_dvac.alpha_local": {
+      "control": null,
+      "new": 1.0
+    },
+    "algorithm.rlt_dvac.application": {
+      "control": null,
+      "new": "success_episode_bc"
+    },
+    "algorithm.rlt_dvac.applied_horizon": {
+      "control": null,
+      "new": 10
+    },
+    "algorithm.rlt_dvac.l_values": {
+      "control": null,
+      "new": [
+        2,
+        3,
+        4
+      ]
+    },
+    "algorithm.rlt_dvac.log_eps": {
+      "control": null,
+      "new": 1e-12
+    },
+    "algorithm.rlt_dvac.mapping": {
+      "control": null,
+      "new": "two_level_batch"
+    },
+    "algorithm.rlt_dvac.minmax_eps": {
+      "control": null,
+      "new": 1e-06
+    },
+    "algorithm.rlt_dvac.mode": {
+      "control": "off",
+      "new": "apply"
+    },
+    "algorithm.rlt_dvac.outer_scope": {
+      "control": null,
+      "new": "successful_batch"
+    },
+    "algorithm.rlt_dvac.selected_l": {
+      "control": null,
+      "new": 3
+    },
+    "algorithm.rlt_dvac.success_scale": {
+      "control": null,
+      "new": 1.0
+    },
+    "algorithm.rlt_dvac.success_target": {
+      "control": null,
+      "new": "reference"
+    },
+    "rollout.rlt_feature_model.openpi.rlt_dvac_mode": {
+      "control": "off",
+      "new": "apply"
+    },
+    "runner.logger.experiment_name": {
+      "control": "robotwin_adjust_bottle_rlt_current_single_gpu_control_fresh480",
+      "new": "robotwin_adjust_bottle_rlt_current_single_gpu_dvac_new"
+    }
+  },
+  "actual_control_checked_fields": {
+    "env.train.total_num_envs": 8,
+    "actor.micro_batch_size": 256,
+    "actor.global_batch_size": 512,
+    "actor.model.model_type": "rlt_mlp_policy",
+    "actor.model.precision": "fp32",
+    "actor.model.z_dim": 2048,
+    "actor.model.proprio_dim": 14,
+    "actor.model.action_dim": 14,
+    "actor.model.num_action_chunks": 10,
+    "actor.model.ref_num_action_chunks": 10,
+    "actor.model.add_value_head": false,
+    "actor.model.add_q_head": true,
+    "actor.model.q_head_type": "default",
+    "actor.model.fixed_std": 0.002,
+    "actor.model.is_lora": false,
+    "actor.model.lora_rank": 32,
+    "actor.optim.clip_grad": 10.0,
+    "actor.optim.lr": 0.0001,
+    "actor.optim.lr_scheduler": "torch_constant",
+    "actor.critic_optim.clip_grad": 10.0,
+    "actor.critic_optim.lr": 0.0001,
+    "actor.critic_optim.lr_scheduler": "torch_constant",
+    "runner.max_steps": 600,
+    "algorithm.update_epoch": 5,
+    "algorithm.rlt_schedule.enable": true,
+    "algorithm.rlt_schedule.max_updates_per_train_step": 1600,
+    "algorithm.rlt_schedule.warmup_min_size": 20000,
+    "algorithm.rlt_schedule.warmup_post_collect_updates": 30000,
+    "algorithm.rlt_schedule.train_every_episodes": 0,
+    "algorithm.rlt_schedule.train_every_transitions": 1,
+    "algorithm.reference_dropout_prob": 0.5,
+    "algorithm.actor_weight_schedule.enable": true,
+    "algorithm.actor_weight_schedule.warmup_updates": 20000,
+    "algorithm.actor_weight_schedule.ramp_updates": 50000,
+    "algorithm.actor_weight_schedule.warmup_bc_weight": 7.0,
+    "algorithm.actor_weight_schedule.warmup_q_weight": 0.05,
+    "algorithm.actor_weight_schedule.online_bc_weight": 2.5,
+    "algorithm.actor_weight_schedule.online_q_weight": 0.45,
+    "algorithm.replay_buffer.enable_cache": true,
+    "algorithm.replay_buffer.cache_size": 80000,
+    "algorithm.replay_buffer.sample_window_size": 80000,
+    "algorithm.replay_buffer.min_buffer_size": 1,
+    "algorithm.replay_buffer.auto_save": false,
+    "rollout.rlt_feature_model.model_path": "/data/chenyiteng/results/rlinf-rlt/formal-current-ar-stage1-2k-stage2-8env250-20260824-v2/stage1/robotwin_adjust_bottle_rlt_stage1_current_ar_clean50_2k_v1/checkpoints/global_step_2000"
+  },
+  "actual_control_diff": {},
+  "lint_returncode": 0,
+  "lint": []
+}
