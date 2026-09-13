@@ -59,7 +59,7 @@ def worker_factory(monkeypatch):
 
     monkeypatch.setattr(EmbodiedSACFSDPPolicy, "__init__", base_init)
 
-    def make(*, mapping="two_level_batch", mode="apply", **overrides):
+    def make(*, mapping="two_level_batch", mode="apply", actor_schedule=None, **overrides):
         dvac = {
             "mode": mode,
             "application": "success_episode_bc",
@@ -101,6 +101,8 @@ def worker_factory(monkeypatch):
                 "env": {"train": {"auto_reset": False}},
             }
         )
+        if actor_schedule is not None:
+            cfg.algorithm.actor_weight_schedule = actor_schedule
         worker = RLTACFSDPPolicy(cfg)
         worker.model = _TinyActorCritic()
         return worker
@@ -234,12 +236,18 @@ def test_new_rejects_partial_batch_and_multiple_actor_ranks(worker_factory):
 
 @pytest.mark.parametrize(
     ("update_step", "train_actor", "expected_actor"),
-    [(0, True, True), (1, True, False), (0, False, False)],
+    [
+        (0, True, True), (1, True, False), (0, False, False),
+        (69998, True, True), (69999, True, False), (70000, True, True),
+    ],
 )
 def test_real_update_loop_prepares_once_before_split_and_only_for_actor_slots(
     worker_factory, update_step, train_actor, expected_actor
 ):
-    worker = worker_factory()
+    worker = (
+        worker_factory(actor_schedule=_actor_schedule(), direction_schedule=_direction())
+        if update_step >= 69998 else worker_factory()
+    )
     batch, _ = _batch_and_expected_weights()
     worker.update_step = update_step
     worker.critic_actor_ratio = 2
@@ -285,6 +293,10 @@ def test_real_update_loop_prepares_once_before_split_and_only_for_actor_slots(
     )
     if expected_actor:
         assert metrics["actor/rlt_dvac_new/success_count"] == 2.0
+        if update_step >= 69998:
+            expected_direction = 1.0 if update_step == 69998 else -1.0
+            assert metrics["actor/rlt_dvac_new/direction_local"] == expected_direction
+            assert metrics["actor/rlt_dvac_new/direction_chunk"] == expected_direction
     else:
         assert not any(key.startswith("actor/") for key in metrics)
     assert "rlt_dvac_new_weights" not in batch
@@ -329,3 +341,74 @@ def test_new_and_pure_resume_remain_separate_and_new_has_no_frozen_baseline(
     changed = worker_factory(alpha_chunk=0.5)
     with pytest.raises(ValueError, match="rlt_resume_contract"):
         changed._validate_rlt_state(new_state)
+
+
+def _actor_schedule(**overrides):
+    schedule = dict(
+        enable=True, warmup_updates=20000, ramp_updates=50000,
+        warmup_bc_weight=7.0, warmup_q_weight=0.05,
+        online_bc_weight=2.5, online_q_weight=0.45,
+    )
+    schedule.update(overrides)
+    return schedule
+
+
+def _direction(**overrides):
+    return dict(enable=True, anchor="actor_weight_schedule_end", **overrides)
+
+
+def test_direction_switch_recomputes_full_batch_at_same_bc_q_boundary(worker_factory):
+    worker = worker_factory(actor_schedule=_actor_schedule(), direction_schedule=_direction())
+    batch, expected = _batch_and_expected_weights()
+    before_v = batch["curr_obs"]["teacher_dvac_v"].clone()
+    worker.update_step = 69998
+    before, metrics = worker._prepare_global_batch(batch, train_actor=True)
+    torch.testing.assert_close(before["rlt_dvac_new_weights"], expected)
+    assert metrics["rlt_dvac_new/direction_local"] == 1
+    assert worker._actor_objective_weights()[2]["actor_weight_ramp_progress"] < 1
+    worker.update_step = 70000
+    after, metrics = worker._prepare_global_batch(batch, train_actor=True)
+    assert metrics["rlt_dvac_new/direction_anchor_step"] == 69999
+    assert metrics["rlt_dvac_new/direction_local"] == -1
+    bc, q, course = worker._actor_objective_weights()
+    assert (bc, q, course["actor_weight_ramp_progress"]) == (2.5, 0.45, 1.0)
+    reversed_weights = after["rlt_dvac_new_weights"]
+    torch.testing.assert_close(reversed_weights[0], torch.tensor([2.25, 0.75] * 5))
+    torch.testing.assert_close(reversed_weights[2], torch.tensor([0.75, 0.25] * 5))
+    assert torch.equal(batch["curr_obs"]["teacher_dvac_v"], before_v)
+    assert "rlt_dvac_new_weights" not in batch
+
+
+@pytest.mark.parametrize("step", [69998, 70000])
+def test_direction_resume_reconstructs_phase_and_rejects_changed_anchor(worker_factory, step):
+    kwargs = dict(actor_schedule=_actor_schedule(), direction_schedule=_direction())
+    worker = worker_factory(**kwargs)
+    worker.update_step = step
+    payload = worker._rlt_state_payload(runner_step=193)
+    restored = worker_factory(**kwargs)
+    restored._restore_rlt_state(payload)
+    assert restored.update_step == step
+    batch, _ = _batch_and_expected_weights()
+    first, _ = worker._prepare_global_batch(batch, train_actor=True)
+    second, _ = restored._prepare_global_batch(batch, train_actor=True)
+    assert torch.equal(first["rlt_dvac_new_weights"], second["rlt_dvac_new_weights"])
+    restored.cfg.algorithm.actor_weight_schedule.ramp_updates = 25000
+    with pytest.raises(ValueError, match="rlt_resume_contract"):
+        restored._validate_rlt_state(payload)
+
+
+def test_old_config_contract_not_injected_and_direction_requires_valid_mapping(worker_factory):
+    import json
+
+    legacy = worker_factory()
+    before = dict(legacy.rlt_dvac_cfg)
+    serialized, _ = legacy._rlt_contract()
+    assert json.loads(serialized) == {
+        "stage1_manifest_id": "current-ar", "rlt_dvac": before,
+    }
+    assert "direction_schedule" not in legacy.rlt_dvac_cfg
+    assert legacy.rlt_dvac_cfg == before
+    with pytest.raises(ValueError, match="actor_weight_schedule"):
+        worker_factory(direction_schedule=_direction())
+    with pytest.raises(ValueError, match="two_level_batch"):
+        worker_factory(mapping=None, actor_schedule=_actor_schedule(), direction_schedule=_direction())

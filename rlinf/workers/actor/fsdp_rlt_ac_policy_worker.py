@@ -22,6 +22,11 @@ import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
+from rlinf.algorithms.rlt.dvac_direction import (
+    actor_weight_progress,
+    direction_anchor,
+    direction_factors,
+)
 from rlinf.algorithms.rlt.dvac_two_level import build_two_level_success_weights
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
@@ -274,6 +279,11 @@ class RLTACLossMixin:
         success = curr_obs.get("episode_success")
         if not isinstance(success, torch.Tensor):
             raise ValueError("RLT DVAC new requires cached episode_success flags.")
+        local_direction, chunk_direction, direction_metrics = direction_factors(
+            self.update_step,
+            self.rlt_dvac_cfg.get("direction_schedule", {}) or {},
+            self.cfg.algorithm.get("actor_weight_schedule", {}) or {},
+        )
         weights, metrics = build_two_level_success_weights(
             selected_v,
             success.reshape(-1),
@@ -282,7 +292,10 @@ class RLTACLossMixin:
             log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
             minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
             success_scale=self.rlt_dvac_success_scale,
+            direction_local=local_direction,
+            direction_chunk=chunk_direction,
         )
+        metrics.update(direction_metrics)
         if self.rlt_dvac_mode == "observe":
             for domain in ("success_applied", "applied"):
                 for name, neutral in (("mean", 1.0), ("std", 0.0), ("ess_ratio", 1.0)):
@@ -370,7 +383,9 @@ class RLTACLossMixin:
 
         weight_warmup_updates = int(schedule_cfg.get("warmup_updates", 0))
         ramp_updates = int(schedule_cfg.get("ramp_updates", 0))
-        in_warmup = int(self.update_step) < weight_warmup_updates
+        in_warmup, ramp_progress = actor_weight_progress(
+            self.update_step, weight_warmup_updates, ramp_updates
+        )
         warmup_bc_weight = float(
             schedule_cfg.get(
                 "warmup_bc_weight",
@@ -400,14 +415,6 @@ class RLTACLossMixin:
             q_weight = warmup_q_weight
             ramp_progress = 0.0
         elif ramp_updates > 0:
-            ramp_progress = min(
-                1.0,
-                max(
-                    0.0,
-                    float(int(self.update_step) - weight_warmup_updates + 1)
-                    / float(ramp_updates),
-                ),
-            )
             bc_weight = warmup_bc_weight + ramp_progress * (
                 online_bc_weight - warmup_bc_weight
             )
@@ -976,6 +983,13 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         self.rlt_dvac_success_scale = float(
             self.rlt_dvac_cfg.get("success_scale", 1.0)
         )
+        direction_cfg = self.rlt_dvac_cfg.get("direction_schedule", {}) or {}
+        if direction_anchor(
+            direction_cfg, self.cfg.algorithm.get("actor_weight_schedule", {}) or {}
+        ) is not None and (
+            self.rlt_dvac_mode == "off" or self.rlt_dvac_mapping != "two_level_batch"
+        ):
+            raise ValueError("RLT DVAC direction requires active two_level_batch mapping.")
         if self.rlt_dvac_mode != "off":
             if self.rlt_dvac_l_values != (2, 3, 4):
                 raise ValueError("RLT teacher DVAC requires fixed L=(2,3,4) order.")
@@ -1088,6 +1102,12 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         contract = dict(contract)
         if getattr(self, "rlt_dvac_mode", "off") != "off":
             contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
+            anchor = direction_anchor(
+                self.rlt_dvac_cfg.get("direction_schedule", {}) or {},
+                self.cfg.algorithm.get("actor_weight_schedule", {}) or {},
+            )
+            if anchor is not None:
+                contract["rlt_dvac_direction_anchor"] = anchor
         serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         return serialized, digest

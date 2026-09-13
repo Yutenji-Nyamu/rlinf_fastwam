@@ -55,6 +55,8 @@ def build_two_level_success_weights(
     log_eps: float = 1e-12,
     minmax_eps: float = 1e-6,
     success_scale: float = 1.0,
+    direction_local: float = 1.0,
+    direction_chunk: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Build two-level weights before splitting a complete batch into microbatches.
 
@@ -73,6 +75,8 @@ def build_two_level_success_weights(
         log_eps: Positive finite offset in log(V + eps).
         minmax_eps: Positive finite range threshold for returning neutral factors.
         success_scale: Positive finite multiplier for successful queries only.
+        direction_local: Signed local preference in [-1,1]; +1 preserves high V.
+        direction_chunk: Signed outer preference in [-1,1]; -1 favors low V.
 
     Returns:
         Detached float32 weights [B, H] on the input device, and complete-batch
@@ -103,6 +107,8 @@ def build_two_level_success_weights(
         "log_eps": float(log_eps),
         "minmax_eps": float(minmax_eps),
         "success_scale": float(success_scale),
+        "direction_local": float(direction_local),
+        "direction_chunk": float(direction_chunk),
     }
     for name, value in parameters.items():
         if not math.isfinite(value):
@@ -110,6 +116,9 @@ def build_two_level_success_weights(
         if name.startswith("alpha_"):
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"RLT two-level {name} must be in [0,1].")
+        elif name.startswith("direction_"):
+            if not -1.0 <= value <= 1.0:
+                raise ValueError(f"RLT two-level {name} must be in [-1,1].")
         elif value <= 0.0:
             raise ValueError(f"RLT two-level {name} must be positive.")
     if not torch.isfinite(variances).all() or (variances < 0).any():
@@ -130,13 +139,13 @@ def build_two_level_success_weights(
         )
         inner = _centered_minmax(
             log_values,
-            alpha=parameters["alpha_local"],
+            alpha=parameters["alpha_local"] * parameters["direction_local"],
             eps=parameters["minmax_eps"],
         )
         chunk_signal = log_values.mean(dim=-1)
         outer = _centered_minmax(
             chunk_signal.unsqueeze(0),
-            alpha=parameters["alpha_chunk"],
+            alpha=parameters["alpha_chunk"] * parameters["direction_chunk"],
             eps=parameters["minmax_eps"],
         ).squeeze(0)
         success_weights = (

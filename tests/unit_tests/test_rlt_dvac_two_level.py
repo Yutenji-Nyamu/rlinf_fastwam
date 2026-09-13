@@ -20,6 +20,45 @@ def _example():
     return variances, torch.tensor([True, True, False])
 
 
+@pytest.mark.parametrize(
+    ("local", "chunk", "expected"),
+    [
+        (-1.0, -1.0, [[2.25, 0.75], [0.75, 0.25]]),
+        (-1.0, 1.0, [[0.75, 0.25], [2.25, 0.75]]),
+        (1.0, -1.0, [[0.75, 2.25], [0.25, 0.75]]),
+        (0.0, 0.0, [[1.0, 1.0], [1.0, 1.0]]),
+    ],
+)
+def test_direction_reverses_each_centered_layer_and_preserves_success_budget(
+    local, chunk, expected
+):
+    variances, success = _example()
+    variances.requires_grad_(True)
+    weights, _ = build_two_level_success_weights(
+        variances, success, direction_local=local, direction_chunk=chunk, success_scale=2
+    )
+    torch.testing.assert_close(weights[success], 2 * torch.tensor(expected))
+    torch.testing.assert_close(weights[success].mean(), torch.tensor(2.0))
+    assert torch.equal(weights[~success], torch.ones_like(weights[~success]))
+    assert (weights > 0).all() and not weights.requires_grad
+
+
+@pytest.mark.parametrize("success", [[False, False], [True, False], [True, True]])
+def test_reversed_constant_domains_and_empty_successes_are_neutral(success):
+    flags = torch.tensor(success)
+    weights, _ = build_two_level_success_weights(
+        torch.ones(2, 10), flags, direction_local=-1, direction_chunk=-1
+    )
+    assert torch.equal(weights, torch.ones_like(weights))
+
+
+@pytest.mark.parametrize("value", [1.1, -1.1, float("nan"), float("inf")])
+def test_direction_rejects_invalid_coefficient(value):
+    variances, success = _example()
+    with pytest.raises(ValueError, match="direction_local"):
+        build_two_level_success_weights(variances, success, direction_local=value)
+
+
 def test_known_two_level_mapping_and_failure_identity():
     variances, success = _example()
     weights, metrics = build_two_level_success_weights(variances, success)

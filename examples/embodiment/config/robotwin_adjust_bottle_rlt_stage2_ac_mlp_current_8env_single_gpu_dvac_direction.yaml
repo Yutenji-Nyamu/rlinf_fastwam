@@ -1,0 +1,17 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_dvac_new
+  - _self_
+
+# Same fresh Stage2 protocol and success_scale=1 as DVAC new.
+# Reverse each centered layer only after the original BC/Q course reaches its end.
+algorithm:
+  rlt_dvac:
+    direction_schedule:
+      enable: true
+      anchor: actor_weight_schedule_end
+      scope: both
+      transition_updates: 0
+
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_current_single_gpu_dvac_direction
