@@ -28,7 +28,11 @@ from rlinf.algorithms.dvac_train_weighting import (
     local_log_v_sufficient_statistics,
     straight_through_scale_logprobs,
 )
-from rlinf.algorithms.dvac_two_level import compute_dvac_two_level_weights
+from rlinf.algorithms.dvac_two_level import (
+    canonicalize_dvac_two_level_contract,
+    compute_dvac_two_level_weights,
+    dvac_mapping_contract,
+)
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.config import SupportedModel
@@ -145,6 +149,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             for key in ("alpha_local", "alpha_chunk"):
                 if not 0 <= float(self.dvac_train_cfg.get(key, 1.0)) <= 1:
                     raise ValueError(f"{key} must be in [0,1]")
+            dvac_mapping_contract(
+                self.dvac_train_cfg.get("mapping", "linear_centered"),
+                self.dvac_train_cfg.get("temperature_local", 1.0),
+                self.dvac_train_cfg.get("temperature_chunk", 1.0),
+            )
         elif (
             self.dvac_train_enabled
             and self.dvac_train_application == "chunk_clipped_action_advantage"
@@ -633,9 +642,17 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "log_eps": 1e-12,
             "minmax_eps": 1e-6,
         }
-        return {
+        contract = {
             key: self.dvac_train_cfg.get(key, value) for key, value in defaults.items()
         }
+        contract.update(
+            dvac_mapping_contract(
+                self.dvac_train_cfg.get("mapping", "linear_centered"),
+                self.dvac_train_cfg.get("temperature_local", 1.0),
+                self.dvac_train_cfg.get("temperature_chunk", 1.0),
+            )
+        )
+        return contract
 
     @torch.no_grad()
     def _prepare_dvac_two_level_step(self) -> None:
@@ -1173,7 +1190,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                         f"checkpoint={checkpoint_value!r}, current={value!r}"
                     )
             if self.dvac_two_level_enabled:
-                if payload.get("two_level_config") != self._dvac_two_level_contract():
+                saved_contract = payload.get("two_level_config")
+                if not isinstance(saved_contract, dict) or (
+                    canonicalize_dvac_two_level_contract(saved_contract)
+                    != self._dvac_two_level_contract()
+                ):
                     raise ValueError("DVAC two-level resume configuration mismatch")
             else:
                 restored_stats = self._new_dvac_recent_stats()

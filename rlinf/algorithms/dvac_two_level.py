@@ -27,6 +27,74 @@ import math
 import torch
 
 
+def dvac_mapping_contract(
+    mapping: str = "linear_centered",
+    temperature_local: float = 1.0,
+    temperature_chunk: float = 1.0,
+) -> dict:
+    """Validate effective mapping fields; omit inactive linear-only defaults.
+
+    Keeping the legacy linear contract unchanged permits exact legacy resume.
+    Temperatures have no mathematical meaning in the linear branch.
+    """
+    if mapping == "linear_centered":
+        return {}
+    if mapping != "exp_mean":
+        raise ValueError("DVAC mapping must be linear_centered or exp_mean")
+    result = {"mapping": mapping}
+    for name, value in (
+        ("temperature_local", temperature_local),
+        ("temperature_chunk", temperature_chunk),
+    ):
+        if not math.isfinite(float(value)) or float(value) <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
+        result[name] = float(value)
+    return result
+
+
+def canonicalize_dvac_two_level_contract(contract: dict) -> dict:
+    """Normalize only new mapping fields, retaining all other resume checks."""
+    result = dict(contract)
+    result.update(
+        dvac_mapping_contract(
+            result.pop("mapping", "linear_centered"),
+            result.pop("temperature_local", 1.0),
+            result.pop("temperature_chunk", 1.0),
+        )
+    )
+    return result
+
+
+def _exp_mean_factor(
+    unit: torch.Tensor,
+    alpha: float,
+    temperature: float,
+    mass: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Positive allocation with mean one along the last normalization axis.
+
+    ``mass`` describes the existing loss contribution, not another score.
+    Both levels use this function. Shift before exponentiation for stability;
+    very small positive temperatures can underflow low scores to zero safely.
+    """
+    if float(alpha) == 0.0:
+        return torch.ones_like(unit)
+    shifted = unit - unit.amax(dim=-1, keepdim=True)
+    # Avoid casting a tiny positive Python temperature to float32 zero.
+    if float(temperature) < torch.finfo(unit.dtype).tiny:
+        shifted = shifted.double()
+    exponential = torch.exp(shifted / float(temperature))
+    if mass is None:
+        mean = exponential.mean(dim=-1, keepdim=True)
+    else:
+        scaled_mass = mass / mass.amax(dim=-1, keepdim=True)
+        mean = (exponential * scaled_mass).sum(dim=-1, keepdim=True) / (
+            scaled_mass.sum(dim=-1, keepdim=True)
+        )
+    factor = (1.0 - float(alpha)) + float(alpha) * (exponential / mean)
+    return factor.to(dtype=unit.dtype)
+
+
 @torch.no_grad()
 def compute_dvac_two_level_weights(
     variance: torch.Tensor,
@@ -37,6 +105,9 @@ def compute_dvac_two_level_weights(
     scope: str = "both",
     alpha_local: float = 1.0,
     alpha_chunk: float = 1.0,
+    mapping: str = "linear_centered",
+    temperature_local: float = 1.0,
+    temperature_chunk: float = 1.0,
     log_eps: float = 1e-12,
     minmax_eps: float = 1e-6,
     chunk_contributions: torch.Tensor | None = None,
@@ -54,12 +125,15 @@ def compute_dvac_two_level_weights(
     A>0/A<0, respectively, and compute outer statistics only in that selected
     set. Excluded chunks have both factors and final weights equal to one.
 
-    The inner factor is 1 + alpha_local * (MinMax(log V) - mean_H).
+    By default the inner factor is 1 + alpha_local * (MinMax(log V) - mean_H).
     The outer score is the raw mean_H(log V), before inner normalization.
     Within each scene group, MinMax outer scores are centered using the
     optional nonnegative ``chunk_contributions[T,B]`` from the actor's loss
     aggregation. Zero-contribution chunks do not affect either normalization.
     No history, sigmoid, extra clipping, or final chunk renormalization is used.
+    ``exp_mean`` instead maps each MinMax score z to exp(z / temperature),
+    divides by the corresponding (loss-mass weighted) mean, and mixes with one
+    using the existing alpha. It preserves the same score direction and domains.
 
     Computation uses float32, retaining float64 when variance is float64.
     Diagnostics: local_factors/log_variance [T,B,H]; chunk_factors,
@@ -90,6 +164,7 @@ def compute_dvac_two_level_weights(
         raise TypeError("group_ids must contain integer IDs, not inferred positions")
     if scope not in ("both", "positive", "negative"):
         raise ValueError("scope must be 'both', 'positive', or 'negative'")
+    dvac_mapping_contract(mapping, temperature_local, temperature_chunk)
     for name, value in (("alpha_local", alpha_local), ("alpha_chunk", alpha_chunk)):
         if not math.isfinite(float(value)) or not 0.0 <= float(value) <= 1.0:
             raise ValueError(f"{name} must be finite and in [0,1]")
@@ -148,9 +223,14 @@ def compute_dvac_two_level_weights(
     local_min = log_variance.amin(dim=-1, keepdim=True)
     local_span = log_variance.amax(dim=-1, keepdim=True) - local_min
     local_unit = (log_variance - local_min) / (local_span + float(minmax_eps))
-    local_factors = 1.0 + float(alpha_local) * (
-        local_unit - local_unit.mean(dim=-1, keepdim=True)
-    )
+    if mapping == "linear_centered":
+        local_factors = 1.0 + float(alpha_local) * (
+            local_unit - local_unit.mean(dim=-1, keepdim=True)
+        )
+    else:
+        local_factors = _exp_mean_factor(
+            local_unit, alpha_local, temperature_local
+        )
     local_factors = torch.where(
         eligible.unsqueeze(-1), local_factors, torch.ones_like(local_factors)
     )
@@ -166,10 +246,19 @@ def compute_dvac_two_level_weights(
         # Rescaling mass leaves the weighted center unchanged and avoids an
         # overflowing sum when the actor contribution coefficients are large.
         mass = mass / mass.max()
-        center = (unit * mass).sum() / mass.sum()
-        chunk_factors[selected] = 1.0 + float(alpha_chunk) * (unit - center)
+        if mapping == "linear_centered":
+            center = (unit * mass).sum() / mass.sum()
+            chunk_factors[selected] = 1.0 + float(alpha_chunk) * (unit - center)
+        else:
+            chunk_factors[selected] = _exp_mean_factor(
+                unit, alpha_chunk, temperature_chunk, mass
+            )
 
     weights = local_factors * chunk_factors.unsqueeze(-1)
+    if mapping == "exp_mean" and (
+        not torch.isfinite(weights).all() or (weights < 0).any()
+    ):
+        raise ValueError("DVAC exp_mean produced non-finite or negative weights")
     return weights, {
         "local_factors": local_factors,
         "chunk_factors": chunk_factors.unsqueeze(-1),

@@ -30,7 +30,11 @@ import pytest
 import torch
 
 import rlinf.algorithms.dvac_two_level as helper_module
-from rlinf.algorithms.dvac_two_level import compute_dvac_two_level_weights
+from rlinf.algorithms.dvac_two_level import (
+    canonicalize_dvac_two_level_contract,
+    compute_dvac_two_level_weights,
+    dvac_mapping_contract,
+)
 
 
 class CheckpointBase:
@@ -98,6 +102,8 @@ def actor_harness():
         "os": os,
         "CheckpointBase": CheckpointBase,
         "compute_dvac_two_level_weights": compute_dvac_two_level_weights,
+        "dvac_mapping_contract": dvac_mapping_contract,
+        "canonicalize_dvac_two_level_contract": canonicalize_dvac_two_level_contract,
         "clear_memory": lambda **kwargs: None,
         "compute_split_num": lambda send, recv: 1,
         "convert_trajectories_to_batch": lambda packets: packets[0].batch,
@@ -131,7 +137,7 @@ def sample_shards():
     return shards
 
 
-def make_actor(rank=0, scope="both", tmp_path=None):
+def make_actor(rank=0, scope="both", tmp_path=None, mapping="linear_centered"):
     actor = actor_harness()()
     actor._rank, actor._world_size, actor.version = rank, 2, 7
     actor.device = torch.device("cpu")
@@ -148,6 +154,10 @@ def make_actor(rank=0, scope="both", tmp_path=None):
         "minmax_eps": 1e-6,
         "save_step_tensors": True,
     }
+    if mapping == "exp_mean":
+        actor.dvac_train_cfg.update(
+            mapping=mapping, temperature_local=0.5, temperature_chunk=0.5
+        )
     actor.cfg = SimpleNamespace(
         algorithm=SimpleNamespace(group_size=4),
         env=SimpleNamespace(train=SimpleNamespace(max_episode_steps=200)),
@@ -185,7 +195,7 @@ def gather_packets(shards):
     return fields
 
 
-def expected_weights(scope="both", shards=None):
+def expected_weights(scope="both", shards=None, mapping="linear_centered"):
     packets = gather_packets(shards or sample_shards())
     return compute_dvac_two_level_weights(
         torch.cat(packets[1], 1),
@@ -196,6 +206,9 @@ def expected_weights(scope="both", shards=None):
         scope=scope,
         alpha_local=0.7,
         alpha_chunk=0.8,
+        mapping=mapping,
+        temperature_local=0.5,
+        temperature_chunk=0.5,
     )[0]
 
 
@@ -216,15 +229,16 @@ def fake_all_gather(monkeypatch, actor, packets=None):
 
 @pytest.mark.parametrize("rank", [0, 1])
 @pytest.mark.parametrize("scope", ["both", "positive", "negative"])
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
 def test_actual_prepare_gathers_then_freezes_native_chunk_weights(
-    monkeypatch, tmp_path, rank, scope
+    monkeypatch, tmp_path, rank, scope, mapping
 ):
-    actor = make_actor(rank, scope, tmp_path)
+    actor = make_actor(rank, scope, tmp_path, mapping)
     calls = fake_all_gather(monkeypatch, actor)
     original = actor.rollout_batch["forward_inputs"]["dvac_v_l3"]
     actor._prepare_dvac_train_step()
     weights = actor.rollout_batch["forward_inputs"]["dvac_weights"]
-    expected = expected_weights(scope)[:, rank * 4 : (rank + 1) * 4]
+    expected = expected_weights(scope, mapping=mapping)[:, rank * 4 : (rank + 1) * 4]
     torch.testing.assert_close(weights, expected)
     assert weights.shape == (3, 4, 3) and not weights.requires_grad
     assert len(calls) == 6
@@ -238,6 +252,11 @@ def test_actual_prepare_gathers_then_freezes_native_chunk_weights(
     assert pending["advantages"].shape == (3, 4, 1)
     assert pending["metrics"]["actor/dvac_group_count"] == 2
     assert pending["metrics"]["actor/dvac_weight_mean"] == pytest.approx(1.0, abs=2e-6)
+    assert pending["config"] == actor._dvac_two_level_contract()
+    if mapping == "exp_mean":
+        assert pending["config"]["mapping"] == "exp_mean"
+        assert pending["config"]["temperature_local"] == 0.5
+        assert pending["config"]["temperature_chunk"] == 0.5
     with torch.no_grad():
         original.add_(5.0)
     torch.testing.assert_close(weights, expected)
@@ -299,14 +318,18 @@ def test_recv_freezes_native_group_ids_and_rejects_split_packet():
         asyncio.run(actor.recv_rollout_trajectories(FakeChannel(packet)))
 
 
-def test_step_sidecar_and_resume_lock_two_level_contract(monkeypatch, tmp_path):
-    actor = make_actor(tmp_path=tmp_path)
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_step_sidecar_and_resume_lock_two_level_contract(
+    monkeypatch, tmp_path, mapping
+):
+    actor = make_actor(tmp_path=tmp_path, mapping=mapping)
     fake_all_gather(monkeypatch, actor)
     actor._prepare_dvac_train_step()
     actor._write_dvac_step_artifact(actor._dvac_pending_step)
     step_path = tmp_path / "runner_step_0007.pt"
     saved = torch.load(step_path, weights_only=False)
     assert saved["schema_version"] == 2 and saved["actor_rank"] == 0
+    assert saved["config"] == actor._dvac_two_level_contract()
     torch.testing.assert_close(saved["weights"], actor._dvac_pending_step["weights"])
     assert saved["group_ids"].shape == (4,)
     assert not (tmp_path / "runner_step_0007.partial.pt").exists()
@@ -327,7 +350,40 @@ def test_step_sidecar_and_resume_lock_two_level_contract(monkeypatch, tmp_path):
         actor.load_checkpoint(str(tmp_path / "checkpoint"))
 
 
-def _gloo_actor_worker(rank, world_size, directory):
+def test_legacy_sidecar_accepts_only_semantically_identical_linear_mapping(tmp_path):
+    actor = make_actor(tmp_path=tmp_path)
+    checkpoint = str(tmp_path / "checkpoint")
+    actor.save_checkpoint(checkpoint, 7)
+    sidecar = actor._dvac_sidecar_path(checkpoint)
+    payload = json.loads(sidecar.read_text())
+    assert "mapping" not in payload["two_level_config"]
+    # Explicit linear and irrelevant temperatures preserve old exact behavior.
+    actor.dvac_train_cfg.update(
+        mapping="linear_centered", temperature_local=0.25, temperature_chunk=9.0
+    )
+    actor.load_checkpoint(checkpoint)
+    payload["two_level_config"].update(
+        mapping="linear_centered", temperature_local=3.0, temperature_chunk=0.1
+    )
+    sidecar.write_text(json.dumps(payload))
+    actor.load_checkpoint(checkpoint)
+    actor.dvac_train_cfg["mapping"] = "exp_mean"
+    with pytest.raises(ValueError, match="two-level resume configuration mismatch"):
+        actor.load_checkpoint(checkpoint)
+
+
+@pytest.mark.parametrize("field", ["temperature_local", "temperature_chunk", "mapping"])
+def test_exp_sidecar_rejects_changed_effective_distribution(tmp_path, field):
+    actor = make_actor(tmp_path=tmp_path, mapping="exp_mean")
+    checkpoint = str(tmp_path / "checkpoint")
+    actor.save_checkpoint(checkpoint, 7)
+    actor.load_checkpoint(checkpoint)
+    actor.dvac_train_cfg[field] = "linear_centered" if field == "mapping" else 0.25
+    with pytest.raises(ValueError, match="two-level resume configuration mismatch"):
+        actor.load_checkpoint(checkpoint)
+
+
+def _gloo_actor_worker(rank, world_size, directory, mapping):
     torch.set_num_threads(1)
     torch.distributed.init_process_group(
         "gloo",
@@ -337,11 +393,11 @@ def _gloo_actor_worker(rank, world_size, directory):
         timeout=timedelta(seconds=45),
     )
     try:
-        actor = make_actor(rank=rank)
+        actor = make_actor(rank=rank, mapping=mapping)
         actor._prepare_dvac_train_step()
         weights = actor.rollout_batch["forward_inputs"]["dvac_weights"]
         torch.testing.assert_close(
-            weights, expected_weights()[:, rank * 4 : (rank + 1) * 4]
+            weights, expected_weights(mapping=mapping)[:, rank * 4 : (rank + 1) * 4]
         )
         torch.save(weights, Path(directory) / f"rank{rank}.pt")
     finally:
@@ -352,9 +408,10 @@ def _gloo_actor_worker(rank, world_size, directory):
     not torch.distributed.is_available() or not torch.distributed.is_gloo_available(),
     reason="CPU gloo unavailable",
 )
-def test_real_two_rank_gloo_prepare_matches_full_rollout(tmp_path):
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_real_two_rank_gloo_prepare_matches_full_rollout(tmp_path, mapping):
     torch.multiprocessing.spawn(
-        _gloo_actor_worker, args=(2, str(tmp_path)), nprocs=2, join=True
+        _gloo_actor_worker, args=(2, str(tmp_path), mapping), nprocs=2, join=True
     )
     gathered = torch.cat(
         [
@@ -363,4 +420,4 @@ def test_real_two_rank_gloo_prepare_matches_full_rollout(tmp_path):
         ],
         dim=1,
     )
-    torch.testing.assert_close(gathered, expected_weights())
+    torch.testing.assert_close(gathered, expected_weights(mapping=mapping))
