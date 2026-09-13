@@ -1,0 +1,43 @@
+# Standalone Stage1 runner: examples/sft/train_fastwam_rlt_stage1.py
+# Full clean50, unchanged current-AR module and 2000-update Stage1 method.
+seed: 0
+steps: 2000
+batch_size: 32
+micro_batch_size: 1
+data:
+  repo_id: physical-intelligence/robotwin
+  path: ${oc.env:ROBOTWIN_RLT_CLEAN50_PATH,/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1}
+  default_prompt: adjust the bottle
+model:
+  model_type: fastwam
+  model_path: ${oc.env:FASTWAM_MODEL_PATH,/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt}
+  checkpoint_path: ${model.model_path}
+  dataset_stats_path: ${oc.env:FASTWAM_STATS_PATH,/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json}
+  action_dim: 14
+  action_horizon: 32
+  num_action_chunks: 24
+  num_inference_steps: 10
+  sigma_shift: 5.0
+  model_forward_batch_size: 1
+  eval_seed: 0
+  fastwam:
+    config_dir: ${oc.env:FASTWAM_CONFIG_DIR}
+    config_name: sim_robotwin
+    task: robotwin_uncond_3cam_384_1e-4
+token:
+  input_dim: 3072
+  embed_dim: 2048
+  prefix_seq_len: 120
+  num_layers: 2
+  num_heads: 8
+  mlp_ratio: 4.0
+  dropout_rate: 0.0
+optim:
+  lr: 2.5e-5
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-8
+  weight_decay: 1.0e-10
+  clip_grad: 1.0
+  warmup_steps: 100
+  min_lr_rate: 0.1

@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "date": "2026-09-13",
+  "base_commit": "77d0a673055db6210bdcdbf11e5ef317d18b990e",
+  "branch": "codex/sz-fastwam-rlt-20260913",
+  "cpu": {
+    "passed": 19,
+    "new_adapter": 4,
+    "original_ar": 4,
+    "robotwin_route_replay": 11,
+    "formal_and_smoke_config_valid": true
+  },
+  "standalone": {
+    "hidden_shape": [
+      1,
+      120,
+      3072
+    ],
+    "stage1_steps": 3,
+    "prefill_oracle_exact": true,
+    "physical_teacher_decode_exact": true,
+    "reference_outside_unit_fraction": 0.2053571492433548,
+    "actor_updated": true,
+    "critic_updated": true,
+    "teacher_frozen": true,
+    "transition": "synthetic bootstrap; real raw observation and teacher reference",
+    "metrics": [
+      {
+        "q_loss": 0.06567703187465668,
+        "actor_loss": 3.3880865573883057,
+        "q_data": 0.32171711325645447,
+        "q_value_0": -0.11729205399751663,
+        "q_value_1": 0.11891334503889084,
+        "q_pi": -0.11729205399751663,
+        "bc_loss": 0.48317456245422363,
+        "bc_ref_loss": 0.48317456245422363,
+        "bc_human_loss": 0.0,
+        "human_mask_ratio": 0.0,
+        "policy_mask_ratio": 1.0,
+        "rlt_dvac/success_query_ratio": 0.0,
+        "rlt_dvac/success_bc_applied": 0.0,
+        "rlt_dvac/enabled": 0.0,
+        "bc_weight": 7.0,
+        "q_weight": 0.05,
+        "actor_weight_schedule_enabled": 0.0,
+        "actor_weight_in_warmup": 0.0,
+        "actor_weight_ramp_progress": 1.0,
+        "action_ref_abs_mean": 0.5862432718276978,
+        "weighted_q": -0.005864602979272604,
+        "weighted_bc": 3.3822219371795654,
+        "reference_dropout_prob": 0.5
+      },
+      {
+        "q_loss": 0.035711199045181274,
+        "actor_loss": 3.2637689113616943,
+        "q_data": 0.010248161852359772,
+        "q_value_0": 0.04930497333407402,
+        "q_value_1": -0.0982811227440834,
+        "q_pi": 0.04930497333407402,
+        "bc_loss": 0.46660488843917847,
+        "bc_ref_loss": 0.4666048586368561,
+        "bc_human_loss": 0.0,
+        "human_mask_ratio": 0.0,
+        "policy_mask_ratio": 1.0,
+        "rlt_dvac/success_query_ratio": 0.0,
+        "rlt_dvac/success_bc_applied": 0.0,
+        "rlt_dvac/enabled": 0.0,
+        "bc_weight": 7.0,
+        "q_weight": 0.05,
+        "actor_weight_schedule_enabled": 0.0,
+        "actor_weight_in_warmup": 0.0,
+        "actor_weight_ramp_progress": 1.0,
+        "action_ref_abs_mean": 0.5721922516822815,
+        "weighted_q": 0.002465248806402087,
+        "weighted_bc": 3.2662341594696045,
+        "reference_dropout_prob": 0.5
+      }
+    ]
+  },
+  "online": {
+    "key": "rlt",
+    "rounds": 3,
+    "collection_success": [
+      {
+        "step": 0,
+        "value": 1.0
+      },
+      {
+        "step": 1,
+        "value": 0.0
+      },
+      {
+        "step": 2,
+        "value": 0.0
+      }
+    ],
+    "returncode": 0,
+    "all_metrics_finite": true,
+    "critic_updates": 6.0,
+    "actor_updates": 3.0,
+    "stage1_smoke": true,
+    "student_output_activation": "identity",
+    "passed": true
+  },
+  "route_metrics": {
+    "train/replay/actor_switch_rate": [
+      {
+        "step": 0,
+        "value": 0.0
+      },
+      {
+        "step": 1,
+        "value": 1.0
+      },
+      {
+        "step": 2,
+        "value": 1.0
+      }
+    ],
+    "train/rlt/actor_updates_run": [
+      {
+        "step": 0,
+        "value": 1.0
+      },
+      {
+        "step": 1,
+        "value": 1.0
+      },
+      {
+        "step": 2,
+        "value": 1.0
+      }
+    ],
+    "train/rlt/critic_updates_run": [
+      {
+        "step": 0,
+        "value": 2.0
+      },
+      {
+        "step": 1,
+        "value": 2.0
+      },
+      {
+        "step": 2,
+        "value": 2.0
+      }
+    ],
+    "train/rlt/global_min_replay_size": [
+      {
+        "step": 0,
+        "value": 7.0
+      },
+      {
+        "step": 1,
+        "value": 15.0
+      },
+      {
+        "step": 2,
+        "value": 23.0
+      }
+    ],
+    "train/rlt/ready_for_online": [
+      {
+        "step": 0,
+        "value": 0.0
+      },
+      {
+        "step": 1,
+        "value": 1.0
+      },
+      {
+        "step": 2,
+        "value": 1.0
+      }
+    ],
+    "train/rlt/update_step": [
+      {
+        "step": 0,
+        "value": 0.0
+      },
+      {
+        "step": 1,
+        "value": 2.0
+      },
+      {
+        "step": 2,
+        "value": 4.0
+      }
+    ]
+  },
+  "checkpoint": {
+    "marker": {
+      "actor_world_size": 1,
+      "complete": true,
+      "rank_files": [
+        "checkpoint_rank_0.pt"
+      ],
+      "rlt_resume_contract_sha256": "4c71c3dd275b5a560fb934c4194349a8b380f018aa6cdfc6cbd089cb9d71f16a",
+      "saved_runner_step": 3,
+      "schema_version": 1,
+      "update_step": 6
+    },
+    "rank_files": [
+      {
+        "name": "checkpoint_rank_0.pt",
+        "exists": true,
+        "bytes": 2835
+      }
+    ]
+  },
+  "online_acceptance_sha256": "18d45858511974da22f5d240b52c03663cab01cd31ce8efc524fa7eb6ceb878d",
+  "limits": "Interface smoke: 8 clean50 frames, Stage1 2 updates restored to 3; not a full Stage1 or formal task-performance result."
+}

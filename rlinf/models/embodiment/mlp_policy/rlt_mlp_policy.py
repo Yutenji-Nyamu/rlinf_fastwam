@@ -37,6 +37,7 @@ class RLTMLPPolicy(MLPPolicy):
         add_q_head: bool = True,
         q_head_type: str = "default",
         fixed_std: float = 0.002,
+        output_activation: str = "tanh",
     ):
         if not add_q_head:
             raise ValueError(
@@ -75,6 +76,9 @@ class RLTMLPPolicy(MLPPolicy):
         self.ref_chunk_len = ref_chunk_len
         self.flat_action_dim = flat_action_dim
         self.fixed_std = float(fixed_std)
+        if output_activation not in ("tanh", "identity"):
+            raise ValueError("RLT output_activation must be tanh or identity")
+        self.output_activation = output_activation
         if self.fixed_std <= 0:
             raise ValueError(f"fixed_std must be positive, got {self.fixed_std}.")
 
@@ -154,7 +158,8 @@ class RLTMLPPolicy(MLPPolicy):
         probs = Normal(action_mean, action_std)
         action = action_mean if deterministic else probs.rsample()
         chunk_logprobs = probs.log_prob(action)
-        action = torch.tanh(action)
+        if self.output_activation == "tanh":
+            action = torch.tanh(action)
         return action, chunk_logprobs, None
 
     def sac_q_forward(self, obs, actions, shared_feature=None, detach_encoder=False):

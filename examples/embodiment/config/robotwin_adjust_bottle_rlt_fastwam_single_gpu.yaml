@@ -1,0 +1,81 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_control
+  - _self_
+
+# Model migration: native Fast H32/C24, z-score identity student. Method budget
+# follows the verified clean single-GPU 600-round current-AR RLT run.
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_rlt_fastwam_current_ar_single_gpu600
+  max_steps: 600
+  max_epochs: 2000
+
+cluster:
+  component_placement:
+    actor,env,rollout: 6
+
+actor:
+  model:
+    num_action_chunks: 24
+    ref_num_action_chunks: 24
+    output_activation: identity
+
+rollout:
+  model:
+    output_activation: ${actor.model.output_activation}
+  rlt_feature_model:
+    model_type: fastwam
+    model_path: ${oc.env:FASTWAM_MODEL_PATH,/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt}
+    checkpoint_path: ${.model_path}
+    dataset_stats_path: ${oc.env:FASTWAM_STATS_PATH,/data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json}
+    precision: bf16
+    action_horizon: 32
+    num_action_chunks: 24
+    action_dim: 14
+    num_inference_steps: 10
+    sigma_shift: 5.0
+    rand_device: cpu
+    model_forward_batch_size: 1
+    eval_seed: 0
+    openpi: null
+    openpi_data: null
+    fastwam:
+      config_dir: ${oc.env:FASTWAM_CONFIG_DIR}
+      config_name: sim_robotwin
+      task: robotwin_uncond_3cam_384_1e-4
+    rlt:
+      enable: true
+      stage1_checkpoint: ${oc.env:FASTWAM_RLT_STAGE1_PATH}
+      minimum_stage1_steps: 2000
+      token_kwargs:
+        input_dim: 3072
+        embed_dim: 2048
+        prefix_seq_len: 120
+        num_layers: 2
+        num_heads: 8
+        mlp_ratio: 4.0
+        dropout_rate: 0.0
+
+env:
+  train:
+    max_episode_steps: 192
+    max_steps_per_rollout_epoch: 192
+    task_config:
+      step_lim: 192
+  eval:
+    max_episode_steps: 192
+    max_steps_per_rollout_epoch: 192
+    task_config:
+      step_lim: 192
+
+algorithm:
+  rlt_resume:
+    contract:
+      model_identity: fastwam_7faa711_robotwin_release_8eaceeb
+      prefix_seq_len: 120
+      feature_input_dim: 3072
+      feature_layer: first_frame_video_final_post_block
+      action_horizon: 32
+      action_chunk: 24
+      canonical_adapter_version: fastwam_robotwin_zscore_v1
+      student_output_activation: ${actor.model.output_activation}

@@ -1,0 +1,33 @@
+defaults:
+  - robotwin_adjust_bottle_rlt_fastwam_single_gpu
+  - _self_
+
+# Interface smoke only: never a mature Stage1 or a formal budget comparison.
+runner:
+  logger:
+    experiment_name: robotwin_adjust_bottle_fastwam_rlt_interface_smoke
+  max_steps: 3
+  val_check_interval: -1
+  save_interval: 3
+actor:
+  global_batch_size: 2
+  micro_batch_size: 1
+env:
+  train:
+    total_num_envs: 1
+  eval:
+    total_num_envs: 1
+    rollout_epoch: 1
+algorithm:
+  update_epoch: 1
+  rlt_schedule:
+    warmup_min_size: 1
+    warmup_post_collect_updates: 2
+    max_updates_per_train_step: 2
+  replay_buffer:
+    cache_size: 100
+    sample_window_size: 100
+rollout:
+  rlt_feature_model:
+    rlt:
+      minimum_stage1_steps: 2

@@ -84,6 +84,11 @@ def _register_builtin_models():
 
         return get_model(cfg, torch_dtype)
 
+    def _build_fastwam(cfg: DictConfig, torch_dtype):
+        from rlinf.models.embodiment.fastwam import get_model
+
+        return get_model(cfg, torch_dtype)
+
     def _build_dexbotic_dm0(cfg: DictConfig, torch_dtype):
         from rlinf.models.embodiment.dexbotic_dm0 import get_model
 
@@ -215,6 +220,7 @@ def _register_builtin_models():
         category="embodied",
         force=True,
     )
+    register_model("fastwam", _build_fastwam, category="embodied", force=True)
     register_model(
         SupportedModel.DEXBOTIC_DM0.value,
         _build_dexbotic_dm0,
