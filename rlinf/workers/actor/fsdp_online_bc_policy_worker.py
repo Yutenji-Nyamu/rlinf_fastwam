@@ -15,6 +15,12 @@ from rlinf.workers.actor.fsdp_dagger_policy_worker import EmbodiedDAGGERFSDPPoli
 
 
 class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
+    def _clip_supervised_grad_norm(self):
+        if str(self.cfg.actor.model.model_type) == "fastwam":
+            # FSDP2 exposes clipping through the RLinf strategy, not Module.
+            return self._strategy.clip_grad_norm_(self.model)
+        return super()._clip_supervised_grad_norm()
+
     def init_worker(self):
         super().init_worker()
         trainable = [
@@ -22,7 +28,16 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             for name, p in self.model.named_parameters()
             if p.requires_grad
         ]
-        if self.cfg.actor.model.openpi.train_expert_only and any(
+        model_cfg = self.cfg.actor.model
+        is_fastwam = str(model_cfg.model_type) == "fastwam"
+        expert_only = is_fastwam or bool(
+            model_cfg.get("openpi", {}).get("train_expert_only", False)
+        )
+        if is_fastwam and (not trainable or any(
+            "mot.mixtures.action." not in name for name, _ in trainable
+        )):
+            raise RuntimeError("Fast-WAM BC must train only the action expert.")
+        if not is_fastwam and expert_only and any(
             "paligemma_with_expert.paligemma." in name for name, _ in trainable
         ):
             raise RuntimeError(
@@ -30,7 +45,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             )
         self.log_info(
             f"Online BC trainable parameters: {sum(n for _, n in trainable):,}; "
-            f"expert_only={self.cfg.actor.model.openpi.train_expert_only}"
+            f"expert_only={expert_only}"
         )
 
     def setup_dagger_components(self):
@@ -51,6 +66,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             max_success_chunks=bc.get("max_success_chunks"),
         )
         if self.demo_weight:
+            if str(self.cfg.actor.model.model_type) == "fastwam":
+                raise ValueError("Fast-WAM online BC currently requires demo_weight=0.")
             self._build_demo_loader()
 
     def _build_demo_loader(self):

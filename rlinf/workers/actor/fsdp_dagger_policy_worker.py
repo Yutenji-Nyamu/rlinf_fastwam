@@ -501,9 +501,7 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
                 self.grad_scaler.scale(actor_loss).backward()
             gbs_actor_loss.append(actor_loss.item() * self.gradient_accumulation)
 
-        actor_grad_norm = self.model.clip_grad_norm_(
-            max_norm=self.cfg.actor.optim.clip_grad
-        )
+        actor_grad_norm = self._clip_supervised_grad_norm()
         self.optimizer.step()
         self.lr_scheduler.step()
 
@@ -546,9 +544,7 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
                 self.grad_scaler.scale(actor_loss).backward()
             gbs_actor_loss.append(actor_loss.item() * num_batches)
 
-        actor_grad_norm = self.model.clip_grad_norm_(
-            max_norm=self.cfg.actor.optim.clip_grad
-        )
+        actor_grad_norm = self._clip_supervised_grad_norm()
         self.optimizer.step()
         self.lr_scheduler.step()
 
@@ -562,6 +558,9 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
             "actor/lr": self.optimizer.param_groups[0]["lr"],
             "actor/grad_norm": actor_grad_norm,
         }
+
+    def _clip_supervised_grad_norm(self):
+        return self.model.clip_grad_norm_(max_norm=self.cfg.actor.optim.clip_grad)
 
     def process_train_metrics(self, metrics):
         """Aggregate DAgger training and replay-buffer metrics."""

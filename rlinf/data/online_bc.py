@@ -53,14 +53,17 @@ class SuccessEpisodeCollector:
                 continue
             # Reuse pre-query observation/normalization inputs, not denoising
             # chains or model_action (the actual submitted command is the label).
+            fastwam_keys = {"image", "text_context", "text_context_mask", "proprio"}
+            is_fastwam = fastwam_keys.issubset(forward_inputs)
             record = {
                 k: v[i].detach().cpu().clone()
                 for k, v in forward_inputs.items()
                 if k.startswith("observation/")
                 or k in ("tokenized_prompt", "tokenized_prompt_mask")
+                or (is_fastwam and k in fastwam_keys)
             }
             if not record:
-                raise ValueError("Missing pre-query OpenPI observation inputs.")
+                raise ValueError("Missing pre-query online BC observation inputs.")
             record["action"] = commands[i].flatten().clone()
             record["action_valid_mask"] = torch.ones_like(commands[i], dtype=torch.bool)
             record["query_idx"] = torch.tensor(len(self.pending[i]))

@@ -491,6 +491,11 @@ class MultiStepRolloutWorker(Worker):
             else self._eval_sampling_params
         )
 
+        if getattr(self.hf_model, "rlinf_accepts_rollout_mode", False):
+            kwargs = {"mode": mode}
+            if self.algorithm_cfg.get("loss_type") == "online_bc":
+                kwargs["online_bc"] = True
+
         if SupportedModel(self.model_cfg.model_type) in [
             SupportedModel.OPENPI,
             SupportedModel.OPENPI_RLINF,
