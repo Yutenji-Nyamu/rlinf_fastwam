@@ -228,9 +228,10 @@ class RLTACLossMixin:
                 std_floor=stats.std_floor,
                 z_clip=self.rlt_dvac_z_clip,
             )
+            success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
             candidate = centered_mean_one_weights(
                 z_scores, strength=self.rlt_dvac_strength
-            ) * self.rlt_dvac_success_scale
+            ) * success_scale
         else:
             log_variances = torch.log(
                 selected_v.float().clamp_min(0) + stats.log_eps
@@ -240,6 +241,8 @@ class RLTACLossMixin:
         apply_weights = mode == "apply" and stats.frozen
         weights = candidate if apply_weights else torch.ones_like(candidate)
         metrics = summarize_weights(weights, z_scores, log_variances)
+        if stats.frozen:
+            metrics.update(scale_metrics)
         metrics.update(
             {
                 "rlt_dvac/enabled": 1.0,
@@ -274,6 +277,7 @@ class RLTACLossMixin:
         success = curr_obs.get("episode_success")
         if not isinstance(success, torch.Tensor):
             raise ValueError("RLT DVAC new requires cached episode_success flags.")
+        success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
         weights, metrics = build_two_level_success_weights(
             selected_v,
             success.reshape(-1),
@@ -281,8 +285,9 @@ class RLTACLossMixin:
             alpha_chunk=self.rlt_dvac_alpha_chunk,
             log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
             minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
-            success_scale=self.rlt_dvac_success_scale,
+            success_scale=success_scale,
         )
+        metrics.update(scale_metrics)
         if self.rlt_dvac_mode == "observe":
             for domain in ("success_applied", "applied"):
                 for name, neutral in (("mean", 1.0), ("std", 0.0), ("ess_ratio", 1.0)):
@@ -347,6 +352,63 @@ class RLTACLossMixin:
             "rlt_dvac/baseline_count": float(stats.count),
             "rlt_dvac/baseline_mean": float(stats.mean),
             "rlt_dvac/baseline_std": float(stats.std),
+        }
+
+    def _rlt_dvac_success_scale_schedule(self) -> dict | None:
+        """Validate the opt-in scale switch and describe its resume anchor."""
+        scale_cfg = getattr(self, "rlt_dvac_cfg", {}).get(
+            "success_scale_schedule", {}
+        ) or {}
+        if not isinstance(scale_cfg, dict):
+            raise ValueError("RLT DVAC success_scale_schedule must be a mapping.")
+        if not bool(scale_cfg.get("enable", False)):
+            return None
+        if (
+            self.rlt_dvac_mode != "apply"
+            or self.rlt_dvac_mapping != "two_level_batch"
+        ):
+            raise ValueError(
+                "RLT DVAC success_scale_schedule requires apply/two_level_batch."
+            )
+        if scale_cfg.get("anchor", "actor_weight_schedule_end") != (
+            "actor_weight_schedule_end"
+        ):
+            raise ValueError("RLT DVAC scale anchor must be actor_weight_schedule_end.")
+        final_scale = float(scale_cfg.get("final_scale", self.rlt_dvac_success_scale))
+        if not math.isfinite(final_scale) or final_scale <= 0:
+            raise ValueError("RLT DVAC final_scale must be finite and positive.")
+        course = self.cfg.algorithm.get("actor_weight_schedule", {}) or {}
+        if OmegaConf.is_config(course):
+            course = OmegaConf.to_container(course, resolve=True)
+        if not isinstance(course, dict) or not bool(course.get("enable", False)):
+            raise ValueError("RLT DVAC scale schedule requires actor_weight_schedule.")
+        for name in ("warmup_updates", "ramp_updates"):
+            value = course.get(name, 0)
+            if isinstance(value, bool) or int(value) != value or value < 0:
+                raise ValueError(f"RLT scale anchor {name} must be a nonnegative integer.")
+        warmup, ramp = int(course.get("warmup_updates", 0)), int(course.get("ramp_updates", 0))
+        return {
+            "final_scale": final_scale,
+            "actor_weight_schedule": dict(course),
+            "actor_weight_defaults": {
+                "bc_weight": float(self.cfg.algorithm.get("bc_weight", 1.0)),
+                "q_weight": float(self.cfg.algorithm.get("q_weight", 1.0)),
+            },
+            "end_update_step": max(warmup, warmup + ramp - 1),
+        }
+
+    def _effective_rlt_dvac_success_scale(self) -> tuple[float, dict[str, float]]:
+        schedule = self._rlt_dvac_success_scale_schedule()
+        if schedule is None:
+            return self.rlt_dvac_success_scale, {}
+        # Use the actor's actual BC/Q curriculum result; do not duplicate its clock.
+        _, _, course_metrics = self._actor_objective_weights()
+        switched = course_metrics["actor_weight_ramp_progress"] >= 1.0
+        scale = schedule["final_scale"] if switched else self.rlt_dvac_success_scale
+        return scale, {
+            "rlt_dvac/success_scale_effective": float(scale),
+            "rlt_dvac/success_scale_schedule_enabled": 1.0,
+            "rlt_dvac/success_scale_switched": float(switched),
         }
 
     def _actor_objective_weights(self) -> tuple[float, float, dict[str, float]]:
@@ -1042,6 +1104,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 )
         else:
             self.rlt_dvac_stats = None
+        self._rlt_dvac_success_scale_schedule()
 
     def _rlt_state_dir(self, base_path: str) -> str:
         return os.path.join(base_path, "sac_components/rlt_trainer_state")
@@ -1088,6 +1151,11 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         contract = dict(contract)
         if getattr(self, "rlt_dvac_mode", "off") != "off":
             contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
+        scale_schedule = self._rlt_dvac_success_scale_schedule()
+        if scale_schedule is not None:
+            # The rlt_dvac dict already carries the scale settings. Protect the
+            # external BC/Q curriculum and its fallback values only when enabled.
+            contract["rlt_dvac_success_scale_anchor"] = scale_schedule
         serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         return serialized, digest
