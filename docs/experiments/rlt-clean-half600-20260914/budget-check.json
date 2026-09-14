@@ -1,0 +1,75 @@
+{
+  "time": "2026-09-14T23:43:27.755331+08:00",
+  "passed": true,
+  "source_sha256": "1c18562db753cd1a7148ea807a198cd9d1bda8db3d459f1f2c366e5ce8f20251",
+  "actual_source_functions": [
+    "_actor_objective_weights",
+    "_rlt_updates_to_run"
+  ],
+  "cases": [
+    {
+      "case": "below",
+      "updates": 0,
+      "desired": 0.0,
+      "online": 0.0
+    },
+    {
+      "case": "warmup",
+      "updates": 800,
+      "desired": 15000.0,
+      "online": 0.0
+    },
+    {
+      "case": "full_warmup",
+      "updates": 1600,
+      "desired": 30000.0,
+      "online": 0.0
+    },
+    {
+      "case": "half_online",
+      "updates": 250,
+      "desired": 15250.0,
+      "online": 1.0
+    },
+    {
+      "case": "full_online",
+      "updates": 500,
+      "desired": 30500.0,
+      "online": 1.0
+    },
+    {
+      "half_update": 0,
+      "full_update": 0,
+      "bc": 7.0,
+      "q": 0.05
+    },
+    {
+      "half_update": 9999,
+      "full_update": 19999,
+      "bc": 7.0,
+      "q": 0.05
+    },
+    {
+      "half_update": 14999,
+      "full_update": 29999,
+      "bc": 6.1,
+      "q": 0.13
+    },
+    {
+      "half_update": 34999,
+      "full_update": 69999,
+      "bc": 2.5,
+      "q": 0.45
+    },
+    {
+      "half_update": 35000,
+      "full_update": 70000,
+      "bc": 2.5,
+      "q": 0.45
+    }
+  ],
+  "nominal_initial_critic_reuse_per_transition": 768,
+  "nominal_initial_actor_reuse_per_transition": 384,
+  "minimum_capped_initialization_rounds": 19,
+  "note": "CPU execution of actual scheduler/weight functions; no learner, GPU, model or extra rollout. Phase-round equivalence is approximate under new trajectories."
+}
