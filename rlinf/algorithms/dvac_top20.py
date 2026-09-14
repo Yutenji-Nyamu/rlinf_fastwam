@@ -67,8 +67,10 @@ def _distributed() -> bool:
 
 
 def _collective_device() -> torch.device:
-    if _distributed() and dist.get_backend() == "nccl":
-        return torch.device("cuda", torch.cuda.current_device())
+    if _distributed():
+        # Follow the same registered-device selection as all_gather_object;
+        # get_backend() may return a composite name such as "cuda:nccl".
+        return torch.device(dist.distributed_c10d._get_object_coll_device())
     return torch.device("cpu")
 
 

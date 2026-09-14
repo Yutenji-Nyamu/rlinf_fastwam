@@ -6,6 +6,7 @@ import random
 import pytest
 import torch
 
+from rlinf.algorithms import dvac_top20
 from rlinf.algorithms.dvac_top20 import (
     DVACTop20Config,
     DVACTop20State,
@@ -144,3 +145,23 @@ def test_distributed_helper_without_process_group():
     expected, _ = compute_top20_weights(v, None, torch.arange(2))
     actual, _ = distributed_top20_weights(v, None, torch.arange(2), config)
     assert torch.equal(expected, actual)
+
+
+@pytest.mark.parametrize("backend, devices, expected", [
+    ("nccl", ["cuda"], "cuda"),
+    ("cuda:nccl", ["cuda"], "cuda"),
+    ("cpu:gloo,cuda:nccl", ["cpu", "cuda"], "cpu"),
+    ("cpu:gloo", ["cpu"], "cpu"),
+])
+def test_collective_device_uses_registered_devices(monkeypatch, backend, devices, expected):
+    # Exercise PyTorch's real object-collective device selection without
+    # allocating CUDA tensors or initializing an actual process group.
+    class FakeProcessGroup:
+        _device_types = [torch.device(device) for device in devices]
+
+    c10d = torch.distributed.distributed_c10d
+    monkeypatch.setattr(c10d, "ProcessGroup", FakeProcessGroup)
+    monkeypatch.setattr(c10d, "_get_default_group", FakeProcessGroup)
+    monkeypatch.setattr(dvac_top20, "_distributed", lambda: True)
+    monkeypatch.setattr(torch.distributed, "get_backend", lambda: backend)
+    assert dvac_top20._collective_device().type == expected
