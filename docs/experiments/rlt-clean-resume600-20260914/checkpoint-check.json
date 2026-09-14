@@ -1,0 +1,127 @@
+{
+  "time": "2026-09-14T16:57:57.757132+08:00",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-control-single-gpu600-20260912",
+  "run": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-control-phys6-fresh600-20260912-v1",
+  "checkpoint": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-control-phys6-fresh600-20260912-v1/current-single-gpu-control-phys6-fresh600-20260912-v1/checkpoints/global_step_350",
+  "read_only": true,
+  "cuda_visible_devices": "",
+  "torch_threads": 1,
+  "checks": {
+    "source_hashes": {
+      "passed": true,
+      "production_commit": "30349428c37a008b95342121c1455debfeb4805e",
+      "sha256": {
+        "rlinf/runners/embodied_runner.py": "fd621df701923fed16f500ec4b4ce53ff95821d19a5ba7f2b70a0891fa5aef51",
+        "rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py": "1c18562db753cd1a7148ea807a198cd9d1bda8db3d459f1f2c366e5ce8f20251",
+        "rlinf/workers/actor/fsdp_sac_policy_worker.py": "ccc61b71a84c754808df1361b85db4cc7e6b7d334ccd295035a2ad3bb9b8d618",
+        "rlinf/hybrid_engines/fsdp/strategy/checkpoint.py": "498052ef5761d55659c54198ebef99cbea7ece7b75085d309d2b3766bede770f",
+        "rlinf/hybrid_engines/fsdp/strategy/base.py": "13214654cb9da81d339211e4dd81b0e0cbf50e2d3906a1ee1ccb07915ef72098",
+        "rlinf/hybrid_engines/fsdp/fsdp_model_manager.py": "d1fa058ccd571d4bcbd03b0b87253f23642f8f8f466a9a76c9be0c7036c31a39",
+        "rlinf/hybrid_engines/fsdp/utils.py": "ca38f9b0446a948e775fca26fe2f46bdc4f5b878de3a3209eff6da31af26a5ec",
+        "rlinf/data/storage/replay/buffer.py": "bedd1988965584fae32ed3d9d80d90145302365613921bf3018b44efc03cdc22",
+        "rlinf/utils/utils.py": "a7b17c215a48cb8a0608b1221b04ae2fa3ff7acf25f02b29006176037a38cc7b"
+      }
+    },
+    "contract_state": {
+      "passed": true,
+      "complete": {
+        "actor_world_size": 1,
+        "complete": true,
+        "rank_files": [
+          "checkpoint_rank_0.pt"
+        ],
+        "rlt_resume_contract_sha256": "a19878ddcfe1ba433e2c106c794243995356d4e3e11980c6bf2d6b51a4bb37c2",
+        "saved_runner_step": 350,
+        "schema_version": 1,
+        "update_step": 155970
+      },
+      "counters": {
+        "update_step": 155970,
+        "local_total_transitions_added": 45299,
+        "local_total_episodes_added": 2800,
+        "global_warmup_ready_total_transitions": 20105,
+        "global_warmup_ready_total_episodes": 1088
+      },
+      "contract_sha256": "a19878ddcfe1ba433e2c106c794243995356d4e3e11980c6bf2d6b51a4bb37c2",
+      "resume_start": 350,
+      "total_endpoint": 600,
+      "additional_rounds": 250,
+      "fixed_alpha": 0,
+      "actor_critic_lr": 0.0001
+    },
+    "dcp_storage": {
+      "passed": true,
+      "storage_entries": 201,
+      "state_entries": 201,
+      "shards": {
+        "__0_0.distcp": 26262693
+      },
+      "payload_loaded": false
+    },
+    "target_cpu_read": {
+      "passed": true,
+      "file": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-control-phys6-fresh600-20260912-v1/current-single-gpu-control-phys6-fresh600-20260912-v1/checkpoints/global_step_350/actor/sac_components/target_model/checkpoint_rank_0.pt",
+      "bytes": 8662967,
+      "tensor_count": 40,
+      "elements": 2162204
+    },
+    "replay": {
+      "passed": true,
+      "metadata": {
+        "trajectory_format": "pt",
+        "size": 45299,
+        "total_samples": 45299,
+        "trajectory_counter": 45299,
+        "seed": 1234
+      },
+      "file_count": 45299,
+      "index_entries": 45299,
+      "first_id": 0,
+      "last_id": 45298,
+      "samples": [
+        {
+          "id": 0,
+          "file": "trajectory_0_bbc03234-997c-519e-bff1-95bc17a99b03.pt",
+          "keys": [
+            "actions",
+            "curr_obs",
+            "dones",
+            "forward_inputs",
+            "intervene_flags",
+            "max_episode_length",
+            "model_weights_id",
+            "next_obs",
+            "rewards",
+            "terminations",
+            "truncations"
+          ],
+          "tensor_count": 12,
+          "elements": 4724
+        },
+        {
+          "id": 45298,
+          "file": "trajectory_45298_59a03817-fde7-5df4-b177-c37770f7d247.pt",
+          "keys": [
+            "actions",
+            "curr_obs",
+            "dones",
+            "forward_inputs",
+            "intervene_flags",
+            "max_episode_length",
+            "model_weights_id",
+            "next_obs",
+            "rewards",
+            "terminations",
+            "truncations"
+          ],
+          "tensor_count": 12,
+          "elements": 4724
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "replay_samples_loaded": 2,
+  "passed": true,
+  "learner_instantiated": false
+}
