@@ -29,6 +29,30 @@ def _centered_minmax(
     return 1.0 + alpha * (scaled - scaled.mean(dim=-1, keepdim=True))
 
 
+def _exp_minmax(
+    values: torch.Tensor, *, alpha: float, eps: float, temperature: float
+) -> torch.Tensor:
+    """Positive mean-one factors, with the same RLT neutral-range threshold."""
+    if alpha == 0.0:
+        return torch.ones_like(values)
+    low = values.amin(dim=-1, keepdim=True)
+    span = values.amax(dim=-1, keepdim=True) - low
+    scaled = torch.where(
+        span > eps,
+        (values - low) / span.clamp_min(eps),
+        torch.zeros_like(values),
+    )
+    # The caller supplies float64 log values. Subtracting the maximum avoids
+    # overflow, and at least one exp(0) keeps each normalization nonzero.
+    exponential = torch.exp(
+        (scaled - scaled.amax(dim=-1, keepdim=True)) / temperature
+    )
+    factors = (1.0 - alpha) + alpha * (
+        exponential / exponential.mean(dim=-1, keepdim=True)
+    )
+    return torch.where(span > eps, factors, torch.ones_like(factors))
+
+
 def _weight_moments(weights: torch.Tensor) -> dict[str, float]:
     """Summarize flattened factors; empty domains have neutral diagnostics."""
     flat = weights.detach().double().reshape(-1)
@@ -55,6 +79,9 @@ def build_two_level_success_weights(
     log_eps: float = 1e-12,
     minmax_eps: float = 1e-6,
     success_scale: float = 1.0,
+    factor_mapping: str = "linear_centered",
+    temperature_local: float = 1.0,
+    temperature_chunk: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Build two-level weights before splitting a complete batch into microbatches.
 
@@ -73,6 +100,11 @@ def build_two_level_success_weights(
         log_eps: Positive finite offset in log(V + eps).
         minmax_eps: Positive finite range threshold for returning neutral factors.
         success_scale: Positive finite multiplier for successful queries only.
+        factor_mapping: Legacy linear_centered or opt-in exp_mean allocation.
+        temperature_local: Positive finite divisor for exp within each query.
+        temperature_chunk: Positive finite divisor for exp across successes.
+            Larger temperatures flatten allocation. Both temperatures are
+            validated for either mapping but are inactive for linear_centered.
 
     Returns:
         Detached float32 weights [B, H] on the input device, and complete-batch
@@ -96,6 +128,10 @@ def build_two_level_success_weights(
         or episode_success.shape[0] != variances.shape[0]
     ):
         raise ValueError("RLT two-level episode_success must be bool [B].")
+    if factor_mapping not in ("linear_centered", "exp_mean"):
+        raise ValueError(
+            "RLT two-level factor_mapping must be linear_centered or exp_mean."
+        )
 
     parameters = {
         "alpha_local": float(alpha_local),
@@ -103,6 +139,8 @@ def build_two_level_success_weights(
         "log_eps": float(log_eps),
         "minmax_eps": float(minmax_eps),
         "success_scale": float(success_scale),
+        "temperature_local": float(temperature_local),
+        "temperature_chunk": float(temperature_chunk),
     }
     for name, value in parameters.items():
         if not math.isfinite(value):
@@ -128,24 +166,39 @@ def build_two_level_success_weights(
         log_values = torch.logaddexp(
             values.log(), values.new_tensor(math.log(parameters["log_eps"]))
         )
-        inner = _centered_minmax(
-            log_values,
-            alpha=parameters["alpha_local"],
-            eps=parameters["minmax_eps"],
-        )
         chunk_signal = log_values.mean(dim=-1)
-        outer = _centered_minmax(
-            chunk_signal.unsqueeze(0),
-            alpha=parameters["alpha_chunk"],
-            eps=parameters["minmax_eps"],
-        ).squeeze(0)
+        if factor_mapping == "linear_centered":
+            # Keep the legacy expressions and float64 path unchanged.
+            inner = _centered_minmax(
+                log_values,
+                alpha=parameters["alpha_local"],
+                eps=parameters["minmax_eps"],
+            )
+            outer = _centered_minmax(
+                chunk_signal.unsqueeze(0),
+                alpha=parameters["alpha_chunk"],
+                eps=parameters["minmax_eps"],
+            ).squeeze(0)
+        else:
+            inner = _exp_minmax(
+                log_values,
+                alpha=parameters["alpha_local"],
+                eps=parameters["minmax_eps"],
+                temperature=parameters["temperature_local"],
+            )
+            outer = _exp_minmax(
+                chunk_signal.unsqueeze(0),
+                alpha=parameters["alpha_chunk"],
+                eps=parameters["minmax_eps"],
+                temperature=parameters["temperature_chunk"],
+            ).squeeze(0)
         success_weights = (
             inner * outer[:, None] * parameters["success_scale"]
         ).float()
         if not torch.isfinite(success_weights).all() or (success_weights <= 0).any():
             raise ValueError(
                 "RLT two-level success weights must be positive finite float32; "
-                "success_scale may exceed the representable range."
+                "success_scale or temperatures may exceed the representable range."
             )
         weights[success] = success_weights
 
@@ -156,6 +209,14 @@ def build_two_level_success_weights(
         f"{prefix}outer_min": float(outer.min().item()) if success_count else 1.0,
         f"{prefix}outer_max": float(outer.max().item()) if success_count else 1.0,
     }
+    if factor_mapping == "exp_mean":
+        metrics.update(
+            {
+                f"{prefix}factor_mapping_exp": 1.0,
+                f"{prefix}temperature_local": parameters["temperature_local"],
+                f"{prefix}temperature_chunk": parameters["temperature_chunk"],
+            }
+        )
     for name, factors in (
         ("inner", inner),
         ("outer", outer),

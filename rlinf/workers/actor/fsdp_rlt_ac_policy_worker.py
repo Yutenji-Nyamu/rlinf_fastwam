@@ -286,6 +286,11 @@ class RLTACLossMixin:
             log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
             minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
             success_scale=success_scale,
+            factor_mapping=getattr(
+                self, "rlt_dvac_factor_mapping", "linear_centered"
+            ),
+            temperature_local=getattr(self, "rlt_dvac_temperature_local", 1.0),
+            temperature_chunk=getattr(self, "rlt_dvac_temperature_chunk", 1.0),
         )
         metrics.update(scale_metrics)
         if self.rlt_dvac_mode == "observe":
@@ -1082,6 +1087,24 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 self.rlt_dvac_alpha_chunk = float(
                     self.rlt_dvac_cfg.get("alpha_chunk", 1.0)
                 )
+                # Effective defaults remain attributes only. The original cfg
+                # is already in the resume contract; do not inject new keys
+                # and change hashes for legacy linear checkpoints.
+                self.rlt_dvac_factor_mapping = str(
+                    self.rlt_dvac_cfg.get("factor_mapping", "linear_centered")
+                ).lower()
+                if self.rlt_dvac_factor_mapping not in {
+                    "linear_centered", "exp_mean"
+                }:
+                    raise ValueError(
+                        "RLT DVAC new factor_mapping must be linear_centered or exp_mean."
+                    )
+                self.rlt_dvac_temperature_local = float(
+                    self.rlt_dvac_cfg.get("temperature_local", 1.0)
+                )
+                self.rlt_dvac_temperature_chunk = float(
+                    self.rlt_dvac_cfg.get("temperature_chunk", 1.0)
+                )
                 for name in ("alpha_local", "alpha_chunk"):
                     value = float(self.rlt_dvac_cfg.get(name, 1.0))
                     if not math.isfinite(value) or not 0 <= value <= 1:
@@ -1090,6 +1113,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                     ("log_eps", 1e-12),
                     ("minmax_eps", 1e-6),
                     ("success_scale", 1.0),
+                    ("temperature_local", 1.0),
+                    ("temperature_chunk", 1.0),
                 ):
                     value = float(self.rlt_dvac_cfg.get(name, default))
                     if not math.isfinite(value) or value <= 0:
