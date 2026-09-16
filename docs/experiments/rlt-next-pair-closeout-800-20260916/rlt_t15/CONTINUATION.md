@@ -1,0 +1,1 @@
+本包保留GPU6原τ1.5/倍率1运行的全部已记录历史；后续从完整CP425恢复到总轮数800，新run为 /data/chenyiteng/results/rlinf-rlt/current-single-gpu-dvac-exp-t15-half4env-resume425to800-phys6-20260916-v1。CP425之后若有旧尾部记录仍保留作证据，但不拼入续训主曲线；续训主曲线应取旧run R1–425与新run R426起。模型、优化器、target-Q、回放及trainer状态的恢复验收以新run STARTUP_VERIFIED为准，本次归档仅检查marker及组件文件元数据。
