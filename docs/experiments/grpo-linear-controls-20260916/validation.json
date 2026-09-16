@@ -1,0 +1,112 @@
+{
+  "time": "2026-09-16T09:21:18.466290+00:00",
+  "passed": true,
+  "base": "34e8c35073c8a53ba4f67489665396f66b8b9dc3",
+  "branch": "codex/sz-pi05-grpo-linear-controls-20260916",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-linear-controls-20260916",
+  "checks": [
+    {
+      "name": "ruff-check",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-B",
+        "-m",
+        "ruff",
+        "check",
+        "--preview",
+        "rlinf/algorithms/dvac_linear_controls.py",
+        "rlinf/workers/actor/embodied_fsdp_actor_worker.py",
+        "tests/unit_tests/test_dvac_linear_controls.py",
+        "tests/unit_tests/test_dvac_adv_new_actor.py"
+      ],
+      "returncode": 0,
+      "tail": "All checks passed!\n"
+    },
+    {
+      "name": "ruff-format-check",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-B",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "rlinf/algorithms/dvac_linear_controls.py",
+        "rlinf/workers/actor/embodied_fsdp_actor_worker.py",
+        "tests/unit_tests/test_dvac_linear_controls.py",
+        "tests/unit_tests/test_dvac_adv_new_actor.py"
+      ],
+      "returncode": 0,
+      "tail": "4 files already formatted\nwarning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "name": "cpu-tests",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-k",
+        "not test_real_cuda_coverage_required",
+        "tests/unit_tests/test_dvac_linear_controls.py",
+        "tests/unit_tests/test_dvac_adv_new_actor.py",
+        "tests/unit_tests/test_dvac_two_level.py",
+        "tests/unit_tests/test_dvac_exp_mean.py",
+        "tests/unit_tests/test_dvac_adv_new_loss.py",
+        "tests/unit_tests/test_grpo_rollout_seed.py"
+      ],
+      "returncode": 0,
+      "tail": "============================= test session starts ==============================\nplatform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0\nrootdir: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-linear-controls-20260916/tests/unit_tests\nconfigfile: pytest.ini\ncollected 163 items / 1 deselected / 162 selected\n\ntests/unit_tests/test_dvac_linear_controls.py .......................... [ 16%]\n................                                                         [ 25%]\ntests/unit_tests/test_dvac_adv_new_actor.py ............................ [ 43%]\n.......                                                                  [ 47%]\ntests/unit_tests/test_dvac_two_level.py .........................        [ 62%]\ntests/unit_tests/test_dvac_exp_mean.py ......................            [ 76%]\ntests/unit_tests/test_dvac_adv_new_loss.py ............................. [ 94%]\n..                                                                       [ 95%]\ntests/unit_tests/test_grpo_rollout_seed.py .......                       [100%]\n\n=============================== warnings summary ===============================\n../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=============== 162 passed, 1 deselected, 16 warnings in 18.14s ================\n"
+    },
+    {
+      "name": "git-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "returncode": 0,
+      "tail": ""
+    }
+  ],
+  "files": [
+    {
+      "path": "rlinf/algorithms/dvac_linear_controls.py",
+      "sha256": "329228144b3c2fbec7e9b0ad86166a7e7b579a637ed60bb736b9030e1c29235f",
+      "bytes": 8420
+    },
+    {
+      "path": "rlinf/workers/actor/embodied_fsdp_actor_worker.py",
+      "sha256": "91b5017b56842a69c4b2d8ecaf1bb697546270cefc97865b81d385a08c5d172e",
+      "bytes": 54697
+    },
+    {
+      "path": "tests/unit_tests/test_dvac_linear_controls.py",
+      "sha256": "098b4cd3c606258b92723b322363d20753710c97f78bfcfb7c6fa604f2815a0a",
+      "bytes": 9756
+    },
+    {
+      "path": "tests/unit_tests/test_dvac_adv_new_actor.py",
+      "sha256": "4fe948d227bf5e29d190cff4c7c5da2254293bb7528025d3170f378e7324bace",
+      "bytes": 25585
+    },
+    {
+      "path": "examples/embodiment/config/dvac_grpo/adv_new.yaml",
+      "sha256": "7f7fcc579ca6053b6e6389ee652a2799ed4aa86906d6f6a77284e47d3d712b03",
+      "bytes": 868
+    },
+    {
+      "path": "examples/embodiment/config/dvac_grpo/adv_linear_positive_a08_a05.yaml",
+      "sha256": "8b248502d84a6c6c48429248765b3176968aac20986f489b47a8bc7f9c585b7d",
+      "bytes": 759
+    },
+    {
+      "path": "docs/experiments/grpo-linear-controls-20260916/README.md",
+      "sha256": "9151d60308795d96570ee4a70994ad1c2716fcb0cf303cdbd2415dc2f6931ddb",
+      "bytes": 5854
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "baseline_run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-dvac-new-half128-seed42-formal200-phys45-20260912-v1",
+  "recipes": [
+    {
+      "recipe": "adv_new",
+      "enabled_contract": {
+        "chunk_dropout": {
+          "enabled": true,
+          "probability": 0.1,
+          "seed": 42
+        },
+        "alpha_schedule": {
+          "enabled": true,
+          "local": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 10,
+            "end_alpha": 0.2
+          },
+          "chunk": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 10,
+            "end_alpha": 0.2
+          }
+        }
+      },
+      "R1": [
+        1.0,
+        1.0
+      ],
+      "R10": [
+        0.2,
+        0.2
+      ],
+      "nonmethod_diff": []
+    },
+    {
+      "recipe": "adv_linear_positive_a08_a05",
+      "enabled_contract": {
+        "chunk_dropout": {
+          "enabled": true,
+          "probability": 0.1,
+          "seed": 42
+        },
+        "alpha_schedule": {
+          "enabled": true,
+          "local": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 10,
+            "end_alpha": 0.2
+          },
+          "chunk": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 10,
+            "end_alpha": 0.2
+          }
+        }
+      },
+      "R1": [
+        0.8,
+        0.5
+      ],
+      "R10": [
+        0.2,
+        0.2
+      ],
+      "nonmethod_diff": []
+    }
+  ]
+}

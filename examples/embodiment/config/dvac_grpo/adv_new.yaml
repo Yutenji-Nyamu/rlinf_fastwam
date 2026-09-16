@@ -7,6 +7,23 @@ scope: both
 selected_l: 3
 alpha_local: 1.0
 alpha_chunk: 1.0
+# Both controls are opt-in; disabled settings preserve the legacy linear path.
+chunk_dropout:
+  enabled: false
+  probability: 0.1  # Fraction of eligible chunks that revert to unweighted adv.
+  seed: 42
+alpha_schedule:
+  enabled: false
+  local:
+    enabled: true
+    start_step: 1  # One-based rollout/training round, not an Adam update.
+    end_step: 10
+    end_alpha: 0.2
+  chunk:
+    enabled: true
+    start_step: 1
+    end_step: 10
+    end_alpha: 0.2
 log_eps: 1.0e-12
 minmax_eps: 1.0e-6
 save_step_tensors: true

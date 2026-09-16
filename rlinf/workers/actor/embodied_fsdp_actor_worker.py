@@ -22,6 +22,11 @@ from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.algorithms.dvac_linear_controls import (
+    apply_chunk_dropout,
+    effective_linear_alphas,
+    linear_controls_contract,
+)
 from rlinf.algorithms.dvac_train_weighting import (
     DVACRecentStats,
     DVACStepStats,
@@ -121,6 +126,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         self.dvac_two_level_enabled = (
             self.dvac_train_enabled and normalization == "two_level_group"
         )
+        if (
+            linear_controls_contract(self.dvac_train_cfg)
+            and not self.dvac_two_level_enabled
+        ):
+            raise ValueError("DVAC linear controls require enabled two-level weighting")
         if self.dvac_two_level_enabled:
             if self.dvac_train_application != "chunk_clipped_action_advantage":
                 raise ValueError(
@@ -652,6 +662,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 self.dvac_train_cfg.get("temperature_chunk", 1.0),
             )
         )
+        controls = linear_controls_contract(self.dvac_train_cfg)
+        if controls:
+            contract["linear_controls"] = controls
         return contract
 
     @torch.no_grad()
@@ -705,14 +718,39 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 "Frozen DVAC group IDs must identify complete native GRPO groups"
             )
         contract = self._dvac_two_level_contract()
+        controls = contract.get("linear_controls", {})
+        weight_config = {
+            k: v
+            for k, v in contract.items()
+            if k not in {"normalization", "linear_controls"}
+        }
+        if controls:
+            alpha_local, alpha_chunk = effective_linear_alphas(
+                contract["alpha_local"],
+                contract["alpha_chunk"],
+                controls,
+                runner_step=int(self.version),
+            )
+            weight_config.update(alpha_local=alpha_local, alpha_chunk=alpha_chunk)
         weights, details = compute_dvac_two_level_weights(
             full_v,
             full_mask,
             full_groups,
             full_adv,
             chunk_contributions=full_contribution.squeeze(-1),
-            **{k: v for k, v in contract.items() if k != "normalization"},
+            **weight_config,
         )
+        if controls:
+            # Freeze one chunk-wide gate on the complete native rollout before
+            # rank slicing, optimizer shuffling and reuse across update epochs.
+            details["pre_dropout_weights"] = weights
+            weights, dropout_mask = apply_chunk_dropout(
+                weights,
+                details["eligible_mask"],
+                controls,
+                runner_step=int(self.version),
+            )
+            details["dropout_mask"] = dropout_mask
         selected = slice(self._rank * batch_size, (self._rank + 1) * batch_size)
         inputs["dvac_weights"] = weights[:, selected].to(variance.device).contiguous()
         mass = full_contribution * full_mask
@@ -737,6 +775,24 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             if full_mask.any()
             else 0.0,
         }
+        if controls:
+            eligible_count = int(details["eligible_mask"].sum())
+            metrics.update(
+                {
+                    "actor/dvac_alpha_local": float(alpha_local),
+                    "actor/dvac_alpha_chunk": float(alpha_chunk),
+                    "actor/dvac_dropout_probability": float(
+                        controls.get("chunk_dropout", {}).get("probability", 0.0)
+                    ),
+                    "actor/dvac_dropout_chunks": float(dropout_mask.sum()),
+                    "actor/dvac_dropout_eligible_chunks": float(eligible_count),
+                    "actor/dvac_dropout_fraction": (
+                        float(dropout_mask.sum()) / eligible_count
+                        if eligible_count
+                        else 0.0
+                    ),
+                }
+            )
         for name, sign_mask in (("positive", full_adv > 0), ("negative", full_adv < 0)):
             side_mass = mass * torch.where(full_mask & sign_mask, full_adv.abs(), 0.0)
             side_denom = side_mass.sum()
