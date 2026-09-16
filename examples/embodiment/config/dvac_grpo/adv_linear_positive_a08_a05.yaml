@@ -1,0 +1,16 @@
+# @package algorithm.dvac_gradient_weighting
+# Success-only linear weighting. Alpha controls amplitude; temperature is ignored by linear.
+mode: apply
+application: chunk_clipped_action_advantage
+normalization: two_level_group
+scope: positive
+selected_l: 3
+mapping: linear
+alpha_local: 0.8
+alpha_chunk: 0.5
+temperature_local: 1.0
+temperature_chunk: 1.0
+log_eps: 1.0e-12
+minmax_eps: 1.0e-6
+save_step_tensors: true
+output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_train
