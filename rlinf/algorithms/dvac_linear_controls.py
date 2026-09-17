@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Optional round schedules and baseline fallback for linear DVAC weights."""
+"""Optional round schedules and baseline fallback for two-level DVAC weights."""
 
 import math
 from collections.abc import Mapping
@@ -59,12 +59,14 @@ def linear_controls_contract(cfg: dict) -> dict:
         cfg: The DVAC configuration, including its mapping and normalization.
 
     Returns:
-        A new dictionary containing only enabled controls. Empty or disabled
+        A new dictionary containing only enabled controls. Linear and exponential
+        mappings share the controls. Empty or disabled
         controls return an empty dictionary, preserving legacy contracts.
 
     Raises:
         ValueError: An enabled control or its applicable DVAC mode is invalid.
     """
+    # Keep this public name and the actor sidecar key for legacy resume.
     cfg = _mapping(cfg, "dvac")
     contract = {}
     dropout = _mapping(cfg.get("chunk_dropout", {}), "chunk_dropout")
@@ -106,11 +108,11 @@ def linear_controls_contract(cfg: dict) -> dict:
             contract["alpha_schedule"] = {"enabled": True, **layers}
 
     if contract and (
-        cfg.get("mapping", "linear_centered") != "linear_centered"
+        cfg.get("mapping", "linear_centered") not in {"linear_centered", "exp_mean"}
         or cfg.get("normalization") != "two_level_group"
     ):
         raise ValueError(
-            "DVAC linear controls require mapping=linear_centered and "
+            "DVAC controls require mapping=linear_centered or exp_mean and "
             "normalization=two_level_group"
         )
     return contract

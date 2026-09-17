@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""CPU checks for opt-in linear DVAC schedules and chunk fallback."""
+"""CPU checks for opt-in two-level DVAC schedules and chunk fallback."""
 
 import copy
 
@@ -37,10 +37,11 @@ def config(**overrides):
     return result
 
 
-def dropout_controls(probability=0.1, seed=42):
+def dropout_controls(probability=0.1, seed=42, mapping="linear_centered"):
     return linear_controls_contract(
         config(
-            chunk_dropout={"enabled": True, "probability": probability, "seed": seed}
+            mapping=mapping,
+            chunk_dropout={"enabled": True, "probability": probability, "seed": seed},
         )
     )
 
@@ -64,8 +65,10 @@ def test_disabled_controls_preserve_legacy_contract_and_weights():
     assert effective_linear_alphas(0.8, 0.5, {}, runner_step=99) == (0.8, 0.5)
 
 
-def test_contract_is_normalized_copy_of_only_enabled_controls():
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_contract_is_normalized_copy_of_only_enabled_controls(mapping):
     cfg = config(
+        mapping=mapping,
         chunk_dropout={"enabled": True},
         alpha_schedule={"enabled": True, "chunk": {"enabled": False}},
     )
@@ -89,21 +92,26 @@ def test_contract_is_normalized_copy_of_only_enabled_controls():
 @pytest.mark.parametrize(
     "version, expected", [(0, 1.0), (3, 11 / 15), (9, 0.2), (30, 0.2)]
 )
-def test_schedule_one_based_round_endpoints(version, expected):
-    controls = linear_controls_contract(config(alpha_schedule={"enabled": True}))
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_schedule_one_based_round_endpoints(version, expected, mapping):
+    controls = linear_controls_contract(
+        config(mapping=mapping, alpha_schedule={"enabled": True})
+    )
     local, chunk = effective_linear_alphas(1.0, 1.0, controls, runner_step=version)
     assert local == pytest.approx(expected)
     assert chunk == pytest.approx(expected)
 
 
-def test_schedule_layers_have_independent_start_target_and_end():
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_schedule_layers_have_independent_start_target_and_end(mapping):
     controls = linear_controls_contract(
         config(
+            mapping=mapping,
             alpha_schedule={
                 "enabled": True,
                 "local": {"start_step": 3, "end_step": 5, "end_alpha": 0.0},
                 "chunk": {"start_step": 1, "end_step": 9, "end_alpha": 0.4},
-            }
+            },
         )
     )
     assert effective_linear_alphas(1.0, 0.8, controls, runner_step=0) == (1.0, 0.8)
@@ -116,21 +124,26 @@ def test_schedule_layers_have_independent_start_target_and_end():
     assert effective_linear_alphas(1.0, 0.8, controls, runner_step=8) == (0.0, 0.4)
 
 
-def test_schedule_can_disable_either_layer_or_both():
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_schedule_can_disable_either_layer_or_both(mapping):
     for off in ("local", "chunk"):
         controls = linear_controls_contract(
-            config(alpha_schedule={"enabled": True, off: {"enabled": False}})
+            config(
+                mapping=mapping,
+                alpha_schedule={"enabled": True, off: {"enabled": False}},
+            )
         )
         result = effective_linear_alphas(1.0, 1.0, controls, runner_step=9)
         assert result == ((1.0, 0.2) if off == "local" else (0.2, 1.0))
     assert (
         linear_controls_contract(
             config(
+                mapping=mapping,
                 alpha_schedule={
                     "enabled": True,
                     "local": {"enabled": False},
                     "chunk": {"enabled": False},
-                }
+                },
             )
         )
         == {}
@@ -138,11 +151,15 @@ def test_schedule_can_disable_either_layer_or_both():
 
 
 @pytest.mark.parametrize("probability", [0.0, 1.0])
-def test_dropout_probability_boundaries_respect_eligibility(probability):
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_dropout_probability_boundaries_respect_eligibility(probability, mapping):
     weights = torch.tensor([[[0.2, 2.0], [1.5, 0.5]]], requires_grad=True)
     eligible = torch.tensor([[[True], [False]]])
     result, dropped = apply_chunk_dropout(
-        weights, eligible, dropout_controls(probability), runner_step=10
+        weights,
+        eligible,
+        dropout_controls(probability, mapping=mapping),
+        runner_step=10,
     )
     assert torch.equal(dropped, eligible if probability else torch.zeros_like(eligible))
     assert torch.equal(result[:, 1], weights.detach()[:, 1])
@@ -153,16 +170,23 @@ def test_dropout_probability_boundaries_respect_eligibility(probability):
     assert torch.equal(weights.detach(), torch.tensor([[[0.2, 2.0], [1.5, 0.5]]]))
 
 
-def test_dropout_is_per_chunk_with_no_rescaling_or_global_rng_effect():
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+@pytest.mark.parametrize("probability", [0.1, 0.2])
+def test_dropout_is_per_chunk_with_no_rescaling_or_global_rng_effect(
+    mapping, probability
+):
     weights = torch.tensor([0.2, 0.8, 1.4, 2.0]).expand(50, 200, 4).clone()
     eligible = torch.ones(50, 200, 1, dtype=torch.bool)
     eligible[:, 100:] = False
     state = torch.random.get_rng_state().clone()
     result, dropped = apply_chunk_dropout(
-        weights, eligible, dropout_controls(), runner_step=15
+        weights,
+        eligible,
+        dropout_controls(probability, mapping=mapping),
+        runner_step=15,
     )
     assert torch.equal(torch.random.get_rng_state(), state)
-    assert 0.08 < dropped.sum().item() / eligible.sum().item() < 0.12
+    assert abs(dropped.sum().item() / eligible.sum().item() - probability) < 0.02
     assert not dropped[~eligible].any()
     expanded = dropped.expand_as(weights)
     assert torch.equal(result[expanded], torch.ones_like(result[expanded]))
@@ -170,15 +194,19 @@ def test_dropout_is_per_chunk_with_no_rescaling_or_global_rng_effect():
     assert torch.equal(weights[0, 0], torch.tensor([0.2, 0.8, 1.4, 2.0]))
 
 
-def test_dropout_round_mask_repeats_across_updates_and_changes_next_round():
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_dropout_round_mask_repeats_across_updates_and_changes_next_round(mapping):
     weights = torch.full((20, 100, 3), 1.4)
     eligible = torch.ones(20, 100, 1, dtype=torch.bool)
-    controls = dropout_controls(0.5)
+    controls = dropout_controls(0.5, mapping=mapping)
     first = apply_chunk_dropout(weights, eligible, controls, runner_step=8)
     repeated = apply_chunk_dropout(weights.clone(), eligible, controls, runner_step=8)
     next_round = apply_chunk_dropout(weights, eligible, controls, runner_step=9)
     other_seed = apply_chunk_dropout(
-        weights, eligible, dropout_controls(0.5, seed=43), runner_step=8
+        weights,
+        eligible,
+        dropout_controls(0.5, seed=43, mapping=mapping),
+        runner_step=8,
     )
     assert torch.equal(first[0], repeated[0])
     assert torch.equal(first[1], repeated[1])
@@ -189,7 +217,7 @@ def test_dropout_round_mask_repeats_across_updates_and_changes_next_round():
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"mapping": "exp_mean", "chunk_dropout": {"enabled": True}},
+        {"mapping": "unknown", "chunk_dropout": {"enabled": True}},
         {"normalization": "recent5", "alpha_schedule": {"enabled": True}},
         {"chunk_dropout": {"enabled": "true"}},
         {"chunk_dropout": {"enabled": True, "probability": float("nan")}},
@@ -245,3 +273,24 @@ def test_runner_step_is_nonnegative_integer(version):
 def test_dropout_rejects_incompatible_shapes_or_types(weights, eligible):
     with pytest.raises(ValueError):
         apply_chunk_dropout(weights, eligible, dropout_controls(), runner_step=0)
+
+
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+@pytest.mark.parametrize(
+    "version, expected", [(0, 1.0), (99, 100 / 199), (199, 0.0), (200, 0.0)]
+)
+def test_200_round_exit_schedule_is_exact(mapping, version, expected):
+    controls = linear_controls_contract(
+        config(
+            mapping=mapping,
+            alpha_schedule={
+                "enabled": True,
+                "local": {"end_step": 200, "end_alpha": 0.0},
+                "chunk": {"end_step": 200, "end_alpha": 0.0},
+            },
+        )
+    )
+    alphas = effective_linear_alphas(1.0, 1.0, controls, runner_step=version)
+    assert alphas == pytest.approx((expected, expected))
+    if version >= 199:
+        assert alphas == (0.0, 0.0)

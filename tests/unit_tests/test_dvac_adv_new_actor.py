@@ -28,6 +28,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from omegaconf import OmegaConf
 
 import rlinf.algorithms.dvac_two_level as helper_module
 from rlinf.algorithms.dvac_linear_controls import (
@@ -40,6 +41,8 @@ from rlinf.algorithms.dvac_two_level import (
     compute_dvac_two_level_weights,
     dvac_mapping_contract,
 )
+from rlinf.algorithms.losses import compute_ppo_actor_loss
+from rlinf.algorithms.utils import preprocess_loss_inputs
 
 
 class CheckpointBase:
@@ -209,6 +212,7 @@ def expected_weights(
     mapping="linear_centered",
     alpha_local=0.7,
     alpha_chunk=0.8,
+    temperature=0.5,
 ):
     packets = gather_packets(shards or sample_shards())
     return compute_dvac_two_level_weights(
@@ -221,8 +225,8 @@ def expected_weights(
         alpha_local=alpha_local,
         alpha_chunk=alpha_chunk,
         mapping=mapping,
-        temperature_local=0.5,
-        temperature_chunk=0.5,
+        temperature_local=temperature,
+        temperature_chunk=temperature,
     )[0]
 
 
@@ -437,9 +441,13 @@ def test_real_two_rank_gloo_prepare_matches_full_rollout(tmp_path, mapping):
     torch.testing.assert_close(gathered, expected_weights(mapping=mapping))
 
 
-def make_controlled_actor(rank=0, scope="positive", probability=0.5, tmp_path=None):
+def make_controlled_actor(
+    rank=0, scope="positive", probability=0.5, tmp_path=None, mapping="linear_centered"
+):
     """Use distinct layer endpoints to expose schedule wiring mistakes."""
-    actor = make_actor(rank=rank, scope=scope, tmp_path=tmp_path)
+    actor = make_actor(rank=rank, scope=scope, tmp_path=tmp_path, mapping=mapping)
+    if mapping == "exp_mean":
+        actor.dvac_train_cfg.update(temperature_local=2.0, temperature_chunk=2.0)
     actor.version = 9  # Zero-based runner step 9 trains the displayed R10.
     actor.dvac_train_cfg.update(
         alpha_local=1.0,
@@ -465,17 +473,25 @@ def make_controlled_actor(rank=0, scope="positive", probability=0.5, tmp_path=No
 
 
 @pytest.mark.parametrize("rank", [0, 1])
-def test_controlled_prepare_freezes_chunk_gate_and_preserves_scope(monkeypatch, rank):
-    actor = make_controlled_actor(rank=rank)
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+@pytest.mark.parametrize("probability", [0.0, 0.2, 0.5])
+def test_controlled_prepare_freezes_chunk_gate_and_preserves_scope(
+    monkeypatch, rank, mapping, probability
+):
+    actor = make_controlled_actor(rank=rank, mapping=mapping, probability=probability)
     fake_all_gather(monkeypatch, actor)
     rng_before = torch.random.get_rng_state().clone()
     actor._prepare_dvac_train_step()
     assert torch.equal(torch.random.get_rng_state(), rng_before)
 
     pending = actor._dvac_pending_step
-    expected = expected_weights(scope="positive", alpha_local=0.2, alpha_chunk=0.8)[
-        :, rank * 4 : (rank + 1) * 4
-    ]
+    expected = expected_weights(
+        mapping=mapping,
+        temperature=2.0,
+        scope="positive",
+        alpha_local=0.2,
+        alpha_chunk=0.8,
+    )[:, rank * 4 : (rank + 1) * 4]
     torch.testing.assert_close(pending["pre_dropout_weights"], expected)
     dropped = pending["dropout_mask"]
     assert dropped.shape == (3, 4, 1) and dropped.dtype == torch.bool
@@ -486,17 +502,18 @@ def test_controlled_prepare_freezes_chunk_gate_and_preserves_scope(monkeypatch, 
     assert torch.equal(weights[outside], torch.ones_like(weights[outside]))
     assert pending["metrics"]["actor/dvac_alpha_local"] == pytest.approx(0.2)
     assert pending["metrics"]["actor/dvac_alpha_chunk"] == pytest.approx(0.8)
-    assert pending["metrics"]["actor/dvac_dropout_probability"] == 0.5
+    assert pending["metrics"]["actor/dvac_dropout_probability"] == probability
     # The gate travels with the weights and is not redrawn by optimizer reuse.
     with pytest.raises(ValueError, match="Missing rollout DVAC signal"):
         actor._prepare_dvac_train_step()
 
 
 @pytest.mark.parametrize("scope", ["both", "positive"])
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
 def test_controlled_prepare_full_dropout_restores_original_advantages(
-    monkeypatch, scope
+    monkeypatch, scope, mapping
 ):
-    actor = make_controlled_actor(scope=scope, probability=1.0)
+    actor = make_controlled_actor(scope=scope, probability=1.0, mapping=mapping)
     advantages = actor.rollout_batch["advantages"].detach().clone()
     fake_all_gather(monkeypatch, actor)
     actor._prepare_dvac_train_step()
@@ -514,15 +531,20 @@ def test_controlled_prepare_full_dropout_restores_original_advantages(
     "runner_step, local_alpha, chunk_alpha",
     [(0, 1.0, 1.0), (9, 0.2, 0.8), (18, 0.2, 0.6), (19, 0.2, 0.6)],
 )
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
 def test_actor_schedule_uses_absolute_round_and_independent_endpoints(
-    monkeypatch, runner_step, local_alpha, chunk_alpha
+    monkeypatch, runner_step, local_alpha, chunk_alpha, mapping
 ):
-    actor = make_controlled_actor(probability=0.0)
+    actor = make_controlled_actor(probability=0.0, mapping=mapping)
     actor.version = runner_step
     fake_all_gather(monkeypatch, actor)
     actor._prepare_dvac_train_step()
     expected = expected_weights(
-        scope="positive", alpha_local=local_alpha, alpha_chunk=chunk_alpha
+        mapping=mapping,
+        temperature=2.0,
+        scope="positive",
+        alpha_local=local_alpha,
+        alpha_chunk=chunk_alpha,
     )[:, :4]
     torch.testing.assert_close(
         actor.rollout_batch["forward_inputs"]["dvac_weights"], expected
@@ -533,10 +555,11 @@ def test_actor_schedule_uses_absolute_round_and_independent_endpoints(
     assert metrics["actor/dvac_dropout_chunks"] == 0
 
 
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
 def test_controlled_sidecar_resume_locks_enabled_fields_and_absolute_schedule(
-    monkeypatch, tmp_path
+    monkeypatch, tmp_path, mapping
 ):
-    actor = make_controlled_actor(tmp_path=tmp_path)
+    actor = make_controlled_actor(tmp_path=tmp_path, mapping=mapping)
     checkpoint = str(tmp_path / "global_step_10" / "actor")
     actor.save_checkpoint(checkpoint, 10)
     actor.load_checkpoint(checkpoint)
@@ -561,21 +584,44 @@ def test_controlled_sidecar_resume_locks_enabled_fields_and_absolute_schedule(
 
     # The runner restores CP10's absolute completed-step counter, then passes
     # version=10 before R11. A fresh object must not restart either schedule.
-    resumed = make_controlled_actor(tmp_path=tmp_path)
+    resumed = make_controlled_actor(tmp_path=tmp_path, mapping=mapping)
     resumed.load_checkpoint(checkpoint)
     resumed.version = sidecar["runner_step"]
     fake_all_gather(monkeypatch, resumed)
     resumed._prepare_dvac_train_step()
     expected = expected_weights(
-        scope="positive", alpha_local=0.2, alpha_chunk=1.0 - 0.4 * 10 / 18
+        mapping=mapping,
+        temperature=2.0,
+        scope="positive",
+        alpha_local=0.2,
+        alpha_chunk=1.0 - 0.4 * 10 / 18,
     )[:, :4]
     torch.testing.assert_close(
         resumed._dvac_pending_step["pre_dropout_weights"], expected
     )
+    # Identical absolute version also replays the full-rollout gate after resume.
+    uninterrupted = make_controlled_actor(mapping=mapping)
+    uninterrupted.version = sidecar["runner_step"]
+    fake_all_gather(monkeypatch, uninterrupted)
+    uninterrupted._prepare_dvac_train_step()
+    for key in ("pre_dropout_weights", "dropout_mask", "weights"):
+        assert torch.equal(
+            resumed._dvac_pending_step[key], uninterrupted._dvac_pending_step[key]
+        )
+    if mapping == "exp_mean":
+        for field in ("temperature_local", "temperature_chunk"):
+            original = actor.dvac_train_cfg[field]
+            actor.dvac_train_cfg[field] = 1.0
+            with pytest.raises(
+                ValueError, match="two-level resume configuration mismatch"
+            ):
+                actor.load_checkpoint(checkpoint)
+            actor.dvac_train_cfg[field] = original
 
 
-def test_explicitly_disabled_controls_accept_legacy_sidecar(tmp_path):
-    actor = make_actor(tmp_path=tmp_path)
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_explicitly_disabled_controls_accept_legacy_sidecar(tmp_path, mapping):
+    actor = make_actor(tmp_path=tmp_path, mapping=mapping)
     checkpoint = str(tmp_path / "legacy")
     actor.save_checkpoint(checkpoint, 7)
     legacy = json.loads(actor._dvac_sidecar_path(checkpoint).read_text())
@@ -597,7 +643,7 @@ def test_explicitly_disabled_controls_accept_legacy_sidecar(tmp_path):
     actor.load_checkpoint(checkpoint)
 
 
-def _gloo_controlled_actor_worker(rank, world_size, directory):
+def _gloo_controlled_actor_worker(rank, world_size, directory, mapping):
     torch.set_num_threads(1)
     torch.manual_seed(1300 + rank)  # Ambient rank RNG must not define the gate.
     torch.distributed.init_process_group(
@@ -608,7 +654,7 @@ def _gloo_controlled_actor_worker(rank, world_size, directory):
         timeout=timedelta(seconds=45),
     )
     try:
-        actor = make_controlled_actor(rank=rank)
+        actor = make_controlled_actor(rank=rank, mapping=mapping)
         actor._prepare_dvac_train_step()
         pending = actor._dvac_pending_step
         torch.save(
@@ -626,18 +672,28 @@ def _gloo_controlled_actor_worker(rank, world_size, directory):
     not torch.distributed.is_available() or not torch.distributed.is_gloo_available(),
     reason="CPU gloo unavailable",
 )
-def test_real_two_rank_gloo_controls_match_complete_rollout(tmp_path):
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+def test_real_two_rank_gloo_controls_match_complete_rollout(tmp_path, mapping):
     torch.multiprocessing.spawn(
-        _gloo_controlled_actor_worker, args=(2, str(tmp_path)), nprocs=2, join=True
+        _gloo_controlled_actor_worker,
+        args=(2, str(tmp_path), mapping),
+        nprocs=2,
+        join=True,
     )
     parts = [
         torch.load(tmp_path / f"controlled_rank{rank}.pt", weights_only=True)
         for rank in range(2)
     ]
-    expected_pre = expected_weights(scope="positive", alpha_local=0.2, alpha_chunk=0.8)
+    expected_pre = expected_weights(
+        mapping=mapping,
+        temperature=2.0,
+        scope="positive",
+        alpha_local=0.2,
+        alpha_chunk=0.8,
+    )
     packets = gather_packets(sample_shards())
     eligible = torch.cat(packets[2], 1) & (torch.cat(packets[3], 1) > 0)
-    actor = make_controlled_actor()
+    actor = make_controlled_actor(mapping=mapping)
     expected, mask = apply_chunk_dropout(
         expected_pre,
         eligible,
@@ -652,3 +708,112 @@ def test_real_two_rank_gloo_controls_match_complete_rollout(tmp_path):
     torch.testing.assert_close(
         torch.cat([part["pre_dropout_weights"] for part in parts], 1), expected_pre
     )
+
+
+def exp_exit_recipe():
+    path = (
+        Path(helper_module.__file__).resolve().parents[2]
+        / "examples/embodiment/config/dvac_grpo"
+        / "adv_exp_positive_t2_drop02_anneal200.yaml"
+    )
+    return OmegaConf.to_container(OmegaConf.load(path), resolve=False)
+
+
+@pytest.mark.parametrize(
+    "runner_step, alpha", [(0, 1.0), (99, 100 / 199), (199, 0.0), (200, 0.0)]
+)
+def test_exp_exit_recipe_drives_actual_actor_absolute_round(
+    monkeypatch, runner_step, alpha
+):
+    actor = make_actor(mapping="exp_mean")
+    actor.dvac_train_cfg.update(exp_exit_recipe())
+    actor.version = runner_step
+    fake_all_gather(monkeypatch, actor)
+    actor._prepare_dvac_train_step()
+    pending = actor._dvac_pending_step
+    assert pending["config"]["temperature_local"] == 2.0
+    assert pending["config"]["temperature_chunk"] == 2.0
+    assert pending["metrics"]["actor/dvac_alpha_local"] == pytest.approx(alpha)
+    assert pending["metrics"]["actor/dvac_alpha_chunk"] == pytest.approx(alpha)
+    assert pending["metrics"]["actor/dvac_dropout_probability"] == 0.2
+    expected = expected_weights(
+        scope="positive",
+        mapping="exp_mean",
+        temperature=2.0,
+        alpha_local=alpha,
+        alpha_chunk=alpha,
+    )[:, :4]
+    torch.testing.assert_close(pending["pre_dropout_weights"], expected)
+    torch.testing.assert_close(
+        pending["weights"], torch.where(pending["dropout_mask"], 1.0, expected)
+    )
+    if runner_step >= 199:
+        assert torch.equal(pending["weights"], torch.ones_like(pending["weights"]))
+
+
+@pytest.mark.parametrize("mapping", ["linear_centered", "exp_mean"])
+@pytest.mark.parametrize("exit_mode", ["alpha_zero", "full_dropout"])
+@pytest.mark.parametrize("clamp_and_dual_clip", [False, True])
+def test_controlled_actor_exit_matches_same_batch_clean_loss_and_gradient(
+    monkeypatch, mapping, exit_mode, clamp_and_dual_clip
+):
+    actor = make_controlled_actor(mapping=mapping, probability=0.2)
+    if exit_mode == "alpha_zero":
+        for layer in ("local", "chunk"):
+            actor.dvac_train_cfg["alpha_schedule"][layer].update(
+                end_step=200, end_alpha=0.0
+            )
+        actor.version = 199
+    else:
+        actor.dvac_train_cfg["chunk_dropout"]["probability"] = 1.0
+    fake_all_gather(monkeypatch, actor)
+    actor._prepare_dvac_train_step()
+    weights = actor.rollout_batch["forward_inputs"]["dvac_weights"].flatten(0, 1)
+    assert torch.equal(weights, torch.ones_like(weights))
+    batch, horizon = weights.shape
+    ratios = torch.tensor([1.05, 0.7, 1.0, 1.4]).repeat(batch // 4)
+    actual = (
+        (ratios.log()[:, None, None] / (horizon * 14))
+        .expand(-1, horizon, 14)
+        .clone()
+        .requires_grad_()
+    )
+    control = actual.detach().clone().requires_grad_()
+    advantages = actor.rollout_batch["advantages"].detach().flatten(0, 1)
+    mask = actor.rollout_batch["loss_mask"].reshape(batch, 1)
+    lengths = actor.rollout_batch["loss_mask_sum"].reshape(batch, 1)
+    lengths = torch.where(mask, lengths, 1.0)
+
+    def native_loss(logprobs, weighting):
+        inputs = preprocess_loss_inputs(
+            logprobs=logprobs,
+            old_logprobs=torch.zeros_like(logprobs),
+            advantages=advantages,
+            logprob_type="chunk_level",
+            reward_type="chunk_level",
+            single_action_dim=14,
+            loss_mask=mask,
+            loss_mask_sum=lengths,
+            dvac_chunk_advantage_weights=weighting,
+        )
+        return compute_ppo_actor_loss(
+            **inputs,
+            clip_ratio_low=0.2,
+            clip_ratio_high=0.2,
+            clip_ratio_c=1.5 if clamp_and_dual_clip else None,
+            clip_log_ratio_min=-0.25 if clamp_and_dual_clip else None,
+            clip_log_ratio_max=0.25 if clamp_and_dual_clip else None,
+            max_episode_steps=200,
+        )
+
+    loss, metrics = native_loss(actual, weights)
+    clean_loss, clean_metrics = native_loss(control, None)
+    torch.testing.assert_close(loss, clean_loss, atol=2e-6, rtol=2e-6)
+    assert metrics.keys() == clean_metrics.keys()
+    for key in metrics:
+        torch.testing.assert_close(
+            metrics[key], clean_metrics[key], equal_nan=True, atol=2e-6, rtol=2e-6
+        )
+    loss.backward()
+    clean_loss.backward()
+    torch.testing.assert_close(actual.grad, control.grad, atol=2e-6, rtol=2e-6)

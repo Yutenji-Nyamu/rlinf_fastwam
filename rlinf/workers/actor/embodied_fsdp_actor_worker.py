@@ -130,7 +130,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             linear_controls_contract(self.dvac_train_cfg)
             and not self.dvac_two_level_enabled
         ):
-            raise ValueError("DVAC linear controls require enabled two-level weighting")
+            raise ValueError("DVAC controls require enabled two-level weighting")
         if self.dvac_two_level_enabled:
             if self.dvac_train_application != "chunk_clipped_action_advantage":
                 raise ValueError(

@@ -1,0 +1,33 @@
+# @package algorithm.dvac_gradient_weighting
+# Positive DVAC with fixed tau=2, chunk fallback, and alpha exit at round 200.
+mode: apply
+application: chunk_clipped_action_advantage
+normalization: two_level_group
+scope: positive
+selected_l: 3
+mapping: exp_mean
+alpha_local: 1.0
+alpha_chunk: 1.0
+temperature_local: 2.0
+temperature_chunk: 2.0
+# The selected chunk keeps its original advantage and normal training loss.
+chunk_dropout:
+  enabled: true
+  probability: 0.2
+  seed: 42
+alpha_schedule:
+  enabled: true
+  local:
+    enabled: true
+    start_step: 1  # One-based rollout/training round, not an Adam update.
+    end_step: 200
+    end_alpha: 0.0
+  chunk:
+    enabled: true
+    start_step: 1
+    end_step: 200
+    end_alpha: 0.0
+log_eps: 1.0e-12
+minmax_eps: 1.0e-6
+save_step_tensors: true
+output_dir: ${runner.logger.log_path}/${runner.logger.experiment_name}/dvac_train

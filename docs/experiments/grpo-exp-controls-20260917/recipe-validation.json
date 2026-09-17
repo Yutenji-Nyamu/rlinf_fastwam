@@ -1,0 +1,148 @@
+{
+  "time": "2026-09-17T12:07:43.340104+08:00",
+  "passed": true,
+  "recipe": "adv_exp_positive_t2_drop02_anneal200",
+  "baseline_run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-clean-half128-seed42-formal200-phys45-20260911-v1",
+  "baseline_config_sha256": "3049922cd93199ae5a9e8848efd7a0da482c38d924c146a2b420f927bce8ecfd",
+  "nonmethod_diff": [],
+  "diff": {
+    "algorithm.dvac_gradient_weighting.alpha_chunk": [
+      null,
+      1.0
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_local": [
+      null,
+      1.0
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.chunk.enabled": [
+      null,
+      true
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.chunk.end_alpha": [
+      null,
+      0.0
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.chunk.end_step": [
+      null,
+      200
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.chunk.start_step": [
+      null,
+      1
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.enabled": [
+      null,
+      true
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.local.enabled": [
+      null,
+      true
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.local.end_alpha": [
+      null,
+      0.0
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.local.end_step": [
+      null,
+      200
+    ],
+    "algorithm.dvac_gradient_weighting.alpha_schedule.local.start_step": [
+      null,
+      1
+    ],
+    "algorithm.dvac_gradient_weighting.application": [
+      "logprob_st",
+      "chunk_clipped_action_advantage"
+    ],
+    "algorithm.dvac_gradient_weighting.chunk_dropout.enabled": [
+      null,
+      true
+    ],
+    "algorithm.dvac_gradient_weighting.chunk_dropout.probability": [
+      null,
+      0.2
+    ],
+    "algorithm.dvac_gradient_weighting.chunk_dropout.seed": [
+      null,
+      42
+    ],
+    "algorithm.dvac_gradient_weighting.mapping": [
+      null,
+      "exp_mean"
+    ],
+    "algorithm.dvac_gradient_weighting.minmax_eps": [
+      null,
+      1e-06
+    ],
+    "algorithm.dvac_gradient_weighting.mode": [
+      "off",
+      "apply"
+    ],
+    "algorithm.dvac_gradient_weighting.normalization": [
+      null,
+      "two_level_group"
+    ],
+    "algorithm.dvac_gradient_weighting.scope": [
+      null,
+      "positive"
+    ],
+    "algorithm.dvac_gradient_weighting.temperature_chunk": [
+      null,
+      2.0
+    ],
+    "algorithm.dvac_gradient_weighting.temperature_local": [
+      null,
+      2.0
+    ]
+  },
+  "control_contract": {
+    "chunk_dropout": {
+      "enabled": true,
+      "probability": 0.2,
+      "seed": 42
+    },
+    "alpha_schedule": {
+      "enabled": true,
+      "local": {
+        "enabled": true,
+        "start_step": 1,
+        "end_step": 200,
+        "end_alpha": 0.0
+      },
+      "chunk": {
+        "enabled": true,
+        "start_step": 1,
+        "end_step": 200,
+        "end_alpha": 0.0
+      }
+    }
+  },
+  "effective_alphas": {
+    "1": [
+      1.0,
+      1.0
+    ],
+    "100": [
+      0.5025125628140703,
+      0.5025125628140703
+    ],
+    "200": [
+      0.0,
+      0.0
+    ],
+    "201": [
+      0.0,
+      0.0
+    ]
+  },
+  "formal_budget": {
+    "trajectories_per_round": 128,
+    "global_batch_size": 512,
+    "micro_batch_size": 32,
+    "update_epoch": 2,
+    "group_size": 8,
+    "lr": 5e-06,
+    "rounds": 200,
+    "rollout_seed": 42
+  }
+}
