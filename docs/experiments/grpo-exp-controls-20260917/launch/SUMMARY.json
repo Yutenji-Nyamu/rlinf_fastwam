@@ -1,0 +1,88 @@
+{
+  "time": "2026-09-17T12:36:11.086132+08:00",
+  "source_head": "ab4d065488c1dd1181731f107a9ba6721a421e27",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-controls-20260917",
+  "branch": "codex/sz-pi05-grpo-exp-controls-20260917",
+  "formal_run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1",
+  "namespace": "RLinf_grpo_exp_t2_drop02_anneal200_positive_half128_seed42_formal45_20260917",
+  "smoke_run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1",
+  "smoke_passed": true,
+  "startup_passed": true,
+  "smoke_exit": 0,
+  "eligible_chunks": 129,
+  "dropped_chunks": 28,
+  "dropout_fraction": 0.21705426356589147,
+  "smoke_tensors": [
+    {
+      "file": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/dvac_train/actor_rank00/runner_step_0000.pt",
+      "sha256": "c45fef7f7484f9dfad2f7302e6a60620e488566c0a0ed242a757bdb60b16bd4d",
+      "eligible_chunks": 64,
+      "dropped_chunks": 13,
+      "min": 0.5548076033592224,
+      "max": 1.6918158531188965,
+      "kept_nonunit_positions": 2550
+    },
+    {
+      "file": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/dvac_train/actor_rank01/runner_step_0000.pt",
+      "sha256": "dde5f2e0f6fb70cfe717ac6bb9effd7b8d297f19dfed301168b7978b43de4170",
+      "eligible_chunks": 65,
+      "dropped_chunks": 15,
+      "min": 0.595583975315094,
+      "max": 1.7332496643066406,
+      "kept_nonunit_positions": 2500
+    }
+  ],
+  "budget": {
+    "fresh_rounds": 200,
+    "episodes_per_round": 128,
+    "global_batch_size": 512,
+    "micro_batch_size": 32,
+    "update_epoch": 2,
+    "eval_episodes": 32
+  },
+  "method": {
+    "mode": "apply",
+    "application": "chunk_clipped_action_advantage",
+    "selected_l": 3,
+    "warmup_steps": 1,
+    "window_steps": 5,
+    "log_eps": 1e-12,
+    "std_floor": 1e-06,
+    "z_clip": 2.0,
+    "strength": 0.5,
+    "weight_min": null,
+    "weight_max": null,
+    "save_step_tensors": true,
+    "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1/dvac_train",
+    "normalization": "two_level_group",
+    "scope": "positive",
+    "mapping": "exp_mean",
+    "alpha_local": 1.0,
+    "alpha_chunk": 1.0,
+    "temperature_local": 2.0,
+    "temperature_chunk": 2.0,
+    "chunk_dropout": {
+      "enabled": true,
+      "probability": 0.2,
+      "seed": 42
+    },
+    "alpha_schedule": {
+      "enabled": true,
+      "local": {
+        "enabled": true,
+        "start_step": 1,
+        "end_step": 200,
+        "end_alpha": 0.0
+      },
+      "chunk": {
+        "enabled": true,
+        "start_step": 1,
+        "end_step": 200,
+        "end_alpha": 0.0
+      }
+    },
+    "minmax_eps": 1e-06
+  },
+  "method_external_config_diff": {},
+  "note": "One full native128 smoke round validates startup and method plumbing. It is not a learning-effectiveness result. Training remains on the frozen production source head; this commit contains docs evidence only."
+}

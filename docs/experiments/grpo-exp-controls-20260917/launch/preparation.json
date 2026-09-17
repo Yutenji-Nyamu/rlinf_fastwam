@@ -1,0 +1,152 @@
+{
+  "time": "2026-09-17T12:13:00.266747+08:00",
+  "passed": true,
+  "source_head": "ab4d065488c1dd1181731f107a9ba6721a421e27",
+  "results": {
+    "formal": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1",
+      "namespace": "RLinf_grpo_exp_t2_drop02_anneal200_positive_half128_seed42_formal45_20260917",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/results/server-maintenance-20260917/grpo-exp-controls/ops.py",
+        "driver",
+        "grpo",
+        "formal",
+        "--config-path",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1/runtime",
+        "--config-name",
+        "resolved",
+        "hydra.run.dir=.",
+        "hydra.output_subdir=null",
+        "hydra.job.chdir=false",
+        "hydra/job_logging=stdout"
+      ],
+      "method": {
+        "mode": "apply",
+        "application": "chunk_clipped_action_advantage",
+        "selected_l": 3,
+        "warmup_steps": 1,
+        "window_steps": 5,
+        "log_eps": 1e-12,
+        "std_floor": 1e-06,
+        "z_clip": 2.0,
+        "strength": 0.5,
+        "weight_min": null,
+        "weight_max": null,
+        "save_step_tensors": true,
+        "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-formal200-phys45-20260917-v1/dvac_train",
+        "normalization": "two_level_group",
+        "scope": "positive",
+        "mapping": "exp_mean",
+        "alpha_local": 1.0,
+        "alpha_chunk": 1.0,
+        "temperature_local": 2.0,
+        "temperature_chunk": 2.0,
+        "chunk_dropout": {
+          "enabled": true,
+          "probability": 0.2,
+          "seed": 42
+        },
+        "alpha_schedule": {
+          "enabled": true,
+          "local": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 200,
+            "end_alpha": 0.0
+          },
+          "chunk": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 200,
+            "end_alpha": 0.0
+          }
+        },
+        "minmax_eps": 1e-06
+      },
+      "nonmethod_diff": {},
+      "smoke_only_diff": {}
+    },
+    "smoke": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1",
+      "namespace": "RLinf_grpo_exp_t2_drop02_anneal200_positive_half128_seed42_formal45_20260917_smoke",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/results/server-maintenance-20260917/grpo-exp-controls/ops.py",
+        "driver",
+        "grpo",
+        "smoke",
+        "--config-path",
+        "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/runtime",
+        "--config-name",
+        "resolved",
+        "hydra.run.dir=.",
+        "hydra.output_subdir=null",
+        "hydra.job.chdir=false",
+        "hydra/job_logging=stdout"
+      ],
+      "method": {
+        "mode": "apply",
+        "application": "chunk_clipped_action_advantage",
+        "selected_l": 3,
+        "warmup_steps": 1,
+        "window_steps": 5,
+        "log_eps": 1e-12,
+        "std_floor": 1e-06,
+        "z_clip": 2.0,
+        "strength": 0.5,
+        "weight_min": null,
+        "weight_max": null,
+        "save_step_tensors": true,
+        "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/pi05-grpo-exp-t2-drop02-anneal200-positive-half128-seed42-smoke1-phys45-20260917-v1/dvac_train",
+        "normalization": "two_level_group",
+        "scope": "positive",
+        "mapping": "exp_mean",
+        "alpha_local": 1.0,
+        "alpha_chunk": 1.0,
+        "temperature_local": 2.0,
+        "temperature_chunk": 2.0,
+        "chunk_dropout": {
+          "enabled": true,
+          "probability": 0.2,
+          "seed": 42
+        },
+        "alpha_schedule": {
+          "enabled": true,
+          "local": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 200,
+            "end_alpha": 0.0
+          },
+          "chunk": {
+            "enabled": true,
+            "start_step": 1,
+            "end_step": 200,
+            "end_alpha": 0.0
+          }
+        },
+        "minmax_eps": 1e-06
+      },
+      "nonmethod_diff": {},
+      "smoke_only_diff": {
+        "runner.max_steps": [
+          200,
+          1
+        ],
+        "runner.save_interval": [
+          10,
+          -1
+        ],
+        "runner.val_check_interval": [
+          5,
+          -1
+        ]
+      }
+    }
+  }
+}
