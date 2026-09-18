@@ -22,7 +22,15 @@ import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
-from rlinf.algorithms.rlt.dvac_two_level import build_two_level_success_weights
+from rlinf.algorithms.rlt.dvac_controls import (
+    apply_chunk_dropout,
+    effective_alphas,
+    rlt_controls_contract,
+)
+from rlinf.algorithms.rlt.dvac_two_level import (
+    _weight_moments,
+    build_two_level_success_weights,
+)
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
     build_rlt_bc_targets_and_weights,
@@ -278,11 +286,17 @@ class RLTACLossMixin:
         if not isinstance(success, torch.Tensor):
             raise ValueError("RLT DVAC new requires cached episode_success flags.")
         success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
+        controls = getattr(self, "rlt_dvac_controls", {})
+        alpha_local, alpha_chunk = self.rlt_dvac_alpha_local, self.rlt_dvac_alpha_chunk
+        if controls:
+            alpha_local, alpha_chunk = effective_alphas(
+                alpha_local, alpha_chunk, controls, runner_step=int(self.version)
+            )
         weights, metrics = build_two_level_success_weights(
             selected_v,
             success.reshape(-1),
-            alpha_local=self.rlt_dvac_alpha_local,
-            alpha_chunk=self.rlt_dvac_alpha_chunk,
+            alpha_local=alpha_local,
+            alpha_chunk=alpha_chunk,
             log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
             minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
             success_scale=success_scale,
@@ -293,6 +307,26 @@ class RLTACLossMixin:
             temperature_chunk=getattr(self, "rlt_dvac_temperature_chunk", 1.0),
         )
         metrics.update(scale_metrics)
+        if controls:
+            success_mask = success.reshape(-1).to(device=weights.device)
+            weights, dropped = apply_chunk_dropout(
+                weights, success_mask, controls, update_step=int(self.update_step)
+            )
+            prefix = "rlt_dvac_controls/"
+            metrics.update({
+                prefix + "runner_round": float(self.version + 1),
+                prefix + "update_step": float(self.update_step),
+                prefix + "alpha_local": alpha_local,
+                prefix + "alpha_chunk": alpha_chunk,
+                prefix + "dropout_probability": controls.get("chunk_dropout", {}).get("probability", 0.0),
+                prefix + "dropout_count": float(dropped.sum().item()),
+                prefix + "dropout_fraction_success": float(dropped.sum().item()) / max(1, int(success_mask.sum().item())),
+            })
+            for domain, values in (("success_applied", weights[success_mask]), ("applied", weights)):
+                for name, value in _weight_moments(values).items():
+                    tag = f"rlt_dvac_new/{domain}_{name}"
+                    metrics[tag.replace("applied", "pre_dropout")] = metrics[tag]
+                    metrics[tag] = value
         if self.rlt_dvac_mode == "observe":
             for domain in ("success_applied", "applied"):
                 for name, neutral in (("mean", 1.0), ("std", 0.0), ("ess_ratio", 1.0)):
@@ -1021,6 +1055,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         if OmegaConf.is_config(raw_dvac_cfg):
             raw_dvac_cfg = OmegaConf.to_container(raw_dvac_cfg, resolve=True)
         self.rlt_dvac_cfg = dict(raw_dvac_cfg)
+        self.rlt_dvac_controls = rlt_controls_contract(self.rlt_dvac_cfg)
         self.rlt_dvac_mode = str(self.rlt_dvac_cfg.get("mode", "off")).lower()
         if self.rlt_dvac_mode not in {"off", "observe", "apply"}:
             raise ValueError("algorithm.rlt_dvac.mode must be off, observe, or apply.")

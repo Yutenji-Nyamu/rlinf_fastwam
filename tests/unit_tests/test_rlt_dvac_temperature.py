@@ -174,7 +174,8 @@ def _make_worker(**overrides):
             if node.name == "RLTACFSDPPolicy":
                 node.bases = [ast.Name("RLTACLossMixin", ast.Load()), ast.Name("_Base", ast.Load())]
             classes.append(node)
-    namespace = dict(torch=torch, math=math, json=json, hashlib=hashlib,
+    from rlinf.algorithms.rlt.dvac_controls import rlt_controls_contract
+    namespace = dict(rlt_controls_contract=rlt_controls_contract, torch=torch, math=math, json=json, hashlib=hashlib,
                      OmegaConf=OmegaConf, _Base=_Base,
                      build_two_level_success_weights=build_two_level_success_weights)
     exec(compile(ast.fix_missing_locations(ast.Module(body=classes, type_ignores=[])), str(path), "exec"), namespace)
