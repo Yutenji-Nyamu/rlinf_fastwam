@@ -179,7 +179,7 @@ def check(base, launching=False):
     assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "positive"
     assert values[prefix + "alpha_local"] == values[prefix + "alpha_chunk"] == 1.0
     assert values[prefix + "temperature_local"] == values[prefix + "temperature_chunk"]
-    assert values[prefix + "temperature_local"] in (1.5, 2.0, 3.0)
+    assert values[prefix + "temperature_local"] in (1.5, 2.0, 2.5, 3.0, 3.5)
     enabled = values[prefix + "chunk_dropout.enabled"]
     assert enabled == values[prefix + "alpha_schedule.enabled"]
     if enabled:
