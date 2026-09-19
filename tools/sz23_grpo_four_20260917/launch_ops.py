@@ -127,7 +127,7 @@ try:
  ray.init(address=address,namespace="sz23_launch_readonly_check",logging_level="ERROR",log_to_driver=False)
  nodes=[n for n in ray.nodes() if n.get("Alive")]
  rows=list_actors(filters=[("ray_namespace","=",namespace)],detail=True,limit=10000,timeout=20)
- actors=[dict(a) for a in rows if a["state"]!="DEAD"]
+ actors=[__import__("dataclasses").asdict(a) for a in rows if a["state"]!="DEAD"]
  print("SZ23_RAY="+json.dumps({"nodes":[{"node_id":n["NodeID"],"address":n["NodeManagerAddress"],"gpus":n.get("Resources",{}).get("GPU",0)} for n in nodes],"actors":actors}))
 finally:
  if ray.is_initialized():ray.shutdown()
