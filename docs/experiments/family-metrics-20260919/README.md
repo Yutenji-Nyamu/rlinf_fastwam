@@ -1,0 +1,1 @@
+RLT4: 12 experiments / 14 run segments. GRPO128: 14 experiments / 19 segments. ZIPs contain all logged scalar JSON/CSV, raw events, configs and light logs; no weights/replay/video. Active runs are snapshots. Use merged/metrics CSVs and INDEX.json for continuation-aware plotting. Original raw segments are retained.
