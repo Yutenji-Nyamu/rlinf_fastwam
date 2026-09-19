@@ -38,6 +38,10 @@ class LeRobotAlohaDataConfig(DataConfigFactory):
     # Set to False for standard Aloha data that does not require realignment.
     adapt_to_pi: bool = True
 
+    # None preserves OpenPI's model-family default. Set explicitly for checkpoints
+    # trained with mean/std normalization, such as SidneyXie/pi05_robotwin.
+    use_quantile_norm: bool | None = None
+
     # Configuration to map dataset keys to the keys expected by the model.
     repack_transforms: _transforms.Group = dataclasses.field(
         default_factory=lambda: _transforms.Group(
@@ -97,10 +101,16 @@ class LeRobotAlohaDataConfig(DataConfigFactory):
         )
 
         # Construct and return the final DataConfig.
+        base_config = self.create_base_config(assets_dirs, model_config)
         return dataclasses.replace(
-            self.create_base_config(assets_dirs, model_config),
+            base_config,
             repack_transforms=self.repack_transforms,
             data_transforms=data_transforms,
             model_transforms=model_transforms,
             action_sequence_keys=("action",),
+            use_quantile_norm=(
+                base_config.use_quantile_norm
+                if self.use_quantile_norm is None
+                else self.use_quantile_norm
+            ),
         )
