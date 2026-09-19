@@ -1,7 +1,7 @@
 """Own GPU4 sequential full Stage1 -> FastWAM RLT Clean4 training."""
 import os,json,time,datetime,subprocess,sys,signal,runpy,hashlib,urllib.request,resource
 from pathlib import Path
-ST=Path('/data/chenyiteng/deployment-20260919/fastwam-rlt-clean4')
+ST=Path('/data/chenyiteng/deployment-20260919/fastwam-rlt-turn-switch')
 def read(p):return json.loads(Path(p).read_text())
 def now():return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).isoformat()
 def save(p,v):
