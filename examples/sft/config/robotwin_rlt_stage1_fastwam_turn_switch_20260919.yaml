@@ -1,0 +1,41 @@
+seed: 0
+steps: 2000
+batch_size: 32
+micro_batch_size: 1
+data:
+  repo_id: turn-switch-aloha-clean50-20260919
+  path: /data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919
+  default_prompt: turn the switch
+model:
+  model_type: fastwam
+  model_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt
+  checkpoint_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384.pt
+  dataset_stats_path: /data/chenyiteng/models/fastwam/release-8eaceeb/robotwin_uncond_3cam_384_dataset_stats.json
+  action_dim: 14
+  action_horizon: 32
+  num_action_chunks: 24
+  num_inference_steps: 10
+  sigma_shift: 5.0
+  model_forward_batch_size: 1
+  eval_seed: 0
+  fastwam:
+    config_dir: /data/chenyiteng/projects/fastwam-standalone/FastWAM-7faa711/configs
+    config_name: sim_robotwin
+    task: robotwin_uncond_3cam_384_1e-4
+token:
+  input_dim: 3072
+  embed_dim: 2048
+  prefix_seq_len: 120
+  num_layers: 2
+  num_heads: 8
+  mlp_ratio: 4.0
+  dropout_rate: 0.0
+optim:
+  lr: 2.5e-05
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-08
+  weight_decay: 1.0e-10
+  clip_grad: 1.0
+  warmup_steps: 100
+  min_lr_rate: 0.1
