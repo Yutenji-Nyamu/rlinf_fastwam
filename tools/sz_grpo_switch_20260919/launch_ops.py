@@ -128,7 +128,7 @@ try:
  ray.init(address=address,namespace="sz23_launch_readonly_check",logging_level="ERROR",log_to_driver=False)
  nodes=[n for n in ray.nodes() if n.get("Alive")]
  rows=list_actors(filters=[("ray_namespace","=",namespace)],detail=True,limit=10000,timeout=20)
- actors=[dataclasses.as__import__("dataclasses").asdict(a) for a in rows if a["state"]!="DEAD"]
+ actors=[__import__("dataclasses").asdict(a) for a in rows if a["state"]!="DEAD"]
  print("SZ23_RAY="+json.dumps({"nodes":[{"node_id":n["NodeID"],"address":n["NodeManagerAddress"],"gpus":n.get("Resources",{}).get("GPU",0)} for n in nodes],"actors":actors}))
 finally:
  if ray.is_initialized():ray.shutdown()
@@ -252,7 +252,7 @@ def cleanup_owned(contract, runtime):
     job = job.hex() if hasattr(job, "hex") else str(job)
     namespace = contract["namespace"]
     for _ in range(10):
-        rows = [dataclasses.as__import__("dataclasses").asdict(row) for row in list_actors(filters=[("ray_namespace", "=", namespace)], detail=True, limit=10000, timeout=15) if row["state"] != "DEAD"]
+        rows = [__import__("dataclasses").asdict(row) for row in list_actors(filters=[("ray_namespace", "=", namespace)], detail=True, limit=10000, timeout=15) if row["state"] != "DEAD"]
         names = {row["name"] for row in ray.util.list_named_actors(all_namespaces=True) if row["namespace"] == namespace}
         identities = [proc(row["pid"]) for row in rows]
         if names == {row["name"] for row in rows if row.get("name")} and all(identities):
