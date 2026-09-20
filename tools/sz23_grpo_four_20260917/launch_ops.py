@@ -127,7 +127,7 @@ try:
  ray.init(address=address,namespace="sz23_launch_readonly_check",logging_level="ERROR",log_to_driver=False)
  nodes=[n for n in ray.nodes() if n.get("Alive")]
  rows=list_actors(filters=[("ray_namespace","=",namespace)],detail=True,limit=10000,timeout=20)
- actors=[dict(a) for a in rows if a["state"]!="DEAD"]
+ actors=[__import__("dataclasses").asdict(a) for a in rows if a["state"]!="DEAD"]
  print("SZ23_RAY="+json.dumps({"nodes":[{"node_id":n["NodeID"],"address":n["NodeManagerAddress"],"gpus":n.get("Resources",{}).get("GPU",0)} for n in nodes],"actors":actors}))
 finally:
  if ray.is_initialized():ray.shutdown()
@@ -176,10 +176,10 @@ def check(base, launching=False):
     for key, expected in required.items():
         assert values.get(key) == expected, "Clean128 budget mismatch: " + key
     prefix = "algorithm.dvac_gradient_weighting."
-    assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "positive"
+    assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "both"
     assert values[prefix + "alpha_local"] == values[prefix + "alpha_chunk"] == 1.0
     assert values[prefix + "temperature_local"] == values[prefix + "temperature_chunk"]
-    assert values[prefix + "temperature_local"] in (1.5, 2.0, 3.0)
+    assert values[prefix + "temperature_local"] in (1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
     enabled = values[prefix + "chunk_dropout.enabled"]
     assert enabled == values[prefix + "alpha_schedule.enabled"]
     if enabled:
