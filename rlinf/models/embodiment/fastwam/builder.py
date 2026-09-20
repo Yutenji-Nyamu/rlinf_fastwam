@@ -320,7 +320,7 @@ def build_fastwam_policy(
         stage1_path = str(_cfg_get(rlt_cfg, "stage1_checkpoint"))
         policy = FastWAMRLTPolicy(
             model=model, processor=processor,
-            config=FastWAMRLTConfig(**asdict(policy_cfg)),
+            config=FastWAMRLTConfig(**asdict(policy_cfg), rlt_dvac_mode=str(_cfg_get(rlt_cfg, "dvac_mode", "off"))),
             stage1_checkpoint=stage1_path, identity=identity,
         )
         minimum_steps = int(_cfg_get(rlt_cfg, "minimum_stage1_steps", 0))

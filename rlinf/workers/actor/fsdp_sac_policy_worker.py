@@ -548,6 +548,12 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         alpha_loss = -alpha * (log_pi.mean() + self.target_entropy)
         return alpha_loss
 
+    def _prepare_global_batch(
+        self, global_batch: dict, *, train_actor: bool
+    ) -> tuple[dict, dict[str, float]]:
+        """Prepare optional actor weights before splitting the sampled batch."""
+        return global_batch, {}
+
     @Worker.timer("update_one_epoch")
     def update_one_epoch(self, train_actor: bool = True):
         global_batch_size_per_rank = (
@@ -557,6 +563,10 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         with self.worker_timer("sample"):
             global_batch = next(self.buffer_dataloader_iter)
 
+        global_batch, prepared_actor_metrics = self._prepare_global_batch(
+            global_batch,
+            train_actor=train_actor and self.update_step % self.critic_actor_ratio == 0,
+        )
         train_micro_batch_list = split_dict_to_chunk(
             global_batch,
             global_batch_size_per_rank // self.cfg.actor.micro_batch_size,
@@ -612,6 +622,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 f"actor/{key}": np.mean(value)
                 for key, value in all_actor_metrics.items()
             }
+            all_actor_metrics.update(
+                {f"actor/{key}": value for key, value in prepared_actor_metrics.items()}
+            )
             actor_grad_norm = self.model.clip_grad_norm_(
                 max_norm=self.cfg.actor.optim.clip_grad
             )

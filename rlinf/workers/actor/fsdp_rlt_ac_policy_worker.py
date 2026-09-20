@@ -14,6 +14,7 @@
 
 import hashlib
 import json
+import math
 import os
 import queue
 
@@ -21,6 +22,15 @@ import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
+from rlinf.algorithms.rlt.dvac_controls import (
+    apply_chunk_dropout,
+    effective_alphas,
+    rlt_controls_contract,
+)
+from rlinf.algorithms.rlt.dvac_two_level import (
+    _weight_moments,
+    build_two_level_success_weights,
+)
 from rlinf.algorithms.rlt.dvac_weighting import (
     FrozenGlobalZMoments,
     build_rlt_bc_targets_and_weights,
@@ -212,6 +222,8 @@ class RLTACLossMixin:
         mode = getattr(self, "rlt_dvac_mode", "off")
         if mode == "off":
             return None, False, {"rlt_dvac/enabled": 0.0}
+        if getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch":
+            raise ValueError("RLT DVAC new requires weights prepared on the full batch.")
 
         selected_v = self._rlt_dvac_selected_variances(curr_obs)
         stats = self.rlt_dvac_stats
@@ -224,9 +236,10 @@ class RLTACLossMixin:
                 std_floor=stats.std_floor,
                 z_clip=self.rlt_dvac_z_clip,
             )
+            success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
             candidate = centered_mean_one_weights(
                 z_scores, strength=self.rlt_dvac_strength
-            ) * self.rlt_dvac_success_scale
+            ) * success_scale
         else:
             log_variances = torch.log(
                 selected_v.float().clamp_min(0) + stats.log_eps
@@ -236,6 +249,8 @@ class RLTACLossMixin:
         apply_weights = mode == "apply" and stats.frozen
         weights = candidate if apply_weights else torch.ones_like(candidate)
         metrics = summarize_weights(weights, z_scores, log_variances)
+        if stats.frozen:
+            metrics.update(scale_metrics)
         metrics.update(
             {
                 "rlt_dvac/enabled": 1.0,
@@ -247,6 +262,88 @@ class RLTACLossMixin:
             }
         )
         return weights.detach(), apply_weights, metrics
+
+    def _prepare_global_batch(
+        self, global_batch: dict, *, train_actor: bool
+    ) -> tuple[dict, dict[str, float]]:
+        """Compare successful queries once over the entire actor-update batch."""
+        if (
+            not train_actor
+            or getattr(self, "rlt_dvac_mode", "off") == "off"
+            or getattr(self, "rlt_dvac_mapping", "frozen_global_z") != "two_level_batch"
+        ):
+            return global_batch, {}
+        if int(self._world_size) != 1:
+            raise ValueError("RLT DVAC new currently requires one actor rank.")
+        curr_obs = global_batch["curr_obs"]
+        selected_v = self._rlt_dvac_selected_variances(curr_obs)
+        if tuple(selected_v.shape) != (
+            int(self.cfg.actor.global_batch_size),
+            self.rlt_dvac_horizon,
+        ):
+            raise ValueError("RLT DVAC new must receive the complete actor batch [B,C].")
+        success = curr_obs.get("episode_success")
+        if not isinstance(success, torch.Tensor):
+            raise ValueError("RLT DVAC new requires cached episode_success flags.")
+        success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
+        controls = getattr(self, "rlt_dvac_controls", {})
+        alpha_local, alpha_chunk = self.rlt_dvac_alpha_local, self.rlt_dvac_alpha_chunk
+        if controls:
+            alpha_local, alpha_chunk = effective_alphas(
+                alpha_local, alpha_chunk, controls, runner_step=int(self.version)
+            )
+        weights, metrics = build_two_level_success_weights(
+            selected_v,
+            success.reshape(-1),
+            alpha_local=alpha_local,
+            alpha_chunk=alpha_chunk,
+            log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
+            minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
+            success_scale=success_scale,
+            factor_mapping=getattr(
+                self, "rlt_dvac_factor_mapping", "linear_centered"
+            ),
+            temperature_local=getattr(self, "rlt_dvac_temperature_local", 1.0),
+            temperature_chunk=getattr(self, "rlt_dvac_temperature_chunk", 1.0),
+        )
+        metrics.update(scale_metrics)
+        if controls:
+            success_mask = success.reshape(-1).to(device=weights.device)
+            weights, dropped = apply_chunk_dropout(
+                weights, success_mask, controls, update_step=int(self.update_step)
+            )
+            prefix = "rlt_dvac_controls/"
+            metrics.update({
+                prefix + "runner_round": float(self.version + 1),
+                prefix + "update_step": float(self.update_step),
+                prefix + "alpha_local": alpha_local,
+                prefix + "alpha_chunk": alpha_chunk,
+                prefix + "dropout_probability": controls.get("chunk_dropout", {}).get("probability", 0.0),
+                prefix + "dropout_count": float(dropped.sum().item()),
+                prefix + "dropout_fraction_success": float(dropped.sum().item()) / max(1, int(success_mask.sum().item())),
+            })
+            for domain, values in (("success_applied", weights[success_mask]), ("applied", weights)):
+                for name, value in _weight_moments(values).items():
+                    tag = f"rlt_dvac_new/{domain}_{name}"
+                    metrics[tag.replace("applied", "pre_dropout")] = metrics[tag]
+                    metrics[tag] = value
+        if self.rlt_dvac_mode == "observe":
+            for domain in ("success_applied", "applied"):
+                for name, neutral in (("mean", 1.0), ("std", 0.0), ("ess_ratio", 1.0)):
+                    key = f"rlt_dvac_new/{domain}_{name}"
+                    metrics[key.replace("applied", "candidate")] = metrics[key]
+                    metrics[key] = neutral
+            weights = torch.ones_like(weights)
+        # Transient sampled-batch field: never store permanently in replay.
+        prepared = dict(global_batch)
+        prepared["rlt_dvac_new_weights"] = weights
+        metrics.update(
+            {
+                "rlt_dvac/enabled": 1.0,
+                "rlt_dvac/mode_apply": float(self.rlt_dvac_mode == "apply"),
+            }
+        )
+        return prepared, metrics
 
     def _accumulate_rlt_dvac_baseline(
         self, replay_trajectories: list[Trajectory]
@@ -280,6 +377,11 @@ class RLTACLossMixin:
         )
 
     def _rlt_dvac_baseline_metrics(self) -> dict[str, float]:
+        if (
+            getattr(self, "rlt_dvac_mode", "off") != "off"
+            and getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch"
+        ):
+            return {"rlt_dvac/enabled": 1.0, "rlt_dvac/new_mapping": 1.0}
         stats = getattr(self, "rlt_dvac_stats", None)
         if stats is None:
             return {"rlt_dvac/enabled": 0.0}
@@ -289,6 +391,63 @@ class RLTACLossMixin:
             "rlt_dvac/baseline_count": float(stats.count),
             "rlt_dvac/baseline_mean": float(stats.mean),
             "rlt_dvac/baseline_std": float(stats.std),
+        }
+
+    def _rlt_dvac_success_scale_schedule(self) -> dict | None:
+        """Validate the opt-in scale switch and describe its resume anchor."""
+        scale_cfg = getattr(self, "rlt_dvac_cfg", {}).get(
+            "success_scale_schedule", {}
+        ) or {}
+        if not isinstance(scale_cfg, dict):
+            raise ValueError("RLT DVAC success_scale_schedule must be a mapping.")
+        if not bool(scale_cfg.get("enable", False)):
+            return None
+        if (
+            self.rlt_dvac_mode != "apply"
+            or self.rlt_dvac_mapping != "two_level_batch"
+        ):
+            raise ValueError(
+                "RLT DVAC success_scale_schedule requires apply/two_level_batch."
+            )
+        if scale_cfg.get("anchor", "actor_weight_schedule_end") != (
+            "actor_weight_schedule_end"
+        ):
+            raise ValueError("RLT DVAC scale anchor must be actor_weight_schedule_end.")
+        final_scale = float(scale_cfg.get("final_scale", self.rlt_dvac_success_scale))
+        if not math.isfinite(final_scale) or final_scale <= 0:
+            raise ValueError("RLT DVAC final_scale must be finite and positive.")
+        course = self.cfg.algorithm.get("actor_weight_schedule", {}) or {}
+        if OmegaConf.is_config(course):
+            course = OmegaConf.to_container(course, resolve=True)
+        if not isinstance(course, dict) or not bool(course.get("enable", False)):
+            raise ValueError("RLT DVAC scale schedule requires actor_weight_schedule.")
+        for name in ("warmup_updates", "ramp_updates"):
+            value = course.get(name, 0)
+            if isinstance(value, bool) or int(value) != value or value < 0:
+                raise ValueError(f"RLT scale anchor {name} must be a nonnegative integer.")
+        warmup, ramp = int(course.get("warmup_updates", 0)), int(course.get("ramp_updates", 0))
+        return {
+            "final_scale": final_scale,
+            "actor_weight_schedule": dict(course),
+            "actor_weight_defaults": {
+                "bc_weight": float(self.cfg.algorithm.get("bc_weight", 1.0)),
+                "q_weight": float(self.cfg.algorithm.get("q_weight", 1.0)),
+            },
+            "end_update_step": max(warmup, warmup + ramp - 1),
+        }
+
+    def _effective_rlt_dvac_success_scale(self) -> tuple[float, dict[str, float]]:
+        schedule = self._rlt_dvac_success_scale_schedule()
+        if schedule is None:
+            return self.rlt_dvac_success_scale, {}
+        # Use the actor's actual BC/Q curriculum result; do not duplicate its clock.
+        _, _, course_metrics = self._actor_objective_weights()
+        switched = course_metrics["actor_weight_ramp_progress"] >= 1.0
+        scale = schedule["final_scale"] if switched else self.rlt_dvac_success_scale
+        return scale, {
+            "rlt_dvac/success_scale_effective": float(scale),
+            "rlt_dvac/success_scale_schedule_enabled": 1.0,
+            "rlt_dvac/success_scale_switched": float(switched),
         }
 
     def _actor_objective_weights(self) -> tuple[float, float, dict[str, float]]:
@@ -452,9 +611,19 @@ class RLTACLossMixin:
         use_crossq = self.cfg.algorithm.get("q_head_type", "default") == "crossq"
 
         curr_obs = batch["curr_obs"]
-        success_weights, apply_success_weights, dvac_metrics = (
-            self._rlt_dvac_success_weights(curr_obs)
-        )
+        if (
+            getattr(self, "rlt_dvac_mode", "off") != "off"
+            and getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch"
+        ):
+            success_weights = batch.get("rlt_dvac_new_weights")
+            if not isinstance(success_weights, torch.Tensor):
+                raise ValueError("RLT DVAC new requires weights prepared on the full batch.")
+            apply_success_weights = self.rlt_dvac_mode == "apply"
+            dvac_metrics = {}
+        else:
+            success_weights, apply_success_weights, dvac_metrics = (
+                self._rlt_dvac_success_weights(curr_obs)
+            )
         reference_dropout_prob = float(
             self.cfg.algorithm.get("reference_dropout_prob", 0.0)
         )
@@ -886,9 +1055,15 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         if OmegaConf.is_config(raw_dvac_cfg):
             raw_dvac_cfg = OmegaConf.to_container(raw_dvac_cfg, resolve=True)
         self.rlt_dvac_cfg = dict(raw_dvac_cfg)
+        self.rlt_dvac_controls = rlt_controls_contract(self.rlt_dvac_cfg)
         self.rlt_dvac_mode = str(self.rlt_dvac_cfg.get("mode", "off")).lower()
         if self.rlt_dvac_mode not in {"off", "observe", "apply"}:
             raise ValueError("algorithm.rlt_dvac.mode must be off, observe, or apply.")
+        self.rlt_dvac_mapping = str(
+            self.rlt_dvac_cfg.get("mapping", "frozen_global_z")
+        ).lower()
+        if self.rlt_dvac_mapping not in {"frozen_global_z", "two_level_batch"}:
+            raise ValueError("RLT DVAC mapping must be frozen_global_z or two_level_batch.")
         self.rlt_dvac_l_values = tuple(
             int(value) for value in self.rlt_dvac_cfg.get("l_values", (2, 3, 4))
         )
@@ -926,18 +1101,70 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 raise ValueError(
                     "Success-episode RLT DVAC BC requires env.train.auto_reset=false."
                 )
-            if self.rlt_dvac_z_clip <= 0 or self.rlt_dvac_strength < 0:
+            if self.rlt_dvac_mapping == "frozen_global_z" and (
+                self.rlt_dvac_z_clip <= 0 or self.rlt_dvac_strength < 0
+            ):
                 raise ValueError(
                     "RLT DVAC z_clip must be positive and strength nonnegative."
                 )
             if self.rlt_dvac_success_scale <= 0:
                 raise ValueError("RLT DVAC success_scale must be positive.")
-            self.rlt_dvac_stats = FrozenGlobalZMoments(
-                log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
-                std_floor=float(self.rlt_dvac_cfg.get("std_floor", 1e-6)),
-            )
+            if self.rlt_dvac_mapping == "two_level_batch":
+                if int(self._world_size) != 1:
+                    raise ValueError("RLT DVAC new currently requires one actor rank.")
+                if self.rlt_dvac_cfg.get("outer_scope", "successful_batch") != (
+                    "successful_batch"
+                ):
+                    raise ValueError("RLT DVAC new outer_scope must be successful_batch.")
+                self.rlt_dvac_alpha_local = float(
+                    self.rlt_dvac_cfg.get("alpha_local", 1.0)
+                )
+                self.rlt_dvac_alpha_chunk = float(
+                    self.rlt_dvac_cfg.get("alpha_chunk", 1.0)
+                )
+                # Effective defaults remain attributes only. The original cfg
+                # is already in the resume contract; do not inject new keys
+                # and change hashes for legacy linear checkpoints.
+                self.rlt_dvac_factor_mapping = str(
+                    self.rlt_dvac_cfg.get("factor_mapping", "linear_centered")
+                ).lower()
+                if self.rlt_dvac_factor_mapping not in {
+                    "linear_centered", "exp_mean"
+                }:
+                    raise ValueError(
+                        "RLT DVAC new factor_mapping must be linear_centered or exp_mean."
+                    )
+                self.rlt_dvac_temperature_local = float(
+                    self.rlt_dvac_cfg.get("temperature_local", 1.0)
+                )
+                self.rlt_dvac_temperature_chunk = float(
+                    self.rlt_dvac_cfg.get("temperature_chunk", 1.0)
+                )
+                for name in ("alpha_local", "alpha_chunk"):
+                    value = float(self.rlt_dvac_cfg.get(name, 1.0))
+                    if not math.isfinite(value) or not 0 <= value <= 1:
+                        raise ValueError(f"RLT DVAC new {name} must be finite in [0,1].")
+                for name, default in (
+                    ("log_eps", 1e-12),
+                    ("minmax_eps", 1e-6),
+                    ("success_scale", 1.0),
+                    ("temperature_local", 1.0),
+                    ("temperature_chunk", 1.0),
+                ):
+                    value = float(self.rlt_dvac_cfg.get(name, default))
+                    if not math.isfinite(value) or value <= 0:
+                        raise ValueError(
+                            f"RLT DVAC new {name} must be finite and positive."
+                        )
+                self.rlt_dvac_stats = None
+            else:
+                self.rlt_dvac_stats = FrozenGlobalZMoments(
+                    log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
+                    std_floor=float(self.rlt_dvac_cfg.get("std_floor", 1e-6)),
+                )
         else:
             self.rlt_dvac_stats = None
+        self._rlt_dvac_success_scale_schedule()
 
     def _rlt_state_dir(self, base_path: str) -> str:
         return os.path.join(base_path, "sac_components/rlt_trainer_state")
@@ -984,6 +1211,11 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         contract = dict(contract)
         if getattr(self, "rlt_dvac_mode", "off") != "off":
             contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
+        scale_schedule = self._rlt_dvac_success_scale_schedule()
+        if scale_schedule is not None:
+            # The rlt_dvac dict already carries the scale settings. Protect the
+            # external BC/Q curriculum and its fallback values only when enabled.
+            contract["rlt_dvac_success_scale_anchor"] = scale_schedule
         serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
         return serialized, digest
@@ -1067,10 +1299,12 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                     f"RLT trainer state mismatch for {key}: "
                     f"{state[key]!r} != {expected!r}."
                 )
-        if getattr(self, "rlt_dvac_mode", "off") != "off" and not isinstance(
-            state.get("rlt_dvac_baseline"), dict
-        ):
-            raise ValueError("RLT DVAC trainer state is missing its baseline payload.")
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            if getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch":
+                if state.get("rlt_dvac_baseline") is not None:
+                    raise ValueError("RLT DVAC new state must not contain a frozen baseline.")
+            elif not isinstance(state.get("rlt_dvac_baseline"), dict):
+                raise ValueError("RLT DVAC trainer state is missing its baseline payload.")
 
     def _save_rlt_state(self, save_base_path: str, runner_step: int) -> None:
         state_dir = self._rlt_state_dir(save_base_path)

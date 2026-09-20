@@ -10,6 +10,8 @@ import torch
 
 from rlinf.models.embodiment.modules.rlt_token_transformer import RLTTokenEncoder
 
+from rlinf.algorithms.rlt.dvac_weighting import compute_endpoint_variances
+
 from .fastwam_policy import FastWAMPolicy, FastWAMPolicyConfig
 from .fastwam_rl import flow_sde_rollout, prepare_initial_action_latents
 from .rlt_features import build_rlt_conditioning
@@ -18,6 +20,7 @@ from .robotwin_adapter import adapt_robotwin_observation, denormalize_actions
 
 @dataclass(frozen=True)
 class FastWAMRLTConfig(FastWAMPolicyConfig):
+    rlt_dvac_mode: str = "off"
     rlt_action_adapter: str = "fastwam_robotwin_zscore_v1"
 
 
@@ -67,7 +70,7 @@ class FastWAMRLTPolicy(FastWAMPolicy):
             device=self.device, dtype=self.model_dtype, rand_device=self.config.rand_device,
             seed=self.config.eval_seed, broadcast_singleton=True,
         )
-        zs, refs = [], []
+        zs, refs, variances = [], [], []
         for start in range(0, batch, self.config.model_forward_batch_size):
             item = slice(start, min(start + self.config.model_forward_batch_size, batch))
             condition, hidden = build_rlt_conditioning(
@@ -83,7 +86,11 @@ class FastWAMRLTPolicy(FastWAMPolicy):
                 num_inference_steps=self.config.num_inference_steps,
                 sigma_shift=self.config.sigma_shift, noise_level=self.config.noise_level,
                 deterministic=True,
+                collect_endpoint_previews=self.config.rlt_dvac_mode != "off",
             )
+            if teacher.endpoint_previews is not None:
+                v = compute_endpoint_variances(teacher.endpoint_previews, l_values=(2, 3, 4))
+                variances.append(torch.stack([v[l] for l in (2, 3, 4)], dim=1).float().cpu())
             zs.append(z.float().cpu())
             refs.append(teacher.actions.float().cpu())
             # Cache lifetimes end at this microbatch, never enter replay.
@@ -94,6 +101,8 @@ class FastWAMRLTPolicy(FastWAMPolicy):
             "proprio": proprio.float().cpu().contiguous(),
             "ref_chunk": template[:, :24].contiguous(),
         }
+        if variances:
+            obs["teacher_dvac_v"] = torch.cat(variances).contiguous()
         if return_decode_context:
             return obs, {"teacher_template": template}
         return obs

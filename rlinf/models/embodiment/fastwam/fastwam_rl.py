@@ -81,6 +81,7 @@ class FlowRollout:
     chains: torch.Tensor | None = None
     prev_logprobs: torch.Tensor | None = None
     denoise_inds: torch.Tensor | None = None
+    endpoint_previews: torch.Tensor | None = None
 
 
 def _model_device(model) -> torch.device:
@@ -495,6 +496,7 @@ def flow_sde_rollout(
     deterministic: bool,
     denoise_inds: torch.Tensor | None = None,
     sde_epsilon: torch.Tensor | None = None,
+    collect_endpoint_previews: bool = False,
 ) -> FlowRollout:
     """Run the one shared denoise loop.
 
@@ -502,6 +504,7 @@ def flow_sde_rollout(
     tensors once for the complete logical batch before resource chunking.
     """
 
+    previews = [] if collect_endpoint_previews else None
     schedule = resolve_action_schedule(model, num_inference_steps, sigma_shift)
     batch_size = initial_latents.shape[0]
     if initial_latents.ndim != 3:
@@ -533,6 +536,8 @@ def flow_sde_rollout(
             raw_timestep=schedule.timesteps[step_index],
             conditioning=conditioning,
         )
+        if previews is not None:
+            previews.append((x.float() - schedule.normalized_timesteps[step_index] * velocity.float()).detach())
         if deterministic:
             x = model.infer_action_scheduler.step(
                 velocity.to(dtype=x.dtype),
@@ -559,7 +564,7 @@ def flow_sde_rollout(
         chains.append(x)
 
     if deterministic:
-        return FlowRollout(actions=x.float())
+        return FlowRollout(actions=x.float(), endpoint_previews=torch.stack(previews, dim=1) if previews is not None else None)
     if not bool(selected_seen.all()):
         raise RuntimeError("Every trajectory must execute exactly one stochastic step")
     return FlowRollout(
