@@ -68,6 +68,15 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                 "variance_eps": float(dvac_cfg.get("log_eps", 1e-12)),
                 "range_eps": float(dvac_cfg.get("range_eps", 1e-6)),
             }
+            if dvac_cfg.get("factor_mapping", "linear_centered") != "linear_centered":
+                self.dvac_new_settings.update({
+                    "factor_mapping": dvac_cfg.factor_mapping,
+                    "temperature_local": float(dvac_cfg.get("temperature_local", 1.0)),
+                    "temperature_chunk": float(dvac_cfg.get("temperature_chunk", 1.0)),
+                })
+            from omegaconf import OmegaConf
+            from rlinf.algorithms.online_bc_dvac_controls import bc_controls_contract
+            self.dvac_controls = bc_controls_contract(OmegaConf.to_container(dvac_cfg, resolve=True))
             from rlinf.algorithms.online_bc_dvac_two_level import compute_two_level_bc_weights
 
             compute_two_level_bc_weights(torch.ones(1, 1), torch.ones(1, 1, 1), **self.dvac_new_settings)
@@ -173,9 +182,21 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             raise ValueError("Two-level BC DVAC must see the complete optimizer batch.")
         if (mask.sum(dim=(1, 2)) == 0).any():
             raise ValueError("BC FM loss requires nonempty targets in every query.")
-        weights, diagnostics = compute_two_level_bc_weights(
-            inputs["dvac_v"], mask, **self.dvac_new_settings
-        )
+        from rlinf.algorithms.online_bc_dvac_controls import effective_alphas, apply_chunk_dropout
+        settings = dict(self.dvac_new_settings)
+        controls = getattr(self, "dvac_controls", {})
+        settings["alpha_local"], settings["alpha_chunk"] = effective_alphas(
+            settings["alpha_local"], settings["alpha_chunk"], controls,
+            runner_step=self.version)
+        weights, diagnostics = compute_two_level_bc_weights(inputs["dvac_v"], mask, **settings)
+        weights, dropped = apply_chunk_dropout(weights, mask.bool().any(dim=(1, 2)),
+            controls, update_step=self.update_step)
+        q = mask.sum(-1).to(weights.dtype)
+        per_query = (weights * q).sum(-1) / q.sum(-1)
+        diagnostics.update(alpha_local=settings["alpha_local"], alpha_chunk=settings["alpha_chunk"],
+            dropout_fraction=float(dropped.float().mean()), final_weight_mean=float(per_query.mean()),
+            final_weight_min=float(weights.min()), final_weight_max=float(weights.max()),
+            runner_round=float(self.version + 1))
         # Replace any previous mapping, without mutating the replay records.
         inputs["action_weights"] = weights
         self.dvac_batch_metrics = {f"dvac_new/{key}": value for key, value in diagnostics.items()}
@@ -195,7 +216,10 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         return metrics | getattr(self, "dvac_batch_metrics", {})
 
     def dvac_new_state(self):
-        return {"normalization": "two_level_batch", "version": 1, "settings": self.dvac_new_settings}
+        state = {"normalization": "two_level_batch", "version": 1, "settings": self.dvac_new_settings}
+        if getattr(self, "dvac_controls", {}):
+            state["controls"] = self.dvac_controls
+        return state
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):

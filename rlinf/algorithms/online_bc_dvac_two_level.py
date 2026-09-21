@@ -34,6 +34,9 @@ def compute_two_level_bc_weights(
     alpha_chunk: float = 1.0,
     variance_eps: float = 1e-12,
     range_eps: float = 1e-6,
+    factor_mapping: str = "linear_centered",
+    temperature_local: float = 1.0,
+    temperature_chunk: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Return detached weights ``[B,H]`` and finite scalar diagnostics.
 
@@ -79,6 +82,12 @@ def compute_two_level_bc_weights(
     for name, value in (("variance_eps", variance_eps), ("range_eps", range_eps)):
         if not math.isfinite(float(value)) or float(value) <= 0.0:
             raise ValueError(f"{name} must be finite and positive")
+
+    if factor_mapping not in ("linear_centered", "exp_mean"):
+        raise ValueError("Unsupported BC factor mapping")
+    for temperature in (temperature_local, temperature_chunk):
+        if not math.isfinite(float(temperature)) or temperature <= 0:
+            raise ValueError("Temperatures must be finite and positive")
 
     dtype = torch.float64 if variance.dtype == torch.float64 else torch.float32
     values = variance.detach().to(dtype=dtype)
@@ -148,6 +157,21 @@ def compute_two_level_bc_weights(
     )
     chunk = torch.ones_like(n)
     chunk[valid_b] = 1.0 + float(alpha_chunk) * (outer_unit - outer_unit.mean())
+    if factor_mapping == "exp_mean":
+        # RLT exp/mean mapping, with BC's exact per-query HD mask reduction.
+        span = maximum - minimum
+        scaled = torch.where((span > range_eps)[:, None],
+            (log_v - minimum[:, None]) / span.clamp_min(range_eps)[:, None],
+            torch.zeros_like(log_v))
+        exponential = torch.exp((scaled - 1.0) / temperature_local)
+        local_mean = (exponential * q).sum(-1) / denominator
+        local = (1.0 - alpha_local) + alpha_local * exponential / local_mean.clamp_min(torch.finfo(dtype).tiny)[:, None]
+        local = torch.where(valid_h & (span > range_eps)[:, None], local, torch.ones_like(local))
+        outer_span = scores.max() - scores.min()
+        scaled_outer = (scores - scores.min()) / outer_span.clamp_min(range_eps)
+        exp_outer = torch.exp((scaled_outer - scaled_outer.max()) / temperature_chunk)
+        chunk[valid_b] = torch.where(outer_span > range_eps,
+            (1.0 - alpha_chunk) + alpha_chunk * exp_outer / exp_outer.mean(), torch.ones_like(scores))
     weights = torch.where(valid_h, local * chunk[:, None], torch.ones_like(local))
 
     # Every valid query contributes equal total mass to the original BC loss.
