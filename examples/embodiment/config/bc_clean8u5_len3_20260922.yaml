@@ -19,7 +19,7 @@ env:
     video_cfg:
       save_video: false
       info_on_video: true
-      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1/video/train
+      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2/video/train
     enable_offload: false
     task_config:
       task_name: move_pillbottle_pad
@@ -57,7 +57,7 @@ env:
         actor_segmentation: false
       pcd_down_sample_num: 1024
       pcd_crop: true
-      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1/robotwin_data
+      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2/robotwin_data
       clear_cache_freq: 1
       collect_data: true
       eval_video_log: true
@@ -82,7 +82,7 @@ env:
     video_cfg:
       save_video: false
       info_on_video: true
-      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1/video/train
+      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2/video/train
     enable_offload: false
     task_config:
       task_name: move_pillbottle_pad
@@ -120,7 +120,7 @@ env:
         actor_segmentation: false
       pcd_down_sample_num: 1024
       pcd_crop: true
-      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1/robotwin_data
+      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2/robotwin_data
       clear_cache_freq: 1
       collect_data: true
       eval_video_log: true
@@ -245,9 +245,9 @@ cluster:
 runner:
   task_type: embodied
   logger:
-    log_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1
+    log_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2
     project_name: rlinf-online-bc
-    experiment_name: pi05-bc-clean-8u5-len3-200-phys7-20260922-v1
+    experiment_name: pi05-bc-clean-8u5-len3-200-phys7-20260922-v2
     logger_backends:
     - tensorboard
   max_epochs: 200
@@ -268,13 +268,13 @@ algorithm:
   reward_coef: 1.0
   update_epoch: 5
   online_bc:
-    data_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v1/success_data
+    data_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-200-phys7-20260922-v2/success_data
     demo_weight: 0.0
     demo_data_path: null
     max_success_chunks: 3
     dvac:
       enabled: false
-      normalization: two_level_batch
+      normalization: recent
       tail_steps: 3
       log_eps: 1.0e-12
       range_eps: 1.0e-06
