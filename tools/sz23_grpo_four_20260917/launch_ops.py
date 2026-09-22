@@ -176,17 +176,20 @@ def check(base, launching=False):
     for key, expected in required.items():
         assert values.get(key) == expected, "Clean128 budget mismatch: " + key
     prefix = "algorithm.dvac_gradient_weighting."
-    assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "both"
-    assert values[prefix + "alpha_local"] == values[prefix + "alpha_chunk"] == 1.0
-    assert values[prefix + "temperature_local"] == values[prefix + "temperature_chunk"]
-    assert values[prefix + "temperature_local"] in (1.5, 2.0, 2.5, 3.0, 3.5)
-    enabled = values[prefix + "chunk_dropout.enabled"]
-    assert enabled == values[prefix + "alpha_schedule.enabled"]
-    if enabled:
-        assert values[prefix + "temperature_local"] == 1.5 and values[prefix + "chunk_dropout.probability"] == 0.2
-        for level in ("local", "chunk"):
-            for field, expected in (("enabled", True), ("start_step", 1), ("end_step", 200), ("end_alpha", 0.0)):
-                assert values[prefix + "alpha_schedule." + level + "." + field] == expected
+    mode = values[prefix + "mode"]
+    assert mode in ("off", "apply")
+    if mode == "apply":
+        assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "both"
+        assert values[prefix + "alpha_local"] == values[prefix + "alpha_chunk"] == 1.0
+        assert values[prefix + "temperature_local"] == values[prefix + "temperature_chunk"]
+        assert values[prefix + "temperature_local"] in (1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0)
+        enabled = values[prefix + "chunk_dropout.enabled"]
+        assert enabled == values[prefix + "alpha_schedule.enabled"]
+        if enabled:
+            assert values[prefix + "temperature_local"] == 1.5 and values[prefix + "chunk_dropout.probability"] == 0.2
+            for level in ("local", "chunk"):
+                for field, expected in (("enabled", True), ("start_step", 1), ("end_step", 200), ("end_alpha", 0.0)):
+                    assert values[prefix + "alpha_schedule." + level + "." + field] == expected
     assert values["cluster.component_placement.actor, env, rollout"] == ",".join(map(str, contract["gpus"]))
     assert values.get("runner.resume_dir") is None and values.get("runner.ckpt_path") is None
     assert values["runner.logger.log_path"] == str(run)
