@@ -55,7 +55,7 @@ def flat(value, prefix=""):
 def proc(pid):
     path = Path("/proc") / str(pid)
     try:
-        values = (path / "stat").read_text().rsplit(")", 1)[1].split()
+        values = (path / "stat").read_text(errors="replace").rsplit(")", 1)[1].split()
         result = {"pid": int(pid), "uid": path.stat().st_uid, "start": int(values[19]),
                   "state": values[0], "ppid": int(values[1])}
         if result["uid"] == UID:
