@@ -103,11 +103,11 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             {} if dvac_cfg is None else OmegaConf.to_container(dvac_cfg, resolve=True)
         )
         self.dvac_train_mode = str(self.dvac_train_cfg.get("mode", "off")).lower()
-        if self.dvac_train_mode not in {"off", "apply"}:
+        if self.dvac_train_mode not in {"off", "observe", "apply"}:
             raise ValueError(
-                "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
+                "algorithm.dvac_gradient_weighting.mode must be 'off', 'observe', or 'apply'"
             )
-        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_train_enabled = self.dvac_train_mode in {"observe", "apply"}
         self.dvac_train_application = str(
             self.dvac_train_cfg.get("application", "logprob_st")
         ).lower()
@@ -751,6 +751,9 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 runner_step=int(self.version),
             )
             details["dropout_mask"] = dropout_mask
+        if self.dvac_train_mode == "observe":
+            details["counterfactual_weights"] = weights
+            weights = torch.ones_like(weights)
         selected = slice(self._rank * batch_size, (self._rank + 1) * batch_size)
         inputs["dvac_weights"] = weights[:, selected].to(variance.device).contiguous()
         mass = full_contribution * full_mask
@@ -804,6 +807,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         self._dvac_pending_step = {
             "runner_step": int(self.version),
             "config": contract,
+            "mode": self.dvac_train_mode,
             "group_ids": group_ids.cpu(),
             "variance": variance.cpu(),
             "weights": weights[:, selected].contiguous(),
@@ -1113,7 +1117,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             prev_logprobs = output_dict["prev_logprobs"]
 
         logprobs_for_loss = output_dict["logprobs"]
-        if self.dvac_train_enabled and self.dvac_train_application == "logprob_st":
+        if self.dvac_train_mode == "apply" and self.dvac_train_application == "logprob_st":
             logprobs_for_loss = straight_through_scale_logprobs(
                 logprobs_for_loss, dvac_weights
             )
@@ -1140,12 +1144,12 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             "critic_warmup": self.optimizer_steps < self.critic_warmup_steps,
         }
         if (
-            self.dvac_train_enabled
+            self.dvac_train_mode == "apply"
             and self.dvac_train_application == "action_advantage"
         ):
             loss_kwargs["dvac_advantage_weights"] = dvac_weights
             loss_kwargs["action_level_sum"] = True
-        if self.dvac_two_level_enabled:
+        if self.dvac_two_level_enabled and self.dvac_train_mode == "apply":
             loss_kwargs["dvac_chunk_advantage_weights"] = dvac_weights
 
         if SupportedModel(self.cfg.actor.model.model_type) in [

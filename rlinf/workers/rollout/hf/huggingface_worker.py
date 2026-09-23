@@ -170,11 +170,11 @@ class MultiStepRolloutWorker(Worker):
         self.dvac_train_mode = str(
             self.dvac_train_cfg.get("mode", "off")
         ).lower()
-        if self.dvac_train_mode not in {"off", "apply"}:
+        if self.dvac_train_mode not in {"off", "observe", "apply"}:
             raise ValueError(
-                "algorithm.dvac_gradient_weighting.mode must be 'off' or 'apply'"
+                "algorithm.dvac_gradient_weighting.mode must be 'off', 'observe', or 'apply'"
             )
-        self.dvac_train_enabled = self.dvac_train_mode == "apply"
+        self.dvac_train_enabled = self.dvac_train_mode in {"observe", "apply"}
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
         if self.dvac_train_enabled:
             if self.only_eval:

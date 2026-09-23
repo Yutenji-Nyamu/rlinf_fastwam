@@ -170,14 +170,14 @@ def check(base, launching=False):
     values = flat(config)
     for key, expected in {**contract["budget"], **contract["method"]}.items():
         assert values.get(key) == expected, "Frozen parameter changed: " + key
-    required = {"env.train.total_num_envs": 64, "env.train.rollout_epoch": 2,
+    required = {"env.train.total_num_envs": 64, "env.train.rollout_epoch": 4,
                 "actor.global_batch_size": 512, "actor.micro_batch_size": 32,
                 "algorithm.update_epoch": 2, "runner.max_steps": 200, "rollout.seed": 42}
     for key, expected in required.items():
-        assert values.get(key) == expected, "Clean128 budget mismatch: " + key
+        assert values.get(key) == expected, "GRPO256 budget mismatch: " + key
     prefix = "algorithm.dvac_gradient_weighting."
     mode = values[prefix + "mode"]
-    assert mode in ("off", "apply")
+    assert mode in ("off", "observe", "apply")
     if mode == "apply":
         assert values[prefix + "mapping"] == "exp_mean" and values[prefix + "scope"] == "both"
         assert values[prefix + "alpha_local"] == values[prefix + "alpha_chunk"] == 1.0
