@@ -22,6 +22,7 @@ import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
+from rlinf.algorithms.rlt.dv_observation import record_collected
 from rlinf.algorithms.rlt.dvac_controls import (
     apply_chunk_dropout,
     effective_alphas,
@@ -833,7 +834,7 @@ class RLTACReplayMixin:
         num_rows = int(actions.shape[0])
         auto_reset = bool(self.cfg.env.train.get("auto_reset", False))
         episode_success = None
-        if getattr(self, "rlt_dvac_mode", "off") != "off":
+        if getattr(self, "rlt_dvac_mode", "off") != "off" or self.cfg.algorithm.get("dv_observe", False):
             episode_success = episode_success_flags(trajectory.rewards)
 
         for env_idx in range(bsz):
@@ -988,6 +989,12 @@ class RLTACReplayMixin:
                 **self._transition_replay_metrics(replay_list),
                 **collect_trajectory_replay_metrics(recv_list, reducer=all_reduce_dict),
             }
+            if self.cfg.algorithm.get("dv_observe", False):
+                self._last_replay_metrics.update(record_collected(
+                    replay_list, output_dir=self.cfg.runner.logger.log_path,
+                    round_number=int(self.version)+1, rank=int(self._rank),
+                    selected_l=3, horizon=int(self.cfg.actor.model.num_action_chunks),
+                ))
             self.replay_buffer.add_trajectories(replay_list)
 
             if self.demo_buffer is not None:
