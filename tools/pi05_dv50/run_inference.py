@@ -75,6 +75,8 @@ def run(config_path):
             if not active.any():
                 break
             before = counts.copy()
+            # EnvOutput supplies this optional field in the standard worker path.
+            obs.setdefault("extra_view_images", None)
             with torch.inference_mode():
                 actions, result = model.predict_action_batch(
                     obs, mode='eval', compute_values=False, return_dvac_telemetry=True)
