@@ -191,7 +191,15 @@ def check(base, launching=False):
                 for field, expected in (("enabled", True), ("start_step", 1), ("end_step", 200), ("end_alpha", 0.0)):
                     assert values[prefix + "alpha_schedule." + level + "." + field] == expected
     assert values["cluster.component_placement.actor, env, rollout"] == ",".join(map(str, contract["gpus"]))
-    assert values.get("runner.resume_dir") is None and values.get("runner.ckpt_path") is None
+    assert values.get("runner.ckpt_path") is None
+    if contract.get("fresh", True):
+        assert values.get("runner.resume_dir") is None
+    else:
+        assert values.get("runner.resume_dir") == contract["resume_checkpoint"]
+        checkpoint = Path(contract["resume_checkpoint"])
+        assert checkpoint.name == "global_step_" + str(contract["resume_step"])
+        assert checkpoint.resolve().is_relative_to(Path("/data/chenyiteng").resolve())
+        assert (checkpoint / "actor").is_dir()
     assert values["runner.logger.log_path"] == str(run)
     for split in ("train", "eval"):
         seeds = Path(config["env"][split]["seeds_path"])
