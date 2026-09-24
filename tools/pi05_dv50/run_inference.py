@@ -36,7 +36,22 @@ def run(config_path):
     save(out / 'started.json', {'time': started, 'pid': os.getpid(), 'gpu': cfg['gpu']})
     torch.set_num_threads(1)
     torch.cuda.set_device(0)
+    # cuDNN SDPA graph execution fails on this H100/runtime combination. Keep
+    # PyTorch's standard flash/efficient/math selection for the same attention.
+    torch.backends.cuda.enable_cudnn_sdp(False)
     model = get_model(OmegaConf.create(cfg['model'])).cuda().eval()
+    dummy = {'main_images': torch.zeros((16,224,224,3),dtype=torch.uint8),
+             'wrist_images': torch.zeros((16,2,224,224,3),dtype=torch.uint8),
+             'extra_view_images': None, 'states': torch.zeros((16,14)),
+             'task_descriptions': ['adjust the bottle']*16}
+    with torch.inference_mode():
+        check_action, check_result = model.predict_action_batch(dummy, mode='eval',
+                      compute_values=False, return_dvac_telemetry=True)
+        check_dv = compute_endpoint_variance(check_result['dvac_telemetry']['z_endpoint'],3)
+        assert check_dv.shape==(16,50) and torch.isfinite(check_dv).all()
+    save(out/'model-smoke.json', {'time':time.time(),'batch':16,'dv_shape':[16,50],
+         'cudnn_sdpa':False,'note':'Synthetic input runtime check; excluded from episode data'})
+    del check_action,check_result,check_dv,dummy
     env_cfg = OmegaConf.create(cfg['env'])
     # No autoreset: successes remain terminal and cannot silently become new episodes.
     assert not env_cfg.auto_reset and env_cfg.ignore_terminations
@@ -75,8 +90,8 @@ def run(config_path):
             if not active.any():
                 break
             before = counts.copy()
-            # EnvOutput supplies this optional field in the standard worker path.
-            obs.setdefault("extra_view_images", None)
+            # EnvOutput normally supplies this optional camera field in RLinf workers.
+            obs.setdefault('extra_view_images', None)
             with torch.inference_mode():
                 actions, result = model.predict_action_batch(
                     obs, mode='eval', compute_values=False, return_dvac_telemetry=True)
