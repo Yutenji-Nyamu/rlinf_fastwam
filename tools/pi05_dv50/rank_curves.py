@@ -3,6 +3,8 @@ import html
 import json
 from pathlib import Path
 import sys
+import subprocess
+import shutil
 import numpy as np
 
 
@@ -30,6 +32,20 @@ def main(root):
     root=Path(root);rows=[]
     for done in sorted(root.glob('batches/*/done.json')):
         d=done.parent;eps=json.loads((d/'episodes.json').read_text());queries=json.loads((d/'queries.json').read_text())
+        # OpenCV's portable mp4v writer is not supported by every browser. Convert only
+        # finalized previews; atomic replacement preserves any concurrent reader.
+        if not (d/'browser-video.json').exists():
+            ffmpeg=shutil.which('ffmpeg')
+            if not ffmpeg:
+                import imageio_ffmpeg
+                ffmpeg=imageio_ffmpeg.get_ffmpeg_exe()
+            for ep in eps:
+                video=d/ep['video'];tmp=video.with_name(video.stem+'.h264.mp4')
+                subprocess.run([ffmpeg,'-hide_banner','-loglevel','error','-y','-i',str(video),
+                    '-an','-c:v','libx264','-threads','1','-preset','fast','-crf','23',
+                    '-pix_fmt','yuv420p','-movflags','+faststart',str(tmp)],check=True,timeout=60)
+                tmp.replace(video)
+            (d/'browser-video.json').write_text(json.dumps({'codec':'H264','episodes':len(eps)}))
         for ep in eps:
             qs=[q for q in queries if q['slot']==ep['slot']]
             # Ranking excludes the terminal-success chunk with unknown executed prefix.
