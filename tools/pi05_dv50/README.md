@@ -2,7 +2,7 @@
 
 Original π0.5 RoboTwin base, native 10-step eval flow ODE, 50-action chunks, DV L=3. Fifty official task limits; 16 environments × two batches each. No optimizer, method weighting, DDP, or Ray connection. Each subprocess sees exactly one authorized physical GPU.
 
-`prepare_manifest.py BASE_CONFIG REPO OUTPUT ENVIRONMENT` freezes 100 batch configs. `queue.py OUTPUT` runs turn_switch/adjust_bottle batch zero as reusable smoke data, checks DV/episode/video consistency, then runs the remaining queue. A completed batch is skipped; partial batches require explicit retry in a fresh output. Timeouts signal only the controller's own child process group.
+`prepare_manifest.py BASE_CONFIG REPO OUTPUT ENVIRONMENT` freezes 100 batch configs. `run_queue.py OUTPUT` runs turn_switch/adjust_bottle batch zero as reusable smoke data, checks DV/episode/video consistency, then runs the remaining queue. A completed batch is skipped; partial batches require explicit retry in a fresh output. Timeouts signal only the controller's own child process group.
 
 Official eval seeds exist for 22 tasks. Other tasks use distinct deterministic seeds without expert success filtering. Both requested seed and RoboTwin's actual `ep_num` are retained; native unstable-scene retries are visible. Initialization failures remain failures, not zero-success policy trials.
 
