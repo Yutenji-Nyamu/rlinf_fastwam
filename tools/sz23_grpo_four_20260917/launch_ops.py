@@ -170,7 +170,7 @@ def check(base, launching=False):
     values = flat(config)
     for key, expected in {**contract["budget"], **contract["method"]}.items():
         assert values.get(key) == expected, "Frozen parameter changed: " + key
-    required = {"env.train.total_num_envs": 64, "env.train.rollout_epoch": 4,
+    required = {"env.train.total_num_envs": 32, "env.train.rollout_epoch": 8,
                 "actor.global_batch_size": 512, "actor.micro_batch_size": 32,
                 "algorithm.update_epoch": 2, "runner.max_steps": 200, "rollout.seed": 42}
     for key, expected in required.items():
@@ -191,7 +191,19 @@ def check(base, launching=False):
                 for field, expected in (("enabled", True), ("start_step", 1), ("end_step", 200), ("end_alpha", 0.0)):
                     assert values[prefix + "alpha_schedule." + level + "." + field] == expected
     assert values["cluster.component_placement.actor, env, rollout"] == ",".join(map(str, contract["gpus"]))
-    assert values.get("runner.resume_dir") is None and values.get("runner.ckpt_path") is None
+    assert values.get("runner.ckpt_path") is None
+    if contract.get("fresh", True):
+        assert values.get("runner.resume_dir") is None
+    else:
+        assert values.get("runner.resume_dir") == contract["resume_checkpoint"]
+        checkpoint = Path(contract["resume_checkpoint"])
+        assert checkpoint.name == "global_step_" + str(contract["resume_step"])
+        assert checkpoint.resolve().is_relative_to(Path("/data/chenyiteng").resolve())
+        for rank in (0, 1):
+            assert (checkpoint / "actor/local_shard_checkpoint" / f"checkpoint_rank_{rank}.pt").stat().st_size > 1_000_000_000
+            state = read(checkpoint / "actor" / f"dvac_state_rank{rank:04d}.json")
+            assert state["runner_step"] == contract["resume_step"] and state["actor_rank"] == rank and state["actor_world_size"] == 2
+            assert state["mode"] == values["algorithm.dvac_gradient_weighting.mode"]
     assert values["runner.logger.log_path"] == str(run)
     for split in ("train", "eval"):
         seeds = Path(config["env"][split]["seeds_path"])
