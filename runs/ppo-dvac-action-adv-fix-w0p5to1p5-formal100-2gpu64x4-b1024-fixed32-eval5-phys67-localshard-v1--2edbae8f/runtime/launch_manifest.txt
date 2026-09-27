@@ -1,0 +1,9 @@
+started_at=2026-08-31T11:54:02+08:00
+source_head=74617ced87d64045ab6850d0efd90956a494af66
+physical_gpus=6,7
+fresh_start=true; target_step=100
+train=64 env x 4 rollout epochs = 256 trajectories/step; max1024 query records
+actor=GB1024/MB32/update2; PPO GAE+critic/group1
+method=PPO-DVAC Action-Adv Fix [0.5,1.5]: PPO GAE actor advantage only; critic unchanged
+eval=fixed32 every5; videos=true; checkpoint=local_shard every10
+normal_stop=complete step100/checkpoint/exit0; hard_timeout=216000s

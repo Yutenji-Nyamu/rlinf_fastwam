@@ -1,0 +1,83 @@
+{
+  "time": "2026-09-09T10:25:03.553394+00:00",
+  "key": "formal",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-rynnvalue-rabc",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-sarm-4u5-k2-gpu7-formal100-20260909-v1",
+  "namespace": "RLinf_bc_sarm_4u5_k2_gpu7_formal_20260909",
+  "source_head": "d72e7fcf92995de3760efe0c8eba56abfa455462",
+  "source_hashes": {
+    "rlinf/data/online_bc.py": "43b42134cbc0df259951248efbf80414c3ebc9842008683400ae2f3cc2aa53d4",
+    "rlinf/workers/env/env_worker.py": "ca945e8870f5949b0e49e7541b1fdb09407fa67ee19a0a2ade2bb85ac39a33d1",
+    "rlinf/models/embodiment/openpi/openpi_action_model.py": "a5105f8ecdcdd588006cf329ceb9c9927fc95dd14f54e12d93c2c8f9a088edda",
+    "rlinf/workers/actor/fsdp_online_bc_policy_worker.py": "8d5dd4e4493514b86f25be450fa53e5d8e9e0edb4a3b703999648ad66c98ac0d",
+    "rlinf/workers/actor/fsdp_dagger_policy_worker.py": "9a19509bbf14cc2a30fa88cf8436266148d7cdb8e0ef730b4f870a2571a0d530",
+    "rlinf/algorithms/online_bc_rabc.py": "537f4a06dee7e1e71c8fdcc35b8f67238bb44bccebaf13965ddef578b840210b",
+    "rlinf/utils/rynnvalue_client.py": "f4b863f0cd38c55204c99678731c4f114922b26322a950b7b7de203591d72d98",
+    "rlinf/utils/rynnvalue_scorer.py": "0fdb23ad109956cfea1731cda1f75e1044b59c948eae5f995e316305b6deaeed"
+  },
+  "base": "01d770db3988da7862454e97434d4ff08f726fa2",
+  "branch": "codex/sz-pi05-online-bc-rynnvalue-rabc-20260909",
+  "baseline_run": "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc4x1-b1024-u5-m10-seed42-eval8x4-gpu6-formal100-20260908-v1",
+  "baseline_resolved_sha256": "42b06b9d61b517267ffe04d810fe74054fd38c10c1389ffc98a9dd31e2e1e15d",
+  "physical_gpus": [
+    7
+  ],
+  "rounds": 100,
+  "attempts_per_round": 4,
+  "adam_per_round": 5,
+  "training_attempts": 400,
+  "max_adam_updates": 500,
+  "global_batch": 1024,
+  "micro_batch": 32,
+  "denoise_steps": 10,
+  "chunk_size": 50,
+  "learning_rate": 2.5e-05,
+  "length_filter": null,
+  "signal": "RynnValue remaining seconds before minus after; SARM RA-BC query weights",
+  "rabc": {
+    "enabled": true,
+    "kappa_seconds": 2.0,
+    "epsilon_signal": 1e-06,
+    "epsilon_weight": 1e-06,
+    "endpoint": "http://127.0.0.1:18797",
+    "model_revision": "8738c5e4ce4418ea0266e9fbeffae0eb9bbb230e",
+    "robot_description": "An ALOHA AgileX bimanual robot with two 6-DoF arms and parallel grippers in the RoboTwin simulator.",
+    "camera_description": "Fixed third-person head RGB camera overlooking both arms and the tabletop workspace.",
+    "timeout_seconds": 900,
+    "debug_batches": 2
+  },
+  "asset_hashes": {
+    "/data/chenyiteng/models/RynnValue-8B-8738c5e4/manifest.json": "becd11bb4c955ee685f9b20cee7d44e765da009b1b6a05805242bfc4f948e935"
+  },
+  "settings_sha256": "f40fb95a33196596d27a52ce5b68c6ac3f32ada56b90c926aa4f8d931cfe24e7",
+  "eval_interval": 5,
+  "eval_episodes_per_check": 32,
+  "save_interval": 10,
+  "timeout_seconds": 172800,
+  "seeds": {
+    "train": {
+      "baseline": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-u10/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-rynnvalue-rabc/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+    },
+    "eval": {
+      "baseline": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-u10/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-rynnvalue-rabc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "sha256": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e"
+    }
+  },
+  "resolved_sha256": "adf826e53ea41371b41fca6ed556e1f712d8939492c3fdcd58a34cfea13f3907",
+  "prepared_hashes": {
+    "resolved.yaml": "adf826e53ea41371b41fca6ed556e1f712d8939492c3fdcd58a34cfea13f3907",
+    "argv.json": "146dd9d101a0b5a590c421e8907dfbcadec5f7b892238165191112ab304be98a",
+    "environment.json": "e38e42d0732aec058018edfb72edbc3c1c367d8bce5b22ab839a2b9b456ba1ad",
+    "command.sh": "3d97890c84eb2eba44501c3e00736aeba452e4802b2309b9f37bea2ebdce03be",
+    "wrapper.sh": "9e7b8fc11e7ec1dcc23572f0ddde9aa0dd33a1ded1b88426ee501efadfd2a65b"
+  },
+  "fresh_model_and_empty_pool": true,
+  "unexpected_differences": {},
+  "smoke_evidence": "/data/chenyiteng/results/server-maintenance-20260909/bc-rynnvalue-rabc/smoke-verification.json",
+  "smoke_source_head": "44f9086ad5a9c315dfabf5084f6afbba824af77f",
+  "owned_scorer_cleanup": "wrapper EXIT trap, exact PID/UID/start/argv identity, separate formal receipts",
+  "baseline_confounds": []
+}

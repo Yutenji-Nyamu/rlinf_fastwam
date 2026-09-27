@@ -1,0 +1,12 @@
+started_at=2026-08-25T04:42:45+00:00
+source_head=66c863bc5a45e90cb5161b30af54355b1104c810
+physical_gpus=4,5,6,7
+resume_from=/data/chenyiteng/results/rlinf-shenzhen/grpo/runs/dvac-global-z-formal100-grpo-matched-4gpu128x4-b2048-phys4567-v4/robotwin_grpo_openpi_dvac_global_z_matched/checkpoints/global_step_30
+resume_step=30; target_total_step=100; remaining_steps=70
+train=128 env x 4 epochs = 512 trajectories/step; G8; max 2048 chunk records/step
+actor=GB2048/MB32/update2; max 2 optimizer calls/step
+dvac=global-z L3; exact recent5 sidecars; warmup1; weights[0,2]
+eval=fixed64 every10; checkpoint every10
+parity=all scientific fields equal v4; only output paths and resume_dir differ
+normal_stop=total step100
+hard_timeout=129600s

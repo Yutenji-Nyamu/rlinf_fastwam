@@ -1,0 +1,790 @@
+{
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc",
+  "head": "a353b59833d902f5bcd8cbc3354643e63f439aad",
+  "branch": "codex/sz-pi05-online-bc",
+  "dirty": "",
+  "remotes": "origin\thttps://github.com/RLinf/RLinf.git (fetch)\norigin\thttps://github.com/RLinf/RLinf.git (push)\npersonal\tgit@github.com:Yutenji-Nyamu/rlinf_fastwam.git (fetch)\npersonal\tgit@github.com:Yutenji-Nyamu/rlinf_fastwam.git (push)",
+  "wrapper": "#!/usr/bin/env bash\nset -u\nrun_dir=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2\nroot=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc\nrobotwin=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\nvenv=/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\nexport PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=\"$root:$robotwin\"\nexport REPO_PATH=\"$root\" EMBODIED_PATH=\"$root/examples/embodiment\" ASSETS_PATH=\"$robotwin\"\nexport PI05_MODEL_PATH=/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\nexport ONLINE_BC_RUN_DIR=\"$run_dir\" RAY_ADDRESS=172.17.0.1:6389 RLINF_CODE_WORKING_DIR=\"$root\"\nexport TORCHINDUCTOR_COMPILE_THREADS=1\nunset CUDA_VISIBLE_DEVICES LD_PRELOAD RLINF_SCENE_FENCE_LIBRARY\ncd \"$root\" || exit 91\ndate -Is > \"$run_dir/started_at.txt\"\ngit rev-parse HEAD > \"$run_dir/runtime/source-head.txt\"\ntimeout --signal=TERM --kill-after=180s 172800 \"$venv/bin/python\" -u \\\n  \"$root/examples/embodiment/train_embodied_agent.py\" \\\n  --config-name robotwin_adjust_bottle_online_bc_openpi \\\n  +online_bc_model=pi05_sidney \\\n  +rollout.seed=42 \\\n  runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 \\\n  actor.optim.total_training_steps=1000 \\\n  runner.logger.experiment_name=pi05-pillbottle-bc-seed42-u10-formal100-gpu6 \\\n  > \"$run_dir/driver.log\" 2>&1 &\nchild=$!\nprintf '%s\\n' \"$child\" > \"$run_dir/timeout.pid\"\nwait \"$child\"\nrc=$?\nprintf '%s\\n' \"$rc\" > \"$run_dir/exit_code.txt\"\ndate -Is > \"$run_dir/finished_at.txt\"\nexit \"$rc\"\n",
+  "runtime_files": [
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/startup_verification.json",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/contract.md",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/preflight.json",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/wrapper.sh",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/new_pair_config_comparison.json",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/resolved.yaml",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/resource_observer.py",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/source-head.txt"
+  ],
+  "resolved": "env:\n  train:\n    env_type: robotwin\n    total_num_envs: 32\n    auto_reset: false\n    ignore_terminations: false\n    reward_coef: 1.0\n    use_custom_reward: true\n    use_rel_reward: true\n    center_crop: false\n    seed: 0\n    group_size: 1\n    use_fixed_reset_state_ids: false\n    max_steps_per_rollout_epoch: 200\n    max_episode_steps: 200\n    is_eval: false\n    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\n    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json\n    video_cfg:\n      save_video: false\n      info_on_video: true\n      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train\n    enable_offload: false\n    task_config:\n      task_name: move_pillbottle_pad\n      step_lim: 200\n      planner_backend: mplib\n      render_freq: 0\n      episode_num: 100\n      use_seed: false\n      save_freq: 15\n      embodiment:\n      - aloha-agilex\n      language_num: 100\n      domain_randomization:\n        random_background: false\n        cluttered_table: false\n        clean_background_rate: 1\n        random_head_camera_dis: 0\n        random_table_height: 0\n        random_light: false\n        crazy_random_light_rate: 0\n      camera:\n        head_camera_type: D435\n        wrist_camera_type: D435\n        collect_head_camera: true\n        collect_wrist_camera: true\n      data_type:\n        rgb: true\n        third_view: false\n        depth: false\n        pointcloud: false\n        observer: false\n        endpose: false\n        qpos: true\n        mesh_segmentation: false\n        actor_segmentation: false\n      pcd_down_sample_num: 1024\n      pcd_crop: true\n      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data\n      clear_cache_freq: 1\n      collect_data: true\n      eval_video_log: true\n    rollout_epoch: 1\n  eval:\n    env_type: robotwin\n    total_num_envs: 8\n    auto_reset: false\n    ignore_terminations: true\n    reward_coef: 1.0\n    use_custom_reward: true\n    use_rel_reward: true\n    center_crop: false\n    seed: 0\n    group_size: 1\n    use_fixed_reset_state_ids: true\n    max_steps_per_rollout_epoch: 200\n    max_episode_steps: 200\n    is_eval: true\n    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\n    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json\n    video_cfg:\n      save_video: false\n      info_on_video: true\n      video_base_dir: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train\n    enable_offload: false\n    task_config:\n      task_name: move_pillbottle_pad\n      step_lim: 200\n      planner_backend: mplib\n      render_freq: 0\n      episode_num: 100\n      use_seed: false\n      save_freq: 15\n      embodiment:\n      - aloha-agilex\n      language_num: 100\n      domain_randomization:\n        random_background: false\n        cluttered_table: false\n        clean_background_rate: 1\n        random_head_camera_dis: 0\n        random_table_height: 0\n        random_light: false\n        crazy_random_light_rate: 0\n      camera:\n        head_camera_type: D435\n        wrist_camera_type: D435\n        collect_head_camera: true\n        collect_wrist_camera: true\n      data_type:\n        rgb: true\n        third_view: false\n        depth: false\n        pointcloud: false\n        observer: false\n        endpose: false\n        qpos: true\n        mesh_segmentation: false\n        actor_segmentation: false\n      pcd_down_sample_num: 1024\n      pcd_crop: true\n      save_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data\n      clear_cache_freq: 1\n      collect_data: true\n      eval_video_log: true\n    rollout_epoch: 4\n    fixed_reset_batch_count: 4\n  group_name: EnvGroup\n  min_open_files: 4096\nactor:\n  model:\n    model_type: openpi\n    model_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\n    precision: null\n    num_action_chunks: 50\n    action_dim: 14\n    is_lora: false\n    lora_rank: 32\n    use_proprio: true\n    num_steps: 10\n    add_value_head: false\n    openpi:\n      config_name: pi05_sidney_robotwin\n      num_images_in_input: 3\n      noise_level: 0.5\n      action_chunk: 50\n      num_steps: 10\n      train_expert_only: true\n      action_env_dim: 14\n      noise_method: flow_sde\n      add_value_head: false\n      detach_critic_input: false\n      use_dsrl: false\n      dsrl_state_dim: 8\n      dsrl_action_noise_dim: 32\n      dsrl_num_q_heads: 10\n      dsrl_agg_q: mean\n      dsrl_image_latent_dim: 64\n      dsrl_state_latent_dim: 64\n      dsrl_hidden_dims:\n      - 128\n      - 128\n      - 128\n      image_augmentation: false\n  fsdp_config:\n    strategy: fsdp\n    sharding_strategy: no_shard\n    gradient_checkpointing: false\n    cpu_offload: false\n    offload_pin_memory: false\n    reshard_after_forward: true\n    enable_gradient_accumulation: true\n    forward_prefetch: false\n    limit_all_gathers: false\n    backward_prefetch: null\n    use_orig_params: false\n    use_liger_kernel: false\n    mixed_precision:\n      param_dtype: null\n      reduce_dtype: null\n      buffer_dtype: null\n    amp_autocast:\n      enabled: false\n      precision: bf16\n    grad_scaler:\n      enabled: false\n      init_scale: null\n      growth_interval: null\n    checkpoint_format: local_shard\n    wrap_policy:\n      transformer_layer_cls_to_wrap:\n      - GemmaMLP\n      - SiglipVisionEmbeddings\n      - GemmaRMSNorm\n      - GemmaRotaryEmbedding\n      no_split_names:\n      - q_proj\n      - k_proj\n      - v_proj\n      - o_proj\n      - action_in_proj\n      - action_out_proj\n      - lm_head\n      - state_proj\n      - action_time_mlp_in\n      - action_time_mlp_out\n      - time_mlp_in\n      - time_mlp_out\n  group_name: ActorGroup\n  training_backend: fsdp\n  micro_batch_size: 32\n  global_batch_size: 1024\n  seed: 1234\n  enable_offload: true\n  enable_drq: false\n  optim:\n    lr: 2.5e-05\n    value_lr: 2.5e-05\n    adam_beta1: 0.9\n    adam_beta2: 0.95\n    adam_eps: 1.0e-08\n    weight_decay: 1.0e-10\n    clip_grad: 1.0\n    total_training_steps: 1000\n    lr_warmup_steps: 0\n    lr_scheduler: constant\n    min_lr: 2.5e-05\nweight_syncer:\n  type: patch\n  patch:\n    snapshot_device: cpu\n    delta_encoding: true\n    compression: none\n    init_sync:\n      enabled: true\n      prefixes: null\n      bucket_size: 134217728\ncluster:\n  num_nodes: 1\n  component_placement:\n    actor,env,rollout: '6'\n  tracer:\n    enable: false\nrunner:\n  task_type: embodied\n  logger:\n    log_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2\n    project_name: rlinf-online-bc\n    experiment_name: pi05-pillbottle-bc-seed42-u10-formal100-gpu6\n    logger_backends:\n    - tensorboard\n  max_epochs: 100\n  max_steps: -1\n  only_eval: false\n  val_check_interval: 5\n  save_interval: 10\n  resume_dir: null\n  ckpt_path: null\n  overlap_env_bootstrap: false\n  per_worker_log: false\n  per_worker_log_path: null\n  weight_sync_interval: 1\nalgorithm:\n  loss_type: online_bc\n  adv_type: gae\n  gamma: 0.99\n  reward_coef: 1.0\n  update_epoch: 10\n  online_bc:\n    data_path: /data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/success_data\n    demo_weight: 0.0\n    demo_data_path: null\n  replay_buffer:\n    min_buffer_size: 1\nrollout:\n  group_name: RolloutGroup\n  backend: huggingface\n  recompute_logprobs: false\n  enable_offload: true\n  pipeline_stage_num: 1\n  collect_prev_infos: false\n  collect_final_values: false\n  expert_model: null\n  model:\n    model_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\n    precision: null\n  seed: 42\nreward:\n  use_reward_model: false\ncritic:\n  use_critic_model: false\n",
+  "root_files": [
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/observer.log",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/metrics.log",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/observer.pid",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/resource.csv",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/wrapper.log",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/started_at.txt",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/timeout.pid",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/driver.log",
+    "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/wrapper.pid"
+  ],
+  "pids": [
+    {
+      "pid": 914847,
+      "uid": 1003,
+      "start": "157000653",
+      "cmd": "timeout --signal=TERM --kill-after=180s 172800 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +rollout.seed=42 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-seed42-u10-formal100-gpu6 ",
+      "runtime_env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc",
+        "ONLINE_BC_RUN_DIR=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2"
+      ]
+    },
+    {
+      "pid": 914848,
+      "uid": 1003,
+      "start": "157000653",
+      "cmd": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +rollout.seed=42 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-seed42-u10-formal100-gpu6 ",
+      "runtime_env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc",
+        "ONLINE_BC_RUN_DIR=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2"
+      ]
+    },
+    {
+      "pid": 915681,
+      "uid": 1003,
+      "start": "157001870",
+      "cmd": "timeout --signal=TERM --kill-after=180s 172800 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +bc_dvac=default +rollout.seed=42 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-dvac-seed42-w0to2-u10-formal100-gpu7 ",
+      "runtime_env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac",
+        "ONLINE_BC_RUN_DIR=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2"
+      ]
+    },
+    {
+      "pid": 915687,
+      "uid": 1003,
+      "start": "157001870",
+      "cmd": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +bc_dvac=default +rollout.seed=42 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-dvac-seed42-w0to2-u10-formal100-gpu7 ",
+      "runtime_env": [
+        "RLINF_CODE_WORKING_DIR=/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac",
+        "ONLINE_BC_RUN_DIR=/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2"
+      ]
+    }
+  ],
+  "scalars": {
+    "env/success_once": [
+      {
+        "step": 1,
+        "value": 0.3125,
+        "wall_time": 1788684292.8007464
+      },
+      {
+        "step": 2,
+        "value": 0.46875,
+        "wall_time": 1788685101.5567565
+      },
+      {
+        "step": 3,
+        "value": 0.4375,
+        "wall_time": 1788685895.25269
+      },
+      {
+        "step": 4,
+        "value": 0.40625,
+        "wall_time": 1788686687.1704762
+      },
+      {
+        "step": 5,
+        "value": 0.59375,
+        "wall_time": 1788687814.301926
+      },
+      {
+        "step": 6,
+        "value": 0.59375,
+        "wall_time": 1788688607.667126
+      },
+      {
+        "step": 7,
+        "value": 0.5,
+        "wall_time": 1788689409.7523458
+      },
+      {
+        "step": 8,
+        "value": 0.5,
+        "wall_time": 1788690197.489988
+      },
+      {
+        "step": 9,
+        "value": 0.53125,
+        "wall_time": 1788691002.5683734
+      },
+      {
+        "step": 10,
+        "value": 0.65625,
+        "wall_time": 1788692172.925188
+      },
+      {
+        "step": 11,
+        "value": 0.59375,
+        "wall_time": 1788692947.705386
+      },
+      {
+        "step": 12,
+        "value": 0.6875,
+        "wall_time": 1788693732.4778051
+      },
+      {
+        "step": 13,
+        "value": 0.6875,
+        "wall_time": 1788694526.2483723
+      },
+      {
+        "step": 14,
+        "value": 0.5625,
+        "wall_time": 1788695308.046766
+      },
+      {
+        "step": 15,
+        "value": 0.59375,
+        "wall_time": 1788696411.618957
+      },
+      {
+        "step": 16,
+        "value": 0.65625,
+        "wall_time": 1788697219.059941
+      },
+      {
+        "step": 17,
+        "value": 0.53125,
+        "wall_time": 1788697982.2363343
+      },
+      {
+        "step": 18,
+        "value": 0.5625,
+        "wall_time": 1788698756.3181162
+      },
+      {
+        "step": 19,
+        "value": 0.65625,
+        "wall_time": 1788699512.4751103
+      },
+      {
+        "step": 20,
+        "value": 0.59375,
+        "wall_time": 1788700619.1536264
+      },
+      {
+        "step": 21,
+        "value": 0.65625,
+        "wall_time": 1788701425.159666
+      },
+      {
+        "step": 22,
+        "value": 0.59375,
+        "wall_time": 1788702189.7741225
+      },
+      {
+        "step": 23,
+        "value": 0.75,
+        "wall_time": 1788702944.6104872
+      },
+      {
+        "step": 24,
+        "value": 0.53125,
+        "wall_time": 1788703711.7346804
+      },
+      {
+        "step": 25,
+        "value": 0.625,
+        "wall_time": 1788704785.8860846
+      },
+      {
+        "step": 26,
+        "value": 0.625,
+        "wall_time": 1788705587.5674555
+      },
+      {
+        "step": 27,
+        "value": 0.65625,
+        "wall_time": 1788706346.6725426
+      },
+      {
+        "step": 28,
+        "value": 0.75,
+        "wall_time": 1788707099.6236787
+      },
+      {
+        "step": 29,
+        "value": 0.625,
+        "wall_time": 1788707868.4377687
+      },
+      {
+        "step": 30,
+        "value": 0.625,
+        "wall_time": 1788708967.4834476
+      },
+      {
+        "step": 31,
+        "value": 0.625,
+        "wall_time": 1788709762.6437187
+      },
+      {
+        "step": 32,
+        "value": 0.625,
+        "wall_time": 1788710524.3118026
+      },
+      {
+        "step": 33,
+        "value": 0.65625,
+        "wall_time": 1788711280.1938465
+      },
+      {
+        "step": 34,
+        "value": 0.59375,
+        "wall_time": 1788712042.8341713
+      },
+      {
+        "step": 35,
+        "value": 0.6875,
+        "wall_time": 1788713110.888294
+      },
+      {
+        "step": 36,
+        "value": 0.5625,
+        "wall_time": 1788713905.3109827
+      },
+      {
+        "step": 37,
+        "value": 0.6875,
+        "wall_time": 1788714655.1883738
+      },
+      {
+        "step": 38,
+        "value": 0.71875,
+        "wall_time": 1788715413.0685523
+      },
+      {
+        "step": 39,
+        "value": 0.6875,
+        "wall_time": 1788716162.9998443
+      },
+      {
+        "step": 40,
+        "value": 0.625,
+        "wall_time": 1788717257.6529531
+      },
+      {
+        "step": 41,
+        "value": 0.625,
+        "wall_time": 1788718064.0475185
+      },
+      {
+        "step": 42,
+        "value": 0.75,
+        "wall_time": 1788718822.7173316
+      },
+      {
+        "step": 43,
+        "value": 0.59375,
+        "wall_time": 1788719578.6758516
+      },
+      {
+        "step": 44,
+        "value": 0.5625,
+        "wall_time": 1788720328.9179292
+      },
+      {
+        "step": 45,
+        "value": 0.6875,
+        "wall_time": 1788721417.7579243
+      },
+      {
+        "step": 46,
+        "value": 0.5625,
+        "wall_time": 1788722204.3678885
+      },
+      {
+        "step": 47,
+        "value": 0.6875,
+        "wall_time": 1788722960.8597515
+      },
+      {
+        "step": 48,
+        "value": 0.75,
+        "wall_time": 1788723713.4358134
+      },
+      {
+        "step": 49,
+        "value": 0.53125,
+        "wall_time": 1788724490.1157486
+      },
+      {
+        "step": 50,
+        "value": 0.75,
+        "wall_time": 1788725586.13702
+      },
+      {
+        "step": 51,
+        "value": 0.65625,
+        "wall_time": 1788726362.1426153
+      },
+      {
+        "step": 52,
+        "value": 0.6875,
+        "wall_time": 1788727135.5845156
+      },
+      {
+        "step": 53,
+        "value": 0.6875,
+        "wall_time": 1788727885.0751197
+      },
+      {
+        "step": 54,
+        "value": 0.6875,
+        "wall_time": 1788728634.2880056
+      },
+      {
+        "step": 55,
+        "value": 0.59375,
+        "wall_time": 1788729699.4423094
+      },
+      {
+        "step": 56,
+        "value": 0.71875,
+        "wall_time": 1788730490.8858838
+      },
+      {
+        "step": 57,
+        "value": 0.625,
+        "wall_time": 1788731265.110712
+      },
+      {
+        "step": 58,
+        "value": 0.65625,
+        "wall_time": 1788732021.9468393
+      },
+      {
+        "step": 59,
+        "value": 0.84375,
+        "wall_time": 1788732779.7211506
+      },
+      {
+        "step": 60,
+        "value": 0.65625,
+        "wall_time": 1788733887.212177
+      },
+      {
+        "step": 61,
+        "value": 0.71875,
+        "wall_time": 1788734654.9740653
+      },
+      {
+        "step": 62,
+        "value": 0.78125,
+        "wall_time": 1788735415.2439406
+      },
+      {
+        "step": 63,
+        "value": 0.84375,
+        "wall_time": 1788736161.285567
+      },
+      {
+        "step": 64,
+        "value": 0.8125,
+        "wall_time": 1788736916.0481431
+      },
+      {
+        "step": 65,
+        "value": 0.71875,
+        "wall_time": 1788737968.5047128
+      },
+      {
+        "step": 66,
+        "value": 0.75,
+        "wall_time": 1788738749.043283
+      },
+      {
+        "step": 67,
+        "value": 0.59375,
+        "wall_time": 1788739500.7699378
+      },
+      {
+        "step": 68,
+        "value": 0.78125,
+        "wall_time": 1788740255.9471664
+      },
+      {
+        "step": 69,
+        "value": 0.71875,
+        "wall_time": 1788741012.9104626
+      },
+      {
+        "step": 70,
+        "value": 0.75,
+        "wall_time": 1788742097.4834304
+      },
+      {
+        "step": 71,
+        "value": 0.71875,
+        "wall_time": 1788742853.0668015
+      },
+      {
+        "step": 72,
+        "value": 0.71875,
+        "wall_time": 1788743628.7869773
+      },
+      {
+        "step": 73,
+        "value": 0.71875,
+        "wall_time": 1788744388.4984272
+      },
+      {
+        "step": 74,
+        "value": 0.71875,
+        "wall_time": 1788745145.1184711
+      },
+      {
+        "step": 75,
+        "value": 0.59375,
+        "wall_time": 1788746206.174682
+      },
+      {
+        "step": 76,
+        "value": 0.625,
+        "wall_time": 1788746988.016296
+      },
+      {
+        "step": 77,
+        "value": 0.625,
+        "wall_time": 1788747765.936216
+      },
+      {
+        "step": 78,
+        "value": 0.71875,
+        "wall_time": 1788748516.4346325
+      },
+      {
+        "step": 79,
+        "value": 0.71875,
+        "wall_time": 1788749290.4446397
+      },
+      {
+        "step": 80,
+        "value": 0.5625,
+        "wall_time": 1788750399.1491067
+      },
+      {
+        "step": 81,
+        "value": 0.75,
+        "wall_time": 1788751162.0938878
+      },
+      {
+        "step": 82,
+        "value": 0.65625,
+        "wall_time": 1788751935.6635108
+      },
+      {
+        "step": 83,
+        "value": 0.6875,
+        "wall_time": 1788752696.1623344
+      },
+      {
+        "step": 84,
+        "value": 0.6875,
+        "wall_time": 1788753458.9053612
+      },
+      {
+        "step": 85,
+        "value": 0.78125,
+        "wall_time": 1788754556.2011943
+      },
+      {
+        "step": 86,
+        "value": 0.65625,
+        "wall_time": 1788755330.31398
+      },
+      {
+        "step": 87,
+        "value": 0.5,
+        "wall_time": 1788756084.0959792
+      },
+      {
+        "step": 88,
+        "value": 0.71875,
+        "wall_time": 1788756874.7613816
+      }
+    ],
+    "eval/success_once": [
+      {
+        "step": 5,
+        "value": 0.4375,
+        "wall_time": 1788687814.2767663
+      },
+      {
+        "step": 10,
+        "value": 0.5625,
+        "wall_time": 1788692146.7140555
+      },
+      {
+        "step": 15,
+        "value": 0.5625,
+        "wall_time": 1788696411.588014
+      },
+      {
+        "step": 20,
+        "value": 0.5,
+        "wall_time": 1788700593.1377146
+      },
+      {
+        "step": 25,
+        "value": 0.5,
+        "wall_time": 1788704785.856551
+      },
+      {
+        "step": 30,
+        "value": 0.59375,
+        "wall_time": 1788708940.5352962
+      },
+      {
+        "step": 35,
+        "value": 0.5625,
+        "wall_time": 1788713110.870563
+      },
+      {
+        "step": 40,
+        "value": 0.59375,
+        "wall_time": 1788717232.5269175
+      },
+      {
+        "step": 45,
+        "value": 0.5625,
+        "wall_time": 1788721417.7403274
+      },
+      {
+        "step": 50,
+        "value": 0.46875,
+        "wall_time": 1788725558.8541915
+      },
+      {
+        "step": 55,
+        "value": 0.59375,
+        "wall_time": 1788729699.4264033
+      },
+      {
+        "step": 60,
+        "value": 0.5625,
+        "wall_time": 1788733858.197786
+      },
+      {
+        "step": 65,
+        "value": 0.5625,
+        "wall_time": 1788737968.4900599
+      },
+      {
+        "step": 70,
+        "value": 0.65625,
+        "wall_time": 1788742067.5855463
+      },
+      {
+        "step": 75,
+        "value": 0.625,
+        "wall_time": 1788746206.160602
+      },
+      {
+        "step": 80,
+        "value": 0.59375,
+        "wall_time": 1788750365.9903636
+      },
+      {
+        "step": 85,
+        "value": 0.59375,
+        "wall_time": 1788754556.186299
+      }
+    ]
+  },
+  "checkpoints": [
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_70/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_70/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_70/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 3455446684
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_70/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_40/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_40/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_40/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 1852485072
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_40/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_20/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_20/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_20/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 855743916
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_20/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_30/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_30/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_30/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 1353409592
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_30/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_60/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_60/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_60/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 2880241916
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_60/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_80/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_80/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_80/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 3974964258
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_80/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_10/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_10/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_10/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 386988211
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_10/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_50/actor/model_state_dict/full_weights.pt",
+      "bytes": 8526557492
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_50/actor/online_bc/rank_0/learner.pt",
+      "bytes": 1261
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_50/actor/online_bc/rank_0/success_replay.pt",
+      "bytes": 2356494866
+    },
+    {
+      "path": "pi05-pillbottle-bc-seed42-u10-formal100-gpu6/checkpoints/global_step_50/actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+      "bytes": 11775071582
+    }
+  ],
+  "exit": null,
+  "log_tail": "",
+  "tag": "bc",
+  "old": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2",
+  "prepared": "/data/chenyiteng/results/server-maintenance-20260907/budget-cutover/prepared-bc",
+  "gpu": 6,
+  "diff": {
+    "algorithm.update_epoch": [
+      10,
+      2
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1/robotwin_data"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1/video/train"
+    ],
+    "algorithm.online_bc.data_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/success_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1/success_data"
+    ],
+    "runner.logger.experiment_name": [
+      "pi05-pillbottle-bc-seed42-u10-formal100-gpu6",
+      "pi05-pillbottle-bc-seed42-8x1-u2-formal100-gpu6-0907"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1/video/train"
+    ],
+    "env.train.total_num_envs": [
+      32,
+      8
+    ],
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc8x1-b1024-u2-m10-seed42-eval8x4-gpu6-formal100-20260907-v1/robotwin_data"
+    ]
+  },
+  "overrides": [
+    "+online_bc_model=pi05_sidney",
+    "+rollout.seed=42",
+    "runner.max_epochs=100",
+    "runner.val_check_interval=5",
+    "runner.save_interval=10",
+    "actor.optim.total_training_steps=1000",
+    "runner.logger.experiment_name=pi05-pillbottle-bc-seed42-8x1-u2-formal100-gpu6-0907",
+    "env.train.total_num_envs=8",
+    "algorithm.update_epoch=2"
+  ],
+  "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +rollout.seed=42 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-seed42-8x1-u2-formal100-gpu6-0907 env.train.total_num_envs=8 algorithm.update_epoch=2"
+}

@@ -1,0 +1,49 @@
+{
+  "source_head": "7b2331c55d14397cfb4cb16181470ddc8afae44a",
+  "physical_gpus": [
+    6,
+    7
+  ],
+  "fresh_start": true,
+  "max_steps": 100,
+  "task": "move_stapler_pad",
+  "model": "Fast-WAM",
+  "model_contract": {
+    "H": 32,
+    "C": 24,
+    "M": 10,
+    "D": 14,
+    "episode_actions": 192
+  },
+  "sampling": {
+    "train_envs": 32,
+    "rollout_epochs": 8,
+    "trajectories_per_step": 256,
+    "group_size": 8,
+    "groups_per_step": 32,
+    "max_query_records": 2048
+  },
+  "optimization": {
+    "global_batch": 2048,
+    "micro_batch": 2,
+    "update_epochs": 2,
+    "optimizer_calls_per_step": 2,
+    "presentations_per_step": 4096,
+    "lr": 5e-06
+  },
+  "evaluation": {
+    "fixed_episodes": 32,
+    "every_steps": 5,
+    "total_fixed_episodes": 640
+  },
+  "checkpoint": {
+    "format": "dcp",
+    "every_steps": 10
+  },
+  "formal_totals": {
+    "trajectories": 25600,
+    "max_query_records": 204800,
+    "optimizer_calls": 200,
+    "presentations": 409600
+  }
+}

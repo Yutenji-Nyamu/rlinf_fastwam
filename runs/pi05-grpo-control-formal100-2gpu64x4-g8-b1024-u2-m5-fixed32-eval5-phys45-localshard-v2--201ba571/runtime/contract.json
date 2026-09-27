@@ -1,0 +1,33 @@
+{
+  "kind": "pi0.5 GRPO Control matched GB1024/update2",
+  "fresh_start": true,
+  "source_head": "256eeeb4459b4bd5db85bfc6a0eb315771e8c38c",
+  "common": {
+    "train_envs": 64,
+    "rollout_epochs": 4,
+    "trajectories_per_step": 256,
+    "max_query_records": 1024,
+    "eval_envs": 32,
+    "global_batch": 1024,
+    "micro_batch": 32,
+    "update_epochs": 2,
+    "optimizer_steps_per_outer": 2,
+    "group_size": 8,
+    "denoise_steps": 5,
+    "eval_every": 5,
+    "save_every": 10,
+    "checkpoint_format": "local_shard"
+  },
+  "old_to_new_diff": [
+    "actor.global_batch_size",
+    "algorithm.dvac_gradient_weighting.output_dir",
+    "algorithm.update_epoch",
+    "env.eval.task_config.save_path",
+    "env.eval.video_cfg.video_base_dir",
+    "env.train.task_config.save_path",
+    "env.train.video_cfg.video_base_dir",
+    "runner.logger.experiment_name",
+    "runner.logger.log_path"
+  ],
+  "unexpected": []
+}

@@ -1,0 +1,9 @@
+started_at=2026-08-30T11:10:07+08:00
+source_head=0e28ac6f09f821ea12e7d54eba7118ce0000ca86
+physical_gpus=6,7
+fresh_start=true; target_step=100
+train=64 env x 4 epochs = 256 trajectories/step; G8; max1024 records
+actor=GB1024/MB32/update2
+method=ST-DVAC global-z [0.8,1.2]: Control joint-chunk forward/clip; local backward scaling
+eval=fixed32 every5; checkpoint=default DCP every10
+normal_stop=complete step100/checkpoint/exit0; hard_timeout=216000s

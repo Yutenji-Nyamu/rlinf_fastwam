@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/results/server-maintenance-20260909/bc-attena-fk/launch_ops.py driver smoke --config-path /home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-attena-fk-sum-4u5-len3-gpu6-smoke2-20260909-v1/runtime --config-name resolved hydra.run.dir=. hydra.output_subdir=null hydra.job.chdir=false hydra/job_logging=stdout

@@ -1,0 +1,37 @@
+{
+  "kind": "pi05 GRPO-DVAC Action-Adv [0.5,1.5]",
+  "common": {
+    "train_envs": 64,
+    "rollout_epochs": 4,
+    "trajectories_per_step": 256,
+    "max_query_records": 1024,
+    "eval_envs": 32,
+    "eval_every": 5,
+    "save_every": 10,
+    "global_batch": 512,
+    "micro_batch": 32,
+    "update_epochs": 5,
+    "optimizer_steps_per_outer": 10,
+    "group_size": 8,
+    "adv_type": "grpo",
+    "loss_type": "actor",
+    "denoise_steps": 5,
+    "checkpoint_format": "local_shard"
+  },
+  "allowed_pair_diff": [
+    "algorithm.dvac_gradient_weighting.application",
+    "algorithm.dvac_gradient_weighting.mode",
+    "algorithm.dvac_gradient_weighting.output_dir",
+    "algorithm.dvac_gradient_weighting.weight_max",
+    "algorithm.dvac_gradient_weighting.weight_min",
+    "algorithm.logprob_type",
+    "cluster.component_placement.actor, env, rollout",
+    "env.eval.task_config.save_path",
+    "env.eval.video_cfg.video_base_dir",
+    "env.train.task_config.save_path",
+    "env.train.video_cfg.video_base_dir",
+    "runner.logger.experiment_name",
+    "runner.logger.log_path"
+  ],
+  "unexpected": []
+}

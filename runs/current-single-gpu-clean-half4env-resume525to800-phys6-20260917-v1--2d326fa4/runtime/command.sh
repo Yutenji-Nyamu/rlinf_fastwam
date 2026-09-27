@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/results/server-maintenance-20260917/rlt-clean4-resume800/ops.py driver rlt formal --config-path /data/chenyiteng/results/rlinf-rlt/current-single-gpu-clean-half4env-resume525to800-phys6-20260917-v1/runtime --config-name resolved hydra.run.dir=. hydra.output_subdir=null hydra.job.chdir=false hydra/job_logging=stdout

@@ -1,0 +1,67 @@
+{
+  "fresh_from_original_sft": true,
+  "donor": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1",
+  "resolved_difference_count": 6,
+  "allowed_resolved_differences": {
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/robotwin_data/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3/robotwin_data/train"
+    ],
+    "runner.logger.experiment_name": [
+      "fastwam_grpo_control_fresh100_2gpu32x8_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_clean_nooidn_v1",
+      "fastwam_grpo_control_fresh100_2gpu32x8_g8_b1024_u2_m10_fixed32_eval5_phys67_dcp_clean_nooidn_scene_fence_v3"
+    ],
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/robotwin_data/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3/robotwin_data/eval"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3/video/train"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1/video/eval",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3/video/eval"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-v1",
+      "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/runs/fastwam-grpo-control-fresh100-2gpu32x8-g8-b1024-u2-m10-fixed32-eval5-phys67-dcp-clean-nooidn-scene-fence-v3"
+    ]
+  },
+  "source_heads": {
+    "rlinf": "62526cc95047c8a4a6e948a76be8eeec8a3926de",
+    "robotwin": "f3e30a83365cdda1165911422dc3ce73e703201e",
+    "fastwam": "7faa71108368fbb3b6885649f112af607427a2d4"
+  },
+  "robotwin_clean_base": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+  "old_vector_patch_in_new_worktree": false,
+  "budget": {
+    "outer_steps": 100,
+    "train_episodes": 25600,
+    "train_submitted_action_slots_max": 4915200,
+    "new_query_records_max": 204800,
+    "query_record_presentations_max": 409600,
+    "actor_optimizer_calls": 400,
+    "critic_updates": 0,
+    "eval_episodes": 640,
+    "checkpoint_generations": 10,
+    "wall_timeout_seconds": 432000,
+    "reserved_gpu_hours_cap": 240,
+    "expected_wall_hours_rough": 50,
+    "expected_gpu_hours_rough": 100
+  },
+  "rendering": "RT/SPP32/pathdepth8 unchanged; explicitly none in train and eval",
+  "stop": "100 steps, driver fatal/exception or inherited120h wall cap. If new hang is confirmed during this supervised launch, capture evidence and stop only this run; no parameter change or automatic restart.",
+  "latest_user_amendment": "Double trajectories via rollout4->8; keep parallel32 and all optimizer hyperparameters unchanged. GB1024/update_epoch2 implies4 optimizer calls per outer step.",
+  "prior_128_packet": "prepared but never launched",
+  "risk": "Prior256-trajectory OIDN-on run OOMed; noOIDN may reduce renderer memory but long-run fit is unproven. On OOM stop, do not silently change parallelism or batches.",
+  "native_fix": {
+    "source": "tools/fastwam_scene_fence",
+    "library": "/home/chenyiteng/builds/fastwam-scene-fence-20260904/release-final/librlinf_scene_fence.so",
+    "sha256": "45e6cac35ea2edea0724fa4cd92ec82cab401b6abd6f8001805d22306f375df0",
+    "loading": "RoboTwin init only: RTLD_LOCAL after PyTorch and before SAPIEN. No LD_PRELOAD or LD_LIBRARY_PATH changes; Actor/Rollout/driver unaffected.",
+    "scope": "timeline render scene-access fence only; no original libraries modified; no dependency upgrade",
+    "smoke": "/data/chenyiteng/results/rlinf-shenzhen/fastwam-grpo/diagnostics/scene-fence-env-local-smoke-20260904"
+  },
+  "restart": "fresh original SFT; old stalled run had no checkpoint; old artifacts preserved"
+}

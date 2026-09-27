@@ -1,0 +1,13 @@
+prepared_at=2026-08-24T03:36:15+00:00
+case=a_zero_update_post_fix
+source_head=f3ea5f691b99fe39e024e5571c0e6ee3d83c51b4
+source_diff= rlinf/hybrid_engines/fsdp/fsdp_model_manager.py  |  2 ++; rlinf/hybrid_engines/fsdp/strategy/checkpoint.py | 33 ++++++++++++++++++++++++; 2 files changed, 35 insertions(+);
+shared_ray_address=172.17.0.1:6389
+physical_gpus=4,5; actor_world_size=2
+train=4 env x 1 cycle; max 8 transitions; H50/C10/D14
+warmup_min_size=10000
+warmup_post_collect_updates=30000
+max_updates_per_train_step=1
+eval=disabled; save=cycle1
+normal_stop=checkpoint global_step_1 and exit0
+failure_stop=nonzero exit or 1800s hard timeout

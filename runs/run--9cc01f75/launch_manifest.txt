@@ -1,0 +1,18 @@
+prepared_at=2026-08-23T16:47:38+00:00
+source_head=4b609178d10d2534f3f972435ad972e4e015c392
+shared_ray_address=172.17.0.1:6389
+ray_job_code_sync=/data/chenyiteng/projects/rlinf-current-dsrl/RLinf-7d07-dsrl-robotwin/rlinf
+physical_gpus=6,7
+actor_world_size=2
+train_envs=4; one episode/env/cycle
+action_horizon=50; executed_chunk=20
+global_batch=256; micro_batch=64
+replay_capacity=25000; warmup_size=500
+utd_ratio=20; critic_actor_ratio=1
+max_steps=200
+eval=every13 cycles; 4 env x 3 waves = 12 episodes
+save=every65 cycles; expected 65,130,195
+normal_stop=cycle200
+train_output=/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/robotwin_data/train
+eval_output=/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/robotwin_data/eval
+failure_stop=nonzero driver exit or hard timeout 108000s

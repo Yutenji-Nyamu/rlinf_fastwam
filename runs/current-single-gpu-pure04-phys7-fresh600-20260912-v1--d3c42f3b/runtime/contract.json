@@ -1,0 +1,84 @@
+{
+  "key": "pure04",
+  "gpu": 7,
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-pure04-single-gpu600-20260912",
+  "run": "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-pure04-phys7-fresh600-20260912-v1",
+  "branch": "codex/sz-rlt-pure04-single-gpu600-20260912",
+  "namespace": "RLinf_rlt_pure04_single_gpu7_fresh600_20260912",
+  "config": "robotwin_adjust_bottle_rlt_stage2_ac_mlp_current_8env_single_gpu_dvac_pure04",
+  "time": "2026-09-12T00:20:29.901820+08:00",
+  "base_head": "30349428c37a008b95342121c1455debfeb4805e",
+  "smoked_source": "b1e01364b01a9f6d6072e2645cd7ba3bdf0df8fd",
+  "code_diff_from_smoke": [],
+  "stage1_manifest_sha256": "ffeeaa44ebe34aa5ea10fe89c8aee3f28d0ab3ee1361c355f301020224a4b6dd",
+  "norm_sha256": "649ed92b431bd70627febdb00b2385e35fcab5088e72a4e4a4845585f8ce4f6a",
+  "stage1_weight_stat": {
+    "bytes": 9556454857,
+    "mtime_ns": 1787503491378461348
+  },
+  "baseline_diff": {
+    "cluster.component_placement.actor,env,rollout": [
+      0,
+      7
+    ],
+    "env.eval.task_config.save_path": [
+      "./data",
+      "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-pure04-phys7-fresh600-20260912-v1/robotwin_data/eval"
+    ],
+    "env.train.task_config.save_path": [
+      "./data",
+      "/data/chenyiteng/results/rlinf-rlt/current-single-gpu-pure04-phys7-fresh600-20260912-v1/robotwin_data/train"
+    ],
+    "runner.logger.experiment_name": [
+      "robotwin_adjust_bottle_rlt_current_single_gpu_dvac_pure04_fresh480",
+      "current-single-gpu-pure04-phys7-fresh600-20260912-v1"
+    ],
+    "runner.max_steps": [
+      480,
+      600
+    ]
+  },
+  "seed_hashes": {
+    "train": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2",
+    "eval": "fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7"
+  },
+  "total_cycles": 600,
+  "fresh": true,
+  "global_batch": 512,
+  "micro_batch": 256,
+  "train_envs": 8,
+  "eval_episodes": 20,
+  "updates_per_data": 5,
+  "warmup_min_size": 20000,
+  "warmup_post_collect_updates": 30000,
+  "replay_capacity": 80000,
+  "eval_save_interval": 25,
+  "method": {
+    "mode": "apply",
+    "application": "success_episode_bc",
+    "success_target": "reference",
+    "l_values": [
+      2,
+      3,
+      4
+    ],
+    "selected_l": 3,
+    "applied_horizon": 10,
+    "log_eps": 1e-12,
+    "std_floor": 1e-06,
+    "z_clip": 2.0,
+    "strength": 1.5,
+    "success_scale": 1.0
+  },
+  "max_episode_steps": 200,
+  "source_budget_same_as_aug30_except_total_cycles": true,
+  "stop": "600 complete cycles, user request, or unrecoverable runtime error; no arbitrary performance cutoff",
+  "files_sha256": {
+    "resolved.yaml": "33662dec5c9d5ecd7aba82a7d55f64c83a494eb89951d61bd1537a1ee23dba5e",
+    "environment.json": "8c0b3827a8d12e3086a52b159a1c2082fb7eb16b105c67473622e47eb3c4120b",
+    "argv.json": "d9505a79948d4c5447fda9a9b7992540ea0ced222ecac0486487fef129f3c338",
+    "command.sh": "bc66bb6dc39c77dafac62ca5bcc9073f10d28775c1ab5ad4f501d4560965949d",
+    "wrapper.sh": "8122fc3fdfdf91fa2557abc45c95c49ab64ece0eaaf35fe2da1f6aa75eb74e91"
+  },
+  "ops_sha256": "8ca8fb98165ce8b46e903ea4cca9c20dff4eebc382630783ded523bec2fd8ea0"
+}

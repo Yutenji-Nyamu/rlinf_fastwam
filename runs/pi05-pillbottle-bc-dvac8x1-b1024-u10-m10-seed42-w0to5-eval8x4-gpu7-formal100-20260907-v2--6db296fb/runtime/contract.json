@@ -1,0 +1,70 @@
+{
+  "time": "2026-09-07T10:18:51.721893+00:00",
+  "tag": "dvac",
+  "old": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac-w5",
+  "run": "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2",
+  "gpu": 7,
+  "diff_from_old": {
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1/robotwin_data",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2/robotwin_data"
+    ],
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1/robotwin_data",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2/robotwin_data"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1/video/train",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2/video/train"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1/video/train",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2/video/train"
+    ],
+    "algorithm.online_bc.dvac.weight_max": [
+      null,
+      5.0
+    ],
+    "env.eval.seeds_path": [
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac-w5/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json"
+    ],
+    "env.train.seeds_path": [
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac-w5/rlinf/envs/robotwin/seeds/train_seeds.json"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2"
+    ],
+    "runner.logger.experiment_name": [
+      "pi05-pillbottle-bc-dvac-seed42-w0to2-8x1-u2-formal100-gpu7-0907",
+      "pi05-pillbottle-bc-dvac-seed42-w0to5-8x1-u10-formal100-gpu7-0907-v2"
+    ],
+    "algorithm.online_bc.dvac.weight_min": [
+      null,
+      0.0
+    ],
+    "algorithm.update_epoch": [
+      2,
+      10
+    ],
+    "algorithm.online_bc.dvac.mapping": [
+      null,
+      "bounded_linear"
+    ],
+    "algorithm.online_bc.data_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u2-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260907-v1/success_data",
+      "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac8x1-b1024-u10-m10-seed42-w0to5-eval8x4-gpu7-formal100-20260907-v2/success_data"
+    ]
+  },
+  "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac-w5/examples/embodiment/train_embodied_agent.py --config-name robotwin_adjust_bottle_online_bc_openpi +online_bc_model=pi05_sidney +bc_dvac=bounded_zero_five +rollout.seed=42 env.train.total_num_envs=8 algorithm.update_epoch=10 runner.max_epochs=100 runner.val_check_interval=5 runner.save_interval=10 actor.optim.total_training_steps=1000 runner.logger.experiment_name=pi05-pillbottle-bc-dvac-seed42-w0to5-8x1-u10-formal100-gpu7-0907-v2",
+  "max_success_chunks": null,
+  "fresh": true,
+  "attempts_per_round": 8,
+  "adam_per_round": 10,
+  "sampled_queries_per_round": 10240,
+  "model_smoke": false,
+  "checkpoint_budget_bytes": 257698037760
+}

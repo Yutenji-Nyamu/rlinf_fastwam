@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/results/server-maintenance-20260916/rlt-next-pair/ops.py driver t1s2 formal --config-path /data/chenyiteng/results/rlinf-rlt/current-single-gpu-dvac-exp-t1s2-half4env-fresh600-phys7-20260916-v1/runtime --config-name resolved hydra.run.dir=. hydra.output_subdir=null hydra.job.chdir=false hydra/job_logging=stdout

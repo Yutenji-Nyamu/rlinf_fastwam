@@ -1,0 +1,524 @@
+{
+  "time_cst": "2026-09-06T16:32:10.698607+08:00",
+  "runs": {
+    "bc": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2",
+      "gpu": 6,
+      "wrapper": {
+        "pid": 914842,
+        "uid": 1003,
+        "state": "S",
+        "start": "157000652",
+        "args": [
+          "bash",
+          "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/runtime/wrapper.sh"
+        ]
+      },
+      "drivers": [
+        {
+          "pid": 914848,
+          "uid": 1003,
+          "state": "S",
+          "start": "157000653",
+          "args": [
+            "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+            "-u",
+            "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/examples/embodiment/train_embodied_agent.py",
+            "--config-name",
+            "robotwin_adjust_bottle_online_bc_openpi",
+            "+online_bc_model=pi05_sidney",
+            "+rollout.seed=42",
+            "runner.max_epochs=100",
+            "runner.val_check_interval=5",
+            "runner.save_interval=10",
+            "actor.optim.total_training_steps=1000",
+            "runner.logger.experiment_name=pi05-pillbottle-bc-seed42-u10-formal100-gpu6"
+          ]
+        }
+      ],
+      "source_head": "7e2565a05e421b8583c157730f96c56095cd2170",
+      "expected_head": "7e2565a05e421b8583c157730f96c56095cd2170",
+      "actual_config_exists": true,
+      "actual_vs_prepared_diff": {},
+      "seed_confirmation": [
+        "\u001b[36m(RolloutGroup(rank=0) pid=915329)\u001b[0m Rollout RNG seed=42; fresh noise per query; eval RNG isolated"
+      ],
+      "rollout_started": true,
+      "fatal_matches": [],
+      "exit_code": null,
+      "log_tail": [
+        "\u001b[36m(RolloutGroup(rank=0) pid=915329)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(RolloutGroup(rank=0) pid=915329)\u001b[0m Rollout RNG seed=42; fresh noise per query; eval RNG isolated",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m I0000 00:00:1788683422.221575  916307 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m I0000 00:00:1788683424.197584  916307 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m [INFO 08:31:12 ActorGroup-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled",
+        "\u001b[36m(ActorGroup(rank=0) pid=915327)\u001b[0m [INFO 08:31:18 ActorGroup-Rank-0][fsdp_online_bc_policy_worker.py:31] Online BC trainable parameters: 693,422,112; expert_only=True",
+        "\u001b[36m(RolloutGroup(rank=0) pid=915329)\u001b[0m ",
+        "Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]"
+      ],
+      "startup_passed": true
+    },
+    "dvac": {
+      "run": "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2",
+      "gpu": 7,
+      "wrapper": {
+        "pid": 915663,
+        "uid": 1003,
+        "state": "S",
+        "start": "157001869",
+        "args": [
+          "bash",
+          "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/runtime/wrapper.sh"
+        ]
+      },
+      "drivers": [
+        {
+          "pid": 915687,
+          "uid": 1003,
+          "state": "S",
+          "start": "157001870",
+          "args": [
+            "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+            "-u",
+            "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/examples/embodiment/train_embodied_agent.py",
+            "--config-name",
+            "robotwin_adjust_bottle_online_bc_openpi",
+            "+online_bc_model=pi05_sidney",
+            "+bc_dvac=default",
+            "+rollout.seed=42",
+            "runner.max_epochs=100",
+            "runner.val_check_interval=5",
+            "runner.save_interval=10",
+            "actor.optim.total_training_steps=1000",
+            "runner.logger.experiment_name=pi05-pillbottle-bc-dvac-seed42-w0to2-u10-formal100-gpu7"
+          ]
+        }
+      ],
+      "source_head": "0390121c41b528434212c6c47a5e6d430fcae166",
+      "expected_head": "0390121c41b528434212c6c47a5e6d430fcae166",
+      "actual_config_exists": true,
+      "actual_vs_prepared_diff": {},
+      "seed_confirmation": [
+        "\u001b[36m(RolloutGroup(rank=0) pid=916599)\u001b[0m Rollout RNG seed=42; fresh noise per query; eval RNG isolated"
+      ],
+      "rollout_started": true,
+      "fatal_matches": [],
+      "exit_code": null,
+      "log_tail": [
+        "\u001b[36m(RolloutGroup(rank=0) pid=916599)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(RolloutGroup(rank=0) pid=916599)\u001b[0m Rollout RNG seed=42; fresh noise per query; eval RNG isolated",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m I0000 00:00:1788683432.591304  917493 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m I0000 00:00:1788683434.143181  917493 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m [INFO 08:31:18 ActorGroup-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled",
+        "\u001b[36m(ActorGroup(rank=0) pid=916597)\u001b[0m [INFO 08:31:24 ActorGroup-Rank-0][fsdp_online_bc_policy_worker.py:31] Online BC trainable parameters: 693,422,112; expert_only=True",
+        "\u001b[36m(RolloutGroup(rank=0) pid=916599)\u001b[0m ",
+        "Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]"
+      ],
+      "startup_passed": true
+    }
+  },
+  "actual_pair_difference": {
+    "algorithm.online_bc.data_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/success_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/success_data"
+    ],
+    "algorithm.online_bc.dvac.alpha": [
+      null,
+      0.25
+    ],
+    "algorithm.online_bc.dvac.enabled": [
+      null,
+      true
+    ],
+    "algorithm.online_bc.dvac.log_eps": [
+      null,
+      1e-12
+    ],
+    "algorithm.online_bc.dvac.std_floor": [
+      null,
+      1e-06
+    ],
+    "algorithm.online_bc.dvac.tail_steps": [
+      null,
+      3
+    ],
+    "algorithm.online_bc.dvac.window": [
+      null,
+      5
+    ],
+    "algorithm.online_bc.dvac.z_clip": [
+      null,
+      2.0
+    ],
+    "cluster.component_placement.actor,env,rollout": [
+      "6",
+      "7"
+    ],
+    "env.eval.seeds_path": [
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json"
+    ],
+    "env.eval.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/robotwin_data"
+    ],
+    "env.eval.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/video/train"
+    ],
+    "env.train.seeds_path": [
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/train_seeds.json"
+    ],
+    "env.train.task_config.save_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/robotwin_data"
+    ],
+    "env.train.video_cfg.video_base_dir": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/video/train"
+    ],
+    "runner.logger.experiment_name": [
+      "pi05-pillbottle-bc-seed42-u10-formal100-gpu6",
+      "pi05-pillbottle-bc-dvac-seed42-w0to2-u10-formal100-gpu7"
+    ],
+    "runner.logger.log_path": [
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2",
+      "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2"
+    ]
+  },
+  "prepared_pair_comparison": {
+    "difference_count": 17,
+    "method_leaves": 7,
+    "identity_leaves": 10,
+    "nonmethod_parameters_identical": true,
+    "differences": {
+      "algorithm.online_bc.data_path": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/success_data",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/success_data"
+      ],
+      "algorithm.online_bc.dvac.alpha": [
+        null,
+        0.25
+      ],
+      "algorithm.online_bc.dvac.enabled": [
+        null,
+        true
+      ],
+      "algorithm.online_bc.dvac.log_eps": [
+        null,
+        1e-12
+      ],
+      "algorithm.online_bc.dvac.std_floor": [
+        null,
+        1e-06
+      ],
+      "algorithm.online_bc.dvac.tail_steps": [
+        null,
+        3
+      ],
+      "algorithm.online_bc.dvac.window": [
+        null,
+        5
+      ],
+      "algorithm.online_bc.dvac.z_clip": [
+        null,
+        2.0
+      ],
+      "cluster.component_placement.actor,env,rollout": [
+        "6",
+        "7"
+      ],
+      "env.eval.seeds_path": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json"
+      ],
+      "env.eval.task_config.save_path": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/robotwin_data"
+      ],
+      "env.eval.video_cfg.video_base_dir": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/video/train"
+      ],
+      "env.train.seeds_path": [
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-dvac/rlinf/envs/robotwin/seeds/train_seeds.json"
+      ],
+      "env.train.task_config.save_path": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/robotwin_data",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/robotwin_data"
+      ],
+      "env.train.video_cfg.video_base_dir": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2/video/train",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2/video/train"
+      ],
+      "runner.logger.experiment_name": [
+        "pi05-pillbottle-bc-seed42-u10-formal100-gpu6",
+        "pi05-pillbottle-bc-dvac-seed42-w0to2-u10-formal100-gpu7"
+      ],
+      "runner.logger.log_path": [
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc32x1-b1024-u10-m10-seed42-eval8x4-gpu6-formal100-20260906-v2",
+        "/data/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc-dvac32x1-b1024-u10-m10-seed42-w0to2-eval8x4-gpu7-formal100-20260906-v2"
+      ]
+    },
+    "same_seed_files": true
+  },
+  "protected_grpo": {
+    "pid": 701211,
+    "uid": 1003,
+    "state": "S",
+    "start": "156522991",
+    "args": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-grpo-dvac-adv/examples/embodiment/train_embodied_agent.py",
+      "--config-path",
+      "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-grpo-dvac-adv/examples/embodiment/config",
+      "--config-name",
+      "robotwin_move_stapler_pad_grpo_openpi_pi05_sidney",
+      "cluster.component_placement={actor\\, env\\, rollout:\"4,5\"}",
+      "runner.logger.log_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1",
+      "runner.logger.experiment_name=pi05_sidney_pillbottle_grpo_dvac_adv_w05to15_formal200_phys45_20260906",
+      "runner.only_eval=false",
+      "runner.max_epochs=1000",
+      "runner.max_steps=200",
+      "runner.val_check_interval=5",
+      "runner.save_interval=10",
+      "runner.resume_dir=null",
+      "algorithm.group_size=8",
+      "algorithm.update_epoch=2",
+      "algorithm.adv_type=grpo",
+      "algorithm.filter_rewards=true",
+      "env.train.total_num_envs=64",
+      "env.train.rollout_epoch=4",
+      "env.train.max_episode_steps=200",
+      "env.train.max_steps_per_rollout_epoch=200",
+      "env.train.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "env.train.video_cfg.save_video=false",
+      "env.train.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/robotwin_data/train",
+      "env.train.task_config.task_name=move_pillbottle_pad",
+      "env.train.task_config.step_lim=200",
+      "env.eval.total_num_envs=32",
+      "env.eval.rollout_epoch=1",
+      "env.eval.max_episode_steps=200",
+      "env.eval.max_steps_per_rollout_epoch=200",
+      "env.eval.use_fixed_reset_state_ids=true",
+      "env.eval.assets_path=/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "env.eval.video_cfg.save_video=true",
+      "env.eval.video_cfg.video_base_dir=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/video/eval",
+      "env.eval.task_config.save_path=/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/robotwin_data/eval",
+      "env.eval.task_config.task_name=move_pillbottle_pad",
+      "env.eval.task_config.step_lim=200",
+      "actor.global_batch_size=1024",
+      "actor.micro_batch_size=32",
+      "actor.model.model_path=/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+      "actor.model.num_steps=10",
+      "actor.model.openpi.num_steps=10",
+      "actor.model.openpi.noise_level=0.5",
+      "++actor.fsdp_config.checkpoint_format=local_shard",
+      "+dvac_grpo=adv_half"
+    ]
+  },
+  "named_actors": [
+    {
+      "name": "RolloutGroup:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "DeviceLockManager",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "Rollout:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "Actor:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "EnvGroup:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "Env:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "CollectiveManager",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "PortLockManager",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "NodeManager",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "ActorGroup:0",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "WorkerManager",
+      "namespace": "RLinf_1"
+    },
+    {
+      "name": "PortLockManager",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "NodeManager",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "RolloutGroup:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "EnvGroup:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "DeviceLockManager",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "Env:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "Actor:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "ActorGroup:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "WorkerManager",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "Rollout:0",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "CollectiveManager",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54",
+      "namespace": "RLinf_2"
+    },
+    {
+      "name": "Env:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "CollectiveManager",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "ActorGroup:1",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "RolloutGroup:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "NodeManager",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "WorkerManager",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "Rollout:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "Actor:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "EnvGroup:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "EnvGroup:1",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "NodeProbe_2730f38e60da6b4c0f68d8779893624a0917240589c544541c894c54",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "PortLockManager",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "ActorGroup:0",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "DeviceLockManager",
+      "namespace": "RLinf"
+    },
+    {
+      "name": "RolloutGroup:1",
+      "namespace": "RLinf"
+    }
+  ],
+  "gpus": [
+    "0, GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 9897, 81559, 0",
+    "1, GPU-a5db195a-ea49-b641-5355-ea060827f70c, 4, 81559, 0",
+    "2, GPU-4ec384bf-4828-063b-a26e-6812eca09f75, 4, 81559, 0",
+    "3, GPU-2f0e1a8f-d784-6388-4e12-d211c97e9174, 8, 81559, 0",
+    "4, GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 47256, 81559, 1",
+    "5, GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 47289, 81559, 0",
+    "6, GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 27040, 81559, 53",
+    "7, GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 26488, 81559, 0"
+  ],
+  "compute_processes": [
+    "GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070, 916861, 9822, /home/liwenbo/.conda/envs/starVLA/bin/python",
+    "GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 701813, 2444, ray::EmbodiedFSDPActor.recv_rollout_trajectories",
+    "GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 701826, 14854, ray::MultiStepRolloutWorker.generate",
+    "GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5, 701839, 29962, ray::EnvWorker.interact",
+    "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 701836, 15760, ray::MultiStepRolloutWorker.generate",
+    "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 701821, 1832, ray::EmbodiedFSDPActor.recv_rollout_trajectories",
+    "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e, 701841, 29892, ray::EnvWorker.interact",
+    "GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 915329, 7756, ray::MultiStepRolloutWorker.generate",
+    "GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 915327, 11168, ray::EmbodiedOnlineBCFSDPPolicy.recv_rollout_trajectories",
+    "GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2, 915335, 8296, ray::EnvWorker.interact",
+    "GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 916599, 7756, ray::MultiStepRolloutWorker.generate",
+    "GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 916597, 11168, ray::EmbodiedOnlineBCFSDPPolicy.recv_rollout_trajectories",
+    "GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba, 916601, 7488, ray::EnvWorker.interact"
+  ],
+  "memory_gib": {
+    "MemTotal": 2015.51,
+    "MemAvailable": 1582.22,
+    "SwapTotal": 5.97,
+    "SwapFree": 3.22
+  },
+  "disk_free_gib": {
+    "/data": 1358.45,
+    "/home/chenyiteng": 1246.15
+  },
+  "startup_passed": true
+}

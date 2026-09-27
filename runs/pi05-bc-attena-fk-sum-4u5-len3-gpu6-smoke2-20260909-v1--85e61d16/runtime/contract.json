@@ -1,0 +1,79 @@
+{
+  "time": "2026-09-09T05:12:02.985065+00:00",
+  "key": "smoke",
+  "root": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk",
+  "run": "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-attena-fk-sum-4u5-len3-gpu6-smoke2-20260909-v1",
+  "namespace": "RLinf_bc_attena_fk_sum_4u5_gpu6_smoke_20260909",
+  "source_head": "462ce99a4f7777f21b0c6a2bd99b10aafd00b02a",
+  "source_hashes": {
+    "rlinf/algorithms/online_bc_attena_fk.py": "cd5fd9ef8b8b77ec1ae6d46211250e1b707d8bec7f0629891441c407ea23b72d",
+    "rlinf/data/online_bc.py": "ba6f0c3406b646add24518d963ae5f61f74a3006a490b40a84de4f02ca34b187",
+    "rlinf/workers/actor/fsdp_online_bc_policy_worker.py": "612c63388a42575946117a18f4e044728944cbac5079aba917cd91c2b9f8a0e9",
+    "rlinf/models/embodiment/openpi/openpi_action_model.py": "80a23977a310ed99b54154eb4f5623c4b03ac8d6c3b3229d231e87c13d15b95d",
+    "examples/embodiment/config/bc_attena/fk_motion.yaml": "d655b71a7d5b40ca1a3149136408f21c0bf900484ff99125f5d56a2117795814",
+    "examples/embodiment/config/bc_attena/aloha_geometry.json": "ad4fbc15e04fba19421b980f41ac5f400cf12fa114d91b3779ab4007b47a2737",
+    "examples/embodiment/config/bc_attena/clean4u5_sum_calibration.json": "b6bf8da8f0196423838b66927bac971f4141f96fa1f6f4d3bc952140a857fc62"
+  },
+  "base": "01d770db3988da7862454e97434d4ff08f726fa2",
+  "branch": "codex/sz-pi05-online-bc-attena-fk-20260909",
+  "baseline_run": "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-pillbottle-bc4x1-b1024-u5-m10-seed42-eval8x4-gpu6-formal100-20260908-v1",
+  "baseline_resolved_sha256": "42b06b9d61b517267ffe04d810fe74054fd38c10c1389ffc98a9dd31e2e1e15d",
+  "physical_gpus": [
+    6
+  ],
+  "rounds": 2,
+  "attempts_per_round": 4,
+  "adam_per_round": 5,
+  "training_attempts": 8,
+  "max_adam_updates": 10,
+  "global_batch": 1024,
+  "micro_batch": 32,
+  "denoise_steps": 10,
+  "chunk_size": 50,
+  "learning_rate": 2.5e-05,
+  "length_filter": 3,
+  "signal": "Per-arm target TCP translation/rotation motion, combined as left + right",
+  "attena": {
+    "enabled": true,
+    "geometry_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/examples/embodiment/config/bc_attena/aloha_geometry.json",
+    "calibration_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/examples/embodiment/config/bc_attena/clean4u5_sum_calibration.json",
+    "ell": 0.1,
+    "epsilon": 0.001,
+    "clip_max": 2.0,
+    "debug_batches": 2
+  },
+  "asset_hashes": {
+    "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/examples/embodiment/config/bc_attena/aloha_geometry.json": "ad4fbc15e04fba19421b980f41ac5f400cf12fa114d91b3779ab4007b47a2737",
+    "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/examples/embodiment/config/bc_attena/clean4u5_sum_calibration.json": "b6bf8da8f0196423838b66927bac971f4141f96fa1f6f4d3bc952140a857fc62"
+  },
+  "settings_sha256": "4d3d604513f855ef5f7e1585f656be2042a0112c63c039e9b2f40674182b06f4",
+  "eval_interval": -1,
+  "eval_episodes_per_check": 32,
+  "save_interval": 2,
+  "timeout_seconds": 3600,
+  "seeds": {
+    "train": {
+      "baseline": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-u10/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+    },
+    "eval": {
+      "baseline": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-u10/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-online-bc-attena-fk/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "sha256": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e"
+    }
+  },
+  "resolved_sha256": "9561e64648a0b5450f298b0bfbe4b99139cc705cf29dc8b3da6cdd5596332662",
+  "prepared_hashes": {
+    "resolved.yaml": "9561e64648a0b5450f298b0bfbe4b99139cc705cf29dc8b3da6cdd5596332662",
+    "argv.json": "14e97b58b74f3340d786065b123deb98bb3324c086142ec4cecbcef0750e1d93",
+    "environment.json": "7a52a44f9f40fe1828700fabff2a331a25e80a016acd342ad4db8b83ee61b3f2",
+    "command.sh": "22808f3460158b28774a9a72a09703b34ddf881616a740f7a2a42ab55f72fa49",
+    "wrapper.sh": "818abe50b8e58248d86b7e1581b4b3b1dbf0a2585fc565f46bb9d27345f61e99"
+  },
+  "fresh_model_and_empty_pool": true,
+  "unexpected_differences": {},
+  "baseline_confounds": [
+    "Historical clean BC length filtering was off; this run enables <=3 chunks"
+  ]
+}

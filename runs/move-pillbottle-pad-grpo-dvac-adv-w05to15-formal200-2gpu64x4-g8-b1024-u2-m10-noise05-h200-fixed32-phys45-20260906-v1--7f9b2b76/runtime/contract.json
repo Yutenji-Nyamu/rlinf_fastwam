@@ -1,0 +1,98 @@
+{
+  "worktree": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-grpo-dvac-adv",
+  "branch": "codex/sz-sidney-pi05-grpo-dvac-adv",
+  "baseline_head": "81be3193d91fe9950a3fc1bdedd14063a85e72d8",
+  "control_run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1",
+  "experiment": "pi05_sidney_pillbottle_grpo_dvac_adv_w05to15_formal200_phys45_20260906",
+  "config": "robotwin_move_stapler_pad_grpo_openpi_pi05_sidney",
+  "physical_gpus": [
+    4,
+    5
+  ],
+  "from_same_original_sft": true,
+  "max_steps": 200,
+  "envs_per_gpu": 32,
+  "serial_rollouts": 4,
+  "attempts_per_round": 256,
+  "group_size": 8,
+  "micro_batch": 32,
+  "global_batch": 1024,
+  "update_epochs": 2,
+  "optimizer_calls_per_round": 2,
+  "lr": 5e-06,
+  "M": 10,
+  "C": 50,
+  "action_dim": 14,
+  "action_horizon": 200,
+  "noise_level": 0.5,
+  "fixed_eval_episodes": 32,
+  "eval_envs_per_gpu": 16,
+  "eval_interval": 5,
+  "save_interval": 10,
+  "timeout_seconds": 345600,
+  "checkpoint_budget_bytes": 576564211400,
+  "config_diff": {
+    "algorithm.dvac_gradient_weighting.application": {
+      "control": "logprob_st",
+      "dvac": "action_advantage"
+    },
+    "algorithm.dvac_gradient_weighting.mode": {
+      "control": "off",
+      "dvac": "apply"
+    },
+    "algorithm.dvac_gradient_weighting.output_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/dvac_train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/pi05_sidney_pillbottle_grpo_dvac_adv_w05to15_formal200_phys45_20260906/dvac_train"
+    },
+    "algorithm.dvac_gradient_weighting.weight_max": {
+      "control": null,
+      "dvac": 1.5
+    },
+    "algorithm.dvac_gradient_weighting.weight_min": {
+      "control": null,
+      "dvac": 0.5
+    },
+    "algorithm.logprob_type": {
+      "control": "chunk_level",
+      "dvac": "action_level"
+    },
+    "env.eval.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-grpo-dvac-adv/rlinf/envs/robotwin/seeds/eval_seeds.json"
+    },
+    "env.eval.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/eval",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/eval",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/video/eval"
+    },
+    "env.train.seeds_path": {
+      "control": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-current-rlinf/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "dvac": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/sidney-pi05-grpo-dvac-adv/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/robotwin_data/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/video/train",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1/video/train"
+    },
+    "runner.logger.experiment_name": {
+      "control": "pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1",
+      "dvac": "pi05_sidney_pillbottle_grpo_dvac_adv_w05to15_formal200_phys45_20260906"
+    },
+    "runner.logger.log_path": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1",
+      "dvac": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-dvac-adv-w05to15-formal200-2gpu64x4-g8-b1024-u2-m10-noise05-h200-fixed32-phys45-20260906-v1"
+    },
+    "runner.resume_dir": {
+      "control": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/move-pillbottle-pad-grpo-formal100-2gpu64x4-g8-b1024-u2-m10-noise0p5-h200-fixed32-eval5-phys45-localshard-v1/pi05_sidney_move_pillbottle_pad_grpo_formal100_2gpu64x4_g8_b1024_u2_m10_noise0p5_h200_fixed32_phys45_v1/checkpoints/global_step_100",
+      "dvac": null
+    }
+  },
+  "source_change": "one method-only YAML; algorithm/model source unchanged"
+}
