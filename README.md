@@ -1,15 +1,18 @@
 # SZ2 原始实验与轻量源码归档
 
-快照日期：2026-09-27T20:46:53.134753+08:00。源服务器直接生成并发布，不通过本机中转。
+2026-09-27，由源服务器直接生成并发布。本包收录 25 个可识别 TensorBoard 训练目录，其中 21 个有固定评估，4 个为运行中快照。失败、短验收、续训与配套对照一并保留；目录数不等于成功实验数。
 
-本包保留 25 个可识别 TensorBoard 训练目录的原始事件、配置、日志、启动记录和轻量 DV 诊断；同时保留失败/短验收与配套对照，避免按最终效果筛掉必要上下文。CATALOG.csv 是逐目录索引。上涨片段只是筛选线索，不等同于 DVCA 的因果增益或跨种子结论。
+## 内容与索引
 
-原始事件使用 TensorBoard 的零起点 step；success-series.json 与 CATALOG 的轮数为 step+1。续训段独立保留，runner.resume_dir 记录连接点；拼接时应截断被续用检查点之后的旧段。active_snapshot=true 的目录仍在训练，文件按各自读取时刻截取；ARTIFACTS.json 记录是否采集时增长。
+- `CATALOG.csv` / `CATALOG.json`：逐目录路径、任务、固定评估、resume连接与运行状态。
+- `runs/`：原生事件、实配、日志、启动记录、成功率序列、DV文本与小型诊断tensor、调试图和相关轻量文件。日志与小型二进制诊断无损gzip；诊断.pt/.npz/.npy按目录识别，保存时不执行反序列化。
+- `SOURCE_INDEX.json`、`source/`、`source-untracked/`：源码版本、相对RLinf `7d07a4212ee6858cc333e1d4fab7a37256d1f839` 的已提交补丁，以及未验证的dirty/untracked快照；其他依赖仓库以commit/remote定位。对应运行保存的版本记录优先于当前工作树版本。
+- `ARTIFACTS.json` 与 `SUPPLEMENT_ARTIFACTS.json`：数据文件的原始/发布SHA256和大小。`CHECKSUMS.json`覆盖当前树全部文件（自身除外），可直接检查当前下载内容。
 
-源码已提交部分由 SOURCE_INDEX.json 的 commit/branch 定位；相对 RLinf 7d07a421 的代码补丁放在 source/，当前 dirty 或 untracked 仅为未验证快照，不是生产修复。不同工作目录可能共享同一提交，补丁按提交去重；运行时保存的源码版本记录优先于当前工作树快照。
+## 读取与范围
 
-大模型、checkpoint/optimizer、回放池、原始 tensor/NPZ、视频、依赖环境、缓存和凭据不进 Git。单文件上限32 MiB，DV文本目录合计上限64 MiB；超限与敏感文件逐项写入 EXCLUSIONS.json，没有截尾冒充原始日志。日志、JSONL和较大文本无损gzip；原始/发布SHA256及大小见ARTIFACTS.json。该包可重绘和追溯，不包含复评模型所需的全部权重。
+原生TensorBoard的step从0开始；success-series和目录表使用round=step+1。续训按实际runner.resume_dir对齐，在被续用检查点处截断旧段，不能直接拼接所有目录。活动训练的文件按读取时刻保存，并记录是否在复制中增长。上升片段只是筛选线索，不等于DVCA因果增益或多种子结论。
 
-## 轻量原始诊断补充
+模型权重、checkpoint/optimizer、回放池、数据集、视频、依赖环境、缓存和凭据不入库；超过32 MiB的单个额外诊断文件也留服务器。独立小型DV tensor属于已收录的原始诊断。`EXCLUSIONS.json`和`SUPPLEMENT_EXCLUSIONS.json`记录具体排除项，`EXCLUDED_DATA_LOCATIONS.json`记录重文件位置与混合目录说明。
 
-补查所有训练目录的嵌套日志层后，另外收录小型 DV tensor（仅诊断目录内的 .pt/.npz/.npy）、调试图、配置、启动源码和补丁。模型 checkpoint 与诊断 tensor 按目录语义区分；小型诊断二进制不是权重，本次原样无损 gzip 保存，不执行反序列化。上文“原始 tensor/NPZ 不进 Git”在此修订为：大型权重/回放/数据集不进 Git，32 MiB 内的独立诊断文件纳入。逐文件原始与发布哈希见 SUPPLEMENT_ARTIFACTS.json，完整的重文件目录排除说明见 SUPPLEMENT_EXCLUSIONS.json；它们补充而不覆盖第一批清单。
+范围为本人/data/chenyiteng/results、/home/chenyiteng/results、/data/chenyiteng/runs内可识别TB目录。非TB旧实验和已经删除的文件可能只存在于旧归档分支；复评所需的大模型仍需从原服务器获得。训练与共享Ray未改动。
