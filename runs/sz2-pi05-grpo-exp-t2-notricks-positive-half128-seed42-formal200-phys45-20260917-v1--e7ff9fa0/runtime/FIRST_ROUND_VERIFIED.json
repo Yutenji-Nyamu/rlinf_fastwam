@@ -1,0 +1,840 @@
+{
+  "time": "2026-09-17T15:48:28.227121+08:00",
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/sz2-pi05-grpo-exp-t2-notricks-positive-half128-seed42-formal200-phys45-20260917-v1",
+  "namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+  "head": "628ca51c043904143c1e987d7e1fd0b696b119ca",
+  "driver_alive": true,
+  "driver": {
+    "pid": 3199779,
+    "uid": 20001,
+    "start": 243419401,
+    "state": "R",
+    "ppid": 3197341,
+    "cmd": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /home/nvme/team-data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/tools/sz23_grpo_four_20260917/launch_ops.py driver --config-dir /home/nvme/team-data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/sz2-pi05-grpo-exp-t2-notricks-positive-half128-seed42-formal200-phys45-20260917-v1/runtime ",
+    "time": "2026-09-17T15:29:20.165809+08:00",
+    "namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917"
+  },
+  "alive_actors": 15,
+  "actors": [
+    {
+      "actor_id": "038b62b695403cc58d318b6108000000",
+      "class_name": "NodeManager",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "NodeManager",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277961,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"RAY_ADDRESS\":\"127.0.0.1:26379\"},\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "135a6303bd39c912d2c4743008000000",
+      "class_name": "ChannelWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "Rollout:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277993,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"0\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"Rollout\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"0\",\"LOCAL_HARDWARE_RANKS\":\"\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"0\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"1\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"Rollout:0\",\"WORLD_SIZE\":\"1\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "Rollout(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "2796141d43539fb2b373731308000000",
+      "class_name": "EnvWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "EnvGroup_cleanhalfseed42_formal45:1",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277983,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"5\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"5\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"EnvGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"5\",\"LOCAL_HARDWARE_RANKS\":\"5\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"5\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"1\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"1\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"5\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"EnvGroup_cleanhalfseed42_formal45:1\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "EnvGroup_cleanhalfseed42_formal45(rank=1)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "5f108c06e07ced1a04b201b308000000",
+      "class_name": "_RemoteNodeProbe",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "NodeProbe_42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277631,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"py_modules\": [\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "6ffb0fddf427afaed69efc6f08000000",
+      "class_name": "MultiStepRolloutWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "RolloutGroup_cleanhalfseed42_formal45:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277970,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"4\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"4\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"RolloutGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"4\",\"LOCAL_HARDWARE_RANKS\":\"4\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"4\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"4\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"RolloutGroup_cleanhalfseed42_formal45:0\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "RolloutGroup_cleanhalfseed42_formal45(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "947f1d5e29b19edf93c7b5e108000000",
+      "class_name": "PortLockManager",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "PortLockManager",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277956,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"RAY_ADDRESS\":\"127.0.0.1:26379\"},\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "98d679595b1584d6a298cc8308000000",
+      "class_name": "EnvWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "EnvGroup_cleanhalfseed42_formal45:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277978,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"4\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"4\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"EnvGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"4\",\"LOCAL_HARDWARE_RANKS\":\"4\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"4\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"4\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"EnvGroup_cleanhalfseed42_formal45:0\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "EnvGroup_cleanhalfseed42_formal45(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "9c3aca4e1e1e991921c3bccb08000000",
+      "class_name": "ChannelWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "Actor:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277997,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"0\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"Actor\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"0\",\"LOCAL_HARDWARE_RANKS\":\"\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"0\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"1\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"Actor:0\",\"WORLD_SIZE\":\"1\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "Actor(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "a26d66ab238f4fca2f0d41fe08000000",
+      "class_name": "EmbodiedFSDPActor",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "ActorGroup_cleanhalfseed42_formal45:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277965,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"4\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"4\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"ActorGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"4\",\"LOCAL_HARDWARE_RANKS\":\"4\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"4\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"4\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"ActorGroup_cleanhalfseed42_formal45:0\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "ActorGroup_cleanhalfseed42_formal45(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "b096225c8e5c7dc7faac75db08000000",
+      "class_name": "MultiStepRolloutWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "RolloutGroup_cleanhalfseed42_formal45:1",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277976,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"5\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"5\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"RolloutGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"5\",\"LOCAL_HARDWARE_RANKS\":\"5\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"5\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"1\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"1\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"5\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"RolloutGroup_cleanhalfseed42_formal45:1\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "RolloutGroup_cleanhalfseed42_formal45(rank=1)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "b97e0ef7690968b09f981db808000000",
+      "class_name": "DeviceLockManager",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "DeviceLockManager",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277955,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"RAY_ADDRESS\":\"127.0.0.1:26379\"},\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "d170d96b600565bab9bdf98708000000",
+      "class_name": "CollectiveManager",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "CollectiveManager",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277962,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"RAY_ADDRESS\":\"127.0.0.1:26379\"},\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "f95da1b494735fa48e85e5ec08000000",
+      "class_name": "ChannelWorker",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "Env:0",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277988,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"0\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"Env\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"0\",\"LOCAL_HARDWARE_RANKS\":\"\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"0\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"0\",\"NODE_LOCAL_WORLD_SIZE\":\"1\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"0\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"0,1,2,3,4,5,6,7\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"Env:0\",\"WORLD_SIZE\":\"1\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "Env(rank=0)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "fa3de3065e9c0ca9e0dc10c008000000",
+      "class_name": "WorkerManager",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "WorkerManager",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277959,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"RAY_ADDRESS\":\"127.0.0.1:26379\"},\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    },
+    {
+      "actor_id": "fff6348ebd51a7b29f50732308000000",
+      "class_name": "EmbodiedFSDPActor",
+      "state": "ALIVE",
+      "job_id": "08000000",
+      "name": "ActorGroup_cleanhalfseed42_formal45:1",
+      "node_id": "42f95e4d37e9934bad9d37fdbbe8ea4e70443406e44a5fe633282b5a",
+      "pid": 3277969,
+      "ray_namespace": "RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917",
+      "serialized_runtime_env": "{\"env_vars\":{\"ACCELERATOR_MODEL\":\"NV_GPU:H100 80GB HBM3\",\"ACCELERATOR_TYPE\":\"NV_GPU\",\"ALL_PROXY\":\"socks5h://127.0.0.1:7890\",\"CATCH_SYSTEM_FAILURE\":\"0\",\"CLUSTER_NAMESPACE\":\"RLinf_sz2_grpo_exp_t2_notricks_half128_seed42_formal45_20260917\",\"CLUSTER_NODE_RANK\":\"0\",\"CUDA_HOME\":\"/home/chenyiteng/tools/cuda-12.9\",\"CUDA_VISIBLE_DEVICES\":\"5\",\"DBUS_SESSION_BUS_ADDRESS\":\"unix:path=/run/user/20001/bus\",\"EGL_DEVICE_ID\":\"5\",\"EMBODIED_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917/examples/embodiment\",\"GROUP_NAME\":\"ActorGroup_cleanhalfseed42_formal45\",\"HF_HOME\":\"/home/chenyiteng/data/cache/huggingface\",\"HOME\":\"/home/chenyiteng\",\"HTTPS_PROXY\":\"http://127.0.0.1:7890\",\"HTTP_PROXY\":\"http://127.0.0.1:7890\",\"HYDRA_FULL_ERROR\":\"1\",\"ISOLATE_ACCELERATOR\":\"1\",\"LANG\":\"C.UTF-8\",\"LD_LIBRARY_PATH\":\"/home/nvme/team-home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/cv2/../../lib64:/home/chenyiteng/tools/cuda-12.9/lib64\",\"LOCAL_ACCELERATOR_RANK\":\"5\",\"LOCAL_HARDWARE_RANKS\":\"5\",\"LOGNAME\":\"chenyiteng\",\"MASTER_ADDR\":\"192.168.0.145\",\"MOTD_SHOWN\":\"pam\",\"MPI_HOME\":\"/usr/mpi/gcc/openmpi-4.1.7a1\",\"MUJOCO_EGL_DEVICE_ID\":\"5\",\"MUJOCO_GL\":\"egl\",\"NCCL_CUMEM_ENABLE\":\"0\",\"NODE_GROUP_LABEL\":\"cluster\",\"NODE_LOCAL_RANK\":\"1\",\"NODE_LOCAL_WORLD_SIZE\":\"2\",\"NODE_RANK\":\"0\",\"NO_PROXY\":\"127.0.0.1,localhost,h100-gpu02\",\"OMP_NUM_THREADS\":\"1\",\"OPENPI_DATA_HOME\":\"/home/chenyiteng/.cache/openpi\",\"PATH\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/home/chenyiteng/tools/cuda-12.9/bin:/home/chenyiteng/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\",\"PIP_CACHE_DIR\":\"/home/chenyiteng/data/cache/pip\",\"PWD\":\"/home/nvme/team-home/chenyiteng\",\"PYGAME_HIDE_SUPPORT_PROMPT\":\"hide\",\"PYOPENGL_PLATFORM\":\"egl\",\"PYTHONBREAKPOINT\":\"ray.util.rpdb._driver_set_trace\",\"PYTHONDONTWRITEBYTECODE\":\"1\",\"PYTHONPATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support:/data/chenyiteng/tmp/r23/session_2026-09-17_15-28-00_474828_3064941/runtime_resources/py_modules_files/_ray_pkg_13706575a1d5f8eb\",\"PYTHONUNBUFFERED\":\"1\",\"RANK\":\"1\",\"RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO\":\"0\",\"RAY_ACTOR\":\"1\",\"RAY_ADDRESS\":\"127.0.0.1:26379\",\"RAY_CLIENT_MODE\":\"0\",\"RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES\":\"1\",\"RAY_JOB_ID\":\"08000000\",\"RAY_LD_PRELOAD_ON_WORKERS\":\"0\",\"RAY_RAYLET_PID\":\"3065945\",\"RAY_USAGE_STATS_ENABLED\":\"0\",\"REPO_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_CATCH_FAILURE\":\"0\",\"RLINF_CODE_WORKING_DIR\":\"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-exp-ablation-sz2-20260917\",\"RLINF_LOG_LEVEL\":\"INFO\",\"RLINF_NET_EMULATION\":\"0\",\"RLINF_PATH_ENV_MERGE_MODE\":\"append\",\"RLINF_TIMEOUT\":\"180\",\"ROBOTWIN_PATH\":\"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support\",\"ROBOT_PLATFORM\":\"ALOHA\",\"SDL_AUDIODRIVER\":\"dsp\",\"SHELL\":\"/bin/bash\",\"SHLVL\":\"0\",\"SPT_NOENV\":\"1\",\"SSH_CLIENT\":\"59.41.161.226 11720 22\",\"SSH_CONNECTION\":\"59.41.161.226 11720 192.168.0.145 22\",\"TMPDIR\":\"/data/chenyiteng/tmp\",\"TORCHINDUCTOR_CACHE_DIR\":\"/data/chenyiteng/tmp/torchinductor_chenyiteng\",\"TORCH_HOME\":\"/home/chenyiteng/data/cache/torch\",\"USER\":\"chenyiteng\",\"UV_CACHE_DIR\":\"/home/chenyiteng/data/cache/uv\",\"VIRTUAL_ENV\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin\",\"VISIBLE_DEVICES\":\"5\",\"VK_DRIVER_FILES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"VK_ICD_FILENAMES\":\"/usr/share/vulkan/icd.d/nvidia_icd.json\",\"WORKER_NAME\":\"ActorGroup_cleanhalfseed42_formal45:1\",\"WORLD_SIZE\":\"2\",\"XDG_RUNTIME_DIR\":\"/run/user/20001\",\"XDG_SESSION_CLASS\":\"user\",\"XDG_SESSION_ID\":\"221567\",\"XDG_SESSION_TYPE\":\"tty\",\"_\":\"/usr/bin/env\",\"all_proxy\":\"socks5h://127.0.0.1:7890\",\"http_proxy\":\"http://127.0.0.1:7890\",\"https_proxy\":\"http://127.0.0.1:7890\",\"no_proxy\":\"127.0.0.1,localhost,h100-gpu02\"},\"py_executable\":\"/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python\",\"py_modules\":[\"gcs://_ray_pkg_13706575a1d5f8eb.zip\"]}",
+      "required_resources": {},
+      "death_cause": null,
+      "is_detached": false,
+      "placement_group_id": null,
+      "repr_name": "ActorGroup_cleanhalfseed42_formal45(rank=1)",
+      "num_restarts": 0,
+      "num_restarts_due_to_lineage_reconstruction": 0,
+      "num_restarts_due_to_node_preemption": 0,
+      "call_site": null,
+      "label_selector": {},
+      "fallback_strategy": null
+    }
+  ],
+  "actor_identities": [
+    {
+      "pid": 3277961,
+      "uid": 20001,
+      "start": 243422095,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::NodeManager                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            "
+    },
+    {
+      "pid": 3277993,
+      "uid": 20001,
+      "start": 243422171,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::ChannelWorker.get                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       "
+    },
+    {
+      "pid": 3277983,
+      "uid": 20001,
+      "start": 243422158,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       "
+    },
+    {
+      "pid": 3277631,
+      "uid": 20001,
+      "start": 243421532,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::_RemoteNodeProbe                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         "
+    },
+    {
+      "pid": 3277970,
+      "uid": 20001,
+      "start": 243422132,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+    },
+    {
+      "pid": 3277956,
+      "uid": 20001,
+      "start": 243422092,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::PortLockManager                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        "
+    },
+    {
+      "pid": 3277978,
+      "uid": 20001,
+      "start": 243422148,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      "
+    },
+    {
+      "pid": 3277997,
+      "uid": 20001,
+      "start": 243422176,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::ChannelWorker.get                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        "
+    },
+    {
+      "pid": 3277965,
+      "uid": 20001,
+      "start": 243422116,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              "
+    },
+    {
+      "pid": 3277976,
+      "uid": 20001,
+      "start": 243422140,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+    },
+    {
+      "pid": 3277955,
+      "uid": 20001,
+      "start": 243422091,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::DeviceLockManager                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      "
+    },
+    {
+      "pid": 3277962,
+      "uid": 20001,
+      "start": 243422096,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::CollectiveManager                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      "
+    },
+    {
+      "pid": 3277988,
+      "uid": 20001,
+      "start": 243422164,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::ChannelWorker                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+    },
+    {
+      "pid": 3277959,
+      "uid": 20001,
+      "start": 243422094,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::WorkerManager                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+    },
+    {
+      "pid": 3277969,
+      "uid": 20001,
+      "start": 243422125,
+      "state": "S",
+      "ppid": 3065945,
+      "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              "
+    }
+  ],
+  "all_actor_uid_valid": true,
+  "single_job": true,
+  "actual_config_diff": {},
+  "gpu_mapping_valid": true,
+  "gpu": [
+    {
+      "gpu": 0,
+      "identity": {
+        "pid": 3591638,
+        "uid": 20002,
+        "start": 243437943,
+        "state": "S",
+        "ppid": 1
+      }
+    },
+    {
+      "gpu": 4,
+      "identity": {
+        "pid": 3277978,
+        "uid": 20001,
+        "start": 243422148,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      "
+      }
+    },
+    {
+      "gpu": 4,
+      "identity": {
+        "pid": 3277970,
+        "uid": 20001,
+        "start": 243422132,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+      }
+    },
+    {
+      "gpu": 4,
+      "identity": {
+        "pid": 3277965,
+        "uid": 20001,
+        "start": 243422116,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              "
+      }
+    },
+    {
+      "gpu": 5,
+      "identity": {
+        "pid": 3277969,
+        "uid": 20001,
+        "start": 243422125,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              "
+      }
+    },
+    {
+      "gpu": 5,
+      "identity": {
+        "pid": 3277976,
+        "uid": 20001,
+        "start": 243422140,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+      }
+    },
+    {
+      "gpu": 5,
+      "identity": {
+        "pid": 3277983,
+        "uid": 20001,
+        "start": 243422158,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       "
+      }
+    },
+    {
+      "gpu": 6,
+      "identity": {
+        "pid": 3277971,
+        "uid": 20001,
+        "start": 243422132,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         "
+      }
+    },
+    {
+      "gpu": 6,
+      "identity": {
+        "pid": 3277964,
+        "uid": 20001,
+        "start": 243422116,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             "
+      }
+    },
+    {
+      "gpu": 6,
+      "identity": {
+        "pid": 3277977,
+        "uid": 20001,
+        "start": 243422147,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     "
+      }
+    },
+    {
+      "gpu": 7,
+      "identity": {
+        "pid": 3277968,
+        "uid": 20001,
+        "start": 243422124,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EmbodiedFSDPActor.recv_rollout_trajectories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             "
+      }
+    },
+    {
+      "gpu": 7,
+      "identity": {
+        "pid": 3277975,
+        "uid": 20001,
+        "start": 243422139,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::MultiStepRolloutWorker.generate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          "
+      }
+    },
+    {
+      "gpu": 7,
+      "identity": {
+        "pid": 3277984,
+        "uid": 20001,
+        "start": 243422159,
+        "state": "S",
+        "ppid": 3065945,
+        "cmd": "ray::EnvWorker.interact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       "
+      }
+    }
+  ],
+  "success_scalars": [
+    {
+      "tag": "env/success_once",
+      "step": 0,
+      "value": 0.3203125
+    }
+  ],
+  "grad_norm_positive": true,
+  "nonfinite_scalars": [],
+  "latest_scalars": {
+    "env/success_once": {
+      "step": 0,
+      "value": 0.3203125
+    },
+    "env/reward": {
+      "step": 0,
+      "value": 0.0016015624860301614
+    },
+    "env/return": {
+      "step": 0,
+      "value": 0.3203125
+    },
+    "env/episode_len": {
+      "step": 0,
+      "value": 200.0
+    },
+    "env/num_trajectories": {
+      "step": 0,
+      "value": 128.0
+    },
+    "rollout/rewards": {
+      "step": 0,
+      "value": 0.0023163841105997562
+    },
+    "rollout/advantages_mean": {
+      "step": 0,
+      "value": -0.07230179756879807
+    },
+    "rollout/advantages_max": {
+      "step": 0,
+      "value": 2.4748666286468506
+    },
+    "rollout/advantages_min": {
+      "step": 0,
+      "value": -2.4748666286468506
+    },
+    "time/sync_weights": {
+      "step": 0,
+      "value": 8.970012664794922
+    },
+    "time/generate_rollouts": {
+      "step": 0,
+      "value": 701.6112670898438
+    },
+    "time/cal_adv_and_returns": {
+      "step": 0,
+      "value": 0.03556537628173828
+    },
+    "time/actor_training": {
+      "step": 0,
+      "value": 13.082741737365723
+    },
+    "time/step": {
+      "step": 0,
+      "value": 723.7101440429688
+    },
+    "time/env/env/bootstrap_step": {
+      "step": 0,
+      "value": 532.4111328125
+    },
+    "time/env/compute_bootstrap_rewards": {
+      "step": 0,
+      "value": 0.0008809296414256096
+    },
+    "time/env/env_interact_step": {
+      "step": 0,
+      "value": 155.81849670410156
+    },
+    "time/env/env/send_rollout_trajectories": {
+      "step": 0,
+      "value": 0.6836314797401428
+    },
+    "time/env/run_interact_once": {
+      "step": 0,
+      "value": 698.3745727539062
+    },
+    "time/env/interact": {
+      "step": 0,
+      "value": 698.374755859375
+    },
+    "time/rollout/sync_model_from_actor": {
+      "step": 0,
+      "value": 7.782073497772217
+    },
+    "time/rollout/predict": {
+      "step": 0,
+      "value": 8.083395957946777
+    },
+    "time/rollout/generate_one_epoch": {
+      "step": 0,
+      "value": 694.4193725585938
+    },
+    "time/rollout/rollout/generate": {
+      "step": 0,
+      "value": 701.563232421875
+    },
+    "time/actor/actor/sync_model_to_rollout": {
+      "step": 0,
+      "value": 8.966730117797852
+    },
+    "time/actor/actor/recv_traj": {
+      "step": 0,
+      "value": 698.9072265625
+    },
+    "time/actor/actor/compute_adv": {
+      "step": 0,
+      "value": 0.0328955352306366
+    },
+    "time/actor/run_training": {
+      "step": 0,
+      "value": 13.080816268920898
+    },
+    "train/actor/approx_kl": {
+      "step": 0,
+      "value": 0.023653831332921982
+    },
+    "train/actor/clip_fraction": {
+      "step": 0,
+      "value": 0.09619726240634918
+    },
+    "train/actor/clipped_ratio": {
+      "step": 0,
+      "value": 0.9950534105300903
+    },
+    "train/actor/dual_cliped_ratio": {
+      "step": 0,
+      "value": 0.0
+    },
+    "train/actor/dvac_chunk_factor_std": {
+      "step": 0,
+      "value": 0.0889362320303917
+    },
+    "train/actor/dvac_group_count": {
+      "step": 0,
+      "value": 16.0
+    },
+    "train/actor/dvac_local_center_error": {
+      "step": 0,
+      "value": 2.384185791015625e-07
+    },
+    "train/actor/dvac_negative_adv_mass_ratio": {
+      "step": 0,
+      "value": 1.0
+    },
+    "train/actor/dvac_positive_adv_mass_ratio": {
+      "step": 0,
+      "value": 0.9999998807907104
+    },
+    "train/actor/dvac_valid_chunks": {
+      "step": 0,
+      "value": 354.0
+    },
+    "train/actor/dvac_weight_max": {
+      "step": 0,
+      "value": 1.7750144004821777
+    },
+    "train/actor/dvac_weight_mean": {
+      "step": 0,
+      "value": 1.0
+    },
+    "train/actor/dvac_weight_min": {
+      "step": 0,
+      "value": 0.5879217386245728
+    },
+    "train/actor/dvac_weight_sq_mean": {
+      "step": 0,
+      "value": 1.014936089515686
+    },
+    "train/actor/entropy_loss": {
+      "step": 0,
+      "value": 0.0
+    },
+    "train/actor/grad_norm": {
+      "step": 0,
+      "value": 18.477596282958984
+    },
+    "train/actor/lr": {
+      "step": 0,
+      "value": 4.999999873689376e-06
+    },
+    "train/actor/policy_loss": {
+      "step": 0,
+      "value": -0.013977954164147377
+    },
+    "train/actor/policy_loss_abs": {
+      "step": 0,
+      "value": 0.5993664264678955
+    },
+    "train/actor/ratio": {
+      "step": 0,
+      "value": 1.067110538482666
+    },
+    "train/actor/ratio_abs": {
+      "step": 0,
+      "value": 0.15010088682174683
+    },
+    "train/actor/total_loss": {
+      "step": 0,
+      "value": -0.0017472442705184221
+    },
+    "train/actor/dvac_weight_ess_fraction": {
+      "step": 0,
+      "value": 0.9852837324142456
+    }
+  },
+  "fatal_lines": [],
+  "exit_code": null,
+  "rollout_seeds_verified": true,
+  "log_tail": "s=128                   │return=0.3203125                      │\n│reward=0.0016015625                    │success_once=0.3203125                 │                                      │\n│                                                                                                                      │\n├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│advantages_max=2.475                   │advantages_mean=-0.072                 │advantages_min=-2.475                 │\n│rewards=0.0023                         │                                       │                                      │\n│                                                                                                                      │\n├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤\n│                                                                                                                      │\n│actor/approx_kl=0.024                  │actor/clip_fraction=0.096              │actor/clipped_ratio=0.995             │\n│actor/dual_cliped_ratio=0.0000         │actor/dvac_chunk_factor_std=0.089      │actor/dvac_group_count=16.000         │\n│actor/dvac_local_center_error=2.38e-07 │actor/dvac_negative_adv_mass_ratio=1.0…│actor/dvac_positive_adv_mass_ratio=1.…│\n│actor/dvac_valid_chunks=354.0          │actor/dvac_weight_ess_fraction=0.985   │actor/dvac_weight_max=1.775           │\n│actor/dvac_weight_mean=1.000           │actor/dvac_weight_min=0.588            │actor/dvac_weight_sq_mean=1.015       │\n│actor/entropy_loss=0.0000              │actor/grad_norm=18.478                 │actor/lr=5.00e-06                     │\n│actor/policy_loss=-0.014               │actor/policy_loss_abs=0.599            │actor/ratio=1.067                     │\n│actor/ratio_abs=0.150                  │actor/total_loss=-0.0017               │                                      │\n│                                                                                                                      │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯\n\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=3277970)\u001b[0m \nGenerating Rollout Epochs:   0%|          | 0/2 [00:00<?, ?it/s]\n",
+  "passed": true
+}
