@@ -9,3 +9,7 @@
 源码已提交部分由 SOURCE_INDEX.json 的 commit/branch 定位；相对 RLinf 7d07a421 的代码补丁放在 source/，当前 dirty 或 untracked 仅为未验证快照，不是生产修复。不同工作目录可能共享同一提交，补丁按提交去重；运行时保存的源码版本记录优先于当前工作树快照。
 
 大模型、checkpoint/optimizer、回放池、原始 tensor/NPZ、视频、依赖环境、缓存和凭据不进 Git。单文件上限32 MiB，DV文本目录合计上限64 MiB；超限与敏感文件逐项写入 EXCLUSIONS.json，没有截尾冒充原始日志。日志、JSONL和较大文本无损gzip；原始/发布SHA256及大小见ARTIFACTS.json。该包可重绘和追溯，不包含复评模型所需的全部权重。
+
+## 轻量原始诊断补充
+
+补查所有训练目录的嵌套日志层后，另外收录小型 DV tensor（仅诊断目录内的 .pt/.npz/.npy）、调试图、配置、启动源码和补丁。模型 checkpoint 与诊断 tensor 按目录语义区分；小型诊断二进制不是权重，本次原样无损 gzip 保存，不执行反序列化。上文“原始 tensor/NPZ 不进 Git”在此修订为：大型权重/回放/数据集不进 Git，32 MiB 内的独立诊断文件纳入。逐文件原始与发布哈希见 SUPPLEMENT_ARTIFACTS.json，完整的重文件目录排除说明见 SUPPLEMENT_EXCLUSIONS.json；它们补充而不覆盖第一批清单。
