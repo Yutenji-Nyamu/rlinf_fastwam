@@ -187,10 +187,14 @@ finally:
                        'all_workers_stopped':True, 'managed_processes':managed_identities(),
                        'cleanup_receipt':clean, 'time':time.time()}
             atomic_json(run/'dojo-release.json', release)
-            state('RESTORING_FOUR_RLT_RUNS', terminal_status=terminal)
-            assert command(rlt+['resume','--release-receipt',str(run/'dojo-release.json')], 'rlt-resume') == 0, 'RLT restore dispatch failed'
-            state('RLT_RESTORE_DISPATCHED', dojo_exit_code=dojo_code)
-            verify_rlt_first_round()
+            if ready.get('restore_rlt_after_dojo', True):
+                state('RESTORING_FOUR_RLT_RUNS', terminal_status=terminal)
+                assert command(rlt+['resume','--release-receipt',str(run/'dojo-release.json')], 'rlt-resume') == 0, 'RLT restore dispatch failed'
+                state('RLT_RESTORE_DISPATCHED', dojo_exit_code=dojo_code)
+                verify_rlt_first_round()
+            else:
+                state('DOJO_FINISHED_RLT_REMAINS_PAUSED', terminal_status=terminal,
+                      reason='User priority: WM first, Dojo second; defer RLT until requested')
         except Exception as exc:
             error = (error or '') + '; resource return: ' + repr(exc)
             state('RESOURCE_RETURN_NEEDS_ATTENTION', error=error, error_context=error_context(exc))

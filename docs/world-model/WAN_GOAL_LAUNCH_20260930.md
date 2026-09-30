@@ -1,6 +1,6 @@
 # SZ3 Wan Goal 首次启动计划
 
-2026-09-30。准备校验完成；下列为本次唯一启动路由，实际状态以服务器回执为准。
+2026-09-30建立，2026-10-01按用户最新优先级更新。WM第一、Dojo第二；RLT暂不安排。下列为本次唯一启动路由，实际状态以服务器回执为准。
 
 |阶段|配置|预算|通过条件|
 |---|---|---|---|
@@ -14,6 +14,6 @@
 
 控制器命令由冻结配置展开：`<RLT_PY> -u -B <Dojo项目>/scripts/wm-bridge-20260930-v1/continue_pipeline.py --config <当前Dojo配置> --cycle-dir <Dojo项目>/rlt-cycle-sz3-wan-goal-20260930-v1 --preparation-dir <原Dojo run>/prepare-continuation-20260930-wan-goal-v1`。控制器运行已审`wm_sequence.py`；单阶段调用`private_ray_driver.py --repo <对应clone> --config <上表配置名> --log-dir <阶段输出> --port <独立端口>`。
 
-停止条件：smoke达到2epoch即验收，未通过不进入下一阶段；正式达到1000epoch停止，不额外设墙钟预算。WM正常完成或失败后精确清理本批并续原Dojo；原Dojo最终退出才恢复四条RLT。若无法核实本批GPU释放，保留现场并报告，不抢占或重复恢复。当前准备验收中的pip元数据警告见`WAN_GOAL_ENVIRONMENT_NOTES.md`，真实GPU路径仍由smoke裁决。
+停止条件：smoke达到2epoch即验收，未通过不进入下一阶段；正式达到1000epoch停止，不额外设墙钟预算。WM正常完成或失败后精确清理本批并续原Dojo；原Dojo最终退出后RLT仍保持暂停，待用户另行安排。若无法核实本批GPU释放，保留现场并报告，不抢占或重复恢复。当前准备验收中的pip元数据警告见`WAN_GOAL_ENVIRONMENT_NOTES.md`，真实GPU路径仍由smoke裁决。
 
-切换顺序：动态核验旧Dojo→唯一TERM意图→旧owner正常归还RLT并核首轮→新cycle精确借出→WM序列→保留原6300评估结果继续Dojo→最终归还RLT。不能跳过旧owner的归还责任。
+切换顺序：旧Dojo退出触发的RLT恢复已发生；完成旧owner退出和归属交接即可，不再把RLT首轮作为WM前置条件。新cycle仅精确暂停这四条RLT→WM序列→保留原6300评估结果继续Dojo；最终仍保留RLT恢复清单，但不自动派发。启动使用`--skip-prior-first-round --defer-rlt-restore`，方法与训练预算不变。

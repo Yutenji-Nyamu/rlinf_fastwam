@@ -70,6 +70,10 @@ def main():
     parser.add_argument('--cycle-dir', type=Path, required=True)
     parser.add_argument('--continuation-name', required=True)
     parser.add_argument('--wm-spec', type=Path, required=True)
+    parser.add_argument('--skip-prior-first-round', action='store_true',
+                        help='User prioritizes WM; require completed ownership return, not a new RLT round')
+    parser.add_argument('--defer-rlt-restore', action='store_true',
+                        help='Leave RLT paused after Dojo ends, pending further user instruction')
     args = parser.parse_args()
     base, m = load_base(args.base_source_dir)
     from dojo_sweep import Sweep, build_plan
@@ -84,7 +88,9 @@ def main():
     spec = validate_spec(read(own_path(args.wm_spec)))
     prior = read(run / 'plan.json'); plan = build_plan(cfg)
     assert cfg == prior['config'], 'Dojo configuration must stay identical'
-    assert plan['episode_total'] == 6300 and plan['gpus'] == [4, 5, 6, 7] and plan['num_envs'] == 4
+    # Frozen Dojo keeps two static queue slots per GPU even with one active worker.
+    assert plan['episode_total'] == 6300 and sorted(set(plan['gpus'])) == [4, 5, 6, 7]
+    assert plan['num_envs'] == 4 and plan['workers_per_gpu'] == 1
     for key in set(prior) | set(plan):
         if key != 'created_at': assert prior.get(key) == plan.get(key), 'Changed benchmark field: ' + key
     with (run / 'pipeline.lock').open('a+') as outer, (run / 'controller.lock').open('a+') as inner:
@@ -93,7 +99,8 @@ def main():
         previous = Path(active['cycle_dir']); previous_attempt = Path(active['attempt_dir'])
         assert read(previous_attempt / 'pipeline-final.json')['rlt_dispatched'] is True
         first = read(previous_attempt / 'rlt-first-round.json')
-        assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
+        if not args.skip_prior_first_round:
+            assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
         assert not Sweep(cfg, prior).guard.scan(), 'Dojo processes still alive'
         prep.mkdir(mode=0o700)
         for file in ('plan.json', 'active-continuation.json', 'pipeline-current.json', 'result-audit.json'):
@@ -108,6 +115,8 @@ def main():
                      base_source_dir=str(base), cycle_dir=str(stage), attempt_dir=str(attempt),
                      prior_plan_sha256=sha(run / 'plan.json'), previous_cycle=str(previous),
                      wm_spec_sha256=sha(prep / 'wm-spec.json'), benchmark_unchanged=True,
+                     prior_first_round_required=not args.skip_prior_first_round,
+                     restore_rlt_after_dojo=not args.defer_rlt_restore,
                      source_sha256={p.name: sha(p) for p in HERE.iterdir() if p.suffix in ('.py', '.json')},
                      preserved_episodes=sum(x.get('episodes', 0) for x in rows))
         atomic(prep / 'ready.json', ready)

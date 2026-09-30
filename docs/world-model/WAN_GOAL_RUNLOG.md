@@ -84,6 +84,20 @@
 - `s127/s130`：切换只读预检遇到旧watchdog将真实路径与`/data`别名比较失败。仅在新stop_dojo调用旧接口处解析路径，实际父子进程身份和冻结源码复验通过；未发送信号、未停止Dojo。已建立新的WM spec和bridge目录，尚未启动。
 - 下一步：包含该修正和启动计划的新提交完成远端回读后，动态绑定旧Dojo，执行唯一归还/借卡流程，再跑OFT与π05 smoke。
 
+### 2026-10-01 00:00–00:02 首次切换
+
+- `s134`：完整上游对象导入独立发布副本后，24227可达对象无缺失；60新增/2修改/0删除，提交`602be50078a2b992e948cd38341c2893d1d2f8f5`已推指定分支并回读SHA一致。原部署源码和环境不因Git修复改变。
+- `s135`：00:00:58按当时的UID/start/boot/命令和父子关系核验，只向原Dojo controller发送唯一TERM；旧outer按原有流程清理并归还RLT。不是结束整个Dojo计划，原结果保留。
+- `s137`：00:02已派发原四RLT恢复，首轮观察仍pending；原Dojo审计为2313/6300、55个完整配置。等旧owner完成首轮核验及终态后，新cycle才精确借卡进入WM。GPU smoke尚未启动。
+
+### 00:12–00:19 WM优先，首次启动OFT smoke
+
+- 用户明确WM第一、Dojo占卡第二、其他先停。新owner设置`prior_first_round_required=false`、`restore_rlt_after_dojo=false`，不再让RLT首轮阻挡WM，也不在Dojo最终结束后自动恢复RLT；模型、GRPO与预算均不变。自动继续任务已同步。
+- `s148`准备结束旧只读观察时，旧owner已经自行完成，因此没有再次发送信号。保留真实回执，不把此前RLT短暂恢复描述为WM训练。
+- `s150/s151`：准备器的GPU列表断言不匹配旧Dojo静态队列：它保留[4,4,5,5,6,6,7,7]八个队列槽，实际每卡仍仅1worker。失败发生在借卡之前。`s152`仅改为唯一物理卡集合检查，同时要求workers_per_gpu=1、num_envs=4及原plan全字段一致；没有改变Dojo并行参数。
+- `s153`：新owner启动，2313个原评估回合按原路径保留；新cycle为`rlt-cycle-sz3-wan-goal-20260930-v1`，active continuation为`continuation-20260930-wan-goal-v1`。`s154`精确停止四RLT后，00:17:57八卡显存查询均0MiB；仅借4–7。
+- `s155`：00:18:18序列进入oft-smoke，独立Ray开始初始化。此时只能称smoke已启动，尚未获得有效GRPO更新证据。
+
 本轮根目录：`E:/Codex/home/visualizations/2026/09/28/01a0e6c7-bb8c-7421-8697-110ddd91d2f1/wan-goal-20260930/steps/`。
 
 每个step包含 `command.sh`、`stdout.log`、`stderr.log`、`receipt.json`（开始/结束、退出码、命令摘要和身份验证）。本地脚本位于 `local_scripts/wan_goal_20260930/`，凭据仅存在当前SSH进程内存。

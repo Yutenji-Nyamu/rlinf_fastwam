@@ -1,5 +1,7 @@
 # 深圳3：Wan Goal 借卡与 RLT 归还方案
 
+**2026-10-01最新授权覆盖下文旧恢复顺序：WM第一，Dojo第二，RLT暂不安排。** 新owner不再等待RLT首轮，以精确身份、旧owner终态和释放回执完成交接；使用`--skip-prior-first-round --defer-rlt-restore`。WM结束续原Dojo；Dojo最终结束后保留RLT恢复清单，不自动派发。下文旧“Dojo→RLT”流程仅作为历史与可选能力。00:18已进入OFT smoke启动，运行路由为`continuation-20260930-wan-goal-v1`。
+
 更新：2026-09-30。本文记录实现依据与切换规划；独立胶水已上传深圳3，s024核验原v3源码，s033通过7项服务器CPU检查。尚未发送本次切换信号，现场进程、checkpoint和磁盘状态仍须在实际切换前重新核验。
 
 本轮最新授权：材料准备齐后借深圳3 GPU 4、5、6、7，先做 Wan Goal OFT smoke，再做批准配置的 π0.5 GRPO 正式实验；**WM 完成或故障后恢复 Dojo，Dojo 最终结束再归还原四个 RLT**。共享 Ray、其他用户、GPU 0–3 与无关实验保持原状。停止 RLT 时使用最近的完整 checkpoint，不等待额外补存。

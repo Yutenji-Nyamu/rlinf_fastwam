@@ -4,6 +4,8 @@
 
 ## 授权与资源
 
+**2026-10-01最新指令覆盖下文历史恢复安排：WM第一、Dojo占卡第二，RLT暂不安排。不等待RLT首轮或补存checkpoint；新owner的`restore_rlt_after_dojo=false`，Dojo结束也不自动续RLT。**
+
 - 仅深圳3，物理 GPU 4–7。环境、源码、模型、缓存与日志放 `/data/chenyiteng/projects/wan-goal-sz3`。
 - 20:30实查 GPU 4–7 为 Dojo π0.5 全量评测，2072/6300 回合、166次成功，RLT已暂停；此数字只是切换前快照。
 - 用户随后明确：**准备好后暂停 Dojo，WM结束再续 Dojo**。保留原结果和 resume manifests；Dojo最终结束仍交还原RLT。准备期间保持Dojo运行。
