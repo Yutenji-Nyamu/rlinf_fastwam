@@ -1,0 +1,80 @@
+{
+  "time": 1790782295.1378279,
+  "kind": "oft",
+  "status": "REVIEWED_FOR_GPU_SMOKE",
+  "pip_check_exit": 1,
+  "pip_check_clean": false,
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "torchaudio": "2.11.0+cu130",
+    "torchcodec": "0.11.1",
+    "flash-attn": "2.8.3+cu13torch2.11cxx11abiTRUE",
+    "transformers": "4.40.1",
+    "tokenizers": "0.19.1",
+    "mujoco": "3.3.7",
+    "rlinf-libero": "0.1.3",
+    "diffsynth": "1.1.9",
+    "deepspeed": "0.18.4",
+    "ray": "2.58.0",
+    "protobuf": "6.33.6",
+    "openvla-oft": "0.0.1",
+    "tensorflow": "2.15.0",
+    "tensorflow-addons": "0.23.0",
+    "tyro": "1.0.16",
+    "typeguard": "2.13.3",
+    "swanlab": "0.10.1",
+    "wrapt": "1.14.2"
+  },
+  "vcs_revisions": {
+    "transformers": {
+      "vcs": "git",
+      "commit_id": "bc339d9ad707454c0c115970db43c260067c61ab"
+    },
+    "openvla-oft": {
+      "vcs": "git",
+      "commit_id": "e4287e94541f459edc4feabc4e181f537cd569a8"
+    }
+  },
+  "warnings": [
+    {
+      "package": "tyro",
+      "requirement": "typeguard>=4.0.0",
+      "installed": "2.13.3",
+      "assessment": "OFT TensorFlow Addons requires older typeguard; this run uses Hydra, not the tyro CLI."
+    },
+    {
+      "package": "swanlab",
+      "requirement": "wrapt>=1.17.0",
+      "installed": "1.14.2",
+      "assessment": "OFT TensorFlow requires older wrapt; this run selects TensorBoard, not SwanLab."
+    },
+    {
+      "package": "tensorflow",
+      "requirement": "protobuf>=3.20.3,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0.dev0",
+      "installed": "6.33.6",
+      "assessment": "Pinned RLinf protobuf>=6.33.5,<7 for Ray. TensorFlow emits nonfatal import diagnostics; GPU smoke remains required."
+    },
+    {
+      "package": "openvla-oft",
+      "requirement": "torch==2.2.0",
+      "installed": "2.11.0+cu130",
+      "assessment": "Pinned RLinf pyproject torch override."
+    },
+    {
+      "package": "openvla-oft",
+      "requirement": "torchvision==0.17.0",
+      "installed": "0.26.0+cu130",
+      "assessment": "Pinned RLinf pyproject torchvision override."
+    },
+    {
+      "package": "openvla-oft",
+      "requirement": "torchaudio==2.2.0",
+      "installed": "2.11.0+cu130",
+      "assessment": "Pinned RLinf pyproject torchaudio override."
+    }
+  ],
+  "imports_receipt": "/data/chenyiteng/projects/wan-goal-sz3/logs/validation-20260930-2325-oft/imports.json",
+  "imports_passed": true,
+  "limitation": "This is a scoped readiness decision, not a clean pip check or verified GRPO/GPU execution."
+}

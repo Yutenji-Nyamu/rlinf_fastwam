@@ -52,6 +52,14 @@ class LiberoInputs(transforms.DataTransformFn):
     # Determines which model will be used.
     # Do not change this for your own dataset.
     model_type: _model.ModelType
+    # Explicit experiment choice; the default retains the pretrained two-view input.
+    wrist_mode: str = "required"
+
+    def __post_init__(self):
+        if self.wrist_mode not in ("required", "disabled"):
+            raise ValueError(f"Unsupported wrist_mode={self.wrist_mode!r}")
+        if self.wrist_mode == "disabled" and self.model_type != _model.ModelType.PI05:
+            raise ValueError("The head-only adapter is limited to the pi05_libero experiment")
 
     def __call__(self, data: dict) -> dict:
         # Possibly need to parse images to uint8 (H,W,C) since LeRobot automatically
@@ -66,11 +74,21 @@ class LiberoInputs(transforms.DataTransformFn):
         # replace it with zeros like we do for the
         # right wrist image below.
         base_image = _parse_image(data["observation/image"])
-        wrist_image = _parse_image(data["observation/wrist_image"])
+        if self.wrist_mode == "disabled":
+            wrist_image = np.zeros_like(base_image)
+            wrist_valid = np.False_
+            # pi05_libero has discrete_state_input=False and no state projection.
+            # This is unused 8D LIBERO-shaped padding, not predicted proprioception.
+            raw_state = np.asarray(data["observation/state"])
+            state = np.zeros((*raw_state.shape[:-1], 8), dtype=np.float32)
+        else:
+            wrist_image = _parse_image(data["observation/wrist_image"])
+            wrist_valid = np.True_
+            state = data["observation/state"]
 
         # Create inputs dict. Do not change the keys in the dict below.
         inputs = {
-            "state": data["observation/state"],
+            "state": state,
             "image": {
                 "base_0_rgb": base_image,
                 "left_wrist_0_rgb": wrist_image,
@@ -79,7 +97,7 @@ class LiberoInputs(transforms.DataTransformFn):
             },
             "image_mask": {
                 "base_0_rgb": np.True_,
-                "left_wrist_0_rgb": np.True_,
+                "left_wrist_0_rgb": wrist_valid,
                 # We only mask padding images for pi0 model, not pi0-FAST. Do not change this for your own dataset.
                 "right_wrist_0_rgb": np.True_
                 if self.model_type == _model.ModelType.PI0_FAST

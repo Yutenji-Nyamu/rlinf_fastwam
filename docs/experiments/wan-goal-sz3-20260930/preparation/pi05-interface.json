@@ -1,0 +1,56 @@
+{
+  "status": "passed",
+  "scope": "CPU source/config/real-transform checks; no GPU policy or GRPO update",
+  "norm_stats_sha256": "dae37d79a22108af83df9189c6710a3ec8e077d65b28e34bdf1da724e5ae30f1",
+  "norm_stats_dimensions": {
+    "state": 32,
+    "actions": 32
+  },
+  "source": [
+    {
+      "path": "rlinf/models/embodiment/openpi/policies/libero_policy.py",
+      "before_sha256": "e060c68094f02bf90a456d1bfb7ab8cb5767aec620115770d519aadb3e7d2975",
+      "after_sha256": "54623f2c2f9d522674c2d17841880455144193659f71762fd34655c3616f0615",
+      "status": "already_applied"
+    },
+    {
+      "path": "rlinf/models/embodiment/openpi/dataconfig/libero_dataconfig.py",
+      "before_sha256": "80f5157a5d8c946f343c07bf1e31f782639203d86c91ede4a1b8af210c29e6a3",
+      "after_sha256": "2397bb58c84edfd39c83b8c77791af9d70b28d436693bfcaa2f7ba0746357eca",
+      "status": "already_applied"
+    }
+  ],
+  "checks": [
+    {
+      "check": "resolved_smoke",
+      "chunk_samples_per_epoch": 1280,
+      "optimizer_steps_per_epoch": 1,
+      "microbatches_per_rank_per_optimizer_step": 5,
+      "epochs": 2
+    },
+    {
+      "check": "resolved_formal",
+      "chunk_samples_per_epoch": 20480,
+      "optimizer_steps_per_epoch": 10,
+      "microbatches_per_rank_per_optimizer_step": 4,
+      "epochs": 1000
+    },
+    {
+      "check": "required_mode_preserved",
+      "passed": true
+    },
+    {
+      "check": "real_transform_chain_with_stub_tokenizer",
+      "passed": true,
+      "state_before_norm": 8,
+      "state_after_pad": 32,
+      "valid_cameras": 1,
+      "action_output": [
+        2,
+        8,
+        7
+      ],
+      "actor_replay_matches_rollout": true
+    }
+  ]
+}

@@ -31,11 +31,18 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
     """
 
     extra_delta_transform: bool = False
+    wrist_mode: str = "required"
 
     @override
     def create(
         self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig
     ) -> DataConfig:
+        if self.wrist_mode == "disabled" and (
+            model_config.model_type != _model.ModelType.PI05
+            or model_config.discrete_state_input
+            or self.extra_delta_transform
+        ):
+            raise ValueError("Head-only LIBERO requires PI05 with no state conditioning or extra delta transform")
         # The repack transform is *only* applied to the data coming from the dataset,
         # and *not* during inference. We can use it to make inputs from the dataset look
         # as close as possible to those coming from the inference environment (e.g. match the keys).
@@ -65,7 +72,11 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
         # how to modify the transforms to match your dataset. Once you created your own transforms, you can
         # replace the transforms below with your own.
         data_transforms = _transforms.Group(
-            inputs=[libero_policy.LiberoInputs(model_type=model_config.model_type)],
+            inputs=[
+                libero_policy.LiberoInputs(
+                    model_type=model_config.model_type, wrist_mode=self.wrist_mode
+                )
+            ],
             outputs=[libero_policy.LiberoOutputs()],
         )
 

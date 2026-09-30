@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "upstream": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+  "host": "SZ3",
+  "physical_gpus": [4, 5, 6, 7],
+  "cuda_visible_devices": "4,5,6,7",
+  "private_ray_num_gpus": 4,
+  "worker_rank_visible_accelerators": [[4], [5], [6], [7]],
+  "component_placement": "actor,env,rollout: 4-7",
+  "require_private_ray": true,
+  "smoke_config": "wan_goal_pi05_headonly_smoke_sz3",
+  "formal_config": "wan_goal_pi05_headonly_formal_sz3",
+  "formal_gate": "two smoke runner epochs with effective GRPO gradients and saved parameter updates; physical GPU ownership verified",
+  "formal_start": "fresh pinned SFT checkpoint; smoke is a separate validation run",
+  "restore_owner": "existing resource-switch controller: WM completion/failure -> original Dojo continuation -> original RLT"
+}
