@@ -74,14 +74,17 @@ def main():
                         help='User prioritizes WM; require completed ownership return, not a new RLT round')
     parser.add_argument('--defer-rlt-restore', action='store_true',
                         help='Leave RLT paused after Dojo ends, pending further user instruction')
+    parser.add_argument('--reuse-borrowed-cycle', action='store_true',
+                        help='Reuse an already stopped cycle after its prior owner released all resources')
     args = parser.parse_args()
     base, m = load_base(args.base_source_dir)
     from dojo_sweep import Sweep, build_plan
     from resume_results import prepare_result
     from wm_stage import validate_spec
     config, cfg, project, run = bind_config(args.config)
-    stage = own_path(args.cycle_dir, exists=False)
-    assert stage.is_relative_to(project) and not stage.exists()
+    stage = own_path(args.cycle_dir, exists=args.reuse_borrowed_cycle)
+    assert stage.is_relative_to(project)
+    if not args.reuse_borrowed_cycle: assert not stage.exists()
     attempt = run / name(args.continuation_name)
     prep = run / ('prepare-' + args.continuation_name)
     assert not attempt.exists() and not prep.exists()
@@ -97,10 +100,19 @@ def main():
         fcntl.flock(outer, fcntl.LOCK_EX | fcntl.LOCK_NB); fcntl.flock(inner, fcntl.LOCK_EX | fcntl.LOCK_NB)
         active = read(run / 'active-continuation.json')
         previous = Path(active['cycle_dir']); previous_attempt = Path(active['attempt_dir'])
-        assert read(previous_attempt / 'pipeline-final.json')['rlt_dispatched'] is True
-        first = read(previous_attempt / 'rlt-first-round.json')
-        if not args.skip_prior_first_round:
-            assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
+        final = read(previous_attempt / 'pipeline-final.json')
+        if args.reuse_borrowed_cycle:
+            assert args.defer_rlt_restore and stage == previous
+            assert final['rlt_dispatched'] is False and final['error'] is None
+            release = read(previous_attempt / 'dojo-release.json')
+            assert release['all_workers_stopped'] and release['cleanup_receipt']['gpus_released']
+            assert (stage / 'rlt-stopped.json').is_file() and not (stage / 'resumed-dispatched.json').exists()
+            assert not m.gpu_processes([4, 5, 6, 7])
+        else:
+            assert final['rlt_dispatched'] is True
+            first = read(previous_attempt / 'rlt-first-round.json')
+            if not args.skip_prior_first_round:
+                assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
         assert not Sweep(cfg, prior).guard.scan(), 'Dojo processes still alive'
         prep.mkdir(mode=0o700)
         for file in ('plan.json', 'active-continuation.json', 'pipeline-current.json', 'result-audit.json'):
@@ -109,7 +121,7 @@ def main():
                     f"{cfg['run_id']}_s{seed}_{task}", prior['budgets'][task], prep / 'preserved-results', apply=True)
                 for seed in prior['seeds'] for task in prior['tasks']]
         atomic(prep / 'preserved-results.json', rows)
-        freeze_cycle(m, base, stage, previous)
+        if not args.reuse_borrowed_cycle: freeze_cycle(m, base, stage, previous)
         atomic(prep / 'wm-spec.json', spec)
         ready = dict(time=time.time(), config_path=str(config), config_sha256=sha(config),
                      base_source_dir=str(base), cycle_dir=str(stage), attempt_dir=str(attempt),
@@ -117,6 +129,8 @@ def main():
                      wm_spec_sha256=sha(prep / 'wm-spec.json'), benchmark_unchanged=True,
                      prior_first_round_required=not args.skip_prior_first_round,
                      restore_rlt_after_dojo=not args.defer_rlt_restore,
+                     reuse_borrowed_cycle=args.reuse_borrowed_cycle,
+                     previous_attempt=str(previous_attempt),
                      source_sha256={p.name: sha(p) for p in HERE.iterdir() if p.suffix in ('.py', '.json')},
                      preserved_episodes=sum(x.get('episodes', 0) for x in rows))
         atomic(prep / 'ready.json', ready)

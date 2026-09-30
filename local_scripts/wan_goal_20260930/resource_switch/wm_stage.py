@@ -53,6 +53,7 @@ class Catalog:
     def scan(self):
         observed = {}
         unreadable_unclaimed = []
+        unreadable_registered = []
         registered_pids = {r['pid'] for r in self.rows.values()}
         needle = (TAG + '=' + self.token).encode()
         descendant_prefix = needle + b'.'
@@ -69,9 +70,26 @@ class Catalog:
             except (FileNotFoundError, ProcessLookupError):
                 continue
             except PermissionError as error:
-                if int(p.name) in registered_pids:
-                    raise RuntimeError('Cannot verify registered WM PID ' + p.name +
-                                       ' at ' + str(error.filename or p) + '; refusing to declare release') from error
+                # /proc/environ can become unreadable during process teardown.
+                # Ownership already established by a token or registered parent
+                # remains valid only for that exact UID/boot/start identity.
+                try:
+                    current = identity(int(p.name))
+                except (FileNotFoundError, ProcessLookupError):
+                    continue
+                except PermissionError:
+                    if int(p.name) in registered_pids:
+                        raise RuntimeError('Cannot recheck registered WM identity ' + p.name) from error
+                    current = None
+                if current is not None and current['state'] in ('Z', 'X'):
+                    continue
+                key = (current['pid'], current['start'], current['boot']) if current else None
+                if key in self.rows and current['uid'] == self.rows[key]['uid'] == UID:
+                    observed[current['pid']] = current
+                    self.add(current, 'registered-identity-environ-unreadable')
+                    unreadable_registered.append(dict(pid=current['pid'], start=current['start'],
+                        path=str(error.filename or p), reason='exact previously owned identity reverified'))
+                    continue
                 unreadable_unclaimed.append(dict(pid=int(p.name), path=str(error.filename or p),
                     reason='unregistered and unreadable; not claimed or signaled'))
                 continue
@@ -84,7 +102,8 @@ class Catalog:
             for pid in children: self.add(observed[pid], 'registered-parent-tree')
             owned |= children
         atomic(self.run / 'managed-identities.json', dict(time=time.time(), owner_token=self.token,
-                managed_processes=list(self.rows.values()), unreadable_unclaimed=unreadable_unclaimed))
+                managed_processes=list(self.rows.values()), unreadable_unclaimed=unreadable_unclaimed,
+                unreadable_registered=unreadable_registered))
 
     def signal(self, row, sig):
         if not alive(row): return

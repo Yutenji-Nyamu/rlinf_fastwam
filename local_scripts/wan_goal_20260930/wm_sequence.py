@@ -1,5 +1,5 @@
 """OFT smoke -> audited PI05 head-only smoke -> formal PI05, with isolated Ray per stage."""
-import hashlib,json,os,subprocess,sys,time
+import argparse,hashlib,json,os,subprocess,sys,time
 from pathlib import Path
 
 ROOT=Path('/data/chenyiteng/projects/wan-goal-sz3')
@@ -44,6 +44,19 @@ stages=[
  ('pi05-smoke','pi05-wan','RLinf-pi05','wan_goal_pi05_headonly_smoke_sz3',63844,'p1',True),
  ('pi05-formal','pi05-wan','RLinf-pi05','wan_goal_pi05_headonly_formal_sz3',63845,'p2',False),
 ]
+parser=argparse.ArgumentParser()
+parser.add_argument('--completed-oft-evidence',type=Path)
+args=parser.parse_args()
+if args.completed_oft_evidence:
+    evidence=json.loads(args.completed_oft_evidence.read_text())
+    assert evidence['status']=='LEARNING_VERIFIED_MONITOR_FAILURE_RECONCILED'
+    assert evidence['source_commit']=='d34d4c320d08cb982de034aa9a011f08dc0fa217'
+    for file,digest in evidence['evidence_sha256'].items():
+        assert hashlib.sha256(Path(file).read_bytes()).hexdigest()==digest
+    assert evidence['learning_verified'] is True and evidence['resources_released'] is True
+    stages=stages[1:]
+    state('REUSING_VERIFIED_OFT_LEARNING',evidence=str(args.completed_oft_evidence),
+          note='Original SIGTERM/monitor failure remains recorded; no OFT budget replay')
 for name,env_name,repo_name,config,port,suffix,verify in stages:
     if stop:raise RuntimeError('Sequence cancelled before next stage')
     stage_run=run/name

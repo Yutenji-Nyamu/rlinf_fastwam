@@ -98,6 +98,30 @@
 - `s153`：新owner启动，2313个原评估回合按原路径保留；新cycle为`rlt-cycle-sz3-wan-goal-20260930-v1`，active continuation为`continuation-20260930-wan-goal-v1`。`s154`精确停止四RLT后，00:17:57八卡显存查询均0MiB；仅借4–7。
 - `s155`：00:18:18序列进入oft-smoke，独立Ray开始初始化。此时只能称smoke已启动，尚未获得有效GRPO更新证据。
 
+### 00:22–00:29 OFT首轮真实信号
+
+- `s160`：优先级调整与首次启动证据已推同分支`31703e082c533bc69f6fca038ef500aff44951ee`（4新增/6修改/0删除），远端SHA一致；物理卡placement已核为4、5、6、7。
+- `s168`：OFT第0日志步的grad_norm=4.06422、loss_mask_fraction=0.602539、advantage范围[-0.935414,1.620185]，均为真实TensorBoard读数。WM内success_once=0.65625不当作真实LIBERO成功率。首轮采集约51.7秒、第二轮约45.0秒；完整checkpoint保存明显长于采集。
+- `s169`：CP1模型完整文件15,082,826,535字节，DCP模型/优化器等四分片合计约45.3GB；CP2仍在写完整权重。尚未完成两轮权重变化验收，不提前宣布smoke通过。
+
+### 00:30–00:43 OFT学习验证与监控修复
+
+- 旧外层`wm_stage.Catalog.scan`对已登记进程的`/proc/<pid>/environ`读取异常直接报错，误触发整批清理；内层OFT driver收到TERM退出-15，清理回调也被外层结束。外层最终完成精确清理并续Dojo。问题来自本任务监控，不是GRPO训练报错；所有原始退出记录保留。
+- `s174`独立只读验证：两轮有效GRPO信号、完整CP1/CP2、抽查参数变化全部通过，唯一失败项是原进程未正常退出。grad_norm分别4.06422/3.57505、有效样本比例0.602539/0.638672；不把WM success作为真实LIBERO成功率。
+- `s175`对短暂fallback的当前Dojo controller发唯一TERM。`s178`确认旧owner退出、4–7释放、pipeline锁空、RLT无恢复派发，2313回合仍保留。读取状态脚本初版对cleanup_receipt的字符串/字典类型处理错误（s177），仅影响打印，s178已修正。
+- `s176`新版monitor通过8项CPU测试。只对已由token/父子关系登记且UID/boot/start完全一致的进程保留归属；读取不到的陌生进程或复用PID不继承归属。没有扩大信号目标。
+- `s180`生成`learning-reconciled.json`：明确保留原verifier=false和退出-15，基于独立真实学习和资源释放证据接受已完成OFT两轮，不重跑预算。新bridge/ready核源码SHA、原Dojo全plan一致，设置`reuse_borrowed_cycle=true`、`restore_rlt_after_dojo=false`。
+- `s181`00:43:17唯一启动新owner，输出`runs/wan-goal-sz3-20261001-r2`，从π05 smoke继续。π05仍要求正常退出、两轮有效梯度及权重变化才自动进原正式配方；本次仅改变监控和资源调度，学习配置不变。
+
+### 00:46–00:53 用户睡前暂停与原RLT恢复
+
+- 用户要求先记录WM进度，再恢复RLT、检查三机。删除WM自动继续任务`3-wan-goal-0-5`；没有以原授权继续训练WM。
+- `s184`π05 smoke完成Wan和策略模型加载，尚无真实更新验收。`s185`对动态核身份的v2 owner发送唯一TERM，owned cleanup正常完成；`s187`停止随后短暂fallback Dojo；`s188`确认两阶段释放、owner退出、4–7无GPU上下文。
+- `s189`00:50:48沿既有cycle/冻结checkpoint/真实release回执唯一恢复四RLT，exit0；user-rlt-return.json和resumed-dispatched.json记录成功派发。`s190`四driver存活、恢复点均CP25；处于加载阶段，首轮未验证。原WM与Dojo结果不删除，Dojo仍保留2313回合。
+- 三机只读检查：深圳1四RLT继续，支架523/520、双瓶524/524；深圳2旧Dojo因stack_bowls_random/s1三次无进展失败，自动恢复原四RLT且首轮真实验证通过。三机0–3无计算任务，但无原RLT恢复清单；已问是否新增实验，未答前不擅自扩展任务/种子/预算。
+- `s191/s192`深圳3四组完成恢复并进入首轮rollout，4–7各约23.2GiB，首轮指标仍待落盘。深圳2四RLT1193/1218/1148/1149轮，原Dojo3235回合保留。
+- `s193`及三机health只读检查：近3小时所查内核无Xid/OOM/I/O/AER新记录，24卡不可纠正ECC0；数据盘充足，23机根余6.9/4.9GiB，未清理。新heartbeat `rlt` 每15分钟维护原12条RLT，健康静默，仅精确恢复意外退出的原任务，不增加预算或重开WM。
+
 本轮根目录：`E:/Codex/home/visualizations/2026/09/28/01a0e6c7-bb8c-7421-8697-110ddd91d2f1/wan-goal-20260930/steps/`。
 
 每个step包含 `command.sh`、`stdout.log`、`stderr.log`、`receipt.json`（开始/结束、退出码、命令摘要和身份验证）。本地脚本位于 `local_scripts/wan_goal_20260930/`，凭据仅存在当前SSH进程内存。

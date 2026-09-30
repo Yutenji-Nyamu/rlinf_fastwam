@@ -1,4 +1,10 @@
-# SZ3 WM → Dojo 独立切换胶水（待审部署）
+# SZ3 WM → Dojo 独立切换胶水
+
+2026-10-01已部署，后按用户睡前要求暂停WM并恢复原RLT。最新运行回执见`WAN_GOAL_PAUSE_20261001.md`。下方原始完整归还设计保留供复现；不要重放已执行的stop/prepare/launch。
+
+新增已审选项：`--skip-prior-first-round`跳过旧RLT首轮等待；`--defer-rlt-restore`使Dojo结束后不自动恢复RLT；`--reuse-borrowed-cycle`仅在旧owner已结束、全部资源释放且RLT未重启时复用既有cycle。00:46用户再次要求恢复RLT后，沿同一cycle和最新release回执唯一派发，不改RLT参数。
+
+监控修复：已由owner token或已核父子关系登记的进程，在/proc/environ暂不可读时重新核UID/boot/start；仅完全相同的既有身份保留归属。陌生进程或复用PID不继承归属。8项服务器CPU测试与实际取消/释放流程均已通过。
 
 只在新的源码目录和新 cycle 中使用。现有 Dojo runtime 不复制、不改动；通过 `base-source-sha256.json` 核验并复用，RLT helper 在 prepare 时原样复制到新 cycle。运行账户/主机固定为 UID 20001 / h100-gpu01。
 

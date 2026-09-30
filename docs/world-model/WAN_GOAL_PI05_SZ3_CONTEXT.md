@@ -1,15 +1,17 @@
 # SZ3 Wan Goal → π0.5 GRPO 实施上下文
 
-更新时间：2026-09-30。当前执行目标由用户明确选定为 RLinf 官方 LIBERO Goal + Wan：先 OpenVLA-OFT GRPO smoke，再完成 π0.5 接口适配并启动正式训练。此前 RoboTwin/OpenDW/WorldArena 的讨论留存，不作为当前启动配方。
+更新时间：2026-10-01。当前执行目标由用户明确选定为 RLinf 官方 LIBERO Goal + Wan：先 OpenVLA-OFT GRPO smoke，再完成 π0.5 接口适配并启动正式训练。此前 RoboTwin/OpenDW/WorldArena 的讨论留存，不作为当前启动配方。
 
 ## 授权与资源
+
+**2026-10-01 00:46再更新：用户睡前要求暂停WM、恢复原RLT，并检查三机。该指令覆盖以下WM优先顺序。WM heartbeat已删除，SZ3四RLT于00:50恢复派发；不再自动启动WM/Dojo。当前小结见`WAN_GOAL_PAUSE_20261001.md`。**
 
 **2026-10-01最新指令覆盖下文历史恢复安排：WM第一、Dojo占卡第二，RLT暂不安排。不等待RLT首轮或补存checkpoint；新owner的`restore_rlt_after_dojo=false`，Dojo结束也不自动续RLT。**
 
 - 仅深圳3，物理 GPU 4–7。环境、源码、模型、缓存与日志放 `/data/chenyiteng/projects/wan-goal-sz3`。
 - 20:30实查 GPU 4–7 为 Dojo π0.5 全量评测，2072/6300 回合、166次成功，RLT已暂停；此数字只是切换前快照。
-- 用户随后明确：**准备好后暂停 Dojo，WM结束再续 Dojo**。保留原结果和 resume manifests；Dojo最终结束仍交还原RLT。准备期间保持Dojo运行。
-- 当前旧 outer 的 finally 会自动恢复 RLT；不能直接杀它后抢卡。实施采用旧链完整归还，再由新链精确借卡，WM阶段结束清理后续原Dojo。细节见 `WAN_GOAL_RESOURCE_SWITCH.md`。
+- 用户明确：**准备好后暂停 Dojo，WM结束再续 Dojo**。保留原结果和 resume manifests；Dojo最终结束后RLT仍保持暂停，待用户安排。
+- 旧outer退出曾自动恢复RLT；该交接已完成。当前新owner复用已借的同一cycle，WM结束清理后续原Dojo，不再停启RLT或等待其首轮。细节见 `WAN_GOAL_RESOURCE_SWITCH.md`。
 - 其他用户、共享 Ray 和 GPU 0–3保持原状。每次信号操作重新核验 UID/PID/starttime/boot/命令摘要，借卡后核查真实GPU占用。
 
 ## 固定来源
@@ -31,9 +33,13 @@
 2. 从官方 `wan_libero_goal_grpo_openvlaoft` 缩短预算做smoke，保留Goal模型/动作/奖励语义；记录明确预算与resolved配置后切卡。验收真实WM生成、策略轨迹、有限loss和参数更新。
 3. π0.5接口审计：Wan官方只输出外部主相机RGB，没有腕图和proprio；选定的 `pi05_libero` 虽保留8D状态字段，`discrete_state_input=False`且PI05无state projection，策略实际不以state为条件。硬缺口是腕图。动作是7D末端增量，不能把最后一条动作当成下一8D实测状态。用户已接受显式image mask屏蔽腕图，训练/真实LIBERO评测保持同一单视角口径。
 4. π0.5以匹配输入验证一次真实更新，再按记录的正式预算启动；真实LIBERO评测与WM内部reward分开记录。尚未通过接口审计时不宣称正式组合可运行。
-5. WM正常结束或失败：只清理新WM owned进程，核4–7释放，续原Dojo。Dojo结束后由唯一outer恢复原RLT。
+5. WM正常结束或失败：只清理新WM owned进程，核4–7释放，续原Dojo。Dojo结束后RLT仍保持暂停。
 
 ## 当前状态
+
+- **00:53最新**：本次WM已按用户要求暂停，π05仅完成模型加载，未验收真实GRPO更新，未进入正式。两份WM运行目录、OFT学习证据和全部部署环境保留；SZ3四RLT已从CP25恢复派发，首轮尚待核验。下一次需明确借卡后再从π05 smoke继续。
+
+- **2026-10-01 00:43最新**：OFT两轮真实更新、CP1/CP2完整性和权重变化已独立验证；原外层monitor在退出阶段遇/proc/environ权限异常并误触发清理，原退出-15保留。`learning-reconciled.json`结合实际学习与释放证据接受已完成OFT学习，不重跑其预算。monitor修复经8项CPU检查；新v2 owner已启动π05 smoke，仍要求其正常退出及真实参数更新才进正式。输出`runs/wan-goal-sz3-20261001-r2`；复用同一已借cycle，RLT保持暂停。上次Git31703e08；本次修复待增量发布。以下准备记录保留为历史。
 
 - 官方模型清单已核，三套合计36.78GB（未含Python环境与LIBERO资产）。
 - SSH主机指纹/账户身份已验；现场只读快照已保存。

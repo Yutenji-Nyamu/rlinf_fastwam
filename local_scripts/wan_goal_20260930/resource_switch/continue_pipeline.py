@@ -28,7 +28,16 @@ for file,digest in ready['source_sha256'].items():assert sha(HERE/file)==digest,
 assert sha(STAGE/HELPER)==read(STAGE/'plan.json')['script_sha256']
 lock=(R/'pipeline.lock').open('a+')
 fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-assert not (STAGE/'stop-attempt.json').exists() and not (STAGE/'resumed-dispatched.json').exists()
+assert not (STAGE/'resumed-dispatched.json').exists()
+if ready.get('reuse_borrowed_cycle', False):
+    assert (STAGE/'rlt-stopped.json').is_file()
+    previous = own_path(ready['previous_attempt'])
+    assert read(previous/'pipeline-final.json')['rlt_dispatched'] is False
+    released = read(previous/'dojo-release.json')
+    assert released['all_workers_stopped'] and released['cleanup_receipt']['gpus_released']
+    assert not m.gpu_processes([4,5,6,7]), 'Borrowed GPUs have not been released'
+else:
+    assert not (STAGE/'stop-attempt.json').exists()
 run.mkdir(exist_ok=False)
 atomic_json(R/'active-continuation.json',{'attempt_dir':str(run),'cycle_dir':str(STAGE),
             'config':str(args.config),'time':time.time(),**identity(os.getpid())})
@@ -156,8 +165,11 @@ try:
     state('VERIFYING_SAME_BENCHMARK_AND_RESUME')
     assert command(dojo+['--plan-only'],'final-preflight')==0
     if stop_requested:raise RuntimeError('Stop requested before borrowing GPUs')
-    state('STOPPING_CURRENT_FOUR_RLT_RUNS',cycle=str(STAGE))
-    assert command(rlt+['stop'],'rlt-stop')==0
+    if ready.get('reuse_borrowed_cycle', False):
+        state('REUSING_ALREADY_BORROWED_GPUS', cycle=str(STAGE), previous=ready['previous_attempt'])
+    else:
+        state('STOPPING_CURRENT_FOUR_RLT_RUNS',cycle=str(STAGE))
+        assert command(rlt+['stop'],'rlt-stop')==0
     assert (STAGE/'rlt-stopped.json').is_file()
     if stop_requested:raise RuntimeError('Owner stopped before WM stage')
     in_wm,wm_attempted=True,True

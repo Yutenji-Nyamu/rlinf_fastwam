@@ -44,7 +44,7 @@ class OwnershipChecks(unittest.TestCase):
         catalog.signal(rows[owned.pid], signal.SIGTERM); owned.wait(timeout=5)
         self.assertIsNone(unrelated.poll(), 'Unrelated process must remain alive')
 
-    def test_permission_unclaimed_skip_registered_fail(self):
+    def test_permission_unclaimed_skip_registered_identity_reverified(self):
         child = self.sleeper(self.token); blocked = Path('/proc') / str(child.pid) / 'environ'
         original = Path.read_bytes
         def denied(path):
@@ -57,8 +57,27 @@ class OwnershipChecks(unittest.TestCase):
             report = json.loads((self.root / 'managed-identities.json').read_text())
             self.assertIn(child.pid, {r['pid'] for r in report['unreadable_unclaimed']})
             catalog.add(identity(child.pid), 'explicit-test-child')
-            with self.assertRaisesRegex(RuntimeError, 'registered WM PID ' + str(child.pid)):
-                catalog.scan()
+            catalog.scan()
+            report = json.loads((self.root / 'managed-identities.json').read_text())
+            self.assertIn(child.pid, {r['pid'] for r in report['unreadable_registered']})
+            self.assertIsNone(child.poll())
+
+    def test_unreadable_reused_pid_does_not_inherit_ownership(self):
+        child = self.sleeper(self.token)
+        catalog = Catalog(self.root, self.token)
+        current = identity(child.pid)
+        catalog.add({**current, 'start': current['start'] - 1}, 'stale-generation')
+        blocked = Path('/proc') / str(child.pid) / 'environ'
+        original = Path.read_bytes
+        def denied(path):
+            if path == blocked: raise PermissionError(13, 'CPU test', str(path))
+            return original(path)
+        with patch.object(Path, 'read_bytes', denied):
+            catalog.scan()
+        self.assertNotIn((current['pid'], current['start'], current['boot']), catalog.rows)
+        report = json.loads((self.root / 'managed-identities.json').read_text())
+        self.assertIn(child.pid, {r['pid'] for r in report['unreadable_unclaimed']})
+        self.assertIsNone(child.poll())
 
     def test_token_family_captures_descendants_without_claiming_ancestors(self):
         parent = self.token; inner = parent + '.' + uuid.uuid4().hex
