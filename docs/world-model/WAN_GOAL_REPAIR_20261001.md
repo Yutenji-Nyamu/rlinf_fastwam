@@ -22,7 +22,7 @@
 
 只用深圳3物理4–7，独立 Ray。原 SFT、头图＋腕图 mask、N64/G8/R8/L320/C8、global2048/micro128、H10、5步去噪、1000 runner epochs/save40不变。OFT/π05 smoke验收复用，不额外跑模型smoke。r5无正式CP，修复后是从原SFT重新开始的新尝试，不声称接着r5的优化器续训；r5的4轮记录单列保留。
 
-准备、CPU检查全部通过后才暂停原四RLT；新cycle绑定当时最新完整RLT checkpoint。WM正常结束或失败时，由唯一owner核清释放并原任务/方法/seed累计3000预算恢复。深圳1/2原RLT继续；另一窗口深圳2 EXPO物理3筹备由对方管理。
+准备、CPU检查全部通过后才暂停原四RLT；新cycle绑定当时最新完整RLT checkpoint。WM正常结束或失败时，由唯一owner核清释放并原任务/方法/seed累计3000预算恢复。最新资源安排：深圳1原RLT继续；另一窗口EXPO借深圳2物理4–7，由对方唯一owner停止并归还原RLT；WM借深圳3物理4–7。
 
 验收分层：CPU身份/清理检查通过；真实训练超过原失败点且有有效更新；第40轮完整checkpoint及有限参数；之后按原1000轮持续训练。启动和首轮不等同长期稳定完成。
 
@@ -37,3 +37,11 @@
 - 后续只读入口：`local_scripts/wan_goal_20261001/status_wake.sh`（含启动/退出），`repair_runtime_evidence.sh`（模型加载且有TensorBoard后核原配置、placement、有效更新和CP目录）。不重放w110/w111。
 
 12:55 w114：owner活、RUNNING_WM，真实placement4–7已通过，模型加载中；训练标量尚空。12:57用户再次确认两窗各自推进，另一窗口compact状态仍在SZ2物理3做EXPO准备，无资源冲突。
+
+13:05 w120发布成功：远端f4e54725672728df2f728c40c244643801a7a751，16新增/8修改/0删除。w116跨任务root的两个轻量回执被allowlist拒绝、w117四md EOF检查失败，均未commit；w118精确定位，w120仅补正四md，从已审暂存完成。原失败manifest保留，活的runtime不改。
+
+## 13:18：真实首轮更新通过
+
+w123只读实查：r6完成step0，grad norm=0.5559873、有效mask=1.376953%、优势[-1.6201816,0.5400605]、loss=0.0001563128，均有限；单轮1066.72秒。owner活，已进入下一轮采集，近期无primary error或monitor诊断。四卡约62GiB显存、可用内存约1.71TiB。尚未超过原4轮故障点，也未到原save40，不声称长期稳定或真实LIBERO成功。
+
+继续验收入口和首次checkpoint只读CPU检查见[进展与验收](WAN_GOAL_REPAIR_PROGRESS_20261001.md)。原训练和活的owner源码保持。

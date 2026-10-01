@@ -1,5 +1,18 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 13:18：r6正式首轮有效更新
+
+- w123退出0，身份/host-key校验通过，RUNNING_WM且owner活；完成step0，grad norm0.5559873、有效mask1.376953%、有限非零优势[-1.6201816,0.5400605]、有限loss0.0001563128，单轮1066.72秒。已进入下一轮采集，无近期primary error或monitor诊断。
+- GPU4–7约62GiB显存，可用内存约1.71TiB。尚未超过旧4轮故障点，也没有正式CP；保持原1000/save40。
+- CPU checkpoint reader准备并审查：规范化/data真实路径，检查DCP结构及全浮点参数有限，metadata/全部引用shard/full_weights前后稳定；等原CP40完整且保存结束才执行。没有热改活的owner或学习源码。
+- 进展专题WAN_GOAL_REPAIR_PROGRESS_20261001.md；细日志w123，后续仍沿统一检查，仅真实里程碑/故障通知。EXPO由另一窗用SZ2物理4–7，WM在SZ3物理4–7，正常不同机不频繁交流。
+
+## 2026-10-01 13:05：监控修复与CPU证据发布
+
+- w120退出0，远端核f4e54725672728df2f728c40c244643801a7a751，16新增/8修改/0删除。只发布本窗已审监控/直接归还代码、18CPU检查和轻量记录，无另一窗口dirty。
+- w116在任务root allowlist拒绝，未进入Git；w117仅复制两个Dojo ready/launch轻量回执到本任务publication目录后，在四md EOF检查失败，尚未commit。w118定位，w120从已审staging补正四md EOF，manifest-v3及原失败manifest均保留，运行源码不热改。
+- w115/w119核原配置SHA、actor/env/rollout真实4–7、直接RLT路由；首轮采集，无近期primary error或monitor诊断，梯度待验。
+- 最新人工安排EXPO到SZ2物理4–7，由exp窗停止/归还原RLT；物理3方案取消。WM仍SZ3 4–7，正常不同机不频繁交流。
 ## 2026-10-01 12:57：进程监控修复，新v6原配置启动
 
 - 新人工授权深入修复稳定训练，沿原单视角/GRPO/seed/1000轮/save40；不重跑已验smoke。r5无正式CP，r6从原固定SFT重开，r5失败历史保留。
