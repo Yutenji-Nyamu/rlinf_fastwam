@@ -1,5 +1,11 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 14:37–14:39：WM里程碑发布与深圳2归还核验
+
+- w140退出0，远端核54edb0c03faeed8a9229fe7966c598777f343f19，6新增/4修改/0删除；只发布本窗审过5轮/3有效梯度、四CP125完整性、只读helper和文档，活的学习/owner源码保持。回执ROOT/publication-update-20261001-r6-past-failure-point/published.json。
+- 发布执行期间另一窗口回报EXPO成功归还。w141 14:39本窗独核：guardian RESTORED/completed/error=null，旧driver退出、新四driver活，CP1500/1525/1475/1475→1505/1530/1480/1480，ready_online1且critic更新，all_first_rounds_verified=true，watch四new_run一致，CUDA未初始化。
+- 取消SZ2借卡跳过，统一检查接回其原四RLT；新cycle为EXPO root/rlt-cycle，namespace er-rlt-cycle-g4至g7。只读helper status避免bridge status补写文件。guardian归还后结束预期，rlt_paused旧字段不覆盖RESTORED/实际训练；不重放旧stop/resume或重复restorer。SZ3继续WM，无新增方法/预算。
+
 ## 2026-10-01 14:32：超过旧监控故障位置
 
 - w137退出0，r6已完成5轮，超过r5完成4轮后中断的位置；owner活、RUNNING_WM，第6轮采集5/8，monitor诊断/近期primary error空。3轮有效GRPO梯度，2轮全组过滤；不把空优势nan当权重nan、不声称过滤轮参数完全没变。
