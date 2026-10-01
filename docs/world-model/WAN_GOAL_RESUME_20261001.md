@@ -26,3 +26,11 @@
 本地细日志`local_logs/wan-goal-20261001/steps/`：w001–w003三机只读快照；w004核旧owner已结束、外部RLT归还存在、13份运行源码SHA仍匹配、环境已审通过、63843/63844/63845未占用。SZ3根盘余5.57GB，数据盘余7.22TB；缓存/输出继续放数据盘。后续只追加真实执行证据。
 
 08:57 `w011`确认原RLT释放后π05 smoke已启动，独立Ray63844；actor/env/rollout实际placement均物理4–7。模型正在加载，尚无真实更新验收。
+
+09:02 `w015–w017`：首轮32环境rollout完成（79.36秒），actor训练前向在`_apply_rope`的TorchInductor加载生成`.py`时FileNotFoundError。未产生已验有效更新或checkpoint。Ray dashboard报错为该失败触发的退出处理次生错误；独立owned清理仍成功，随后按原owner续Dojo。09:04报错文件已能读到，底层是`fuse.mergerfs`；临时文件可见性是工作假设，尚未证明根因。
+
+缓存处理沿[PyTorch官方环境变量](https://docs.pytorch.org/tutorials/recipes/torch_compile_caching_configuration_tutorial.html)，保持编译及方法参数，仅把新run各阶段Inductor/Triton缓存放独立0700的`/dev/shm/chenyiteng-wan-goal-<run hash>/`。内存盘可用约1.06TB、挂载无noexec；模型、日志和checkpoint仍在数据盘。`w019`精确TERM当前v3 owner，令其负责Dojo清理与RLT归还，不直接杀Ray或workers；后续新owner借卡前核旧终态。
+
+09:09双进程实际CPU编译/导入/前后向梯度匹配检查通过，CUDA未初始化；90.76秒，44缓存文件/0.75MB。09:10旧v3 owner已结束、归还派发成功、error=None。09:14 `w022`准备新bridge v4、continuation v4、cycle `rlt-cycle-sz3-wan-goal-20261001-wake-v2`、WM run r4；训练YAML SHA保持原样。09:15请求唯一启动，禁止重放准备/停止/启动。
+
+用户已要求清理定时任务：本聊天统一为原ID `rlt`的“三机训练与资源归还检查”，每15min，正常推进静默；服务器唯一owner继续负责WM→Dojo→RLT。旧且暂停的9月17日π05准备检查已删除，旧Wan专用不重建；“每日调研”独立保留。

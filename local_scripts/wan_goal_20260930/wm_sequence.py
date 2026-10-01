@@ -13,6 +13,11 @@ run=Path(os.environ['WAN_GOAL_RUN_DIR'])
 cycle=ROOT/'cycles'/os.environ['WAN_GOAL_CYCLE_ID']
 cycle.mkdir(parents=True,exist_ok=True)
 events=run/'sequence-events.jsonl'
+compile_cache=Path('/dev/shm')/('chenyiteng-wan-goal-'+hashlib.sha256(str(run).encode()).hexdigest()[:12])
+assert not compile_cache.exists(), 'Fresh run requires a fresh compilation cache'
+compile_cache.mkdir(mode=0o700)
+atomic(run/'compile-cache.json',{'path':str(compile_cache),'uid':os.getuid(),
+       'reason':'Keep generated compiler files off mergerfs; models/checkpoints remain on data disk'})
 stop=False
 import signal
 def stop_sequence(signum,frame):
@@ -30,7 +35,6 @@ def state(phase,**details):
 base_env={
  'TMPDIR':str(ROOT/'tmp'), 'HF_HOME':str(ROOT/'cache/huggingface'),
  'XDG_CACHE_HOME':str(ROOT/'cache/xdg'), 'TORCH_HOME':str(ROOT/'cache/torch'),
- 'TRITON_CACHE_DIR':str(ROOT/'cache/triton'), 'TORCHINDUCTOR_CACHE_DIR':str(ROOT/'cache/torchinductor'),
  'OPENPI_DATA_HOME':str(ROOT/'models/openpi-assets'), 'ROBOT_PLATFORM':'LIBERO',
  'LIBERO_TYPE':'standard', 'MUJOCO_GL':'egl','PYOPENGL_PLATFORM':'egl',
  'WAN_GOAL_WM_PATH':str(ROOT/'models/wan-goal'),
@@ -67,6 +71,8 @@ for name,env_name,repo_name,config,port,suffix,verify in stages:
     short_id=hashlib.sha256(str(run).encode()).hexdigest()[:8]
     ray_tmp=f'/data/chenyiteng/wr/{short_id}{suffix}'
     env={**base_env,'LIBERO_CONFIG_PATH':str(ROOT/'config'/('libero-pi05' if 'pi05' in name else 'libero'))}
+    cache=compile_cache/name;cache.mkdir(mode=0o700)
+    env.update(TRITON_CACHE_DIR=str(cache/'triton'),TORCHINDUCTOR_CACHE_DIR=str(cache/'inductor'))
     spec={
       'schema':1,'run_dir':str(stage_run),'cwd':str(ROOT/repo_name),
       'physical_gpus':[4,5,6,7],'max_seconds':None,'cleanup_timeout_seconds':180,

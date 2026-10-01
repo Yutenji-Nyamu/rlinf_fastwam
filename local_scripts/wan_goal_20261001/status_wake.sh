@@ -6,12 +6,13 @@ sys.modules.setdefault('tensorflow',None)
 R=Path('/data/chenyiteng/projects/wan-goal-sz3')
 P=Path('/data/chenyiteng/projects/robodojo-openwam-sz3')
 D=P/'runs/sz3_pi05_official_6300_n4_dual_20260929_r2'
-W=R/'runs/wan-goal-sz3-20261001-r3'
 sys.path.insert(0,str(R/'scripts/resource_switch'))
 from common import account,alive
 account()
 def read(p): return json.loads(p.read_text()) if p.is_file() else None
 active=read(D/'active-continuation.json')
+spec=read(D/('prepare-'+Path(active['attempt_dir']).name)/'wm-spec.json')
+W=Path(spec['run_dir']);assert W.parent==R/'runs'
 report={'time':time.time(),'active_attempt':active['attempt_dir'],'owner_alive':alive(active),
  'pipeline':read(D/'pipeline-current.json'),'sequence':read(W/'sequence-current.json'),'stages':{}}
 for name in ('pi05-smoke','pi05-formal'):

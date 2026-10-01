@@ -39,6 +39,8 @@
 
 ## 当前状态
 
+- **09:15最新**：r3第一轮32环境rollout已完成79.36s，actor训练前向读mergerfs生成缓存文件暂不可见而失败，没有有效更新。原owned清理、Dojo退出和原RLT归还均核成功。仅改新run编译缓存为独立tmpfs，实际双CPU进程编译/前后向梯度检查通过，原两π05 YAML SHA不变。w023唯一启动v4 owner及WM r4，沿动态active pointer刷新；仍须严格smoke验收才正式。定时任务合并为原ID rlt一个检查，服从唯一owner。
+
 - **08:57最新**：w006准备成功，四原RLT绑定完整CP125；w007唯一启动v3 owner，08:56已释放原RLT并进入π05 smoke。w011核actor/env/rollout均实际放在物理4–7，placement通过，尚在加载，未验收有效更新。OFT学习证据复用；正式仍受严格smoke gate控制。
 
 - **00:53最新**：本次WM已按用户要求暂停，π05仅完成模型加载，未验收真实GRPO更新，未进入正式。两份WM运行目录、OFT学习证据和全部部署环境保留；SZ3四RLT已从CP25恢复派发，首轮尚待核验。下一次需明确借卡后再从π05 smoke继续。

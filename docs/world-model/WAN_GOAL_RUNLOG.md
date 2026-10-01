@@ -10,6 +10,15 @@
 - `w006` 08:53准备成功：原Dojo2313回合保留、四RLT最新完整CP125绑定，配置SHA与已批准Windows源码一致。新ready明确fresh cycle及WM→Dojo→RLT恢复顺序。
 - `w007` 08:55:20唯一启动新owner，退出0；实际PID/start/boot写入launch-identity.json，后续从动态active pointer读取。尚需现场确认借卡和π05真实更新，不能把启动回执当训练验收。
 - `w008–w011`：原RLT4–7已真实释放，新owner进入π05 smoke，私有Ray63844；08:57 `VERIFIED_PHYSICAL_PLACEMENT_4567`及placement文件核actor/env/rollout均4–7。尚处加载，未记录真实更新或正式验收。
+- `w013`：源码/4份专题/三机快照/placement与owner回执发布成功，SHA237a393c，11新增/6修改/0删除，远端核一致。
+- `w014`：首轮rollout运行时GPU4–7约97–100%利用率、每卡36–37GiB；不能据此宣称参数更新通过。
+- `w015–w018`：首轮rollout完成79.36秒，随后actor TorchInductor读取生成缓存`.py`失败，未有有效更新。次生dashboard报错与primary stack分开保存。数据盘为mergerfs，09:04该文件已可读；可见性异常为待验工作假设。独立WM清理成功，原owner续Dojo。
+- `w019`：09:07:45对动态核UID/boot/start/命令摘要的当前v3 owner唯一TERM；由它清理Dojo并归还原RLT，禁止重放该信号。准备使用新run独立tmpfs编译缓存，保持原smoke/正式配置；w020在服务器CPU验证实际并发编译与梯度等价，尚待结果。
+- `w020`：09:09两CPU进程实际torch.compile检查通过，前向和梯度与原执行匹配，CUDA未初始化；90.76s、缓存44文件/0.75MB。证明该tmpfs能承载实际编译导入，不作为GPU训练验收。
+- `w021`：09:10核v3 owner已结束、wm_released=true、RLT归还派发true、error=None；用户停止后首轮observer立即退出pending，不等待RLT首轮。旧资源回执保留原样。
+- `w022`：09:14新v4 prepare成功，保留2313个原Dojo回合、新cycle wake-v2，原两份π05 YAML SHA不变；代码只改编译缓存位置及新路由。
+- 用户要求整理定时任务：旧“深圳2、3 π0.5实验准备收尾”删除；原rlt同ID更新为“三机训练与资源归还检查”，15min、正常静默，统一WM进展和原RLT守护；另一个“每日调研”继续。未重建重复Wan定时任务。
+- `w023`：09:15:43唯一启动v4，退出0，来源与两YAML SHA匹配已审清单；新cycle/continuation/run均独立。后续从动态pointer核身份，不用旧PID。缓存修复与这次启动证据待增量推Git。
 
 ## 2026-09-30：准备与来源固定
 
