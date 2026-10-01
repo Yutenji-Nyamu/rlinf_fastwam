@@ -2,6 +2,8 @@
 
 更新时间：2026-10-01 11:05。本次r5正式已完成4/1000轮，step0–3均有正梯度、有效loss mask和有限loss，第5轮采集到2/8后于10:58:04中断。首个正式checkpoint原定第40轮，因此没有正式checkpoint；原smoke学习及完整CP证据保持。
 
+**11:13更新：`w082`四原RLT真实首轮全部验收，all_first_rounds_verified=true；物理4/5/6/7累计127/127/126/127轮，均超过恢复CP125，四driver活、无finished错误。资源归还不仅已派发，且已证实实际继续训练。旧根pipeline的RLT_FIRST_ROUNDS_PENDING是结束observer的历史状态。当前只维护原三机RLT。**
+
 ## 发生了什么
 
 - `pi05-formal/wm-exit.json`：`outcome=failed`、`exit_code=null`、`error=AssertionError()`。这是内层运行监控捕获的异常，不是已取得的训练driver退出码。

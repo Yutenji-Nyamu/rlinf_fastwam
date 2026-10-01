@@ -1,5 +1,15 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 11:13：原四RLT实际续训完成首轮验收
+
+- `w082`退出0：SZ3四原RLT从CP125真实推进到127/127/126/127轮，driver均活、finished=null、all_first_rounds_verified=true。原owner/guard已经结束，根RLT_FIRST_ROUNDS_PENDING是旧observer末次写入，不能覆盖此最新status。
+- 恢复首轮已证实，后续健康推进安静；只维护原3000轮累计预算，不重放resume，不自动新WM/Dojo。新轻量证据与日志追加发布，不修改训练源码或方法。
+
+## 2026-10-01 11:12：故障与归还日志发布
+
+- `w081`退出0，审过的故障专题、粗日志、共享资源表和轻量释放/原RLT存活证据已推既有分支；远端核SHA `4e2aba637da55ee6bd3b7fc0d6beef7a823adf3f`（4新增/5修改/0删除）。无训练源码/方法/预算修改，无WM重启。
+- 回执`ROOT/publication-update-20261001-formal-failure-r5/published.json`；统一rlt心跳已改为原三机RLT维护，不要求已正常结束的v5 owner/guard继续存活。首轮仍按最新只读现场确认，不把派发当作完成。
+
 ## 2026-10-01 10:58–11:05：监控中断与唯一RLT归还
 
 - `w073`：正式完成step0–3四轮，第5轮采集2/8后内层wm-exit=failed/exit_code=null/AssertionError()，10:58:04进入清理；不是训练driver正常返回的退出码。未到save40，无正式checkpoint；不重跑smoke、不自动续WM。
