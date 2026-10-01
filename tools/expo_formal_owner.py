@@ -3,8 +3,8 @@ import fcntl,hashlib,json,os,signal,socket,subprocess,time,traceback,uuid
 from pathlib import Path
 from expo_smoke_owner import Roster,identity,atomic,gpu_map,gpu_processes,owned
 from expo_process import pidfd_probe
-ROOT=Path('/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-20261001')
-SOURCE=ROOT/'source';CYCLE=ROOT/'rlt-cycle-expo-formal-20261001-v1'
+ROOT=Path('/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001')
+SOURCE=ROOT/'source';CYCLE=ROOT/'rlt-cycle-expo-turn-switch-20261001-v1'
 RLT_PY='/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
 EXPO_PY='/data/chenyiteng/venvs/rlinf-sz1-parity-py311-20260917/bin/python'
 UUIDS=['GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d','GPU-2cd891ea-180d-da39-6419-2d7033f8b21b',

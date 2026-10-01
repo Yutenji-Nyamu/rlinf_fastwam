@@ -1,5 +1,7 @@
 # EXPO-FT 专题上下文
 
+最新任务：SZ2 `turn_switch` EXPO正式已启动，物理4–7、原正式配方/20k真实动作保持。独立scope `formal-turn-switch-20261001`，owner839628/driver942043；RLT已精准暂停，仅EXPO退出后恢复。见[换任务运行](TURN_SWITCH_FORMAL_20261001.md)。以下瓶子正式与smoke为保留历史。
+
 更新：2026-10-01。深圳2四卡B64完整smoke和独立进程恢复已PASS，Q20、FM/editor/temp各1，action expert及小组件实际更新、冻结prefix无梯度。一次call207秒，四卡采样显存峰值约45.0/37.4/37.4/37.4GiB；详见[规模smoke](FORMAL_SCALE_SMOKE_20261001.md)。正式20k真实动作含10回合warmup已启动，原四RLT清理完成，仅EXPO退出后恢复。正式路由与现场进度见[正式运行](FORMAL_RUN_20261001.md)。此前单卡小batch smoke及14:31归还回执仍保留在[运行包](SMOKE_PACKET_20261001.md)，不能混作本次正式结果。
 
 ## 已确认

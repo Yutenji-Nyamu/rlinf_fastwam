@@ -1,0 +1,271 @@
+{
+  "model": {
+    "model_type": "openpi",
+    "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "precision": null,
+    "num_action_chunks": 10,
+    "action_dim": 14,
+    "is_lora": false,
+    "lora_rank": 32,
+    "use_proprio": true,
+    "num_steps": 4,
+    "add_value_head": false,
+    "openpi": {
+      "config_name": "pi05_sidney_robotwin",
+      "num_images_in_input": 3,
+      "noise_level": 0.5,
+      "action_chunk": 10,
+      "num_steps": 10,
+      "train_expert_only": true,
+      "action_env_dim": 14,
+      "noise_method": "flow_ode",
+      "add_value_head": false,
+      "detach_critic_input": true,
+      "action_horizon": 50,
+      "rtc_enabled": false,
+      "use_rlt": false,
+      "rlt_train_vla": false,
+      "rlt_alpha": 0.0,
+      "rlt_input_dim": 2048,
+      "rlt_embed_dim": 2048,
+      "rlt_prefix_seq_len": 768,
+      "rlt_num_layers": 2,
+      "rlt_num_heads": 8,
+      "rlt_mlp_ratio": 4.0,
+      "rlt_image_only": true,
+      "rlt_use_mask": true,
+      "rlt_action_adapter": "robotwin_aloha_canonical_v1"
+    },
+    "openpi_data": {
+      "repo_id": "SidneyXie/pi05_robotwin",
+      "default_prompt": "turn the switch",
+      "norm_stats_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+    }
+  },
+  "env": {
+    "env_type": "robotwin",
+    "total_num_envs": 1,
+    "auto_reset": false,
+    "ignore_terminations": false,
+    "reward_coef": 1.0,
+    "use_custom_reward": true,
+    "use_rel_reward": false,
+    "center_crop": false,
+    "seed": 0,
+    "group_size": 1,
+    "use_fixed_reset_state_ids": false,
+    "max_steps_per_rollout_epoch": 200,
+    "max_episode_steps": 200,
+    "is_eval": false,
+    "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+    "seeds_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_train_rlt_20260923.json",
+    "video_cfg": {
+      "save_video": false,
+      "info_on_video": true,
+      "video_base_dir": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/video"
+    },
+    "enable_offload": false,
+    "task_config": {
+      "task_name": "turn_switch",
+      "step_lim": 200,
+      "planner_backend": "mplib",
+      "render_freq": 0,
+      "episode_num": 100,
+      "use_seed": false,
+      "save_freq": 15,
+      "embodiment": [
+        "aloha-agilex"
+      ],
+      "language_num": 100,
+      "domain_randomization": {
+        "random_background": false,
+        "cluttered_table": false,
+        "clean_background_rate": 1,
+        "random_head_camera_dis": 0,
+        "random_table_height": 0,
+        "random_light": false,
+        "crazy_random_light_rate": 0
+      },
+      "camera": {
+        "head_camera_type": "D435",
+        "wrist_camera_type": "D435",
+        "collect_head_camera": true,
+        "collect_wrist_camera": true
+      },
+      "data_type": {
+        "rgb": true,
+        "third_view": false,
+        "depth": false,
+        "pointcloud": false,
+        "observer": false,
+        "endpose": false,
+        "qpos": true,
+        "mesh_segmentation": false,
+        "actor_segmentation": false
+      },
+      "pcd_down_sample_num": 1024,
+      "pcd_crop": true,
+      "save_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/env-data",
+      "clear_cache_freq": 1,
+      "collect_data": true,
+      "eval_video_log": true
+    },
+    "rollout_epoch": 1
+  },
+  "demo_path": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+  "source_head": "e5cb9aa4c767490a66cba3c4e155c76f1193f199",
+  "physical_gpu": 4,
+  "core": {
+    "n_base": 8,
+    "n_edit": 8,
+    "num_qs": 10,
+    "num_min_qs": 2,
+    "chunk_length": 10,
+    "action_dim": 14,
+    "proprio_dim": 14,
+    "num_views": 3,
+    "critic_updates": 20,
+    "edit_scale": 0.2,
+    "discount": 0.99,
+    "vision_kind": "official_resnetv2_joint_groupnorm4_spatial_flatten",
+    "parallel_devices": 4,
+    "critic_microbatch_size": 64,
+    "editor_microbatch_size": 64,
+    "selection_observation_microbatch_size": 64,
+    "selection_candidate_microbatch_size": 8
+  },
+  "smoke": {
+    "batch_size": 4,
+    "base_batch_size": 1,
+    "episodes": 1,
+    "update_calls": 1,
+    "base_lr": 2.5e-05,
+    "seed": 42
+  },
+  "base_parameters": "action_expert_and_action_time_projections; frozen_vision_language; FP32 master/BF16 compute",
+  "rlt_policy": "EXPO priority; original4-7 remains if unused; exact return if borrowed",
+  "norm_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf",
+  "physical_gpus": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "formal": {
+    "seed": 42,
+    "batch_size": 64,
+    "parallel_devices": 4,
+    "candidate_microbatch": 8,
+    "observation_microbatch": 64,
+    "fm_microbatch": 64,
+    "base_lr": 2.5e-05,
+    "num_envs": 1,
+    "warmup_episodes": 10,
+    "physical_actions_per_update_call": 40,
+    "critic_updates_per_call": 20,
+    "augmentation": false,
+    "scope": "formal-online-training; 20000 actual online actions including warmup; eval excluded",
+    "max_physical_actions": 20000,
+    "initialization": "fresh native base and fresh EXPO components; not smoke checkpoint"
+  },
+  "smoke_proof": {
+    "scope": "/data/chenyiteng/projects/expo-ft-sz2-20261001/scale-smoke-20261001",
+    "attempt": "smoke-v2",
+    "source_sha256": {
+      "rlinf/algorithms/expo_ft/core.py": "540ae27e81fc3284396388f129322734c4c0065049b202474e4e326e6ad44905",
+      "rlinf/algorithms/expo_ft/backend.py": "0fea4f8da441ca8906c21df8a04c39e4f143caf31cbbb1bd7df47e6d3e6bfacd",
+      "rlinf/algorithms/expo_ft/formal_replay.py": "b9922ed73b5b06f9884ff317eaa026c98ce898c8f7f01e0575ee286a4b895754"
+    },
+    "full_one_call_and_new_process_restore": true
+  },
+  "port_source_manifest": {
+    "rlinf/algorithms/expo_ft/core.py": "540ae27e81fc3284396388f129322734c4c0065049b202474e4e326e6ad44905",
+    "rlinf/algorithms/expo_ft/backend.py": "0fea4f8da441ca8906c21df8a04c39e4f143caf31cbbb1bd7df47e6d3e6bfacd",
+    "rlinf/algorithms/expo_ft/formal_replay.py": "b9922ed73b5b06f9884ff317eaa026c98ce898c8f7f01e0575ee286a4b895754",
+    "rlinf/algorithms/expo_ft/formal_cadence.py": "48315c819975ef39f4b947b5003c701fd3a5c6b2ca62e7e63c47d4f05a7e4fec",
+    "rlinf/algorithms/expo_ft/formal_eval.py": "1b4b86330f07f6025d29c2b6b1c1cfb94405fc19ffb0d17e8609da574e29d553",
+    "examples/embodiment/train_expo_ft.py": "e768dfae52d2df07c76385d9f5169499b401230c936431199b75f182980b3122",
+    "examples/embodiment/train_expo_formal.py": "d0876523fdaa6469dd2c727c447f88201e68db81e6cca31d4b3351fe548fcd66",
+    "tools/expo_formal_owner.py": "8805ccfd22def997222137f60a6db8718a2a639eb8bfbada03e92d0a58249e1c",
+    "tools/expo_formal_resources.py": "11ce0d24b539bd8233ba63a3199643646098e9d0696397e2748c019a7fd6971f",
+    "tools/expo_smoke_owner.py": "d7fc1f670b68d3e559d55d0fef5949101f72d955f187f08008fabc9b40cb5847",
+    "tools/expo_process.py": "a23efa918d4808d87120a0ee900c2fbbabc10d5f651b7200c836959a71c067e3"
+  },
+  "evaluation": {
+    "config": {
+      "env_type": "robotwin",
+      "total_num_envs": 4,
+      "auto_reset": false,
+      "ignore_terminations": true,
+      "reward_coef": 1.0,
+      "use_custom_reward": true,
+      "use_rel_reward": false,
+      "center_crop": false,
+      "seed": 0,
+      "group_size": 1,
+      "use_fixed_reset_state_ids": false,
+      "max_steps_per_rollout_epoch": 200,
+      "max_episode_steps": 200,
+      "is_eval": true,
+      "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+      "seeds_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_eval_rlt_20260923.json",
+      "video_cfg": {
+        "save_video": false,
+        "info_on_video": true,
+        "video_base_dir": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/eval-video"
+      },
+      "enable_offload": false,
+      "task_config": {
+        "task_name": "turn_switch",
+        "step_lim": 200,
+        "planner_backend": "mplib",
+        "render_freq": 0,
+        "episode_num": 100,
+        "use_seed": false,
+        "save_freq": 15,
+        "embodiment": [
+          "aloha-agilex"
+        ],
+        "language_num": 100,
+        "domain_randomization": {
+          "random_background": false,
+          "cluttered_table": false,
+          "clean_background_rate": 1,
+          "random_head_camera_dis": 0,
+          "random_table_height": 0,
+          "random_light": false,
+          "crazy_random_light_rate": 0
+        },
+        "camera": {
+          "head_camera_type": "D435",
+          "wrist_camera_type": "D435",
+          "collect_head_camera": true,
+          "collect_wrist_camera": true
+        },
+        "data_type": {
+          "rgb": true,
+          "third_view": false,
+          "depth": false,
+          "pointcloud": false,
+          "observer": false,
+          "endpose": false,
+          "qpos": true,
+          "mesh_segmentation": false,
+          "actor_segmentation": false
+        },
+        "pcd_down_sample_num": 1024,
+        "pcd_crop": true,
+        "save_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/eval-env-data",
+        "clear_cache_freq": 1,
+        "collect_data": true,
+        "eval_video_log": true
+      },
+      "rollout_epoch": 5,
+      "_expo_seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+    },
+    "seed_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_eval_rlt_20260923.json",
+    "every_episodes": 25,
+    "episodes": 20,
+    "initial_base_only": true
+  }
+}

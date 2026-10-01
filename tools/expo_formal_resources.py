@@ -7,9 +7,9 @@ are copied server-side and never logged or published.
 import argparse,copy,hashlib,importlib.util,json,os,signal,socket,sys,types
 from pathlib import Path
 from expo_process import pidfd_open,pidfd_send,pidfd_probe
-ROOT=Path('/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-20261001')
-PREVIOUS=ROOT.parent/'scale-smoke-20261001/rlt-cycle-scale-20261001-v1'
-CYCLE=ROOT/'rlt-cycle-expo-formal-20261001-v1'
+ROOT=Path('/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001')
+PREVIOUS=ROOT.parent/'formal-20261001/rlt-cycle-expo-formal-20261001-v1'
+CYCLE=ROOT/'rlt-cycle-expo-turn-switch-20261001-v1'
 UID=20001
 
 def read(path):return json.loads(Path(path).read_text())
@@ -41,13 +41,18 @@ def guard_checkpoint(h,checked,cfg,repo):
 def prepare():
  from omegaconf import OmegaConf
  assert not CYCLE.exists(),'A formal cycle already exists; inspect receipts'
- assert read(PREVIOUS.parent/'rlt-guardian.json')['state']=='RESTORED'
+ from expo_smoke_owner import owned
+ handoff=read(ROOT/'previous-owner-handoff.json')
+ assert handoff['ownership_released'] and handoff['previous_cycle']==str(PREVIOUS)
+ assert not owned(handoff['old_owner'])
+ assert sha(PREVIOUS.parent/'release.json')==handoff['release_sha256']
+ assert sha(PREVIOUS/'resumed-dispatched.json')==handoff['resumed_dispatched_sha256']
  prior=read(PREVIOUS/'plan.json');stopped=read(PREVIOUS/'rlt-stopped.json')
  helper_bytes=(PREVIOUS/'rlt_cycle.py').read_bytes()
  assert hashlib.sha256(helper_bytes).hexdigest()==prior['script_sha256']
  CYCLE.mkdir(mode=0o700);(CYCLE/'rlt_cycle.py').write_bytes(helper_bytes)
  (CYCLE/'rlt_cycle.py').chmod(0o500);h=helper(CYCLE)
- plan=copy.deepcopy(prior);plan.update(cycle_id=CYCLE.name,time=h.now(),management_namespace='expo-rlt-ops-formal-20261001')
+ plan=copy.deepcopy(prior);plan.update(cycle_id=CYCLE.name,time=h.now(),management_namespace='expo-rlt-ops-turn-switch-20261001')
  h.source_check(plan);live=h.actors(plan)
  for key,row in plan['runs'].items():
   old=prior['runs'][key];old_run=Path(old['new_run']);rt=old_run/'runtime'
@@ -62,7 +67,7 @@ def prepare():
   guard_checkpoint(h,checked,cfg,plan['repo'])
   assert h.dependency_snapshot(cfg)==old['dependencies']
   new_run=Path('/data/chenyiteng/results/rlinf-rlt')/h.resumed_name(old_run,CYCLE)
-  namespace='er-rlt-expo-formal-20261001-v1-'+key.replace('gpu','g')
+  namespace='er-rlt-expo-turn-switch-20261001-v1-'+key.replace('gpu','g')
   assert not new_run.exists() and not h.active(live,namespace)
   newcfg,changes=h.resumed_config(cfg,old_run,new_run,checked['path'])
   pre=CYCLE/'prepared'/key;pre.mkdir(parents=True,mode=0o700)
