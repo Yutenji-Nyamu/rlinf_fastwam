@@ -1,5 +1,18 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 10:58–11:05：监控中断与唯一RLT归还
+
+- `w073`：正式完成step0–3四轮，第5轮采集2/8后内层wm-exit=failed/exit_code=null/AssertionError()，10:58:04进入清理；不是训练driver正常返回的退出码。未到save40，无正式checkpoint；不重跑smoke、不自动续WM。
+- `w076`与源码审查：训练SIGTERM紧随监控失败回执，是清理结果；原断言只留repr，没有完整堆栈/PID。common目录归属断言是可达候选，未证明PID复用等原因，未据猜测修改监控。
+- `w078`：部署common/wm_stage SHA与已审本地一致；内外WM释放all_workers_stopped/processes_clear/gpus_released均true。guard10:58:53只在释放后TERM短暂Dojo入口，原owner10:59:31唯一派发原四RLT，outer final error=null/wm_released=true/rlt_dispatched=true。guard=RLT_RETURN_DISPATCHED，双方正常结束。
+- `w077`11:03：四原RLT driver活、CP125，首轮尚待。保持现有恢复，不重放resume。`w074/w075`SZ1/SZ2原RLT均活，约662–674/1406–1466轮；无新GPU分配。
+- 故障专题`WAN_GOAL_FORMAL_FAILURE_20261001.md`，原回执和失败保留。当前三机4–7归原RLT；统一心跳与资源表按此更新，WM/Dojo不自动启动。
+
+## 2026-10-01 10:09：正式与协调记录发布
+
+- `w062`退出0：仅审过的源码和轻量证据已推`codex/sz3-wan-goal-20260930`，远端核SHA `ef1db581feda993b1d4f4e0efbed1765615cabbe`，18新增/6修改/0删除。包含一轮有效π05更新与原strict false、r5正式协议/真实step0、direct-RLT请求/guard和两窗资源表；没有发布另一窗口研究dirty。
+- 服务器回执`ROOT/publication-update-20261001-formal-r5/published.json`，本地完整执行细日志`local_logs/wan-goal-20261001/steps/w062-publish-formal-and-coordination/`。定时检查已按共享资源表更新，仅保留统一训练检查和独立每日调研。
+
 ## 2026-10-01 10:04：正式首轮与窗口协调
 
 - `w059`：r5正式首轮8次rollout完成，首个真实训练step0记录grad norm0.7964912、mask0.01259766、有限非零优势[-1.6201816,0.5400605]与有限loss0.00014402；time/step1061.4s。已进入下一轮采集，近期无primary error。此处是正式真实训练进展，未声称已保存正式checkpoint（仍原save40）或真实LIBERO成功。

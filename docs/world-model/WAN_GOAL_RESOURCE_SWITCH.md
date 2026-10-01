@@ -1,5 +1,7 @@
 # 深圳3：Wan Goal 借卡与 RLT 归还方案
 
+**11:05当前已归还：r5监控中断，内外WM完整释放已核；原v5 owner10:59:31唯一派发CP125的原四RLT，11:03四driver活/首轮待验。outer final error=null、wm_released/rlt_dispatched=true；guard=RLT_RETURN_DISPATCHED并结束，不再要求存活或重新部署。只读rlt_current_compact.sh继续核实际首轮，不重放旧stop/prepare/launch/resume，不自动新WM或Dojo。详见WAN_GOAL_FORMAL_FAILURE_20261001.md。**
+
 **10:04实查：r5正式首轮已有正梯度/有效mask并进入下一轮，direct-RLT guard活且绑定同一v5 owner。用户要求两个exp窗口协调，“0927 exp”本轮GPU需求0；具体安排见[资源表](../server-admin/EXPERIMENT_RESOURCE_COORDINATION_20261001.md)。现有4–7归还仍由本窗口的唯一服务器owner承担，不启动第二个restorer。**
 
 **09:51最新授权为WM→原四RLT，取消Dojo续评测。当前formal运行中的v5 frozen owner不热换进程；w053在独立CPU guard绑定其UID/start/boot/命令摘要。只在该owner已验证WM完整释放、进入EVALUATING边界后精确TERM，让其短暂Dojo入口退出，再由同一owner清理和唯一resume原RLT。guard不启动RLT、不抢卡、不向运行中的WM发信号；旧ready仍作为冻结历史证据。权威请求ROOT/post-wm-direct-rlt-v5/request.json，运行状态current.json；不可重放--launch。**

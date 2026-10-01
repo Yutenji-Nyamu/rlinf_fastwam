@@ -4,6 +4,8 @@
 
 ## 授权与资源
 
+**2026-10-01 11:05：r5正式完成4轮后监控AssertionError中断；内外层释放已验，原v5 owner已唯一恢复原四RLT（CP125、11:03四driver活，首轮待验）。owner/guard现已正常结束，guard=RLT_RETURN_DISPATCHED。当前只维护原三机RLT，不自动新WM/Dojo；详见[中断与归还记录](WAN_GOAL_FORMAL_FAILURE_20261001.md)。**
+
 **2026-10-01 10:04：r5正式第0轮已完成真实训练，grad norm0.79649、有效mask1.2598%、有限非零优势及loss；已进入第1轮采集。原1000轮/save40保持，当前归还仍WM→原RLT。另窗“0927 exp”已确认本轮EXPO-FT只研究、GPU需求0；本窗口维护[两窗资源表](../server-admin/EXPERIMENT_RESOURCE_COORDINATION_20261001.md)，后续另窗部署先刷新并登记具体卡/run/owner。**
 
 **2026-10-01 09:51最新用户指令：WM结束后直接归还原RLT，取消Dojo续评测。w053已唯一部署当前v5绑定的direct-RLT CPU guard；当前formal仍运行，不发送训练中断信号，归还仅由原v5 owner执行。w044已启动r5正式，实际物理placement4–7和原正式resolved配置通过；首轮训练指标待确认。下方旧路线与准备状态为历史。**

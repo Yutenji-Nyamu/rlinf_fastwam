@@ -1,10 +1,12 @@
 # 两个实验窗口的深圳资源安排
 
-更新时间：2026-10-01 10:06（北京时间）。用户明确要求两个 exp 窗口协调并分别推进。现场证据优先，空闲快照不等于已分配资源。
+更新时间：2026-10-01 11:05（北京时间）。用户明确要求两个 exp 窗口协调并分别推进。现场证据优先，空闲快照不等于已分配资源。
+
+**当前变更：SZ3 Wan r5完成4轮后监控异常中断，WM完整释放；原v5 owner10:59:31唯一恢复原四RLT，11:03四driver活、CP125、首轮待验。三机4–7目前均维护原RLT；WM/Dojo不自动重开，恢复/监控责任仍由0928 exp 2承担。下面10:04表为历史快照。**
 
 |窗口|本轮任务|当前GPU需求|写入范围|
 |---|---|---|---|
-|0928 exp 2|SZ3 Wan Goal 单视角 π0.5 GRPO 正式训练；三机原RLT检查与归还|深圳3物理4–7|Wan独立源码/环境/run、docs/world-model、HANDOFF与本表；Git codex/sz3-wan-goal-20260930|
+|0928 exp 2|WM故障记录；三机原RLT检查与归还|三机原RLT物理4–7；不新启WM/Dojo|Wan独立源码/环境/run、docs/world-model、HANDOFF与本表；Git codex/sz3-wan-goal-20260930|
 |0927 exp|EXPO-FT论文、官方开源与RLinf/RoboTwin/π0.5接入调研|本轮0张，暂无拟启动任务|docs/methods/expo-ft、PROJECT_CONTEXT研究入口；本轮未提交/推Git|
 
 另一窗口已明确回复：SZ1只读核源码/实配完成，不改运行；本轮不启动GPU任务，不接管当前归还控制器；HANDOFF与本表由0928 exp 2维护。
