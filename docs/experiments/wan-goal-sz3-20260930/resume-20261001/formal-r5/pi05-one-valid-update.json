@@ -1,0 +1,248 @@
+{
+  "time": 1790818366.8032744,
+  "status": "ONE_VALID_PI05_GRPO_UPDATE_VERIFIED",
+  "source_commit": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+  "learning_verified": true,
+  "resources_released": true,
+  "completed_runner_epochs": 2,
+  "effective_update_count": 1,
+  "valid_epoch": {
+    "tensorboard_step": 1,
+    "checkpoint_step": 2,
+    "valid_rl_signal": true,
+    "grad_norm": 3.7244246006011963,
+    "total_loss": 0.00042730968561954796,
+    "loss_mask_fraction": 0.23046875,
+    "advantages_min": -0.5400605201721191,
+    "advantages_max": 1.6201815605163574
+  },
+  "filtered_epoch": {
+    "tensorboard_step": 0,
+    "checkpoint_step": 1,
+    "valid_rl_signal": false,
+    "grad_norm": 0.0,
+    "total_loss": 0.0,
+    "loss_mask_fraction": 0.0,
+    "advantages_min": "nan",
+    "advantages_max": "nan"
+  },
+  "checkpoint_floating_parameters": [
+    {
+      "step": 1,
+      "floating_tensors": 667,
+      "elements": 3353433872,
+      "all_finite": true
+    },
+    {
+      "step": 2,
+      "floating_tensors": 667,
+      "elements": 3353433872,
+      "all_finite": true
+    }
+  ],
+  "actual_weight_change": {
+    "ok": true,
+    "comparison": "global_step_1 -> global_step_2",
+    "method": "CPU mmap; deterministic evenly spaced samples in matching floating tensors",
+    "candidate_scope": "d34 Pi05 trainable projections and expert-1",
+    "eligible_tensors": 190,
+    "sampled_tensors": [
+      {
+        "name": "action_in_proj.bias",
+        "shape": [
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 1024,
+        "changed_samples": 1024,
+        "max_abs_change": 3.676861524581909e-06
+      },
+      {
+        "name": "action_in_proj.weight",
+        "shape": [
+          1024,
+          32
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 8192,
+        "changed_samples": 8192,
+        "max_abs_change": 3.6954879760742188e-06
+      },
+      {
+        "name": "action_out_proj.bias",
+        "shape": [
+          32
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 32,
+        "changed_samples": 28,
+        "max_abs_change": 3.676861524581909e-06
+      },
+      {
+        "name": "action_out_proj.weight",
+        "shape": [
+          32,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 8192,
+        "changed_samples": 6593,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "time_mlp_in.bias",
+        "shape": [
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 1024,
+        "changed_samples": 1024,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "time_mlp_in.weight",
+        "shape": [
+          1024,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 8192,
+        "changed_samples": 8192,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "time_mlp_out.bias",
+        "shape": [
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 1024,
+        "changed_samples": 1024,
+        "max_abs_change": 3.676861524581909e-06
+      },
+      {
+        "name": "time_mlp_out.weight",
+        "shape": [
+          1024,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 8192,
+        "changed_samples": 8192,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "llm.final_norms.1.ada_modulation.bias",
+        "shape": [
+          3072
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 3072,
+        "changed_samples": 2048,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "llm.final_norms.1.ada_modulation.weight",
+        "shape": [
+          3072,
+          1024
+        ],
+        "dtype": "torch.float32",
+        "elements_sampled": 8192,
+        "changed_samples": 5461,
+        "max_abs_change": 3.680586814880371e-06
+      },
+      {
+        "name": "llm.layers.0.attn.k_proj.1.weight",
+        "shape": [
+          256,
+          1024
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 125,
+        "max_abs_change": 3.814697265625e-06
+      },
+      {
+        "name": "llm.layers.0.attn.o_proj.1.weight",
+        "shape": [
+          1024,
+          2048
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 224,
+        "max_abs_change": 3.814697265625e-06
+      },
+      {
+        "name": "llm.layers.0.attn.q_proj.1.weight",
+        "shape": [
+          2048,
+          1024
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 102,
+        "max_abs_change": 3.814697265625e-06
+      },
+      {
+        "name": "llm.layers.0.attn.v_proj.1.weight",
+        "shape": [
+          256,
+          1024
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 150,
+        "max_abs_change": 3.814697265625e-06
+      },
+      {
+        "name": "llm.layers.0.mlps.1.w_gating",
+        "shape": [
+          2,
+          1024,
+          4096
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 134,
+        "max_abs_change": 3.814697265625e-06
+      },
+      {
+        "name": "llm.layers.0.mlps.1.w_linear",
+        "shape": [
+          4096,
+          1024
+        ],
+        "dtype": "torch.bfloat16",
+        "elements_sampled": 8192,
+        "changed_samples": 315,
+        "max_abs_change": 3.814697265625e-06
+      }
+    ],
+    "error": null,
+    "limitation": "A sampled delta alone can be weight decay. Acceptance also requires finite positive gradient, positive loss-mask fraction and nonzero valid advantage at both logged epochs. No baseline->CP1 comparison is claimed."
+  },
+  "process_exit_confirmed": true,
+  "original_strict_verifier_ok": false,
+  "original_strict_verifier_preserved": "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke-control/smoke-verification.json",
+  "evidence_sha256": {
+    "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke-control/smoke-verification.json": "df757c5d015997dd7d702449d2c75aab52a5d4e315bcda184ff56f2cbf0bfdd2",
+    "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/wm-exit.json": "3ad14d1b5aeaef2067a0fe9214a1498b8fe726455f6fa3de65b30c47d172e17f",
+    "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke-control/wm-release.json": "63453c4b8c7834a4721a7b4c95c9688b110afbd68844ba16e3b7d198f19c263c",
+    "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/wm-cleanup.json": "b3c214b186127efb7922009235e7aa07e03e6caced6168c1613f9fad9d834f88",
+    "/data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/verified-placement.json": "faa46ecc3e3f24936ed09a51a39d3f5964871ba5dc4bb57e73f6808050b4da85",
+    "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/tensorboard/config.yaml": "6f7c73fd30b08efde66b8705061294f3bbde8ac1deb7257189c2f5bce5383c46",
+    "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/tensorboard/events.out.tfevents.1790817457.h100-gpu01.747215.0": "d878131ce7f473c71cde6b52d26846858ac05c345fb4b9d5aa1dd7b29b1c6aa8",
+    "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/wan_goal_pi05_headonly_smoke_sz3/checkpoints/global_step_1/actor/dcp_checkpoint/.metadata": "9cd6444f6dd420974acdb68a1ffb27255fd58c04e466605923bd0b744fe4f2a1",
+    "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r4/pi05-smoke/wan_goal_pi05_headonly_smoke_sz3/checkpoints/global_step_2/actor/dcp_checkpoint/.metadata": "38aede9d5f1aeb576ca3d0f84aedfa00128604058e4a70e13adc7407682a8597"
+  },
+  "approved_model_source_sha256": {
+    "/data/chenyiteng/projects/wan-goal-sz3/RLinf-pi05/rlinf/models/embodiment/openpi/policies/libero_policy.py": "54623f2c2f9d522674c2d17841880455144193659f71762fd34655c3616f0615",
+    "/data/chenyiteng/projects/wan-goal-sz3/RLinf-pi05/rlinf/models/embodiment/openpi/dataconfig/libero_dataconfig.py": "2397bb58c84edfd39c83b8c77791af9d70b28d436693bfcaa2f7ba0746357eca"
+  },
+  "no_additional_smoke_budget": true,
+  "formal_runner_epochs": 1000,
+  "formal_initialization": "original_fixed_SFT",
+  "scope": "One genuine GRPO parameter update, complete CP1/CP2 and normal exit; not two effective updates or real LIBERO success."
+}

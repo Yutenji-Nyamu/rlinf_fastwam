@@ -25,8 +25,8 @@ for name in ('pi05-smoke','pi05-formal'):
   with log.open('rb') as stream:
    stream.seek(max(0,log.stat().st_size-10000));data=stream.read().decode('utf-8',errors='replace')
   row.update(log_age_seconds=time.time()-log.stat().st_mtime,log_tail=data[-6500:])
- tb=stage/'tensorboard/all'
- if list(tb.glob('events.out.tfevents.*')):
+ tb=next((p for p in (stage/'tensorboard/all',stage/'tensorboard') if list(p.glob('events.out.tfevents.*'))),None)
+ if tb is not None:
   from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
   acc=EventAccumulator(str(tb),size_guidance={'scalars':0});acc.Reload()
   row['metrics']={k:[{'step':v.step,'value':v.value,'wall_time':v.wall_time} for v in acc.Scalars(k)[-2:]]

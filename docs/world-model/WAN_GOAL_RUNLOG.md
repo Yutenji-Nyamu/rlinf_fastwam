@@ -1,5 +1,28 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 10:04：正式首轮与窗口协调
+
+- `w059`：r5正式首轮8次rollout完成，首个真实训练step0记录grad norm0.7964912、mask0.01259766、有限非零优势[-1.6201816,0.5400605]与有限loss0.00014402；time/step1061.4s。已进入下一轮采集，近期无primary error。此处是正式真实训练进展，未声称已保存正式checkpoint（仍原save40）或真实LIBERO成功。
+- 正式四卡显存约62–62.5GiB；物理0–3各4MiB。当前direct-RLT guard活且ARMED_WM_THEN_RLT，未向训练发送信号，唯一owner绑定仍匹配。
+- `w060/w061`：SZ1四RLT655/649/661/657轮、SZ2四RLT1418/1444/1383/1385轮，driver均活。采集等待或瞬时低GPU利用率未当作空卡。
+- 用户明确要求两个exp窗口协调。向“0927 exp”同步当前host/cards/run/归还与文档边界；该窗确认本轮EXPO-FT只读研究，GPU需求0，后续授权部署先登记资源。共享安排见`docs/server-admin/EXPERIMENT_RESOURCE_COORDINATION_20261001.md`。本窗口不写其研究文档或发布其dirty。
+
+## 2026-10-01 09:51：正式启动与直接归还RLT
+
+- `w042`核v4 final资源归还成功、error=None；`w043`v5 prepare通过并保留原Dojo2313回合，fresh cycle wake-v3。`w044`09:40:42唯一启动v5，禁止重放。
+- `w048`正式真实actor/env/rollout placement均物理4–7通过；`w049`只读证据脚本错取algorithm.rollout_epoch，未影响训练，改读env.train；`w051`正式resolved N64/G8/R8/L320/C8、B2048/MB128、H10/M5、disabled腕图、官方reward过滤、原SFT、1000epoch/save40全部通过，源YAML SHA不变。
+- `w046/w047`再次刷新SZ2/SZ1：四RLT均活，无新fatal，SZ2约1374–1433轮、SZ1约645–655轮；物理0–3无新分配。
+- 用户09:51更改：WM结束后直接归还原RLT，不续Dojo。`w053`独立CPU guard唯一启动，绑定当前v5 active owner，request明确RLT_DIRECT/resume_dojo=false。只在WM完整释放后的EVALUATING边界精确TERM短暂Dojo启动入口；原v5 owner负责释放核查和唯一RLT resume。guard本身不调用resume、不给训练中WM发信号。原frozen ready不改，细回执G/request.json、guard-identity.json、current.json保留。
+
+## 2026-10-01 09:35：单视角π0.5真实更新与正式启动准备
+
+- `w028`：缓存位置修复及r4启动证据发布成功，远端核SHA `11e39d8b4b4bd76ed80ec9fc80a985d3d5e58a1d`，9新增/5修改/0删除。
+- `w029/w034`：r4的2轮smoke均完成，进程正常退出；第0轮全组过滤（mask0/grad0/空样本优势NaN），第1轮grad norm3.7244246、mask0.23046875、有限非零优势，WM估计success2/32。完整CP1/CP2与真实权重变化通过；原严格“两轮都有效”verifier整体false，未进入formal。原owner清理WM后续原Dojo。
+- `w030`服务器rg不可用，后用Python/grep只读源码；一次过长PTY JSON请求解析失败未执行，改用有细回执的本地脚本。`w032b/w033/w036`确认Wan使用LIBERO action转换，openpi动作不做OFT夹爪翻转；官方按组累计奖励过滤，全部失败时样本可全部被屏蔽。没有据此改方法。
+- `w038`：独立CPU验收一轮真实参数更新：正常退出、正梯度/有效mask/非零优势、完整CP、抽样实际权重变化，且两CP逐个浮点张量全有限；无CUDA初始化。新`one-update-reconciled.json` SHA `94374f6fa5988de6170cd2c417d0d69ee726146714832bb0b72f565d5d8eeeb1`；原失败回执不覆盖，不声称两轮有效。
+- 用户的目标是真实有效GRPO参数更新后启动正式；现已证实一次，不加预算重跑smoke。formal-only序列复用OFT与π05绑定证据，从原固定SFT跑原N64/G8/R8/L320/C8/1000epoch正式配置，两YAML原SHA保持。
+- `w039`：18份运行源码、两YAML、编译CPU证据与OFT/π05全部证据SHA复核通过。`w040`09:35:33仅对当前v4 outer精确pidfd TERM，由唯一owner完成Dojo清理/原RLT归还；禁止重放。新bridge v5、cycle wake-v3、WM run r5仍待旧final后prepare/launch。
+
 ## 2026-10-01 08:43：用户起床后继续WM
 
 - `w001–w003`：三机只读刷新，12条原RLT真实推进；SZ1约629–642、SZ2约1349–1409、SZ3约126–132。物理0–3无新安排；SZ1/2保持原任务。

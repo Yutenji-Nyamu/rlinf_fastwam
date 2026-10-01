@@ -1,5 +1,11 @@
 # 深圳3：Wan Goal 借卡与 RLT 归还方案
 
+**10:04实查：r5正式首轮已有正梯度/有效mask并进入下一轮，direct-RLT guard活且绑定同一v5 owner。用户要求两个exp窗口协调，“0927 exp”本轮GPU需求0；具体安排见[资源表](../server-admin/EXPERIMENT_RESOURCE_COORDINATION_20261001.md)。现有4–7归还仍由本窗口的唯一服务器owner承担，不启动第二个restorer。**
+
+**09:51最新授权为WM→原四RLT，取消Dojo续评测。当前formal运行中的v5 frozen owner不热换进程；w053在独立CPU guard绑定其UID/start/boot/命令摘要。只在该owner已验证WM完整释放、进入EVALUATING边界后精确TERM，让其短暂Dojo入口退出，再由同一owner清理和唯一resume原RLT。guard不启动RLT、不抢卡、不向运行中的WM发信号；旧ready仍作为冻结历史证据。权威请求ROOT/post-wm-direct-rlt-v5/request.json，运行状态current.json；不可重放--launch。**
+
+**09:39最新：π05 r4原定2轮正常退出，第二轮真实GRPO更新已独立核验；原两轮都有效的失败回执保留，明确只验收一轮有效更新。不额外重跑smoke，正式仍原SFT/1000epoch。w040精确停止v4 outer，w042其final已归还原RLT、error=None；w043已完成fresh v5 prepare，2313个原Dojo回合保留。bridge=P/scripts/wm-bridge-20261001-v5、cycle=P/rlt-cycle-sz3-wan-goal-20261001-wake-v3、continuation=D/continuation-20261001-wan-goal-v5、WM=ROOT/runs/wan-goal-sz3-20261001-r5。后续仍WM→原Dojo→原RLT，物理4–7唯一owner。w044已请求唯一launch，待返回现场核实，不重放。**
+
 **08:57最新：用户起床要求继续WM。新v3 owner已重新借原RLT4–7，绑定最新完整CP125；独立π05 smoke实际placement通过。新的唯一归还链为WM→原Dojo→原四RLT。专题`WAN_GOAL_RESUME_20261001.md`。prepare兼容v2的精确外部RLT归还，不修改历史final，不重放旧stop/restore；9项CPU检查通过。以下暂停/优先级为历史。**
 
 **00:46最新：用户要求暂停WM、恢复原RLT。s185–s189已完成WM/Dojo精确退出与四RLT恢复派发；00:50 root状态USER_RESTORED_RLT。WM自动继续已删除，不再自动启动WM或Dojo。以下为历史调度设计，当前进度见`WAN_GOAL_PAUSE_20261001.md`。**

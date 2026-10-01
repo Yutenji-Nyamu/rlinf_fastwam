@@ -50,6 +50,7 @@ stages=[
 ]
 parser=argparse.ArgumentParser()
 parser.add_argument('--completed-oft-evidence',type=Path)
+parser.add_argument('--completed-pi05-evidence',type=Path)
 args=parser.parse_args()
 if args.completed_oft_evidence:
     evidence=json.loads(args.completed_oft_evidence.read_text())
@@ -61,6 +62,22 @@ if args.completed_oft_evidence:
     stages=stages[1:]
     state('REUSING_VERIFIED_OFT_LEARNING',evidence=str(args.completed_oft_evidence),
           note='Original SIGTERM/monitor failure remains recorded; no OFT budget replay')
+if args.completed_pi05_evidence:
+    assert args.completed_oft_evidence, 'Formal-only continuation requires both policy smoke receipts'
+    evidence=json.loads(args.completed_pi05_evidence.read_text())
+    assert evidence['status']=='ONE_VALID_PI05_GRPO_UPDATE_VERIFIED'
+    assert evidence['source_commit']=='d34d4c320d08cb982de034aa9a011f08dc0fa217'
+    assert evidence['learning_verified'] is True and evidence['resources_released'] is True
+    assert evidence['completed_runner_epochs']==2 and evidence['effective_update_count']==1
+    assert evidence['process_exit_confirmed'] is True and evidence['original_strict_verifier_ok'] is False
+    assert evidence['no_additional_smoke_budget'] is True and evidence['formal_runner_epochs']==1000
+    assert evidence['formal_initialization']=='original_fixed_SFT'
+    for file,digest in {**evidence['evidence_sha256'],**evidence['approved_model_source_sha256']}.items():
+        assert hashlib.sha256(Path(file).read_bytes()).hexdigest()==digest
+    stages=stages[1:]
+    assert [stage[0] for stage in stages]==['pi05-formal']
+    state('REUSING_VERIFIED_PI05_UPDATE',evidence=str(args.completed_pi05_evidence),
+          note='Two completed epochs; first fully filtered, second genuine update. Original strict failure retained.')
 for name,env_name,repo_name,config,port,suffix,verify in stages:
     if stop:raise RuntimeError('Sequence cancelled before next stage')
     stage_run=run/name
