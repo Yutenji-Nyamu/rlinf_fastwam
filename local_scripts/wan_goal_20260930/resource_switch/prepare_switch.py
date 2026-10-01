@@ -63,6 +63,31 @@ def freeze_cycle(m, base, stage, previous):
     m.save(stage / 'prepared.json', dict(time=m.now(), cycle=str(stage), predecessor=str(previous)))
 
 
+def verify_prior_return(previous_attempt, previous, require_first_round):
+    """Accept either the owner return or its exact, separately recorded user return."""
+    final = read(previous_attempt / 'pipeline-final.json')
+    source = 'pipeline-final.json'
+    if final['rlt_dispatched'] is not True:
+        assert final['rlt_dispatched'] is False and final['error'] is None
+        assert final['wm_released'] is True
+        returned = read(previous_attempt / 'user-rlt-return.json')
+        assert returned['phase'] == 'USER_RESTORED_RLT'
+        assert returned['exit_code'] == 0 and returned['dispatched'] is True
+        assert returned['cycle'] == str(previous) and returned['continuation'] == str(previous_attempt)
+        dispatched = read(previous / 'resumed-dispatched.json')
+        release = previous_attempt / 'dojo-release.json'
+        assert dispatched['cycle_id'] == previous.name
+        assert dispatched['release']['path'] == str(release)
+        assert dispatched['release']['sha256'] == sha(release)
+        cleaned = read(release)
+        assert cleaned['all_workers_stopped'] and cleaned['cleanup_receipt']['gpus_released']
+        source = 'user-rlt-return.json'
+    if require_first_round:
+        first = read(previous_attempt / 'rlt-first-round.json')
+        assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
+    return source
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=Path, required=True)
@@ -109,10 +134,7 @@ def main():
             assert (stage / 'rlt-stopped.json').is_file() and not (stage / 'resumed-dispatched.json').exists()
             assert not m.gpu_processes([4, 5, 6, 7])
         else:
-            assert final['rlt_dispatched'] is True
-            first = read(previous_attempt / 'rlt-first-round.json')
-            if not args.skip_prior_first_round:
-                assert first['state'] == 'verified' and first['status']['all_first_rounds_verified'] is True
+            verify_prior_return(previous_attempt, previous, not args.skip_prior_first_round)
         assert not Sweep(cfg, prior).guard.scan(), 'Dojo processes still alive'
         prep.mkdir(mode=0o700)
         for file in ('plan.json', 'active-continuation.json', 'pipeline-current.json', 'result-audit.json'):

@@ -1,6 +1,8 @@
 # SZ3 WM → Dojo 独立切换胶水
 
-2026-10-01已部署，后按用户睡前要求暂停WM并恢复原RLT。最新运行回执见`WAN_GOAL_PAUSE_20261001.md`。下方原始完整归还设计保留供复现；不要重放已执行的stop/prepare/launch。
+2026-10-01已部署，用户睡前暂停后起床要求继续；最新路径见`WAN_GOAL_RESUME_20261001.md`。新v3 owner重新借四条原RLT的4–7卡，执行π05 smoke→原正式→原Dojo→原RLT；不要重放已执行的stop/prepare/launch。
+
+起床后的prepare兼容用户单独归还RLT：历史owner final未派发时，必须核同一cycle/continuation的`user-rlt-return.json`、成功派发及原release文件SHA；仍从实际driver/namespace/完整checkpoint冻结新cycle。9项服务器CPU测试通过。
 
 新增已审选项：`--skip-prior-first-round`跳过旧RLT首轮等待；`--defer-rlt-restore`使Dojo结束后不自动恢复RLT；`--reuse-borrowed-cycle`仅在旧owner已结束、全部资源释放且RLT未重启时复用既有cycle。00:46用户再次要求恢复RLT后，沿同一cycle和最新release回执唯一派发，不改RLT参数。
 

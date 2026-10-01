@@ -1,5 +1,16 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 08:43：用户起床后继续WM
+
+- `w001–w003`：三机只读刷新，12条原RLT真实推进；SZ1约629–642、SZ2约1349–1409、SZ3约126–132。物理0–3无新安排；SZ1/2保持原任务。
+- `w004`：SZ3旧v2 owner已结束，精确外部RLT归还及旧cycle派发回执存在，运行源码13项SHA匹配，独立OFT/π05环境已审，私有Ray端口空闲。资产36.78GB已完成，不重新下载。
+- `w005`：新增外部归还回执兼容，核cycle/continuation/释放SHA；保留真实driver/namespace/完整checkpoint核查。9项服务器CPU检查全通过，包括错cycle拒绝和首轮可选读取。无借卡/无GPU测试。
+- 新人工授权路由为π05 smoke→原1000轮正式→原Dojo→原RLT。`rlt` heartbeat已更新，借卡/交接时不能抢卡恢复。仅准备resource胶水变化，学习方法/预算/官方固定版本保持。
+- 新细日志放当前工作区`local_logs/wan-goal-20261001/steps/`，专题`WAN_GOAL_RESUME_20261001.md`；旧E证据和已发布原回执保持历史原样。
+- `w006` 08:53准备成功：原Dojo2313回合保留、四RLT最新完整CP125绑定，配置SHA与已批准Windows源码一致。新ready明确fresh cycle及WM→Dojo→RLT恢复顺序。
+- `w007` 08:55:20唯一启动新owner，退出0；实际PID/start/boot写入launch-identity.json，后续从动态active pointer读取。尚需现场确认借卡和π05真实更新，不能把启动回执当训练验收。
+- `w008–w011`：原RLT4–7已真实释放，新owner进入π05 smoke，私有Ray63844；08:57 `VERIFIED_PHYSICAL_PLACEMENT_4567`及placement文件核actor/env/rollout均4–7。尚处加载，未记录真实更新或正式验收。
+
 ## 2026-09-30：准备与来源固定
 
 目的：OFT＋Wan Goal smoke → π0.5＋Wan Goal GRPO正式训练，GPU4–7，WM结束续Dojo。
@@ -121,6 +132,8 @@
 - 三机只读检查：深圳1四RLT继续，支架523/520、双瓶524/524；深圳2旧Dojo因stack_bowls_random/s1三次无进展失败，自动恢复原四RLT且首轮真实验证通过。三机0–3无计算任务，但无原RLT恢复清单；已问是否新增实验，未答前不擅自扩展任务/种子/预算。
 - `s191/s192`深圳3四组完成恢复并进入首轮rollout，4–7各约23.2GiB，首轮指标仍待落盘。深圳2四RLT1193/1218/1148/1149轮，原Dojo3235回合保留。
 - `s193`及三机health只读检查：近3小时所查内核无Xid/OOM/I/O/AER新记录，24卡不可纠正ECC0；数据盘充足，23机根余6.9/4.9GiB，未清理。新heartbeat `rlt` 每15分钟维护原12条RLT，健康静默，仅精确恢复意外退出的原任务，不增加预算或重开WM。
+- `s194/s195/s196`：发布add因上游`*.txt`忽略规则退出1；核显式23文件清单后，仅force-add已审1177B CPU测试文本，不改ignore。最终提交`894322d3c731f63ffa1cb8355eac0e67f5bcd71c`，11新增/10修改/0删除，远端SHA核对通过。
+- 01:07 `wm-plan-20260930/steps/sleep-sz3-rlt-final-20261001`：四组都从CP25推进至27轮、all_first_rounds_verified=true、driver全活、无finished错误。无需本机SSH保活，关机不停止服务器训练；本机heartbeat离线期间暂停。
 
 本轮根目录：`E:/Codex/home/visualizations/2026/09/28/01a0e6c7-bb8c-7421-8697-110ddd91d2f1/wan-goal-20260930/steps/`。
 

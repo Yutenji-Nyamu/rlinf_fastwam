@@ -1,5 +1,7 @@
 # 深圳3：Wan Goal 借卡与 RLT 归还方案
 
+**08:57最新：用户起床要求继续WM。新v3 owner已重新借原RLT4–7，绑定最新完整CP125；独立π05 smoke实际placement通过。新的唯一归还链为WM→原Dojo→原四RLT。专题`WAN_GOAL_RESUME_20261001.md`。prepare兼容v2的精确外部RLT归还，不修改历史final，不重放旧stop/restore；9项CPU检查通过。以下暂停/优先级为历史。**
+
 **00:46最新：用户要求暂停WM、恢复原RLT。s185–s189已完成WM/Dojo精确退出与四RLT恢复派发；00:50 root状态USER_RESTORED_RLT。WM自动继续已删除，不再自动启动WM或Dojo。以下为历史调度设计，当前进度见`WAN_GOAL_PAUSE_20261001.md`。**
 
 **2026-10-01最新授权覆盖下文旧恢复顺序：WM第一，Dojo第二，RLT暂不安排。** 新owner不再等待RLT首轮，以精确身份、旧owner终态和释放回执完成交接；使用`--skip-prior-first-round --defer-rlt-restore`。WM结束续原Dojo；Dojo最终结束后保留RLT恢复清单，不自动派发。下文旧“Dojo→RLT”流程仅作为历史与可选能力。00:18已进入OFT smoke启动，运行路由为`continuation-20260930-wan-goal-v1`。

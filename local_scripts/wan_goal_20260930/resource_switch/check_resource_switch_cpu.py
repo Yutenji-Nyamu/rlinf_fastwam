@@ -11,6 +11,7 @@ from unittest.mock import patch
 import uuid
 from common import ROOT, account, identity, own_path, pidfd_open, pidfd_send
 from wm_stage import Catalog, TAG, run_stage
+from prepare_switch import verify_prior_return
 
 
 class OwnershipChecks(unittest.TestCase):
@@ -117,6 +118,25 @@ class OwnershipChecks(unittest.TestCase):
 
     def test_user_path_spelling_preserved(self):
         self.assertEqual(str(own_path(self.root)), str(self.root.absolute()))
+
+    def test_exact_external_return_and_optional_first_round(self):
+        import hashlib
+        attempt = self.root / 'prior-attempt'; attempt.mkdir()
+        cycle = self.root / 'prior-cycle'; cycle.mkdir()
+        def save(path, value): path.write_text(json.dumps(value))
+        save(attempt / 'pipeline-final.json', dict(rlt_dispatched=False, error=None, wm_released=True))
+        save(attempt / 'user-rlt-return.json', dict(phase='USER_RESTORED_RLT', exit_code=0,
+             dispatched=True, cycle=str(cycle), continuation=str(attempt)))
+        release = attempt / 'dojo-release.json'
+        save(release, dict(all_workers_stopped=True, cleanup_receipt=dict(gpus_released=True)))
+        save(cycle / 'resumed-dispatched.json', dict(cycle_id=cycle.name,
+             release=dict(path=str(release), sha256=hashlib.sha256(release.read_bytes()).hexdigest())))
+        self.assertEqual(verify_prior_return(attempt, cycle, False), 'user-rlt-return.json')
+        with self.assertRaises(FileNotFoundError): verify_prior_return(attempt, cycle, True)
+        returned = json.loads((attempt / 'user-rlt-return.json').read_text())
+        returned['cycle'] = str(self.root / 'other-cycle')
+        save(attempt / 'user-rlt-return.json', returned)
+        with self.assertRaises(AssertionError): verify_prior_return(attempt, cycle, False)
 
     def stage_spec(self, cleanup_exit=0):
         callback = self.root / 'callback.py'
