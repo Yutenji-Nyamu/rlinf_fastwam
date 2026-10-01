@@ -45,3 +45,7 @@
 w123只读实查：r6完成step0，grad norm=0.5559873、有效mask=1.376953%、优势[-1.6201816,0.5400605]、loss=0.0001563128，均有限；单轮1066.72秒。owner活，已进入下一轮采集，近期无primary error或monitor诊断。四卡约62GiB显存、可用内存约1.71TiB。尚未超过原4轮故障点，也未到原save40，不声称长期稳定或真实LIBERO成功。
 
 继续验收入口和首次checkpoint只读CPU检查见[进展与验收](WAN_GOAL_REPAIR_PROGRESS_20261001.md)。原训练和活的owner源码保持。
+
+## 14:32：已超过上一轮中断位置
+
+w137完成step0–4共5轮，owner活、RUNNING_WM；第6轮采集5/8，近期primary error和monitor诊断均为空。3轮有有效GRPO梯度，2轮全组过滤（mask=grad=loss=0、空优势统计nan）；不把空统计当权重nan，也不据grad0证明参数完全未变。尚无CP40，原监控修复在实际运行中已越过旧故障点，长期稳定仍继续验证。训练方法、seed、预算保持。
