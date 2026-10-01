@@ -126,6 +126,42 @@ def clone_env_observation(obs: Mapping[str, Any]) -> dict:
     return result
 
 
+class _NativeBatchAdapter(torch.nn.Module):
+    """Scatter a plain tensor observation dict; build native objects per replica.
+
+    DataParallel gathers per-example values on device0 and sums replica grads.
+    It does not pool VRAM or shard the starting model/Adam states.
+    """
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, processed, noise_or_target, operation):
+        from openpi.models import model as openpi_model
+        observation = openpi_model.Observation.from_dict(dict(processed))
+        with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+            if operation == 'sample':
+                # Factory stores sample_actions as a bound instance attribute;
+                # DP shallow-copies that attribute and would call the master.
+                # Bind the class implementation to the actual local replica.
+                return type(self.model).sample_actions(self.model,observation, noise=noise_or_target,
+                    mode='eval', compute_values=False)['actions']
+            if operation == 'fm':
+                # A [1] result avoids DataParallel's scalar gather special case.
+                # Pinned OpenPiActionModel.sft_forward(use_rlt=False) returns
+                # super().forward(observation, actions).mean(). Its device-only
+                # next(self.parameters()) wrapper is incompatible with DP
+                # replicas (their weights are differentiable tensor attrs).
+                # Tensor scatter already places the native inputs on each card.
+                from openpi.models_pytorch.pi0_pytorch import PI0Pytorch
+                if self.model.config.use_rlt:
+                    raise RuntimeError('EXPO native FM must not enter RLT loss')
+                if hasattr(self.model,'gradient_checkpointing_disable'):
+                    self.model.gradient_checkpointing_disable()
+                return PI0Pytorch.forward(self.model,observation,noise_or_target.float()).mean().reshape(1)
+        raise ValueError('Unknown native parallel operation')
+
+
 class Pi05Backend:
     """Sidney π0.5 H50/C10/14D, same transforms, trainable action expert.
 
@@ -162,11 +198,43 @@ class Pi05Backend:
         candidate_microbatch: int = 1,
         critic_camera_keys: Sequence[str] = ("main", "left_wrist", "right_wrist"),
         source_head: str | None = None,
+        parallel_devices: int = 1,
+        observation_microbatch: int = 64,
+        fm_microbatch: int = 64,
+        image_augmentation: bool = False,
     ):
         from omegaconf import OmegaConf, open_dict
         from rlinf.models.embodiment.openpi import get_model
 
         self.device = torch.device(device)
+        self.parallel_devices = int(parallel_devices)
+        self.observation_microbatch = int(observation_microbatch)
+        self.fm_microbatch = int(fm_microbatch)
+        if self.parallel_devices < 1 or self.observation_microbatch < 1 or self.fm_microbatch < 1:
+            raise ValueError('Invalid parallel batch configuration')
+        if self.device.type != 'cuda' or self.parallel_devices > torch.cuda.device_count():
+            raise ValueError('Native backend requires the configured visible CUDA devices')
+        if self.parallel_devices > 1 and self.device.index not in (None, 0):
+            raise ValueError('DataParallel master must be local cuda0')
+        self.image_augmentation = bool(image_augmentation)
+        # Explicit human decision: no image augmentation, including the native
+        # compute_loss(train=True) path. Keep image normalization/resize/pad,
+        # FM noise/time sampling and all model training gradients unchanged.
+        import openpi.models_pytorch.preprocessing_pytorch as preprocessing
+        original = preprocessing.preprocess_observation_pytorch
+        if getattr(original, '_expo_no_augmentation', False):
+            if self.image_augmentation:
+                raise RuntimeError('Incompatible preprocessing policy in this process')
+        elif not self.image_augmentation:
+            original_sha = hashlib.sha256(inspect.getsource(original).encode()).hexdigest()
+            @functools.wraps(original)
+            def no_image_augmentation(observation, *, train=False, **kwargs):
+                return original(observation, train=False, **kwargs)
+            no_image_augmentation._expo_no_augmentation = True
+            no_image_augmentation._expo_original_sha256 = original_sha
+            preprocessing.preprocess_observation_pytorch = no_image_augmentation
+        self.preprocessing_source_sha256 = getattr(preprocessing.preprocess_observation_pytorch,
+            '_expo_original_sha256', hashlib.sha256(inspect.getsource(original).encode()).hexdigest())
         # Same scoped H100/runtime compatibility fix as the successful
         # tools/pi05_dv50/run_inference.py:41. Disable only cuDNN SDPA; preserve
         # standard flash/efficient/math dispatch and ordinary cuDNN convolutions.
@@ -230,6 +298,8 @@ class Pi05Backend:
             cfg.openpi_data.norm_stats_path = str(norm_path)
         self.model_cfg = cfg
         self.model = get_model(cfg).to(self.device)
+        if bool(getattr(self.model,'torch_compile_enabled',False)):
+            raise RuntimeError('This replicated native API contract requires uncompiled per-replica methods')
         _verify_model_files_unchanged(model_dir, starting_model_manifest, starting_model_identities)
         if _stat_identity(norm_path.stat()) != norm_identity:
             raise RuntimeError("Normalization file changed during loading")
@@ -262,6 +332,8 @@ class Pi05Backend:
             weight_decay=weight_decay,
         )
         self.base_updates = 0
+        self.parallel_adapter = _NativeBatchAdapter(self.model)
+        self.inference_receipts = []
         self.contract = {
             "schema_version": 2,
             "source_head": source_head,
@@ -277,6 +349,14 @@ class Pi05Backend:
             "trainable_names": sorted(self.trainable),
             "critic_cameras": list(self.critic_camera_keys),
             "runtime_attention": self.runtime_attention,
+            "parallel": {"devices": self.parallel_devices,
+                "kind": "replicated_model_batch_scatter_grad_reduce",
+                "observation_microbatch": self.observation_microbatch,
+                "candidate_microbatch": self.candidate_microbatch,
+                "fm_microbatch": self.fm_microbatch},
+            "image_augmentation": self.image_augmentation,
+            "preprocessing_source_sha256": self.preprocessing_source_sha256,
+            "fm_api": "pinned-use_rlt-false-native-PI0Pytorch.forward.mean; tensor-scattered-device-inputs",
             "optimizer": {
                 "lr": float(lr), "betas": list(betas), "eps": float(eps),
                 "weight_decay": float(weight_decay), "clip_grad": self.clip_grad,
@@ -342,10 +422,17 @@ class Pi05Backend:
                     raise ValueError("Critic RGB must be uint8 or float [0,1]")
                 frame = (frame * 255).round().to(torch.uint8)
             if tuple(frame.shape[-2:]) != (224, 224):
-                frame = torch.nn.functional.interpolate(
-                    frame.float(), size=(224, 224), mode="bilinear",
-                    align_corners=False, antialias=True,
-                ).round().clamp(0, 255).to(torch.uint8)
+                from openpi.shared import image_tools
+                resized = image_tools.resize_with_pad_torch(
+                    frame.permute(0, 2, 3, 1), 224, 224
+                )
+                # The pinned native helper squeezes a singleton image batch.
+                # Restore that axis before converting NHWC back to NCHW.
+                if resized.ndim == 3 and frame.shape[0] == 1:
+                    resized = resized.unsqueeze(0)
+                if resized.shape != (frame.shape[0], 224, 224, 3):
+                    raise ValueError("Native critic resize changed batch or RGB shape")
+                frame = resized.permute(0, 3, 1, 2).round().clamp(0, 255).to(torch.uint8)
             views.append(frame)
         images = torch.stack(views, dim=1).to(self.device)
         processed = self._prepare(env_obs)
@@ -371,26 +458,32 @@ class Pi05Backend:
         batch_size = int(processed["state"].shape[0])
         rows = []
         with torch.inference_mode(), self._autocast():
-            for offset in range(0, num_candidates, self.candidate_microbatch):
-                count = min(self.candidate_microbatch, num_candidates - offset)
-                repeated = tree_map(
-                    lambda x: x.repeat_interleave(count, dim=0)
-                    if torch.is_tensor(x) else x,
-                    processed,
-                )
-                noise = torch.randn(
-                    batch_size * count, self.HORIZON, self.MODEL_DIM,
-                    device=self.device, dtype=torch.float32, generator=generator,
-                )
-                output = self.model.sample_actions(
-                    self._observation(repeated), noise=noise, mode="eval",
-                    compute_values=False,
-                )
-                raw = _finite(output["actions"].float(), "base model candidates")
-                if tuple(raw.shape) != (batch_size * count, self.HORIZON, self.MODEL_DIM):
-                    raise ValueError(f"Unexpected base output shape {tuple(raw.shape)}")
-                rows.append(raw.reshape(batch_size, count, self.HORIZON, self.MODEL_DIM))
-        return torch.cat(rows, dim=1).detach()
+            # Noise is drawn once in global B,N order, independent of splitting.
+            noise_all = torch.randn(batch_size, num_candidates, self.HORIZON,
+                self.MODEL_DIM, device=self.device, dtype=torch.float32, generator=generator)
+            for bstart in range(0, batch_size, self.observation_microbatch):
+                bend = min(batch_size, bstart + self.observation_microbatch)
+                sub = tree_map(lambda x:x[bstart:bend] if torch.is_tensor(x) else x,processed)
+                candidate_rows = []
+                for offset in range(0, num_candidates, self.candidate_microbatch):
+                    count = min(self.candidate_microbatch, num_candidates - offset)
+                    repeated = tree_map(lambda x:x.repeat_interleave(count,dim=0)
+                        if torch.is_tensor(x) else x,sub)
+                    noise = noise_all[bstart:bend,offset:offset+count].reshape(-1,self.HORIZON,self.MODEL_DIM)
+                    if self.parallel_devices > 1:
+                        raw = torch.nn.parallel.data_parallel(self.parallel_adapter,
+                            (repeated,noise,'sample'),device_ids=list(range(self.parallel_devices)),output_device=0)
+                    else:
+                        raw = self.parallel_adapter(repeated,noise,'sample')
+                    raw = _finite(raw.float(), 'base model candidates')
+                    if tuple(raw.shape) != ((bend-bstart)*count,self.HORIZON,self.MODEL_DIM):
+                        raise ValueError(f'Unexpected base output shape {tuple(raw.shape)}')
+                    candidate_rows.append(raw.reshape(bend-bstart,count,self.HORIZON,self.MODEL_DIM))
+                rows.append(torch.cat(candidate_rows,dim=1))
+        self.inference_receipts.append({'B':batch_size,'N':num_candidates,'flat_batch':batch_size*num_candidates,
+            'devices':self.parallel_devices,'observation_microbatch':self.observation_microbatch,
+            'candidate_microbatch':self.candidate_microbatch})
+        return torch.cat(rows, dim=0).detach()
 
     def decode(self, env_obs: Mapping[str, Any], normalized_chunk) -> torch.Tensor:
         """Decode only the selected normalized C10/14D chunk exactly once."""
@@ -434,12 +527,12 @@ class Pi05Backend:
             raise ValueError("Base FM requires real full-H50 canonical actions, no invented tail")
         processed = self._prepare(obs, actions=actions)
         target = processed.pop("actions")
-        return self.fm_update_native(self._observation(processed), target)
+        return self.fm_update_native(processed, target)
 
     def fm_update_native(self, observation, normalized_padded_actions) -> dict[str, float]:
         """Accept a native RLinf SFT dataset (Observation, H50×32 target) batch."""
-        if isinstance(observation, Mapping):
-            observation = self._observation(observation)
+        if not isinstance(observation, Mapping):
+            raise TypeError('FM uses a tensor observation dict for native per-device construction')
         target = torch.as_tensor(normalized_padded_actions, device=self.device).float()
         if target.ndim != 3 or tuple(target.shape[1:]) != (self.HORIZON, self.MODEL_DIM):
             raise ValueError("Native FM target must be normalized [B,50,32]")
@@ -453,12 +546,20 @@ class Pi05Backend:
             name: parameter.detach().reshape(-1)[:64].clone()
             for name, parameter in self.trainable.items()
         }
-        with self._autocast():
-            loss = self.model.sft_forward((observation, target))
-        if not torch.is_tensor(loss) or loss.ndim != 0:
-            raise RuntimeError("use_rlt=False must yield scalar native FM loss")
-        _finite(loss, "FM loss")
-        loss.backward()
+        batch_size = int(target.shape[0]); total_loss = 0.0; forwards = 0
+        from torch.utils._pytree import tree_map
+        for start in range(0,batch_size,self.fm_microbatch):
+            end=min(batch_size,start+self.fm_microbatch);size=end-start
+            if self.parallel_devices > 1 and size % self.parallel_devices:
+                raise ValueError('FM data parallel batch must divide evenly across configured cards')
+            sub=tree_map(lambda x:x[start:end] if torch.is_tensor(x) else x,observation)
+            if self.parallel_devices > 1:
+                values=torch.nn.parallel.data_parallel(self.parallel_adapter,(sub,target[start:end],'fm'),
+                    device_ids=list(range(self.parallel_devices)),output_device=0)
+            else:
+                values=self.parallel_adapter(sub,target[start:end],'fm')
+            loss=values.mean();_finite(loss,'FM loss')
+            (loss*(size/batch_size)).backward();total_loss+=float(loss.detach())*size/batch_size;forwards+=1
         frozen_with_grad = sum(
             parameter.grad is not None
             for name, parameter in self.model.named_parameters()
@@ -479,7 +580,10 @@ class Pi05Backend:
         self.base_updates += 1
         self.model.eval()
         return {
-            "base_fm_loss": float(loss.detach()),
+            "base_fm_loss": total_loss,
+            "base_global_batch": float(batch_size),
+            "base_fm_forwards": float(forwards),
+            "base_parallel_devices": float(self.parallel_devices),
             "base_grad_norm": float(grad_norm),
             "base_sampled_parameter_delta_max": max(deltas),
             "base_changed_parameter_samples": float(sum(delta > 0 for delta in deltas)),
@@ -531,8 +635,9 @@ def bind_simulator_renderer(device: str = "cuda:0") -> dict:
     if device != "cuda:0":
         raise ValueError("This isolated renderer contract uses local cuda:0")
     visible = os.environ.get("CUDA_VISIBLE_DEVICES", "")
-    if not visible.startswith("GPU-") or "," in visible:
-        raise RuntimeError("Renderer requires one explicit GPU UUID in CUDA_VISIBLE_DEVICES")
+    visible_ids=visible.split(',')
+    if not visible_ids or any(not item.startswith('GPU-') for item in visible_ids) or len(set(visible_ids))!=len(visible_ids):
+        raise RuntimeError("Renderer requires explicit distinct GPU UUIDs in CUDA_VISIBLE_DEVICES")
     os.environ[_RENDER_DEVICE_ENV] = device
     import sapien
     from sapien.wrapper.scene import Scene
@@ -570,6 +675,7 @@ def bind_simulator_renderer(device: str = "cuda:0") -> dict:
     receipt = {
         "sapien_version": str(sapien.__version__), "device": device,
         "visible_gpu_uuid": visible, "api": "Scene.default_systems.RenderSystem(device)",
+        "render_gpu_uuid":visible_ids[0],
         "scene_source_sha256": hashlib.sha256(scene_source.encode()).hexdigest(),
         "explicit_systems_preserved": True,
     }
