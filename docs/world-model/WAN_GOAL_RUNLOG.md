@@ -1,5 +1,23 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 15:39–15:55：训练机制与四卡并行实查
+
+- 用户追问每轮行为、WMPO/WoVR、奖励/过滤、单视角、训练参数、每卡情况，并要求记录并发。w157/w159只读刷新：15:53已完成10个runner轮，其中七轮正mask且非零有限GRPO梯度，三轮全组过滤；第11轮4/8，错误诊断空、无正式CP。最新grad1.8499382、mask7.1972653%、loss0.00009743094、优势有限非零；仍原1000/save40。
+- w158/w160逐GPU核compute context及当前catalog的UID/start/boot，12进程全属于本run。物理4–7各16个环境槽位、2组、一个env/rollout/actor；采集约61–62.5GiB，策略更新约48.4–48.8GiB，更新快照四卡100%。记录的是阶段快照，不虚报恒定占用或峰值。
+- 源码补核实际TaskEmbed ResNet奖励0/1、相对差分、组均值过滤、GRPO轨迹级优势及chunk概率聚合。每轮8批共512轨迹/20,480 chunk槽位，训练一遍、10次optimizer调度；全mask仍计算，空优势nan不是权重nan。
+- 新专题WAN_GOAL_MECHANISM_AND_PARALLEL_20261001.md包含官方π0.5与Wan参数来源、闭环图和单视角先例/性能待验范围。广泛核官方Wan/WoVR/WMPO、OpenPI mask与ProphRL；ProphRL先做匹配单视角SFT，不能代证本checkpoint的腕图消融效果。
+- 本轮仅只读现场、文档、独立发布payload；未改训练配置、资源控制器、过滤、seed、预算或恢复安排。原始日志/第三方源码留本地，只发布审过文档、只读helper与轻量JSON证据。
+
+## 2026-10-01 14:47：EXPO最终交付指针
+
+- 对方最终回报codex/sz2-expo-ft-20261001@c969b851e36bf5fe4d2b4696f17863370f8ae5ff已推核，24份源码/方法/小回执307675 bytes、source clean，14:43仍smoke_passed/guardian RESTORED/首轮已验，工作SSH关闭、不再操作卡位。交付入口登记HANDOFF与资源表，不操作或发布对方源码。
+- 本窗继续维护SZ1/2原RLT与SZ3 WM；此消息不改变方法/预算/已完成归还，不重放任何控制器。新交付元数据随下一重要里程碑发布，本窗当前远端仍08987b88。
+
+## 2026-10-01 14:44：深圳2实际归还记录发布
+
+- w143退出0，远端核08987b885efb3841237ba9f4f9573fc30b1957c3，4新增/2修改/0删除；仅本窗w141只读独核的实际RLT归还、status helper、共享资源路由与粗日志，无其他窗口dirty或训练/owner源码改动。回执ROOT/publication-update-20261001-sz2-expo-return/published.json。
+- 统一检查已接回SZ2原四RLT，SZ3继续WM；超过旧故障点与实际归还只报告一次，后续正常推进安静。下个WM验收仍原完整CP40与有限参数。
+
 ## 2026-10-01 14:37–14:39：WM里程碑发布与深圳2归还核验
 
 - w140退出0，远端核54edb0c03faeed8a9229fe7966c598777f343f19，6新增/4修改/0删除；只发布本窗审过5轮/3有效梯度、四CP125完整性、只读helper和文档，活的学习/owner源码保持。回执ROOT/publication-update-20261001-r6-past-failure-point/published.json。

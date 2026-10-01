@@ -2,6 +2,14 @@
 
 2026-10-01，r6从原固定SFT重开，沿原1000轮/save40，不重跑smoke。源码修复与依据分别见[修复专题](WAN_GOAL_REPAIR_20261001.md)、[官方与社区线索](WAN_GOAL_REPAIR_SOURCES_20261001.md)。
 
+## 15:53：10轮、机制与阶段资源核查
+
+w159退出0，owner活、RUNNING_WM，完成step0–9十个runner轮，七轮有正mask/非零有限GRPO梯度，三轮全组过滤；第11轮采集4/8。最新step9 grad1.8499382、mask7.1972653%、有限loss0.00009743094和优势[-0.7245674,2.4748666]，本轮1000.206秒；monitor诊断及近期primary错误为空，尚无正式CP。
+
+用户要求记录并行配置与每卡负载。w158 15:44更新阶段每卡48.38–48.79GiB且GPU利用率均100%；w157 15:39采集阶段62.1–62.5GiB；w160 15:55采集阶段60.9–61.3GiB。十二个GPU进程均验证为当前自有catalog身份，四卡各一个actor、rollout、env角色，每卡16个环境槽位、2组，Wan真实batch16。瞬时利用率会随等待变化，约62GiB不是常数或持续测量峰值。
+
+每轮8批共512轨迹槽位、20,480 chunk槽位；B2048/MB128/四rank形成每次4个microbatch累积、每轮10次optimizer调度。有效runner轮与optimizer次数分开。实际奖励Goal TaskEmbed ResNet经round输出0/1，再差分；mask比例不是成功率。准确机制、原配方来源、单视角公开依据和现场证据见[训练机制与四卡并行](WAN_GOAL_MECHANISM_AND_PARALLEL_20261001.md)。没有改学习/owner源码、方法或预算，CP40仍是下一验收。
+
 ## 14:32已超过上一轮中断位置
 
 w137退出0，固定身份/host-key验证通过；owner活、RUNNING_WM，完成step0–4共5轮，第6轮采集5/8，monitor_diagnostics={}、recent_primary_error_lines=[]，checkpoint目录仍空。上一轮r5在完成4轮后监控中断，这次已超过该位置；这不是原断言根因复现或长期稳定证明。

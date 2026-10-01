@@ -1,0 +1,405 @@
+{
+  "schema": 1,
+  "description": "Fixed-source mechanism and phase-specific four-GPU snapshots; not peak measurements or physical LIBERO evaluation",
+  "host": "sz3",
+  "run": "wan-goal-sz3-20261001-r6/pi05-formal",
+  "time": 1790841224.0642827,
+  "source_revision": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+  "physical_gpus": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "owner_alive": true,
+  "pipeline_phase": "RUNNING_WM",
+  "completed_runner_epochs": 10,
+  "epochs_with_effective_grpo_gradient": [
+    0,
+    1,
+    2,
+    6,
+    7,
+    8,
+    9
+  ],
+  "all_filtered_runner_epochs": [
+    3,
+    4,
+    5
+  ],
+  "latest_metrics": {
+    "env/success_once": [
+      {
+        "step": 9,
+        "value": 0.021484375,
+        "wall_time": 1790840694.8660007
+      }
+    ],
+    "rollout/loss_mask_fraction": [
+      {
+        "step": 9,
+        "value": 0.07197265326976776,
+        "wall_time": 1790840694.8660648
+      }
+    ],
+    "rollout/advantages_max": [
+      {
+        "step": 9,
+        "value": 2.4748666286468506,
+        "wall_time": 1790840694.866091
+      }
+    ],
+    "rollout/advantages_min": [
+      {
+        "step": 9,
+        "value": -0.7245674133300781,
+        "wall_time": 1790840694.8660989
+      }
+    ],
+    "time/step": [
+      {
+        "step": 9,
+        "value": 1000.2059936523438,
+        "wall_time": 1790840694.8678432
+      }
+    ],
+    "train/actor/grad_norm": [
+      {
+        "step": 9,
+        "value": 1.849938154220581,
+        "wall_time": 1790840694.8740697
+      }
+    ],
+    "train/actor/total_loss": [
+      {
+        "step": 9,
+        "value": 9.74309368757531E-05,
+        "wall_time": 1790840694.8759112
+      }
+    ]
+  },
+  "recent_rollout_progress": [
+    {
+      "completed": 3,
+      "total": 8,
+      "timing": "05:30<09:10, 110.18s/it"
+    },
+    {
+      "completed": 4,
+      "total": 8,
+      "timing": "07:20<07:19, 109.96s/it"
+    }
+  ],
+  "protocol": {
+    "max_epochs": 1000,
+    "resume_dir": null,
+    "save_interval": 40,
+    "N": 64,
+    "G": 8,
+    "R": 8,
+    "episode_steps": 320,
+    "chunk": 8,
+    "action_horizon": 10,
+    "num_steps": 5,
+    "global_batch": 2048,
+    "micro_batch": 128,
+    "wrist_mode": "disabled",
+    "filter_rewards": true,
+    "learning_rate": 5E-06,
+    "model_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero",
+    "component_placement": {
+      "actor,env,rollout": "4-7"
+    },
+    "real_libero_evaluation_interval": -1
+  },
+  "resolved_config_sha256": "46932fe627077260e76931dd19456d682eb85ca6d30a9a81282fb4261d137b7c",
+  "source_yaml_sha256": "7e650f37e95f72e0aed67cbd2f86c0ed345e3cc7b34f50d40964a0158725fbee",
+  "per_runner_epoch": {
+    "trajectory_slots": 512,
+    "action_slots": 163840,
+    "chunk_slots": 20480,
+    "groups_per_wave": 8,
+    "waves": 8,
+    "optimizer_calls": 10,
+    "rank_chunk_slots": 5120,
+    "rank_update_batch": 512,
+    "micro_batch": 128,
+    "gradient_accumulations": 4,
+    "slot_counts_are_not_valid_sample_counts": true
+  },
+  "source_hashes": {
+    "src/diffsynth-studio/diffsynth/models/reward_model.py": "39838f06553d0c62ef42f3cf45d7b3cb34e1bc0b3543cbd12dac72b5d1141a65",
+    "RLinf-pi05/rlinf/algorithms/advantages.py": "a324ac98794fe9fcb1d2df3186ef1865c03cd2b06029aa3b4ffc03ab2059e791",
+    "RLinf-pi05/rlinf/algorithms/utils.py": "de21453674c103f82e51c9a373937130ab6f7ca8f50acba051f50ff79e7c104b",
+    "RLinf-pi05/rlinf/algorithms/losses.py": "68508fcdcb1bc0c4d71386944ddbced0bc6715483463b7ec498b81a8cf0645ea"
+  },
+  "phase_snapshots": [
+    {
+      "step": "w158-user-wm-card-reward-audit",
+      "time": 1790840653.3462431,
+      "phase": "actor_training",
+      "cards": {
+        "4": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 49555,
+          "utilization_pct": 100,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 47802,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 790,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 908,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "5": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 49961,
+          "utilization_pct": 100,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 46936,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 2062,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 910,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "6": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 49901,
+          "utilization_pct": 100,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 46936,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 2062,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 848,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "7": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 49541,
+          "utilization_pct": 100,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 46696,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 1822,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 970,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        }
+      },
+      "read_only": true,
+      "resource_actions": []
+    },
+    {
+      "step": "w160-user-wm-role-algorithm-source",
+      "time": 1790841306.5351782,
+      "phase": "rollout",
+      "cards": {
+        "4": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 62339,
+          "utilization_pct": 98,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 12276,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 11326,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 38682,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "5": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 62743,
+          "utilization_pct": 98,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 11410,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 12598,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 38682,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "6": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 62685,
+          "utilization_pct": 100,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 11410,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 12598,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 38622,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        },
+        "7": {
+          "memory_total_mib": 81559,
+          "memory_used_mib": 62325,
+          "utilization_pct": 1,
+          "env_slots": 16,
+          "group_size": 8,
+          "concurrent_groups": 2,
+          "roles": [
+            {
+              "role": "actor",
+              "memory_used_mib": 11170,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "rollout",
+              "memory_used_mib": 12358,
+              "current_catalog_identity_verified": true
+            },
+            {
+              "role": "env",
+              "memory_used_mib": 38742,
+              "current_catalog_identity_verified": true
+            }
+          ]
+        }
+      },
+      "read_only": true,
+      "resource_actions": []
+    }
+  ],
+  "checkpoint_directories": [],
+  "monitor_diagnostics": {},
+  "recent_primary_error_lines": [],
+  "restoration": {
+    "after_wm": "RLT_DIRECT",
+    "resume_dojo": false,
+    "existing_unique_owner": true
+  },
+  "receipts": {
+    "w157-user-wm-mechanism-status": {
+      "host": "sz3",
+      "started": "2026-10-01T15:39:09.052325+08:00",
+      "command_sha256": "76e81a58509b83965f7f6e3105a989ffdd1280a6685f38951ef4f711914fd6ef",
+      "exit_code": 0,
+      "finished": "2026-10-01T15:39:10.467619+08:00",
+      "identity_verified": true,
+      "host_key_verified": true
+    },
+    "w158-user-wm-card-reward-audit": {
+      "host": "sz3",
+      "started": "2026-10-01T15:44:11.917832+08:00",
+      "command_sha256": "761e7b44a73d4bfa52ac9da15a88f4c0aa312f67f5577cea3cd5b38334067242",
+      "exit_code": 0,
+      "finished": "2026-10-01T15:44:12.689648+08:00",
+      "identity_verified": true,
+      "host_key_verified": true
+    },
+    "w159-user-wm-current-status": {
+      "host": "sz3",
+      "started": "2026-10-01T15:53:42.416899+08:00",
+      "command_sha256": "76e81a58509b83965f7f6e3105a989ffdd1280a6685f38951ef4f711914fd6ef",
+      "exit_code": 0,
+      "finished": "2026-10-01T15:53:43.753573+08:00",
+      "identity_verified": true,
+      "host_key_verified": true
+    },
+    "w160-user-wm-role-algorithm-source": {
+      "host": "sz3",
+      "started": "2026-10-01T15:55:05.081174+08:00",
+      "command_sha256": "dbecef1b9c61b05b0d590e8189316de44ed00b83e9b0297ad4a7b634c1b2e642",
+      "exit_code": 0,
+      "finished": "2026-10-01T15:55:05.854374+08:00",
+      "identity_verified": true,
+      "host_key_verified": true
+    }
+  },
+  "training_or_owner_source_changes": [],
+  "resource_actions": []
+}
