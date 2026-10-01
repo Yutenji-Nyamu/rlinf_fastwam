@@ -64,11 +64,11 @@ def main():
             for row in live:
                 key = (row['pid'], row['start'], row['boot'])
                 if key in signaled: continue
-                try: current = identity(row['pid'])
-                except (FileNotFoundError, ProcessLookupError): continue
-                catalog.signal(current, sig)
-                actions.append(dict(time=time.time(), signal=sig.name, identity=current))
-                signaled.add(key)
+                # Keep the registered UID/boot/start anchor. Refreshing the row
+                # first could authorize a different process after PID reuse.
+                if catalog.signal(row, sig):
+                    actions.append(dict(time=time.time(), signal=sig.name, identity=row))
+                    signaled.add(key)
             atomic(run / 'cleanup-actions.json', dict(owner_token=token, actions=actions))
             time.sleep(1)
     remaining = targets()

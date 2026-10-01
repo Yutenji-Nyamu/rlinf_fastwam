@@ -178,12 +178,17 @@ try:
         wm_released=True
     finally:
         in_wm=False
-    state('WM_RELEASED_RESUMING_DOJO',wm_release=str(run/'wm-release.json'),
-          wm_outcome=wm_result['outcome'],wm_exit_code=wm_result['wm_exit_code'])
-    state('EVALUATING',gpus=[4,5,6,7],simultaneous_workers=4,workers_per_gpu=1,
-          environments_per_worker=4,expected_episodes=6300,seeds=[0,1,2],wall_time_limit=None)
-    dojo_code=command(dojo,'dojo-controller',interruptible=True)
-    terminal='completed' if dojo_code==0 else 'failed'
+    if ready.get('return_rlt_direct', False):
+        state('WM_RELEASED_RETURNING_RLT_DIRECT', wm_release=str(run/'wm-release.json'),
+              wm_outcome=wm_result['outcome'],wm_exit_code=wm_result['wm_exit_code'])
+        terminal='completed' if wm_result['outcome']=='completed' and wm_result['wm_exit_code']==0 else 'failed'
+    else:
+        state('WM_RELEASED_RESUMING_DOJO',wm_release=str(run/'wm-release.json'),
+              wm_outcome=wm_result['outcome'],wm_exit_code=wm_result['wm_exit_code'])
+        state('EVALUATING',gpus=[4,5,6,7],simultaneous_workers=4,workers_per_gpu=1,
+              environments_per_worker=4,expected_episodes=6300,seeds=[0,1,2],wall_time_limit=None)
+        dojo_code=command(dojo,'dojo-controller',interruptible=True)
+        terminal='completed' if dojo_code==0 else 'failed'
 except Exception as exc:
     error=repr(exc)
     state('PIPELINE_ERROR',error=error,error_context=error_context(exc))
@@ -197,7 +202,8 @@ finally:
             assert clean['processes_clear'] and clean['gpus_released']
             release = {'cycle_id':args.cycle_dir.name, 'terminal_status':terminal,
                        'all_workers_stopped':True, 'managed_processes':managed_identities(),
-                       'cleanup_receipt':clean, 'time':time.time()}
+                       'cleanup_receipt':clean, 'time':time.time(),
+                       'workload_route':'WM_RLT_DIRECT' if ready.get('return_rlt_direct', False) else 'WM_DOJO_RLT'}
             atomic_json(run/'dojo-release.json', release)
             if ready.get('restore_rlt_after_dojo', True):
                 state('RESTORING_FOUR_RLT_RUNS', terminal_status=terminal)

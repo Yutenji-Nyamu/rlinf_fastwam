@@ -5,8 +5,9 @@ import re
 import signal
 import subprocess
 import time
+import traceback
 import uuid
-from common import UID, alive, atomic, identity, own_path, pidfd_open, pidfd_send, read, sha
+from common import UID, ProcessIdentityChanged, ProcessIdentityUncertain, alive, atomic, identity, own_path, pidfd_open, pidfd_send, read, sha
 
 TAG = 'WM_OWNER_TOKEN'
 
@@ -50,23 +51,37 @@ class Catalog:
         row['observed_command_sha256'] = sorted(set(old.get('observed_command_sha256', [])) | {row['command_sha256']})
         self.rows[key] = row
 
+    def persist(self, **details):
+        atomic(self.run / 'managed-identities.json', dict(time=time.time(), owner_token=self.token,
+               managed_processes=list(self.rows.values()), **details))
+
     def scan(self):
         observed = {}
         unreadable_unclaimed = []
         unreadable_registered = []
+        identity_changes = []
         registered_pids = {r['pid'] for r in self.rows.values()}
         needle = (TAG + '=' + self.token).encode()
         descendant_prefix = needle + b'.'
         for p in Path('/proc').iterdir():
             if not p.name.isdigit(): continue
             try:
-                if p.stat().st_uid != UID: continue
                 row = identity(int(p.name))
                 if row['state'] in ('Z', 'X'): continue
                 entries = (p / 'environ').read_bytes().split(b'\0')
                 tagged = any(value == needle or value.startswith(descendant_prefix) for value in entries)
                 observed[row['pid']] = row
                 if tagged: self.add(row, 'owned-token-family')
+            except ProcessIdentityChanged as error:
+                if int(p.name) in registered_pids:
+                    identity_changes.append(error.identity_context)
+                continue
+            except ProcessIdentityUncertain as error:
+                if int(p.name) in registered_pids:
+                    raise
+                unreadable_unclaimed.append(dict(pid=int(p.name), reason=str(error),
+                    path=str(p), observation='unregistered inconsistent snapshot; not claimed or signaled'))
+                continue
             except (FileNotFoundError, ProcessLookupError):
                 continue
             except PermissionError as error:
@@ -93,6 +108,10 @@ class Catalog:
                 unreadable_unclaimed.append(dict(pid=int(p.name), path=str(error.filename or p),
                     reason='unregistered and unreadable; not claimed or signaled'))
                 continue
+            except Exception as error:
+                if not hasattr(error, 'identity_context'):
+                    error.identity_context = dict(pid=int(p.name), registered=int(p.name) in registered_pids)
+                raise
         # A live exact registered parent also establishes descendants, even if
         # a launcher intentionally sanitizes its child environment.
         owned = {r['pid'] for r in self.rows.values() if alive(r)}
@@ -101,22 +120,23 @@ class Catalog:
             if not children: break
             for pid in children: self.add(observed[pid], 'registered-parent-tree')
             owned |= children
-        atomic(self.run / 'managed-identities.json', dict(time=time.time(), owner_token=self.token,
-                managed_processes=list(self.rows.values()), unreadable_unclaimed=unreadable_unclaimed,
-                unreadable_registered=unreadable_registered))
+        self.persist(scan_incomplete=False, unreadable_unclaimed=unreadable_unclaimed,
+                     unreadable_registered=unreadable_registered, identity_changes=identity_changes)
 
     def signal(self, row, sig):
-        if not alive(row): return
+        if not alive(row): return False
         try:
             current = identity(row['pid'])
-            assert (current['start'], current['boot'], current['uid']) == (row['start'], row['boot'], row['uid'])
+            if (current['start'], current['boot'], current['uid']) != (row['start'], row['boot'], row['uid']):
+                return False
             fd = pidfd_open(row['pid'])
         except (FileNotFoundError, ProcessLookupError):
-            return
+            return False
         try:
-            if not alive(current, command=True): return
+            if not alive(current, command=True): return False
             try: pidfd_send(fd, sig)
-            except ProcessLookupError: return
+            except ProcessLookupError: return False
+            return True
         finally:
             os.close(fd)
 
@@ -136,6 +156,7 @@ def run_stage(spec, cycle, attempt, gpu_processes, state, stop_requested):
     parent_token = os.environ.get(TAG)
     token = (parent_token + '.' if parent_token else '') + uuid.uuid4().hex
     catalog = Catalog(run, token)
+    catalog.persist(scan_incomplete=True, observation='initialized before command spawn')
     ray = spec['ray']
     receipt_path = run / 'wm-cleanup.json'
     env = os.environ.copy(); env.update(spec.get('environment', {}))
@@ -151,12 +172,19 @@ def run_stage(spec, cycle, attempt, gpu_processes, state, stop_requested):
            parent_identity=identity(os.getpid()), command=spec['command']))
     state('RUNNING_WM', wm_run=str(run), owner_token=token)
     exit_code = None; outcome = 'failed'; error = None; child = None
+    monitor_error = None; final_scan_error = None
+
+    def diagnostic(exc, phase):
+        return dict(time=time.time(), phase=phase, error=repr(exc),
+                    traceback=traceback.format_exc(),
+                    identity_context=getattr(exc, 'identity_context', None))
     try:
         with (run / 'command.log').open('ab') as output:
             child = subprocess.Popen(spec['command'], cwd=spec['cwd'], env=env, stdout=output,
                     stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
             try: catalog.add(identity(child.pid), 'wm-command-root')
             except (FileNotFoundError, ProcessLookupError): pass
+            catalog.persist(scan_incomplete=True, observation='known command root registered before first scan')
             started = time.monotonic(); stopped_at = None
             while child.poll() is None:
                 catalog.scan()
@@ -174,11 +202,20 @@ def run_stage(spec, cycle, attempt, gpu_processes, state, stop_requested):
             if stopped_at is None: outcome = 'completed' if exit_code == 0 else 'failed'
     except Exception as exc:
         error = repr(exc)
+        monitor_error = diagnostic(exc, 'command_or_monitor')
+        atomic(run / 'wm-monitor-error.json', monitor_error)
     finally:
         # Also runs if Popen or monitoring failed. A live command root is included
         # in the callback catalog; no Dojo launch until its identity is gone.
-        catalog.scan()
-        atomic(run / 'wm-exit.json', dict(time=time.time(), exit_code=exit_code, outcome=outcome, error=error))
+        try:
+            catalog.scan()
+        except Exception as exc:
+            final_scan_error = diagnostic(exc, 'final_catalog_scan')
+            atomic(run / 'wm-final-scan-error.json', final_scan_error)
+            catalog.persist(scan_incomplete=True, final_scan_error=final_scan_error,
+                            observation='known roots retained for dedicated cleanup; release not verified')
+        atomic(run / 'wm-exit.json', dict(time=time.time(), exit_code=exit_code, outcome=outcome,
+            error=error, monitor_error=monitor_error, final_scan_error=final_scan_error))
         state('CLEANING_WM', wm_run=str(run), outcome=outcome)
         assert not receipt_path.exists(), 'Stale cleanup receipt'
         cleanup_started = time.time()
@@ -193,7 +230,11 @@ def run_stage(spec, cycle, attempt, gpu_processes, state, stop_requested):
                 pass
             deadline = time.monotonic() + spec['cleanup_timeout_seconds']
             while cleanup.poll() is None and time.monotonic() < deadline:
-                catalog.scan(); time.sleep(1)
+                try:
+                    catalog.scan()
+                except Exception as exc:
+                    atomic(run / 'wm-cleanup-monitor-error.json', diagnostic(exc, 'cleanup_monitor'))
+                time.sleep(1)
             if cleanup.poll() is None:
                 assert cleanup_identity, 'Missing live cleanup callback identity'
                 catalog.signal(cleanup_identity, signal.SIGTERM)

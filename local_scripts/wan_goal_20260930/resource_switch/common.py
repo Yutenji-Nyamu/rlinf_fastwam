@@ -123,18 +123,66 @@ def load_base(path):
     return path, load_module(path / HELPER, 'frozen_rlt_cycle')
 
 
+class ProcessIdentityChanged(ProcessLookupError):
+    """A dynamic process observation cannot be bound to the expected account."""
+    def __init__(self, pid, reason, **observed):
+        self.identity_context = dict(pid=int(pid), reason=reason, **observed)
+        super().__init__(str(self.identity_context))
+
+
+class ProcessIdentityUncertain(RuntimeError):
+    """A registered live generation is not proved exited or safe to control."""
+    def __init__(self, pid, reason, **observed):
+        self.identity_context = dict(pid=int(pid), reason=reason, **observed)
+        super().__init__(str(self.identity_context))
+
+
+def _proc_contents(directory_fd, filename):
+    source = os.open(filename, os.O_RDONLY | os.O_CLOEXEC, dir_fd=directory_fd)
+    with os.fdopen(source, 'rb') as stream:
+        return stream.read()
+
+
 def identity(pid):
-    p = Path('/proc') / str(pid)
-    fields = (p / 'stat').read_text().rsplit(')', 1)[1].split()
-    assert p.stat().st_uid == UID
-    return dict(pid=int(pid), uid=UID, start=int(fields[19]), ppid=int(fields[1]),
-                state=fields[0], boot=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
-                command_sha256=hashlib.sha256((p / 'cmdline').read_bytes()).hexdigest())
+    # An open proc directory pins this lookup to one PID generation. Directory
+    # inode ownership is metadata, not a stable process-UID snapshot: pid_getattr
+    # can return default root ownership after its task has disappeared.
+    pid = int(pid)
+    fd = os.open('/proc/' + str(pid), os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+    def content(filename):
+        return _proc_contents(fd, filename)
+    def fields():
+        # comm can contain non-UTF8 bytes; only the ASCII fields after ')' matter.
+        return content('stat').rsplit(b')', 1)[1].split()
+    def uids():
+        lines = content('status').splitlines()
+        return tuple(map(int, next(line for line in lines if line.startswith(b'Uid:')).split()[1:]))
+    try:
+        first = fields(); before = uids()
+        if before != (UID, UID, UID, UID):
+            raise ProcessIdentityChanged(pid, 'foreign_or_changed_process_uid',
+                                         observed_uids=list(before), start=int(first[19]))
+        digest = hashlib.sha256(content('cmdline')).hexdigest()
+        after = uids(); last = fields()
+        if before != after or int(first[19]) != int(last[19]):
+            raise ProcessIdentityUncertain(pid, 'inconsistent_process_snapshot',
+                before_uids=list(before), after_uids=list(after),
+                first_start=int(first[19]), last_start=int(last[19]))
+        return dict(pid=pid, uid=UID, start=int(last[19]), ppid=int(last[1]),
+                    state=last[0].decode('ascii'), boot=Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+                    command_sha256=digest)
+    finally:
+        os.close(fd)
 
 
 def alive(row, command=False):
     try:
         current = identity(row['pid'])
+    except ProcessIdentityChanged as error:
+        if error.identity_context.get('start') == row['start']:
+            raise ProcessIdentityUncertain(row['pid'], 'registered_generation_uid_changed',
+                                           registered_start=row['start'], observed=error.identity_context) from error
+        return False
     except (FileNotFoundError, ProcessLookupError):
         return False
     return (current['state'] not in ('Z', 'X') and

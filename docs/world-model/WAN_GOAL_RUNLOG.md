@@ -1,5 +1,20 @@
 # SZ3 Wan Goal 实施日志
 
+## 2026-10-01 12:57：进程监控修复，新v6原配置启动
+
+- 新人工授权深入修复稳定训练，沿原单视角/GRPO/seed/1000轮/save40；不重跑已验smoke。r5无正式CP，r6从原固定SFT重开，r5失败历史保留。
+- w100–w102三机原RLT正常；另一窗口获授权在SZ2物理3筹备EXPO，已协调，SZ1/2原RLT保持。
+- w103旧identity 2000短命子进程未复现断言；w104 held proc inode UID实测20001→0，不等同原r5 traceback。原断言根因仍待精确堆栈。
+- 修复proc FD/status UID/start快照、bytes解析、原row+pidfd信号、原错误/最终scan/cleanup监控分开保存、已知root catalog提前持久化。新v6 ready原生WM→RLT直接，无Dojo评测或独立guard。
+- w105 16CPU检查通过；w106新2000短命进程无异常；w107固定源码已含reset PR1518；w108完整18CPU检查通过，含WM成功/失败各一次实际owner控制流fixture，无真实GPU或RLT动作。原配置两YAML SHA不变。
+- w110 12:52prepare成功，原Dojo2313回合保留，原四RLT完整CP125绑定；w111 12:53:23唯一launch退出0；w112尚在RLT精确停止/释放阶段，未把启动当真实学习验收。新run wan-goal-sz3-20261001-r6、cycle repair-v1、bridge/continuation v6。
+- w114 12:55正式RUNNING_WM、真实placement4–7通过、模型加载中；尚无训练标量。12:57用户确认两窗各自推进，compact实查EXPO仍独立SZ2物理3准备，无冲突。
+- 专题WAN_GOAL_REPAIR_20261001.md和WAN_GOAL_REPAIR_SOURCES_20261001.md；细日志local_logs/wan-goal-20261001/steps/w100起；代码/轻量证据发布准备中，不发布另窗dirty。
+## 2026-10-01 11:17：真实RLT首轮证据发布
+
+- `w084`退出0，远端核`fedc35957904bbe6722c274d64e4b9fd739bd8ff`，1新增/6修改/0删除。已发布w082真实127/127/126/127轮与all_first_rounds_verified=true证据，以及更新后的粗日志/专题/资源表；回执ROOT/publication-update-20261001-rlt-first-rounds/published.json。
+- 归还链与恢复首轮已完成并报告，后续正常推进静默；本次只读和文档发布，未重启任何训练或修改预算。
+
 ## 2026-10-01 11:13：原四RLT实际续训完成首轮验收
 
 - `w082`退出0：SZ3四原RLT从CP125真实推进到127/127/126/127轮，driver均活、finished=null、all_first_rounds_verified=true。原owner/guard已经结束，根RLT_FIRST_ROUNDS_PENDING是旧observer末次写入，不能覆盖此最新status。

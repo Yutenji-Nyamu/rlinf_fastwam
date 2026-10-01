@@ -101,7 +101,10 @@ def main():
                         help='Leave RLT paused after Dojo ends, pending further user instruction')
     parser.add_argument('--reuse-borrowed-cycle', action='store_true',
                         help='Reuse an already stopped cycle after its prior owner released all resources')
+    parser.add_argument('--return-rlt-direct', action='store_true',
+                        help='After verified WM release, skip Dojo and return the original four RLT runs')
     args = parser.parse_args()
+    assert not args.return_rlt_direct or not args.defer_rlt_restore, 'Direct RLT return cannot defer RLT'
     base, m = load_base(args.base_source_dir)
     from dojo_sweep import Sweep, build_plan
     from resume_results import prepare_result
@@ -151,6 +154,7 @@ def main():
                      wm_spec_sha256=sha(prep / 'wm-spec.json'), benchmark_unchanged=True,
                      prior_first_round_required=not args.skip_prior_first_round,
                      restore_rlt_after_dojo=not args.defer_rlt_restore,
+                     return_rlt_direct=args.return_rlt_direct,
                      reuse_borrowed_cycle=args.reuse_borrowed_cycle,
                      previous_attempt=str(previous_attempt),
                      source_sha256={p.name: sha(p) for p in HERE.iterdir() if p.suffix in ('.py', '.json')},

@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import uuid
-from common import ROOT, account, identity, own_path, pidfd_open, pidfd_send
+from common import ROOT, UID, ProcessIdentityChanged, ProcessIdentityUncertain, account, alive, identity, own_path, pidfd_open, pidfd_send
 from wm_stage import Catalog, TAG, run_stage
 from prepare_switch import verify_prior_return
 
@@ -26,6 +26,8 @@ class OwnershipChecks(unittest.TestCase):
                 child.terminate()
                 try: child.wait(timeout=5)
                 except subprocess.TimeoutExpired: child.kill(); child.wait(timeout=5)
+            if child.stdout is not None: child.stdout.close()
+            if child.stderr is not None: child.stderr.close()
         self.tmp.cleanup()
 
     def sleeper(self, token):
@@ -118,6 +120,98 @@ class OwnershipChecks(unittest.TestCase):
 
     def test_user_path_spelling_preserved(self):
         self.assertEqual(str(own_path(self.root)), str(self.root.absolute()))
+
+    def test_proc_directory_metadata_is_not_uid_authority(self):
+        child = self.sleeper(self.token)
+        directory = Path('/proc') / str(child.pid)
+        original = Path.stat
+        def changed_metadata(path, *args, **kwargs):
+            if path == directory:
+                raise AssertionError('identity must not use mutable proc directory UID')
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'stat', changed_metadata):
+            self.assertEqual(identity(child.pid)['uid'], UID)
+
+    def test_foreign_uid_is_not_claimed_or_signaled(self):
+        child = self.sleeper(self.token); row = identity(child.pid)
+        with patch('common.UID', UID + 1):
+            with self.assertRaises(ProcessIdentityChanged): identity(child.pid)
+            with self.assertRaises(ProcessIdentityUncertain): alive(row)
+            self.assertFalse(alive({**row, 'start':row['start']-1}))
+            catalog = Catalog(self.root, self.token); catalog.scan()
+            self.assertNotIn(child.pid, {item['pid'] for item in catalog.rows.values()})
+            with self.assertRaises(ProcessIdentityUncertain): catalog.signal(row, signal.SIGTERM)
+        self.assertIsNone(child.poll())
+
+    def test_inconsistent_uid_snapshot_cannot_prove_registered_exit(self):
+        import common
+        child = self.sleeper(self.token); row = identity(child.pid)
+        original = common._proc_contents; status_reads = 0
+        def changing(fd, filename):
+            nonlocal status_reads
+            data = original(fd, filename)
+            if filename == 'status':
+                status_reads += 1
+                if status_reads == 2:
+                    data = b'\n'.join(b'Uid:\t%d\t%d\t%d\t%d' % (UID, UID+1, UID, UID)
+                        if line.startswith(b'Uid:') else line for line in data.splitlines())
+            return data
+        with patch('common._proc_contents', changing):
+            with self.assertRaises(ProcessIdentityUncertain): alive(row)
+        self.assertIsNone(child.poll())
+
+    def test_non_utf8_process_name_is_safe(self):
+        code = "import ctypes,time;ctypes.CDLL(None).prctl(15,b'\\xffwm',0,0,0);print('ready',flush=True);time.sleep(90)"
+        child = subprocess.Popen([sys.executable,'-c',code],stdout=subprocess.PIPE,
+                                 env={**os.environ,TAG:self.token},start_new_session=True)
+        self.children.append(child); self.assertEqual(child.stdout.readline(),b'ready\n')
+        self.assertEqual(identity(child.pid)['uid'],UID)
+        catalog=Catalog(self.root,self.token);catalog.scan()
+        self.assertIn(child.pid,{row['pid'] for row in catalog.rows.values()})
+
+    def test_signal_recheck_preserves_registered_generation(self):
+        child = self.sleeper(self.token); row = identity(child.pid)
+        catalog = Catalog(self.root, self.token)
+        with patch('wm_stage.alive', return_value=True), \
+             patch('wm_stage.identity', return_value={**row, 'start': row['start'] + 1}), \
+             patch('wm_stage.pidfd_open') as opened:
+            self.assertFalse(catalog.signal(row, signal.SIGTERM))
+            opened.assert_not_called()
+        self.assertIsNone(child.poll())
+
+    def test_cleanup_passes_original_identity_to_signal(self):
+        # Inspect the actual call site; no GPU or cleanup action is run here.
+        import ast, cleanup_owned, inspect
+        tree = ast.parse(inspect.getsource(cleanup_owned))
+        signals = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                   and isinstance(node.func, ast.Attribute) and node.func.attr == 'signal']
+        self.assertEqual(len(signals), 1)
+        self.assertIsInstance(signals[0].args[0], ast.Name)
+        self.assertEqual(signals[0].args[0].id, 'row')
+
+    def test_monitor_and_final_scan_errors_preserved_cleanup_still_attempted(self):
+        attempt = self.root / 'attempt'; attempt.mkdir()
+        spec = self.stage_spec(cleanup_exit=9)
+        # Track only the own CPU children started by this test for final teardown.
+        original_popen = subprocess.Popen
+        def start(*args, **kwargs):
+            child = original_popen(*args, **kwargs); self.children.append(child); return child
+        actual_scan = Catalog.scan; calls = 0
+        def injected(catalog):
+            nonlocal calls
+            calls += 1
+            if calls == 1: raise RuntimeError('injected monitor observation failure')
+            if calls == 2: raise RuntimeError('injected final scan failure')
+            return actual_scan(catalog)
+        with patch('wm_stage.subprocess.Popen', side_effect=start), patch.object(Catalog, 'scan', injected):
+            with self.assertRaisesRegex(AssertionError, 'cleanup callback failed'):
+                run_stage(spec, self.root / 'cycle-test', attempt,
+                          lambda _: [], lambda *args, **kwargs: None, lambda: False)
+        report = json.loads((Path(spec['run_dir']) / 'wm-exit.json').read_text())
+        self.assertIn('injected monitor', report['monitor_error']['traceback'])
+        self.assertIn('injected final', report['final_scan_error']['traceback'])
+        self.assertTrue((Path(spec['run_dir']) / 'cleanup.log').exists())
+        self.assertFalse((attempt / 'wm-release.json').exists())
 
     def test_exact_external_return_and_optional_first_round(self):
         import hashlib
