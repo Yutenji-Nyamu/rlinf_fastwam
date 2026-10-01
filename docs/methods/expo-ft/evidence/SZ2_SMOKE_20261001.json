@@ -1,0 +1,749 @@
+{
+  "date": "2026-10-01",
+  "task": "SZ2 action-expert EXPO-FT real smoke and original RLT return",
+  "control_source_head": "e5cb9aa4c767490a66cba3c4e155c76f1193f199",
+  "inputs_sha256": "863ec77648d965e5d4efdae4c009fee204e595155794848e07e73db2e2825bb6",
+  "port_source_manifest": {
+    "rlinf/algorithms/expo_ft/__init__.py": "bdf317b0a9eb2ab755a4559cec2223800dada2b9121684dfddcaba653d3641fc",
+    "rlinf/algorithms/expo_ft/core.py": "d4d4654db5a69c72189db7163283523bffcdb5c8ba65257d25159e8377afab57",
+    "rlinf/algorithms/expo_ft/replay.py": "d427f2327f4e6f843b3820cfc744ff467d56693966476e2c1265d148cf906e26",
+    "rlinf/algorithms/expo_ft/backend.py": "143754bec94a165ea4dadbb02fbf15a060af42350acc36e51312af036011047c",
+    "examples/embodiment/train_expo_ft.py": "e768dfae52d2df07c76385d9f5169499b401230c936431199b75f182980b3122",
+    "tools/expo_smoke_owner.py": "d7fc1f670b68d3e559d55d0fef5949101f72d955f187f08008fabc9b40cb5847",
+    "tools/rlt_guardian.py": "0cdca8538962cfb774f2ac05de9312d9b052d8f4b9a264214bedf8d65998a546",
+    "tools/expo_process.py": "a23efa918d4808d87120a0ee900c2fbbabc10d5f651b7200c836959a71c067e3",
+    "tests/test_expo_core.py": "4e7bb36995a1abca98a5bc6d21a4e1f538fe1c602acf094bac4367a6d1dea2f2"
+  },
+  "method": {
+    "n_base": 8,
+    "n_edit": 8,
+    "num_qs": 10,
+    "num_min_qs": 2,
+    "chunk_length": 10,
+    "action_dim": 14,
+    "proprio_dim": 14,
+    "num_views": 3,
+    "critic_updates": 20,
+    "edit_scale": 0.2,
+    "discount": 0.99
+  },
+  "base_contract": {
+    "schema_version": 2,
+    "source_head": "e5cb9aa4c767490a66cba3c4e155c76f1193f199",
+    "factory": "rlinf.models.embodiment.openpi.get_model",
+    "model_path": "/home/nvme/team-data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "starting_model_manifest": {
+      "weight_format": "safetensors",
+      "files": {
+        "conversion_manifest.json": {
+          "bytes": 859,
+          "sha256": "495b234831aa42e9352ffa50b7f8555a2509da0ea2ac1937949fa0842e85c11f"
+        },
+        "model.safetensors": {
+          "bytes": 9354045872,
+          "sha256": "a875898babcb06bd767f09b10ebbf8aa550e68ad28ee7e99cb103ccfe65393db"
+        }
+      }
+    },
+    "config_name": "pi05_sidney_robotwin",
+    "norm_stats_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf",
+    "horizon": 50,
+    "chunk": 10,
+    "env_dim": 14,
+    "model_dim": 32,
+    "ode_steps": 10,
+    "training_filter": [
+      "paligemma_with_expert.gemma_expert.",
+      "action_in_proj.",
+      "action_out_proj.",
+      "time_mlp_in.",
+      "time_mlp_out."
+    ],
+    "trainable_names": [
+      "action_in_proj.bias",
+      "action_in_proj.weight",
+      "action_out_proj.bias",
+      "action_out_proj.weight",
+      "paligemma_with_expert.gemma_expert.lm_head.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.0.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.0.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.0.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.1.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.1.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.1.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.10.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.10.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.10.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.11.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.11.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.11.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.12.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.12.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.12.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.13.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.13.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.13.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.14.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.14.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.14.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.15.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.15.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.15.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.16.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.16.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.17.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.17.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.17.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.2.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.2.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.2.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.3.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.3.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.3.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.4.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.4.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.4.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.5.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.5.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.6.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.6.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.6.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.7.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.7.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.7.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.8.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.8.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.8.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.input_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.9.input_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.mlp.down_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.mlp.gate_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.mlp.up_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.post_attention_layernorm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.layers.9.post_attention_layernorm.dense.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.self_attn.k_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.self_attn.o_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.self_attn.q_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.layers.9.self_attn.v_proj.weight",
+      "paligemma_with_expert.gemma_expert.model.norm.dense.bias",
+      "paligemma_with_expert.gemma_expert.model.norm.dense.weight",
+      "time_mlp_in.bias",
+      "time_mlp_in.weight",
+      "time_mlp_out.bias",
+      "time_mlp_out.weight"
+    ],
+    "critic_cameras": [
+      "main",
+      "left_wrist",
+      "right_wrist"
+    ],
+    "runtime_attention": {
+      "torch_version": "2.11.0+cu129",
+      "cuda_version": "12.9",
+      "cudnn_version": 91701,
+      "cudnn_sdp_enabled": false,
+      "flash_sdp_enabled": true,
+      "mem_efficient_sdp_enabled": true,
+      "math_sdp_enabled": true
+    },
+    "optimizer": {
+      "lr": 2.5e-05,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "clip_grad": 1.0
+    }
+  },
+  "trainable_tensor_count": 209,
+  "trainable_parameters_by_dtype": {
+    "torch.float32": 693422112
+  },
+  "phases": {
+    "fresh": {
+      "complete": {
+        "ok": true,
+        "completed_episodes": 1,
+        "total_episode": 1,
+        "real_update_calls": 1,
+        "core_update_calls": 1,
+        "base_updates": 1,
+        "online_success_episodes": 0,
+        "elapsed_seconds": 153.49958729743958,
+        "peak_cuda_bytes": 16086704128,
+        "env_closed": true,
+        "checkpoint": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v2/fresh/checkpoint-0001.pt",
+        "resume_verified": false
+      },
+      "checkpoint": {
+        "path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v2/fresh/checkpoint-0001.pt",
+        "bytes": 6618260983,
+        "hashes": {
+          "base": "9cf4bf7676186705f5282ab6ddae23ea4a5def100d85f7ff003da23a4d228e55",
+          "core": "c659ede39160aa01f68ecd750e419feb981ffbf6b392498a3841e6f5e9a947ea",
+          "replay": "3c3e4ed38cf84c24e53541c089183701b403841b9f6b914ec3eb550868dac18b",
+          "candidate_rng": "86690ffb63dce4eaaa1ebd057c6d1b6e6f8518f403778aeca3ba6b091eddbc7c"
+        },
+        "episode": 1,
+        "core_updates": 1,
+        "base_updates": 1,
+        "finite": true
+      },
+      "events": [
+        {
+          "time": 1790835229.754209,
+          "event": "simulator_binding",
+          "sapien_version": "3.0.1",
+          "device": "cuda:0",
+          "visible_gpu_uuid": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+          "api": "Scene.default_systems.RenderSystem(device)",
+          "scene_source_sha256": "71bb9d43e53d03f9e73730bce85c6d0aa275f60d8894cb715b4114b7e4cb311c",
+          "explicit_systems_preserved": true
+        },
+        {
+          "time": 1790835339.1985667,
+          "event": "episode_finished",
+          "episode": 0,
+          "physical_steps": 200,
+          "chunks": 20,
+          "success": false,
+          "reward": 0.0
+        },
+        {
+          "time": 1790835356.7262647,
+          "event": "base_fm_source",
+          "kind": "verified_success_demo",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-diverse-bottles-aloha-clean50-20260927/data/chunk-000/episode_000000.parquet",
+          "episode_frames": 121,
+          "start": 20,
+          "end": 70,
+          "verified_source": "9dc9299c163db059931898a9f0852098a61155a1",
+          "task_index": 0,
+          "prompt": "Assign one arm to each of the bottle with flat sides and logo and the handheld bottle.",
+          "tasks_sha256": "33c143fe5326b16f9e82241129f5c2085c098b2a6c0d7883232c46dfe6ff4a26",
+          "rgb_frame_shape": [
+            480,
+            640,
+            3
+          ]
+        },
+        {
+          "time": 1790835357.3021214,
+          "event": "real_update",
+          "metrics": {
+            "critic_loss": 0.021158847957849503,
+            "critic_grad_norm": 1.3763043880462646,
+            "q_mean": -0.02076689898967743,
+            "target_mean": -0.137150377035141,
+            "base/base_fm_loss": 0.02650817297399044,
+            "base/base_grad_norm": 0.8053165674209595,
+            "base/base_sampled_parameter_delta_max": 2.5004148483276367e-05,
+            "base/base_changed_parameter_samples": 208.0,
+            "base/base_frozen_parameters_with_grad": 0.0,
+            "base/base_updates": 1.0,
+            "base/fm_callback_called": 1.0,
+            "editor_loss": 134.9625701904297,
+            "editor_grad_norm": 33.77684783935547,
+            "edit_q": -0.012852052226662636,
+            "entropy": -134.94972229003906,
+            "temperature_loss": -64.94972229003906,
+            "temperature": 1.0003000497817993,
+            "edit_norm": 1.532045602798462,
+            "update_calls": 1.0,
+            "critic_steps": 20.0,
+            "editor_steps": 1.0,
+            "temperature_steps": 1.0
+          },
+          "parameter_changes": {
+            "critic": true,
+            "editor": true,
+            "target": true,
+            "temperature": true
+          },
+          "base_prefix_samples_unchanged": true
+        }
+      ]
+    },
+    "resume": {
+      "complete": {
+        "ok": true,
+        "completed_episodes": 1,
+        "total_episode": 2,
+        "real_update_calls": 1,
+        "core_update_calls": 2,
+        "base_updates": 2,
+        "online_success_episodes": 0,
+        "elapsed_seconds": 157.60221529006958,
+        "peak_cuda_bytes": 16087627776,
+        "env_closed": true,
+        "checkpoint": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v2/resume/checkpoint-0002.pt",
+        "resume_verified": true
+      },
+      "checkpoint": {
+        "path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v2/resume/checkpoint-0002.pt",
+        "bytes": 6646009079,
+        "hashes": {
+          "base": "178f7917c3910eea2b898e7c17dd4e8d202374db69048e95367d19589f6f761f",
+          "core": "1762bd18069a33f12fe4f79d20929bdfc2f3ec32d2c4c2c72d8fa0497a20d2c6",
+          "replay": "a77137c8a9364d817c39109c5ea45b5e1e9e5d214a593eca2c77093aaea3fb6e",
+          "candidate_rng": "53aca25781c71905890883d47e29642f51fdfe4dfc4daccdb2d70e56d5f8a3c6"
+        },
+        "episode": 2,
+        "core_updates": 2,
+        "base_updates": 2,
+        "finite": true
+      },
+      "events": [
+        {
+          "time": 1790835536.9752097,
+          "event": "resume_verified",
+          "checkpoint": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v2/fresh/checkpoint-0001.pt",
+          "hashes": {
+            "base": "9cf4bf7676186705f5282ab6ddae23ea4a5def100d85f7ff003da23a4d228e55",
+            "core": "c659ede39160aa01f68ecd750e419feb981ffbf6b392498a3841e6f5e9a947ea",
+            "replay": "3c3e4ed38cf84c24e53541c089183701b403841b9f6b914ec3eb550868dac18b",
+            "candidate_rng": "86690ffb63dce4eaaa1ebd057c6d1b6e6f8518f403778aeca3ba6b091eddbc7c"
+          },
+          "core_updates": 1,
+          "base_updates": 1
+        },
+        {
+          "time": 1790835549.4107194,
+          "event": "simulator_binding",
+          "sapien_version": "3.0.1",
+          "device": "cuda:0",
+          "visible_gpu_uuid": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+          "api": "Scene.default_systems.RenderSystem(device)",
+          "scene_source_sha256": "71bb9d43e53d03f9e73730bce85c6d0aa275f60d8894cb715b4114b7e4cb311c",
+          "explicit_systems_preserved": true
+        },
+        {
+          "time": 1790835662.9802895,
+          "event": "episode_finished",
+          "episode": 1,
+          "physical_steps": 200,
+          "chunks": 20,
+          "success": false,
+          "reward": 0.0
+        },
+        {
+          "time": 1790835682.0624752,
+          "event": "base_fm_source",
+          "kind": "verified_success_demo",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-diverse-bottles-aloha-clean50-20260927/data/chunk-000/episode_000001.parquet",
+          "episode_frames": 117,
+          "start": 20,
+          "end": 70,
+          "verified_source": "9dc9299c163db059931898a9f0852098a61155a1",
+          "task_index": 1,
+          "prompt": "With two arms, catch both the medium bottle with orange lid and the yellow-capped bottle for beverages.",
+          "tasks_sha256": "33c143fe5326b16f9e82241129f5c2085c098b2a6c0d7883232c46dfe6ff4a26",
+          "rgb_frame_shape": [
+            480,
+            640,
+            3
+          ]
+        },
+        {
+          "time": 1790835682.5965025,
+          "event": "real_update",
+          "metrics": {
+            "critic_loss": 0.023518165573477745,
+            "critic_grad_norm": 1.278399109840393,
+            "q_mean": 0.002472995314747095,
+            "target_mean": -0.1359868049621582,
+            "base/base_fm_loss": 0.025655359029769897,
+            "base/base_grad_norm": 0.9495546817779541,
+            "base/base_sampled_parameter_delta_max": 2.500787377357483e-05,
+            "base/base_changed_parameter_samples": 208.0,
+            "base/base_frozen_parameters_with_grad": 0.0,
+            "base/base_updates": 2.0,
+            "base/fm_callback_called": 1.0,
+            "editor_loss": 132.78424072265625,
+            "editor_grad_norm": 32.87228775024414,
+            "edit_q": -0.020819924771785736,
+            "entropy": -132.72360229492188,
+            "temperature_loss": -62.74242401123047,
+            "temperature": 1.0005998611450195,
+            "edit_norm": 1.5099921226501465,
+            "update_calls": 2.0,
+            "critic_steps": 40.0,
+            "editor_steps": 2.0,
+            "temperature_steps": 2.0
+          },
+          "parameter_changes": {
+            "critic": true,
+            "editor": true,
+            "target": true,
+            "temperature": true
+          },
+          "base_prefix_samples_unchanged": true
+        }
+      ]
+    }
+  },
+  "final": {
+    "time": "2026-10-01T14:21:53.444573+08:00",
+    "error": null,
+    "smoke_passed": true,
+    "reserved_gpu_released": true,
+    "rlt_boundary_verified": true,
+    "cleanups": [
+      {
+        "ok": true,
+        "signals": {
+          "term": [],
+          "kill": []
+        },
+        "remaining": [],
+        "phase": "fresh"
+      },
+      {
+        "ok": true,
+        "signals": {
+          "term": [],
+          "kill": []
+        },
+        "remaining": [],
+        "phase": "resume"
+      }
+    ]
+  },
+  "rlt_first_round": {
+    "state": "verified",
+    "time": "2026-10-01T14:31:23.177821+08:00",
+    "status": {
+      "time": "2026-10-01T14:31:09.839240+08:00",
+      "cycle_id": "rlt-cycle",
+      "runs": {
+        "gpu4": {
+          "original_alive": false,
+          "resume_identity": {
+            "pid": 3425996,
+            "uid": 20001,
+            "start": 363977424,
+            "state": "R",
+            "ppid": 3398073,
+            "cmdline_sha256": "98ea87fb3c407e61649167d57355e1a85bc76b6e30c282566f1a16593c5dd036",
+            "namespace": "er-rlt-cycle-g4",
+            "time": "2026-10-01T14:22:19.235975+08:00"
+          },
+          "resume_alive": true,
+          "checkpoint_step": 1500,
+          "latest_metrics": {
+            "env/success_once": {
+              "round": 1501,
+              "value": 0.0
+            },
+            "train/rlt/critic_updates_run": {
+              "round": 1501,
+              "value": 400.0
+            },
+            "train/rlt/global_min_replay_size": {
+              "round": 1501,
+              "value": 109159.0
+            },
+            "train/rlt/ready_for_online": {
+              "round": 1501,
+              "value": 1.0
+            },
+            "train/rlt/update_step": {
+              "round": 1501,
+              "value": 510280.0
+            }
+          },
+          "first_round_verified": true,
+          "finished": null
+        },
+        "gpu5": {
+          "original_alive": false,
+          "resume_identity": {
+            "pid": 3499478,
+            "uid": 20001,
+            "start": 363978580,
+            "state": "R",
+            "ppid": 3398073,
+            "cmdline_sha256": "211b25fda2526f589d22ff097cdb75ca5ee979d5de0fc3aca1d1ef0a11d7eede",
+            "namespace": "er-rlt-cycle-g5",
+            "time": "2026-10-01T14:22:28.130355+08:00"
+          },
+          "resume_alive": true,
+          "checkpoint_step": 1525,
+          "latest_metrics": {
+            "env/success_once": {
+              "round": 1526,
+              "value": 0.5
+            },
+            "train/actor/rlt_dvac_controls/update_step": {
+              "round": 1526,
+              "value": 516542.0
+            },
+            "train/rlt/critic_updates_run": {
+              "round": 1526,
+              "value": 325.0
+            },
+            "train/rlt/global_min_replay_size": {
+              "round": 1526,
+              "value": 110413.0
+            },
+            "train/rlt/ready_for_online": {
+              "round": 1526,
+              "value": 1.0
+            },
+            "train/rlt/update_step": {
+              "round": 1526,
+              "value": 516380.0
+            }
+          },
+          "first_round_verified": true,
+          "finished": null
+        },
+        "gpu6": {
+          "original_alive": false,
+          "resume_identity": {
+            "pid": 3499927,
+            "uid": 20001,
+            "start": 363979680,
+            "state": "R",
+            "ppid": 3398073,
+            "cmdline_sha256": "c4bfc5fc98c44f0869fb6c06fc34ee0f2c1f7fb6e5ad0ae5f63eb004375b10d3",
+            "namespace": "er-rlt-cycle-g6",
+            "time": "2026-10-01T14:22:39.116152+08:00"
+          },
+          "resume_alive": true,
+          "checkpoint_step": 1475,
+          "latest_metrics": {
+            "env/success_once": {
+              "round": 1476,
+              "value": 0.0
+            },
+            "train/rlt/critic_updates_run": {
+              "round": 1476,
+              "value": 400.0
+            },
+            "train/rlt/global_min_replay_size": {
+              "round": 1476,
+              "value": 114382.0
+            },
+            "train/rlt/ready_for_online": {
+              "round": 1476,
+              "value": 1.0
+            },
+            "train/rlt/update_step": {
+              "round": 1476,
+              "value": 536340.0
+            }
+          },
+          "first_round_verified": true,
+          "finished": null
+        },
+        "gpu7": {
+          "original_alive": false,
+          "resume_identity": {
+            "pid": 3501011,
+            "uid": 20001,
+            "start": 363980805,
+            "state": "R",
+            "ppid": 1,
+            "cmdline_sha256": "ad61d8c68deea9b3770a951e2a7ffcc0140d033afcc4748b3fa1ef272d732467",
+            "namespace": "er-rlt-cycle-g7",
+            "time": "2026-10-01T14:22:50.985953+08:00"
+          },
+          "resume_alive": true,
+          "checkpoint_step": 1475,
+          "latest_metrics": {
+            "env/success_once": {
+              "round": 1476,
+              "value": 0.0
+            },
+            "train/actor/rlt_dvac_controls/update_step": {
+              "round": 1476,
+              "value": 533779.0
+            },
+            "train/rlt/critic_updates_run": {
+              "round": 1476,
+              "value": 400.0
+            },
+            "train/rlt/global_min_replay_size": {
+              "round": 1476,
+              "value": 113855.0
+            },
+            "train/rlt/ready_for_online": {
+              "round": 1476,
+              "value": 1.0
+            },
+            "train/rlt/update_step": {
+              "round": 1476,
+              "value": 533580.0
+            }
+          },
+          "first_round_verified": true,
+          "finished": null
+        }
+      },
+      "all_first_rounds_verified": true
+    }
+  },
+  "guardian_return": {
+    "dispatched": {
+      "resumed_dispatched": true,
+      "cycle_id": "rlt-cycle",
+      "first_round_validation_pending": true
+    },
+    "first_round_verified": true,
+    "proof": "/data/chenyiteng/projects/expo-ft-sz2-20261001/rlt-cycle/rlt-first-round.json",
+    "time": "2026-10-01T06:31:24.068746+00:00"
+  },
+  "seed_note": {
+    "fresh_requested": 131330,
+    "resume_requested": 131321,
+    "resume_native_retry_to": 131322
+  },
+  "limits": [
+    "short1env/B4/FM1episodeboundary; notformalB64/parallel/cadence",
+    "expert-only notLoRA; threecamera GNResNet50/noaugmentation/variableK port",
+    "online_success=0/2; FMverifiedsuccessfuldemos",
+    "frozenparameters no-gradient+64-value samples; notallfrozenpostupdatehash",
+    "resumelearningstatehash; notbitwisesimulatorcontinuation"
+  ]
+}

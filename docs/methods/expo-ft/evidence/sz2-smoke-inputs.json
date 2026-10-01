@@ -1,0 +1,153 @@
+{
+  "model": {
+    "model_type": "openpi",
+    "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "precision": null,
+    "num_action_chunks": 10,
+    "action_dim": 14,
+    "is_lora": false,
+    "lora_rank": 32,
+    "use_proprio": true,
+    "num_steps": 4,
+    "add_value_head": false,
+    "openpi": {
+      "config_name": "pi05_sidney_robotwin",
+      "num_images_in_input": 3,
+      "noise_level": 0.5,
+      "action_chunk": 10,
+      "num_steps": 10,
+      "train_expert_only": true,
+      "action_env_dim": 14,
+      "noise_method": "flow_ode",
+      "add_value_head": false,
+      "detach_critic_input": true,
+      "action_horizon": 50,
+      "rtc_enabled": false,
+      "use_rlt": false,
+      "rlt_train_vla": false,
+      "rlt_alpha": 0.0,
+      "rlt_input_dim": 2048,
+      "rlt_embed_dim": 2048,
+      "rlt_prefix_seq_len": 768,
+      "rlt_num_layers": 2,
+      "rlt_num_heads": 8,
+      "rlt_mlp_ratio": 4.0,
+      "rlt_image_only": true,
+      "rlt_use_mask": true,
+      "rlt_action_adapter": "robotwin_aloha_canonical_v1"
+    },
+    "openpi_data": {
+      "repo_id": "SidneyXie/pi05_robotwin",
+      "default_prompt": "pick diverse bottles",
+      "norm_stats_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+    }
+  },
+  "env": {
+    "env_type": "robotwin",
+    "total_num_envs": 1,
+    "auto_reset": false,
+    "ignore_terminations": false,
+    "reward_coef": 1.0,
+    "use_custom_reward": true,
+    "use_rel_reward": false,
+    "center_crop": false,
+    "seed": 0,
+    "group_size": 1,
+    "use_fixed_reset_state_ids": false,
+    "max_steps_per_rollout_epoch": 200,
+    "max_episode_steps": 200,
+    "is_eval": false,
+    "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+    "seeds_path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-six-tasks-sz2-20260927/rlinf/envs/robotwin/seeds/pick_diverse_bottles_train_rlt_20260927.json",
+    "video_cfg": {
+      "save_video": false,
+      "info_on_video": true,
+      "video_base_dir": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v1/video"
+    },
+    "enable_offload": false,
+    "task_config": {
+      "task_name": "pick_diverse_bottles",
+      "step_lim": 200,
+      "planner_backend": "mplib",
+      "render_freq": 0,
+      "episode_num": 100,
+      "use_seed": false,
+      "save_freq": 15,
+      "embodiment": [
+        "aloha-agilex"
+      ],
+      "language_num": 100,
+      "domain_randomization": {
+        "random_background": false,
+        "cluttered_table": false,
+        "clean_background_rate": 1,
+        "random_head_camera_dis": 0,
+        "random_table_height": 0,
+        "random_light": false,
+        "crazy_random_light_rate": 0
+      },
+      "camera": {
+        "head_camera_type": "D435",
+        "wrist_camera_type": "D435",
+        "collect_head_camera": true,
+        "collect_wrist_camera": true
+      },
+      "data_type": {
+        "rgb": true,
+        "third_view": false,
+        "depth": false,
+        "pointcloud": false,
+        "observer": false,
+        "endpose": false,
+        "qpos": true,
+        "mesh_segmentation": false,
+        "actor_segmentation": false
+      },
+      "pcd_down_sample_num": 1024,
+      "pcd_crop": true,
+      "save_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/runs/smoke-v1/env-data",
+      "clear_cache_freq": 1,
+      "collect_data": true,
+      "eval_video_log": true
+    },
+    "rollout_epoch": 1
+  },
+  "demo_path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-diverse-bottles-aloha-clean50-20260927",
+  "source_head": "e5cb9aa4c767490a66cba3c4e155c76f1193f199",
+  "physical_gpu": 4,
+  "core": {
+    "n_base": 8,
+    "n_edit": 8,
+    "num_qs": 10,
+    "num_min_qs": 2,
+    "chunk_length": 10,
+    "action_dim": 14,
+    "proprio_dim": 14,
+    "num_views": 3,
+    "critic_updates": 20,
+    "edit_scale": 0.2,
+    "discount": 0.99
+  },
+  "smoke": {
+    "batch_size": 4,
+    "base_batch_size": 1,
+    "episodes": 1,
+    "update_calls": 1,
+    "base_lr": 2.5e-05,
+    "seed": 42
+  },
+  "base_parameters": "action_expert_and_action_time_projections; frozen_vision_language; FP32 master/BF16 compute",
+  "rlt_policy": "EXPO priority; original4-7 remains if unused; exact return if borrowed",
+  "norm_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf",
+  "port_source_manifest": {
+    "rlinf/algorithms/expo_ft/__init__.py": "bdf317b0a9eb2ab755a4559cec2223800dada2b9121684dfddcaba653d3641fc",
+    "rlinf/algorithms/expo_ft/core.py": "d4d4654db5a69c72189db7163283523bffcdb5c8ba65257d25159e8377afab57",
+    "rlinf/algorithms/expo_ft/replay.py": "d427f2327f4e6f843b3820cfc744ff467d56693966476e2c1265d148cf906e26",
+    "rlinf/algorithms/expo_ft/backend.py": "143754bec94a165ea4dadbb02fbf15a060af42350acc36e51312af036011047c",
+    "examples/embodiment/train_expo_ft.py": "e768dfae52d2df07c76385d9f5169499b401230c936431199b75f182980b3122",
+    "tools/expo_smoke_owner.py": "d7fc1f670b68d3e559d55d0fef5949101f72d955f187f08008fabc9b40cb5847",
+    "tools/rlt_guardian.py": "0cdca8538962cfb774f2ac05de9312d9b052d8f4b9a264214bedf8d65998a546",
+    "tools/expo_process.py": "a23efa918d4808d87120a0ee900c2fbbabc10d5f651b7200c836959a71c067e3",
+    "tests/test_expo_core.py": "4e7bb36995a1abca98a5bc6d21a4e1f538fe1c602acf094bac4367a6d1dea2f2"
+  }
+}
