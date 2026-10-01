@@ -8,9 +8,11 @@
 
 固定评估继承Control的pick_diverse_bottles20种子名单、200动作/C10、4环境×5组、success_once/ignore_terminations语义；起点raw π0.5单候选，之后每25在线episode及结束评EXPO策略。EXPO的25episode不能声称与RLT25采样轮采集量相同。eval不进replay、warmup、20k或40动作计数。既有seed表来自其他任务表改键且expert_verified=false，沿用可复现名单，不称本任务专家筛选。
 
+名单及当前`rows.seed`记录的是请求seed。原生Control在物体不稳定时递增trial_seed后重试，初评已出现100187524→100187526、100137537→100137538、100187558→100187559；原始reset warning保留于`driver.log`，不把请求seed说成实际场景seed，也不额外筛选专家种子。
+
 资源/输出计划：`/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-20261001`；正式driver `examples/embodiment/train_expo_formal.py --inputs …/inputs.json --run …/run --max-physical-actions 20000`。独立owner精确清理当前四RLT命名空间及拥有的后代，复用已冻结完整四CP；共享Ray/其他用户保持。EXPO结束/异常/心跳失联后仅清理本EXPO进程，恢复四RLT及首轮回执。启动前固定源码、输入和种子SHA，停止条件为预算完成、非finite、资源身份/配置漂移或进程故障。
 
-现场：2026-10-01已启动正式owner（PID211750）和driver（PID314046），四个原RLT driver/命名空间已停止且4–7卡释放。新cycle保留已验证完整CP1575/1600/1550/1550作为故障恢复点。服务器CPU的11项cadence＋10项driver检查通过；owner独立持锁，聊天/SSH断开不终止训练。当前先初始化原基座，随后进行20种子起点评估；在线动作和learner call均为0，不能把smoke更新计入正式进度。
+现场：2026-10-01已启动正式owner（PID211750）和driver（PID314046），四个原RLT driver/命名空间已停止且4–7卡释放。新cycle保留已验证完整CP1575/1600/1550/1550作为故障恢复点。服务器CPU的11项cadence＋10项driver检查通过；owner独立持锁，聊天/SSH断开不终止训练。原基座初始化完成，20种子起点评估正在实际逐动作推进、心跳正常；在线动作和learner call均为0，不能把smoke更新计入正式进度。
 
 启动命令含`--enable-evaluation`，输入SHA为`c1e65e1964a9b9ab7994f207d09736ec03db03fae0d231bd6512cdc424b6f384`。owner状态`current.json`、driver状态`run/status.json`，失败`run/failure.json`，最终`run/complete.json`；每call及episode边界保存完整状态。
 

@@ -36,4 +36,4 @@
 
 先读[综述](EXPO_FT_REVIEW_20261001.md)，按问题再到[论文笔记](RESEARCH_PAPER_NOTES_20261001.md)、[开源/运行审计](CODE_AUDIT_20261001.md)、[RLinf映射](RLINF_MAPPING_NOTES_20261001.md)。后续实施沿当前已跑通的π0.5模型/动作合同，仅在独立source/config/output/namespace中接方法；运行前列配置差异、命令、资源和停止条件。
 
-实现交付分支：[codex/sz2-expo-ft-20261001](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz2-expo-ft-20261001/docs/methods/expo-ft)。仅源码、方法依据和轻量验收回执；server root `/data/chenyiteng/projects/expo-ft-sz2-20261001` 下保留大checkpoint及实际部署合同。
+当前正式分支：[codex/sz2-expo-ft-formal-20261001](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz2-expo-ft-formal-20261001/docs/methods/expo-ft)，四卡B64源码、完整恢复/正式启动轻量回执已推送并校验远端一致。旧单卡交付分支：[codex/sz2-expo-ft-20261001](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz2-expo-ft-20261001/docs/methods/expo-ft)。server root `/data/chenyiteng/projects/expo-ft-sz2-20261001` 下保留大checkpoint及实际部署合同。
