@@ -1,0 +1,191 @@
+{
+  "host": "sz1",
+  "time": 1790949551.430273,
+  "source_head": "55c1399a50826d61e8735a64daa2f1742f1b824f",
+  "all_formal_N": 8,
+  "schedule": {
+    "algorithm.rlt_schedule.warmup_min_size": 20000,
+    "algorithm.rlt_schedule.warmup_post_collect_updates": 30000,
+    "algorithm.rlt_schedule.max_updates_per_train_step": 1600,
+    "algorithm.actor_weight_schedule.warmup_updates": 20000,
+    "algorithm.actor_weight_schedule.ramp_updates": 50000
+  },
+  "stage1_updates": 2000,
+  "formal_rounds": 3000,
+  "reviews": [
+    {
+      "task": "place_fan",
+      "role": "stage1-full",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_phone_stand-stage1-full-n8-2000-20260928-sz1/runtime/resolved.yaml",
+      "source_sha256": "9c74e9d73a4b9cb48016e1ea5d7ecd506f2ccfa069522569b49857601aac0ab0",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-stage1-full-n8full-2000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "11648dc9a309ddb486d36ad42cf8392bfe4f3036576d81753d4aeb3600ad794f",
+      "approved_delta": {
+        "actor.model.openpi_data.default_prompt": [
+          "place phone stand",
+          "place fan"
+        ],
+        "data.train_data_paths[0].dataset_path": [
+          "/data/chenyiteng/datasets/robotwin2/canonical/place-phone-stand-aloha-clean50-20260928",
+          "/data/chenyiteng/datasets/robotwin2/canonical/place-fan-aloha-clean50-20261002"
+        ]
+      }
+    },
+    {
+      "task": "place_fan",
+      "role": "clean",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_phone_stand-clean-n8full-3000-20260929-sz1-v1/runtime/resolved.yaml",
+      "source_sha256": "6382d29d8f34cbe149d0c2cdaf16a730228d9e442902b56dde6b9c30064b9525",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-clean-n8full-3000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "999b4c67406cf22843545712faf934468f3a61d7acedeb21834fb71a4caa29ff",
+      "approved_delta": {
+        "env.train.task_config.task_name": [
+          "place_phone_stand",
+          "place_fan"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_phone_stand_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_fan_eval_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "place phone stand",
+          "place fan"
+        ],
+        "env.eval.task_config.task_name": [
+          "place_phone_stand",
+          "place_fan"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_phone_stand_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_fan_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_phone_stand-stage1-full-n8-2000-20260928-sz1/pi05-rlt-place_phone_stand-stage1-full-n8-2000-20260928-sz1/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-stage1-full-n8full-2000-20261002-sz1/pi05-rlt-place_fan-stage1-full-n8full-2000-20261002-sz1/checkpoints/global_step_2000"
+        ]
+      }
+    },
+    {
+      "task": "place_fan",
+      "role": "combo",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_phone_stand-combo-n8full-3000-20260929-sz1-v1/runtime/resolved.yaml",
+      "source_sha256": "c6caf7c7840e6ab1056c0f845d8f658b367d9646dec996b6b8f76a55a9cac3c1",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "8f9a3c934d9661424bd60e6c50a78691cc2501aa607f6f39c66e268af31115a2",
+      "approved_delta": {
+        "env.train.task_config.task_name": [
+          "place_phone_stand",
+          "place_fan"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_phone_stand_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_fan_eval_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "place phone stand",
+          "place fan"
+        ],
+        "env.eval.task_config.task_name": [
+          "place_phone_stand",
+          "place_fan"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_phone_stand_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/place_fan_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_phone_stand-stage1-full-n8-2000-20260928-sz1/pi05-rlt-place_phone_stand-stage1-full-n8-2000-20260928-sz1/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-stage1-full-n8full-2000-20261002-sz1/pi05-rlt-place_fan-stage1-full-n8full-2000-20261002-sz1/checkpoints/global_step_2000"
+        ]
+      }
+    },
+    {
+      "task": "click_bell",
+      "role": "stage1-full",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-pick_dual_bottles-stage1-full-n8-2000-20260928-sz1/runtime/resolved.yaml",
+      "source_sha256": "d564946e8ec319ea2fbeb12722cb7ce7162c92dc1e140b493d823bd87cd7ee17",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-stage1-full-n8full-2000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "9117beea6ec3633c41039ef3de2db2c1bf065901b537a6dc8cdfb64a89bd1085",
+      "approved_delta": {
+        "actor.model.openpi_data.default_prompt": [
+          "pick dual bottles",
+          "click bell"
+        ],
+        "data.train_data_paths[0].dataset_path": [
+          "/data/chenyiteng/datasets/robotwin2/canonical/pick-dual-bottles-aloha-clean50-20260928",
+          "/data/chenyiteng/datasets/robotwin2/canonical/click-bell-aloha-clean50-20261002"
+        ]
+      }
+    },
+    {
+      "task": "click_bell",
+      "role": "clean",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-pick_dual_bottles-clean-n8full-3000-20260929-sz1-v1-after-dojo-rlt-cycle-sz1-dojo-continuation-20261002-v1-gpu6-eed476d82b03/runtime/resolved.yaml",
+      "source_sha256": "a438c841a0deb09cf7fea21912bdfd388dcf23027faad0199135cb8d5a91cef6",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "688e23a5ee812a83f6875dde013223b2096a0cb72b78e70e7367335f102057dd",
+      "approved_delta": {
+        "env.train.task_config.task_name": [
+          "pick_dual_bottles",
+          "click_bell"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/pick_dual_bottles_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/click_bell_eval_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "pick dual bottles",
+          "click bell"
+        ],
+        "env.eval.task_config.task_name": [
+          "pick_dual_bottles",
+          "click_bell"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/pick_dual_bottles_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/click_bell_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-pick_dual_bottles-stage1-full-n8-2000-20260928-sz1/pi05-rlt-pick_dual_bottles-stage1-full-n8-2000-20260928-sz1/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-stage1-full-n8full-2000-20261002-sz1/pi05-rlt-click_bell-stage1-full-n8full-2000-20261002-sz1/checkpoints/global_step_2000"
+        ]
+      }
+    },
+    {
+      "task": "click_bell",
+      "role": "combo",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-pick_dual_bottles-combo-n8full-3000-20260929-sz1-v1-after-dojo-rlt-cycle-pi05-yamlfix-gpu7-1eade83c4819/runtime/resolved.yaml",
+      "source_sha256": "bcd114ef242118f4b1651256073471db151e2d0a80fac00e5930c25aec97a406",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-combo-n8full-3000-20261002-sz1/runtime/resolved.yaml",
+      "sha256": "05911ced4227de7a235994ea5c9f06e18a95a0ef344bafd73e451ed46dbd6728",
+      "approved_delta": {
+        "env.train.task_config.task_name": [
+          "pick_dual_bottles",
+          "click_bell"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/pick_dual_bottles_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/click_bell_eval_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "pick dual bottles",
+          "click bell"
+        ],
+        "env.eval.task_config.task_name": [
+          "pick_dual_bottles",
+          "click_bell"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/pick_dual_bottles_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz1-20261002/rlinf/envs/robotwin/seeds/click_bell_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-pick_dual_bottles-stage1-full-n8-2000-20260928-sz1/pi05-rlt-pick_dual_bottles-stage1-full-n8-2000-20260928-sz1/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-stage1-full-n8full-2000-20261002-sz1/pi05-rlt-click_bell-stage1-full-n8full-2000-20261002-sz1/checkpoints/global_step_2000"
+        ]
+      }
+    }
+  ],
+  "launched": false,
+  "deleted_files": 0
+}
