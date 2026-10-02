@@ -1,5 +1,7 @@
 # SZ2 EXPO 换拨开关任务 · 2026-10-01
 
+2026-10-02后续：本页为原始换任务合同。初评9/20=45%已完成，随后环境析构SIGSEGV，尚无在线动作/学习。当前修复和完整恢复转到[原生关闭修复](NATIVE_REPAIR_20261002.md)，新scope `formal-turn-switch-repair-20261002`，原方法/任务/预算保持；不要重放本页旧owner或stop/resume。
+
 用户授权：挑官方400步、论文π0.5约60–70%、最好已有成功训练历史的任务，替换瓶子EXPO正式训练。
 
 选 `turn_switch`。RoboTwin [官方step limit](https://raw.githubusercontent.com/RoboTwin-Platform/RoboTwin/main/env_cfg/task_config/_eval_step_limit.yml)为400；[Fast-WAM v2 Table3](https://arxiv.org/html/2603.16666v2#A1.T3)的π0.5 Clean62%/Randomized54%。此前本工作区[π0.5 RLT成功基线](../../server-admin/PI05_RLT_TURN_SWITCH_SUCCESSFUL_BASELINE_20260925.md)末5固定评估均66%、末次65%、最高85%。这些数值用于选任务；当前Sidney原基座在200动作/C10下的实际起点须重新评估，不能把论文分数当本次结果。
@@ -28,3 +30,5 @@
 核心算法、模型、replay与driver源码保持原字节；仅owner/resources的scope和前轮cycle路由修改。服务器21项现有CPU检查通过，50条4863帧实际demo读取与H50/14D采样通过，CUDA未初始化。
 
 2026-10-02 00:06:50 owner839628启动，00:07:35 driver942043已进入原始π0.5加载。新cycle确认四RLT driver/namespace全部停止、4–7释放；完整CP1575/1600/1550/1550保留作退出后的恢复点。输入SHA `b81b67dcf5b7c21cab9579b81aefc35a18bc52f29c108fbb5be1455899e58ded`。独立owner持续监督，不依赖工作SSH。
+
+00:13只读复核：`EXPO_RUNNING`、`evaluation_started`，首组4环境已实际推进每环境110动作，心跳约10秒、无failure。起点评估尚未完成，在线训练动作与学习更新仍为0；初评后自动进入10回合warmup再学习。源码/配置/轻量回执已推 `codex/sz2-expo-ft-turn-switch-20261001@67cff0224a55a3387bc09a6ec92484da55bca901`，远端SHA一致。动态原始回执在E盘 `expo-task-switch-20261001-2320/sz2/new-status2.out`；本段是现场后续记录，未计入该Git提交。

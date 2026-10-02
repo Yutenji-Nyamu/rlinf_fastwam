@@ -1,6 +1,8 @@
 # EXPO-FT 专题上下文
 
-最新任务：SZ2 `turn_switch` EXPO正式已启动，物理4–7、原正式配方/20k真实动作保持。独立scope `formal-turn-switch-20261001`，owner839628/driver942043；RLT已精准暂停，仅EXPO退出后恢复。见[换任务运行](TURN_SWITCH_FORMAL_20261001.md)。以下瓶子正式与smoke为保留历史。
+当前路由（2026-10-02 12:40）：旧开关初评9/20=45%完成后发生SIGSEGV，零在线动作/零学习。已在不加载policy的N4原生复现中重现；补丁先shutdown线程池再释放场景，三轮N4→N1共六次关闭全部通过。新scope `formal-turn-switch-repair-20261002`、owner197649/start371818311、driver2892740，物理4–7正式完整恢复已验；首回合59真实动作成功并保存checkpoint，第二回合warmup进行中，尚无学习。原配方、20k预算和初评保持。四RLT已精准退出，仅本owner在EXPO结束/故障且GPU释放后续原累计3000。当前唯一入口[修复运行](NATIVE_REPAIR_20261002.md)，源码分支`codex/sz2-expo-ft-repair-20261002`。下面旧scope启动记录保留作历史，不重放旧owner。
+
+最新任务：2026-10-02 SZ2 `turn_switch` EXPO正式已启动，物理4–7、原正式配方/20k真实动作保持。独立scope `formal-turn-switch-20261001`，owner839628/driver942043；四RLT已精准暂停，仅EXPO退出后恢复。见[换任务运行](TURN_SWITCH_FORMAL_20261001.md)。已推[codex/sz2-expo-ft-turn-switch-20261001](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz2-expo-ft-turn-switch-20261001/docs/methods/expo-ft) @67cff0224a55a3387bc09a6ec92484da55bca901，远端SHA核同。以下瓶子正式与smoke为保留历史。
 
 更新：2026-10-01。深圳2四卡B64完整smoke和独立进程恢复已PASS，Q20、FM/editor/temp各1，action expert及小组件实际更新、冻结prefix无梯度。一次call207秒，四卡采样显存峰值约45.0/37.4/37.4/37.4GiB；详见[规模smoke](FORMAL_SCALE_SMOKE_20261001.md)。正式20k真实动作含10回合warmup已启动，原四RLT清理完成，仅EXPO退出后恢复。正式路由与现场进度见[正式运行](FORMAL_RUN_20261001.md)。此前单卡小batch smoke及14:31归还回执仍保留在[运行包](SMOKE_PACKET_20261001.md)，不能混作本次正式结果。
 

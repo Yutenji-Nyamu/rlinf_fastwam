@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 from omegaconf import OmegaConf,open_dict
 from .backend import create_robotwin_env
+from .lifecycle import close_robotwin_env
 
 def _atomic(path,data):
  temporary=path.with_name(path.name+'.tmp-'+str(os.getpid()))
@@ -79,10 +80,15 @@ def evaluate(backend,learner,eval_config,run,seed_path,base_only=False,heartbeat
    rows.extend({'seed':seed,'success_once':bool(ok),'physical_actions':200} for seed,ok in zip(selected_seeds,success.tolist()))
    event('group_finished',group=group,rows=rows[-4:]);beat()
  finally:
-  if env is not None:env.offload()
+  if env is not None:
+   event('environment_close_started')
+   close_robotwin_env(env)
+   event('environment_close_finished')
   beat()
  result={'ok':True,'contract':contract,'rows':rows,'successes':sum(row['success_once'] for row in rows),
   'episodes':20,'success_rate':sum(row['success_once'] for row in rows)/20,
   'evaluation_physical_actions':4000,'training_budgeted_actions':0,'elapsed_seconds':time.time()-started,
   'attempt':str(attempt),'env_closed':True,'metric':'Control eval/success_once; term intentionally ignored'}
- _atomic(complete,result);return result
+ _atomic(complete,result)
+ event('evaluation_function_returning')
+ return result

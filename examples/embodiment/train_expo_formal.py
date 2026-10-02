@@ -29,6 +29,7 @@ from rlinf.algorithms.expo_ft.backend import (
 from rlinf.algorithms.expo_ft.core import ExpoConfig, ExpoLearner
 from rlinf.algorithms.expo_ft.formal_cadence import FormalCadence
 from rlinf.algorithms.expo_ft.formal_replay import FormalReplay
+from rlinf.algorithms.expo_ft.lifecycle import close_robotwin_env
 
 
 VERSION = 4
@@ -270,7 +271,7 @@ def main():
         nonlocal env
         if env is not None:
             closing = env; env = None
-            closing.offload()
+            close_robotwin_env(closing)
 
     def run_evaluation(label, *, base_only=False):
         # The helper owns/offloads its four-env vector. Never overlap vectors.
@@ -280,10 +281,14 @@ def main():
         saved_selection = list(learner.last_selection_q_indices)
         saved_bootstrap = list(learner.last_bootstrap_q_indices)
         try:
+            log(run, 'evaluation_native_enter', label=label)
             result = evaluate(backend, learner, evaluation['config'], run / 'evaluations' / label,
                               evaluation['seed_path'], base_only=base_only, heartbeat=heartbeat)
+            log(run, 'evaluation_native_returned', label=label)
         finally:
+            log(run, 'evaluation_rng_restore_started', label=label)
             restore_rng(saved_rng, generator); learner.generator.set_state(owned_rng.cpu())
+            log(run, 'evaluation_rng_restore_finished', label=label)
             learner.last_selection_q_indices = saved_selection
             learner.last_bootstrap_q_indices = saved_bootstrap
         if isinstance(result, (str, Path)):
