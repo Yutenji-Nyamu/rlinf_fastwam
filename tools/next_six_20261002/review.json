@@ -1,0 +1,191 @@
+{
+  "host": "sz3",
+  "time": 1790949553.9658837,
+  "source_head": "56efffa988ab0001710af1199ec8f0d66063a434",
+  "all_formal_N": 8,
+  "schedule": {
+    "algorithm.rlt_schedule.warmup_min_size": 20000,
+    "algorithm.rlt_schedule.warmup_post_collect_updates": 30000,
+    "algorithm.rlt_schedule.max_updates_per_train_step": 1600,
+    "algorithm.actor_weight_schedule.warmup_updates": 20000,
+    "algorithm.actor_weight_schedule.ramp_updates": 50000
+  },
+  "stage1_updates": 2000,
+  "formal_rounds": 3000,
+  "reviews": [
+    {
+      "task": "beat_block_hammer",
+      "role": "stage1-full",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-move_pillbottle_pad-stage1-full-n8-2000-20260928-sz3/runtime/resolved.yaml",
+      "source_sha256": "0f2649bd05b1a68acb0bfe0f35f2f0c27e4bcec9cd9e9d2bb33765415ddc4014",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-beat_block_hammer-stage1-full-n8full-2000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "a8ec68e123e0bdbe92c69efd54b02126edd373583b00cd53abc49a3c920c8ffa",
+      "approved_delta": {
+        "data.train_data_paths[0].dataset_path": [
+          "/data/chenyiteng/datasets/robotwin2/canonical/move-pillbottle-pad-aloha-clean50-20260928",
+          "/data/chenyiteng/datasets/robotwin2/canonical/beat-block-hammer-aloha-clean50-20261002"
+        ],
+        "actor.model.openpi_data.default_prompt": [
+          "move pillbottle pad",
+          "beat block hammer"
+        ]
+      }
+    },
+    {
+      "task": "beat_block_hammer",
+      "role": "clean",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-move_pillbottle_pad-clean-n8full-3000-20260929-sz3-v1-after-dojo-rlt-cycle-sz3-wan-goal-20261001-wake-v3-1184f1718d82/runtime/resolved.yaml",
+      "source_sha256": "374da1c7daabf57d149b86f8fd84bc0c27d316e840601ace1e1be550d44d7e10",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-beat_block_hammer-clean-n8full-3000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "ba883cfa3ae430a5b4919c4d91b5c8c12c9a5315968a55dcf3ce21aa7fe540c0",
+      "approved_delta": {
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-move_pillbottle_pad-stage1-full-n8-2000-20260928-sz3/pi05-rlt-move_pillbottle_pad-stage1-full-n8-2000-20260928-sz3/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-beat_block_hammer-stage1-full-n8full-2000-20261002-sz3/pi05-rlt-beat_block_hammer-stage1-full-n8full-2000-20261002-sz3/checkpoints/global_step_2000"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/move_pillbottle_pad_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/beat_block_hammer_eval_rlt_20261002.json"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/move_pillbottle_pad_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/beat_block_hammer_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "move pillbottle pad",
+          "beat block hammer"
+        ],
+        "env.eval.task_config.task_name": [
+          "move_pillbottle_pad",
+          "beat_block_hammer"
+        ],
+        "env.train.task_config.task_name": [
+          "move_pillbottle_pad",
+          "beat_block_hammer"
+        ]
+      }
+    },
+    {
+      "task": "beat_block_hammer",
+      "role": "combo",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-move_pillbottle_pad-combo-n8full-3000-20260929-sz3-v1-after-dojo-rlt-cycle-sz3-wan-goal-20261001-wake-v3-8b98a030fcb5/runtime/resolved.yaml",
+      "source_sha256": "33aa2bbb2692035035af5aa5bd28d891656b86c821a548367456669b8ddd5309",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-beat_block_hammer-combo-n8full-3000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "717baed17742b00582fdf72817e23607d208283ec4c5ac10333cacda7dee5f15",
+      "approved_delta": {
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-move_pillbottle_pad-stage1-full-n8-2000-20260928-sz3/pi05-rlt-move_pillbottle_pad-stage1-full-n8-2000-20260928-sz3/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-beat_block_hammer-stage1-full-n8full-2000-20261002-sz3/pi05-rlt-beat_block_hammer-stage1-full-n8full-2000-20261002-sz3/checkpoints/global_step_2000"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/move_pillbottle_pad_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/beat_block_hammer_eval_rlt_20261002.json"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/move_pillbottle_pad_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/beat_block_hammer_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "move pillbottle pad",
+          "beat block hammer"
+        ],
+        "env.eval.task_config.task_name": [
+          "move_pillbottle_pad",
+          "beat_block_hammer"
+        ],
+        "env.train.task_config.task_name": [
+          "move_pillbottle_pad",
+          "beat_block_hammer"
+        ]
+      }
+    },
+    {
+      "task": "lift_pot",
+      "role": "stage1-full",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-rotate_qrcode-stage1-full-n8-2000-20260928-sz3/runtime/resolved.yaml",
+      "source_sha256": "3263283374c518cbe26cff9aad5c1f507de4a24cc99e82de54550bfc4234fa50",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-lift_pot-stage1-full-n8full-2000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "455c2150bb7f1b831f36d83da80e34aac33c3416e9d4c7c7b0225184ee9043cb",
+      "approved_delta": {
+        "data.train_data_paths[0].dataset_path": [
+          "/data/chenyiteng/datasets/robotwin2/canonical/rotate-qrcode-aloha-clean50-20260928",
+          "/data/chenyiteng/datasets/robotwin2/canonical/lift-pot-aloha-clean50-20261002"
+        ],
+        "actor.model.openpi_data.default_prompt": [
+          "rotate qrcode",
+          "lift pot"
+        ]
+      }
+    },
+    {
+      "task": "lift_pot",
+      "role": "clean",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-rotate_qrcode-clean-n8full-3000-20260929-sz3-v1-after-dojo-rlt-cycle-sz3-wan-goal-20261001-wake-v3-80abd670aa38/runtime/resolved.yaml",
+      "source_sha256": "31f6fe62122b7fe8b2cdf48ecf70e32904e2df27b610bc461e018274d1a4e526",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-lift_pot-clean-n8full-3000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "feab08fbff3657fe0c86c945fe028efe548a0e35a47c8f2abc097ddb86b3ba35",
+      "approved_delta": {
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-rotate_qrcode-stage1-full-n8-2000-20260928-sz3/pi05-rlt-rotate_qrcode-stage1-full-n8-2000-20260928-sz3/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-lift_pot-stage1-full-n8full-2000-20261002-sz3/pi05-rlt-lift_pot-stage1-full-n8full-2000-20261002-sz3/checkpoints/global_step_2000"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/rotate_qrcode_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/lift_pot_eval_rlt_20261002.json"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/rotate_qrcode_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/lift_pot_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "rotate qrcode",
+          "lift pot"
+        ],
+        "env.eval.task_config.task_name": [
+          "rotate_qrcode",
+          "lift_pot"
+        ],
+        "env.train.task_config.task_name": [
+          "rotate_qrcode",
+          "lift_pot"
+        ]
+      }
+    },
+    {
+      "task": "lift_pot",
+      "role": "combo",
+      "source": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-rotate_qrcode-combo-n8full-3000-20260929-sz3-v1-after-dojo-rlt-cycle-sz3-wan-goal-20261001-wake-v3-7310b5344edd/runtime/resolved.yaml",
+      "source_sha256": "b817f72f759eff2918a3e1e984d4e00ee1337eaa7c40ab758b9319b0f67dfe72",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-lift_pot-combo-n8full-3000-20261002-sz3/runtime/resolved.yaml",
+      "sha256": "eabac74b400b715ea1f98c1016f3eb48edb9fadd33ac5047ff2ac5dddf3e7dc5",
+      "approved_delta": {
+        "rollout.rlt_feature_model.model_path": [
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-rotate_qrcode-stage1-full-n8-2000-20260928-sz3/pi05-rlt-rotate_qrcode-stage1-full-n8-2000-20260928-sz3/checkpoints/global_step_2000",
+          "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-lift_pot-stage1-full-n8full-2000-20261002-sz3/pi05-rlt-lift_pot-stage1-full-n8full-2000-20261002-sz3/checkpoints/global_step_2000"
+        ],
+        "env.eval.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/rotate_qrcode_eval_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/lift_pot_eval_rlt_20261002.json"
+        ],
+        "env.train.seeds_path": [
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/rotate_qrcode_train_rlt_20260928.json",
+          "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz3-20261002/rlinf/envs/robotwin/seeds/lift_pot_train_rlt_20261002.json"
+        ],
+        "rollout.rlt_feature_model.openpi_data.default_prompt": [
+          "rotate qrcode",
+          "lift pot"
+        ],
+        "env.eval.task_config.task_name": [
+          "rotate_qrcode",
+          "lift_pot"
+        ],
+        "env.train.task_config.task_name": [
+          "rotate_qrcode",
+          "lift_pot"
+        ]
+      }
+    }
+  ],
+  "launched": false,
+  "deleted_files": 0
+}
