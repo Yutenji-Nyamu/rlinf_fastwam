@@ -1,6 +1,6 @@
 # EXPO-FT 专题上下文
 
-2026-10-03评估频率变更进行中：用户授权25→10，保存方式及训练配方保持。首次交接在GPU释放门禁中止，75回合/11677动作/241调用的完整checkpoint保留；原owner已归还RLT并核四卡首轮。新cycle准备需等待归还run的新完整checkpoint，尚未验证新EXPO恢复成功。当前变更路由见[部署记录](EVAL10_DEPLOYMENT_20261003.md)，解释见[熵/并行机制](ENTROPY_PARALLEL_20261003.md)。以下13:02与更早记录为历史截点。
+2026-10-03 17:02评估频率25→10已迁移、完整恢复与首个新学习调用保存已验：四条RLT新CP1875/1900/1850/1850严格验收后精确借出GPU4–7，两条已完成Stage1的等待队列改绑新cycle，未重跑Stage1。唯一owner4086166/start381843377、driver1089953/start382155251；16:55:37完整恢复75回合/11677动作/241调用，17:01:59完成call242，17:02:37提交finite checkpoint（core/base242、pending4/carry10），call243执行中。评估输入10/20及17项源码核同；熵设置、采集N1、保存方式与训练配方保持。现场当前路由以原训练目录`active-continuation.json`指向的`eval10-continuation-20261003/current.json`为准，旧current/final属于已结束的前cycle。首包已推远端`codex/sz2-expo-ft-repair-20261002` [1386f943](https://github.com/Yutenji-Nyamu/rlinf_fastwam/commit/1386f943ab388bdcdc5bf6c16d7557627cfb30bc)；恢复证据随本提交保存，最终对象由所在提交SHA及发布回执标识。详见[部署记录](EVAL10_DEPLOYMENT_20261003.md)与[恢复回执](evidence/20261003-eval10/continuation-resume.json)，解释见[熵/并行机制](ENTROPY_PARALLEL_20261003.md)。以下13:02与更早记录为历史截点。
 
 历史只读审计（2026-10-03 13:02）：同一修复scope仍在运行，69回合、10842/20000真实动作、223次学习调用；固定评估45%→50%→30%，暂无稳定增益。5/10/15/20回合滑动曲线、采样/评估/保存解释、官方差异及GitHub同步缺口见[完整审计](AUDIT_20261003.md)。当前运行17份锁定源码已与修复分支`0bd979f`逐文件核同；在该13:02截点，此次新增审计/图表与CONTEXT更新仍仅本地，当时未变更运行参数或推送。后续状态见页首路由。
 

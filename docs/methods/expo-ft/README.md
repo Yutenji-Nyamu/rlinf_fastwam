@@ -1,6 +1,8 @@
 # EXPO-FT 调研与原生移植
 
-本轮入口：[熵与四卡/单环境机制](ENTROPY_PARALLEL_20261003.md) · [eval25→10部署记录（恢复验证待补）](EVAL10_DEPLOYMENT_20261003.md)。
+本轮入口：[熵与四卡/单环境机制](ENTROPY_PARALLEL_20261003.md) · [eval25→10部署记录（17:02恢复与首调用保存已验）](EVAL10_DEPLOYMENT_20261003.md)。
+
+源码、机制讲解和标时图表已首推至[`codex/sz2-expo-ft-repair-20261002` @1386f943](https://github.com/Yutenji-Nyamu/rlinf_fastwam/commit/1386f943ab388bdcdc5bf6c16d7557627cfb30bc)。17:02现场已完成四RLT借卡、两队列改绑、eval10合同迁移与完整恢复；call242已完成并保存有限checkpoint，call243执行中。恢复证据随本提交保存，最终对象由所在提交SHA及发布回执标识。本轮不改变熵设置、采集N1或保存方式。
 
 当前阅读入口：[10月3日训练机制、滑动成功率、评估/保存与发布审计](AUDIT_20261003.md)。其中13:02数据为明确标时的历史截点；后续频率调整和部署状态见该专题的追加记录。当前正式scope沿[10月2日修复运行](NATIVE_REPAIR_20261002.md)，控制路由见[CONTEXT](CONTEXT.md)。
 
