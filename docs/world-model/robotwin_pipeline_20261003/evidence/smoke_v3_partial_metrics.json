@@ -1,0 +1,247 @@
+{
+  "analysis_kind": "opendw_smoke_v1",
+  "naive_time_offset_assumption": "+08:00",
+  "limits": "This is evidence analysis, not native success evaluation. Missing metrics and ambiguous request attribution stay unknown.",
+  "snapshot_kind": "partial_analysis_preserved_as_recorded; final exits are in smoke_v3_final_summary.json",
+  "trials": [
+    {
+      "key": "n8",
+      "num_envs": 8,
+      "exit_code": 0,
+      "owner_trial_seconds": 592.4058732045814,
+      "request_count": 1,
+      "wm_plus_reward_row_seconds": {
+        "status": "observed",
+        "count": 8,
+        "min": 1.445424472913146,
+        "max": 6.244196591898799,
+        "mean": 2.1317540659802034,
+        "p50": 1.523122324142605,
+        "p95": 4.656144476355982
+      },
+      "pure_wm_row_seconds": {
+        "status": "unknown",
+        "reason": "service row timer includes WM plus reward; no independent WM completion timestamp"
+      },
+      "score_last": {
+        "status": "observed",
+        "count": 8,
+        "min": 3.0309870453493204e-06,
+        "max": 3.791391009144718e-06,
+        "mean": 3.4189177711141383e-06,
+        "p50": 3.3714422897901386e-06,
+        "p95": 3.7779089097966784e-06
+      },
+      "score_max": {
+        "status": "observed",
+        "count": 8,
+        "min": 1.2354363207123242e-05,
+        "max": 1.3204198694438674e-05,
+        "mean": 1.2795652992281248e-05,
+        "p50": 1.2686151421803515e-05,
+        "p95": 1.3176765605749097e-05
+      },
+      "memory": {
+        "service_rss_sample_peak_bytes": 4959395840,
+        "service_pss_sample_peak_bytes": 4844307456,
+        "service_cuda_allocated_sample_peak_bytes": 25423581184,
+        "service_cuda_max_allocated_bytes_during_requests": 26850066944,
+        "service_cuda_reserved_sample_peak_bytes": 27636269056,
+        "gpu_board_used_sample_peak_bytes": 39953891328.0,
+        "managed_compute_memory_sample_peak_bytes": 39887831040.0,
+        "managed_process_rss_sum_sample_peak_bytes": 81003470848,
+        "resource_samples": 38,
+        "limits": "Sampled peaks can miss transients. Board usage includes other processes; RSS sums count shared pages repeatedly. PSS here is service only. Torch max is service since its onload reset, not actor or board."
+      },
+      "reward_filter": {
+        "status": "reconstructed",
+        "group_size": 8,
+        "inclusive_bounds": [
+          0.1,
+          0.9
+        ],
+        "retained_groups": 0,
+        "unknown_groups": 0,
+        "basis": "One first C32: relative frame rewards telescope from previous score 0 to score_last; group rows are contiguous. Near-boundary float32 reductions stay unknown.",
+        "actor_learning": "not established: filter reconstruction is not gradient/update evidence"
+      },
+      "training": {
+        "tensorboard": "enabled",
+        "nonzero_grad_norm_reported": false,
+        "effective_learning": "not established by logs or checkpoint presence",
+        "checkpoint_note": "Only explicit marker presence is reported; directories, save-start lines and exit code 0 do not prove checkpoint completeness.",
+        "metric_count_note": "Observations can repeat across backends; counts are not optimizer-step counts.",
+        "metrics": {
+          "actor/entropy_loss": {
+            "status": "observed",
+            "count": 1,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "actor/grad_norm": {
+            "status": "observed",
+            "count": 1,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "actor/policy_loss": {
+            "status": "observed",
+            "count": 1,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "actor/policy_loss_abs": {
+            "status": "observed",
+            "count": 1,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "actor/total_loss": {
+            "status": "observed",
+            "count": 1,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "train/actor/entropy_loss": {
+            "status": "observed",
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "train/actor/grad_norm": {
+            "status": "observed",
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "train/actor/policy_loss": {
+            "status": "observed",
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "train/actor/policy_loss_abs": {
+            "status": "observed",
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "train/actor/total_loss": {
+            "status": "observed",
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          }
+        },
+        "checkpoint_statuses": [
+          {
+            "status": "unknown_no_explicit_completion_marker",
+            "completion_markers": []
+          }
+        ]
+      },
+      "action_telemetry": {
+        "actions": {
+          "status": "observed",
+          "observed_rows": 8,
+          "abs_z_gt5_count": 0,
+          "abs_z_gt5_fraction": 0.0
+        },
+        "state": {
+          "status": "observed",
+          "observed_rows": 8,
+          "abs_z_gt5_count": 0,
+          "abs_z_gt5_fraction": 0.0
+        }
+      }
+    },
+    {
+      "key": "n16",
+      "num_envs": 16,
+      "exit_code": null,
+      "owner_trial_seconds": null,
+      "request_count": 0,
+      "wm_plus_reward_row_seconds": {
+        "status": "unknown",
+        "reason": "no finite observations"
+      },
+      "pure_wm_row_seconds": {
+        "status": "unknown",
+        "reason": "service row timer includes WM plus reward; no independent WM completion timestamp"
+      },
+      "score_last": {
+        "status": "unknown",
+        "reason": "no finite observations"
+      },
+      "score_max": {
+        "status": "unknown",
+        "reason": "no finite observations"
+      },
+      "memory": {
+        "service_rss_sample_peak_bytes": null,
+        "service_pss_sample_peak_bytes": null,
+        "service_cuda_allocated_sample_peak_bytes": null,
+        "service_cuda_max_allocated_bytes_during_requests": null,
+        "service_cuda_reserved_sample_peak_bytes": null,
+        "gpu_board_used_sample_peak_bytes": null,
+        "managed_compute_memory_sample_peak_bytes": 1310720000.0,
+        "managed_process_rss_sum_sample_peak_bytes": 53575786496,
+        "resource_samples": 13,
+        "limits": "Sampled peaks can miss transients. Board usage includes other processes; RSS sums count shared pages repeatedly. PSS here is service only. Torch max is service since its onload reset, not actor or board."
+      },
+      "reward_filter": {
+        "status": "unknown",
+        "reason": "single complete first-C32 request not established"
+      },
+      "training": {
+        "tensorboard": "enabled",
+        "nonzero_grad_norm_reported": null,
+        "effective_learning": "not established by logs or checkpoint presence",
+        "checkpoint_note": "Only explicit marker presence is reported; directories, save-start lines and exit code 0 do not prove checkpoint completeness.",
+        "metric_count_note": "Observations can repeat across backends; counts are not optimizer-step counts.",
+        "metrics": {},
+        "checkpoint_statuses": []
+      },
+      "action_telemetry": {
+        "actions": {
+          "status": "unknown",
+          "reason": "no parsed-stat telemetry"
+        },
+        "state": {
+          "status": "unknown",
+          "reason": "no parsed-stat telemetry"
+        }
+      }
+    }
+  ]
+}

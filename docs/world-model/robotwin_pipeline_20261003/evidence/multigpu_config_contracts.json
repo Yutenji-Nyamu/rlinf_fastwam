@@ -1,0 +1,145 @@
+{
+  "configurations": [
+    {
+      "source_ref": "2151a08ee1bd75df1bef0d8190e594bd5c7f7977",
+      "source_config": "examples/embodiment/config/sz2_can256_clean_resume_n32-20260927-v1.yaml",
+      "source_config_sha256": "4be891860c5763bd5e1596c4de59dcbaca6383a9d4539d70caae5f6fda030079",
+      "writes_configuration_only": true,
+      "launched": false,
+      "physical_placement": {
+        "actor": "4,5",
+        "env": "6,7",
+        "rollout": "4,5"
+      },
+      "output_config_sha256": "96cf62112604176b0251226b8a36dcda21a2c67dd8d58cd758b3dabc43b9a11f",
+      "key": "n64_short",
+      "contract": {
+        "mode": "multigpu_short_smoke",
+        "task": "adjust_bottle",
+        "N": 64,
+        "G": 8,
+        "R": 8,
+        "L": 32,
+        "C": 32,
+        "H": 50,
+        "M": 10,
+        "runner_iterations": 1,
+        "trajectories_per_iteration": 512,
+        "chunks_per_trajectory": 1,
+        "chunk_samples_per_iteration": 512,
+        "grpo_groups_per_iteration": 64,
+        "global_batch_size": 512,
+        "micro_batch_size": 8,
+        "update_epochs": 2,
+        "actor_world_size": 2,
+        "rollout_world_size": 2,
+        "env_world_size": 2,
+        "pipeline_stage_num": 1,
+        "environments_per_env_rank": 32,
+        "gradient_accumulation_per_actor": 32,
+        "scheduled_optimizer_steps": 2,
+        "micro_forward_backward_calls_per_actor": 64,
+        "planned_wm_rows_max": 512,
+        "planned_environment_actions_max": 16384,
+        "planned_future_frames_max": 4096,
+        "reset_sampling": "Each env rank resamples four G8 starts with replacement after every rollout epoch",
+        "expected_reset_count": 50,
+        "reset_asset_contents_verified_by_generator": false,
+        "native_evaluation": false,
+        "save_interval": 1,
+        "val_check_interval": -1,
+        "effective_gradient_not_guaranteed": true
+      },
+      "service_contract": [
+        {
+          "env_rank": 0,
+          "physical_gpu": 6,
+          "url": "http://127.0.0.1:18946",
+          "model_batch_size": 1,
+          "logical_environments": 32,
+          "wm_rows_max": 256
+        },
+        {
+          "env_rank": 1,
+          "physical_gpu": 7,
+          "url": "http://127.0.0.1:18947",
+          "model_batch_size": 1,
+          "logical_environments": 32,
+          "wm_rows_max": 256
+        }
+      ],
+      "launched_field_scope": "Configuration-generator receipt; does not claim the current owner is running or stopped"
+    },
+    {
+      "source_ref": "2151a08ee1bd75df1bef0d8190e594bd5c7f7977",
+      "source_config": "examples/embodiment/config/sz2_can256_clean_resume_n32-20260927-v1.yaml",
+      "source_config_sha256": "4be891860c5763bd5e1596c4de59dcbaca6383a9d4539d70caae5f6fda030079",
+      "writes_configuration_only": true,
+      "launched": false,
+      "physical_placement": {
+        "actor": "4,5",
+        "env": "6,7",
+        "rollout": "4,5"
+      },
+      "output_config_sha256": "cf77b5647b8a8c35d67885c70d095bd6a5053f11e5f7cb95aeb4088d19b72f7d",
+      "key": "n64_full",
+      "contract": {
+        "mode": "multigpu_signal_smoke",
+        "task": "adjust_bottle",
+        "N": 64,
+        "G": 8,
+        "R": 8,
+        "L": 384,
+        "C": 32,
+        "H": 50,
+        "M": 10,
+        "runner_iterations": 1,
+        "trajectories_per_iteration": 512,
+        "chunks_per_trajectory": 12,
+        "chunk_samples_per_iteration": 6144,
+        "grpo_groups_per_iteration": 64,
+        "global_batch_size": 2048,
+        "micro_batch_size": 8,
+        "update_epochs": 2,
+        "actor_world_size": 2,
+        "rollout_world_size": 2,
+        "env_world_size": 2,
+        "pipeline_stage_num": 1,
+        "environments_per_env_rank": 32,
+        "gradient_accumulation_per_actor": 128,
+        "scheduled_optimizer_steps": 6,
+        "micro_forward_backward_calls_per_actor": 768,
+        "planned_wm_rows_max": 6144,
+        "planned_environment_actions_max": 196608,
+        "planned_future_frames_max": 49152,
+        "reset_sampling": "Each env rank resamples four G8 starts with replacement after every rollout epoch",
+        "expected_reset_count": 50,
+        "reset_asset_contents_verified_by_generator": false,
+        "native_evaluation": false,
+        "save_interval": 1,
+        "val_check_interval": -1,
+        "effective_gradient_not_guaranteed": true
+      },
+      "service_contract": [
+        {
+          "env_rank": 0,
+          "physical_gpu": 6,
+          "url": "http://127.0.0.1:18946",
+          "model_batch_size": 1,
+          "logical_environments": 32,
+          "wm_rows_max": 3072
+        },
+        {
+          "env_rank": 1,
+          "physical_gpu": 7,
+          "url": "http://127.0.0.1:18947",
+          "model_batch_size": 1,
+          "logical_environments": 32,
+          "wm_rows_max": 3072
+        }
+      ],
+      "launched_field_scope": "Configuration-generator receipt; does not claim the current owner is running or stopped"
+    }
+  ],
+  "runtime_status": "not_read_by_publication_stager"
+}
