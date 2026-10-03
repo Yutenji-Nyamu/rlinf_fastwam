@@ -81,7 +81,11 @@ class RoboTwinEnv(gym.Env):
         mp.set_start_method("spawn", force=True)
         os.environ["ASSETS_PATH"] = self.cfg.assets_path
 
-        from robotwin.envs.vector_env import VectorEnv
+        from robotwin.envs.vector_env import VectorEnv as BaseVectorEnv
+        from rlinf.envs.robotwin.step_timeout import step_with_bounded_wait
+
+        class VectorEnv(BaseVectorEnv):
+            step = step_with_bounded_wait
 
         env_seeds = self.reset_state_ids.tolist()
 
