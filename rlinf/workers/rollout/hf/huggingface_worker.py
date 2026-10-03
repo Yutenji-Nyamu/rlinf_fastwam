@@ -23,6 +23,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
+from rlinf.utils.resource_telemetry import record_resource_boundary
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.rlt import (
     build_rlt_route,
@@ -913,8 +914,10 @@ class MultiStepRolloutWorker(Worker):
         output_channel: Channel,
         actor_channel: Channel,
     ):
+        record_resource_boundary(self, "rollout_before_onload", reset_peak=True)
         if self.enable_offload:
             self.reload_model()
+        record_resource_boundary(self, "rollout_after_onload")
 
         for _ in tqdm(
             range(self.rollout_epoch),
@@ -926,8 +929,10 @@ class MultiStepRolloutWorker(Worker):
                 output_channel,
                 actor_channel,
             )
+        record_resource_boundary(self, "rollout_before_offload")
         if self.enable_offload:
             self.offload_model()
+        record_resource_boundary(self, "rollout_after_offload")
 
     @Worker.timer("evaluate")
     async def evaluate(self, input_channel: Channel, output_channel: Channel):

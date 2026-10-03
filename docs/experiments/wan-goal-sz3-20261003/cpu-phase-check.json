@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "time": 1791011991.8118758,
+  "cuda_used": false,
+  "checks": {
+    "normal_env_offload_before_actor": [
+      "actor.set_global_step.wait",
+      "rollout.set_global_step.wait",
+      "env.set_global_step.wait",
+      "env.start",
+      "actor.recv.wait",
+      "rollout.wait",
+      "env.wait",
+      "actor.advantages.wait",
+      "actor.start",
+      "actor.train.wait",
+      "env.wait",
+      "finished"
+    ],
+    "env_error_prevents_actor": [
+      "actor.set_global_step.wait",
+      "rollout.set_global_step.wait",
+      "env.set_global_step.wait",
+      "env.start",
+      "actor.recv.wait",
+      "rollout.wait",
+      "env.wait"
+    ],
+    "baseline_reproduces_missing_barrier": true,
+    "telemetry_no_cuda_init": true
+  }
+}

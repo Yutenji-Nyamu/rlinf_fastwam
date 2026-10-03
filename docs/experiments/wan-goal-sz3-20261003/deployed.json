@@ -1,0 +1,43 @@
+{
+  "time": 1791011992.509429,
+  "status": "DEPLOYED_NOT_STARTED",
+  "repo": "/data/chenyiteng/projects/wan-goal-sz3/deployment-20261003-memory-fix/repo",
+  "branch": "codex/sz3-wan-goal-repair-20261003",
+  "configuration_diff": [
+    {
+      "path": "runner.save_interval",
+      "before": 40,
+      "after": 10
+    },
+    {
+      "path": "actor.micro_batch_size",
+      "before": 128,
+      "after": 64
+    }
+  ],
+  "gradient_accumulation_before": 4,
+  "gradient_accumulation_after": 8,
+  "monitor": {
+    "external_interval_seconds": 10,
+    "pss_interval_seconds": 60,
+    "starts_with_new_driver": true,
+    "driver": "/data/chenyiteng/projects/wan-goal-sz3/deployment-20261003-memory-fix/repo/local_scripts/wan_goal_20261003/private_ray_driver_monitored.py",
+    "runtime_env_propagation_check": true,
+    "read_only_sample_ok": true,
+    "actor_rollout_peaks": "reset each training/generation round",
+    "env_peaks": "process cumulative"
+  },
+  "evaluation_plan": "/data/chenyiteng/projects/wan-goal-sz3/deployment-20261003-memory-fix/repo/local_scripts/wan_goal_20261003/evaluation_plan.json",
+  "evaluation_queue_started": false,
+  "cpu_phase_checks_ok": true,
+  "gpu_validation_performed": false,
+  "original_checkout_unchanged": true,
+  "formal_training_started": false,
+  "old_source_hashes": {
+    "rlinf/runners/embodied_runner.py": "94619101397255b04ec301d63d143570031d13f813e429a813df7a2e479dc0bd",
+    "rlinf/workers/env/env_worker.py": "c622571777474b8f2d08f42216f97ed419a0a32581cf9a8cc1c661c96dfe6023",
+    "rlinf/workers/actor/embodied_fsdp_actor_worker.py": "9b8abf1f6ca0f90cbf2ee6969bb6969033d465ebb6765ce7aa405e807bf29d76",
+    "rlinf/workers/rollout/hf/huggingface_worker.py": "0abb32c7b6a743a0057551410489c8505a76c7cdaf8a79aa33262e1070086e3c",
+    "examples/embodiment/config/wan_goal_pi05_headonly_formal_sz3.yaml": "7e650f37e95f72e0aed67cbd2f86c0ed345e3cc7b34f50d40964a0158725fbee"
+  }
+}

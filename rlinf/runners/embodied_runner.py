@@ -532,6 +532,9 @@ class EmbodiedRunner:
                         input_channel=self.actor_channel
                     ).wait()
                     rollout_handle.wait()
+                    # A final trajectory may arrive before env video flush/offload.
+                    # Colocated actor training must wait for the environment phase.
+                    env_handle.wait()
                     if self.reward is not None:
                         reward_handle.wait()
 

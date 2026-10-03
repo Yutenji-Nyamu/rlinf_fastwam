@@ -20,6 +20,7 @@ import numpy as np
 import torch
 from omegaconf import DictConfig, OmegaConf
 
+from rlinf.utils.resource_telemetry import record_resource_boundary
 from rlinf.data.schema.embodied_types import (
     EnvOutput,
     EnvPart,
@@ -1234,9 +1235,11 @@ class EnvWorker(Worker):
             cooperative_yield=False,
         )
 
+        record_resource_boundary(self, "env_before_offload")
         for env in self.env_list:
             if self.train_enable_offload:
                 get_env_attr(env, "offload")()
+        record_resource_boundary(self, "env_after_offload")
 
         return env_metrics
 

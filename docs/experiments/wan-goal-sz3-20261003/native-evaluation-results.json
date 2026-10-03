@@ -1,0 +1,422 @@
+{
+  "protocol": "native Pi0Eval dual-camera H10 C5 M5 Goal320",
+  "world_model_used": false,
+  "per_model_episodes": 500,
+  "phases": {
+    "original": {
+      "time": 1790933998.8385415,
+      "kind": "original",
+      "episodes": 500,
+      "tasks": 10,
+      "actions_per_episode": 320,
+      "physical_gpus": [
+        2,
+        3
+      ],
+      "concurrent_environments": 20,
+      "evaluation_epochs": 25,
+      "render_backend": "mesa_llvmpipe",
+      "software_device": 8,
+      "rendering_uses_cuda": false,
+      "egl_vendor_file": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/evaluations/wm-official-20261002-1738-dc66e5a3/source/50_mesa.json",
+      "egl_vendor_sha256": "8c31df54d018395b8cdcfebb9d56fd24e0e23817015f10e65bb21684b4610329",
+      "software_render_threads_per_environment": 2,
+      "policy_seeds_by_rank": [
+        42,
+        43
+      ],
+      "environment_seed_base": 0,
+      "model_contract": {
+        "model_type": "openpi",
+        "precision": null,
+        "pi05": true,
+        "is_lora": false,
+        "lora_rank": 32,
+        "num_action_chunks": 5,
+        "action_dim": 7,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "task": "eval",
+          "config_name": "pi05_libero",
+          "num_images_in_input": 2,
+          "noise_level": 0.3,
+          "action_chunk": 5,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 7,
+          "noise_method": "flow_sde",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": false,
+          "model_action_dim": 32,
+          "paligemma_variant": "gemma_2b",
+          "action_expert_variant": "gemma_300m",
+          "max_token_len": 200,
+          "torch_compile": true,
+          "action_horizon": 10,
+          "discrete_state_input": false
+        },
+        "model_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero",
+        "openpi_data": {
+          "wrist_mode": "required",
+          "extra_delta_transform": false,
+          "norm_stats_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero/physical-intelligence/libero/norm_stats.json"
+        }
+      },
+      "checkpoint": null,
+      "formal_config": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r6/pi05-formal/tensorboard/config.yaml",
+      "formal_config_sha256": "46932fe627077260e76931dd19456d682eb85ca6d30a9a81282fb4261d137b7c",
+      "launch_config_sha256": "a43ae2c5c6394bc3fa948ae7018ce1594cdb1671d192454c23784b3a5de2f8f8",
+      "checkpoint_signature": null,
+      "real_environment": true,
+      "training_actions": 0,
+      "world_model_used": false,
+      "protocol": "native-Pi0Eval-dual-C5-M5-Goal320",
+      "source_reference": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+      "infrastructure_adapters": [
+        "private Ray isolation",
+        "Mesa simulator child renderer",
+        "fixed policy RNG after loading",
+        "trial receipts"
+      ],
+      "resource_schedule": "20 environments x25 epochs instead of500x1",
+      "finished": 1790939379.6290085,
+      "ok": true,
+      "metrics": {
+        "reward": 0.008530355989933014,
+        "episode_len": 320.0,
+        "success_once": 0.8560000061988831,
+        "return": 0.8560000061988831,
+        "success_at_end": 0.7680000066757202,
+        "num_trajectories": 500
+      },
+      "successes": 428,
+      "task_stats": {
+        "0": {
+          "success": 37,
+          "total": 50
+        },
+        "2": {
+          "success": 49,
+          "total": 50
+        },
+        "4": {
+          "success": 44,
+          "total": 50
+        },
+        "6": {
+          "success": 46,
+          "total": 50
+        },
+        "8": {
+          "success": 50,
+          "total": 50
+        },
+        "1": {
+          "success": 49,
+          "total": 50
+        },
+        "3": {
+          "success": 11,
+          "total": 50
+        },
+        "5": {
+          "success": 48,
+          "total": 50
+        },
+        "7": {
+          "success": 50,
+          "total": 50
+        },
+        "9": {
+          "success": 44,
+          "total": 50
+        }
+      },
+      "unique_task_trials": 500
+    },
+    "cp40": {
+      "time": 1790939417.8839386,
+      "kind": "40",
+      "episodes": 500,
+      "tasks": 10,
+      "actions_per_episode": 320,
+      "physical_gpus": [
+        2,
+        3
+      ],
+      "concurrent_environments": 20,
+      "evaluation_epochs": 25,
+      "render_backend": "mesa_llvmpipe",
+      "software_device": 8,
+      "rendering_uses_cuda": false,
+      "egl_vendor_file": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/evaluations/wm-official-20261002-1738-dc66e5a3/source/50_mesa.json",
+      "egl_vendor_sha256": "8c31df54d018395b8cdcfebb9d56fd24e0e23817015f10e65bb21684b4610329",
+      "software_render_threads_per_environment": 2,
+      "policy_seeds_by_rank": [
+        42,
+        43
+      ],
+      "environment_seed_base": 0,
+      "model_contract": {
+        "model_type": "openpi",
+        "precision": null,
+        "pi05": true,
+        "is_lora": false,
+        "lora_rank": 32,
+        "num_action_chunks": 5,
+        "action_dim": 7,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "task": "eval",
+          "config_name": "pi05_libero",
+          "num_images_in_input": 2,
+          "noise_level": 0.3,
+          "action_chunk": 5,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 7,
+          "noise_method": "flow_sde",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": false,
+          "model_action_dim": 32,
+          "paligemma_variant": "gemma_2b",
+          "action_expert_variant": "gemma_300m",
+          "max_token_len": 200,
+          "torch_compile": true,
+          "action_horizon": 10,
+          "discrete_state_input": false
+        },
+        "model_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero",
+        "openpi_data": {
+          "wrist_mode": "required",
+          "extra_delta_transform": false,
+          "norm_stats_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero/physical-intelligence/libero/norm_stats.json"
+        }
+      },
+      "checkpoint": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r6/pi05-formal/wan_goal_pi05_headonly_formal_sz3/checkpoints/global_step_40/actor/model_state_dict/full_weights.pt",
+      "formal_config": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r6/pi05-formal/tensorboard/config.yaml",
+      "formal_config_sha256": "46932fe627077260e76931dd19456d682eb85ca6d30a9a81282fb4261d137b7c",
+      "launch_config_sha256": "6f14cec2f1c8f60c510081e9824bac8d3f5bdaf53231ae3e9a3a139912275590",
+      "checkpoint_signature": [
+        40,
+        9339942449266586735,
+        6946527306,
+        1790870717834027312
+      ],
+      "real_environment": true,
+      "training_actions": 0,
+      "world_model_used": false,
+      "protocol": "native-Pi0Eval-dual-C5-M5-Goal320",
+      "source_reference": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+      "infrastructure_adapters": [
+        "private Ray isolation",
+        "Mesa simulator child renderer",
+        "fixed policy RNG after loading",
+        "trial receipts"
+      ],
+      "resource_schedule": "20 environments x25 epochs instead of500x1",
+      "finished": 1790944613.5705392,
+      "ok": true,
+      "metrics": {
+        "success_at_end": 0.5720000267028809,
+        "return": 0.7720000147819519,
+        "episode_len": 320.0,
+        "reward": 0.008305663242936134,
+        "success_once": 0.7720000147819519,
+        "num_trajectories": 500
+      },
+      "successes": 386,
+      "task_stats": {
+        "0": {
+          "success": 40,
+          "total": 50
+        },
+        "2": {
+          "success": 50,
+          "total": 50
+        },
+        "4": {
+          "success": 44,
+          "total": 50
+        },
+        "6": {
+          "success": 50,
+          "total": 50
+        },
+        "8": {
+          "success": 50,
+          "total": 50
+        },
+        "1": {
+          "success": 50,
+          "total": 50
+        },
+        "3": {
+          "success": 2,
+          "total": 50
+        },
+        "5": {
+          "success": 0,
+          "total": 50
+        },
+        "7": {
+          "success": 50,
+          "total": 50
+        },
+        "9": {
+          "success": 50,
+          "total": 50
+        }
+      },
+      "unique_task_trials": 500
+    },
+    "cp80": {
+      "time": 1790944681.299528,
+      "kind": "80",
+      "episodes": 500,
+      "tasks": 10,
+      "actions_per_episode": 320,
+      "physical_gpus": [
+        2,
+        3
+      ],
+      "concurrent_environments": 20,
+      "evaluation_epochs": 25,
+      "render_backend": "mesa_llvmpipe",
+      "software_device": 8,
+      "rendering_uses_cuda": false,
+      "egl_vendor_file": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/evaluations/wm-official-20261002-1738-dc66e5a3/source/50_mesa.json",
+      "egl_vendor_sha256": "8c31df54d018395b8cdcfebb9d56fd24e0e23817015f10e65bb21684b4610329",
+      "software_render_threads_per_environment": 2,
+      "policy_seeds_by_rank": [
+        42,
+        43
+      ],
+      "environment_seed_base": 0,
+      "model_contract": {
+        "model_type": "openpi",
+        "precision": null,
+        "pi05": true,
+        "is_lora": false,
+        "lora_rank": 32,
+        "num_action_chunks": 5,
+        "action_dim": 7,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "task": "eval",
+          "config_name": "pi05_libero",
+          "num_images_in_input": 2,
+          "noise_level": 0.3,
+          "action_chunk": 5,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 7,
+          "noise_method": "flow_sde",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": false,
+          "model_action_dim": 32,
+          "paligemma_variant": "gemma_2b",
+          "action_expert_variant": "gemma_300m",
+          "max_token_len": 200,
+          "torch_compile": true,
+          "action_horizon": 10,
+          "discrete_state_input": false
+        },
+        "model_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero",
+        "openpi_data": {
+          "wrist_mode": "required",
+          "extra_delta_transform": false,
+          "norm_stats_path": "/data/chenyiteng/projects/wan-goal-sz3/models/pi05-libero/physical-intelligence/libero/norm_stats.json"
+        }
+      },
+      "checkpoint": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r6/pi05-formal/wan_goal_pi05_headonly_formal_sz3/checkpoints/global_step_80/actor/model_state_dict/full_weights.pt",
+      "formal_config": "/home/nvme/team-data/chenyiteng/projects/wan-goal-sz3/runs/wan-goal-sz3-20261001-r6/pi05-formal/tensorboard/config.yaml",
+      "formal_config_sha256": "46932fe627077260e76931dd19456d682eb85ca6d30a9a81282fb4261d137b7c",
+      "launch_config_sha256": "f9146cafc943e761d74d5fdddc840d743091a1952300eeb602bc6bbdd4715e79",
+      "checkpoint_signature": [
+        40,
+        2219707892433255688,
+        6946527306,
+        1790910666697172266
+      ],
+      "real_environment": true,
+      "training_actions": 0,
+      "world_model_used": false,
+      "protocol": "native-Pi0Eval-dual-C5-M5-Goal320",
+      "source_reference": "d34d4c320d08cb982de034aa9a011f08dc0fa217",
+      "infrastructure_adapters": [
+        "private Ray isolation",
+        "Mesa simulator child renderer",
+        "fixed policy RNG after loading",
+        "trial receipts"
+      ],
+      "resource_schedule": "20 environments x25 epochs instead of500x1",
+      "finished": 1790949987.023191,
+      "ok": true,
+      "metrics": {
+        "reward": 0.008121678605675697,
+        "success_once": 0.8080000281333923,
+        "episode_len": 320.0,
+        "success_at_end": 0.6919999718666077,
+        "return": 0.8080000281333923,
+        "num_trajectories": 500
+      },
+      "successes": 404,
+      "task_stats": {
+        "0": {
+          "success": 47,
+          "total": 50
+        },
+        "2": {
+          "success": 50,
+          "total": 50
+        },
+        "4": {
+          "success": 47,
+          "total": 50
+        },
+        "6": {
+          "success": 49,
+          "total": 50
+        },
+        "8": {
+          "success": 50,
+          "total": 50
+        },
+        "1": {
+          "success": 49,
+          "total": 50
+        },
+        "3": {
+          "success": 10,
+          "total": 50
+        },
+        "5": {
+          "success": 6,
+          "total": 50
+        },
+        "7": {
+          "success": 50,
+          "total": 50
+        },
+        "9": {
+          "success": 46,
+          "total": 50
+        }
+      },
+      "unique_task_trials": 500
+    }
+  }
+}

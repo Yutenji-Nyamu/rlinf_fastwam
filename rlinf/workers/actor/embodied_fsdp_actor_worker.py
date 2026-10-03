@@ -18,6 +18,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import rlinf.algorithms  # noqa: F401
+from rlinf.utils.resource_telemetry import record_resource_boundary
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.algorithms.utils import compute_entropy_loss
@@ -581,10 +582,12 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         """
         Run the training process using the received rollout batch.
         """
+        record_resource_boundary(self, "actor_before_onload", reset_peak=True)
         if self.is_weight_offloaded:
             self.load_param_and_grad(self.device)
         if self.is_optimizer_offloaded:
             self.load_optimizer(self.device)
+        record_resource_boundary(self, "actor_after_onload")
 
         if self.cfg.algorithm.loss_type == "opd":
             target_steps = int(self.rollout_batch["advantages"].shape[0])
@@ -684,6 +687,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 compute_critic_explained_variance_from_stats(reduced_stats).item()
             )
 
+        record_resource_boundary(self, "actor_after_training")
         return mean_metric_dict
 
     def train_micro_batch(
