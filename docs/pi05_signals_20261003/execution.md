@@ -28,6 +28,12 @@
 
 此前SZ1 RLT next-six已发布：[`3f35e89`](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz1-pi05-rlt-next-six-20261002)。此前Dojo补齐46份代码、630份日志/JSON凭据、7篇文档；8份大日志只提供索引与hash，未声称上传原件：[`0834ff3`](https://github.com/Yutenji-Nyamu/robodojo_openwam/tree/codex/sz1-dojo-scope-scaling-20261003/docs/experiments/20261003_sz1_scope_scaling)。均已核对远端SHA。
 
+本轮信号实现、100批配置、smoke验收与派发凭据共272份文件已发布：[`9fb1c3d`](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz1-pi05-signals-20261003)，远端SHA已核对。模型权重、原始NPZ和视频留在服务器，云端保存路径、大小与hash索引。
+
+23:58现场审计：4批、64条轨迹已验收，其中40条任务成功；另2批正在物理6/7卡采集，剩余94批等待。正式队列尚无失败批。4/5仍由原Dojo owner持有，唯一waiter等待N36结束后接管。四条next-six冻结锚点与cycle未变，0–3卡未新增任务。
+
+已创建本聊天每小时夜间检查 `automation-2`：正常进度静默，只在异常、需要决定或全部完成时通知；完成后核对清场及原Dojo恢复，结束检查。单批最长3600秒，控制器8小时；触发截止时保留未完成项，不把部分完成当作全量完成。正式采集暂估10月4日05:00–08:00完成，随4/5接入及长任务耗时修正。
+
 ## 路径与入口
 
 实现：本地源码目录（原本地研究资料）。远端分支 `codex/sz1-pi05-signals-20261003`，独立worktree位于 `rlinf-shenzhen/worktrees/pi05-signals-sz1-20261003`。

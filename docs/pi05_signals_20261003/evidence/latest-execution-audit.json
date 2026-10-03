@@ -1,0 +1,177 @@
+{
+  "time": 1791043081.6572409,
+  "counts": {
+    "VALIDATED": 4,
+    "CLAIMED": 2
+  },
+  "episodes_validated": 64,
+  "successes_in_validated": 40,
+  "pending_batches": 94,
+  "active_progress": [
+    {
+      "batch": "beat_block_hammer_b0",
+      "state": "CLAIMED",
+      "progress": {
+        "time": 1791043076.8158083,
+        "query": 7,
+        "phase": "model",
+        "successes": 13,
+        "queries_max": 8
+      },
+      "gpu": 6
+    },
+    {
+      "batch": "beat_block_hammer_b1",
+      "state": "CLAIMED",
+      "progress": {
+        "time": 1791043079.4010668,
+        "query": 7,
+        "phase": "model",
+        "successes": 12,
+        "queries_max": 8
+      },
+      "gpu": 7
+    }
+  ],
+  "owners": {
+    "4": {
+      "owner": {
+        "pid": 3580494,
+        "uid": 1003,
+        "start_ticks": 391608903,
+        "cmdline_sha256": "38cfc7c844d205076082ff1ca90db5a316abc8042350c93899aaf051791efa43"
+      },
+      "state": "MAINTENANCE_PROBE",
+      "maintenance": "/srv/dojo/runs/gpu4-scope-maintenance-20261003-v2"
+    },
+    "5": {
+      "owner": {
+        "pid": 3580494,
+        "uid": 1003,
+        "start_ticks": 391608903,
+        "cmdline_sha256": "38cfc7c844d205076082ff1ca90db5a316abc8042350c93899aaf051791efa43"
+      },
+      "state": "DOJO_RUNNING",
+      "maintenance": "/srv/dojo/runs/gpu4-scope-maintenance-20261003-v2"
+    },
+    "6": {
+      "owner": {
+        "pid": 4059705,
+        "uid": 1003,
+        "start_ticks": 392913243,
+        "cmdline_sha256": "7f389ec18b0c096b771fb65c9b35a87f60cefe6883ae30b39cdd441bcc59db2f"
+      },
+      "state": "MAINTENANCE_PROBE",
+      "maintenance": "/srv/dojo/runs/gpu6-signal-maintenance-20261003-v1"
+    },
+    "7": {
+      "owner": {
+        "pid": 4003177,
+        "uid": 1003,
+        "start_ticks": 392716901,
+        "cmdline_sha256": "aed917c38c34d281ff17823b927f1018578a4e95a6ddd2fe350d0ed2a9b86b4a"
+      },
+      "state": "MAINTENANCE_PROBE",
+      "maintenance": "/srv/dojo/runs/gpu7-signal-maintenance-20261003-v1"
+    }
+  },
+  "health": {
+    "pi05-signal-formal-gpu6-20261003-v1/gpu6-health.json": {
+      "time": 1791043080.708793,
+      "gpu": 6,
+      "owned_processes": [
+        {
+          "gpu": 6,
+          "pid": 4072080,
+          "type": "C+G",
+          "memory": "29180 MiB"
+        }
+      ]
+    },
+    "pi05-signal-formal-gpu7-20261003-v1/gpu7-health.json": {
+      "time": 1791043074.100225,
+      "gpu": 7,
+      "owned_processes": [
+        {
+          "gpu": 7,
+          "pid": 4072140,
+          "type": "C+G",
+          "memory": "29180 MiB"
+        }
+      ]
+    }
+  },
+  "next_six_gates": [
+    {
+      "task": "place_fan",
+      "role": "clean",
+      "frozen_cycle_and_anchor_unchanged": true
+    },
+    {
+      "task": "place_fan",
+      "role": "combo",
+      "frozen_cycle_and_anchor_unchanged": true
+    },
+    {
+      "task": "click_bell",
+      "role": "clean",
+      "frozen_cycle_and_anchor_unchanged": true
+    },
+    {
+      "task": "click_bell",
+      "role": "combo",
+      "frozen_cycle_and_anchor_unchanged": true
+    }
+  ],
+  "publications": {
+    "signal": {
+      "time": 1791042704.8297184,
+      "repo": "Yutenji-Nyamu/rlinf_fastwam",
+      "branch": "codex/sz1-pi05-signals-20261003",
+      "commit": "9fb1c3d5574acb64a416183fca3d3471b1bad206",
+      "remote_verified": true,
+      "files": 272,
+      "smoke_fingerprint": "8d726804e43eedbd048f0f39b56458bb569b72fd7f6f44253c851124694f38ee",
+      "main_unchanged": true
+    },
+    "dojo": {
+      "time": 1791042227.777285,
+      "repo": "Yutenji-Nyamu/robodojo_openwam",
+      "branch": "codex/sz1-dojo-scope-scaling-20261003",
+      "commit": "0834ff37456cab233914c25789f67a74a07bbddd",
+      "remote_verified": true,
+      "files": 686,
+      "code_files": 46,
+      "logs_included": 630,
+      "large_logs_indexed": 8,
+      "main_unchanged": true,
+      "running_checkout_unchanged": true
+    },
+    "rlt": {
+      "time": 1791041393.5548723,
+      "repo": "Yutenji-Nyamu/rlinf_fastwam",
+      "branch": "codex/sz1-pi05-rlt-next-six-20261002",
+      "commit": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc",
+      "remote_verified": true,
+      "paths": [
+        "examples/embodiment/config/pi05_rlt_click_bell_clean_n8full_20261002.yaml",
+        "examples/embodiment/config/pi05_rlt_click_bell_combo_n8full_20261002.yaml",
+        "examples/embodiment/config/pi05_rlt_place_fan_clean_n8full_20261002.yaml",
+        "examples/embodiment/config/pi05_rlt_place_fan_combo_n8full_20261002.yaml",
+        "examples/sft/config/pi05_rlt_click_bell_stage1-full_n8full_20261002.yaml",
+        "examples/sft/config/pi05_rlt_place_fan_stage1-full_n8full_20261002.yaml",
+        "rlinf/envs/robotwin/seeds/click_bell_eval_rlt_20261002.json",
+        "rlinf/envs/robotwin/seeds/click_bell_train_rlt_20261002.json",
+        "rlinf/envs/robotwin/seeds/place_fan_eval_rlt_20261002.json",
+        "rlinf/envs/robotwin/seeds/place_fan_train_rlt_20261002.json",
+        "tools/next_six_20261002/ops.py",
+        "tools/next_six_20261002/queue_owner.py",
+        "tools/next_six_20261002/review.json",
+        "tools/next_six_20261002/test_queue.py"
+      ],
+      "running_checkout_unchanged": true,
+      "main_unchanged": true
+    }
+  },
+  "stop_rule": "per batch deadline 3600s; controller 8h; fatal stops exact owned scope; original Dojo/RLT receipt gates retained"
+}
