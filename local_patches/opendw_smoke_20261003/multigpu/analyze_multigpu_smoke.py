@@ -387,9 +387,12 @@ def checkpoint_evidence(experiment, enabled):
         if torch.cuda.is_initialized():
             raise RuntimeError('CUDA already initialized')
         torch.set_num_threads(2)
-        core = getattr(np, '_core', np.core)
-        safe = [(core.multiarray._reconstruct, 'numpy.core.multiarray._reconstruct'),
-                (core.multiarray._reconstruct, 'numpy._core.multiarray._reconstruct'),
+        # NumPy 1.x may expose a partial numpy._core compatibility package.
+        # Import the actual module instead of assuming its attribute is loaded.
+        import importlib
+        multiarray = importlib.import_module('numpy.core.multiarray')
+        safe = [(multiarray._reconstruct, 'numpy.core.multiarray._reconstruct'),
+                (multiarray._reconstruct, 'numpy._core.multiarray._reconstruct'),
                 np.ndarray, np.dtype, type(np.dtype('uint32'))]
         root = Path(experiment) / 'checkpoints/global_step_1/actor/local_shard_checkpoint'
         expected = [root / f'checkpoint_rank_{rank}.pt' for rank in (0, 1)]
@@ -519,7 +522,11 @@ def analyze(owner, tensorboard=False, checkpoint_scan=False, offset=None):
         log = cfg.get('runner', {}).get('logger', {})
         experiment = Path(log.get('log_path', '/missing')) / log.get('experiment_name', '')
         log_bound = experiment.resolve().is_relative_to(Path(trial['directory']).resolve())
-        tb = tensorboard_metrics(experiment / 'tensorboard', tensorboard) if log_bound else unknown('Logger path outside trial')
+        # This RLinf version stores events below log_path/tensorboard/all,
+        # while checkpoints live below log_path/experiment_name/checkpoints.
+        metric_root = Path(log.get('log_path', '/missing')) / 'tensorboard'
+        metrics_bound = metric_root.resolve().is_relative_to(Path(trial['directory']).resolve())
+        tb = tensorboard_metrics(metric_root, tensorboard) if log_bound and metrics_bound else unknown('Logger path outside trial')
         cp = checkpoint_evidence(experiment, checkpoint_scan) if log_bound else unknown('Logger path outside trial')
         config_path = Path(trial['config_source']) if trial['config_source'] else None
         binding = (plan.get('mode') == 'multigpu_smoke' and reviewed_contract(cfg) and log_bound
