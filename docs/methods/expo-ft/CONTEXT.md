@@ -1,5 +1,9 @@
 # EXPO-FT 专题上下文
 
+2026-10-03评估频率变更进行中：用户授权25→10，保存方式及训练配方保持。首次交接在GPU释放门禁中止，75回合/11677动作/241调用的完整checkpoint保留；原owner已归还RLT并核四卡首轮。新cycle准备需等待归还run的新完整checkpoint，尚未验证新EXPO恢复成功。当前变更路由见[部署记录](EVAL10_DEPLOYMENT_20261003.md)，解释见[熵/并行机制](ENTROPY_PARALLEL_20261003.md)。以下13:02与更早记录为历史截点。
+
+历史只读审计（2026-10-03 13:02）：同一修复scope仍在运行，69回合、10842/20000真实动作、223次学习调用；固定评估45%→50%→30%，暂无稳定增益。5/10/15/20回合滑动曲线、采样/评估/保存解释、官方差异及GitHub同步缺口见[完整审计](AUDIT_20261003.md)。当前运行17份锁定源码已与修复分支`0bd979f`逐文件核同；在该13:02截点，此次新增审计/图表与CONTEXT更新仍仅本地，当时未变更运行参数或推送。后续状态见页首路由。
+
 当前路由（2026-10-02 12:40）：旧开关初评9/20=45%完成后发生SIGSEGV，零在线动作/零学习。已在不加载policy的N4原生复现中重现；补丁先shutdown线程池再释放场景，三轮N4→N1共六次关闭全部通过。新scope `formal-turn-switch-repair-20261002`、owner197649/start371818311、driver2892740，物理4–7正式完整恢复已验；首回合59真实动作成功并保存checkpoint，第二回合warmup进行中，尚无学习。原配方、20k预算和初评保持。四RLT已精准退出，仅本owner在EXPO结束/故障且GPU释放后续原累计3000。当前唯一入口[修复运行](NATIVE_REPAIR_20261002.md)，源码分支`codex/sz2-expo-ft-repair-20261002`。下面旧scope启动记录保留作历史，不重放旧owner。
 
 最新任务：2026-10-02 SZ2 `turn_switch` EXPO正式已启动，物理4–7、原正式配方/20k真实动作保持。独立scope `formal-turn-switch-20261001`，owner839628/driver942043；四RLT已精准暂停，仅EXPO退出后恢复。见[换任务运行](TURN_SWITCH_FORMAL_20261001.md)。已推[codex/sz2-expo-ft-turn-switch-20261001](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/sz2-expo-ft-turn-switch-20261001/docs/methods/expo-ft) @67cff0224a55a3387bc09a6ec92484da55bca901，远端SHA核同。以下瓶子正式与smoke为保留历史。

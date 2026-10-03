@@ -1,0 +1,113 @@
+{
+  "snapshot_beijing": "2026-10-03 11:29",
+  "owner_alive": true,
+  "driver_alive": true,
+  "heartbeat_seconds": 19.380971670150757,
+  "source_hashes_match": true,
+  "finite_metrics": true,
+  "phase": "checkpoint_started",
+  "counters": {
+    "episodes_completed": 66,
+    "physical_actions": 10354,
+    "warmup_actions": 1827,
+    "post_warmup_actions": 8527,
+    "carry_actions": 7,
+    "pending_calls": 3,
+    "completed_calls": 210,
+    "budget_truncated_episodes": 0
+  },
+  "online_successes": 28,
+  "online_recent10_successes": 4,
+  "fixed_evaluations": [
+    {
+      "episode": 0,
+      "policy": "raw-base",
+      "successes": 9,
+      "n": 20,
+      "percent": 45.0,
+      "learner_calls": 0,
+      "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+    },
+    {
+      "episode": 25,
+      "policy": "EXPO",
+      "successes": 10,
+      "n": 20,
+      "percent": 50.0,
+      "learner_calls": 51,
+      "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+    },
+    {
+      "episode": 50,
+      "policy": "EXPO",
+      "successes": 6,
+      "n": 20,
+      "percent": 30.0,
+      "learner_calls": 149,
+      "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+    }
+  ],
+  "metrics": {
+    "critic_loss": {
+      "first10_mean": 0.02170237465761602,
+      "last10_mean": 0.005937649228144437
+    },
+    "base/base_fm_loss": {
+      "first10_mean": 0.062508112937212,
+      "last10_mean": 0.07562323659658432
+    },
+    "editor_loss": {
+      "first10_mean": 131.8081817626953,
+      "last10_mean": 138.04644775390625
+    },
+    "critic_grad_norm": {
+      "first10_mean": 0.7466286964714527,
+      "last10_mean": 0.13461576774716377
+    },
+    "base/base_grad_norm": {
+      "first10_mean": 0.3901418924331665,
+      "last10_mean": 0.5273438662290573
+    },
+    "editor_grad_norm": {
+      "first10_mean": 8.934917545318603,
+      "last10_mean": 6.8424485206604
+    },
+    "q_mean": {
+      "first10_mean": -0.22046091184020042,
+      "last10_mean": 0.08605333045125008
+    },
+    "target_mean": {
+      "first10_mean": -0.19841904751956463,
+      "last10_mean": 0.09342777132987976
+    },
+    "entropy": {
+      "first10_mean": -131.41590118408203,
+      "last10_mean": -129.8510726928711
+    },
+    "temperature": {
+      "first10_mean": 1.0016506910324097,
+      "last10_mean": 1.0641378879547119
+    },
+    "edit_norm": {
+      "first10_mean": 1.4646870493888855,
+      "last10_mean": 1.3978792190551759
+    }
+  },
+  "learner_minutes": {
+    "first10_mean": 3.709863218466441,
+    "last10_mean": 5.9991591016451515
+  },
+  "checkpoint_minutes": {
+    "first10_mean": 0.6394035696983338,
+    "last10_mean": 0.60119899948438
+  },
+  "scope": "Read-only SZ2 probe; no training, configuration, process or resource actions.",
+  "metric_semantics": {
+    "critic_loss": "Last of the 20 critic optimizer steps in each learner call; not the average of all 20.",
+    "base/base_fm_loss": "Logged base flow-matching training loss.",
+    "edit_norm": "Batch mean L2 norm of the flattened action-chunk correction; not a physical distance unit.",
+    "learner_seconds": "Learner call duration, excluding subsequent checkpoint save.",
+    "fixed_evaluation": "Same 20 initial states; initial raw-base policy vs later complete EXPO policy, including candidate selection and editing.",
+    "smoothing": "Trailing arithmetic mean of 10 recorded calls or episodes; no interpolation of missing evaluations."
+  }
+}

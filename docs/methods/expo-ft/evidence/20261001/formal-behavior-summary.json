@@ -1,0 +1,141 @@
+{
+  "snapshot_bj": "2026-10-01T22:59:37.031643+08:00",
+  "current": {
+    "time": 1790866776.4634376,
+    "pid": 314046,
+    "phase": "checkpoint_started",
+    "cadence": {
+      "version": 2,
+      "contract": {
+        "max_physical_actions": 20000,
+        "warmup_episodes": 10,
+        "actions_per_call": 40,
+        "max_episode_actions": 200,
+        "minimum_online_actions": 64
+      },
+      "counters": {
+        "episodes_completed": 16,
+        "physical_actions": 3200,
+        "warmup_actions": 2000,
+        "post_warmup_actions": 1200,
+        "carry_actions": 0,
+        "pending_calls": 0,
+        "completed_calls": 30,
+        "budget_truncated_episodes": 0
+      }
+    },
+    "core_updates": 30,
+    "base_updates": 30,
+    "reason": "learner-call"
+  },
+  "source_checks": [
+    {
+      "file": "examples/embodiment/train_expo_formal.py",
+      "pinned_match": true,
+      "local_match": true
+    },
+    {
+      "file": "rlinf/algorithms/expo_ft/core.py",
+      "pinned_match": true,
+      "local_match": true
+    },
+    {
+      "file": "rlinf/algorithms/expo_ft/backend.py",
+      "pinned_match": true,
+      "local_match": true
+    },
+    {
+      "file": "rlinf/algorithms/expo_ft/formal_replay.py",
+      "pinned_match": true,
+      "local_match": true
+    },
+    {
+      "file": "rlinf/algorithms/expo_ft/formal_eval.py",
+      "pinned_match": true,
+      "local_match": true
+    },
+    {
+      "file": "rlinf/algorithms/expo_ft/formal_cadence.py",
+      "pinned_match": true,
+      "local_match": true
+    }
+  ],
+  "owner_alive": true,
+  "child_alive": true,
+  "episodes": 16,
+  "successes": 0,
+  "warmup": {
+    "episodes": 10,
+    "actions": 2000,
+    "successes": 0,
+    "all_finished_before_first_learner_call": true,
+    "selected_edited_fraction": 0.775
+  },
+  "learning": {
+    "calls": 30,
+    "all_metrics_finite": true,
+    "last_metrics": {
+      "critic_loss": 0.004324335139244795,
+      "critic_grad_norm": 0.12015527486801147,
+      "q_mean": -0.11765461415052414,
+      "target_mean": -0.10300987213850021,
+      "critic_global_batch": 64.0,
+      "critic_microbatches": 1.0,
+      "base/base_fm_loss": 0.008624430745840073,
+      "base/base_global_batch": 64.0,
+      "base/base_fm_forwards": 1.0,
+      "base/base_parallel_devices": 4.0,
+      "base/base_grad_norm": 0.14422516524791718,
+      "base/base_sampled_parameter_delta_max": 1.773238182067871e-05,
+      "base/base_changed_parameter_samples": 208.0,
+      "base/base_frozen_parameters_with_grad": 0.0,
+      "base/base_updates": 30.0,
+      "base/fm_callback_called": 1.0,
+      "editor_loss": 130.7672882080078,
+      "editor_grad_norm": 8.261147499084473,
+      "edit_q": -0.11802779138088226,
+      "entropy": -129.52017211914062,
+      "temperature_loss": -60.03902816772461,
+      "temperature": 1.0090184211730957,
+      "edit_norm": 1.3936426639556885,
+      "editor_global_batch": 64.0,
+      "editor_microbatches": 1.0,
+      "update_calls": 30.0,
+      "critic_steps": 600.0,
+      "editor_steps": 30.0,
+      "temperature_steps": 30.0
+    },
+    "all_calls_base_changed": true,
+    "max_frozen_grad_count": 0.0
+  },
+  "replay_check": {
+    "episodes": 16,
+    "all_reward_zero": true,
+    "all_term_zero": true,
+    "all_action_finite": true,
+    "cuda_initialized": false
+  },
+  "entropy": {
+    "dims": 140,
+    "edit_scale": 0.2,
+    "current_target": -70,
+    "max_possible_scaled_entropy": -128.2807024623817,
+    "official_scale_adjusted_target": -295.32130774077405,
+    "observed_entropy": -129.52017211914062,
+    "observed_alpha": 1.0090184211730957,
+    "current_target_feasible": false
+  },
+  "fm_all_batches_demo": true,
+  "evaluations": {
+    "initial-base": {
+      "episodes": 20,
+      "successes": 5,
+      "success_rate": 0.25
+    }
+  },
+  "limits": [
+    "No new GPU evaluation, policy replay, train change, stop/restart or budget change.",
+    "Static and CPU checks do not establish the root cause of physical task failure.",
+    "Raw-base fixed eval and online EXPO differ in seeds and policy selection."
+  ]
+}

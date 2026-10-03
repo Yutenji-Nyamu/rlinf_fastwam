@@ -19,7 +19,7 @@
 | DSRL 私有移植快照 | `.tmp/dsrl_current_impl_20260823`，2026-08-23 | macro projection、32D latent-Q、compact ring / target shadow / sidecar；旧 π0 路线，非已验收 π0.5 DSRL |
 | 深圳1 fresh source / model合同 | 主审查2026-10-01 09:59:41固定host-key只读确认；HEAD `55c1399a50826d61e8735a64daa2f1742f1b824f`，branch `codex/sz1-pi05-rlt-n8full-20260929`，clean | 现役actor=`rlt_mlp_policy` / identity，8环境、C10/14D、200动作；frozen `pi05_sidney_robotwin` feature base为H50/ODE10。四条Stage2 driver exact identity alive；Stage1已退出，其resolved没有algorithm/env属于SFT配方，不能当现役Stage2 overlay |
 
-此次现场 worktree：`/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-n8full-sz1-20260929`。证据 [完整只读源码与实配 JSON](E:/Codex/home/visualizations/2026/09/27/01a0e2cf-e398-7f90-99e5-7013b133ea33/server-review/sz1/expo-ft-source-files-20261001-1003.json)。JSON实际时间为09:59:41，文件名label不充当采样时间。现役Clean实配SHA：支架`6382d29d8f34cbe149d0c2cdaf16a730228d9e442902b56dde6b9c30064b9525`，双瓶`74bfeedb9c92b111cf2f01aa778b58dad9645d5bc5fe80df773d174fa5bfa546`。
+此次现场 worktree：`/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-n8full-sz1-20260929`。证据 完整只读源码与实配 JSON（未随本包发布的本地历史索引：`E:/Codex/home/visualizations/2026/09/27/01a0e2cf-e398-7f90-99e5-7013b133ea33/server-review/sz1/expo-ft-source-files-20261001-1003.json`）。JSON实际时间为09:59:41，文件名label不充当采样时间。现役Clean实配SHA：支架`6382d29d8f34cbe149d0c2cdaf16a730228d9e442902b56dde6b9c30064b9525`，双瓶`74bfeedb9c92b111cf2f01aa778b58dad9645d5bc5fe80df773d174fa5bfa546`。
 
 官方项目：[EXPO-FT](https://pd-perry.github.io/expo-ft/)。论文与方法边界见 [原论文笔记](RESEARCH_PAPER_NOTES_20261001.md)。8 base + 8 edits = 16 是论文配方；实现时 N / C / H / UTD 必须作为方法预算列出，不能把现有 RLT 的每轮 N8 等同于候选 N8。
 

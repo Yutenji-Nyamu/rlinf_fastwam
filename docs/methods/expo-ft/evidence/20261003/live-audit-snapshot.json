@@ -1,0 +1,767 @@
+{
+  "time": 1791003775.05023,
+  "root": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002",
+  "files": {
+    "inputs.json": {
+      "model": {
+        "model_type": "openpi",
+        "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+        "precision": null,
+        "num_action_chunks": 10,
+        "action_dim": 14,
+        "is_lora": false,
+        "lora_rank": 32,
+        "use_proprio": true,
+        "num_steps": 4,
+        "add_value_head": false,
+        "openpi": {
+          "config_name": "pi05_sidney_robotwin",
+          "num_images_in_input": 3,
+          "noise_level": 0.5,
+          "action_chunk": 10,
+          "num_steps": 10,
+          "train_expert_only": true,
+          "action_env_dim": 14,
+          "noise_method": "flow_ode",
+          "add_value_head": false,
+          "detach_critic_input": true,
+          "action_horizon": 50,
+          "rtc_enabled": false,
+          "use_rlt": false,
+          "rlt_train_vla": false,
+          "rlt_alpha": 0.0,
+          "rlt_input_dim": 2048,
+          "rlt_embed_dim": 2048,
+          "rlt_prefix_seq_len": 768,
+          "rlt_num_layers": 2,
+          "rlt_num_heads": 8,
+          "rlt_mlp_ratio": 4.0,
+          "rlt_image_only": true,
+          "rlt_use_mask": true,
+          "rlt_action_adapter": "robotwin_aloha_canonical_v1"
+        },
+        "openpi_data": {
+          "repo_id": "SidneyXie/pi05_robotwin",
+          "default_prompt": "turn the switch",
+          "norm_stats_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+        }
+      },
+      "env": {
+        "env_type": "robotwin",
+        "total_num_envs": 1,
+        "auto_reset": false,
+        "ignore_terminations": false,
+        "reward_coef": 1.0,
+        "use_custom_reward": true,
+        "use_rel_reward": false,
+        "center_crop": false,
+        "seed": 0,
+        "group_size": 1,
+        "use_fixed_reset_state_ids": false,
+        "max_steps_per_rollout_epoch": 200,
+        "max_episode_steps": 200,
+        "is_eval": false,
+        "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "seeds_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_train_rlt_20260923.json",
+        "video_cfg": {
+          "save_video": false,
+          "info_on_video": true,
+          "video_base_dir": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/video"
+        },
+        "enable_offload": false,
+        "task_config": {
+          "task_name": "turn_switch",
+          "step_lim": 200,
+          "planner_backend": "mplib",
+          "render_freq": 0,
+          "episode_num": 100,
+          "use_seed": false,
+          "save_freq": 15,
+          "embodiment": [
+            "aloha-agilex"
+          ],
+          "language_num": 100,
+          "domain_randomization": {
+            "random_background": false,
+            "cluttered_table": false,
+            "clean_background_rate": 1,
+            "random_head_camera_dis": 0,
+            "random_table_height": 0,
+            "random_light": false,
+            "crazy_random_light_rate": 0
+          },
+          "camera": {
+            "head_camera_type": "D435",
+            "wrist_camera_type": "D435",
+            "collect_head_camera": true,
+            "collect_wrist_camera": true
+          },
+          "data_type": {
+            "rgb": true,
+            "third_view": false,
+            "depth": false,
+            "pointcloud": false,
+            "observer": false,
+            "endpose": false,
+            "qpos": true,
+            "mesh_segmentation": false,
+            "actor_segmentation": false
+          },
+          "pcd_down_sample_num": 1024,
+          "pcd_crop": true,
+          "save_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/env-data",
+          "clear_cache_freq": 1,
+          "collect_data": true,
+          "eval_video_log": true
+        },
+        "rollout_epoch": 1
+      },
+      "demo_path": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+      "source_head": "e5cb9aa4c767490a66cba3c4e155c76f1193f199",
+      "physical_gpu": 4,
+      "core": {
+        "n_base": 8,
+        "n_edit": 8,
+        "num_qs": 10,
+        "num_min_qs": 2,
+        "chunk_length": 10,
+        "action_dim": 14,
+        "proprio_dim": 14,
+        "num_views": 3,
+        "critic_updates": 20,
+        "edit_scale": 0.2,
+        "discount": 0.99,
+        "vision_kind": "official_resnetv2_joint_groupnorm4_spatial_flatten",
+        "parallel_devices": 4,
+        "critic_microbatch_size": 64,
+        "editor_microbatch_size": 64,
+        "selection_observation_microbatch_size": 64,
+        "selection_candidate_microbatch_size": 8
+      },
+      "smoke": {
+        "batch_size": 4,
+        "base_batch_size": 1,
+        "episodes": 1,
+        "update_calls": 1,
+        "base_lr": 2.5e-05,
+        "seed": 42
+      },
+      "base_parameters": "action_expert_and_action_time_projections; frozen_vision_language; FP32 master/BF16 compute",
+      "rlt_policy": "EXPO priority; original4-7 remains if unused; exact return if borrowed",
+      "norm_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf",
+      "physical_gpus": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "formal": {
+        "seed": 42,
+        "batch_size": 64,
+        "parallel_devices": 4,
+        "candidate_microbatch": 8,
+        "observation_microbatch": 64,
+        "fm_microbatch": 64,
+        "base_lr": 2.5e-05,
+        "num_envs": 1,
+        "warmup_episodes": 10,
+        "physical_actions_per_update_call": 40,
+        "critic_updates_per_call": 20,
+        "augmentation": false,
+        "scope": "formal-online-training; 20000 actual online actions including warmup; eval excluded",
+        "max_physical_actions": 20000,
+        "initialization": "fresh native base and fresh EXPO components; not smoke checkpoint"
+      },
+      "smoke_proof": {
+        "scope": "/data/chenyiteng/projects/expo-ft-sz2-20261001/scale-smoke-20261001",
+        "attempt": "smoke-v2",
+        "source_sha256": {
+          "rlinf/algorithms/expo_ft/core.py": "540ae27e81fc3284396388f129322734c4c0065049b202474e4e326e6ad44905",
+          "rlinf/algorithms/expo_ft/backend.py": "0fea4f8da441ca8906c21df8a04c39e4f143caf31cbbb1bd7df47e6d3e6bfacd",
+          "rlinf/algorithms/expo_ft/formal_replay.py": "b9922ed73b5b06f9884ff317eaa026c98ce898c8f7f01e0575ee286a4b895754"
+        },
+        "full_one_call_and_new_process_restore": true
+      },
+      "port_source_manifest": {
+        "examples/embodiment/train_expo_formal.py": "fc8c906dbcfb519a90d9e6e9ef062577df2b7ee9f2c5659e0bc94b954bff36e2",
+        "examples/embodiment/train_expo_ft.py": "e768dfae52d2df07c76385d9f5169499b401230c936431199b75f182980b3122",
+        "rlinf/algorithms/expo_ft/backend.py": "0fea4f8da441ca8906c21df8a04c39e4f143caf31cbbb1bd7df47e6d3e6bfacd",
+        "rlinf/algorithms/expo_ft/core.py": "540ae27e81fc3284396388f129322734c4c0065049b202474e4e326e6ad44905",
+        "rlinf/algorithms/expo_ft/formal_cadence.py": "48315c819975ef39f4b947b5003c701fd3a5c6b2ca62e7e63c47d4f05a7e4fec",
+        "rlinf/algorithms/expo_ft/formal_eval.py": "97584a841f9eb8d2614d75e458b47a11b05b45ebc439353564c50310e54cc807",
+        "rlinf/algorithms/expo_ft/formal_replay.py": "b9922ed73b5b06f9884ff317eaa026c98ce898c8f7f01e0575ee286a4b895754",
+        "rlinf/algorithms/expo_ft/lifecycle.py": "05ed680622452c4abb2945093b1fbd50af52d74088bfabc510a820dccab40d7e",
+        "tests/native_expo_lifecycle.py": "fec3e3f48e907f798bb267c1d5d242a93cca8508ecb2e3d3486da95928d60400",
+        "tests/test_expo_lifecycle.py": "d47958e1753403f45b7dc3ee5b434c385e1a338ec6d451f9a9f5b2c78eebe857",
+        "tests/test_expo_repair_owner.py": "a0324855e225d0838390c6740c8ad9510a3179bbc40f42a38d54f114f6442809",
+        "tools/expo_formal_owner.py": "8e5bf3faa0891612ff003c0e8d8c3b7d5a601debbe35871d7f740cd54ea6dfb6",
+        "tools/expo_formal_resources.py": "ebb34a340ab2980011d01be14862209c2977a525bec35bde883a17498292afac",
+        "tools/expo_process.py": "a23efa918d4808d87120a0ee900c2fbbabc10d5f651b7200c836959a71c067e3",
+        "tools/expo_rlt_switch.py": "c9c20968403c3c861edde1053255e93e3ce16fd788a2d6e6b31dc1517330d8ff",
+        "tools/expo_smoke_owner.py": "d7fc1f670b68d3e559d55d0fef5949101f72d955f187f08008fabc9b40cb5847",
+        "tools/launch_expo_repair.py": "4d5984ad711ddec23d997c4a20b3c76780b24a6298753c2a33f3b97c4ff8ab9d"
+      },
+      "evaluation": {
+        "config": {
+          "env_type": "robotwin",
+          "total_num_envs": 4,
+          "auto_reset": false,
+          "ignore_terminations": true,
+          "reward_coef": 1.0,
+          "use_custom_reward": true,
+          "use_rel_reward": false,
+          "center_crop": false,
+          "seed": 0,
+          "group_size": 1,
+          "use_fixed_reset_state_ids": false,
+          "max_steps_per_rollout_epoch": 200,
+          "max_episode_steps": 200,
+          "is_eval": true,
+          "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+          "seeds_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_eval_rlt_20260923.json",
+          "video_cfg": {
+            "save_video": false,
+            "info_on_video": true,
+            "video_base_dir": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/eval-video"
+          },
+          "enable_offload": false,
+          "task_config": {
+            "task_name": "turn_switch",
+            "step_lim": 200,
+            "planner_backend": "mplib",
+            "render_freq": 0,
+            "episode_num": 100,
+            "use_seed": false,
+            "save_freq": 15,
+            "embodiment": [
+              "aloha-agilex"
+            ],
+            "language_num": 100,
+            "domain_randomization": {
+              "random_background": false,
+              "cluttered_table": false,
+              "clean_background_rate": 1,
+              "random_head_camera_dis": 0,
+              "random_table_height": 0,
+              "random_light": false,
+              "crazy_random_light_rate": 0
+            },
+            "camera": {
+              "head_camera_type": "D435",
+              "wrist_camera_type": "D435",
+              "collect_head_camera": true,
+              "collect_wrist_camera": true
+            },
+            "data_type": {
+              "rgb": true,
+              "third_view": false,
+              "depth": false,
+              "pointcloud": false,
+              "observer": false,
+              "endpose": false,
+              "qpos": true,
+              "mesh_segmentation": false,
+              "actor_segmentation": false
+            },
+            "pcd_down_sample_num": 1024,
+            "pcd_crop": true,
+            "save_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/run/eval-env-data",
+            "clear_cache_freq": 1,
+            "collect_data": true,
+            "eval_video_log": true
+          },
+          "rollout_epoch": 5,
+          "_expo_seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+        },
+        "seed_path": "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-20261001/seeds/turn_switch_eval_rlt_20260923.json",
+        "every_episodes": 25,
+        "episodes": 20,
+        "initial_base_only": true
+      }
+    },
+    "current.json": {
+      "owner": {
+        "pid": 197649,
+        "uid": 20001,
+        "boot_id": "87193fef-9734-40ce-ada3-0d084ab9d254",
+        "start_ticks": 371818311,
+        "state": "R",
+        "ppid": 1,
+        "pgid": 197649,
+        "sid": 197649
+      },
+      "scope": "expo-repair-327b3402-bc8b-4290-ba86-d40601d5849f",
+      "physical_gpus": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "status": "DRIVER_RUNNING",
+      "time": 1790915704.667798,
+      "child": {
+        "pid": 2892740,
+        "uid": 20001,
+        "boot_id": "87193fef-9734-40ce-ada3-0d084ab9d254",
+        "start_ticks": 371974616,
+        "state": "R",
+        "ppid": 197649,
+        "pgid": 2892740,
+        "sid": 2892740
+      },
+      "command": [
+        "/data/chenyiteng/venvs/rlinf-sz1-parity-py311-20260917/bin/python",
+        "-X",
+        "faulthandler",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/source/examples/embodiment/train_expo_formal.py",
+        "--inputs",
+        "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/inputs.json",
+        "--run",
+        "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run",
+        "--max-physical-actions",
+        "20000",
+        "--enable-evaluation",
+        "--resume",
+        "/data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/checkpoint-latest.pt"
+      ],
+      "diagnostic_returncode": -11,
+      "native_receipt": {
+        "ok": true,
+        "mode": "fixed",
+        "repeats": 3,
+        "inputs_sha256": "c24258adb7d3cc4ab7612cd96879e12cfa2694f00395e43a9f973cc3e67eda16",
+        "test_sha256": "fec3e3f48e907f798bb267c1d5d242a93cca8508ecb2e3d3486da95928d60400",
+        "lifecycle_sha256": "05ed680622452c4abb2945093b1fbd50af52d74088bfabc510a820dccab40d7e",
+        "real_evaluation_score": false,
+        "training_actions": 0,
+        "time": 1790915699.4094865
+      }
+    },
+    "run/status.json": {
+      "time": 1791003751.065725,
+      "pid": 2892740,
+      "phase": "learner_started",
+      "cadence": {
+        "version": 2,
+        "contract": {
+          "max_physical_actions": 20000,
+          "warmup_episodes": 10,
+          "actions_per_call": 40,
+          "max_episode_actions": 200,
+          "minimum_online_actions": 64
+        },
+        "counters": {
+          "episodes_completed": 69,
+          "physical_actions": 10842,
+          "warmup_actions": 1827,
+          "post_warmup_actions": 9015,
+          "carry_actions": 15,
+          "pending_calls": 2,
+          "completed_calls": 223,
+          "budget_truncated_episodes": 0
+        }
+      },
+      "core_updates": 223,
+      "base_updates": 223,
+      "call": 224
+    }
+  },
+  "owner_alive": true,
+  "child_alive": true,
+  "heartbeat_age_seconds": 5.221187353134155,
+  "source_hashes_match": true,
+  "checkpoint_files": [
+    {
+      "name": "checkpoint-latest.pt",
+      "bytes": 8786976132,
+      "mtime": 1791003748.5751123
+    },
+    {
+      "name": "checkpoint-last1.pt",
+      "bytes": 8786976132,
+      "mtime": 1791003355.9878228
+    },
+    {
+      "name": "checkpoint.json",
+      "bytes": 1261,
+      "mtime": 1791003750.9790835
+    }
+  ],
+  "read_only": true,
+  "snapshot_beijing": "2026-10-03 13:02",
+  "source_snapshot_sha256": "a1db9c01e54bbb3b9bc8a450063aba1dbe788678e1a684c18fad785010627a45",
+  "event_counts": {
+    "resume_verified": 1,
+    "initialized": 1,
+    "evaluation_native_enter": 3,
+    "evaluation_native_returned": 3,
+    "evaluation_rng_restore_started": 3,
+    "evaluation_rng_restore_finished": 3,
+    "evaluation_finished": 3,
+    "checkpoint_committed": 295,
+    "simulator_binding": 3,
+    "episode_started": 69,
+    "real_chunk": 1097,
+    "episode_finished": 69,
+    "base_fm_source": 223,
+    "learner_finished": 223
+  },
+  "last_selected_events": {
+    "evaluation_finished": {
+      "time": 1790972725.0321622,
+      "event": "evaluation_finished",
+      "label": "episode-000050",
+      "summary": {
+        "ok": true,
+        "contract": {
+          "task": "turn_switch",
+          "config_sha256": "3eb2baf7f6edb03d37de79668f3e917bdfb25165cf3d43ddff6f9ffb03341cef",
+          "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250",
+          "seeds": [
+            100125057,
+            100187524,
+            100137537,
+            100187558,
+            100137528,
+            100125038,
+            100112501,
+            100187505,
+            100162575,
+            100150009,
+            100137561,
+            100100020,
+            100162509,
+            100175062,
+            100187532,
+            100150015,
+            100150041,
+            100137534,
+            100100069,
+            100112512
+          ],
+          "policy": "EXPO",
+          "base_updates": 149,
+          "learner_calls": 149,
+          "steps_per_episode": 200,
+          "parallel_envs": 4,
+          "n_base": 8,
+          "eval_noise_seed": 90042
+        },
+        "rows": [
+          {
+            "seed": 100125057,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100187524,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100137537,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100187558,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100137528,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100125038,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100112501,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100187505,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100162575,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100150009,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100137561,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100100020,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100162509,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100175062,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100187532,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100150015,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100150041,
+            "success_once": true,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100137534,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100100069,
+            "success_once": false,
+            "physical_actions": 200
+          },
+          {
+            "seed": 100112512,
+            "success_once": false,
+            "physical_actions": 200
+          }
+        ],
+        "successes": 6,
+        "episodes": 20,
+        "success_rate": 0.3,
+        "evaluation_physical_actions": 4000,
+        "training_budgeted_actions": 0,
+        "elapsed_seconds": 1844.876211643219,
+        "attempt": "/home/nvme/team-data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/evaluations/episode-000050/attempt-61b622cb-48f3-49fd-8c40-2718c8ce6e27",
+        "env_closed": true,
+        "metric": "Control eval/success_once; term intentionally ignored"
+      },
+      "budgeted_actions": 0
+    },
+    "checkpoint_committed": {
+      "time": 1791003750.987292,
+      "event": "checkpoint_committed",
+      "path": "/home/nvme/team-data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/checkpoint-latest.pt",
+      "bytes": 8786976132,
+      "hashes": {
+        "base": "920e1d49aded429d100eb7f05b40b61d9c55d7582ede69e0d05293abdca2ca17",
+        "core": "43500eeb4d7f46b5e4544eaa7ec3d9474c2485f0c180e08ac6af5e968491eadd",
+        "replay": "8e8a46ad332f2af46a2457f421523251f5525b1ace2116280f8aa03b1076e7d0",
+        "cadence": "13ef8c2e93fea21555ba8cc8cda1da4cc173cfb4ef5e23acd9df32ba68c9078f",
+        "rng": "d793ecd7cd7a60b9751324dbe68cff36e67b85624de260644de7d076b1866751",
+        "progress": "6c311c15ebe01af60b78b02c07ffff254b7845cde103c056e0e1b43e02a8779e"
+      },
+      "reason": "learner-call",
+      "cadence": {
+        "version": 2,
+        "contract": {
+          "max_physical_actions": 20000,
+          "warmup_episodes": 10,
+          "actions_per_call": 40,
+          "max_episode_actions": 200,
+          "minimum_online_actions": 64
+        },
+        "counters": {
+          "episodes_completed": 69,
+          "physical_actions": 10842,
+          "warmup_actions": 1827,
+          "post_warmup_actions": 9015,
+          "carry_actions": 15,
+          "pending_calls": 2,
+          "completed_calls": 223,
+          "budget_truncated_episodes": 0
+        }
+      },
+      "core_updates": 223,
+      "base_updates": 223,
+      "finite": true
+    },
+    "episode_finished": {
+      "time": 1791002521.7552674,
+      "event": "episode_finished",
+      "episode": 68,
+      "env_seed": 125120,
+      "physical_steps": 200,
+      "chunks": 20,
+      "success": false,
+      "budget_truncated": false,
+      "stop_truncated": false,
+      "horizon_term_precedence": false,
+      "replay_entry": {
+        "kind": "online",
+        "id": "episode-000068-92df477d72a200b0",
+        "episode_id": "online-000068",
+        "path": "online/episode-000068-92df477d72a200b0.pt",
+        "pin": {
+          "sha256": "526a5e84c2356855f14032c175931d25a5930dfe8add5c8e23910615a43b31fd",
+          "bytes": 139174657,
+          "identity": [
+            55,
+            695475358180867775,
+            139174657,
+            1791002521313838615,
+            1791002521341838278,
+            20001
+          ]
+        },
+        "manifest_path": "online/episode-000068-92df477d72a200b0.json",
+        "manifest_pin": {
+          "sha256": "4e93c4f8bde44330acdca320bcd729622d5d2a0406377f39e654308be05ede71",
+          "bytes": 15025,
+          "identity": [
+            55,
+            7283401427330921075,
+            15025,
+            1791002521341838278,
+            1791002521341838278,
+            20001
+          ]
+        },
+        "frames": 200,
+        "q_count": 190,
+        "fm_count": 0,
+        "success": false,
+        "terminal": false,
+        "timeout": true,
+        "reward_source": "real online env.step rewards",
+        "terminal_next_obs_source": "real online final_obs"
+      },
+      "cadence": {
+        "version": 2,
+        "contract": {
+          "max_physical_actions": 20000,
+          "warmup_episodes": 10,
+          "actions_per_call": 40,
+          "max_episode_actions": 200,
+          "minimum_online_actions": 64
+        },
+        "counters": {
+          "episodes_completed": 69,
+          "physical_actions": 10842,
+          "warmup_actions": 1827,
+          "post_warmup_actions": 9015,
+          "carry_actions": 15,
+          "pending_calls": 5,
+          "completed_calls": 220,
+          "budget_truncated_episodes": 0
+        }
+      }
+    },
+    "learner_finished": {
+      "time": 1791003713.1818087,
+      "event": "learner_finished",
+      "metrics": {
+        "critic_loss": 0.011640611104667187,
+        "critic_grad_norm": 0.02931256592273712,
+        "q_mean": 0.10995795577764511,
+        "target_mean": 0.10679919272661209,
+        "critic_global_batch": 64.0,
+        "critic_microbatches": 1.0,
+        "base/base_fm_loss": 0.06771008670330048,
+        "base/base_global_batch": 64.0,
+        "base/base_fm_forwards": 1.0,
+        "base/base_parallel_devices": 4.0,
+        "base/base_grad_norm": 0.34746649861335754,
+        "base/base_sampled_parameter_delta_max": 1.9099563360214233e-05,
+        "base/base_changed_parameter_samples": 208.0,
+        "base/base_frozen_parameters_with_grad": 0.0,
+        "base/base_updates": 223.0,
+        "base/fm_callback_called": 1.0,
+        "editor_loss": 138.87327575683594,
+        "editor_grad_norm": 6.399824619293213,
+        "edit_q": 0.12164368480443954,
+        "entropy": -129.95510864257812,
+        "temperature_loss": -64.12565612792969,
+        "temperature": 1.0698907375335693,
+        "edit_norm": 1.3918040990829468,
+        "editor_global_batch": 64.0,
+        "editor_microbatches": 1.0,
+        "update_calls": 223.0,
+        "critic_steps": 4460.0,
+        "editor_steps": 223.0,
+        "temperature_steps": 223.0
+      },
+      "call": 223,
+      "learner_seconds": 354.7008638381958
+    }
+  },
+  "sources": {
+    "examples/embodiment/train_expo_formal.py": {
+      "sha256": "fc8c906dbcfb519a90d9e6e9ef062577df2b7ee9f2c5659e0bc94b954bff36e2"
+    },
+    "examples/embodiment/train_expo_ft.py": {
+      "sha256": "e768dfae52d2df07c76385d9f5169499b401230c936431199b75f182980b3122"
+    },
+    "rlinf/algorithms/expo_ft/backend.py": {
+      "sha256": "0fea4f8da441ca8906c21df8a04c39e4f143caf31cbbb1bd7df47e6d3e6bfacd"
+    },
+    "rlinf/algorithms/expo_ft/core.py": {
+      "sha256": "540ae27e81fc3284396388f129322734c4c0065049b202474e4e326e6ad44905"
+    },
+    "rlinf/algorithms/expo_ft/formal_cadence.py": {
+      "sha256": "48315c819975ef39f4b947b5003c701fd3a5c6b2ca62e7e63c47d4f05a7e4fec"
+    },
+    "rlinf/algorithms/expo_ft/formal_eval.py": {
+      "sha256": "97584a841f9eb8d2614d75e458b47a11b05b45ebc439353564c50310e54cc807"
+    },
+    "rlinf/algorithms/expo_ft/formal_replay.py": {
+      "sha256": "b9922ed73b5b06f9884ff317eaa026c98ce898c8f7f01e0575ee286a4b895754"
+    },
+    "rlinf/algorithms/expo_ft/lifecycle.py": {
+      "sha256": "05ed680622452c4abb2945093b1fbd50af52d74088bfabc510a820dccab40d7e"
+    },
+    "tests/native_expo_lifecycle.py": {
+      "sha256": "fec3e3f48e907f798bb267c1d5d242a93cca8508ecb2e3d3486da95928d60400"
+    },
+    "tests/test_expo_lifecycle.py": {
+      "sha256": "d47958e1753403f45b7dc3ee5b434c385e1a338ec6d451f9a9f5b2c78eebe857"
+    },
+    "tests/test_expo_repair_owner.py": {
+      "sha256": "a0324855e225d0838390c6740c8ad9510a3179bbc40f42a38d54f114f6442809"
+    },
+    "tools/expo_formal_owner.py": {
+      "sha256": "8e5bf3faa0891612ff003c0e8d8c3b7d5a601debbe35871d7f740cd54ea6dfb6"
+    },
+    "tools/expo_formal_resources.py": {
+      "sha256": "ebb34a340ab2980011d01be14862209c2977a525bec35bde883a17498292afac"
+    },
+    "tools/expo_process.py": {
+      "sha256": "a23efa918d4808d87120a0ee900c2fbbabc10d5f651b7200c836959a71c067e3"
+    },
+    "tools/expo_rlt_switch.py": {
+      "sha256": "c9c20968403c3c861edde1053255e93e3ce16fd788a2d6e6b31dc1517330d8ff"
+    },
+    "tools/expo_smoke_owner.py": {
+      "sha256": "d7fc1f670b68d3e559d55d0fef5949101f72d955f187f08008fabc9b40cb5847"
+    },
+    "tools/launch_expo_repair.py": {
+      "sha256": "4d5984ad711ddec23d997c4a20b3c76780b24a6298753c2a33f3b97c4ff8ab9d"
+    }
+  },
+  "omitted": "Source text duplicates, full driver/owner logs, full event stream, raw GPU process lists; retained in local raw snapshot."
+}
