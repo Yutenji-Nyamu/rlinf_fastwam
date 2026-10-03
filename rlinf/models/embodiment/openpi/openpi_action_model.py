@@ -16,6 +16,8 @@ import math
 import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
+# pi05-signals-20261003: explicit eval-only collection
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -844,8 +846,18 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         compute_values=True,
         rtc_context: RTCGuidanceContext | None = None,
         return_dvac_telemetry: bool = False,
+        record_signals: bool = False,
+        consistency_steps: int = 5,
+        noise=None,
+        num_steps: int | None = None,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
+        if mode != "eval" and (noise is not None or num_steps is not None or record_signals):
+            raise ValueError("Per-call inference overrides and signal collection require mode='eval'")
+        if record_signals and not return_dvac_telemetry:
+            raise ValueError("record_signals requires return_dvac_telemetry=True")
+        if self.config.use_dsrl and (noise is not None or record_signals):
+            raise ValueError("External noise/signal collection is not supported on the DSRL path")
         to_process_obs = self.obs_processor(env_obs)  # env obs -> policy input obs
         processed_obs = self.input_transform(
             to_process_obs, transpose=False
@@ -871,6 +883,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 observation,
                 noise=noise_actions,
                 mode="eval",
+                num_steps=num_steps,
                 compute_values=compute_values,
                 return_dvac_telemetry=return_dvac_telemetry,
             )
@@ -889,6 +902,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             # Non-DSRL or eval mode
             if rtc_context is not None and mode == "eval" and self.config.rtc_enabled:
+                if noise is not None or num_steps is not None or record_signals:
+                    raise ValueError("Per-call inference overrides/signal collection require the native non-RTC path")
                 if return_dvac_telemetry:
                     raise ValueError(
                         "DVAC telemetry records the native OpenPI sampler; RTC guidance "
@@ -909,6 +924,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     mode=mode,
                     compute_values=compute_values,
                     return_dvac_telemetry=return_dvac_telemetry,
+                    noise=noise,
+                    num_steps=num_steps,
+                    record_signals=record_signals,
+                    consistency_steps=consistency_steps,
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -986,8 +1005,26 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         return_dvac_telemetry: bool = False,
+        num_steps: int | None = None,
+        record_signals: bool = False,
+        consistency_steps: int = 5,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
+        if num_steps is not None:
+            if mode != "eval":
+                raise ValueError("num_steps override is evaluation-only")
+            if isinstance(num_steps, bool) or not isinstance(num_steps, int) or num_steps < 1:
+                raise ValueError("num_steps must be a positive integer")
+        if record_signals:
+            if mode != "eval" or not return_dvac_telemetry:
+                raise ValueError("record_signals requires eval and return_dvac_telemetry=True")
+            if isinstance(consistency_steps, bool) or not isinstance(consistency_steps, int) or consistency_steps < 1:
+                raise ValueError("consistency_steps must be a positive integer")
+            main_steps = self.config.num_steps if num_steps is None else num_steps
+            if main_steps != 10:
+                raise ValueError("Signal collection is defined on the M10 main chain")
+            if getattr(self, "_signal_observer", None) is None:
+                raise ValueError("Bind model._signal_observer before enabling record_signals")
         bsize = observation.state.shape[0]
         device = observation.state.device
         if noise is None:
@@ -1005,7 +1042,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
-        return self._sample_actions_with_prefix_cache(
+        result = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
             prefix_pad_masks,
@@ -1014,7 +1051,36 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode=mode,
             compute_values=compute_values,
             return_dvac_telemetry=return_dvac_telemetry,
+            num_steps=num_steps,
+            record_signals=record_signals,
         )
+        if record_signals:
+            telemetry = result["dvac_telemetry"]
+            # This is the full noise AFTER the cached sampler's dtype cast.
+            # Reusing the original pre-cast random sample can change the path.
+            initial_noise = telemetry["initial_noise_full"]
+            rng_devices = []
+            if initial_noise.device.type == "cuda":
+                rng_devices = [initial_noise.device.index]
+            # flow_ode still samples zero-weight noise each round. Restore
+            # CPU and this CUDA RNG so the next main query is unchanged.
+            with torch.random.fork_rng(devices=rng_devices, enabled=True):
+                side = self._sample_actions_with_prefix_cache(
+                    state, prefix_output, prefix_pad_masks, past_key_values,
+                    noise=initial_noise.clone(), mode="eval",
+                    compute_values=False, return_dvac_telemetry=False,
+                    num_steps=consistency_steps, record_signals=False,
+                )
+            telemetry["side_action_model"] = side["actions"][
+                ..., : self.config.action_env_dim
+            ].detach()
+            telemetry["side_num_steps"] = torch.tensor(
+                consistency_steps, device=initial_noise.device, dtype=torch.int64
+            )
+            side_grid = self._get_timesteps(consistency_steps, initial_noise.device)
+            telemetry["side_timesteps"] = side_grid[:-1].detach()
+            telemetry["side_final_time"] = side_grid[-1].detach()
+        return result
 
     def _sample_actions_with_prefix_cache(
         self,
@@ -1026,10 +1092,25 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         return_dvac_telemetry: bool = False,
+        num_steps: int | None = None,
+        record_signals: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        if num_steps is None:
+            num_steps = self.config.num_steps
+        else:
+            if mode != "eval":
+                raise ValueError("num_steps override is evaluation-only")
+            if isinstance(num_steps, bool) or not isinstance(num_steps, int) or num_steps < 1:
+                raise ValueError("num_steps must be a positive integer")
+        observer = None
+        if record_signals:
+            if mode != "eval" or not return_dvac_telemetry or num_steps != 10:
+                raise ValueError("record_signals requires native M10 eval telemetry")
+            observer = getattr(self, "_signal_observer", None)
+            if observer is None:
+                raise ValueError("Bind model._signal_observer before enabling record_signals")
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
@@ -1037,6 +1118,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
+        if record_signals:
+            expected_shape = (bsize, self.config.action_horizon, self.config.action_dim)
+            if tuple(noise.shape) != expected_shape or noise.device != device:
+                raise ValueError("Signal collection requires full model-space initial noise on the state device")
+        initial_noise_full = noise.detach().clone() if record_signals else None
+        velocity_trace = [] if record_signals else None
         x_t = noise
         # add sde sample and traj collect
         chains = []
@@ -1088,16 +1175,19 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
-            )
+            with (observer.step(idx, num_steps) if observer is not None else nullcontext()):
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if velocity_trace is not None:
+                velocity_trace.append(v_t[..., : self.config.action_env_dim].detach().clone())
             if endpoint_trace is not None:
                 t_i = telemetry_timesteps[idx].to(dtype=x_t_prev.dtype)
                 endpoint_trace.append(
@@ -1146,6 +1236,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 "timesteps": telemetry_timesteps[:-1].detach(),
                 "final_model_action": x_0[..., : self.config.action_env_dim].detach(),
             }
+        if record_signals:
+            result["dvac_telemetry"]["velocity"] = torch.stack(velocity_trace, dim=1)
+            result["dvac_telemetry"]["initial_noise_full"] = initial_noise_full
         return result
 
     def _get_timesteps(self, denoise_steps, device):

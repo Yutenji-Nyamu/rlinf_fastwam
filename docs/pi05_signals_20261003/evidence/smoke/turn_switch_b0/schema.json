@@ -1,0 +1,39 @@
+{
+  "schema": "pi05-action-signals-v1",
+  "signals": [
+    "dv",
+    "fresco",
+    "geo",
+    "geoaac",
+    "shift",
+    "norm",
+    "sr",
+    "ugrow"
+  ],
+  "shape": {
+    "B": 16,
+    "M": 10,
+    "H": 50,
+    "D": 14
+  },
+  "tail_n": 5,
+  "norm_deepest_layers": 3,
+  "sr_window": 5,
+  "ugrow_steps": [
+    10,
+    5
+  ],
+  "hidden_storage": "last_layer_hidden float16: storage rounding only; sr_last_hidden float32 preserves scoring input",
+  "shift_norm_storage": "shift layer means and per-layer L2 norms are float32",
+  "score_storage": "float64 scores; bool valid masks; NaN iff invalid",
+  "fresco_input": "x_chain[:,:10]; excludes post-update final x_chain[:,10]",
+  "geoaac_first_action": "NaN/False: no previous nonempty prefix",
+  "signal_weights": "raw scores only; no reward/loss weighting and no environment intervention",
+  "cleanup_order": "threadpool.shutdown(wait=True), then env.offload(clear_cache=True)",
+  "source_hashes": {
+    "run_batch.py": "e9303c99d152cbb0bcf8d09957c778aa2e1b9f2524a1286529f9ca367f182380",
+    "signal_math.py": "6af7368c8a58e3b454928fe8cd540bfec64e7094319ee1cf6261dd5dcd61fd2b",
+    "signal_observer.py": "99c6363a120e7975be347d44d63e417c282cd389521c8350e0017532fe0a5ae7",
+    "validate_batch.py": "f3f993ff0b5130e516d83af9b91cd2dd0bb1f275bdf21191d80fe118db5c265f"
+  }
+}
