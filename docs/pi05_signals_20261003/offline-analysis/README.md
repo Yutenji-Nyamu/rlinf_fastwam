@@ -11,4 +11,4 @@ The completed inference records are replayed on CPU to preserve each submitted a
 
 Validation: all 1,077 batch queries recomputed; all score masks match. Seven scores match exactly; SR's equivalent Gram-eigenvalue calculation differs by at most 1.33e-15. All 368 marked entries exclude unknown terminal prefixes; all 1,732 gallery links resolve. A/B/C and visual labels are descriptive selection aids, not statistical significance or training evidence.
 
-Plots, videos, NPZ files, per-episode candidate tables and full visual notes stay on the server. Only source archives, compact terminal/QC evidence and documentation are published here. Frozen inference source and training configs are unchanged. No additional GPU inference or training was run for this analysis.
+The subsequent visualization publication is available at [the full visual atlas](visualizations/README.md): PNG/SVG curves, task sheets, paired frames and review notes can now be browsed on GitHub. Videos, raw NPZ files and model weights remain on the server. Frozen inference source and training configs are unchanged. No additional GPU inference or training was run for this analysis.

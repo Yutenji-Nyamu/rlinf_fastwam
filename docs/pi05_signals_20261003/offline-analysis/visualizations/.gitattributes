@@ -1,0 +1,5 @@
+# Preserve exported scientific files byte-for-byte.
+# Generated SVG paths/base64 are reviewed as images, not line diffs.
+figures/**/*.svg -text -diff linguist-generated=true
+# CSV uses its original CRLF convention; still check other whitespace errors.
+*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
