@@ -1,0 +1,49 @@
+"""Diagnostic correlates, preserving the eight original scores unchanged."""
+import os
+for k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):os.environ[k]='1'
+os.environ['CUDA_VISIBLE_DEVICES']=''
+import collections,concurrent.futures,json,time
+from pathlib import Path
+import numpy as np
+from scipy.stats import spearmanr
+D=Path('/data/chenyiteng/results/pi05-signals/analysis-20261004-v1');RAW=Path('/data/chenyiteng/results/pi05-signals/20261003-v1')
+S=('dv','fresco','geo','geoaac','shift','norm','sr','ugrow')
+X=('noise_norm','noise_to_action_distance','action_norm','velocity_norm','motion')
+def save(p,obj):
+    p=Path(p);p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False))
+def rho(a,b,mask):
+    m=mask & np.isfinite(a) & np.isfinite(b)
+    if m.sum()<15 or np.ptp(a[m])<1e-15 or np.ptp(b[m])<1e-15:return None
+    r=float(spearmanr(a[m],b[m]).statistic);return r if np.isfinite(r) else None
+def batch(path):
+    info=json.loads(path.read_text());b=info['batch'];rdir=RAW/'batches'/b
+    eps=json.loads((rdir/'episodes.json').read_text());parts=[collections.defaultdict(list) for _ in eps]
+    for q in range(info['queries']):
+        with np.load(rdir/f'query_{q:03d}.npz') as z:
+            noise=z['initial_noise_full'][...,:14].astype(float);action=z['final_model_action'].astype(float);velocity=z['velocity'].astype(float)
+            pred=dict(noise_norm=np.linalg.norm(noise,axis=-1),noise_to_action_distance=np.linalg.norm(noise-action,axis=-1),action_norm=np.linalg.norm(action,axis=-1),velocity_norm=np.linalg.norm(velocity,axis=-1).mean(axis=1))
+            for slot in range(16):
+                ix=np.flatnonzero(z['submitted_mask'][slot])
+                if not len(ix):continue
+                for k,a in pred.items():parts[slot][k].append(a[slot,ix])
+    rows=[]
+    for slot,ep in enumerate(eps):
+        ident=f'{b}_s{slot:02d}';p=D/'series'/ep['task']/(ident+'.npz')
+        if not p.exists():continue
+        with np.load(p) as z:c={k:z[k] for k in z.files}
+        diag={k:np.concatenate(v) for k,v in parts[slot].items()};assert all(len(v)==len(c['action']) for v in diag.values())
+        folder=D/'diagnostics'/ep['task'];folder.mkdir(parents=True,exist_ok=True);np.savez_compressed(folder/(ident+'.npz'),**diag)
+        diag['motion']=c['motion'];mask=np.asarray(c['exact'],bool)
+        rows.append(dict(id=ident,task=ep['task'],success=ep['success'],quality=info['quality'],n_actions=int(mask.sum()),signal_correlations={a:{b:rho(c[a],c[b],mask) for b in S} for a in S},predictor_correlations={a:{b:rho(c[a],diag[b],mask) for b in X} for a in S},median={a:float(np.nanmedian(c[a])) for a in S}))
+    return rows
+def summarize_values(values):
+    a=np.array([v for v in values if v is not None]);return dict(n=len(a),median=float(np.median(a)),q25=float(np.quantile(a,.25)),q75=float(np.quantile(a,.75))) if len(a) else dict(n=0,median=None)
+def main():
+    os.nice(12);rows=[]
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:
+        for result in pool.map(batch,sorted((D/'batches').glob('*.json'))):rows.extend(result)
+    valid=[r for r in rows if r['quality']=='validated']
+    s=dict(time=time.time(),episodes=len(rows),validated_episodes=len(valid),mask='nonterminal confirmed submitted chunks only; terminal successful chunk excluded',signal_correlations={a:{b:summarize_values(r['signal_correlations'][a][b] for r in valid) for b in S} for a in S},predictor_correlations={a:{b:summarize_values(r['predictor_correlations'][a][b] for r in valid) for b in X} for a in S})
+    save(D/'correlations_by_episode.json',rows);save(D/'diagnostic_summary.json',s)
+    print(json.dumps({a:{b:v['median'] for b,v in s['predictor_correlations'][a].items()} for a in S}))
+if __name__=='__main__':main()

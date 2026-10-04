@@ -1,0 +1,131 @@
+"""Server-only action-level plots and frame-bracket gallery. CPU, no inference."""
+import os
+for k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):os.environ[k]='1'
+os.environ['CUDA_VISIBLE_DEVICES']=''
+import collections,concurrent.futures,html,json,time,traceback
+from pathlib import Path
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from PIL import Image,ImageDraw,ImageFont
+import cv2
+D=Path('/data/chenyiteng/results/pi05-signals/analysis-20261004-v1')
+SIGNALS=('dv','fresco','geo','geoaac','shift','norm','sr','ugrow')
+NAMES={'dv':'DV','fresco':'Fresco-tail5','geo':'GEO-full','geoaac':'GeoAAC-growth','shift':'SHIFT','norm':'Tell-Tale Norm','sr':'SR-window5','ugrow':'U-GROW 10vs5'}
+MEANING={'dv':'Final-action estimates disagree across denoising steps.','fresco':'Intermediate action drafts vary across the final five steps.','geo':'Adjacent velocity changes relative to velocity magnitude.','geoaac':'Positive relative growth of the entire action-prefix geometry.','shift':'First/last denoising representations change after layer averaging.','norm':'Residual-vector magnitude; last 5 evaluations, deepest 3 layers.','sr':'Directional diversity of the neighboring 5 action representations.','ugrow':'Same input/noise, complete 10-step versus 5-step action disagreement.'}
+COLORS={'dv':'#2563eb','fresco':'#0f766e','geo':'#7c3aed','geoaac':'#c2410c','shift':'#0891b2','norm':'#be185d','sr':'#4d7c0f','ugrow':'#a16207'}
+GRADE={'A':'#166534','B':'#a16207','C':'#b91c1c','NO_DATA':'#64748b'}
+plt.rcParams.update({'font.size':10,'axes.spines.top':False,'axes.spines.right':False,'savefig.facecolor':'white'})
+def read(p):return json.loads(Path(p).read_text())
+def save(p,obj):
+    p=Path(p);p.parent.mkdir(parents=True,exist_ok=True);temp=p.with_suffix(p.suffix+'.tmp');temp.write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False));temp.replace(p)
+def font(size=16):return ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',size)
+def landmarks(r,c):
+    if r['pattern'] in ('localized_peaks','sparse_prefix_growth'):items=r['peaks'][:2]
+    else:items=r['raw_structure'].get('regions',[])
+    chosen=[];seen=set()
+    for v in items+r['raw_structure'].get('regions',[]):
+        q=v['query']
+        if q in seen:continue
+        seen.add(q);v=dict(v);v['action']=int(c['action'][v['index']]);chosen.append(v)
+        if len(chosen)==2:break
+    if not chosen and len(c['action']):
+        i=int(np.nanargmax(c[r['signal']]));chosen=[dict(index=i,query=int(c['query'][i]),h=int(c['h'][i]),action=int(c['action'][i]),kind='maximum',terminal_prefix_unknown=not bool(c['exact'][i]))]
+    return chosen
+def get_frame(video,index,out):
+    if out.exists():return
+    cap=cv2.VideoCapture(video);cap.set(cv2.CAP_PROP_POS_FRAMES,index);ok,frame=cap.read();cap.release()
+    if not ok:raise RuntimeError(f'missing frame {video} {index}')
+    out.parent.mkdir(parents=True,exist_ok=True)
+    assert cv2.imwrite(str(out),frame,[cv2.IMWRITE_JPEG_QUALITY,92])
+def plot_curve(ax,r,c,marks,compact=False):
+    y=c[r['signal']];color=COLORS[r['signal']]
+    for q in np.unique(c['query']):
+        m=c['query']==q;x=c['action'][m];v=y[m]
+        if (~c['exact'][m]).any():ax.axvspan(x[0]-.5,x[-1]+.5,color='#fed7aa',alpha=.7,lw=0)
+        ax.plot(x,v,color=color,lw=1.05 if compact else 1.1)
+        if q:ax.axvline(x[0]-.5,color='#94a3b8',lw=.4,ls=':')
+    for i,m in enumerate(marks):
+        j=m['index'];a=c['action'][j]
+        if np.isfinite(y[j]):ax.scatter([a],[y[j]],s=24,color='#111827',zorder=3);ax.annotate(str(i+1),(a,y[j]),xytext=(3,7),textcoords='offset points',fontsize=9,fontweight='bold')
+    ax.set_xlim(float(c['action'][0])-1,float(c['action'][-1])+1);ax.grid(axis='y',alpha=.15)
+    ax.tick_params(labelsize=8 if compact else 9);ax.ticklabel_format(axis='y',style='sci',scilimits=(-3,4))
+    ax.set_xlabel('Submitted action slot (0-based)',fontsize=8 if compact else 10)
+    if not compact:ax.set_ylabel(NAMES[r['signal']])
+def one(r):
+    if 'id' not in r:return r
+    with np.load(D/r['series']) as z:c={k:z[k] for k in z.files}
+    task=r['task'];s=r['signal'];folder=D/'figures'/task;folder.mkdir(parents=True,exist_ok=True)
+    marks=landmarks(r,c);frames=[]
+    for mi,m in enumerate(marks):
+        for side,index in [('before',m['query']),('after',m['query']+1)]:
+            p=D/'frames'/task/r['id']/f'f{index:03d}.jpg';get_frame(r['video'],index,p)
+            frames.append(dict(path=str(p.relative_to(D)),landmark=mi+1,side=side,query=m['query'],frame=index,terminal_prefix_unknown=m['terminal_prefix_unknown']))
+    r=dict(r,landmarks=marks,frames=frames)
+    fig,ax=plt.subplots(figsize=(6.2,1.75),dpi=140);plot_curve(ax,r,c,marks,True);fig.subplots_adjust(left=.12,right=.98,bottom=.27,top=.86)
+    ax.set_title(f"{NAMES[s]} | {r['grade']} | {r['pattern']}",loc='left',fontsize=9,color=GRADE[r['grade']])
+    mini=folder/(s+'_curve.png');fig.savefig(mini);plt.close(fig)
+    fig=plt.figure(figsize=(13,8.4),dpi=150);grid=fig.add_gridspec(3,4,height_ratios=[2.4,1.3,2.1],hspace=.65,wspace=.2)
+    ax=fig.add_subplot(grid[0,:]);plot_curve(ax,r,c,marks)
+    title=f"{task} / {NAMES[s]} / {r['id']} / {'SUCCESS' if r['success'] else 'FAILURE'}"
+    fig.suptitle(title,fontsize=14,x=.065,ha='left',y=.975)
+    ax.set_title(f"Grade {r['grade']}: {r['pattern']} | relative span {r['raw_structure']['relative_span']:.3g} | position-template explained {r['position_template_explained']:.0%}",loc='left',fontsize=10)
+    ax2=fig.add_subplot(grid[1,:]);y=c[s];template=np.asarray(r['position_template'])[c['h']]*r['position_scale'];residual=y-template
+    for q in np.unique(c['query']):
+        m=c['query']==q;ax2.plot(c['action'][m],residual[m],color=COLORS[s],lw=.8)
+    ax2.set_xlim(ax.get_xlim());ax2.set_xlabel('Submitted action slot');ax2.set_ylabel('Diagnostic only',fontsize=9);ax2.set_title('After removing other episodes\' repeated within-chunk position shape; main curve above is unchanged.',loc='left',fontsize=9);ax2.grid(axis='y',alpha=.15)
+    for i,f in enumerate(frames):
+        a=fig.add_subplot(grid[2,i]);a.imshow(Image.open(D/f['path']));a.axis('off');suffix=' [terminal prefix unknown]' if f['terminal_prefix_unknown'] else ''
+        a.set_title(f"{f['landmark']} {f['side']} chunk {f['query']}\nframe {f['frame']}{suffix}",fontsize=8)
+    fig.text(.065,.03,MEANING[s]+'\nVideo brackets the whole 50-action chunk; it does not locate the marked action within that chunk. Orange = terminal prefix unknown.',fontsize=9,color='#475569')
+    fig.subplots_adjust(left=.075,right=.98,top=.87,bottom=.12)
+    png=folder/(s+'.png');svg=folder/(s+'.svg');fig.savefig(png);fig.savefig(svg);plt.close(fig)
+    r.update(figure=str(png.relative_to(D)),svg=str(svg.relative_to(D)),curve=str(mini.relative_to(D)))
+    save(D/'entries'/task/(s+'.json'),r);return r
+def task_sheet(task,rows):
+    img=Image.new('RGB',(1600,100+len(rows)*255),'#f8fafc');draw=ImageDraw.Draw(img)
+    draw.text((24,14),task,font=font(26),fill='#0f172a');draw.text((24,53),'Raw per-action curves | snapshots bracket chunks, not exact action instants | A/B/C = screening, not semantic proof',font=font(16),fill='#475569')
+    for j,r in enumerate(rows):
+        y=100+j*255
+        if 'id' not in r:draw.text((24,y+70),f"{NAMES[r['signal']]}: NO COMPLETE DATA",font=font(22),fill=GRADE['NO_DATA']);continue
+        curve=Image.open(D/r['curve']).convert('RGB');curve.thumbnail((825,235));img.paste(curve,(5,y+5))
+        for i,f in enumerate(r['frames']):
+            tile=Image.open(D/f['path']).convert('RGB');tile.thumbnail((188,145));x=820+i*193;img.paste(tile,(x,y+44))
+            draw.text((x,y+20),f"{f['landmark']} {f['side']} q{f['query']}",font=font(13),fill='#0f172a')
+        draw.text((830,y+195),f"{r['id']} / {'SUCCESS' if r['success'] else 'FAIL'} / seed {r['actual_seed']}",font=font(13),fill='#475569')
+        draw.text((830,y+215),f"position effect {r['position_template_explained']:.0%}; coherence {r['raw_structure']['coherence']:.2f}",font=font(13),fill='#475569')
+        draw.line((20,y+250,1580,y+250),fill='#cbd5e1',width=1)
+    p=D/'task_sheets'/(task+'.jpg');p.parent.mkdir(exist_ok=True);img.save(p,quality=93)
+def gallery(rows):
+    bytask=collections.defaultdict(list)
+    for r in rows:bytask[r['task']].append(r)
+    base='''<!doctype html><html><meta charset="utf-8"><style>body{font:16px system-ui;margin:24px;background:#f8fafc;color:#0f172a}a{color:#1d4ed8}nav{display:flex;gap:12px;flex-wrap:wrap}table{border-collapse:collapse;background:white}td,th{padding:8px 13px;border:1px solid #cbd5e1}img{max-width:100%;height:auto}.note{padding:14px;background:#fff7ed;border-left:4px solid #f97316}article{margin:28px 0}select,input{font:inherit;padding:6px}.muted{color:#64748b}</style>'''
+    for task,rr in bytask.items():
+        task_sheet(task,rr)
+        lines=[base,f'<h1>{task}</h1><p><a href="../index.html">All tasks</a> · <a href="../task_sheets/{task}.jpg">Full task sheet</a></p>', '<p class="note">Only pre/post chunk frames were recorded. A visible stage transition is a candidate explanation, not proof of a contact instant. Main plots preserve every action score.</p>',f'<img src="../task_sheets/{task}.jpg" width="1600">']
+        for r in rr:
+            if 'figure' in r:lines += [f'<article id="{r["signal"]}"><h2>{NAMES[r["signal"]]} · {r["grade"]} · {r["pattern"]}</h2>',f'<p>{html.escape(MEANING[r["signal"]])}</p><a href="../{r["svg"]}">SVG</a> · <a href="../entries/{task}/{r["signal"]}.json">metadata</a>',f'<img loading="lazy" src="../{r["figure"]}"></article>']
+        (D/'tasks').mkdir(exist_ok=True);(D/'tasks'/(task+'.html')).write_text('\n'.join(lines),encoding='utf-8')
+    summ=read(D/'summary.json')
+    lines=[base,'<h1>π0.5 · eight signals · action-level review</h1>',f'<p>{summ["validated_episodes"]} validated episodes · {summ["validated_successes"]} successes · {summ["recomputed_queries"]} queries replayed · {summ["available_entries"]}/{summ["entries"]} available selections.</p>', '<p class="note">A/B/C describe signal shape only; visual interpretations are listed separately in the review notes. orange curve region = successful terminal chunk with unknown physical action prefix. Four tasks lack complete data; shake_bottle is supplemental due to duplicate seeds.</p>', '<p><a href="summary.json">Audit summary</a> · <a href="selection.csv">Selection table</a> · <a href="REVIEW.md">Review notes</a> · <a href="METHOD.md">Definitions and limitations</a></p>', '<input id="search" placeholder="Filter tasks" oninput="document.querySelectorAll(\'tbody tr\').forEach(x=>x.hidden=!x.textContent.toLowerCase().includes(this.value.toLowerCase()))">', '<table><thead><tr><th>Task</th>'+''.join(f'<th>{NAMES[s]}</th>' for s in SIGNALS)+'</tr></thead><tbody>']
+    for task,rr in bytask.items():
+        line=f'<tr><td><a href="tasks/{task}.html">{task}</a></td>'
+        for r in rr:
+            g=r['grade'];line+=f'<td style="color:{GRADE[g]}"><a href="tasks/{task}.html#{r["signal"]}">{g}</a>'+(' ✓' if r.get('success') else ' ×' if 'id' in r else '')+'</td>'
+        lines.append(line+'</tr>')
+    lines.append('</tbody></table>');(D/'index.html').write_text('\n'.join(lines),encoding='utf-8')
+    save(D/'selected_rendered.json',rows)
+def main():
+    os.nice(12);assert (D/'analysis-complete.json').exists()
+    rows=read(D/'selected.json');result=[];errors=[]
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as ex:
+        futures={ex.submit(one,r):(r['task'],r['signal']) for r in rows}
+        for future in concurrent.futures.as_completed(futures):
+            try:result.append(future.result())
+            except BaseException as exc:errors.append(dict(entry=futures[future],error=repr(exc),traceback=traceback.format_exc()))
+            save(D/'render-progress.json',dict(completed=len(result),total=len(rows),errors=errors,time=time.time()))
+    if errors:raise RuntimeError(json.dumps(errors))
+    result.sort(key=lambda r:(r['task'],SIGNALS.index(r['signal'])));gallery(result)
+    save(D/'render-complete.json',dict(time=time.time(),entries=len(rows),figures=sum('figure' in r for r in result),tasks=len({r['task'] for r in result})))
+if __name__=='__main__':main()

@@ -1,0 +1,81 @@
+"""Attach visual judgements and publish a server-local reviewed atlas."""
+import os
+for k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):os.environ[k]='1'
+os.environ['CUDA_VISIBLE_DEVICES']=''
+import collections,csv,hashlib,html,json,time
+from pathlib import Path
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+D=Path('/data/chenyiteng/results/pi05-signals/analysis-20261004-v1')
+Q=Path('/data/chenyiteng/projects/pi05-signals-sz1-20261003')
+S=('dv','fresco','geo','geoaac','shift','norm','sr','ugrow')
+def read(p):return json.loads(Path(p).read_text())
+def save(p,obj):Path(p).write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False))
+def verdict(note):
+    if note.startswith(('弱','形态清楚但语义弱')):return 'weak'
+    if '混杂强' in note or note.startswith(('谨慎','失败例谨慎')):return 'confounded'
+    if '阶段差异' in note and '候选' not in note:return 'phase_only'
+    if '候选' in note:return 'candidate'
+    return 'confounded'
+def main():
+    os.nice(12);rows=read(D/'selected_rendered.json');review=read(Q/'visual_review_notes_20261004.json');assert len(review['tasks'])==46
+    diagnostic=read(D/'diagnostic_summary.json');corr={r['id']:r for r in read(D/'correlations_by_episode.json')}
+    before=read(D/'selection-before-prefix-filter.json');old={(r['task'],r['signal']):r.get('id') for r in before}
+    for r in rows:
+        if 'id' not in r:r.update(visual_verdict='no_data',semantic_review='该任务未取得完整可复算批次。',eligible_for_explanation=False);continue
+        task=review['tasks'][r['task']];note=task.get(r['signal'],review['default_notes'].get(r['signal']))
+        assert note,(r['task'],r['signal']);v=verdict(note)
+        r.update(semantic_review=note,visual_verdict=v,eligible_for_explanation=v=='candidate',reviewed_views='raw eight-signal task sheet plus recorded pre/post chunk frames; no exact contact timestamp',diagnostic_correlations=corr[r['id']]['predictor_correlations'][r['signal']],selection_changed_after_terminal_filter=old[(r['task'],r['signal'])]!=r['id'])
+        for mark in r['landmarks']:assert not mark['terminal_prefix_unknown'],(r['task'],r['signal'],mark)
+        save(D/'entries'/r['task']/(r['signal']+'.json'),r)
+    save(D/'selected_reviewed.json',rows)
+    fields=['task','signal','id','quality','success','actual_seed','grade','visual_verdict','eligible_for_explanation','pattern','selection_actions','semantic_review','figure']
+    with (D/'selection_reviewed.csv').open('w',newline='',encoding='utf-8-sig') as f:
+        w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');w.writeheader();w.writerows(rows)
+    counts={s:dict(collections.Counter(r['visual_verdict'] for r in rows if r['signal']==s)) for s in S}
+    summary=read(D/'summary.json');summary.update(visual_reviewed_entries=sum('id' in r for r in rows),visual_reviewed_tasks=len(review['tasks']),visual_verdicts=counts,selection_scope='Ranking uses only confirmed nonterminal prefixes. Full curves retain terminal unknown-prefix shading.',selected_success_entries=sum(r.get('success',False) for r in rows),selected_failure_entries=sum('id' in r and not r['success'] for r in rows),changed_after_terminal_filter=sum(r.get('selection_changed_after_terminal_filter',False) for r in rows))
+    save(D/'summary.json',summary)
+    bytask=collections.defaultdict(list)
+    for r in rows:bytask[r['task']].append(r)
+    lines=['# 七信号＋DV：服务器离线筛选与看图复核','', '2026-10-04；这是描述性展示筛选，不是显著性检验、失败预测性能或因果归因。','',f"- 正式验收89批、1424条，其中751条成功；另有shake_bottle两批32条作为重复种子补充数据。",'- 1077次批量决策已重算八条信号；除SR数值算法误差1.33e-15外，与采集分数一致。','- 50任务×8信号=400个条目；46任务有368组曲线/帧，4任务32项缺数据。','- 352项来自成功轨迹；move_stapler_pad、place_dual_shoes的16项为失败候选。','- 看过46张任务总图的全部8行，共368组。所有标记片段来自终止前的确定部分；橙色终止段不用于筛选。','- 图像只记录每个chunk前后，不能把某个峰精确叫作接触时刻。q/h/action索引均从0开始。','', '## 优先看什么','', '- DV/GEO/U-GROW：先看place_bread_basket，同一成功轨迹的入篮阶段共同升高；handover_mic、scan_object也有清楚阶段。','- Norm：先看place_object_basket的宽高区，含义是表示幅度；不要求它必须与DV同峰。','- GeoAAC：handover_mic可看前缀增长；大量任务的峰位于chunk前部，不能解释为独立动作难度。','- SR：pick_dual_bottles有较居中的局部峰；整体仍多边界形状，且stable rank非常接近1。','- Fresco/SHIFT：place_object_basket有宽峰，但路径长度混杂明显，保留作对照，不强推为不确定性/关键接触证据。','', '## 全量诊断','', '以下先在每条正式轨迹内、只用非终止已确认部分，计算Spearman相关，再取中位数；不足15个有效动作或常数序列不计。','', '| 信号 | 与初噪声到最终动作距离 | 与初噪声范数 | 与相邻动作变化量 |','|---|---:|---:|---:|']
+    for s in S:
+        p=diagnostic['predictor_correlations'][s];lines.append(f"| {s} | {p['noise_to_action_distance']['median']:.3f} | {p['noise_norm']['median']:.3f} | {p['motion']['median']:.3f} |")
+    lines += ['', 'Fresco的0.998意味着当前分数几乎按生成路径长度排序，并不等于观测条件下的随机不确定性。若去噪轨迹近似直线，跨去噪时间的草稿方差本来就与起终点距离平方成正比。SHIFT也较受该因素影响；这不等于原语言模型方法无效，只说明本次动作去噪适配存在混杂。','', 'DV与GEO的相关中位数约0.643，DV与U-GROW约0.365；它们有重叠但并非一条信号。相关不能证明因果或训练收益。','', '## 逐任务逐信号看图记录','', 'candidate=有可解释阶段候选；phase_only=形态有变化但事件证据弱；confounded=位置/遮挡/路径长度混杂；weak=不适合作为关键事件示例；no_data=没有完整数据。自动A/B/C仅衡量曲线形状，优先看人工复核这一列。','']
+    for task,rr in bytask.items():
+        lines += [f'### {task}','',f'[八信号总图](task_sheets/{task}.jpg) · [任务图册](tasks/{task}.html)','', '| 信号 | 候选 | 复核 | 观察 |','|---|---|---|---|']
+        for r in rr:lines.append(f"| {r['signal']} | {r.get('id','无')} | {r['visual_verdict']} | {r['semantic_review']} |")
+        lines.append('')
+        p=D/'tasks'/(task+'.html');page=p.read_text();anchor=f'<p class="note">人工看图复核：'+ '<br>'.join(f"<b>{r['signal']}</b> [{r['visual_verdict']}] {html.escape(r['semantic_review'])}" for r in rr)+'</p>'
+        page=page.replace(f'<img src="../task_sheets/{task}.jpg" width="1600">',anchor+f'<img src="../task_sheets/{task}.jpg" width="1600">');p.write_text(page,encoding='utf-8')
+    (D/'REVIEW.md').write_text('\n'.join(lines),encoding='utf-8')
+    # Compact server-only correlation and positional diagnostics.
+    m=np.array([[diagnostic['signal_correlations'][a][b]['median'] for b in S] for a in S])
+    fig,ax=plt.subplots(figsize=(8,7));im=ax.imshow(m,vmin=-1,vmax=1,cmap='coolwarm');ax.set_xticks(range(8),S,rotation=45,ha='right');ax.set_yticks(range(8),S)
+    for i in range(8):
+        for j in range(8):ax.text(j,i,f'{m[i,j]:.2f}',ha='center',va='center',fontsize=9)
+    ax.set_title('Median within-episode Spearman correlation\nvalidated, nonterminal action slots');fig.colorbar(im,ax=ax);fig.tight_layout();fig.savefig(D/'signal_correlations.png',dpi=180);plt.close(fig)
+    fig,axs=plt.subplots(2,4,figsize=(15,6))
+    for s,ax in zip(S,axs.flat):
+        v=summary['position_bias'][s];a=np.array(v['mean_relative_score']);a[np.array(v['count'])==0]=np.nan;ax.plot(np.arange(50),a);ax.set_title(s);ax.set_xlabel('h in chunk');ax.grid(alpha=.2)
+    fig.suptitle('Within-chunk position diagnostic (mean relative to each chunk median)');fig.tight_layout();fig.savefig(D/'position_bias.png',dpi=180);plt.close(fig)
+    # One reviewed example per signal, with confounded cases explicitly retained as comparisons.
+    examples={'dv':'place_bread_basket','fresco':'place_object_basket','geo':'handover_mic','geoaac':'handover_mic','shift':'place_object_basket','norm':'place_object_basket','sr':'pick_dual_bottles','ugrow':'place_bread_basket'}
+    p=D/'START.html';head='<meta charset="utf-8"><style>body{font:17px system-ui;margin:30px;max-width:1400px}img{max-width:100%}td{padding:8px;border:1px solid #ccc}a{color:#1d4ed8}</style><h1>七信号＋DV：先看这些</h1><p>结果均在深圳1。主图是逐动作原始值；帧只包围整个chunk。形状分数不等于语义或训练收益。</p><p><a href="index.html">全部50任务</a> · <a href="REVIEW.md">完整复核记录</a> · <a href="selection_reviewed.csv">400项总表</a> · <a href="METHOD.md">计算与限制</a></p>'
+    for s,task in examples.items():
+        r=next(r for r in rows if r['task']==task and r['signal']==s);head+=f'<h2>{s} · {task} · {r["visual_verdict"]}</h2><p>{html.escape(r["semantic_review"])}</p><a href="tasks/{task}.html#{s}"><img src="{r["figure"]}"></a>'
+    head+='<h2>信号关系</h2><img src="signal_correlations.png"><h2>chunk位置模式</h2><img src="position_bias.png">';p.write_text(head,encoding='utf-8')
+    index=D/'index.html';page=index.read_text();page=page.replace('<h1>π0.5', '<p><a href="START.html">先看复核后的代表例子</a> · <a href="selection_reviewed.csv">人工复核总表</a></p><h1>π0.5');index.write_text(page,encoding='utf-8')
+    files=[]
+    for r in rows:
+        if 'id' not in r:continue
+        for k in ('figure','svg','curve','series'):
+            f=D/r[k];assert f.is_file() and f.stat().st_size>0
+        for f in r['frames']:assert (D/f['path']).is_file()
+    for f in sorted(D.rglob('*')):
+        if f.is_file():files.append(dict(path=str(f.relative_to(D)),bytes=f.stat().st_size))
+    save(D/'artifact_index.json',files)
+    receipt=dict(time=time.time(),entries=len(rows),available=368,reviewed=368,tasks_reviewed=46,missing_tasks=sorted({r['task'] for r in rows if r['visual_verdict']=='no_data'}),visual_verdicts=counts,bytes=sum(f['bytes'] for f in files),files=len(files),raw_unchanged=True,cpu_only=True,automation_2='deleted',reviews_sha256=hashlib.sha256((Q/'visual_review_notes_20261004.json').read_bytes()).hexdigest())
+    save(D/'final-analysis-receipt.json',receipt);print(json.dumps(receipt,indent=2))
+if __name__=='__main__':main()

@@ -1,0 +1,244 @@
+"""CPU-only replay and honest per-action peak screening; all outputs stay on SZ1."""
+import os
+for k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS'):os.environ[k]='1'
+os.environ['CUDA_VISIBLE_DEVICES']=''
+import argparse,collections,concurrent.futures,csv,hashlib,json,math,time,traceback,zipfile
+from pathlib import Path
+import numpy as np
+from scipy.ndimage import median_filter
+from scipy.signal import find_peaks,peak_widths
+from scipy.stats import spearmanr
+import sys
+SOURCE=Path('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-signals-sz1-20261003/tools/pi05_signals')
+sys.path.insert(0,str(SOURCE))
+import signal_math as sm
+RAW=Path('/data/chenyiteng/results/pi05-signals/20261003-v1')
+DEST=Path('/data/chenyiteng/results/pi05-signals/analysis-20261004-v1')
+SIGNALS=('dv','fresco','geo','geoaac','shift','norm','sr','ugrow')
+INPUTS=('z_endpoint','x_chain','velocity','timesteps','shift_first_mean','shift_last_mean','layer_norms','sr_last_hidden','final_model_action','side_action_model')
+def read(p):return json.loads(Path(p).read_text())
+def save(p,obj):
+    p=Path(p);p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix(p.suffix+'.tmp');tmp.write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False));tmp.replace(p)
+def sr_gram(hidden):
+    a=np.asarray(hidden,dtype=np.float64);b,h,d=a.shape;starts=np.clip(np.arange(h)-2,0,h-5)
+    w=np.stack([a[:,i:i+5] for i in range(h-4)],axis=1)
+    scale=np.max(np.abs(w),axis=(-2,-1),keepdims=True);w=w/np.where(scale>0,scale,1)
+    gram=w@np.swapaxes(w,-1,-2);eig=np.linalg.eigvalsh(gram)
+    score=np.trace(gram,axis1=-2,axis2=-1)/np.maximum(eig[...,-1],np.finfo(float).tiny)
+    valid=np.isfinite(score)&(scale[...,0,0]>0)
+    return sm.SignalScore(np.where(valid,score,np.nan)[:,starts],valid[:,starts])
+def recompute(d):
+    return dict(dv=sm.dv_score(d['z_endpoint']),fresco=sm.fresco_score(d['x_chain'][:,:10]),geo=sm.geo_full(d['velocity']),geoaac=sm.geoaac_growth(d['velocity'],d['timesteps']),shift=sm.shift_score(d['shift_first_mean'],d['shift_last_mean']),norm=sm.norm_score(d['layer_norms']),sr=sr_gram(d['sr_last_hidden']),ugrow=sm.ugrow_10_vs_5(d['final_model_action'],d['side_action_model']))
+def scalar(x):return float(x) if np.isfinite(x) else None
+def salience(y,query,h,exact,motion):
+    good=np.isfinite(y);n=int(good.sum())
+    base={'n_actions':len(y),'n_valid':n,'score':0.,'grade':'C','reason':'insufficient_or_flat','peaks':[],'peak_count':0}
+    if n<15:return base
+    vals=y[good];scale=max(float(np.max(np.abs(vals))),1e-20)
+    raw=np.interp(np.arange(len(y)),np.flatnonzero(good),vals)
+    smooth=median_filter(raw,size=5,mode='nearest')
+    q20,med,q90,q99=np.quantile(vals,[.2,.5,.9,.99]);amp=float(q99-q20)
+    contrast=amp/(abs(float(med))+scale*1e-6+1e-20)
+    base.update(median=float(med),q99=float(q99),relative_contrast=float(contrast),minimum=float(vals.min()),maximum=float(vals.max()))
+    if amp<=scale*1e-5:return base
+    # The 5-action median is used only for screening; exported scientific curves stay raw.
+    prominence=.35*amp
+    padded=np.r_[q20,smooth,q20]
+    peaks,props=find_peaks(padded,prominence=prominence,distance=max(6,min(20,len(y)//20)))
+    peaks=peaks-1;keep=(peaks>=0)&(peaks<len(y));peaks=peaks[keep];prom=props['prominences'][keep]
+    if not len(peaks):return base
+    strong=prom>=max(.45*float(prom.max()),.35*amp);peaks=peaks[strong];prom=prom[strong]
+    order=np.argsort(-prom);peaks=peaks[order];prom=prom[order]
+    measure=peak_widths(padded,peaks+1,rel_height=.5);widths,left,right=measure[0],measure[2]-1,measure[3]-1
+    top=peaks[:2];excess=np.maximum(smooth-q20,0);cover=np.zeros(len(y),bool)
+    details=[]
+    for j,p in enumerate(peaks[:6]):
+        lo=max(0,int(math.floor(left[j])));hi=min(len(y)-1,int(math.ceil(right[j])))
+        if j<2:cover[lo:hi+1]=True
+        a=max(0,int(p)-2);z=min(len(y),int(p)+3);finite=np.flatnonzero(np.isfinite(y[a:z]))+a
+        rawp=int(finite[np.argmax(y[finite])]) if len(finite) else int(p)
+        details.append(dict(index=rawp,query=int(query[rawp]),h=int(h[rawp]),height=float(y[rawp]) if np.isfinite(y[rawp]) else None,prominence=float(prom[j]),width_actions=float(widths[j]),left_index=lo,right_index=hi,boundary=bool(h[rawp]<=2 or h[rawp]>=47),terminal_prefix_unknown=not bool(exact[rawp]),pre_frame=int(query[rawp]),post_frame=int(query[rawp]+1)))
+    dominance=float(excess[cover].sum()/(excess.sum()+1e-30));occupancy=float(np.mean(smooth>q20+.5*amp));count=len(peaks)
+    boundary_frac=float(np.mean([p['boundary'] for p in details[:2]]));terminal_frac=float(np.mean([p['terminal_prefix_unknown'] for p in details[:2]]))
+    count_penalty=1/(1+.8*max(0,count-2))
+    score=float(math.log1p(min(contrast,100))*dominance*(1-min(occupancy,.95))*count_penalty*(1-.45*boundary_frac)*(1-.15*terminal_frac))
+    strict=(1<=count<=2 and contrast>=.12 and dominance>=.5 and occupancy<=.35 and boundary_frac==0)
+    usable=(1<=count<=4 and contrast>=.05 and dominance>=.3)
+    grade='A' if strict else 'B' if usable else 'C'
+    reasons=[]
+    if count>2:reasons.append('multiple_peaks')
+    if contrast<.12:reasons.append('weak_relative_contrast')
+    if occupancy>.35:reasons.append('broad_elevated_region')
+    if dominance<.5:reasons.append('weak_peak_concentration')
+    if boundary_frac:reasons.append('chunk_boundary_peak')
+    if terminal_frac:reasons.append('terminal_execution_prefix_unknown')
+    finite=good&np.isfinite(motion)
+    corr=scalar(spearmanr(y[finite],motion[finite]).statistic) if finite.sum()>8 and np.ptp(motion[finite])>0 and np.ptp(y[finite])>0 else None
+    return dict(base,score=score,grade=grade,reason=';'.join(reasons) or 'one_or_two_localized_peaks',peaks=details,peak_count=count,top2_excess_share=dominance,high_fraction=occupancy,boundary_peak_fraction=boundary_frac,terminal_peak_fraction=terminal_frac,motion_spearman=corr)
+def batch_job(claim):
+    d=Path(claim['output']);batch=d.name;episodes=read(d/'episodes.json');done=read(d/'done.json')
+    task=episodes[0]['task'];quality='validated' if claim['state']=='VALIDATED' else 'supplemental_duplicate_seeds'
+    chunks=[collections.defaultdict(list) for _ in episodes];audits=[];position={s:[np.zeros(50),np.zeros(50,dtype=int)] for s in SIGNALS}
+    for q in range(done['queries']):
+        f=d/f'query_{q:03d}.npz'
+        with np.load(f,allow_pickle=False) as z:
+            raw={k:z[k] for k in INPUTS};scores=recompute(raw)
+            errors={};shape={k:list(v.shape) for k,v in raw.items()}
+            for s,result in scores.items():
+                recorded=z[s];valid=z[s+'_valid'];assert np.array_equal(valid,result.valid),(batch,q,s,'valid mask')
+                diff=float(np.max(np.abs(recorded[valid]-result.score[valid]))) if valid.any() else 0.
+                assert np.allclose(recorded,result.score,rtol=1e-9,atol=1e-11,equal_nan=True),(batch,q,s,diff)
+                errors[s]=diff
+            if q==0:
+                fields={k:{'shape':list(z[k].shape),'dtype':str(z[k].dtype)} for k in z.files if k not in ('last_layer_hidden',)}
+                for key in ('last_layer_hidden','initial_noise_full','hook_counts'):
+                    arr=z[key];assert np.isfinite(arr).all();fields[key]={'shape':list(arr.shape),'dtype':str(arr.dtype)}
+            submitted=z['submitted_mask'];exact=z['executed_mask'];active=z['active'];starts=z['action_slot_start']
+            norm_action=raw['final_model_action'];diff=np.linalg.norm(np.diff(norm_action,axis=1,prepend=norm_action[:,:1]),axis=-1)
+            env=z['env_action']
+            for slot in range(len(episodes)):
+                if not active[slot]:continue
+                mask=submitted[slot];ix=np.flatnonzero(mask)
+                if not len(ix):continue
+                c=chunks[slot]
+                for key,value in [('action',starts[slot]+ix),('query',np.full(len(ix),q)),('h',ix),('exact',exact[slot,ix]),('motion',diff[slot,ix]),('env_action',env[slot,ix])]:c[key].append(value)
+                for s,result in scores.items():
+                    y=result.score[slot,ix];c[s].append(y)
+                    good=np.isfinite(y);norm=np.median(y[good]) if good.any() else 0
+                    if norm>1e-15:position[s][0][ix[good]]+=y[good]/norm;position[s][1][ix[good]]+=1
+            audits.append(dict(query=q,max_abs_error=errors,trace_bytes=f.stat().st_size,raw_shapes=shape if q==0 else None))
+    outrows=[]
+    seen=collections.Counter(e['actual'] for e in episodes)
+    for slot,ep in enumerate(episodes):
+        c={k:np.concatenate(v,axis=0) for k,v in chunks[slot].items()}
+        if not c:continue
+        ident=f'{batch}_s{slot:02d}';p=DEST/'series'/task/(ident+'.npz');p.parent.mkdir(parents=True,exist_ok=True);np.savez_compressed(p,**c)
+        base=dict(id=ident,task=task,batch=batch,slot=slot,success=bool(ep['success']),actual_seed=int(ep['actual']),requested_seed=int(ep['requested']),seed_duplicate_in_batch=seen[ep['actual']]>1,quality=quality,raw_dir=str(d),video=str(d/ep['video']),video_frames=int(ep['frames']),series=str(p.relative_to(DEST)),n_actions=len(c['action']))
+        for s in SIGNALS:outrows.append(dict(base,signal=s,**salience(c[s],c['query'],c['h'],c['exact'],c['motion'])))
+    report=dict(batch=batch,quality=quality,episodes=len(episodes),successes=done['successes'],queries=done['queries'],fields=fields,replay=audits,rows=outrows,position={s:[a.tolist(),b.tolist()] for s,(a,b) in position.items()})
+    save(DEST/'batches'/(batch+'.json'),report)
+    return {k:report[k] for k in ('batch','episodes','successes','queries','quality')}
+def shape_evidence(y,query,h,exact,motion):
+    good=np.isfinite(y);vals=y[good]
+    if len(vals)<15:return dict(score=0.,grade='C',pattern='too_short',peaks=[],relative_span=0.,coherence=0.)
+    filled=np.interp(np.arange(len(y)),np.flatnonzero(good),vals)
+    q05,q50,q95=np.quantile(vals,[.05,.5,.95]);span=float(q95-q05)
+    scale=max(abs(float(q50)),float(np.max(np.abs(vals)))*1e-6,1e-20)
+    rel=span/scale
+    if span<scale*1e-6:return dict(score=0.,grade='C',pattern='flat',peaks=[],relative_span=rel,coherence=0.)
+    smooth=median_filter(filled,size=5,mode='nearest')
+    rough=float(np.median(np.abs(filled-smooth)))/max(span,1e-20)
+    adjacent=(query[1:]==query[:-1]) & good[1:] & good[:-1]
+    adjacent_rough=float(np.median(np.abs(np.diff(filled))[adjacent]))/max(span,1e-20) if adjacent.any() else 1.
+    coherence=float(np.clip(1-2*rough-adjacent_rough,0,1))
+    # Sustained high OR low representation states are eligible; no claim that low means important.
+    rolling=np.convolve(smooth,np.ones(10)/10,mode='valid')
+    hi=int(np.argmax(rolling))+5;lo=int(np.argmin(rolling))+5
+    region_contrast=float(np.max(rolling)-np.min(rolling))/max(span,1e-20)
+    qs=np.unique(query);levels=np.array([np.nanmedian(y[query==q]) for q in qs])
+    phase_span=float(np.ptp(levels))/max(span,1e-20) if len(levels)>1 else 0.
+    peaks=salience(y,query,h,exact,motion)
+    localized=peaks['grade'] in ('A','B')
+    pattern='localized_peaks' if localized else ('stage_contrast' if phase_span>=.6 else 'structured_variation')
+    # Descriptive screening, not a p-value or a test of causal relevance.
+    strength=math.log1p(min(rel,20))
+    score=strength*coherence*min(region_contrast,2)*(1 if localized else .85)
+    grade='A' if coherence>=.75 and rel>=.03 and region_contrast>=.7 else 'B' if coherence>=.5 and rel>=.008 and region_contrast>=.4 else 'C'
+    regions=[]
+    for kind,i in [('high',hi),('low',lo)]:
+        regions.append(dict(kind=kind,index=i,query=int(query[i]),h=int(h[i]),pre_frame=int(query[i]),post_frame=int(query[i]+1),terminal_prefix_unknown=not bool(exact[i])))
+    return dict(score=float(score),grade=grade,pattern=pattern,peaks=peaks['peaks'],regions=regions,relative_span=float(rel),coherence=coherence,roughness=rough,adjacent_roughness=adjacent_rough,region_contrast=region_contrast,phase_span=phase_span)
+
+def refine_rankings(rows):
+    """Cross-episode positional template is a diagnostic, never the main plotted signal."""
+    by_task=collections.defaultdict(list)
+    for r in rows:by_task[r['task']].append(r)
+    for task,group in by_task.items():
+        paths={r['id']:r['series'] for r in group};data={}
+        for ident,p in paths.items():
+            with np.load(DEST/p) as z:data[ident]={k:z[k] for k in z.files if k!='env_action'}
+        for s in SIGNALS:
+            templates={};spans={}
+            for ident,c in data.items():
+                y=c[s];v=y[np.isfinite(y)]
+                span=max(float(np.quantile(v,.95)-np.quantile(v,.05)),float(np.max(np.abs(v)))*1e-6,1e-20) if len(v) else 1.
+                spans[ident]=span;num=np.zeros(50);den=np.zeros(50)
+                for q in np.unique(c['query']):
+                    ix=np.flatnonzero((c['query']==q)&c['exact']);a=y[ix];good=np.isfinite(a)
+                    if not good.any():continue
+                    hh=c['h'][ix[good]];num[hh]+=np.clip((a[good]-np.median(a[good]))/span,-5,5);den[hh]+=1
+                templates[ident]=(np.divide(num,den,out=np.zeros(50),where=den>0),den>0)
+            total=sum(t[0] for t in templates.values());count=sum(t[1].astype(int) for t in templates.values())
+            for r in (x for x in group if x['signal']==s):
+                c=data[r['id']];y=c[s];own,own_valid=templates[r['id']]
+                other=count-own_valid;template=np.divide(total-own,other,out=np.zeros(50),where=other>0)
+                residual=y-template[c['h']]*spans[r['id']]
+                kwargs=[c['query'],c['h'],c['exact'],c['motion']]
+                known=np.flatnonzero(c['exact']);end=int(known[-1])+1 if len(known) else 0
+                full=shape_evidence(y,*kwargs)
+                raw=shape_evidence(y[:end],*[a[:end] for a in kwargs]);adjusted=shape_evidence(residual[:end],*[a[:end] for a in kwargs])
+                peak=salience(y[:end],*[a[:end] for a in kwargs])
+                center=np.zeros(len(y))
+                for q in np.unique(c['query']):
+                    ix=c['query']==q;v=y[ix];v=v[np.isfinite(v)];center[ix]=np.median(v) if len(v) else 0
+                good=np.isfinite(y)&c['exact'];energy=float(np.sum((y[good]-center[good])**2))
+                resid_energy=float(np.sum((residual[good]-center[good])**2))
+                explained=float(np.clip(1-resid_energy/max(energy,1e-30),0,1))
+                # A repeated h-shape may be real model structure but is weak event evidence.
+                penalty=1-.65*explained
+                r.update(peak_screen_grade=peak['grade'],peak_screen_score=peak['score'],peaks=peak['peaks'],peak_count=peak['peak_count'],reason=peak['reason'],full_structure=full,raw_structure=raw,residual_structure=adjusted,position_template_explained=explained,position_template=template.tolist(),position_scale=spans[r['id']],pattern=raw['pattern'],score=float(raw['score']*penalty),grade=raw['grade'],selection_scope='confirmed_nonterminal_prefix',selection_actions=end)
+                if explained>.8 and adjusted['grade']=='C':r['grade']='C';r['reason']+=';mostly_repeatable_chunk_position'
+                elif explained>.6 and r['grade']=='A':r['grade']='B';r['reason']+=';substantial_chunk_position_pattern'
+                if s=='geoaac' and raw['coherence']<.5:
+                    # Prefix-growth can be sparse by definition. Keep sparse spikes as B evidence,
+                    # but require visual review and do not erase them with the median filter.
+                    if r['peak_screen_grade'] in ('A','B') and explained<.6:
+                        r['grade']='B';r['score']=max(r['score'],r['peak_screen_score']*.6);r['pattern']='sparse_prefix_growth'
+    return rows
+
+def summarize():
+    rows=[];reports=[];position={s:[np.zeros(50),np.zeros(50,dtype=int)] for s in SIGNALS}
+    for f in sorted((DEST/'batches').glob('*.json')):
+        r=read(f);reports.append(r);rows.extend(r['rows'])
+        for s in SIGNALS:
+            if r['quality']=='validated':position[s][0]+=r['position'][s][0];position[s][1]+=np.asarray(r['position'][s][1],int)
+    rows=refine_rankings(rows)
+    tasks=sorted({p.stem.rsplit('_b',1)[0] for p in (RAW/'claims').glob('*.json')})
+    selected=[]
+    for task in tasks:
+        for s in SIGNALS:
+            pool=[r for r in rows if r['task']==task and r['signal']==s]
+            valid=[r for r in pool if r['quality']=='validated'];pool=valid or pool
+            success=[r for r in pool if r['success']];pool=success or pool
+            pool.sort(key=lambda r:(r['grade']=='A',r['grade']=='B',r['score']),reverse=True)
+            if not pool:selected.append(dict(task=task,signal=s,grade='NO_DATA',reason='no_complete_replayable_batch'));continue
+            best=dict(pool[0]);best['alternatives']=[{k:r[k] for k in ('id','grade','score','success','actual_seed')} for r in pool[1:4]]
+            best['success_candidates']=len(success);best['candidate_count']=len(pool);best['semantic_review']='not_yet_visually_reviewed';selected.append(best)
+    save(DEST/'all_candidates.json',rows);save(DEST/'selected.json',selected)
+    with (DEST/'selection.csv').open('w',newline='') as f:
+        fields=['task','signal','id','quality','success','actual_seed','grade','score','peak_count','relative_contrast','top2_excess_share','high_fraction','boundary_peak_fraction','terminal_peak_fraction','motion_spearman','reason'];w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore');w.writeheader();w.writerows(selected)
+    summary=dict(time=time.time(),tasks=len(tasks),signals=list(SIGNALS),entries=len(selected),available_entries=sum('id' in r for r in selected),validated_batches=sum(r['quality']=='validated' for r in reports),supplemental_batches=sum(r['quality']!='validated' for r in reports),validated_episodes=sum(r['episodes'] for r in reports if r['quality']=='validated'),validated_successes=sum(r['successes'] for r in reports if r['quality']=='validated'),recomputed_queries=sum(r['queries'] for r in reports),replay_max_abs_error={s:max(q['max_abs_error'][s] for r in reports for q in r['replay']) for s in SIGNALS},grades={s:dict(collections.Counter(r['grade'] for r in selected if r['signal']==s)) for s in SIGNALS},position_bias={s:dict(mean_relative_score=(a/np.maximum(b,1)).tolist(),count=b.tolist()) for s,(a,b) in position.items()},limitations=['x-axis preserves individual submitted action slots, never chunk means','video has only pre/post chunk frames; no exact within-chunk contact timestamp','terminal successful chunks have unknown physical executed prefix','A/B/C is a descriptive screening rule, not statistical significance or method performance','chunk-position diagnostics use other episodes of the same task; main curves remain raw','supplemental shake_bottle has repeated native retry seeds and is excluded from validated totals'])
+    save(DEST/'summary.json',summary);return summary
+def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--workers',type=int,default=4);parser.add_argument('--resume',action='store_true');parser.add_argument('--summarize',action='store_true');args=parser.parse_args()
+    os.nice(12)
+    if args.summarize:summarize();return
+    if DEST.exists() and not args.resume:raise RuntimeError('Fresh analysis directory required; explicit --resume only after reading receipts')
+    DEST.mkdir(exist_ok=True);(DEST/'batches').mkdir(exist_ok=True)
+    claims=[]
+    for f in sorted((RAW/'claims').glob('*.json')):
+        c=read(f)
+        if c['state']=='VALIDATED':claims.append(c)
+        elif f.stem.startswith('shake_bottle_') and (Path(c['output'])/'done.json').exists():claims.append(c)
+    jobs=[c for c in claims if not (DEST/'batches'/(Path(c['output']).name+'.json')).exists()]
+    save(DEST/('resume-started.json' if args.resume else 'started.json'),dict(time=time.time(),pid=os.getpid(),cpu_only=True,workers=args.workers,batches=len(claims),source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),math_sha256=hashlib.sha256((SOURCE/'signal_math.py').read_bytes()).hexdigest()))
+    errors=[];completed=len(claims)-len(jobs)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+        futures={executor.submit(batch_job,c):Path(c['output']).name for c in jobs}
+        for future in concurrent.futures.as_completed(futures):
+            try:r=future.result();completed+=1;print(json.dumps(r),flush=True)
+            except BaseException as exc:errors.append(dict(batch=futures[future],error=repr(exc),traceback=traceback.format_exc()))
+            save(DEST/'progress.json',dict(time=time.time(),completed=completed,total=len(claims),errors=errors))
+    if errors:save(DEST/'failed.json',errors);raise RuntimeError('Some batch analyses failed; source data unchanged')
+    summary=summarize();save(DEST/'analysis-complete.json',dict(time=time.time(),batches=len(claims),recomputed_queries=summary['recomputed_queries'],complete=True));print(json.dumps({k:summary[k] for k in ('entries','available_entries','validated_episodes','recomputed_queries','grades')}),flush=True)
+if __name__=='__main__':main()

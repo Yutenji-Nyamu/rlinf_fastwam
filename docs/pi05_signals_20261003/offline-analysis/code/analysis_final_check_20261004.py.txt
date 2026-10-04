@@ -1,0 +1,36 @@
+"""Read-only artifact, provenance and final machine checks."""
+import collections,hashlib,json,os,subprocess,time
+from html.parser import HTMLParser
+from pathlib import Path
+from urllib.parse import unquote,urlsplit
+D=Path('/data/chenyiteng/results/pi05-signals/analysis-20261004-v1')
+Q=Path('/data/chenyiteng/projects/pi05-signals-sz1-20261003')
+R=Path('/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-signals-sz1-20261003')
+def read(p):return json.loads(p.read_text())
+def run(args):
+    p=subprocess.run(args,capture_output=True,text=True,timeout=45)
+    return {'rc':p.returncode,'out':p.stdout.strip(),'err':p.stderr[-800:]}
+class Links(HTMLParser):
+    def __init__(self):super().__init__();self.paths=[]
+    def handle_starttag(self,t,attrs):
+        self.paths += [v for k,v in attrs if k in ('src','href')]
+missing=[];checks=0
+for f in [D/'START.html',D/'index.html',*(D/'tasks').glob('*.html')]:
+    parser=Links();parser.feed(f.read_text())
+    for u in parser.paths:
+        path=urlsplit(u)
+        if path.scheme or not path.path:continue
+        checks+=1;p=(f.parent/unquote(path.path)).resolve()
+        if not p.is_file():missing.append(str(p))
+rows=read(D/'selected_reviewed.json')
+assert not missing,missing
+assert len(rows)==400
+assert sum('id' in r for r in rows)==368
+assert all(not m['terminal_prefix_unknown'] for r in rows for m in r.get('landmarks',[]))
+assert len(list((D/'series').rglob('*.npz')))==1456
+assert len(list((D/'figures').rglob('*.svg')))==368
+summary=read(D/'summary.json')
+artifacts={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [D/'METHOD.md',D/'REVIEW.md',D/'selection_reviewed.csv',D/'selected_reviewed.json',D/'START.html',D/'final-analysis-receipt.json']}
+sources={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [Q/'offline_analysis_20261004.py',Q/'render_analysis_20261004.py',Q/'diagnostics_analysis_20261004.py',Q/'finalize_analysis_20261004.py',Q/'visual_review_notes_20261004.json',R/'tools/pi05_signals/signal_math.py']}
+report=dict(time=time.time(),links_checked=checks,missing=missing,all_marked_actions_nonterminal=True,series=1456,figures=368,reviewed=368,unique_selected_episodes=len({r['id'] for r in rows if 'id' in r}),changed_after_terminal_filter=summary['changed_after_terminal_filter'],artifacts_sha256=artifacts,sources_sha256=sources,sr_range_selected=[min(r['minimum'] for r in rows if r.get('signal')=='sr' and 'id' in r),max(r['maximum'] for r in rows if r.get('signal')=='sr' and 'id' in r)],git_status=run(['git','-C',str(R),'status','--short']),git_head=run(['git','-C',str(R),'rev-parse','HEAD']),gpu=run(['nvidia-smi','--query-gpu=index,memory.used,utilization.gpu','--format=csv,noheader']),disk=run(['df','-h','/data/chenyiteng','/home/chenyiteng']))
+(D/'quality-check.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
