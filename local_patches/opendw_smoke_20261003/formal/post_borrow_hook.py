@@ -39,6 +39,8 @@ def install_and_verify(plan):
                       previous_owner=previous_identity,
                       previous_owner_final=dict(path=str(previous_final), sha256=M.sha(previous_final)),
                       rlt_stop_receipt=dict(path=str(stop), sha256=M.sha(stop)))
+    if scope.get('audited_unreadable_cpu_processes'):
+        retirement['audited_unreadable_cpu_processes'] = scope['audited_unreadable_cpu_processes']
     retirement_path = directory / 'retirement-proof.json'
     M.record(retirement_path, retirement)
     prepare_path = M.owned_path(scope['prepare_module'])

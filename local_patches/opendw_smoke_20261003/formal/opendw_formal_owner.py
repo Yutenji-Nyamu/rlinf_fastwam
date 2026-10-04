@@ -193,6 +193,68 @@ def validate_formal_config(cfg, row, plan, owner, smoke_cfg):
     assert len(values) >= 32 and len(set(values)) == len(values) and all(type(v) is int for v in values)
 
 
+def startup_contract(cfg):
+    """Ignore only run identities and output paths when comparing both trials."""
+    value = copy.deepcopy(cfg)
+    for path in (
+        ('env', 'group_name'), ('actor', 'group_name'), ('rollout', 'group_name'),
+        ('runner', 'logger', 'log_path'), ('runner', 'logger', 'experiment_name'),
+        ('runner', 'per_worker_log_path'),
+        ('env', 'train', 'video_cfg', 'video_base_dir'),
+        ('env', 'eval', 'video_cfg', 'video_base_dir'),
+        ('env', 'eval', 'task_config', 'save_path'),
+        ('algorithm', 'dvac_gradient_weighting', 'output_dir'),
+    ):
+        parent = value
+        for key in path[:-1]:
+            parent = parent[key]
+        parent.pop(path[-1], None)
+    return value
+
+
+def validate_startup_smoke(cfg, row, plan, owner, formal_cfg):
+    """Same parallel placement/model as formal; one short training/eval step."""
+    assert row['key'] == 'startup_smoke' and row['episode_steps'] == 32 and row['num_envs'] == 64
+    runner, train, native = cfg['runner'], cfg['env']['train'], cfg['env']['eval']
+    assert runner['max_epochs'] == runner['max_steps'] == 1
+    assert runner['save_interval'] == runner['val_check_interval'] == 1
+    assert train['rollout_epoch'] == 1
+    assert train['max_episode_steps'] == train['max_steps_per_rollout_epoch'] == 32
+    assert native['max_episode_steps'] == native['max_steps_per_rollout_epoch'] == native['task_config']['step_lim'] == 32
+    assert cfg['actor']['global_batch_size'] == 64
+    assert 0 < row['timeout_seconds'] <= 10800
+    # Reconstruct the formal contract by restoring exactly the authorized
+    # serial-work changes. Everything else, including native N32/three views,
+    # action transforms, services, actor microbatch and two-rank placement,
+    # must match. Neither config passed to training is mutated here.
+    restored = copy.deepcopy(cfg)
+    for name in ('max_epochs', 'max_steps', 'save_interval', 'val_check_interval'):
+        restored['runner'][name] = formal_cfg['runner'][name]
+    for name in ('rollout_epoch', 'max_episode_steps', 'max_steps_per_rollout_epoch'):
+        restored['env']['train'][name] = formal_cfg['env']['train'][name]
+    for name in ('max_episode_steps', 'max_steps_per_rollout_epoch'):
+        restored['env']['eval'][name] = formal_cfg['env']['eval'][name]
+    restored['env']['eval']['task_config']['step_lim'] = formal_cfg['env']['eval']['task_config']['step_lim']
+    restored['actor']['global_batch_size'] = formal_cfg['actor']['global_batch_size']
+    assert startup_contract(restored) == startup_contract(formal_cfg), 'Startup smoke differs beyond its serial-work/output allowance'
+    # The donor checks its older R8/GB512 short-trial schema. Validate an
+    # in-memory shadow to inherit those checks without changing actual R1/64.
+    shadow = copy.deepcopy(cfg)
+    shadow['runner']['val_check_interval'] = -1
+    shadow['env']['train']['rollout_epoch'] = 8
+    shadow['actor']['global_batch_size'] = 512
+    M.validate_config(shadow, row, plan, owner)
+
+
+def trial_keys(plan):
+    assert type(plan.get('startup_smoke', False)) is bool
+    expected = ['startup_smoke', 'formal'] if plan.get('startup_smoke', False) else ['formal']
+    assert [row['key'] for row in plan['trials']] == expected, 'Require the declared startup smoke before formal'
+    assert len({row['namespace'] for row in plan['trials']}) == len(expected)
+    assert len({row['config'] for row in plan['trials']}) == len(expected)
+    return expected
+
+
 def validate(plan, frozen=False):
     global OWNER_ENV
     assert os.getuid() == M.UID and socket.gethostname() == 'h100-gpu01'
@@ -207,13 +269,17 @@ def validate(plan, frozen=False):
     assert plan['source_sha256'] and str(DONOR) in plan['source_sha256'] and str(THIS) in plan['source_sha256']
     for path, digest in plan['source_sha256'].items():
         assert sha(M.owned_path(path)) == digest, 'Reviewed source changed: ' + path
-    assert len(plan['trials']) == 1
+    trial_keys(plan)
     smoke_cfg = protocol_reference(plan)
-    row = plan['trials'][0]
-    assert row['namespace'].startswith('opendw_') and re.fullmatch(r'[A-Za-z0-9_-]+', row['namespace'])
-    cfg = M.H.config(M.owned_path(row['config']))
-    validate_formal_config(cfg, row, plan, owner, smoke_cfg)
-    M.owned_path(cfg['runner']['logger']['log_path'], False)
+    formal_row = plan['trials'][-1]
+    formal_cfg = M.H.config(M.owned_path(formal_row['config']))
+    validate_formal_config(formal_cfg, formal_row, plan, owner, smoke_cfg)
+    for row in plan['trials']:
+        assert row['namespace'].startswith('opendw_') and re.fullmatch(r'[A-Za-z0-9_-]+', row['namespace'])
+        cfg = formal_cfg if row['key'] == 'formal' else M.H.config(M.owned_path(row['config']))
+        if row['key'] == 'startup_smoke':
+            validate_startup_smoke(cfg, row, plan, owner, formal_cfg)
+        M.owned_path(cfg['runner']['logger']['log_path'], False)
     M.validate_services(plan['services'], owner)
     assert 0 < plan.get('restore_wait_seconds', 60) <= 60
     environment = read(M.owned_path(plan['environment_file']))
@@ -225,7 +291,8 @@ def validate(plan, frozen=False):
         receipt_name = 'scope-activated.json' if plan.get('start_mode') == DIRECT_START else 'native-evaluation-verified.json'
         validate_native_receipt(plan, read(M.owned_path(Path(plan['owner_dir']) / receipt_name)))
         environment.update(fragment)
-        assert row['config_sha256'] == sha(row['config'])
+        for row in plan['trials']:
+            assert row['config_sha256'] == sha(row['config'])
         assert plan['owner_script_sha256'] == sha(THIS)
         assert plan['environment_sha256'] == sha(plan['environment_file'])
         assert plan['lifecycle_plan_sha256'] == sha(cycle / 'plan.json')
@@ -320,7 +387,7 @@ def main():
     if args.action == 'owner':
         module.owner_main(plan)
     else:
-        assert args.key == 'formal'
+        assert args.key in trial_keys(plan)
         module.run_driver(plan, args.key)
 
 

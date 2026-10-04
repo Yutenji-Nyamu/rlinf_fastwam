@@ -220,9 +220,39 @@ def identity_alive(identity):
         return False
 
 
-def scoped_processes(manifest_path=None):
-    """Read only our own process env; races exit cleanly, unreadable live PIDs fail."""
+def gpu_process_pids():
+    """Include compute and graphics contexts from the same full NVML inventory."""
+    root = ET.fromstring(subprocess.check_output(["nvidia-smi", "-q", "-x"], timeout=30))
+    if len(root.findall("gpu")) != 8:
+        raise RuntimeError("Cannot audit CPU exceptions without the full GPU inventory")
+    return {int(row.findtext("pid")) for row in root.findall("./gpu/processes/process_info")}
+
+
+def verify_unreadable_cpu_process(path, approved, gpu_pids):
+    """An explicit reviewed PID is the only exception to an unreadable env.
+
+    PID/start/UID, parent, comm and command bytes must still match the frozen
+    audit. A graphics-scope comm or any current C/G context always rejects it.
+    This is deliberately not a blanket exemption for same-user CPU processes.
+    """
+    tail = (path / "stat").read_text().rsplit(")", 1)[1].split()
+    current = dict(pid=int(path.name), uid=path.stat().st_uid, start=int(tail[19]),
+                   ppid=int(tail[1]), comm=(path / "comm").read_text().strip(),
+                   cmdline_sha256=digest(path / "cmdline"))
+    if current != approved or current["uid"] != os.getuid() or tail[0] in ("Z", "X"):
+        raise RuntimeError("Reviewed unreadable CPU process identity changed: " + path.name)
+    if current["comm"].startswith(("odw4-", "odwf")) or current["pid"] in gpu_pids:
+        raise RuntimeError("Unreadable process has a graphics scope or GPU context: " + path.name)
+    return current
+
+
+def scoped_processes(manifest_path=None, *, unreadable_cpu_exemptions=()):
+    """Read our process env; only exact, explicitly audited CPU PIDs may be unreadable."""
     found = []
+    approved = {row["pid"]: row for row in unreadable_cpu_exemptions}
+    if len(approved) != len(unreadable_cpu_exemptions):
+        raise RuntimeError("Duplicate unreadable CPU process audit")
+    gpu_pids = gpu_process_pids() if approved else set()
     for path in Path("/proc").iterdir():
         if not path.name.isdigit():
             continue
@@ -241,6 +271,12 @@ def scoped_processes(manifest_path=None):
         except FileNotFoundError:
             continue
         except PermissionError as exc:
+            if int(path.name) in approved:
+                try:
+                    verify_unreadable_cpu_process(path, approved[int(path.name)], gpu_pids)
+                except FileNotFoundError:
+                    continue
+                continue
             raise RuntimeError(f"Cannot establish scope retirement for live owned PID {path.name}") from exc
     return found
 
@@ -263,12 +299,13 @@ def verify_retirement(proof_path):
             or release.get("all_original_drivers_stopped") is not True
             or release.get("all_original_namespaces_empty") is not True):
         raise RuntimeError("Four-card RLT stop receipt is incomplete")
-    remaining = scoped_processes()
+    exceptions = proof.get("audited_unreadable_cpu_processes", [])
+    remaining = scoped_processes(unreadable_cpu_exemptions=exceptions)
     if remaining:
         raise RuntimeError("Old scoped processes remain; do not install new profiles: " + json.dumps(remaining))
     return dict(proof_path=str(Path(proof_path).resolve()), proof_sha256=digest(proof_path),
                 previous_owner=owner, previous_owner_final=final_record, rlt_stop_receipt=release_record,
-                no_scoped_processes=True, checked_at=time.time())
+                no_scoped_processes=True, audited_unreadable_cpu_processes=exceptions, checked_at=time.time())
 
 
 def activation_payload(root, manifest, retirement, receipt_path):

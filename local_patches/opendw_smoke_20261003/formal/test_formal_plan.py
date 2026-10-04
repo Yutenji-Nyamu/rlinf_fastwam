@@ -37,7 +37,93 @@ def build(smoke, control):
                    native_assets='/data/chenyiteng/robotwin', native_eval_seeds='/data/chenyiteng/seeds.json')
 
 
+def startup_fixture():
+    formal, _ = build(*configs())
+    startup = copy.deepcopy(formal)
+    startup['runner'].update(max_epochs=1, max_steps=1, save_interval=1, val_check_interval=1,
+                             per_worker_log_path='/data/chenyiteng/formal-v1/startup_smoke/workers')
+    startup['runner']['logger'].update(log_path='/data/chenyiteng/formal-v1/startup_smoke/run',
+                                       experiment_name='startup-smoke')
+    startup['env']['train'].update(rollout_epoch=1, max_episode_steps=32, max_steps_per_rollout_epoch=32)
+    startup['env']['eval'].update(max_episode_steps=32, max_steps_per_rollout_epoch=32)
+    startup['env']['eval']['task_config']['step_lim'] = 32
+    startup['actor']['global_batch_size'] = 64
+    row = dict(key='startup_smoke', episode_steps=32, num_envs=64, timeout_seconds=3600,
+               namespace='opendw_startup', config='/data/chenyiteng/startup.yaml')
+    return formal, startup, row
+
+
 class FormalTests(unittest.TestCase):
+    def test_startup_smoke_shadow_only_and_unchanged_actual_parameters(self):
+        original = O.M
+        try:
+            formal, startup, row = startup_fixture()
+            before = copy.deepcopy(startup)
+            calls = []
+            O.M = types.SimpleNamespace(validate_config=lambda *args: calls.append(args))
+            O.validate_startup_smoke(startup, row, {}, Path('/data/chenyiteng/formal-v1'), formal)
+            self.assertEqual(startup, before)
+            self.assertEqual(len(calls), 1)
+            shadow = calls[0][0]
+            self.assertEqual(shadow['env']['train']['rollout_epoch'], 8)
+            self.assertEqual(shadow['actor']['global_batch_size'], 512)
+            self.assertEqual(shadow['runner']['val_check_interval'], -1)
+            self.assertEqual(startup['env']['train']['rollout_epoch'], 1)
+            self.assertEqual(startup['actor']['global_batch_size'], 64)
+            self.assertEqual(startup['env']['eval']['total_num_envs'], 32)
+            self.assertEqual(startup['env']['eval']['max_episode_steps'], 32)
+        finally:
+            O.M = original
+
+    def test_startup_smoke_rejects_parallel_model_and_native_protocol_drift(self):
+        original = O.M
+        try:
+            O.M = types.SimpleNamespace(validate_config=lambda *args: None)
+            cases = (
+                (('cluster', 'component_placement', 'actor'), '4'),
+                (('env', 'train', 'total_num_envs'), 16),
+                (('env', 'train', 'group_size'), 4),
+                (('env', 'train', 'chunk'), 16),
+                (('actor', 'micro_batch_size'), 4),
+                (('rollout', 'model', 'kind'), 'different'),
+                (('algorithm', 'update_epoch'), 1),
+                (('env', 'eval', 'total_num_envs'), 16),
+                (('env', 'eval', 'task_config', 'camera', 'collect_wrist_camera'), False),
+                (('env', 'eval', 'max_episode_steps'), 384),
+                (('runner', 'val_check_interval'), -1),
+                (('actor', 'global_batch_size'), 512),
+            )
+            for path, value in cases:
+                with self.subTest(path=path):
+                    formal, startup, row = startup_fixture()
+                    parent = startup
+                    for key in path[:-1]:
+                        parent = parent[key]
+                    parent[path[-1]] = value
+                    with self.assertRaises(AssertionError):
+                        O.validate_startup_smoke(startup, row, {}, Path('/data/chenyiteng/formal-v1'), formal)
+        finally:
+            O.M = original
+
+    def test_trial_order_and_unique_execution_identities(self):
+        formal = dict(key='formal', namespace='opendw_formal', config='/data/chenyiteng/formal.yaml')
+        _, _, startup = startup_fixture()
+        self.assertEqual(O.trial_keys(dict(trials=[formal])), ['formal'])
+        plan = dict(startup_smoke=True, trials=[startup, formal])
+        self.assertEqual(O.trial_keys(plan), ['startup_smoke', 'formal'])
+        invalid = [dict(startup_smoke=True, trials=[formal, startup]),
+                   dict(startup_smoke=False, trials=[startup, formal]),
+                   dict(startup_smoke=True, trials=[formal]),
+                   dict(startup_smoke='yes', trials=[startup, formal])]
+        for field in ('namespace', 'config'):
+            duplicate = copy.deepcopy(plan)
+            duplicate['trials'][0][field] = duplicate['trials'][1][field]
+            invalid.append(duplicate)
+        for value in invalid:
+            with self.subTest(plan=value):
+                with self.assertRaises(AssertionError):
+                    O.trial_keys(value)
+
     def test_effective_200_budget_and_unchanged_training(self):
         smoke, control = configs()
         original = copy.deepcopy(smoke)

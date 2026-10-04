@@ -61,9 +61,16 @@ class ReturnedCycleTests(unittest.TestCase):
             'recovery_error': None, 'rlt_borrowed': True, 'rlt_return_dispatched': True,
             'rlt_first_round_verified': False})
         self.save(owner / 'owner-identity.json', {'pid': 101, 'uid': 20001, 'start': 123})
+        self.save(owner / 'cleanup.json', {'all_stopped': True})
+        self.save(owner / 'smoke-release.json', {'cycle_id': combined.name, 'gpus': [4, 5, 6, 7],
+            'all_workers_stopped': True, 'terminal_status': 'completed',
+            'managed_processes': [{'pid': 104, 'uid': 20001, 'start': 124}]})
+        self.save(combined / 'return-started.json', {'release_sha256': C.sha(owner / 'smoke-release.json')})
+        self.save(owner / 'rlt-return-dispatched.json', {
+            'result': C.read(combined / 'resumed-dispatched.json')['children']})
         return owner, combined, child, script
 
-    def test_parent_provenance_allows_pending_first_round_but_rejects_live_or_failed_owner(self):
+    def test_parent_provenance_allows_pending_first_round_but_rejects_live_or_incomplete_owner(self):
         owner, combined, child, script = self.parent_fixture()
         group, identity, evidence = C.parent_complete(owner, child, script, self.helper)
         self.assertEqual(group, 'gpu4')
@@ -84,6 +91,37 @@ class ReturnedCycleTests(unittest.TestCase):
             'runs': {'gpu4': {'run': '/unrelated/run'}}})
         with self.assertRaises(AssertionError):
             C.parent_complete(owner, child, script, self.helper)
+
+    def test_failed_parent_requires_complete_cleanup_release_and_return(self):
+        owner, combined, child, script = self.parent_fixture()
+        final = C.read(owner / 'final.json')
+        self.save(owner / 'final.json', dict(final, terminal_status='failed',
+            error={'type': 'PermissionError', 'error': 'Unreadable unrelated process environment'}))
+        release = dict(C.read(owner / 'smoke-release.json'), terminal_status='failed')
+        self.save(owner / 'smoke-release.json', release)
+        self.save(combined / 'return-started.json', {'release_sha256': C.sha(owner / 'smoke-release.json')})
+        group, _, evidence = C.parent_complete(owner, child, script, self.helper)
+        self.assertEqual(group, 'gpu4')
+        self.assertEqual(evidence['release_sha256'], C.sha(owner / 'smoke-release.json'))
+        self.helper.same.side_effect = lambda row: row['pid'] == 104
+        with self.assertRaisesRegex(AssertionError, 'worker is still live'):
+            C.parent_complete(owner, child, script, self.helper)
+        self.helper.same.side_effect = None
+        corruptions = [
+            (owner / 'cleanup.json', {'all_stopped': False}),
+            (owner / 'smoke-release.json', dict(release, all_workers_stopped=False)),
+            (owner / 'smoke-release.json', dict(release, managed_processes=[])),
+            (owner / 'smoke-release.json', dict(release, terminal_status='completed')),
+            (combined / 'return-started.json', {'release_sha256': 'wrong'}),
+            (owner / 'rlt-return-dispatched.json', {'result': {}}),
+        ]
+        for path, bad in corruptions:
+            with self.subTest(path=path.name, value=bad):
+                good = C.read(path)
+                self.save(path, bad)
+                with self.assertRaises(AssertionError):
+                    C.parent_complete(owner, child, script, self.helper)
+                self.save(path, good)
 
     def test_return_driver_is_bound_to_original_module_cycle_key_and_launch(self):
         prior = self.root / 'previous'
@@ -181,7 +219,8 @@ class ReturnedCycleTests(unittest.TestCase):
         self.save(self.stage / 'plan.json', plan)
         fragment = {'RLINF_OPENDW_FORMAL_GRAPHICS_MANIFEST': str(new),
                     'PYTHONPATH': '/new/bootstrap:/wm/repo', 'LD_PRELOAD': '/new/libscope.so',
-                    '__GL_APPLICATION_PROFILE': '1', 'HOME': '/home/chenyiteng'}
+                    '__GL_APPLICATION_PROFILE': '1', '__GL_APPLICATION_PROFILE_LOG': '0',
+                    'HOME': '/home/chenyiteng'}
         receipt = {'status': 'active', 'uid': 20001, 'scope_id': 'token',
                    'environment_fragment': fragment, 'manifest_sha256': C.sha(new),
                    'runtime_path': str(runtime), 'runtime_sha256': C.sha(runtime)}
@@ -211,6 +250,7 @@ class ReturnedCycleTests(unittest.TestCase):
                 result = C.scope_overlay(self.stage, self.stage / 'prepared/gpu4/environment.json', original)
                 self.assertEqual(result['PYTHONPATH'], '/new/bootstrap:' + tail + ':/libs')
                 self.assertEqual(result['LD_PRELOAD'], '/new/libscope.so:/unrelated.so')
+                self.assertEqual(result['__GL_APPLICATION_PROFILE_LOG'], '0')
                 self.assertNotIn('RLINF_OPENDW_GPU_SCOPE_MANIFEST', result)
                 self.assertIn('RLINF_OPENDW_GPU_SCOPE_MANIFEST', original)
                 self.assertNotIn('/wm/repo', result['PYTHONPATH'])
@@ -261,6 +301,8 @@ class ReturnedCycleTests(unittest.TestCase):
         owner, combined, child, script = self.parent_fixture()
         (child / 'resumed-dispatched.json').unlink()
         (combined / 'resumed-dispatched.json').unlink()
+        (combined / 'return-started.json').unlink()
+        (owner / 'rlt-return-dispatched.json').unlink()
         sibling = self.root / 'prior-gpu567'
         sibling.mkdir()
         other_script = sibling / 'old-cycle.py'

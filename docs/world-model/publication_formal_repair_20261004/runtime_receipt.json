@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "collected_launch_time": "2026-10-04T13:43:41.001815+08:00",
+  "timezone": "Asia/Shanghai",
+  "server": "Shenzhen3",
+  "owner": {
+    "pid": 3242048,
+    "uid": 20001,
+    "start": 706364464
+  },
+  "owner_alive_at_launch": true,
+  "owner_dir": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/formal-v2",
+  "control_dir": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/formal-control-v2",
+  "plan_sha256": "4928516ae72315b8c83ac42ccb9064d41b1b40d6760228fe858bd995b296d893",
+  "status": "Owner launched; initial CPU model loading. Startup smoke and formal updates not yet verified.",
+  "startup_smoke_passed": null,
+  "formal_updates_verified": false,
+  "validation": {
+    "initial_server_cpu_tests": 38,
+    "initial_returncode": 0,
+    "final_return_scope_targeted_tests": 13,
+    "targeted_returncode": 0,
+    "gpu_used_by_cpu_tests": false
+  },
+  "final_return_scope_source_sha256": "2667484807da8065ce523ea398b5502b384e39898de58b98d50aef72a71ab7b3",
+  "changes": [
+    "Narrow audited exception for unreadable system-helper process environments",
+    "Formal-parallel one-block startup smoke before the unchanged formal configuration",
+    "Preserve the graphics profile log key and copy import in exact RLT return overlay"
+  ],
+  "physical_gpus": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "placement": {
+    "actor": [
+      4,
+      5
+    ],
+    "rollout": [
+      4,
+      5
+    ],
+    "environment": [
+      6,
+      7
+    ],
+    "wm_services": [
+      6,
+      7
+    ]
+  },
+  "startup_smoke": {
+    "N": 64,
+    "G": 8,
+    "R": 1,
+    "L": 32,
+    "C": 32,
+    "global_batch": 64,
+    "micro_batch": 8,
+    "update_epochs": 2,
+    "runner_steps": 1,
+    "save_interval": 1,
+    "native_eval_interval": 1,
+    "native_eval_N": 32,
+    "native_eval_L": 32
+  },
+  "formal": {
+    "N": 64,
+    "G": 8,
+    "R": 8,
+    "L": 384,
+    "C": 32,
+    "H": 50,
+    "global_batch": 2048,
+    "micro_batch": 8,
+    "update_epochs": 2,
+    "effective_runner_steps": 200,
+    "save_interval": 10,
+    "native_eval_interval": 10,
+    "native_eval_N": 32,
+    "native_eval_L": 384
+  },
+  "source_evidence": {
+    "opendw-oct4-v2-start1.out": {
+      "sha256": "85cebd80d6cd2b2f84f26abfaf1761b44167f996652de3c9be27be471331e52d",
+      "bytes": 487
+    },
+    "opendw-oct4-v2-stage1.out": {
+      "sha256": "0ed7bb85a93646233b186ed96b49623a92fe79bedd574836ebd5a7f124d1bd7f",
+      "bytes": 8698
+    },
+    "opendw-oct4-v2-logscopefix2.out": {
+      "sha256": "cacf9b909554d5e385b99a7c565b8960bb8c135336450bfc0297e4e4282c6706",
+      "bytes": 5692
+    }
+  },
+  "limits": [
+    "Launch receipt does not prove GPU smoke, native evaluation, checkpoint save, nonzero gradients, or formal learning success.",
+    "Large checkpoints and raw logs are excluded from Git."
+  ]
+}

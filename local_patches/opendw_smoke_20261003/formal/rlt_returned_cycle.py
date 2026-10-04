@@ -1,4 +1,4 @@
-"""Reborrow the exact RLT jobs returned by a completed OpenDW owner.
+"""Reborrow the exact RLT jobs returned by a terminated OpenDW owner.
 
 Reuse the reviewed GPU567 stop/return implementation with a fresh checkpoint
 cycle. The previous WM owner must have terminated; no live monitor is retired.
@@ -62,7 +62,12 @@ def parent_complete(owner, child_path, child_module, helper=None):
     owner = owned(owner)
     p = read(owner / 'owner-plan.json')
     f = read(owner / 'final.json')
-    assert f['terminal_status'] == 'completed' and f.get('error') is None
+    terminal = f['terminal_status']
+    assert terminal in ('completed', 'failed'), 'Previous WM owner has no supported terminal result'
+    if terminal == 'completed':
+        assert f.get('error') is None
+    else:
+        assert isinstance(f.get('error'), dict) and f['error'].get('type') and f['error'].get('error')
     assert f.get('recovery_error') is None and f.get('rlt_borrowed') is True
     assert f.get('rlt_return_dispatched') is True
     assert Path(p['owner_dir']).resolve() == owner.resolve(), 'Wrong parent owner plan'
@@ -71,16 +76,26 @@ def parent_complete(owner, child_path, child_module, helper=None):
     if helper is not None:
         assert not helper.same(identity), 'Previous WM owner is still live'
     combined = owned(p['lifecycle_path'])
+    assert read(owner / 'cleanup.json')['all_stopped'] is True
+    release = read(owner / 'smoke-release.json')
+    assert release['cycle_id'] == combined.name and release['gpus'] == [4, 5, 6, 7]
+    assert release['all_workers_stopped'] is True and release['terminal_status'] == terminal
+    assert isinstance(release['managed_processes'], list) and release['managed_processes']
+    assert all(row['uid'] == 20001 for row in release['managed_processes'])
+    if helper is not None:
+        assert all(not helper.same(row) for row in release['managed_processes']), 'Previous WM worker is still live'
+    assert read(combined / 'return-started.json')['release_sha256'] == sha(owner / 'smoke-release.json')
     children = read(combined / 'plan.json')['children']
     matches = [(key, value) for key, value in children.items()
                if Path(value['path']).resolve() == Path(child_path).resolve()
                and Path(value['module']).resolve() == Path(child_module).resolve()]
-    assert len(matches) == 1, 'Previous cycle is not a child of the completed owner'
+    assert len(matches) == 1, 'Previous cycle is not a child of the terminated owner'
     key, frozen = matches[0]
     assert sha(Path(child_path) / 'plan.json') == frozen['plan_sha256']
     assert sha(child_module) == frozen['module_sha256']
     returned = read(combined / 'resumed-dispatched.json')
     assert set(returned['children']) == {'gpu4', 'gpu567'}
+    assert read(owner / 'rlt-return-dispatched.json')['result'] == returned['children']
     assert returned['children'][key]['cycle_id'] == Path(child_path).name
     child_return = read(Path(child_path) / 'resumed-dispatched.json')
     child_plan = read(Path(child_path) / 'plan.json')
@@ -92,6 +107,12 @@ def parent_complete(owner, child_path, child_module, helper=None):
                           'final': str(owner / 'final.json'), 'final_sha256': sha(owner / 'final.json'),
                           'identity': str(owner / 'owner-identity.json'),
                           'identity_sha256': sha(owner / 'owner-identity.json'),
+                          'cleanup': str(owner / 'cleanup.json'), 'cleanup_sha256': sha(owner / 'cleanup.json'),
+                          'release': str(owner / 'smoke-release.json'), 'release_sha256': sha(owner / 'smoke-release.json'),
+                          'owner_return': str(owner / 'rlt-return-dispatched.json'),
+                          'owner_return_sha256': sha(owner / 'rlt-return-dispatched.json'),
+                          'return_started': str(combined / 'return-started.json'),
+                          'return_started_sha256': sha(combined / 'return-started.json'),
                           'combined_plan': str(combined / 'plan.json'),
                           'combined_plan_sha256': sha(combined / 'plan.json'),
                           'combined_return': str(combined / 'resumed-dispatched.json'),
@@ -215,7 +236,7 @@ def retired_parent(stage, plan):
     assert not H.same(plan['old_owner'])
     path = stage / 'monitor-retired.json'
     value = {'time': H.now(), 'identity': plan['old_owner'], 'monitor_only': True,
-             'reason': 'Previous OpenDW owner already completed; no signal sent'}
+             'reason': 'Previous OpenDW owner already terminated and returned RLT; no signal sent'}
     if path.exists():
         assert read(path)['identity'] == plan['old_owner']
     else:
@@ -240,7 +261,8 @@ def scope_overlay(stage, path, value):
     fragment = receipt['environment_fragment']
     assert isinstance(fragment, dict) and fragment and not any(k in fragment for k in H.MASKS)
     manifest_key = 'RLINF_OPENDW_FORMAL_GRAPHICS_MANIFEST'
-    allowed_keys = {'LD_PRELOAD', 'PYTHONPATH', manifest_key, '__GL_APPLICATION_PROFILE', 'HOME', 'USER', 'LOGNAME'}
+    allowed_keys = {'LD_PRELOAD', 'PYTHONPATH', manifest_key, '__GL_APPLICATION_PROFILE',
+                    '__GL_APPLICATION_PROFILE_LOG', 'HOME', 'USER', 'LOGNAME'}
     assert set(fragment) <= allowed_keys
     assert fragment[manifest_key] == p['scope_manifest']
     assert sha(owned(p['scope_manifest'])) == receipt['manifest_sha256']
@@ -271,6 +293,8 @@ def scope_overlay(stage, path, value):
             result[key] = fragment[key]
     result[manifest_key] = fragment[manifest_key]
     result['__GL_APPLICATION_PROFILE'] = '1'
+    if '__GL_APPLICATION_PROFILE_LOG' in fragment:
+        result['__GL_APPLICATION_PROFILE_LOG'] = fragment['__GL_APPLICATION_PROFILE_LOG']
     assert fragment.get('__GL_APPLICATION_PROFILE', '1') == '1'
     assert not any(k in result for k in H.MASKS)
     return result
@@ -375,7 +399,8 @@ def prepare(stage, previous_stage, previous_module, parent_owner, base_module,
         rows[key]['prepared_sha256'] = {n: sha(pre / n) for n in ('original.yaml', 'resolved.yaml', 'environment.json')}
     frozen.update({str(previous_stage / 'plan.json'): sha(previous_stage / 'plan.json'),
                    str(previous_module): sha(previous_module)})
-    for key in ('owner_plan', 'final', 'identity', 'combined_plan', 'combined_return', 'child_return'):
+    for key in ('owner_plan', 'final', 'identity', 'cleanup', 'release', 'owner_return',
+                'return_started', 'combined_plan', 'combined_return', 'child_return'):
         frozen[evidence[key]] = evidence[key + '_sha256']
     frozen.update({path: row['manifest_sha256'] for path,row in legacy_scopes.items()})
     p = {k: prior_plan[k] for k in ('repo', 'head', 'uid', 'python', 'ray_address', 'ray_dashboard_url')}

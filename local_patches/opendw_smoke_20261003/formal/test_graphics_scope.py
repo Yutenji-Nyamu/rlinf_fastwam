@@ -78,6 +78,55 @@ class ProfileCompatibilityTests(unittest.TestCase):
             prep.validate_existing_device_profile(self.content(pattern={"feature": "commname", "matches": "unrelated"}))
 
 
+class UnreadableCpuProcessTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.proc = Path(self.tmp.name) / "99999"
+        self.proc.mkdir()
+        fields = ["S", "1"] + ["0"] * 17 + ["42"] + ["0"] * 3
+        (self.proc / "stat").write_text("99999 ((sd-pam)) " + " ".join(fields))
+        (self.proc / "comm").write_text("(sd-pam)\n")
+        (self.proc / "cmdline").write_bytes(b"(sd-pam) \0")
+        (self.proc / "environ").write_bytes(b"")
+        self.approved = dict(pid=99999, uid=os.getuid(), start=42, ppid=1,
+                             comm="(sd-pam)", cmdline_sha256=prep.digest(self.proc / "cmdline"))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_only_explicit_exact_audit_can_survive_permission_error(self):
+        original = Path.read_bytes
+        def deny_environment(path):
+            if path == self.proc / "environ":
+                raise PermissionError("fixture non-dumpable CPU daemon")
+            return original(path)
+        with patch.object(Path, "iterdir", side_effect=lambda: iter([self.proc])), \
+                patch.object(Path, "read_bytes", deny_environment), \
+                patch.object(prep, "gpu_process_pids", return_value=set()):
+            with self.assertRaisesRegex(RuntimeError, "Cannot establish scope retirement"):
+                prep.scoped_processes()
+            self.assertEqual(prep.scoped_processes(unreadable_cpu_exemptions=[self.approved]), [])
+
+    def test_identity_changes_scope_comm_and_gpu_context_are_rejected(self):
+        for key, value in (("start", 43), ("ppid", 2), ("cmdline_sha256", "changed")):
+            with self.subTest(key=key), self.assertRaisesRegex(RuntimeError, "identity changed"):
+                prep.verify_unreadable_cpu_process(self.proc, dict(self.approved, **{key: value}), set())
+        with self.assertRaisesRegex(RuntimeError, "GPU context"):
+            prep.verify_unreadable_cpu_process(self.proc, self.approved, {99999})
+        (self.proc / "comm").write_text("odwf6-12345678\n")
+        with self.assertRaisesRegex(RuntimeError, "graphics scope"):
+            prep.verify_unreadable_cpu_process(self.proc, dict(self.approved, comm="odwf6-12345678"), set())
+
+    def test_readable_scope_is_never_exempted(self):
+        (self.proc / "environ").write_bytes((runtime.MANIFEST_ENV + "=/frozen/scope.json\0").encode())
+        with patch.object(Path, "iterdir", side_effect=lambda: iter([self.proc])), \
+                patch.object(prep, "gpu_process_pids", return_value=set()):
+            rows = prep.scoped_processes(unreadable_cpu_exemptions=[self.approved])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["pid"], 99999)
+        self.assertEqual(rows[0]["scopes"], {runtime.MANIFEST_ENV: "/frozen/scope.json"})
+
+
 class ActivationReceiptTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
