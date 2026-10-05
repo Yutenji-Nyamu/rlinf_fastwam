@@ -173,10 +173,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--inputs', required=True)
     parser.add_argument('--run', required=True)
-    parser.add_argument('--max-physical-actions', type=int, choices=(20000,), required=True)
+    parser.add_argument('--max-physical-actions', type=int, choices=(20000, 60000), required=True)
     parser.add_argument('--resume')
     parser.add_argument('--enable-evaluation', action='store_true')
     args = parser.parse_args()
+    if args.max_physical_actions == 60000 and not args.resume:
+        parser.error('The approved 60000-action extension requires the migrated complete checkpoint')
     inputs_path = Path(args.inputs).resolve(strict=True)
     inputs_bytes = inputs_path.read_bytes(); inputs = json.loads(inputs_bytes)
     inputs_hash = hashlib.sha256(inputs_bytes).hexdigest()
@@ -217,7 +219,8 @@ def main():
     cadence = FormalCadence(max_physical_actions=args.max_physical_actions,
                             warmup_episodes=cfg['warmup_episodes'],
                             actions_per_call=cfg['physical_actions_per_update_call'],
-                            max_episode_actions=200, minimum_online_actions=64)
+                            max_episode_actions=200, minimum_online_actions=64,
+                            prior_budget_truncations=1 if args.max_physical_actions == 60000 else 0)
     progress = dict(online_success=0, stopped_episodes=0, evaluation_initial=False,
                     evaluation_periodic=[], evaluation_final=False, evaluation_summaries={},
                     training_seed_sha256=None, horizon_term_precedence=0)
@@ -455,7 +458,7 @@ def main():
 
         close_env()
         if args.enable_evaluation and not progress['evaluation_final']:
-            run_evaluation('final-expo')
+            run_evaluation('final-expo' if args.max_physical_actions == 20000 else 'final-expo-60000')
             with stop.transaction():
                 progress['evaluation_final'] = True; save_checkpoint('final-evaluation')
         result = dict(ok=True, budget_completed=True, cadence=cadence.state_dict(),

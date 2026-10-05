@@ -1,0 +1,42 @@
+"""The single authorized SZ2 20k -> 60k continuation route."""
+import hashlib
+import json
+from pathlib import Path
+
+ROOT = Path('/data/chenyiteng/projects/expo-ft-sz2-20261001')
+TRAIN = ROOT / 'formal-turn-switch-repair-20261002'
+CONTROL = ROOT / 'continue-60k-20261005'
+SOURCE = CONTROL / 'source'
+TOOLS = SOURCE / 'tools/expo_extend_20261005'
+CYCLE = CONTROL / 'rlt-cycle-expo60k-20261005-v1'
+GRAPHICS = ROOT / 'gpu4567-fix-20261003'
+EXPO_PY = '/data/chenyiteng/venvs/rlinf-sz1-parity-py311-20260917/bin/python'
+RLT_PY = '/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
+QUEUES = [Path('/data/chenyiteng/deployment-20261002/rlt-next6-' + task)
+          for task in ('place_object_stand', 'move_playingcard_away')]
+UUIDS = ['GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d', 'GPU-2cd891ea-180d-da39-6419-2d7033f8b21b',
+         'GPU-dc5d6921-fa81-b666-bac7-566c126f1dd4', 'GPU-3c6321c1-3e58-c071-3867-533391152fe7']
+CHANGED_SOURCE = {'examples/embodiment/train_expo_formal.py', 'rlinf/algorithms/expo_ft/formal_cadence.py'}
+
+def read(path):
+    return json.loads(Path(path).read_text())
+
+def sha(path):
+    h = hashlib.sha256()
+    with Path(path).open('rb') as f:
+        for block in iter(lambda: f.read(8 * 1024 * 1024), b''):
+            h.update(block)
+    return h.hexdigest()
+
+def jhash(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+def atomic(path, value):
+    path = Path(path)
+    temp = path.with_name(path.name + '.60k-partial')
+    with temp.open('w') as f:
+        json.dump(value, f, indent=2, allow_nan=False)
+        f.write('\n'); f.flush()
+        import os
+        os.fsync(f.fileno())
+    temp.replace(path)

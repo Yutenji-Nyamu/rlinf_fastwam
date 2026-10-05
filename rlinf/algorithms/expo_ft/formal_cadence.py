@@ -11,6 +11,7 @@ class FormalCadence:
     actions_per_call: int = 40
     max_episode_actions: int = 200
     minimum_online_actions: int = 64
+    prior_budget_truncations: int = 0
     episodes_completed: int = 0
     physical_actions: int = 0
     warmup_actions: int = 0
@@ -32,6 +33,8 @@ class FormalCadence:
                 raise ValueError(name + ' must be a positive integer')
         if type(self.warmup_episodes) is not int or self.warmup_episodes < 0:
             raise ValueError('warmup_episodes must be a nonnegative integer')
+        if type(self.prior_budget_truncations) is not int or self.prior_budget_truncations < 0:
+            raise ValueError('prior_budget_truncations must be a nonnegative integer')
         self._validate()
 
     @property
@@ -59,8 +62,8 @@ class FormalCadence:
                 self.carry_actions != self.post_warmup_actions % self.actions_per_call or
                 self.completed_calls + self.pending_calls != self.post_warmup_actions // self.actions_per_call or
                 (self.completed_calls and not self.can_learn) or
-                self.budget_truncated_episodes > min(1, self.episodes_completed) or
-                (self.budget_truncated_episodes and self.remaining_actions != 0)):
+                self.budget_truncated_episodes > min(self.prior_budget_truncations + 1, self.episodes_completed) or
+                (self.budget_truncated_episodes > self.prior_budget_truncations and self.remaining_actions != 0)):
             raise ValueError('Cadence action/episode/debt invariants differ')
 
     def finish_episode(self, actions: int, *, budget_truncated: bool = False) -> int:
@@ -94,11 +97,14 @@ class FormalCadence:
 
     def state_dict(self):
         self._validate()
-        return {'version': self.VERSION,
+        state = {'version': self.VERSION,
                 'contract': {name: getattr(self, name) for name in (
                     'max_physical_actions', 'warmup_episodes', 'actions_per_call', 'max_episode_actions',
                     'minimum_online_actions')},
                 'counters': {name: getattr(self, name) for name in self.COUNTERS}}
+        if self.prior_budget_truncations:
+            state['contract']['prior_budget_truncations'] = self.prior_budget_truncations
+        return state
 
     def load_state_dict(self, state):
         if (set(state) != {'version', 'contract', 'counters'} or
