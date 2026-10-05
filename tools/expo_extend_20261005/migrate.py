@@ -10,6 +10,12 @@ from common import *
 
 PAYLOAD = {'base', 'core', 'replay', 'cadence', 'rng', 'progress'}
 
+
+def snapshot_file(source, target, folder):
+    # Online replay pins ctime: a hardlink would invalidate its strict identity.
+    if folder == 'run' and source.suffix == '.pt': os.link(source, target)
+    else: shutil.copy2(source, target)
+
 def extend_metadata(saved):
     assert saved['cadence']['contract']['max_physical_actions'] == 20000
     c = saved['cadence']['counters']
@@ -57,7 +63,7 @@ def main():
     exec(compile(ast.Module(body=[node], type_ignores=[]), 'digest', 'exec'), ns)
     digest = ns['digest']
     backup.mkdir(mode=0o700)
-    # Link immutable large payloads, copy mutable metadata. Never edit these backups.
+    # Only checkpoints may be linked; replay file ctime must stay unchanged.
     for folder in ('run', 'replay'):
         for p in (TRAIN / folder).rglob('*'):
             assert not p.is_symlink()
@@ -65,8 +71,7 @@ def main():
             if p.is_dir(): target.mkdir(parents=True, exist_ok=True)
             elif p.is_file():
                 target.parent.mkdir(parents=True, exist_ok=True)
-                if p.suffix == '.pt': os.link(p, target)
-                else: shutil.copy2(p, target)
+                snapshot_file(p, target, folder)
     shutil.copy2(TRAIN / 'inputs.json', backup / 'inputs.json')
     replay_before = sha(TRAIN / 'replay/index.json')
     results = {}

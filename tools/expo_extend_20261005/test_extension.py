@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
-from migrate import extend_metadata, check_inputs
+from migrate import extend_metadata, check_inputs, snapshot_file
 from common import CHANGED_SOURCE
 
 path = Path(__file__).resolve().parents[2] / 'rlinf/algorithms/expo_ft/formal_cadence.py'
@@ -13,6 +13,16 @@ module = importlib.util.module_from_spec(spec); sys.modules[spec.name] = module;
 Cadence = module.FormalCadence
 
 class ExtensionTests(unittest.TestCase):
+    def test_replay_snapshot_preserves_pinned_identity(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / 'episode.pt'; source.write_bytes(b'payload')
+            target = Path(folder) / 'backup.pt'; before = source.stat()
+            snapshot_file(source, target, 'replay')
+            self.assertEqual(before.st_ctime_ns, source.stat().st_ctime_ns)
+            self.assertNotEqual(source.stat().st_ino, target.stat().st_ino)
+            self.assertEqual(source.read_bytes(), target.read_bytes())
+
     def state(self):
         cadence = Cadence(20000, episodes_completed=128, physical_actions=20000, warmup_actions=1827,
                          post_warmup_actions=18173, carry_actions=13, completed_calls=454, budget_truncated_episodes=1)

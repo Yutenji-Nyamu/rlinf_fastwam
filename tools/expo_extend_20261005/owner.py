@@ -85,10 +85,17 @@ def main():
         wait_free(managed); child = roster = None
     try:
         pins(); assert [gpu_map().get(i) for i in (4, 5, 6, 7)] == UUIDS
-        state('PREPARING_RLT_CHECKPOINTS'); operation('prepare')
+        state('PREPARING_RLT_CHECKPOINTS')
+        if (CONTROL / 'preflight-retry.json').is_file():
+            retry = read(CONTROL / 'preflight-retry.json')
+            assert retry['rlt_untouched'] and not owned(retry['previous_owner'])
+            assert not (CONTROL / 'rlt-stop-intent.json').exists()
+            assert read(CONTROL / 'replay-ctime-repair.json')['ok']
+        else:
+            operation('prepare')
+            state('MIGRATING_20K_TO_60K')
+            command([EXPO_PY, '-u', '-B', str(TOOLS / 'migrate.py')], 'migration')
         assert set(read(CYCLE / 'plan.json')['runs']) == {'gpu4', 'gpu5', 'gpu6', 'gpu7'}
-        state('MIGRATING_20K_TO_60K')
-        command([EXPO_PY, '-u', '-B', str(TOOLS / 'migrate.py')], 'migration')
         migration = read(CONTROL / 'migration.json'); assert migration['ok'] and migration['counters_unchanged']
         if requested[0]: raise RuntimeError('Stop requested before borrowing')
         for stage in QUEUES:
