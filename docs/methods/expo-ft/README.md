@@ -1,5 +1,7 @@
 # EXPO-FT 调研与原生移植
 
+2026-10-05 17:05 EXPO终态核验：SZ2 turn_switch已于00:41完整结束，128回合/20000真实动作/454学习，最终固定15/20（初始9/20）；7个场景失败转成功、1个成功转失败。latest/last1及128条回放齐全，源码17/17核同；全程约60h，学习44.84h。原RLT恢复首轮已验，00:52 nextsix接续，17:05四路TRAINING。GPU0现有本人RLT图形535MiB，EXPO已退出。本轮只读审计并整理轻量产物，未启停训练。 当前入口：[最终复盘与产物](FINAL_REVIEW_20261005.md)。下方状态均为各自日期的历史记录；不重放旧owner。
+
 本轮入口：[熵与四卡/单环境机制](ENTROPY_PARALLEL_20261003.md) · [eval25→10部署记录（17:02恢复与首调用保存已验）](EVAL10_DEPLOYMENT_20261003.md)。
 
 源码、机制讲解和标时图表已首推至[`codex/sz2-expo-ft-repair-20261002` @1386f943](https://github.com/Yutenji-Nyamu/rlinf_fastwam/commit/1386f943ab388bdcdc5bf6c16d7557627cfb30bc)。17:02现场已完成四RLT借卡、两队列改绑、eval10合同迁移与完整恢复；call242已完成并保存有限checkpoint，call243执行中。恢复证据随本提交保存，最终对象由所在提交SHA及发布回执标识。本轮不改变熵设置、采集N1或保存方式。

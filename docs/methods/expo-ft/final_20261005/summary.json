@@ -1,0 +1,354 @@
+{
+  "snapshot": "2026-10-05T17:05:02.267368+08:00",
+  "task": "turn_switch",
+  "train_seed": 42,
+  "completion": "2026-10-05T00:41:13+08:00",
+  "online": {
+    "episodes": 128,
+    "actions": 20000,
+    "successes": 56,
+    "rate": 0.4375,
+    "trailing": {
+      "5": {
+        "successes": 1,
+        "episodes": 5
+      },
+      "10": {
+        "successes": 4,
+        "episodes": 10
+      },
+      "15": {
+        "successes": 8,
+        "episodes": 15
+      },
+      "20": {
+        "successes": 9,
+        "episodes": 20
+      }
+    },
+    "last_episode_budget_truncated": true,
+    "last_episode_actions": 61,
+    "unique_seeds": 128,
+    "overlap_with_eval_seeds": 0
+  },
+  "updates": {
+    "calls": 454,
+    "critic": 9080,
+    "base_fm": 454,
+    "editor": 454,
+    "temperature": 454,
+    "batch": 64,
+    "pending": 0,
+    "unused_carry_actions": 13,
+    "warmup_actions": 1827
+  },
+  "evaluation": {
+    "initial": 0.45,
+    "final": 0.75,
+    "absolute_percentage_points": 30,
+    "independent_training_seeds": 1,
+    "fixed_scene_seeds": 20,
+    "evaluations": [
+      {
+        "episode": 0,
+        "label": "initial-base",
+        "successes": 9,
+        "episodes": 20,
+        "rate": 0.45,
+        "seconds": 1696.798772096634,
+        "policy": "raw-base",
+        "calls": 0,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 25,
+        "label": "episode-000025",
+        "successes": 10,
+        "episodes": 20,
+        "rate": 0.5,
+        "seconds": 1838.2090337276459,
+        "policy": "EXPO",
+        "calls": 51,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 50,
+        "label": "episode-000050",
+        "successes": 6,
+        "episodes": 20,
+        "rate": 0.3,
+        "seconds": 1844.876211643219,
+        "policy": "EXPO",
+        "calls": 149,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 80,
+        "label": "episode-000080",
+        "successes": 10,
+        "episodes": 20,
+        "rate": 0.5,
+        "seconds": 1829.1646506786346,
+        "policy": "EXPO",
+        "calls": 263,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 90,
+        "label": "episode-000090",
+        "successes": 10,
+        "episodes": 20,
+        "rate": 0.5,
+        "seconds": 1848.2926409244537,
+        "policy": "EXPO",
+        "calls": 305,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 100,
+        "label": "episode-000100",
+        "successes": 10,
+        "episodes": 20,
+        "rate": 0.5,
+        "seconds": 1873.289278268814,
+        "policy": "EXPO",
+        "calls": 349,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 110,
+        "label": "episode-000110",
+        "successes": 13,
+        "episodes": 20,
+        "rate": 0.65,
+        "seconds": 1852.123141527176,
+        "policy": "EXPO",
+        "calls": 392,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 120,
+        "label": "episode-000120",
+        "successes": 12,
+        "episodes": 20,
+        "rate": 0.6,
+        "seconds": 1822.707843542099,
+        "policy": "EXPO",
+        "calls": 427,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      },
+      {
+        "episode": 128,
+        "label": "final-expo",
+        "successes": 15,
+        "episodes": 20,
+        "rate": 0.75,
+        "seconds": 1836.6079139709473,
+        "policy": "EXPO",
+        "calls": 454,
+        "seed_sha256": "ea326f6013f40f59b891860cfa0f3509a4334d7897504ff39ff34e97ff0ea250"
+      }
+    ],
+    "positive_pairs": 7,
+    "negative_pairs": 1,
+    "both_success": 8,
+    "both_fail": 4,
+    "final_wilson95": [
+      0.531299122381256,
+      0.8881382985923343
+    ],
+    "paired_exact_mcnemar_p": 0.0703125,
+    "statistical_note": "Exploratory fixed-set description; policies/candidate budgets differ. No multi-training-seed or independent holdout confirmation.",
+    "all_eval_actions": 36000,
+    "post_training_eval_actions": 32000
+  },
+  "timing": {
+    "repair_start": "2026-10-02T12:37:28+08:00",
+    "repair_to_complete_hours": 60.062329778869945,
+    "planned_pause_hours": 1.6897833933432898,
+    "learner_hours": 44.83679007715649,
+    "collection_body_hours": 2.9829033929109574,
+    "post_baseline_eval_hours": 4.095908531745275,
+    "initial_eval_hours": 0.471332992249065,
+    "first20_call_seconds": 227.05825731754302,
+    "last20_call_seconds": 437.37538796663284,
+    "last_process_elapsed_hours": 28.237687234812313,
+    "checkpoint_commits": 591
+  },
+  "learning": {
+    "initial_alpha": 1,
+    "final_alpha": 1.150212049484253,
+    "last50_entropy": -129.6963040161133,
+    "entropy_max": -128.2807024623817,
+    "entropy_target": -70,
+    "last50_q_loss": 0.0025969018941395918,
+    "last50_fm_loss": 0.08668046809732914,
+    "first20_fm_loss": 0.04787721494212747,
+    "all_metrics_finite": true,
+    "base_frozen_grad_nonzero_calls": 0,
+    "base_update_nonzero_calls": 454,
+    "fm_demo_fraction_all": 0.6171186674008811,
+    "fm_demo_fraction_last50": 0.4503125,
+    "edited_selected": {
+      "chunks": 2026,
+      "edited_selected": 1246,
+      "last100": {
+        "chunks": 100,
+        "edited_selected": 66
+      }
+    }
+  },
+  "replay": {
+    "episodes": 128,
+    "frames": 20000,
+    "successes": 56,
+    "q_windows_online": 18776,
+    "fm_windows_online": 3027,
+    "short_success_lengths": [
+      46,
+      29,
+      48,
+      45,
+      45
+    ],
+    "bytes": 13940766773,
+    "payload_size_checks": 128,
+    "manifest_sha_checks": 128,
+    "payload_full_rehash_performed": false
+  },
+  "artifacts": {
+    "run_bytes": 17576357792,
+    "checkpoints": {
+      "checkpoint-latest.pt": {
+        "bytes": 8787024772,
+        "mtime": 1791132069.8384163,
+        "zip_directory_ok": true,
+        "members": 2045,
+        "uncompressed_bytes": 8786619259,
+        "metadata_members": [
+          "archive/data.pkl",
+          "archive/.format_version",
+          "archive/.storage_alignment",
+          "archive/byteorder",
+          "archive/version",
+          "archive/.data/serialization_id"
+        ],
+        "encrypted": false,
+        "unchanged_during_read": true
+      },
+      "checkpoint-last1.pt": {
+        "bytes": 8787023492,
+        "mtime": 1791130195.737027,
+        "zip_directory_ok": true,
+        "members": 2045,
+        "uncompressed_bytes": 8786617988,
+        "metadata_members": [
+          "archive/data.pkl",
+          "archive/.format_version",
+          "archive/.storage_alignment",
+          "archive/byteorder",
+          "archive/version",
+          "archive/.data/serialization_id"
+        ],
+        "encrypted": false,
+        "unchanged_during_read": true
+      }
+    },
+    "checkpoint_metadata": {
+      "path": "/home/nvme/team-data/chenyiteng/projects/expo-ft-sz2-20261001/formal-turn-switch-repair-20261002/run/checkpoint-latest.pt",
+      "bytes": 8787024772,
+      "hashes": {
+        "base": "823609f3f0e2a107723ebf9869c7975ff890e0456c556eaba8975567ba311da9",
+        "core": "32ca8ace5d3e1ce4a6a1d17d60da018473b762ba50d3cbb606057ada51753b45",
+        "replay": "9e975882db55d90546993f940b339f8e267401401c27f895b90dc3f9e08426ce",
+        "cadence": "8e04b3b55bb43408c20ff34c3efc3f2eaf8440599aa1dd97b48d0850f7cbc608",
+        "rng": "199052591f456bf2553b6f21b291eb81f740594ee8cfce9e27ec26cd4585e5ee",
+        "progress": "a2a7885e74ee2dd810120dcc1b974bbeb9d06ba89993483bcc28ee163003ce08"
+      },
+      "reason": "final-evaluation",
+      "cadence": {
+        "version": 2,
+        "contract": {
+          "max_physical_actions": 20000,
+          "warmup_episodes": 10,
+          "actions_per_call": 40,
+          "max_episode_actions": 200,
+          "minimum_online_actions": 64
+        },
+        "counters": {
+          "episodes_completed": 128,
+          "physical_actions": 20000,
+          "warmup_actions": 1827,
+          "post_warmup_actions": 18173,
+          "carry_actions": 13,
+          "pending_calls": 0,
+          "completed_calls": 454,
+          "budget_truncated_episodes": 1
+        }
+      },
+      "core_updates": 454,
+      "base_updates": 454,
+      "finite": true
+    },
+    "checkpoint_tensor_reload_performed": false,
+    "media_in_current_run": 0,
+    "source_files_matched": 17
+  },
+  "handoff": {
+    "formal_passed": true,
+    "gpu_released": true,
+    "rlt_first_rounds_verified": true,
+    "rlt_tasks": {
+      "place_object_stand": {
+        "roles": {
+          "clean": "TRAINING",
+          "combo": "TRAINING"
+        },
+        "clean_first_round": {
+          "time": "2026-10-05T00:58:19.656828+08:00",
+          "metrics": {
+            "step": 0,
+            "success": 0.75,
+            "wall_time": 1791133091.3863032
+          }
+        },
+        "combo_first_round": {
+          "time": "2026-10-05T00:59:49.674827+08:00",
+          "metrics": {
+            "step": 0,
+            "success": 0.625,
+            "wall_time": 1791133159.9571183
+          }
+        }
+      },
+      "move_playingcard_away": {
+        "roles": {
+          "clean": "TRAINING",
+          "combo": "TRAINING"
+        },
+        "clean_first_round": {
+          "time": "2026-10-05T00:58:19.656830+08:00",
+          "metrics": {
+            "step": 0,
+            "success": 0.5,
+            "wall_time": 1791133088.8611274
+          }
+        },
+        "combo_first_round": {
+          "time": "2026-10-05T00:58:19.661661+08:00",
+          "metrics": {
+            "step": 0,
+            "success": 0.75,
+            "wall_time": 1791133083.7090569
+          }
+        }
+      }
+    },
+    "current_rlt_gpu0_graphics_mib": 535
+  },
+  "source_evidence": {
+    "expo-final-artifacts-20261005-1707.out": "e391cd92afd16a96a759f5e10142c703d0602bd076492ea594041005c188383a",
+    "expo-final-aux-20261005-1711.out": "4506a1cfc64b912043eb8a93402a985601240dab2ae71e57e2fb8669d10845a9"
+  },
+  "source_code_commit": "568fd5a017597998f0c8ebe265d6f20b3e39b699"
+}
