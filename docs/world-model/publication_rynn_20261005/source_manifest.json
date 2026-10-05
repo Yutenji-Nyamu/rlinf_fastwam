@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "created_time_utc": "2026-10-05T10:16:02.390568+00:00",
+  "prior_remote_commit": "07faf0636163b8ca6a604f94eb8cea74705a125a",
+  "source_branch": "codex/robotwin-opendw-wmrl-20261003",
+  "branch": "codex/rynnvalue-wmrl-release-20261005",
+  "purpose": "RynnValue BF16 repair, sparse reward/unknown masks, failed V2 semantic gate, and separate GPU4 input diagnosis",
+  "files": {
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/opendw_robotwin_env.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/opendw_robotwin_env.py",
+      "bytes": 23378,
+      "sha256": "d7d234f2a0f9abea02157a7d2cbf832aaac136340ee84a19c82960d1f1152ba0"
+    },
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_success.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_success.py",
+      "bytes": 1949,
+      "sha256": "cf122200c949eac84a5748ec356d8974b877e342e2cc2899a1932a86b75d9f3c"
+    },
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_actor_mask.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_actor_mask.py",
+      "bytes": 1923,
+      "sha256": "009630e6df3befa75928c1457953458276636e919e938a396de1f0bc5fb2ce1e"
+    },
+    "local_patches/rynn_wmrl_20261005/tools/rynn_success_service.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/tools/rynn_success_service.py",
+      "bytes": 31523,
+      "sha256": "eef621bc65a6af1d7ca6afdaaf5057e326f1aabe672a2b3c501a84e2d2d76b7d"
+    },
+    "local_patches/rynn_wmrl_20261005/tools/opendw_service_batched.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/tools/opendw_service_batched.py",
+      "bytes": 37274,
+      "sha256": "13d714e8d777b55a15187f0e2ae70e7432a3908c971d50688825adb6c60d0ea1"
+    },
+    "local_patches/rynn_wmrl_20261005/tools/patch_actor_rynn_mask.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/tools/patch_actor_rynn_mask.py",
+      "bytes": 2541,
+      "sha256": "6dd68dd95cbf2bae08804e44b3e09038eeb8997ae932c6e2f36881b22884dbb3"
+    },
+    "local_patches/rynn_wmrl_20261005/tools/test_rynn_success_service.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/tools/test_rynn_success_service.py",
+      "bytes": 9864,
+      "sha256": "d6e648dcfc23c8a665a1f9d19bcad07df6c134a75e8514efa119d31c8199b954"
+    },
+    "local_patches/rynn_wmrl_20261005/tests/test_env_and_mask.py": {
+      "source_local": "local_patches/rynn_wmrl_20261005/tests/test_env_and_mask.py",
+      "bytes": 8298,
+      "sha256": "0994ab64ef5756f9ae0ca45e559e0a38ea5ede3244a09387ea0c13c8a4ce5775"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_formal_owner.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_formal_owner.py",
+      "bytes": 17955,
+      "sha256": "b2bb0cca85e6af304153a5c040c30f49192a5c8539ec16561092da8bfb8b4158"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_handoff.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_handoff.py",
+      "bytes": 4871,
+      "sha256": "05b79202c83d07c44879274fac52c15d48606b720e9a0f9ef4e96796a6b0fd93"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_gate_client.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_gate_client.py",
+      "bytes": 7142,
+      "sha256": "05e5b74c3359da3b28018cd212ebb3ef3e60a9c909e6eb1102ea2ff98cc59421"
+    },
+    "local_scripts/rynn_wmrl_20261005/test_rynn_owner.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/test_rynn_owner.py",
+      "bytes": 6318,
+      "sha256": "e46b432af5d32575c25fb8a95892af61c3009f39a56908382e93eeff26917a88"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_formal_owner_v2.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_formal_owner_v2.py",
+      "bytes": 19213,
+      "sha256": "a42975a3908068d0179f1cc0543a881276984108e776c18618e0ae94da891208"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_v2_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_v2_remote.py",
+      "bytes": 6723,
+      "sha256": "5f164a0803af1742c8950c0aeab7112f6d8103c387c1ecb43cccd74d94c06c10"
+    },
+    "local_scripts/rynn_wmrl_20261005/launch_v2_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/launch_v2_remote.py",
+      "bytes": 2920,
+      "sha256": "bc6dfa5e010c2423fb0fdaaf2a05e49407fb0f962b6db180a01585323a0fbffa"
+    },
+    "local_scripts/rynn_wmrl_20261005/test_rynn_owner_v2.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/test_rynn_owner_v2.py",
+      "bytes": 2369,
+      "sha256": "157c875d8307c46e08769ec1ee2ff0d47c6d07bae4931d824707f8cce7391202"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_diagnostic.py",
+      "bytes": 19026,
+      "sha256": "e6825e35058de0e8311b6d468675fefee549a8a38913f281bf876d60289299b9"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner.py",
+      "bytes": 14980,
+      "sha256": "e9b075ab13f64afc8ad2b405dc92f2c04bdb493f81b9e06c180fe779551efb40"
+    },
+    "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner.py",
+      "bytes": 3003,
+      "sha256": "d13e24430bfe775a16c5f5071007cd9b77d892e23203124a371deab8cc8361d1"
+    },
+    "local_scripts/rynn_wmrl_20261005/preflight_rynn_diagnostic.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/preflight_rynn_diagnostic.py",
+      "bytes": 560,
+      "sha256": "22fb5e0983c41c676f56b16846e60b3557b03c36068f441b5520ca914a0b4fd4"
+    },
+    "local_scripts/rynn_wmrl_20261005/build_diag_stage_rpc.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/build_diag_stage_rpc.py",
+      "bytes": 2612,
+      "sha256": "3fa13f17acaedb13afe611e95d4c893c38409ce40be11ffd679c3fd36fd69262"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_diagnostic_samples_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_diagnostic_samples_remote.py",
+      "bytes": 4481,
+      "sha256": "2193d863e06dd45d67cfa9233d53e8447d05cb660d7cf1064d448f53608ec7a0"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_diagnostic_owner_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_diagnostic_owner_remote.py",
+      "bytes": 329,
+      "sha256": "5c25fa9213a117cade1b24112f7ed80777fb0d0b8682835a9d0e8379cd2ee9ea"
+    },
+    "local_scripts/rynn_wmrl_20261005/launch_diagnostic_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/launch_diagnostic_remote.py",
+      "bytes": 327,
+      "sha256": "8003316e23f2384ee0a3ce398b9b2c5ee74481247b1007ae63098a5a18d5ad53"
+    },
+    "local_scripts/rynn_wmrl_20261005/diagnostic_status_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/diagnostic_status_remote.py",
+      "bytes": 1922,
+      "sha256": "2dce4e5b2b9ef9e55917f4a3de125a7e88c4916c389559eed6ba02aa23c42a2a"
+    },
+    "local_scripts/rynn_wmrl_20261005/collect_evidence_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/collect_evidence_remote.py",
+      "bytes": 3471,
+      "sha256": "d3d4b1e2a200e1b0ae9831046bd562e005369e2814ca31485c351200fe602d42"
+    },
+    "local_scripts/rynn_wmrl_20261005/collect_diagnostic_evidence_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/collect_diagnostic_evidence_remote.py",
+      "bytes": 2409,
+      "sha256": "fe28b3a6b8408e773b9e601ace538b6806f5fcbe609512ff1e648b5ea02aa3a9"
+    },
+    "local_scripts/rynn_wmrl_20261005/native_status_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/native_status_remote.py",
+      "bytes": 2055,
+      "sha256": "04ed19369ee637122b3e088b3ca3ecbf3e826b84dbdef4917ad863ebb0323cff"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_native_frames_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_native_frames_remote.py",
+      "bytes": 1566,
+      "sha256": "c3f96839a9668b9bbbafc4f8f3748f0673a4b4931f97ed30ea9ed10a00ce0f1d"
+    },
+    "local_scripts/rynn_wmrl_20261005/verify_official_git_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/verify_official_git_remote.py",
+      "bytes": 605,
+      "sha256": "6823ae1e22138a13d5370a5b07b43b2f2d3aa8ea5918a12177c74431fae7af17"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_native_diagnostic.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_native_diagnostic.py",
+      "bytes": 16302,
+      "sha256": "732c48a3743194c1390230f9a755d267d266e6c47aab4949dbc5a65357a2a8d0"
+    },
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner_v2.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner_v2.py",
+      "bytes": 19497,
+      "sha256": "ea64078cbe7a5ed0975fd468b582f710abe7ee504da401f29e8a102ea9db3afb"
+    },
+    "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner_v2.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner_v2.py",
+      "bytes": 4168,
+      "sha256": "d9235c53c309019f7e81b6686489b2cb2588f2b9de9e160047210a33e0249abe"
+    },
+    "local_scripts/rynn_wmrl_20261005/build_native_stage_rpc.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/build_native_stage_rpc.py",
+      "bytes": 3293,
+      "sha256": "2c37d3378aa3078f3145a648fe789c90c60ad3d7108da88480da9d285ce3b87d"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_native_owner_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_native_owner_remote.py",
+      "bytes": 332,
+      "sha256": "15859f5214cb00fc27cfbfea1ec300e9e5275d46716fbd26cf4366c7a5882077"
+    },
+    "local_scripts/rynn_wmrl_20261005/launch_native_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/launch_native_remote.py",
+      "bytes": 330,
+      "sha256": "137e36b0dc1407b4a036328de1c8a6f67c507c19a1a7808be83348d07df7c318"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_remote.py",
+      "bytes": 3324,
+      "sha256": "b55b40df06fbb44f76113b6155a70e0e0c37d2b081baa708ed48d137c9d26237"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_samples_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_samples_remote.py",
+      "bytes": 2810,
+      "sha256": "7acab190d11621f7a897e8c33893dab2573f93d23da4d00df1b342a3308be1ea"
+    },
+    "local_scripts/rynn_wmrl_20261005/prepare_plan_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/prepare_plan_remote.py",
+      "bytes": 10084,
+      "sha256": "b619c5c110296d807336ac4fc727a9f487719447e8a1fb46c7809dddaaac96cc"
+    },
+    "local_scripts/rynn_wmrl_20261005/validate_assets_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/validate_assets_remote.py",
+      "bytes": 709,
+      "sha256": "3e5b521b32e0e8246206e46c99ef31405982aa0f7ba146cce6fea61685d71045"
+    },
+    "local_scripts/rynn_wmrl_20261005/launch_handoff_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/launch_handoff_remote.py",
+      "bytes": 1911,
+      "sha256": "6263c63b53c4e6549cf86dc04182588191850c58e279e879d6b8d1e66dd0d718"
+    },
+    "local_scripts/rynn_wmrl_20261005/inventory_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/inventory_remote.py",
+      "bytes": 2873,
+      "sha256": "7d4fe5ac5ccd79fad018f98fdf69728fb55484598564b8e851ad72cfee48cb1c"
+    },
+    "local_scripts/rynn_wmrl_20261005/status_remote.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/status_remote.py",
+      "bytes": 2034,
+      "sha256": "af56b7394b250505c360fd7427f11a6a42cbb2082278b408f61f023719d03934"
+    },
+    "local_scripts/rynn_wmrl_20261005/build_stage_rpc.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/build_stage_rpc.py",
+      "bytes": 3784,
+      "sha256": "3b95fb8c37df145392c5db462dd4755b057528effcd2ba93be9a642036520ad8"
+    },
+    "local_scripts/rynn_wmrl_20261005/build_v2_stage_rpc.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/build_v2_stage_rpc.py",
+      "bytes": 2995,
+      "sha256": "abb64d8174f9ad75fd287e5ae2fe402f63f7ae4d56e95742e2ccd42a0b30157e"
+    },
+    "local_scripts/rynn_wmrl_20261005/make_publication_rpc.py": {
+      "source_local": "local_scripts/rynn_wmrl_20261005/make_publication_rpc.py",
+      "bytes": 23875,
+      "sha256": "09381e7e23f2965740cd6a6e314d8dbf30681c0e9fb63e66967a1f2bb9cd23e0"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/rynnvalue_integration_plan_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/rynnvalue_integration_plan_20261005.md",
+      "bytes": 9634,
+      "sha256": "d1a1a82e10a45acae7273f142d2e90137e42c8e4de0579cd03f81f791d1733f7"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/rynnvalue_batch_audit_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/rynnvalue_batch_audit_20261005.md",
+      "bytes": 7497,
+      "sha256": "0b3d48f5cd83c7c4ffa933e554e1a9a323340432304087a1f0cdd9dd3ea8fd7e"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/rynnvalue_execution_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/rynnvalue_execution_20261005.md",
+      "bytes": 11356,
+      "sha256": "6f1ce9dc81ea76168185260c72928ce7c4633749d4bef885c31257e964a268fa"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/reward_saturation_discussion_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/reward_saturation_discussion_20261005.md",
+      "bytes": 11312,
+      "sha256": "806a8de8db60eee9c0970948f375547b08c7e5ffd195cf1016d99c09d4bc6f8f"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/candidate_comparison_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/candidate_comparison_20261005.md",
+      "bytes": 7925,
+      "sha256": "a409e90055712f93db5eaa8cbd8196703268383e04b2c1fd2d3e1208b6de773c"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/general_reward_integration_20261003.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/general_reward_integration_20261003.md",
+      "bytes": 14945,
+      "sha256": "3e879784d89fe5745bb4ca44fff26ca70db184e9aa8d93f9f8ce9632701841e5"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/rynnvalue_semantic_diagnosis_20261005.md": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/rynnvalue_semantic_diagnosis_20261005.md",
+      "bytes": 11723,
+      "sha256": "b6b00fee2cd6c486454be837950cf99c4d3dd6e2ae04f1281634ee8534a6e937"
+    },
+    "docs/world-model/robotwin_pipeline_20261003/rynnvalue_source_receipt_20261005.json": {
+      "source_local": "docs/world-model/robotwin_pipeline_20261003/rynnvalue_source_receipt_20261005.json",
+      "bytes": 2454,
+      "sha256": "151a0df467219e96a73a16c45145eb37fcc488331b216d46cad50c57d8a1662d"
+    },
+    "docs/world-model/publication_rynn_20261005/v2_gate_result.json": {
+      "source_local": "docs/world-model/publication_rynn_20261005/v2_gate_result.json",
+      "bytes": 8074,
+      "sha256": "c2d8a59efba0d1212240848c269abf8b7413a6f0864d7458f34b98afe128acfd"
+    },
+    "docs/world-model/publication_rynn_20261005/diagnostic_v1_result.json": {
+      "source_local": "docs/world-model/publication_rynn_20261005/diagnostic_v1_result.json",
+      "bytes": 14939,
+      "sha256": "93333967160812d01c398645260ba7e4452241b709944215a1ef97e1ca2bfaee"
+    },
+    "docs/world-model/publication_rynn_20261005/native_diagnostic_result.json": {
+      "source_local": "docs/world-model/publication_rynn_20261005/native_diagnostic_result.json",
+      "bytes": 15617,
+      "sha256": "50f3312980f851e08e5697c6a442bcc0a4381f780619fd2bc336e1ca3709c170"
+    }
+  },
+  "runtime_bindings": {
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/opendw_robotwin_env.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rlinf-rynn-v1/rlinf/envs/world_model/opendw_robotwin_env.py",
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_success.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rlinf-rynn-v1/rlinf/envs/world_model/rynn_success.py",
+    "local_patches/rynn_wmrl_20261005/rlinf/envs/world_model/rynn_actor_mask.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rlinf-rynn-v1/rlinf/envs/world_model/rynn_actor_mask.py",
+    "local_patches/rynn_wmrl_20261005/tools/rynn_success_service.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/rynn_success_service.py",
+    "local_patches/rynn_wmrl_20261005/tools/opendw_service_batched.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/opendw_service_batched.py",
+    "local_patches/rynn_wmrl_20261005/tools/patch_actor_rynn_mask.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/patch_actor_rynn_mask.py",
+    "local_patches/rynn_wmrl_20261005/tools/test_rynn_success_service.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/test_rynn_success_service.py",
+    "local_patches/rynn_wmrl_20261005/tests/test_env_and_mask.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/test_env_and_mask.py",
+    "local_scripts/rynn_wmrl_20261005/rynn_gate_client.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/rynn_gate_client.py",
+    "local_scripts/rynn_wmrl_20261005/test_rynn_owner.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/test_rynn_owner.py",
+    "local_scripts/rynn_wmrl_20261005/rynn_formal_owner_v2.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/rynn_formal_owner_v2.py",
+    "local_scripts/rynn_wmrl_20261005/prepare_v2_remote.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/prepare_v2_remote.py",
+    "local_scripts/rynn_wmrl_20261005/launch_v2_remote.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/launch_v2_remote.py",
+    "local_scripts/rynn_wmrl_20261005/test_rynn_owner_v2.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/test_rynn_owner_v2.py"
+  },
+  "runtime_entrypoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v2/code/rynn_formal_owner_v2.py",
+  "archive_bindings": {
+    "local_scripts/rynn_wmrl_20261005/rynn_formal_owner.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v1/code/rynn_formal_owner.py",
+    "local_scripts/rynn_wmrl_20261005/rynn_handoff.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-control-v1/code/rynn_handoff.py"
+  },
+  "diagnostic_bindings": {
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v1/code/rynn_diagnostic.py",
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v1/code/rynn_diagnostic_owner.py",
+    "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v1/code/test_rynn_diagnostic_owner.py",
+    "local_scripts/rynn_wmrl_20261005/preflight_rynn_diagnostic.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v1/code/preflight_rynn_diagnostic.py"
+  },
+  "diagnostic_entrypoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v1/code/rynn_diagnostic_owner.py",
+  "native_bindings": {
+    "local_scripts/rynn_wmrl_20261005/rynn_native_diagnostic.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v2/code/rynn_native_diagnostic.py",
+    "local_scripts/rynn_wmrl_20261005/rynn_diagnostic_owner_v2.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v2/code/rynn_diagnostic_owner_v2.py",
+    "local_scripts/rynn_wmrl_20261005/test_rynn_diagnostic_owner_v2.py": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v2/code/test_rynn_diagnostic_owner_v2.py"
+  },
+  "native_entrypoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/rynn-diagnosis-v2/code/rynn_diagnostic_owner_v2.py",
+  "archived_v1_notice": "V1 failed before training because its floating-point value head was not converted to BF16; v1 owner/handoff files are retained as history, not active launch instructions.",
+  "v2_execution_notice": "V2 passed dtype/API execution but rejected all 16 expert samples as No at its semantic gate. It failed before training and returned RLT. The GPU4 diagnostic is an independent run, not resumed formal WMRL.",
+  "native_execution_notice": "The native-input comparison is a separate GPU4-only diagnostic. Its engineering and semantic results are defined by the final listed receipt; source inclusion makes no success claim.",
+  "execution_evidence": [
+    "docs/world-model/publication_rynn_20261005/v2_gate_result.json",
+    "docs/world-model/publication_rynn_20261005/diagnostic_v1_result.json",
+    "docs/world-model/publication_rynn_20261005/native_diagnostic_result.json"
+  ],
+  "execution_claim": "Only the explicitly listed receipts establish progress; source publication does not establish smoke or formal success.",
+  "excluded": [
+    "running checkout Git/index mutation",
+    "full owner plans/environments/tokens",
+    "raw logs/TensorBoard/media",
+    "weights/checkpoints/reset datasets",
+    "generated upload RPC/base64 duplication",
+    "shared HANDOFF and unrelated dirty"
+  ],
+  "self_hash_rule": "Manifest excludes itself; generated RPC payload pins its exact bytes."
+}

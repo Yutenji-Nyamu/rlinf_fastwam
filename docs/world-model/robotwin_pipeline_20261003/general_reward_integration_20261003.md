@@ -1,5 +1,9 @@
 # Robometer / RynnValue：通用奖励的接入与成本
 
+2026-10-05 16:12用户选择先试RynnValue。已对服务器实际HF/Git源码审查：模型无B1硬限制，官方数值有batch，Success示例仍单条generate；旧RA-BC服务不能直接复用为Success batch。当前先规划独立旁路批复核，后续再接reward/done，未部署。新权威入口：[接入计划](rynnvalue_integration_plan_20261005.md)、[batch与资源审查](rynnvalue_batch_audit_20261005.md)。在线候选复核被否决后可能重复调用，不能按每条永远一次估成本；策略卡4/5分时是首选待测方案。
+
+2026-10-05更新：[click_bell、Robometer、RynnValue紧凑比较](candidate_comparison_20261005.md)。深圳3已有RynnValue资产重新核验，旧服务仍只有数值输出；本轮未加载模型或改训练。下文10月3日的“当前”时间语境保留，版本与资产新结论以上述更新为准。
+
 2026-10-03。官方源码、权重元数据及本地历史回执专项核验。本文保留后续讨论方案；**当前 OpenDW＋π0.5-GRPO 继续用 WorldArena `adjust_bottle` RM，不因本次研究自动接入大模型。** GPU smoke / 正式训练状态由本轮 owner 回执记录，本文不宣布其完成。
 
 ## 1. 先讲结论
