@@ -1,0 +1,798 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-05T22:31:49.259944+08:00",
+  "status": "diagnostic_complete_reward_not_accepted",
+  "conclusion": "Language returns No for all32 native episodes and misses all15 true successes. Numeric endpoint scores overlap; no GRPO binary reward and no threshold fitting.",
+  "owner_dir": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2",
+  "source_snapshot_sha256": "3c1682123cd535ef27ae92efb5d083b9c11c8c3109721ea074e75a0d9a4643d1",
+  "evidence_pins": [
+    {
+      "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/native_rynn32/dataset/cases.json",
+      "sha256": "cc873dd92e2c7a6b88dbf4da9d02b6536bd0a01566eedaa58d44be8aa4b6ffe1",
+      "bytes": 54188
+    },
+    {
+      "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/rynn32/precheck.json",
+      "sha256": "a374d2b8493dadcee8df9a9b6a9df0fdde8bb73f146d841252cfd566b0a23a46",
+      "bytes": 538
+    },
+    {
+      "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/rynn32/report.json",
+      "sha256": "90af76902bf3184805edfc8b35e783435479e396e74828fdc109d622a279db29",
+      "bytes": 141986
+    }
+  ],
+  "protocol": {
+    "task": "adjust_bottle",
+    "policy_checkpoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/formal-b16-v1/formal/run/opendw-adjust-bottle-formal-b16-v1/checkpoints/global_step_70/actor/model_state_dict/full_weights.pt",
+    "native_episodes": 32,
+    "parallel_envs": 16,
+    "rollout_epochs": 2,
+    "action_chunk": 32,
+    "max_episode_steps": 384,
+    "input_frames": 8,
+    "input_image_hw": [
+      256,
+      320
+    ],
+    "physical_gpu": 4,
+    "configured_max_batch": 16,
+    "actual_batch_sizes": [
+      2,
+      6,
+      4,
+      6,
+      4,
+      6,
+      4
+    ],
+    "unknown_excluded_from_binary_matrix": true,
+    "threshold_fitted": false,
+    "reward_deployed": false
+  },
+  "engineering_passed": true,
+  "summary": {
+    "total": 32,
+    "native_successes": 15,
+    "native_failures": 17,
+    "language": {
+      "true_positive": 0,
+      "false_negative": 15,
+      "false_positive": 0,
+      "true_negative": 17,
+      "unknown": 0
+    },
+    "numeric_success": {
+      "count": 15,
+      "minimum": 0.2845797836780548,
+      "median": 1.0905274152755737,
+      "maximum": 4.795066833496094
+    },
+    "numeric_failure": {
+      "count": 17,
+      "minimum": 0.3264707922935486,
+      "median": 1.5225279331207275,
+      "maximum": 9.894241333007812
+    },
+    "auc_lower_value_predicts_success": 0.7019607843137254,
+    "strict_low_value_separation_on_this_sample": false,
+    "deployed_threshold": null,
+    "interpretation": "Terminal 0/1 diagnostic only. Small native sample is not an OpenDW-generated-domain guarantee. Unknown language output is excluded, not counted as No."
+  },
+  "timing": {
+    "started_at_unix": 1791210543.4735918,
+    "finished_at_unix": 1791210636.0417812,
+    "child_total_s": 92.5681893825531,
+    "numeric_forward_s": 4.651181491091847,
+    "language_generation_s": 11.774997090920806,
+    "owner_precheck_s": 98.44730325322598
+  },
+  "gpu": {
+    "identity": {
+      "physical_gpu": 4,
+      "gpu_uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+      "pci": "00000000:96:00.0"
+    },
+    "peak_allocated_bytes": 22229754880,
+    "peak_reserved_bytes": 24796725248
+  },
+  "model": {
+    "id": "Alibaba-DAMO-Academy/RynnValue-8B",
+    "revision": "8738c5e4ce4418ea0266e9fbeffae0eb9bbb230e",
+    "manifest_sha256": "9723a5510de47d166adde79724c5c84288ca93943bd20eba38aea359e02425f9",
+    "service_sha256": "eef621bc65a6af1d7ca6afdaaf5057e326f1aabe672a2b3c501a84e2d2d76b7d",
+    "dtype": "bfloat16",
+    "attention": "pred_slot_isolated_eager"
+  },
+  "batches": [
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env0-ep1",
+        "native-2789550-1791209669583944248-env0-ep2"
+      ],
+      "batch_size": 2,
+      "input_tokens": 936,
+      "elapsed_s": 1.3985060956329107,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 20449329152,
+        "peak_allocated_bytes": 20225948160,
+        "peak_reserved_bytes": 20449329152
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env0-ep1",
+        "native-2789550-1791209669583944248-env0-ep2"
+      ],
+      "batch_size": 2,
+      "input_tokens": 936,
+      "elapsed_s": 1.4156449418514967,
+      "memory": {
+        "allocated_bytes": 19228513792,
+        "reserved_bytes": 20449329152,
+        "peak_allocated_bytes": 20225212416,
+        "peak_reserved_bytes": 20449329152
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env1-ep1",
+        "native-2789550-1791209669583944248-env1-ep2",
+        "native-2789550-1791209669583944248-env12-ep1",
+        "native-2789550-1791209669583944248-env12-ep2",
+        "native-2789550-1791209669583944248-env3-ep1",
+        "native-2789550-1791209669583944248-env3-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 926,
+      "elapsed_s": 0.6565037546679378,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 23454547968,
+        "peak_allocated_bytes": 22192013312,
+        "peak_reserved_bytes": 23454547968
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env1-ep1",
+        "native-2789550-1791209669583944248-env1-ep2",
+        "native-2789550-1791209669583944248-env12-ep1",
+        "native-2789550-1791209669583944248-env12-ep2",
+        "native-2789550-1791209669583944248-env3-ep1",
+        "native-2789550-1791209669583944248-env3-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 926,
+      "elapsed_s": 1.8951755221933126,
+      "memory": {
+        "allocated_bytes": 19291517952,
+        "reserved_bytes": 23454547968,
+        "peak_allocated_bytes": 22192060416,
+        "peak_reserved_bytes": 23454547968
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env10-ep1",
+        "native-2789550-1791209669583944248-env10-ep2",
+        "native-2789550-1791209669583944248-env4-ep1",
+        "native-2789550-1791209669583944248-env4-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 933,
+      "elapsed_s": 0.47004881873726845,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 23454547968,
+        "peak_allocated_bytes": 21217524224,
+        "peak_reserved_bytes": 23454547968
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env10-ep1",
+        "native-2789550-1791209669583944248-env10-ep2",
+        "native-2789550-1791209669583944248-env4-ep1",
+        "native-2789550-1791209669583944248-env4-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 933,
+      "elapsed_s": 1.6272181328386068,
+      "memory": {
+        "allocated_bytes": 19260016640,
+        "reserved_bytes": 23454547968,
+        "peak_allocated_bytes": 21217556992,
+        "peak_reserved_bytes": 23454547968
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env11-ep1",
+        "native-2789550-1791209669583944248-env11-ep2",
+        "native-2789550-1791209669583944248-env15-ep1",
+        "native-2789550-1791209669583944248-env15-ep2",
+        "native-2789550-1791209669583944248-env8-ep1",
+        "native-2789550-1791209669583944248-env8-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 934,
+      "elapsed_s": 0.6328644156455994,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 22229707264,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env11-ep1",
+        "native-2789550-1791209669583944248-env11-ep2",
+        "native-2789550-1791209669583944248-env15-ep1",
+        "native-2789550-1791209669583944248-env15-ep2",
+        "native-2789550-1791209669583944248-env8-ep1",
+        "native-2789550-1791209669583944248-env8-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 934,
+      "elapsed_s": 1.8753037825226784,
+      "memory": {
+        "allocated_bytes": 19291519488,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 22229754880,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env13-ep1",
+        "native-2789550-1791209669583944248-env13-ep2",
+        "native-2789550-1791209669583944248-env14-ep1",
+        "native-2789550-1791209669583944248-env14-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 929,
+      "elapsed_s": 0.4334120787680149,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 21205465600,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env13-ep1",
+        "native-2789550-1791209669583944248-env13-ep2",
+        "native-2789550-1791209669583944248-env14-ep1",
+        "native-2789550-1791209669583944248-env14-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 929,
+      "elapsed_s": 1.5818987786769867,
+      "memory": {
+        "allocated_bytes": 19260016640,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 21205498368,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env2-ep1",
+        "native-2789550-1791209669583944248-env2-ep2",
+        "native-2789550-1791209669583944248-env5-ep1",
+        "native-2789550-1791209669583944248-env5-ep2",
+        "native-2789550-1791209669583944248-env6-ep1",
+        "native-2789550-1791209669583944248-env6-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 930,
+      "elapsed_s": 0.6239335751160979,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 22211374592,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env2-ep1",
+        "native-2789550-1791209669583944248-env2-ep2",
+        "native-2789550-1791209669583944248-env5-ep1",
+        "native-2789550-1791209669583944248-env5-ep2",
+        "native-2789550-1791209669583944248-env6-ep1",
+        "native-2789550-1791209669583944248-env6-ep2"
+      ],
+      "batch_size": 6,
+      "input_tokens": 930,
+      "elapsed_s": 1.7646183706820011,
+      "memory": {
+        "allocated_bytes": 19291519488,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 22211422208,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "numeric",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env7-ep1",
+        "native-2789550-1791209669583944248-env7-ep2",
+        "native-2789550-1791209669583944248-env9-ep1",
+        "native-2789550-1791209669583944248-env9-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 925,
+      "elapsed_s": 0.4359127525240183,
+      "memory": {
+        "cuda_initialized": true,
+        "allocated_bytes": 19197009408,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 21191619072,
+        "peak_reserved_bytes": 24796725248
+      }
+    },
+    {
+      "mode": "language",
+      "case_ids": [
+        "native-2789550-1791209669583944248-env7-ep1",
+        "native-2789550-1791209669583944248-env7-ep2",
+        "native-2789550-1791209669583944248-env9-ep1",
+        "native-2789550-1791209669583944248-env9-ep2"
+      ],
+      "batch_size": 4,
+      "input_tokens": 925,
+      "elapsed_s": 1.6151375621557236,
+      "memory": {
+        "allocated_bytes": 19260015104,
+        "reserved_bytes": 24796725248,
+        "peak_allocated_bytes": 21191651328,
+        "peak_reserved_bytes": 24796725248
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "native-2789550-1791209669583944248-env0-ep1",
+      "reference_success": false,
+      "last_remaining_value": 5.196347713470459,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 31,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env0-ep2",
+      "reference_success": true,
+      "last_remaining_value": 1.1323813199996948,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env1-ep1",
+      "reference_success": true,
+      "last_remaining_value": 0.6224930882453918,
+      "language": {
+        "success": false,
+        "match": false,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env1-ep2",
+      "reference_success": false,
+      "last_remaining_value": 2.0406882762908936,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 31,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env10-ep1",
+      "reference_success": false,
+      "last_remaining_value": 0.37775519490242004,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env10-ep2",
+      "reference_success": true,
+      "last_remaining_value": 0.33975014090538025,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 35,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env11-ep1",
+      "reference_success": true,
+      "last_remaining_value": 1.3222486972808838,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 35,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env11-ep2",
+      "reference_success": false,
+      "last_remaining_value": 2.4915730953216553,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env12-ep1",
+      "reference_success": true,
+      "last_remaining_value": 1.1069917678833008,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 34,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env12-ep2",
+      "reference_success": false,
+      "last_remaining_value": 9.894241333007812,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env13-ep1",
+      "reference_success": false,
+      "last_remaining_value": 1.4092384576797485,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env13-ep2",
+      "reference_success": true,
+      "last_remaining_value": 1.0090216398239136,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env14-ep1",
+      "reference_success": false,
+      "last_remaining_value": 2.2811455726623535,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env14-ep2",
+      "reference_success": true,
+      "last_remaining_value": 0.393268883228302,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 34,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env15-ep1",
+      "reference_success": true,
+      "last_remaining_value": 1.0905274152755737,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 34,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env15-ep2",
+      "reference_success": false,
+      "last_remaining_value": 7.227445125579834,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env2-ep1",
+      "reference_success": false,
+      "last_remaining_value": 0.6933701038360596,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 31,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env2-ep2",
+      "reference_success": true,
+      "last_remaining_value": 0.4761286675930023,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env3-ep1",
+      "reference_success": false,
+      "last_remaining_value": 1.313286304473877,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 34,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env3-ep2",
+      "reference_success": false,
+      "last_remaining_value": 1.786510705947876,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env4-ep1",
+      "reference_success": true,
+      "last_remaining_value": 1.4032386541366577,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env4-ep2",
+      "reference_success": true,
+      "last_remaining_value": 1.6197693347930908,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env5-ep1",
+      "reference_success": true,
+      "last_remaining_value": 4.795066833496094,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env5-ep2",
+      "reference_success": true,
+      "last_remaining_value": 0.2845797836780548,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env6-ep1",
+      "reference_success": false,
+      "last_remaining_value": 0.4901309013366699,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env6-ep2",
+      "reference_success": false,
+      "last_remaining_value": 1.5225279331207275,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env7-ep1",
+      "reference_success": true,
+      "last_remaining_value": 0.47010016441345215,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 35,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env7-ep2",
+      "reference_success": false,
+      "last_remaining_value": 0.3264707922935486,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 35,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env8-ep1",
+      "reference_success": true,
+      "last_remaining_value": 1.462299108505249,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 30,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env8-ep2",
+      "reference_success": false,
+      "last_remaining_value": 1.030096411705017,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env9-ep1",
+      "reference_success": false,
+      "last_remaining_value": 1.0683000087738037,
+      "language": {
+        "success": false,
+        "match": false,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    },
+    {
+      "id": "native-2789550-1791209669583944248-env9-ep2",
+      "reference_success": false,
+      "last_remaining_value": 6.699112415313721,
+      "language": {
+        "success": false,
+        "match": true,
+        "parse_status": "ok",
+        "generated_tokens": 33,
+        "max_new_tokens": 128
+      }
+    }
+  ],
+  "offload": {
+    "ok": true,
+    "is_offloaded": true,
+    "pid": 751731,
+    "physical_gpu": 4,
+    "memory": {
+      "cuda_initialized": true,
+      "allocated_bytes": 33554432,
+      "reserved_bytes": 33554432,
+      "peak_allocated_bytes": 21191651328,
+      "peak_reserved_bytes": 24796725248
+    }
+  },
+  "precheck": {
+    "key": "rynn32",
+    "engineering_passed": true,
+    "commands": [
+      {
+        "command": 0,
+        "exit_code": 0,
+        "elapsed_seconds": 98.44636118598282
+      }
+    ],
+    "seconds": 98.44730325322598,
+    "result_file": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/rynn32/report.json",
+    "result_sha256": "90af76902bf3184805edfc8b35e783435479e396e74828fdc109d622a279db29",
+    "reward_gate_blocks_bell": false,
+    "note": "Rynn semantic result is recorded only; continue the separately selected bell reward."
+  },
+  "next_stage_at_snapshot": {
+    "time": "2026-10-05T22:31:44.669868+08:00",
+    "phase": "native_bell32",
+    "command": 0,
+    "elapsed_seconds": 64.31805877946317
+  },
+  "bell_result_completed": false
+}
