@@ -11,6 +11,31 @@ from pathlib import Path
 import torch
 
 
+def validate_ugrow_record(record):
+    """Reject old DV records and incompatible U producer metadata."""
+    from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+
+    if "dvac_v" in record or "ugrow_u" not in record:
+        raise ValueError("BC U replay requires its own raw U, never old DV.")
+    expected = {
+        "ugrow_signal_version": torch.tensor(UGROW_SIGNAL_SPEC["version"]),
+        "ugrow_steps": torch.tensor(UGROW_SIGNAL_SPEC["steps"]),
+        "ugrow_action_dim": torch.tensor(UGROW_SIGNAL_SPEC["action_dim"]),
+        "ugrow_epsilon": torch.tensor(UGROW_SIGNAL_SPEC["epsilon"], dtype=torch.float64),
+    }
+    for key, value in expected.items():
+        if key not in record or not torch.equal(record[key].cpu(), value):
+            raise ValueError(f"BC U replay producer metadata mismatch: {key}")
+    u, mask = record["ugrow_u"], record["action_valid_mask"]
+    if (
+        mask.ndim != 2 or mask.shape[-1] != 14 or u.shape != mask.shape[:1]
+        or not torch.isfinite(mask).all() or not ((mask == 0) | (mask == 1)).all()
+        or not mask.any() or not torch.isfinite(u).all() or (u < 0).any()
+        or (u > 1.000001).any()
+    ):
+        raise ValueError("BC U requires finite [H] scores and a nonempty Hx14 mask.")
+
+
 def masked_fm_loss(
     loss: torch.Tensor, mask: torch.Tensor, action_weights: torch.Tensor | None = None
 ) -> torch.Tensor:
@@ -30,11 +55,16 @@ def masked_fm_loss(
 class SuccessEpisodeCollector:
     """Collect complete episodes; never retain post-terminal policy queries."""
 
-    def __init__(self, num_envs: int, dvac_log_eps: float | None = None):
+    def __init__(self, num_envs: int, dvac_log_eps: float | None = None, signal_kind="dvac"):
         self.num_envs = num_envs
         self.completed = []
         self.episode_ids = [0] * num_envs
         self.dvac_log_eps = dvac_log_eps
+        if signal_kind not in ("dvac", "ugrow_10_5"):
+            raise ValueError("Unknown online BC collector signal.")
+        self.signal_kind = signal_kind
+        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "dvac_v"
+        self.moments_key = "ugrow_moments" if signal_kind == "ugrow_10_5" else "dvac_moments"
         self.dvac_moments = torch.zeros(3, dtype=torch.float64)
         self.reset()
 
@@ -75,11 +105,19 @@ class SuccessEpisodeCollector:
             if self.dvac_log_eps is not None:
                 from rlinf.algorithms.online_bc_dvac import log_moments
 
-                v = forward_inputs["dvac_v"][i].detach().float().cpu().clone()
+                v = forward_inputs[self.raw_key][i].detach().float().cpu().clone()
                 if v.shape != commands[i].shape[:1]:
                     raise ValueError("DVAC signal must match submitted command H.")
                 self.dvac_moments += log_moments(v, self.dvac_log_eps)
-                record["dvac_v"] = v
+                record[self.raw_key] = v
+                if self.signal_kind == "ugrow_10_5":
+                    from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+
+                    record["ugrow_signal_version"] = torch.tensor(UGROW_SIGNAL_SPEC["version"])
+                    record["ugrow_steps"] = torch.tensor(UGROW_SIGNAL_SPEC["steps"])
+                    record["ugrow_action_dim"] = torch.tensor(UGROW_SIGNAL_SPEC["action_dim"])
+                    record["ugrow_epsilon"] = torch.tensor(UGROW_SIGNAL_SPEC["epsilon"], dtype=torch.float64)
+                    validate_ugrow_record(record)
             record["query_idx"] = torch.tensor(len(self.pending[i]))
             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])
             if versions is not None:
@@ -106,13 +144,15 @@ class SuccessReplay:
     """Cumulative query replay, with uniform replacement sampling and restart state."""
 
     def __init__(
-        self, seed: int, archive_path: str, max_success_chunks: int | None = None
+        self, seed: int, archive_path: str, max_success_chunks: int | None = None,
+        signal_spec: dict | None = None,
     ):
         if max_success_chunks is not None and (
             type(max_success_chunks) is not int or max_success_chunks < 1
         ):
             raise ValueError("max_success_chunks must be null or a positive integer.")
         self.max_success_chunks = max_success_chunks
+        self.signal_spec = signal_spec
         self.filtered_success_episodes = 0
         self.records = []
         self.episodes = 0
@@ -135,6 +175,10 @@ class SuccessReplay:
             episodes = accepted
         if not episodes:
             return
+        if self.signal_spec is not None:
+            for episode in episodes:
+                for record in episode:
+                    validate_ugrow_record(record)
         self.archive_path.mkdir(parents=True, exist_ok=True)
         archive = self.archive_path / f"batch_{self.archive_id:06d}.pt"
         # Exclusive creation prevents an accidental fresh run overwriting data.
@@ -169,12 +213,25 @@ class SuccessReplay:
                 archive_id=self.archive_id,
                 filtered_success_episodes=self.filtered_success_episodes,
                 rng=self.rng.get_state(),
+                **({"signal_spec": self.signal_spec} if self.signal_spec is not None else {}),
             ),
             target / "success_replay.pt",
         )
 
     def load_checkpoint(self, load_path: str | Path) -> None:
         state = torch.load(Path(load_path) / "success_replay.pt", weights_only=True)
+        if state.get("signal_spec") != self.signal_spec:
+            raise ValueError("BC replay signal specification mismatch; use a fresh U pool.")
+        if self.signal_spec is not None:
+            for record in state["records"]:
+                validate_ugrow_record(record)
+                weights = record.get("action_weights")
+                if (
+                    weights is None or weights.shape != record["ugrow_u"].shape
+                    or not torch.isfinite(weights).all() or (weights < 0).any()
+                    or (weights > 5).any()
+                ):
+                    raise ValueError("BC U checkpoint is missing valid frozen weights.")
         self.records = state["records"]
         self.episodes = state["episodes"]
         self.archive_id = state["archive_id"]

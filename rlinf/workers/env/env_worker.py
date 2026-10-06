@@ -186,6 +186,9 @@ class EnvWorker(Worker):
                             )
                             else None
                         ),
+                        signal_kind=OmegaConf.select(
+                            self.cfg, "algorithm.online_bc.dvac.signal_kind", default="dvac"
+                        ),
                     )
                     for _ in range(self.stage_num)
                 ]
@@ -1442,7 +1445,7 @@ class EnvWorker(Worker):
                             # Count each env's new moments once across actor ranks.
                             packet = {
                                 "episodes": packet,
-                                "dvac_moments": moments
+                                collector.moments_key: moments
                                 if split == 0
                                 else torch.zeros_like(moments),
                             }

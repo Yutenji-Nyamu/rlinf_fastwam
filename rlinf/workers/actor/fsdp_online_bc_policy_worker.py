@@ -45,14 +45,23 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.demo_weight = float(bc.demo_weight)
         if self.demo_weight < 0:
             raise ValueError("online_bc.demo_weight must be non-negative.")
+        dvac_cfg = bc.get("dvac", {})
+        self.ugrow_enabled = bool(dvac_cfg.get("enabled", False)) and dvac_cfg.get("signal_kind", "dvac") == "ugrow_10_5"
+        signal_spec = None
+        if self.ugrow_enabled:
+            from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+
+            signal_spec = dict(UGROW_SIGNAL_SPEC)
+            if self.demo_weight != 0 or bc.get("max_success_chunks") is not None:
+                raise ValueError("BC U keeps success-only BC and length filtering off.")
         self.replay_buffer = SuccessReplay(
             seed=self.cfg.actor.seed + self._rank,
             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
             max_success_chunks=bc.get("max_success_chunks"),
+            signal_spec=signal_spec,
         )
         self.dvac = None
         self.dvac_metrics = {}
-        dvac_cfg = bc.get("dvac", {})
         if dvac_cfg.get("enabled", False):
             from rlinf.algorithms.online_bc_dvac import OnlineBCDvac
 
@@ -62,6 +71,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                     for key in (
                         "window", "alpha", "z_clip", "log_eps", "std_floor",
                         "mapping", "weight_min", "weight_max",
+                        "signal_kind",
                     )
                     if key in dvac_cfg
                 }
@@ -109,13 +119,15 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                 self.replay_buffer.add_episodes(packet)
             else:
                 new_episodes.extend(packet["episodes"])
-                moments += packet["dvac_moments"].cpu()
+                moments_key = "ugrow_moments" if self.ugrow_enabled else "dvac_moments"
+                moments += packet[moments_key].cpu()
         if self.dvac is not None:
             moments = moments.to(self.device)
             torch.distributed.all_reduce(moments)
             self.dvac_metrics = self.dvac.annotate(new_episodes, moments.cpu())
             self.replay_buffer.add_episodes(new_episodes)
-            self.log_info(f"Online BC DVAC: {self.dvac_metrics}")
+            label = "U" if self.ugrow_enabled else "DVAC"
+            self.log_info(f"Online BC {label}: {self.dvac_metrics}")
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):
@@ -179,9 +191,25 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.replay_buffer.save_checkpoint(target)
         torch.save({"update_step": self.update_step}, target / "learner.pt")
         if self.dvac is not None:
-            torch.save(self.dvac.state_dict(), target / "dvac.pt")
+            torch.save(self.dvac.state_dict(), target / ("ugrow.pt" if getattr(self, "ugrow_enabled", False) else "dvac.pt"))
 
     def load_checkpoint(self, load_base_path):
+        target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
+        ugrow_enabled = getattr(self, "ugrow_enabled", False)
+        if ugrow_enabled:
+            if not (target / "ugrow.pt").is_file() or (target / "dvac.pt").exists():
+                raise ValueError("BC U requires a distinct U checkpoint and fresh calibration.")
+            self.dvac.load_state_dict(torch.load(target / "ugrow.pt", weights_only=True))
+            self.replay_buffer.load_checkpoint(target)
+        elif (target / "ugrow.pt").exists():
+            raise ValueError("Cannot load a U checkpoint as clean BC or DV.")
+        # Match save_checkpoint: initialization may have offloaded these states.
+        if ugrow_enabled and self.is_weight_offloaded:
+            self.load_param_and_grad(self.device)
+            self.is_weight_offloaded = False
+        if ugrow_enabled and self.is_optimizer_offloaded:
+            self.load_optimizer(self.device)
+            self.is_optimizer_offloaded = False
         self._strategy.load_checkpoint(
             model=self.model,
             optimizers=[self.optimizer],
@@ -189,10 +217,10 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             load_path=load_base_path,
             checkpoint_format=self.checkpoint_format,
         )
-        target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
-        self.replay_buffer.load_checkpoint(target)
+        if not ugrow_enabled:
+            self.replay_buffer.load_checkpoint(target)
         self.update_step = torch.load(target / "learner.pt", weights_only=True)[
             "update_step"
         ]
-        if self.dvac is not None:
+        if self.dvac is not None and not ugrow_enabled:
             self.dvac.load_state_dict(torch.load(target / "dvac.pt", weights_only=True))

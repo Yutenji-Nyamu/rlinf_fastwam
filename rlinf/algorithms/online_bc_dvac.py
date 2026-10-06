@@ -42,7 +42,8 @@ class OnlineBCDvac:
 
     def __init__(
         self, *, window=5, alpha=0.25, z_clip=2.0, log_eps=1e-12, std_floor=1e-6,
-        mapping="chunk_centered", weight_min=None, weight_max=None
+        mapping="chunk_centered", weight_min=None, weight_max=None,
+        signal_kind="dvac",
     ):
         if not all(math.isfinite(x) for x in (alpha, z_clip, log_eps, std_floor)):
             raise ValueError("DVAC settings must be finite.")
@@ -77,6 +78,16 @@ class OnlineBCDvac:
             )
         self.history = deque(maxlen=int(window))
         self.round_id = 0
+        if signal_kind not in ("dvac", "ugrow_10_5"):
+            raise ValueError("Unknown online BC signal kind.")
+        self.signal_kind = signal_kind
+        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "dvac_v"
+        if signal_kind == "ugrow_10_5":
+            from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+
+            if mapping != "bounded_linear" or weight_min != 0 or weight_max != 5:
+                raise ValueError("BC U inherits the frozen bounded [0,5] mapper.")
+            self.settings["signal_spec"] = dict(UGROW_SIGNAL_SPEC)
 
     def annotate(self, episodes: list, moments: torch.Tensor) -> dict:
         moments = moments.detach().to(device="cpu", dtype=torch.float64)
@@ -96,9 +107,14 @@ class OnlineBCDvac:
             else torch.tensor(1.0)
         )
         weights = []
+        raw_scores = []
         for episode in episodes:
             for row in episode:
-                v = row["dvac_v"].detach().to(dtype=torch.float64, device="cpu")
+                if self.signal_kind == "ugrow_10_5":
+                    from rlinf.data.online_bc import validate_ugrow_record
+
+                    validate_ugrow_record(row)
+                v = row[self.raw_key].detach().to(dtype=torch.float64, device="cpu")
                 q = (
                     row["action_valid_mask"]
                     .to(dtype=torch.float64, device="cpu")
@@ -119,8 +135,11 @@ class OnlineBCDvac:
                     else:
                         w = 1 + self.settings["alpha"] * (z - (z * q).sum() / q.sum())
                 row["action_weights"] = w.float()
-                row["dvac_calibration_round"] = torch.tensor(self.round_id)
+                calibration_key = "ugrow_calibration_round" if self.signal_kind == "ugrow_10_5" else "dvac_calibration_round"
+                row[calibration_key] = torch.tensor(self.round_id)
                 weights.append(w[q > 0])
+                if self.signal_kind == "ugrow_10_5":
+                    raw_scores.append(v[q > 0])
         metrics = {
             "dvac/round": float(self.round_id + 1),
             "dvac/new_action_positions": moments[0].item(),
@@ -141,6 +160,18 @@ class OnlineBCDvac:
             )
         self.history.append(moments.clone())
         self.round_id += 1
+        if self.signal_kind == "ugrow_10_5":
+            metrics = {key.replace("dvac/", "ugrow/"): value for key, value in metrics.items()}
+            metrics["ugrow/success_action_count"] = float(sum(v.numel() for v in raw_scores))
+            if raw_scores:
+                raw = torch.cat(raw_scores)
+                metrics.update({
+                    "ugrow/raw_mean": raw.mean().item(),
+                    "ugrow/raw_std": raw.std(unbiased=False).item(),
+                    "ugrow/raw_min": raw.min().item(),
+                    "ugrow/raw_max": raw.max().item(),
+                    "ugrow/weight_nonunit_fraction": (torch.cat(weights).sub(1).abs() > 1e-7).double().mean().item(),
+                })
         return metrics
 
     def state_dict(self):

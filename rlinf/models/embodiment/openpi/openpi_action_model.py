@@ -916,6 +916,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     mode=mode,
                     compute_values=compute_values,
                     dvac_tail_steps=kwargs.get("dvac_tail_steps", 0),
+                    ugrow_enabled=kwargs.get("ugrow_enabled", False),
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -942,6 +943,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         if "dvac_v" in outputs:
             forward_inputs["dvac_v"] = outputs["dvac_v"]
+        if "ugrow_u" in outputs:
+            forward_inputs["ugrow_u"] = outputs["ugrow_u"]
 
         if self.config.is_nft:
             nft_outputs = {
@@ -994,6 +997,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         dvac_tail_steps=0,
+        ugrow_enabled=False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -1013,7 +1017,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
-        return self._sample_actions_with_prefix_cache(
+        if ugrow_enabled and (
+            mode != "eval" or self.config.num_steps != 10
+            or self.config.action_env_dim != 14 or dvac_tail_steps
+        ):
+            raise ValueError("U requires native ODE10, D14 and a separate DV path.")
+        # Capture the complete initial tensor after the sampler's dtype cast.
+        initial_noise = noise.to(self.action_in_proj.weight.dtype).clone() if ugrow_enabled else None
+        outputs = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
             prefix_pad_masks,
@@ -1023,6 +1034,27 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             compute_values=compute_values,
             dvac_tail_steps=dvac_tail_steps,
         )
+        if ugrow_enabled:
+            from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
+
+            # The legacy ODE also draws zero-coefficient noise at every step.
+            # Keep the side solve from advancing any primary random stream.
+            devices = [device.index if device.index is not None else torch.cuda.current_device()] if device.type == "cuda" else []
+            python_rng = random.getstate()
+            try:
+                with torch.random.fork_rng(devices=devices):
+                    comparison = self._sample_actions_with_prefix_cache(
+                        state, prefix_output, prefix_pad_masks, past_key_values,
+                        noise=initial_noise, mode="eval", compute_values=False,
+                        num_steps_override=5,
+                    )
+            finally:
+                random.setstate(python_rng)
+            outputs["ugrow_u"] = compute_ugrow_signal(
+                outputs["actions"][:, : self.config.action_chunk],
+                comparison["actions"][:, : self.config.action_chunk],
+            )
+        return outputs
 
     def _sample_actions_with_prefix_cache(
         self,
@@ -1034,10 +1066,11 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         dvac_tail_steps=0,
+        num_steps_override=None,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        num_steps = self.config.num_steps if num_steps_override is None else num_steps_override
         if dvac_tail_steps and not 2 <= dvac_tail_steps <= num_steps:
             raise ValueError("DVAC tail length must be between 2 and denoising steps.")
         dvac_endpoints = []
