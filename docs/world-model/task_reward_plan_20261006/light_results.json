@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "observed_at": "2026-10-06T12:46:36.997463+08:00",
-  "source_snapshot": "task-rm-1006-status06.out",
+  "observed_at": "2026-10-06T14:15:43.965548+08:00",
+  "source_snapshot": "task-rm-1006-status10.out",
   "stopped_wm": {
     "checkpoint": 50,
     "completed_checkpoint_verified": true,
@@ -157,7 +157,7 @@
   },
   "current": {
     "attempt": "task-reward-v2",
-    "owner_live": true,
+    "owner_live": false,
     "owner_identity": {
       "pid": 1318475,
       "uid": 20001,
@@ -167,32 +167,226 @@
       "cmdline_sha256": "1d7c126ebc10015add7b3948f55e1be454903f65ccac259c6517a491c87da2df"
     },
     "state": {
-      "time": "2026-10-06T12:46:34.637778+08:00",
-      "phase": "native_lift128",
-      "elapsed_seconds": 55.90287773963064
+      "time": "2026-10-06T14:09:20.820748+08:00",
+      "phase": "train_lift",
+      "elapsed_seconds": 14.598865196108818
     },
     "heartbeat": {
-      "time": "2026-10-06T12:46:34.633268+08:00",
-      "phase": "native_lift128",
-      "owned_gpu_contexts": [],
-      "gpu4_memory_used_total_mib_utilization_pct": "5, 81559, 0"
+      "time": "2026-10-06T14:09:20.816405+08:00",
+      "phase": "train_lift",
+      "owned_gpu_contexts": [
+        {
+          "gpu": 4,
+          "uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+          "pid": 1700475,
+          "type": "C"
+        }
+      ],
+      "gpu4_memory_used_total_mib_utilization_pct": "5962, 81559, 38"
     },
     "capture": {
-      "records": 0,
-      "successes": 0,
-      "unique_seeds": 0
+      "records": 128,
+      "successes": 56,
+      "unique_seeds": 128
     },
     "untouched_rlt_live": {
       "gpu5": true,
       "gpu6": true,
       "gpu7": true
     },
-    "final": null
+    "final": {
+      "time": "2026-10-06T14:10:09.185383+08:00",
+      "terminal_status": "completed",
+      "commands": [
+        {
+          "key": "native_lift128",
+          "exit_code": 0,
+          "seconds": 4941.604755114764,
+          "output": null
+        },
+        {
+          "key": "validate_capture",
+          "exit_code": 0,
+          "seconds": 13.663913676515222,
+          "output": {
+            "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/capture-validation.json",
+            "sha256": "d3eb9cb90b538b3073c4a47adf240eb3718169ea86331a394857524aefe74450"
+          }
+        },
+        {
+          "key": "prepare_lift_data",
+          "exit_code": 0,
+          "seconds": 48.31957887019962,
+          "output": {
+            "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/data/lift-pot/manifest.json",
+            "sha256": "6d9981d72508cf79aedc0e0e5130881acc72de4cdfd7baa0c0c824cf68311bc9"
+          }
+        },
+        {
+          "key": "train_lift",
+          "exit_code": 0,
+          "seconds": 26.505174593999982,
+          "output": {
+            "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/lift-pot/report.json",
+            "sha256": "3ae3b431a92196b2acdab8ec69e3a947a6a727ab5df8675c33983c03ffa56714"
+          }
+        }
+      ],
+      "error": null,
+      "recovery_error": null,
+      "physical_gpus": [
+        4
+      ],
+      "untouched_gpus": [
+        5,
+        6,
+        7
+      ],
+      "rlt_borrowed": true,
+      "rlt_return_dispatched": true,
+      "lifecycle_path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/prepared/rm1006-v2",
+      "first_round_validation_pending": true,
+      "untouched_drivers_live": {
+        "gpu5": true,
+        "gpu6": true,
+        "gpu7": true
+      }
+    }
   },
   "lift_pot_training": {
-    "profile": null,
-    "report": null,
-    "status": null
+    "profile": {
+      "rows": [
+        {
+          "micro_batch": 32,
+          "global_batch": 64,
+          "seconds": 0.023032027762383223,
+          "images_per_second": 2778.739269519604,
+          "peak_allocated_bytes": 1554236416
+        },
+        {
+          "micro_batch": 64,
+          "global_batch": 64,
+          "seconds": 0.012652819976210594,
+          "images_per_second": 5058.160957030183,
+          "peak_allocated_bytes": 2204410368
+        }
+      ],
+      "inference": [
+        {
+          "batch": 128,
+          "count": 256,
+          "seconds": 0.010812640655785799,
+          "images_per_second": 23675.992585864347,
+          "peak_allocated_bytes": 1733502464
+        },
+        {
+          "batch": 256,
+          "count": 256,
+          "seconds": 0.010372130200266838,
+          "images_per_second": 24681.525883025846,
+          "peak_allocated_bytes": 2555586048
+        }
+      ],
+      "selected_micro_batch": 64,
+      "selected_eval_batch": 256,
+      "global_batch": 64,
+      "note": "BN/RNG restored; microbatch can affect BN statistics; effective global batch unchanged"
+    },
+    "report": {
+      "schema_version": 1,
+      "task_name": "lift_pot",
+      "task_config": "demo_clean",
+      "checkpoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/lift-pot/best.pt",
+      "checkpoint_sha256": "0363474ef67e87db1f6f9456bba9b17aeb8c3bb801a536a037413de0b23f232f",
+      "dataset_manifest_sha256": "6d9981d72508cf79aedc0e0e5130881acc72de4cdfd7baa0c0c824cf68311bc9",
+      "best_epoch": 18,
+      "epochs_run": 33,
+      "updates": 66,
+      "selected_micro_batch": 64,
+      "global_batch": 64,
+      "elapsed_seconds": 5.344108819961548,
+      "threshold_selection": "validation only: maximum recall under episode false alarm constraint; tie lower alarms then higher threshold",
+      "validation": {
+        "threshold": 0.7082200646400452,
+        "tp": 7,
+        "fp": 0,
+        "fn": 4,
+        "tn": 201,
+        "recall": 0.6363636363636364,
+        "false_positive_rate": 0.0,
+        "false_alarm_episodes": 0,
+        "negative_episodes": 25,
+        "episode_false_alarm_rate": 0.0
+      },
+      "validation_auc": 0.9855269109000452,
+      "test": {
+        "threshold": 0.7082200646400452,
+        "tp": 8,
+        "fp": 1,
+        "fn": 3,
+        "tn": 196,
+        "recall": 0.7272727272727273,
+        "false_positive_rate": 0.005076142131979695,
+        "false_alarm_episodes": 1,
+        "negative_episodes": 25,
+        "episode_false_alarm_rate": 0.04
+      },
+      "test_auc": 0.9912321181356715,
+      "test_loss": 0.08133411407470703,
+      "wm_domain_validated": false,
+      "deployment_authorized_by_this_report": false,
+      "caveat": "Small native held-out diagnostic, not a deployment guarantee; first-positive milestone may occur within an action chunk",
+      "peak_allocated_bytes": 2327920640,
+      "peak_reserved_bytes": 5454692352
+    },
+    "status": {
+      "phase": "completed",
+      "schema_version": 1,
+      "task_name": "lift_pot",
+      "task_config": "demo_clean",
+      "checkpoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/lift-pot/best.pt",
+      "checkpoint_sha256": "0363474ef67e87db1f6f9456bba9b17aeb8c3bb801a536a037413de0b23f232f",
+      "dataset_manifest_sha256": "6d9981d72508cf79aedc0e0e5130881acc72de4cdfd7baa0c0c824cf68311bc9",
+      "best_epoch": 18,
+      "epochs_run": 33,
+      "updates": 66,
+      "selected_micro_batch": 64,
+      "global_batch": 64,
+      "elapsed_seconds": 5.344108819961548,
+      "threshold_selection": "validation only: maximum recall under episode false alarm constraint; tie lower alarms then higher threshold",
+      "validation": {
+        "threshold": 0.7082200646400452,
+        "tp": 7,
+        "fp": 0,
+        "fn": 4,
+        "tn": 201,
+        "recall": 0.6363636363636364,
+        "false_positive_rate": 0.0,
+        "false_alarm_episodes": 0,
+        "negative_episodes": 25,
+        "episode_false_alarm_rate": 0.0
+      },
+      "validation_auc": 0.9855269109000452,
+      "test": {
+        "threshold": 0.7082200646400452,
+        "tp": 8,
+        "fp": 1,
+        "fn": 3,
+        "tn": 196,
+        "recall": 0.7272727272727273,
+        "false_positive_rate": 0.005076142131979695,
+        "false_alarm_episodes": 1,
+        "negative_episodes": 25,
+        "episode_false_alarm_rate": 0.04
+      },
+      "test_auc": 0.9912321181356715,
+      "test_loss": 0.08133411407470703,
+      "wm_domain_validated": false,
+      "deployment_authorized_by_this_report": false,
+      "caveat": "Small native held-out diagnostic, not a deployment guarantee; first-positive milestone may occur within an action chunk",
+      "peak_allocated_bytes": 2327920640,
+      "peak_reserved_bytes": 5454692352
+    }
   },
   "gpu_scope": {
     "rm": [

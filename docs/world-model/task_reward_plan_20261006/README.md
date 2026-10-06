@@ -1,6 +1,6 @@
 # 单任务小奖励模型：收敛方案
 
-2026-10-06；用户已授权实现、采集和训练。旧按铃WMRL在完整CP50后停止，原流程已归还RLT；新RM仅借GPU4，5–7卡继续RLT。当前执行、结果和借还状态看[执行记录](execution.md)，规划发布回执为 `published.json`，实现发布使用独立回执。
+2026-10-06 14:15实查：**抬锅128回合采集、RM训练和留出评估已完成，14:10归还GPU4，RLT已恢复。** 56成功/72失败，RM测试TP8/FN3/FP1/TN196；尚未验证OpenDW生成域、未重启新任务WMRL。看[结果与提速分析](results_20261006.md)及[执行记录](execution.md)。旧WM停于CP50。规划发布回执为 `published.json`，实现发布使用独立回执。
 
 ## 当前决定
 
@@ -37,6 +37,7 @@ OpenDW输出与RoboTwin外观相近是一个有利起点；相同clean/rand不�
 ## 阅读路由
 
 - [执行记录](execution.md)：当前唯一owner、源代码、采集/训练结果与GPU4归还。
+- [最终结果与下一步](results_20261006.md)：耗时、显存、误判和新任务WMRL接入顺序。
 - [数据与首版训练配方](data_recipe.md)：早期约100回合规划、两种比例、标签和划分；实际128回合以执行记录为准。
 - [最小验证与现有管线接入](validation_and_integration.md)：输入对齐、32段抽查、整回合假成功、何时加数据/历史。
 - [此前官方来源盘点](../robotwin_pipeline_20261003/reward_sources_20261006.md)、[Rynn结论](../robotwin_pipeline_20261003/rynn_options_20261006.md)。

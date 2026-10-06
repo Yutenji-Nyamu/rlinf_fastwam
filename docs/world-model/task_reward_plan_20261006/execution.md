@@ -1,5 +1,7 @@
 # 单任务奖励模型执行 · 2026-10-06
 
+**14:15实查：v2已于14:10完成，error/recovery_error均为null，GPU4已归还且原RLT新driver身份匹配存活。128回合56成功/72失败；采集82.36分钟，训练阶段26.51秒（训练器内部5.34秒）。新RM测试TP8/FN3/FP1/TN196；OpenDW验证待做，不代表新任务WMRL已启动。** 详细结果、提速候选和下一步见[结果记录](results_20261006.md)，后文保留执行来历。
+
 ## 当前路由
 
 用户授权在深圳3实现、实验、训练新任务RM；可停旧WM，RLT低优先候补。旧 `click-bell-v2` 已在完整CP50（两份shard与full_weights ZIP核验）后精确SIGTERM；原finally清理完成、归还RLT4–7，`recovery_error=null`。旧owner记录signal15为本次主动停止，不是新的训练故障。
