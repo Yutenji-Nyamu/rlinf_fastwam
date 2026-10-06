@@ -1,0 +1,47 @@
+{
+  "time": 1791306790.2222576,
+  "status": "MINIMAL_SMOKE_PASSED_USER_GATE",
+  "intentional_stop": true,
+  "driver_cleanup": {
+    "time": "2026-10-07T01:09:10.561087+08:00",
+    "exit_code": 15,
+    "cleanup_error": null
+  },
+  "owner_exit_observation": {
+    "time": 1791306558.577294,
+    "error": "RuntimeError('Driver exit -6')",
+    "traceback": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/ops/owner.py\", line 131, in main\n    if child.returncode:raise RuntimeError('Driver exit '+str(child.returncode))\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Driver exit -6\n"
+  },
+  "namespace_released": true,
+  "gpu_released": true,
+  "probe": {
+    "status": "PASS",
+    "time": 1791305176.5693889,
+    "role": "bc",
+    "gpu": 6,
+    "results": [
+      {
+        "phase": 0,
+        "batch": 8,
+        "shape": [
+          8,
+          50
+        ],
+        "min": 449.9677429199219,
+        "mean": 460.2962341308594,
+        "max": 483.88079833984375,
+        "std": 5.161657810211182,
+        "main_action_exact": true,
+        "cpu_cuda_python_rng_exact": true,
+        "expert_forwards": 10,
+        "hooks_removed": true
+      }
+    ],
+    "peak_allocated": 8731096064
+  },
+  "gate": "real-model action/RNG passivity probes, full-size startup, environment sampling, Norm production/replay path and CPU mapping tests; no requirement to finish warmup or a smoke checkpoint",
+  "limitations": [
+    "DSRL GPU weighted update awaits formal warmup500",
+    "No smoke checkpoint was required under the user revised gate"
+  ]
+}

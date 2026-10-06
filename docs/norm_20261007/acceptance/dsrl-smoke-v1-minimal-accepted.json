@@ -1,0 +1,63 @@
+{
+  "time": 1791306790.2264876,
+  "status": "MINIMAL_SMOKE_PASSED_USER_GATE",
+  "intentional_stop": true,
+  "driver_cleanup": {
+    "time": "2026-10-07T01:09:10.111342+08:00",
+    "exit_code": 15,
+    "cleanup_error": null
+  },
+  "owner_exit_observation": {
+    "time": 1791306556.7869666,
+    "error": "RuntimeError('Driver exit -6')",
+    "traceback": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/ops/owner.py\", line 131, in main\n    if child.returncode:raise RuntimeError('Driver exit '+str(child.returncode))\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Driver exit -6\n"
+  },
+  "namespace_released": true,
+  "gpu_released": true,
+  "probe": {
+    "status": "PASS",
+    "time": 1791304913.8376644,
+    "role": "dsrl",
+    "gpu": 7,
+    "results": [
+      {
+        "phase": 0,
+        "batch": 4,
+        "shape": [
+          4,
+          20
+        ],
+        "min": 527.160888671875,
+        "mean": 569.8878784179688,
+        "max": 645.8179931640625,
+        "std": 41.949581146240234,
+        "main_action_exact": true,
+        "cpu_cuda_python_rng_exact": true,
+        "expert_forwards": 10,
+        "hooks_removed": true
+      },
+      {
+        "phase": 1,
+        "batch": 4,
+        "shape": [
+          4,
+          20
+        ],
+        "min": 498.816162109375,
+        "mean": 547.4693603515625,
+        "max": 568.2973022460938,
+        "std": 17.793428421020508,
+        "main_action_exact": true,
+        "cpu_cuda_python_rng_exact": true,
+        "expert_forwards": 10,
+        "hooks_removed": true
+      }
+    ],
+    "peak_allocated": 8140282368
+  },
+  "gate": "real-model action/RNG passivity probes, full-size startup, environment sampling, Norm production/replay path and CPU mapping tests; no requirement to finish warmup or a smoke checkpoint",
+  "limitations": [
+    "DSRL GPU weighted update awaits formal warmup500",
+    "No smoke checkpoint was required under the user revised gate"
+  ]
+}

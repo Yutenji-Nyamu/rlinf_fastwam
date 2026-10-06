@@ -85,9 +85,11 @@ for role,gpu,total in [('bc',6,300),('dsrl',7,200)]:
         run=Path('/data/chenyiteng/results/norm-bc-dsrl-20261007')/(role+'-'+phase+str(total)+'-v1')
         rt=run/'runtime';rt.mkdir(parents=True,exist_ok=True);assert not (rt/'launch.json').exists()
         cfg=route(old,[(manifest[role]['repo'],str(repo)),(manifest[role]['run'],str(run)),(Path(manifest[role]['run']).name,run.name)])
-        cfg['runner'].update(max_epochs=steps,max_steps=steps,resume_dir=None)
-        if phase=='smoke':cfg['runner'].update(val_check_interval=0,save_interval=steps)
-        if role=='bc':cfg['algorithm']['online_bc']['dvac']['signal_kind']='norm_residual_t5_l3'
+        cfg['runner'].update(max_steps=steps,resume_dir=None)
+        if phase=='smoke':cfg['runner'].update(max_epochs=steps,val_check_interval=0,save_interval=steps)
+        if role=='bc':
+            cfg['algorithm']['online_bc']['dvac']['signal_kind']='norm_residual_t5_l3'
+            cfg['algorithm']['online_bc']['dvac']['signal_spec']=dict(mod('norm_config_bc',repo/'rlinf/algorithms/norm_signal.py').NORM_SIGNAL_SPEC)
         else:
             spec=norm.make_signal_spec(signal_kind='norm_residual_t5_l3',chunk_length=20)
             cfg['actor']['model']['openpi']['dsrl_u_spec']=spec
@@ -104,7 +106,7 @@ for role,gpu,total in [('bc',6,300),('dsrl',7,200)]:
             assert sha(repo/original)==hashlib.sha256(frozen_seed).hexdigest()
             assert Path(cfg['env'][mode]['seeds_path']).is_file()
         differences=diff(old,cfg)
-        allowed=lambda k:k.startswith(('cluster.','actor.model.openpi.dsrl_u_spec.','algorithm.dsrl_u.spec.')) or k in {'env.train.seeds_path','env.eval.seeds_path','env.train.task_config.save_path','env.eval.task_config.save_path','env.train.video_cfg.video_base_dir','env.eval.video_cfg.video_base_dir','runner.logger.log_path','runner.logger.experiment_name','runner.max_epochs','runner.max_steps','algorithm.online_bc.data_path','algorithm.online_bc.dvac.signal_kind'} or (phase=='smoke' and k in {'runner.val_check_interval','runner.save_interval'})
+        allowed=lambda k:k.startswith(('cluster.','actor.model.openpi.dsrl_u_spec.','algorithm.dsrl_u.spec.','algorithm.online_bc.dvac.signal_spec.')) or k in {'env.train.seeds_path','env.eval.seeds_path','env.train.task_config.save_path','env.eval.task_config.save_path','env.train.video_cfg.video_base_dir','env.eval.video_cfg.video_base_dir','runner.logger.log_path','runner.logger.experiment_name','runner.max_epochs','runner.max_steps','algorithm.online_bc.data_path','algorithm.online_bc.dvac.signal_kind'} or (phase=='smoke' and k in {'runner.val_check_interval','runner.save_interval'})
         assert all(allowed(d['key']) for d in differences),[d for d in differences if not allowed(d['key'])]
         (rt/'resolved.yaml').write_text(yaml.safe_dump(cfg,sort_keys=False));save(rt/'environment.json',runtime_env)
         save(CONTROL/(role+'-'+phase+'-config-diff.json'),differences)
