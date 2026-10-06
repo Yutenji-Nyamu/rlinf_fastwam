@@ -16,6 +16,7 @@ import math
 import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -29,6 +30,7 @@ from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
 from rlinf.algorithms.rlt.dvac_weighting import compute_endpoint_variances
+from rlinf.algorithms.rlt.norm_signal import capture_expert_norm
 from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
@@ -116,6 +118,7 @@ class OpenPi0Config(Pi0Config):
     rlt_action_adapter: str = "identity"
     rlt_dvac_mode: Literal["off", "observe", "apply"] = "off"
     rlt_ugrow_enabled: bool = False
+    rlt_norm_enabled: bool = False
     state_indices: list[int] | None = None
 
 
@@ -611,6 +614,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             compute_values=False,
             collect_endpoint_previews=self.config.rlt_dvac_mode != "off",
             collect_ugrow=getattr(self.config, "rlt_ugrow_enabled", False),
+            collect_norm=getattr(self.config, "rlt_norm_enabled", False),
         )
         decode_context = None
         if self.config.rlt_action_adapter == "identity":
@@ -667,6 +671,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             )
         if "teacher_ugrow_u" in outputs:
             rlt_obs["teacher_ugrow_u"] = outputs["teacher_ugrow_u"].to(
+                device=z_rl.device, dtype=torch.float32
+            )
+        if "teacher_norm" in outputs:
+            rlt_obs["teacher_norm"] = outputs["teacher_norm"].to(
                 device=z_rl.device, dtype=torch.float32
             )
         if return_decode_context:
@@ -1146,12 +1154,16 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         compute_values=True,
         collect_endpoint_previews: bool = False,
         collect_ugrow: bool = False,
+        collect_norm: bool = False,
         num_steps: int | None = None,
         noise_is_prepared: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
         num_steps = self.config.num_steps if num_steps is None else num_steps
+        if collect_norm and (mode != "eval" or num_steps != 10 or self.config.action_horizon != 50):
+            raise ValueError("RLT Norm requires the main eval ODE10/H50 chain.")
+        norm_values = []
         if collect_ugrow and (
             mode != "eval" or num_steps != 10 or self.config.action_env_dim != 14
         ):
@@ -1216,16 +1228,24 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
+            capture = (
+                capture_expert_norm(self, self.config.action_horizon)
+                if collect_norm and idx >= num_steps - 5
+                else nullcontext()
             )
+            with capture as step_norms:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             if endpoint_previews is not None:
                 endpoint_previews.append(
                     (x_t_prev - v_t * endpoint_timesteps[idx].to(dtype=x_t_prev.dtype))[
@@ -1272,6 +1292,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             result["teacher_dvac_v"] = torch.stack(
                 [endpoint_variances[l_value] for l_value in (2, 3, 4)], dim=1
             ).to(dtype=torch.float32)
+        if collect_norm:
+            if len(norm_values) != 15:
+                raise ValueError("Norm requires exactly five rounds by three layers.")
+            result["teacher_norm"] = torch.stack(norm_values).mean(dim=0).detach()
+            if not torch.isfinite(result["teacher_norm"]).all():
+                raise ValueError("Nonfinite teacher Norm signal.")
         if collect_ugrow:
             # Reuse the exact complete initial noise after the main path's dtype
             # handling. ODE still draws zero-coefficient noise in the legacy

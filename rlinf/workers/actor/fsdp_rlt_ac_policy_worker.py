@@ -39,6 +39,12 @@ from rlinf.algorithms.rlt.dvac_weighting import (
     global_z_scores,
     summarize_weights,
 )
+from rlinf.algorithms.rlt.q_chunk_weighting import (
+    chunk_q_weights,
+    selected_q_signal,
+    validate_q_config,
+    weighted_q_mean,
+)
 from rlinf.algorithms.rlt.transition import (
     core_rlt_obs,
     use_simulator_transition_replay,
@@ -278,7 +284,16 @@ class RLTACLossMixin:
     def _prepare_global_batch(
         self, global_batch: dict, *, train_actor: bool
     ) -> tuple[dict, dict[str, float]]:
-        """Compare successful queries once over the entire actor-update batch."""
+        """Prepare method weights once over the entire actor-update batch."""
+        q_config = getattr(self, "rlt_q_cfg", None)
+        if train_actor and q_config is not None:
+            signal = selected_q_signal(global_batch["curr_obs"], q_config)
+            if int(self._world_size) != 1 or signal.shape[0] != int(self.cfg.actor.global_batch_size):
+                raise ValueError("Q weights require a complete batch on one actor rank.")
+            weights, metrics = chunk_q_weights(signal, q_config)
+            prepared = dict(global_batch)
+            prepared["rlt_q_weights"] = weights
+            return prepared, metrics
         if (
             not train_actor
             or getattr(self, "rlt_dvac_mode", "off") == "off"
@@ -702,7 +717,15 @@ class RLTACLossMixin:
 
         entropy = -log_pi.mean()
         bc_weight, q_weight, weight_metrics = self._actor_objective_weights()
-        actor_loss = -q_weight * qf_pi.mean() + bc_weight * bc_loss
+        q_objective = qf_pi.mean()
+        if getattr(self, "rlt_q_cfg", None) is not None:
+            weights = batch.get("rlt_q_weights")
+            if not isinstance(weights, torch.Tensor):
+                raise ValueError("Q weights must be prepared on the full actor batch.")
+            q_objective = weighted_q_mean(qf_pi, weights)
+            metrics["rlt_q/q_unweighted"] = qf_pi.detach().mean().item()
+            metrics["rlt_q/q_weighted"] = q_objective.detach().item()
+        actor_loss = -q_weight * q_objective + bc_weight * bc_loss
         metrics.update(weight_metrics)
         metrics["action_ref_abs_mean"] = (
             (self._flatten_chunk(pi) - self._flatten_chunk(ref_chunk))
@@ -711,7 +734,7 @@ class RLTACLossMixin:
             .detach()
             .item()
         )
-        metrics["weighted_q"] = (q_weight * qf_pi.mean()).detach().item()
+        metrics["weighted_q"] = (q_weight * q_objective).detach().item()
         metrics["weighted_bc"] = (bc_weight * bc_loss).detach().item()
         metrics["reference_dropout_prob"] = reference_dropout_prob
 
@@ -994,6 +1017,19 @@ class RLTACReplayMixin:
 
     def _ugrow_ingest_metrics(self, trajectories: list[Trajectory]) -> dict[str, float]:
         """Report new teacher U once at ingestion, including precollection rounds."""
+        q_config = getattr(self, "rlt_q_cfg", None)
+        if q_config is not None:
+            values = [selected_q_signal(traj.curr_obs, q_config).float().cpu() for traj in trajectories]
+            if not values:
+                return {"rlt_q/rollout_query_count": 0.0}
+            signal = torch.cat(values)
+            return {
+                "rlt_q/rollout_query_count": float(signal.shape[0]),
+                "rlt_q/rollout_signal_mean": float(signal.mean().item()),
+                "rlt_q/rollout_signal_std": float(signal.std(unbiased=False).item()),
+                "rlt_q/rollout_signal_min": float(signal.min().item()),
+                "rlt_q/rollout_signal_max": float(signal.max().item()),
+            }
         if getattr(self, "rlt_signal_source", "dvac") != "ugrow_10_5":
             return {}
         values = []
@@ -1252,6 +1288,17 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         else:
             self.rlt_dvac_stats = None
         self._rlt_dvac_success_scale_schedule()
+        self.rlt_q_cfg = None
+        q_config = cfg.algorithm.get("rlt_q_weighting", {}) or {}
+        if q_config.get("enabled", False):
+            if self.rlt_dvac_mode != "off" or int(self._world_size) != 1:
+                raise ValueError("Q-only weighting requires Clean BC and one actor rank.")
+            if OmegaConf.is_config(q_config):
+                q_config = OmegaConf.to_container(q_config, resolve=True)
+            feature = OmegaConf.select(cfg, "rollout.rlt_feature_model.openpi")
+            self.rlt_q_cfg = validate_q_config(
+                q_config, feature or {}, chunk_len=int(cfg.actor.model.num_action_chunks)
+            )
 
     def _rlt_state_dir(self, base_path: str) -> str:
         return os.path.join(base_path, "sac_components/rlt_trainer_state")
@@ -1296,6 +1343,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
                 f"{sorted(unresolved)}."
             )
         contract = dict(contract)
+        if getattr(self, "rlt_q_cfg", None) is not None:
+            contract["rlt_q_weighting"] = dict(self.rlt_q_cfg)
         if getattr(self, "rlt_dvac_mode", "off") != "off":
             contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
         if getattr(self, "rlt_signal_source", "dvac") == "ugrow_10_5":

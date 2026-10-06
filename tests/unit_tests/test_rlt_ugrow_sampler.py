@@ -2,6 +2,7 @@
 
 import ast
 import random
+from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ import numpy as np
 import pytest
 import torch
 
+from rlinf.algorithms.rlt.norm_signal import capture_expert_norm
 from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
 
 
@@ -24,7 +26,8 @@ def _production_sampler():
                   if isinstance(node, ast.FunctionDef)
                   and node.name == "_sample_actions_with_prefix_cache")
     module = ast.Module(body=[method], type_ignores=[])
-    namespace = dict(torch=torch, random=random, np=np,
+    namespace = dict(torch=torch, random=random, np=np, nullcontext=nullcontext,
+                     capture_expert_norm=capture_expert_norm,
                      compute_ugrow_signal=compute_ugrow_signal)
     exec(compile(ast.fix_missing_locations(module), str(path), "exec"), namespace)
     return namespace[method.name]
