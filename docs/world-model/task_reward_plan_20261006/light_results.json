@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-06T12:46:36.997463+08:00",
+  "source_snapshot": "task-rm-1006-status06.out",
+  "stopped_wm": {
+    "checkpoint": 50,
+    "completed_checkpoint_verified": true,
+    "user_requested_stop": true,
+    "cleanup_complete": true,
+    "rlt_return_dispatched": true
+  },
+  "cpu_tests": {
+    "total": 5,
+    "passed": 5
+  },
+  "bottle_pilot": {
+    "episodes": 32,
+    "native_successes": 15,
+    "native_failures": 17,
+    "source_mode": "Existing K8 frames with exact native indices; not full-resolution full-sequence capture",
+    "profile": {
+      "rows": [
+        {
+          "micro_batch": 32,
+          "global_batch": 64,
+          "seconds": 0.015197013039141893,
+          "images_per_second": 4211.353891396923,
+          "peak_allocated_bytes": 1024177664
+        },
+        {
+          "micro_batch": 64,
+          "global_batch": 64,
+          "seconds": 0.01265321671962738,
+          "images_per_second": 5058.002357671205,
+          "peak_allocated_bytes": 1674810368
+        }
+      ],
+      "inference": [
+        {
+          "batch": 128,
+          "count": 256,
+          "seconds": 0.010698828846216202,
+          "images_per_second": 23927.85263506091,
+          "peak_allocated_bytes": 1204074496
+        },
+        {
+          "batch": 256,
+          "count": 256,
+          "seconds": 0.010310556273907423,
+          "images_per_second": 24828.922242328532,
+          "peak_allocated_bytes": 2026158080
+        }
+      ],
+      "selected_micro_batch": 64,
+      "selected_eval_batch": 256,
+      "global_batch": 64,
+      "note": "BN/RNG restored; microbatch can affect BN statistics; effective global batch unchanged"
+    },
+    "report": {
+      "schema_version": 1,
+      "task_name": "adjust_bottle",
+      "task_config": "demo_clean",
+      "checkpoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v1/pilot/best.pt",
+      "checkpoint_sha256": "725d29041d6cb04b9ffc7955578ff0491d42ff42c9b9d2bbae2b4df34fe71871",
+      "dataset_manifest_sha256": "269595db01a218394dcad89472d03249a687b7382feddf128e7d1218ca74111d",
+      "best_epoch": 18,
+      "epochs_run": 20,
+      "updates": 20,
+      "selected_micro_batch": 64,
+      "global_batch": 64,
+      "elapsed_seconds": 5.1829986572265625,
+      "threshold_selection": "validation only: maximum recall under episode false alarm constraint; tie lower alarms then higher threshold",
+      "validation": {
+        "threshold": 1.0000001192092896,
+        "tp": 0,
+        "fp": 0,
+        "fn": 3,
+        "tn": 47,
+        "recall": 0.0,
+        "false_positive_rate": 0.0,
+        "false_alarm_episodes": 0,
+        "negative_episodes": 8,
+        "episode_false_alarm_rate": 0.0
+      },
+      "validation_auc": 0.8865248226950354,
+      "test": {
+        "threshold": 1.0000001192092896,
+        "tp": 0,
+        "fp": 0,
+        "fn": 4,
+        "tn": 44,
+        "recall": 0.0,
+        "false_positive_rate": 0.0,
+        "false_alarm_episodes": 0,
+        "negative_episodes": 8,
+        "episode_false_alarm_rate": 0.0
+      },
+      "test_auc": 0.9943181818181818,
+      "test_loss": 0.1028677299618721,
+      "wm_domain_validated": false,
+      "deployment_authorized_by_this_report": false,
+      "caveat": "Small native held-out diagnostic, not a deployment guarantee; first-positive milestone may occur within an action chunk",
+      "peak_allocated_bytes": 885285888,
+      "peak_reserved_bytes": 5068816384
+    }
+  },
+  "v1_retry": {
+    "reason": "Inherited RLINF_CODE_WORKING_DIR selected old bell runtime without recorder; corrected to private capture repository in v2",
+    "native_valid_episodes": 0,
+    "final": {
+      "time": "2026-10-06T12:39:03.522315+08:00",
+      "terminal_status": "failed",
+      "commands": [
+        {
+          "key": "pilot",
+          "exit_code": 0,
+          "seconds": 41.098635469563305,
+          "output": {
+            "path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v1/pilot/report.json",
+            "sha256": "17e3f63334dbd611bc2ea8f55b8f166482ab8af4fbe7e1255f8651bde01b47bc"
+          }
+        },
+        {
+          "key": "native_lift128",
+          "terminal_status": "failed",
+          "error": {
+            "type": "RuntimeError",
+            "error": "RM owner received signal 15"
+          },
+          "exit_code": null,
+          "seconds": 155.28823727089912
+        }
+      ],
+      "error": {
+        "type": "RuntimeError",
+        "error": "RM owner received signal 15"
+      },
+      "recovery_error": null,
+      "physical_gpus": [
+        4
+      ],
+      "untouched_gpus": [
+        5,
+        6,
+        7
+      ],
+      "rlt_borrowed": true,
+      "rlt_return_dispatched": true,
+      "lifecycle_path": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v1/prepared/rm1006-v1",
+      "first_round_validation_pending": true,
+      "untouched_drivers_live": {
+        "gpu5": true,
+        "gpu6": true,
+        "gpu7": true
+      }
+    }
+  },
+  "current": {
+    "attempt": "task-reward-v2",
+    "owner_live": true,
+    "owner_identity": {
+      "pid": 1318475,
+      "uid": 20001,
+      "start": 723290483,
+      "state": "R",
+      "ppid": 1,
+      "cmdline_sha256": "1d7c126ebc10015add7b3948f55e1be454903f65ccac259c6517a491c87da2df"
+    },
+    "state": {
+      "time": "2026-10-06T12:46:34.637778+08:00",
+      "phase": "native_lift128",
+      "elapsed_seconds": 55.90287773963064
+    },
+    "heartbeat": {
+      "time": "2026-10-06T12:46:34.633268+08:00",
+      "phase": "native_lift128",
+      "owned_gpu_contexts": [],
+      "gpu4_memory_used_total_mib_utilization_pct": "5, 81559, 0"
+    },
+    "capture": {
+      "records": 0,
+      "successes": 0,
+      "unique_seeds": 0
+    },
+    "untouched_rlt_live": {
+      "gpu5": true,
+      "gpu6": true,
+      "gpu7": true
+    },
+    "final": null
+  },
+  "lift_pot_training": {
+    "profile": null,
+    "report": null,
+    "status": null
+  },
+  "gpu_scope": {
+    "rm": [
+      4
+    ],
+    "rlt_unchanged": [
+      5,
+      6,
+      7
+    ],
+    "no_other_user_process_cleanup": true
+  },
+  "contract": {
+    "model": "Single-task ResNet18 + MLP256",
+    "image": "main RGB,224x224,ImageNet normalization",
+    "output": "[B] sigmoid success scores; validation-selected threshold to0/1",
+    "native_collection": "original SFT; clean; N16x8; C32/H50;384actions",
+    "training": "global64,measured micro32/64,FP32,AdamW1e-4,GPU image cache,max100epochs,patience15"
+  },
+  "limitations": [
+    "Pilot threshold is unusable despite high test ranking AUC",
+    "Native held-out accuracy is not generated-domain accuracy",
+    "No new-task GRPO deployment is claimed"
+  ]
+}
