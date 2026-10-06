@@ -1,0 +1,144 @@
+{
+  "observed_at": "2026-10-07T00:13:45.751695+08:00",
+  "task": "lift_pot",
+  "third_task": true,
+  "start_policy": "original_pi05",
+  "rl_start_step": 0,
+  "optimizer_resumed": false,
+  "source_head": "9ce50c602c5e773e87e3306218fdde0cf167e8a8",
+  "owner_directory": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-two-gpu-from0-v2",
+  "config": {
+    "resume_dir": null,
+    "ckpt_path": null,
+    "max_steps": 200,
+    "placement": {
+      "actor": "4",
+      "env": "5",
+      "rollout": "4"
+    },
+    "N": 64,
+    "R": 8,
+    "G": 8,
+    "actor_micro": 16,
+    "global_batch": 2048,
+    "resume_source_world_size": 1,
+    "initial_model": {
+      "model_type": "openpi",
+      "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+    }
+  },
+  "receipts": {
+    "owner-identity.json": {
+      "pid": 1190137,
+      "uid": 20001,
+      "start": 727421473,
+      "state": "R",
+      "ppid": 1,
+      "cmdline_sha256": "020895b7506c412cbfd75dbe77237c4617c9875bdcf11c4e1f3ef77b4346f3ed",
+      "time": "2026-10-07T00:13:13.006567+08:00",
+      "alive_now": true
+    },
+    "ready.json": {
+      "time": "2026-10-07T00:12:26.386839+08:00",
+      "plan": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-from0-v2/prepared/owner-plan.json",
+      "plan_sha256": "bf16f2fd2948175c093767ddeaef0a8bba9cffa1a76e07e18e39b276ee9173db",
+      "entrypoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-from0-v2/code/fresh_owner.py",
+      "cpu_validate_passed": true,
+      "physical_gpus": [
+        4,
+        5
+      ],
+      "resume_step": 0,
+      "resume_dir": null,
+      "max_steps": 200,
+      "reused_smoke": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-two-gpu-b32-v2",
+      "canonical_entrypoint_validated": true,
+      "resource_timeout_cpu_test": {
+        "optional_timeout_logged": true,
+        "own_wrong_gpu_rejected": true,
+        "service_wrong_gpu_rejected": true,
+        "cpu_only": true
+      }
+    },
+    "launch.json": {
+      "time": "2026-10-07T00:13:11.161605+08:00",
+      "pid": 1190137,
+      "uid": 20001,
+      "start": 727421473,
+      "argv": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-from0-v2/code/fresh_owner.py",
+        "--plan",
+        "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-from0-v2/prepared/owner-plan.json",
+        "owner"
+      ],
+      "plan_sha256": "bf16f2fd2948175c093767ddeaef0a8bba9cffa1a76e07e18e39b276ee9173db",
+      "physical_gpus": [
+        4,
+        5
+      ],
+      "start_policy": "original_pi05",
+      "resume_step": 0,
+      "max_steps": 200
+    },
+    "resource-timeout-cpu-test.json": {
+      "optional_timeout_logged": true,
+      "own_wrong_gpu_rejected": true,
+      "service_wrong_gpu_rejected": true,
+      "cpu_only": true
+    }
+  },
+  "health": {
+    "unavailable": "URLError"
+  },
+  "rlt_gpu6_gpu7": {
+    "gpu6": {
+      "pid": 1721514,
+      "start": 726970407,
+      "alive": true
+    },
+    "gpu7": {
+      "pid": 1801744,
+      "start": 726971165,
+      "alive": true
+    }
+  },
+  "rlt_gpu4_gpu5_borrowed": false,
+  "rlt_gpu4_gpu5_queued": {
+    "gpu4": {
+      "gpus": [
+        4
+      ],
+      "new_run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g4-after-lift-g4-v1-after-two-g4-after-fresh-g4-after-fresh2-g4",
+      "checkpoint": 225
+    },
+    "gpu5": {
+      "gpus": [
+        5
+      ],
+      "new_run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g5-after-lift-g567-v1-after-two-g5-after-fresh-g5-after-fresh2-g5",
+      "checkpoint": 250
+    }
+  },
+  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 14819, 0\n5, 12644, 1\n6, 23589, 0\n7, 12809, 0\n",
+  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4     674050     C   1360      0    ray::RLTACFSDPP\n    4     674054     C   9186      0    ray::MultiStepR\n    4     674060   C+G   4228      0    ray::EnvWorker.\n    5     675123     C   1360      0    ray::RLTACFSDPP\n    5     675126     C   9186      0    ray::MultiStepR\n    5     675129   C+G   4180      0    ray::EnvWorker.\n    6    1825196     C   1576      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G  10776      0    ray::EnvWorker.\n    7    1825961     C   1576      0    ray::RLTACFSDPP\n    7    1825965     C   9390      0    ray::MultiStepR\n    7    1825969   C+G   1766      0    ray::EnvWorker.\n",
+  "wm_batches": {
+    "count": 0,
+    "recent": []
+  },
+  "worker_proofs": [],
+  "reused_smoke": {
+    "directory": "runs/lift-two-gpu-b32-v2",
+    "exit_code": 0,
+    "seconds": 1766.130871752277,
+    "policy_batch": 64,
+    "wm_batch": 32,
+    "resource_only": true,
+    "short_C32_grad_norm": 0,
+    "not_evidence_of_learning": true
+  },
+  "prior_formal_failure": "Optional nvidia-smi compute-memory query timeout during CP10 formal initialization; no formal update",
+  "smoke_repeated": false
+}

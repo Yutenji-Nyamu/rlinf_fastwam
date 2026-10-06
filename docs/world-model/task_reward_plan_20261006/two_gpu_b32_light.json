@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-10-06T23:28:05.770825+08:00",
+  "observed_at": "2026-10-06T23:51:18.734975+08:00",
   "task": "lift_pot",
   "source_head": "9ce50c602c5e773e87e3306218fdde0cf167e8a8",
   "layout": {
@@ -41,9 +41,110 @@
       "time": "2026-10-06T23:10:23.826913+08:00"
     },
     "state.json": {
-      "time": "2026-10-06T23:27:57.592643+08:00",
-      "phase": "startup_smoke",
-      "elapsed_seconds": 710.0180014614016
+      "time": "2026-10-06T23:46:18.514502+08:00",
+      "phase": "formal",
+      "elapsed_seconds": 42.45820030011237
+    },
+    "startup-smoke-accepted.json": {
+      "passed": true,
+      "actual_wm_batch": 32,
+      "actual_policy_batch": 64,
+      "wm_full_batches": 2,
+      "wm_seconds": [
+        10.373492085374892,
+        6.560052909888327
+      ],
+      "optimizer_preserved": true,
+      "resource_smoke_only": true
+    },
+    "error.json": {
+      "type": "TimeoutExpired",
+      "error": "Command '['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory', '--format=csv,noheader']' timed out after 20 seconds",
+      "traceback": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b32-v1/generated/opendw_owner_base.py\", line 589, in owner_main\n    resource_snapshot(plan, catalog, row['key'])\n  File \"/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b32-v1/generated/opendw_owner_base.py\", line 386, in resource_snapshot\n    value['compute_memory_csv'] = subprocess.check_output(\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 466, in check_output\n    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 550, in run\n    stdout, stderr = process.communicate(input, timeout=timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 1209, in communicate\n    stdout, stderr = self._communicate(input, endtime, timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 2116, in _communicate\n    self._check_timeout(endtime, orig_timeout, stdout, stderr)\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 1253, in _check_timeout\n    raise TimeoutExpired(\nsubprocess.TimeoutExpired: Command '['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory', '--format=csv,noheader']' timed out after 20 seconds\n"
+    },
+    "final.json": {
+      "time": "2026-10-06T23:48:49.323775+08:00",
+      "mode": "two_gpu_b32_formal",
+      "physical_gpus": [
+        4,
+        5
+      ],
+      "terminal_status": "failed",
+      "trials": [
+        {
+          "key": "startup_smoke",
+          "num_envs": 64,
+          "exit_code": 0,
+          "seconds": 1766.130871752277
+        }
+      ],
+      "error": {
+        "type": "TimeoutExpired",
+        "error": "Command '['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory', '--format=csv,noheader']' timed out after 20 seconds",
+        "traceback": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b32-v1/generated/opendw_owner_base.py\", line 589, in owner_main\n    resource_snapshot(plan, catalog, row['key'])\n  File \"/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b32-v1/generated/opendw_owner_base.py\", line 386, in resource_snapshot\n    value['compute_memory_csv'] = subprocess.check_output(\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 466, in check_output\n    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 550, in run\n    stdout, stderr = process.communicate(input, timeout=timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 1209, in communicate\n    stdout, stderr = self._communicate(input, endtime, timeout)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 2116, in _communicate\n    self._check_timeout(endtime, orig_timeout, stdout, stderr)\n  File \"/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py\", line 1253, in _check_timeout\n    raise TimeoutExpired(\nsubprocess.TimeoutExpired: Command '['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory', '--format=csv,noheader']' timed out after 20 seconds\n"
+      },
+      "recovery_error": null,
+      "rlt_borrowed": true,
+      "partial_rlt_recovery_recorded": false,
+      "rlt_return_dispatched": true,
+      "rlt_first_round_pending": true,
+      "rlt_first_round_verified": false,
+      "gpu_processes": [
+        {
+          "gpu": 4,
+          "uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+          "pid": 2805610,
+          "type": "C"
+        },
+        {
+          "gpu": 4,
+          "uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+          "pid": 2805620,
+          "type": "C"
+        },
+        {
+          "gpu": 6,
+          "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+          "pid": 1825196,
+          "type": "C"
+        },
+        {
+          "gpu": 6,
+          "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+          "pid": 1825198,
+          "type": "C"
+        },
+        {
+          "gpu": 6,
+          "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+          "pid": 1825200,
+          "type": "C+G"
+        },
+        {
+          "gpu": 7,
+          "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+          "pid": 1825961,
+          "type": "C"
+        },
+        {
+          "gpu": 7,
+          "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+          "pid": 1825965,
+          "type": "C"
+        },
+        {
+          "gpu": 7,
+          "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+          "pid": 1825969,
+          "type": "C+G"
+        }
+      ]
+    },
+    "startup_smoke/result.json": {
+      "key": "startup_smoke",
+      "num_envs": 64,
+      "exit_code": 0,
+      "seconds": 1766.130871752277
     },
     "services/wm5/service-cpu-ready.json": {
       "ok": true,
@@ -188,8 +289,8 @@
       "alive": true
     }
   },
-  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 20236, 0\n5, 1423, 0\n6, 23542, 0\n7, 23542, 0\n",
-  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4    3691090     C  12214      0    ray::EmbodiedFS\n    4    3691095     C   7964      0    ray::MultiStepR\n    5    3070672     C    722      0    python         \n    5    3691100   C+G    691      0    ray::EnvWorker.\n    6    1825196     C   1576      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G  10757      0    ray::EnvWorker.\n    7    1825961     C   1576      0    ray::RLTACFSDPP\n    7    1825965     C  11150      0    ray::MultiStepR\n    7    1825969   C+G  10757      0    ray::EnvWorker.\n",
+  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 1697, 0\n5, 1699, 0\n6, 13544, 5\n7, 13529, 3\n",
+  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4    2805610     C    518      0    ray::RLTACFSDPP\n    4    2805620     C    540      0    ray::MultiStepR\n    4    2805622     C    616      0    ray::EnvWorker \n    5    2806701     C    518      0    ray::RLTACFSDPP\n    5    2806706     C    540      0    ray::MultiStepR\n    5    2806710     C    616      0    ray::EnvWorker \n    6    1825196     C   1584      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G    742      0    ray::EnvWorker \n    7    1825961     C   1584      0    ray::RLTACFSDPP\n    7    1825965     C  11150      0    ray::MultiStepR\n    7    1825969   C+G    736      0    ray::EnvWorker \n",
   "prior_attempt": "CPU CLI rejected B32; no GPU borrowing; corrected in immutable service-v2",
   "ready_for_publication": true
 }
