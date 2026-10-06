@@ -14,7 +14,7 @@ optimizer/replay metrics and reuses that already-complete smoke before a fresh
 
 RLT's first two-round smoke exited zero and saved complete CP2 with update count
 4. It collected no success: after just two initialization updates its second
-round had already switched to the untrained student. It was not accepted as
+round had already switched to the newly trained student. It was not accepted as
 successful-weighting coverage. One additional fixed four-round smoke preserves
 the teacher for collection, with exactly three smoke-only recipe changes in
 `tools/ugrow_ops_v2/rlt_smoke_v2_recipe.py`. The formal N4/U5, 800-round recipe is
@@ -32,6 +32,16 @@ that acceptance evidence is still pending at that capture. RLT's first formal
 receipt may prove only teacher precollection while the original 10k replay
 threshold and 15k initialization-update schedule delay online learning.
 These engineering checks do not establish a training improvement.
+
+At the closing capture, BC formal has three completed rounds and nonunit U
+weights from round two. RLT's four-round teacher smoke exited zero, saved
+complete CP4/update8 and 320 replay rows, but all 16 episodes failed; its
+successful-weighting gate remained unmet, so formal did not start. The exact
+old RLT was returned on GPU5 and verified at restored round 100, replay
+15557 -> 15710, with its original precollection schedule unchanged. This is
+a coverage limitation, not evidence of a numerical failure or a measured
+method benefit. The small historical teacher extract provides context for
+the low-success task; it is not additional U validation.
 
 Only source, resolved recipes, scalar histories and small receipts are included.
 Model weights, replay tensors, credentials and full logs remain on the server.

@@ -37,8 +37,14 @@ v1独立部署目录`/data/chenyiteng/deployment-20261006/ugrow-bc-rlt-g45-v1`�
 
 13:01:39起，当前权威事务改为`/data/chenyiteng/deployment-20261006/ugrow-bc-rlt-g45-v2`，GPU4 owner2485016/start414961836，GPU5 owner2485099/start414962114。12项新服务器CPU检查（另3子测试）通过。只修独立ops：BC按两轮真实loss/grad/lr/replay验收并复用已完成smoke，直接接fresh formal；RLT只做一次固定4轮补充smoke，将smoke max_steps/save_interval从2改4、warmup_post_collect_updates从2改8，确保四轮沿teacher采集，不筛seed，仍须自然成功+非均匀U权重+有限更新。正式配置保持原预算，均不从smoke续权重/回放。两卡返回driver再次精确停止，当前driver自己的cleanup、namespace/进程/C/G清空实证齐全后启动v2；没有伪造旧owner新确认。
 
-当前源码HEAD仍为上列两条，独立ops位于v2/tools并固定hash。smoke至formal间保持本事务所有权，事务终止清理后才从完整CP接回候补RLT。smoke上限90分钟，BC formal48小时/RLT7天；输出盘低于40GiB、异卡绑定或进程失败停止并归还，不删除历史文件、不reset GPU。v2正式首轮及RLT补验待下一次现场回执更新。
+当前源码HEAD仍为上列两条，独立ops位于v2/tools并固定hash。smoke至formal间保持本事务所有权，事务终止清理后才从完整CP接回候补RLT。smoke上限90分钟，BC formal48小时/RLT7天；输出盘低于40GiB、异卡绑定或进程失败停止并归还，不删除历史文件、不reset GPU。
 
-12:43:28两条源码已推到个人GitHub并分别以ls-remote核同：[BC源码](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/1c4b3810a1cddcd1ae38312126448c80348f5686)、[RLT源码](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/bfbc9c889bfe687dc24de7c3dc1d66138d3010df)。这两个源码提交内的`docs/ugrow_CONTEXT_20261006.md`是实施前快照，运行阶段以本文件及后续轻量证据发布为准。冻结运行HEAD保持，发布后续文档使用独立工作树。
+13:22收尾核验：BC正式前3/100轮已写出，success分别1/4、2/4、2/4；第二轮loss0.0086873、grad0.111724、U权重std0.730544/nonunit_fraction1。正式首轮验收回执齐全，继续后续训练。RLT补验13:14:53正常exit0，完整CP4/update8、回放320；四轮实际actor_switch_rate=0，每轮2次critic/1次actor更新，ref BC loss和grad有限。16回合实际0成功，仍未覆盖成功权重，owner因此FAILED并明确不启动正式。U namespace/进程/C/G已清空，13:15恢复旧place_fan combo N8/3000：driver2516932/start415042475，run/namespace `rlt-g5-after-ugrow-1006-v2`，从原完整CP100/回放15557继续；13:21:17恢复首轮已验，step100、success1/8、回放15710（增长153）、update0，沿原20k预采集门槛。此为U验收覆盖不足，不是训练异常或已证明U无效。
+
+当前4卡BC owner/driver有活跃心跳；5卡U owner已完成归还职责，后续是原RLT driver。计算与图形均在各自4/5卡，0–3未见C/G（保留驱动基础显存）；6/7由另窗管理。本轮末次输出盘余量/home约316GiB、/data约443GiB；训练源码两树仍干净、HEAD和pins核同。127项服务器CPU检查（另3子测试）通过；BC真实smoke通过，RLT真实成功权重验收仍缺，两个结论分别记录。
+
+解释覆盖边界的既有证据：2026-09-19历史同一N4 adjust_bottle pair前16轮teacher预采集，Clean2/64、Combo7/64，分别出现连续9轮、6轮零成功；提取文件`local_scripts/ugrow_bc_rlt_20261006/evidence/historical-rlt-teacher-first16.json`含原路径/sha/逐轮scalar。本轮不再扩大smoke或反复挑种子。5卡U后续先补真实成功样本上的独立分支验证，再决定新正式事务；原U采集、回放、有限参数更新和CPU分支/梯度测试证据均保留。
+
+12:43:28两条源码已推到个人GitHub并分别以ls-remote核同：[BC源码](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/1c4b3810a1cddcd1ae38312126448c80348f5686)、[RLT源码](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/bfbc9c889bfe687dc24de7c3dc1d66138d3010df)。这两个源码提交内的`docs/ugrow_CONTEXT_20261006.md`是实施前快照；后续执行文档和轻量证据位于[独立证据分支](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/ugrow-g45-evidence-20261006)，其中`docs/ugrow_CONTEXT_20261006.md`为本文件发布副本，`docs/ugrow_execution_20261006/`含实配、scalar、CP/借还和测试证据，`tools/ugrow_ops_v2/`为修正ops。冻结运行HEAD保持，发布文档不改运行工作树。
 
 本轮工作文件：`local_scripts/ugrow_bc_rlt_20261006/`。其他窗口请保持GPU4/5本窗口事务所有权，不重放旧RLT恢复入口。
