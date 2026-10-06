@@ -57,8 +57,9 @@ if cfg_path.is_file():
                      'actor_micro': cfg['actor']['micro_batch_size'], 'global_batch': cfg['actor']['global_batch_size'],
                      'resume_source_world_size': cfg['actor']['fsdp_config']['resume_source_world_size']}
     out['worker_tails'] = {}
-    for p in (O / 'formal').rglob('worker-*.out'):
-        out['worker_tails'][str(p.relative_to(O))] = tail(p, 6000)
+    for p in (O / 'formal').rglob('*'):
+        if p.is_file() and p.suffix in ['.log', '.out'] and p.name != 'driver.log':
+            out['worker_tails'][str(p.relative_to(O))] = tail(p, 6000)
 try:
     with urllib.request.urlopen('http://127.0.0.1:18985/health', timeout=3) as response:
         health = json.load(response)

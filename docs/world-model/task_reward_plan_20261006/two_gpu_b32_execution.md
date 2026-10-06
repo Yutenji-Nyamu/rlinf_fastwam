@@ -88,3 +88,11 @@ CPU/GPU绑定、实际B32×2前向、实际策略B64、有限梯度、optimizer�
 00:06:40从0的v1入口在driver校验时退出：`/data/chenyiteng`实际解析为`/home/nvme/team-data/chenyiteng`，新增wrapper直接用字符串索引冻结清单，因路径别名而KeyError。未开始GPU采样；00:08:54已结束自身清理/4、5卡归还，recovery_error为空。v2恢复既有owner的“解析后比同一文件、保留清单原路径”做法；CPU准备改用与driver一致的canonical路径加载并校验。沿已完成归还的精确RLT链再借4/5，所有训练参数保持，不重复GPU smoke。见[two_gpu_from0_path_failure.json](two_gpu_from0_path_failure.json)。
 
 00:13:11从0正式v2已后台启动，owner PID1190137/start727421473，计划SHA256 `bf16f2fd2948175c093767ddeaef0a8bba9cffa1a76e07e18e39b276ee9173db`。入口canonical路径CPU校验及可选统计超时回归均通过；运行源码9ce50c6和训练配置保持，仅新建唯一输出目录。最新状态见[two_gpu_from0_light.json](two_gpu_from0_light.json)。
+
+00:14:43已补推新正式起点、wrapper路径修复、可选显存超时修复、CPU回归、完整smoke和失败/归还轻量回执：`codex/wmrl-bell-reward-20261005@97324cc7b5f50371caef131361ab043878a86476`，远端SHA核同，运行源码9ce50c6保持。发布checkout独立；权重、原始视频、完整环境变量和打包payload不入Git。
+
+00:21:00：4/5借卡完成；正式driver PID1914282/start727464407、namespace `opendw_lift_fresh2_200_1007`存活，actor/rollout各唯一rank均GPU4，env唯一rank为GPU5，placement回执已写入；CPU服务B32健康，正在策略初始化，暂未有WM生成批。6/7 RLT原driver身份保持。路径修复已实际越过此前失败位置。
+
+00:28:37已进入第1轮正式采样，`Generating Rollout Epochs 0/8`和`WMRL_POLICY_ACTUAL_BATCH 64`均由正式rollout日志确认。actor从原始Sidney权重初始化，未打印CP10恢复标记；配置resume_dir/ckpt_path为空。GPU4约23222MiB、GPU5约77915MiB，WM健康且在GPU；尚未完成首轮更新，也没有新的原生评估结果。6/7原RLT driver仍存活，4/5候补恢复断点分别225/250。
+
+00:29:14正式WM首两个真实B32批已完成：8.077秒、6.508秒，输出均有限；策略实际B64。owner/driver心跳继续、无error/final回执。GPU4约22.68GiB、GPU5约76.09GiB；0–3未见我方计算/图形进程。新正式现已实际采样，首轮更新尚未完成，不据此宣称新收益。6/7原RLT driver身份仍存活。本次以此为后台启动验收，不另等完整首轮或增加长测。

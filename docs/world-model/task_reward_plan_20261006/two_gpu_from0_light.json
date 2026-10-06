@@ -1,5 +1,5 @@
 {
-  "observed_at": "2026-10-07T00:13:45.751695+08:00",
+  "observed_at": "2026-10-07T00:29:14.686821+08:00",
   "task": "lift_pot",
   "third_task": true,
   "start_policy": "original_pi05",
@@ -37,6 +37,99 @@
       "cmdline_sha256": "020895b7506c412cbfd75dbe77237c4617c9875bdcf11c4e1f3ef77b4346f3ed",
       "time": "2026-10-07T00:13:13.006567+08:00",
       "alive_now": true
+    },
+    "state.json": {
+      "time": "2026-10-07T00:29:03.998962+08:00",
+      "phase": "formal",
+      "elapsed_seconds": 523.44449544698
+    },
+    "formal/verified-placement.json": {
+      "actor": [
+        {
+          "rank": 0,
+          "cluster_node_rank": 0,
+          "placement_node_rank": 0,
+          "local_accelerator_rank": 4,
+          "accelerator_type": "NV_GPU",
+          "local_rank": 0,
+          "local_world_size": 1,
+          "visible_accelerators": [
+            "4"
+          ],
+          "isolate_accelerator": true,
+          "local_hardware_ranks": [
+            4
+          ],
+          "node_group_label": "cluster"
+        }
+      ],
+      "env": [
+        {
+          "rank": 0,
+          "cluster_node_rank": 0,
+          "placement_node_rank": 0,
+          "local_accelerator_rank": 5,
+          "accelerator_type": "NV_GPU",
+          "local_rank": 0,
+          "local_world_size": 1,
+          "visible_accelerators": [
+            "5"
+          ],
+          "isolate_accelerator": true,
+          "local_hardware_ranks": [
+            5
+          ],
+          "node_group_label": "cluster"
+        }
+      ],
+      "rollout": [
+        {
+          "rank": 0,
+          "cluster_node_rank": 0,
+          "placement_node_rank": 0,
+          "local_accelerator_rank": 4,
+          "accelerator_type": "NV_GPU",
+          "local_rank": 0,
+          "local_world_size": 1,
+          "visible_accelerators": [
+            "4"
+          ],
+          "isolate_accelerator": true,
+          "local_hardware_ranks": [
+            4
+          ],
+          "node_group_label": "cluster"
+        }
+      ]
+    },
+    "formal/driver-identity.json": {
+      "pid": 1914282,
+      "uid": 20001,
+      "start": 727464407,
+      "state": "R",
+      "ppid": 1190137,
+      "cmdline_sha256": "ee52876c16586b6907161dd3b91eafe078ec29bac96faea84da63f4bc697b4fc",
+      "namespace": "opendw_lift_fresh2_200_1007",
+      "alive_now": true
+    },
+    "services/wm5/service-cpu-ready.json": {
+      "ok": true,
+      "pid": 1190340,
+      "phase": "ready_offloaded",
+      "is_offloaded": true,
+      "fatal_error": null,
+      "requests_completed": 0,
+      "rows_completed": 0,
+      "execution_mode": "batched",
+      "wm_batch_size": 32,
+      "batch_calls_completed": 0,
+      "max_actual_wm_batch": 0,
+      "physical_gpu": 5,
+      "physical_gpu_identity": {
+        "physical_gpu": 5,
+        "gpu_uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "pci": "00000000:97:00.0"
+      }
     },
     "ready.json": {
       "time": "2026-10-07T00:12:26.386839+08:00",
@@ -91,7 +184,11 @@
     }
   },
   "health": {
-    "unavailable": "URLError"
+    "ok": true,
+    "pid": 1190340,
+    "is_offloaded": false,
+    "wm_batch_size": 32,
+    "physical_gpu": 5
   },
   "rlt_gpu6_gpu7": {
     "gpu6": {
@@ -105,7 +202,7 @@
       "alive": true
     }
   },
-  "rlt_gpu4_gpu5_borrowed": false,
+  "rlt_gpu4_gpu5_borrowed": true,
   "rlt_gpu4_gpu5_queued": {
     "gpu4": {
       "gpus": [
@@ -122,13 +219,43 @@
       "checkpoint": 250
     }
   },
-  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 14819, 0\n5, 12644, 1\n6, 23589, 0\n7, 12809, 0\n",
-  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4     674050     C   1360      0    ray::RLTACFSDPP\n    4     674054     C   9186      0    ray::MultiStepR\n    4     674060   C+G   4228      0    ray::EnvWorker.\n    5     675123     C   1360      0    ray::RLTACFSDPP\n    5     675126     C   9186      0    ray::MultiStepR\n    5     675129   C+G   4180      0    ray::EnvWorker.\n    6    1825196     C   1576      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G  10776      0    ray::EnvWorker.\n    7    1825961     C   1576      0    ray::RLTACFSDPP\n    7    1825965     C   9390      0    ray::MultiStepR\n    7    1825969   C+G   1766      0    ray::EnvWorker.\n",
+  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 23224, 0\n5, 77917, 0\n6, 13573, 6\n7, 23573, 0\n",
+  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4    1915747     C   1298      0    ray::EmbodiedFS\n    4    1915749     C  21870      0    ray::MultiStepR\n    5    1190340     C  77218      0    python         \n    5    1915752     C    680      0    ray::EnvWorker.\n    6    1825196     C   1582      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G    755      0    ray::EnvWorker \n    7    1825961     C   1576      0    ray::RLTACFSDPP\n    7    1825965     C  11150      0    ray::MultiStepR\n    7    1825969   C+G  10770      0    ray::EnvWorker.\n",
   "wm_batches": {
-    "count": 0,
-    "recent": []
+    "count": 2,
+    "recent": [
+      {
+        "timestamp_utc": "2026-10-06T16:28:43.829039+00:00",
+        "actual_wm_batch": 32,
+        "seconds": 8.077264003455639,
+        "world_model_seconds": 7.843809126876295,
+        "reward_seconds": 0.2333834609016776,
+        "wm_peak": {
+          "cuda_max_allocated_bytes": 69211059200,
+          "cuda_max_reserved_bytes": 80245424128
+        },
+        "outputs_finite": true
+      },
+      {
+        "timestamp_utc": "2026-10-06T16:29:01.343716+00:00",
+        "actual_wm_batch": 32,
+        "seconds": 6.50813686195761,
+        "world_model_seconds": 6.417106192559004,
+        "reward_seconds": 0.09100317861884832,
+        "wm_peak": {
+          "cuda_max_allocated_bytes": 69211059200,
+          "cuda_max_reserved_bytes": 80247521280
+        },
+        "outputs_finite": true
+      }
+    ]
   },
-  "worker_proofs": [],
+  "worker_proofs": [
+    {
+      "source": "formal/worker_logs/LiftFresh2_rollout/rank_0.log",
+      "line": "Generating Rollout Epochs:   0%|          | 0/8 [00:00<?, ?it/s]WMRL_POLICY_ACTUAL_BATCH 64"
+    }
+  ],
   "reused_smoke": {
     "directory": "runs/lift-two-gpu-b32-v2",
     "exit_code": 0,
