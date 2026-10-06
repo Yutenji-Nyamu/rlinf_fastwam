@@ -20,8 +20,8 @@ for gpu in [4,5]:
     for p in [*r.glob('**/driver.log'),*r.glob('**/train.log'),*r.glob('**/worker*.log')]:
         if p.exists():d['logs'][str(p)]={'mtime':p.stat().st_mtime,'tail':p.read_text(errors='replace')[-8500:]}
     for p in Path('/proc').iterdir():
-        if not p.name.isdigit() or p.stat().st_uid!=20001:continue
         try:
+            if not p.name.isdigit() or p.stat().st_uid!=20001:continue
             cmd=(p/'cmdline').read_bytes().decode(errors='replace')
             if str(r) in cmd:d.setdefault('processes',[]).append(proc(int(p.name)))
         except (FileNotFoundError,ProcessLookupError,PermissionError):pass
