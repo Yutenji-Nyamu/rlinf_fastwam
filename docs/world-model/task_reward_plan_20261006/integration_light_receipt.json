@@ -1,0 +1,200 @@
+{
+  "config_contract": {
+    "task": "lift_pot",
+    "initialization": "original_SFT; smoke checkpoint is not used for formal",
+    "reward": {
+      "source": "single_task_resnet_classifier",
+      "frame_reduction": "max8",
+      "threshold": 0.7082200646400452,
+      "semantics": "Preserve bell: max of eight predicted main-frame scores; give 1 once on threshold hit at C32 boundary; terminate row",
+      "caveat": "RM labels/threshold use native C32 boundary frames; internal generated-frame false positives need checking"
+    },
+    "parallel": {
+      "N": 64,
+      "G": 8,
+      "wm_batch": 16,
+      "actor_ranks": 2,
+      "env_ranks": 2,
+      "actor_microbatch": 8
+    },
+    "formal": {
+      "R": 8,
+      "C": 32,
+      "max_actions": 384,
+      "trajectories_per_round": 512,
+      "global_batch": 2048,
+      "update_epochs": 2,
+      "rounds": 200,
+      "save_eval_every": 10
+    },
+    "smoke": {
+      "R": 1,
+      "C": 32,
+      "max_actions": 32,
+      "rounds": 1,
+      "global_batch": 64,
+      "native_eval_N": 32,
+      "tests_full_horizon_learning": false,
+      "note": "Same parallel scale; one action block may contain no positive reward"
+    },
+    "diff": [
+      {
+        "key": "actor.group_name",
+        "before": "OpenDWActor_opendw-click-bell-b16-v2",
+        "after": "OpenDWActor_lift-pot-v1"
+      },
+      {
+        "key": "algorithm.dvac_gradient_weighting.output_dir",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal/unused-dv",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/unused-dv"
+      },
+      {
+        "key": "env.eval.seeds_path",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/click-bell-v2/prepared/click-bell-seeds.json",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-pot-v1/assets/native_seeds32.json"
+      },
+      {
+        "key": "env.eval.task_config.save_path",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal/robotwin_data/eval",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/robotwin_data/eval"
+      },
+      {
+        "key": "env.eval.task_config.task_name",
+        "before": "click_bell",
+        "after": "lift_pot"
+      },
+      {
+        "key": "env.eval.video_cfg.video_base_dir",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal/video/eval",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/video/eval"
+      },
+      {
+        "key": "env.group_name",
+        "before": "OpenDWEnv_opendw-click-bell-b16-v2",
+        "after": "OpenDWEnv_lift-pot-v1"
+      },
+      {
+        "key": "env.train.initial_state_path",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/click-bell-v1/assets/click_bell_clean50_reset.npz",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-pot-v1/assets/lift_pot_clean50_reset.npz"
+      },
+      {
+        "key": "env.train.reward_source",
+        "before": "worldarena_t5_classifier",
+        "after": "single_task_resnet_classifier"
+      },
+      {
+        "key": "env.train.service_urls",
+        "before": [
+          "http://127.0.0.1:18966",
+          "http://127.0.0.1:18967"
+        ],
+        "after": [
+          "http://127.0.0.1:18976",
+          "http://127.0.0.1:18977"
+        ]
+      },
+      {
+        "key": "env.train.success_reward_threshold",
+        "before": 0.9,
+        "after": 0.7082200646400452
+      },
+      {
+        "key": "env.train.task_name",
+        "before": "click_bell",
+        "after": "lift_pot"
+      },
+      {
+        "key": "env.train.video_cfg.video_base_dir",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal/video/train",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/video/train"
+      },
+      {
+        "key": "rollout.group_name",
+        "before": "OpenDWRollout_opendw-click-bell-b16-v2",
+        "after": "OpenDWRollout_lift-pot-v1"
+      },
+      {
+        "key": "runner.logger.experiment_name",
+        "before": "opendw-click-bell-b16-v2-formal",
+        "after": "lift-pot-v1-formal"
+      },
+      {
+        "key": "runner.logger.log_path",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal"
+      },
+      {
+        "key": "runner.per_worker_log_path",
+        "before": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/click-bell-v2/formal/worker-metrics",
+        "after": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/worker-metrics"
+      }
+    ],
+    "launched": false,
+    "base_config": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/click-bell-v2/prepared/formal.yaml",
+    "base_sha256": "1de2f704c743d623dbad60d8f78d8eeeec19ffb6e0cbaa683044c5da96e6b158",
+    "reward_report": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/lift-pot/report.json",
+    "reward_report_sha256": "3ae3b431a92196b2acdab8ec69e3a947a6a727ab5df8675c33983c03ffa56714",
+    "reward_checkpoint": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/task-reward-v2/lift-pot/best.pt",
+    "reward_checkpoint_sha256": "0363474ef67e87db1f6f9456bba9b17aeb8c3bb801a536a037413de0b23f232f",
+    "native_seeds_sha256": "e1105b587dbb2a2b340ea63dce95b67626e0040d105c1b486b1bc0660064beda",
+    "reset_sha256": "46d37e9b12b6220bdeda5817314369998358fdce304d427f258966d8753cfade",
+    "native_baseline": {
+      "N": 16,
+      "R": 2,
+      "total_requested_seeds": 32,
+      "physical_gpu": 4,
+      "fixed_reset_state_ids": false,
+      "actor_created": false,
+      "world_model_created": false,
+      "formal_evaluation": "N32x1, same frozen 32 requested seeds; fixed IDs reused each evaluation"
+    }
+  },
+  "formal_started": false,
+  "current_phase": "OpenDW CPU loading; RLT still running",
+  "schema_version": 1,
+  "initial_rm_total": 50,
+  "rm_test": {
+    "fn": 3,
+    "tn": 196,
+    "tp": 8,
+    "fp": 1
+  },
+  "cpu_tests_passed": 5,
+  "initial_rm_positives": 0,
+  "resource_scope_observation": "0-3 had no contexts in snapshot; no other-user cleanup",
+  "plan_sha256": "5ce0af0cc495ccc8ca1b855df4f810ac0488252cc735d5e4637bde45f18002ba",
+  "outside_our_gpu_contexts": [],
+  "rm_best_epoch": 18,
+  "owner_identity_verified": true,
+  "owner_start": 724116770,
+  "smoke_completed": false,
+  "physical_gpus": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "ordered_stages": [
+    "native_lift32",
+    "startup_smoke",
+    "formal"
+  ],
+  "no_additional_rm_training": true,
+  "time": "2026-10-06T15:06:18+08:00",
+  "task": "lift_pot",
+  "owner_pid": 3019581,
+  "owner_dir": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1",
+  "ready_for_publication": true,
+  "baseline_native_capture": {
+    "count": 0,
+    "success": 0,
+    "unique_requested_seeds": 0
+  },
+  "rlt_recovery_checkpoints": [
+    225,
+    250,
+    150,
+    150
+  ]
+}
