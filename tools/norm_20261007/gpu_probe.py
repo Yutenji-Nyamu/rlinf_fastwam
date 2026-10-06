@@ -12,7 +12,8 @@ def main():
     cfg=OmegaConf.load(a.config);model=get_model(cfg.actor.model,torch_dtype=torch.bfloat16).to('cuda:0').eval()
     B=cfg.env.train.total_num_envs
     im=torch.arange(256*256*3).remainder(256).to(torch.uint8).reshape(1,256,256,3).expand(B,-1,-1,-1).clone()
-    obs={'main_images':im,'wrist_images':torch.stack((im.flip(1),im.flip(2)),dim=1),'extra_view_images':None,'states':torch.linspace(-.25,.25,14).repeat(B,1),'task_descriptions':[cfg.actor.model.openpi_data.default_prompt]*B}
+    prompt=OmegaConf.select(cfg,'actor.model.openpi_data.default_prompt') or cfg.env.train.task_config.task_name.replace('_',' ')
+    obs={'main_images':im,'wrist_images':torch.stack((im.flip(1),im.flip(2)),dim=1),'extra_view_images':None,'states':torch.linspace(-.25,.25,14).repeat(B,1),'task_descriptions':[prompt]*B}
     results=[];calls=[];original=model.sample_mean_var_val
     def counted(*args,**kwargs):calls.append(args[1]);return original(*args,**kwargs)
     model.sample_mean_var_val=counted
