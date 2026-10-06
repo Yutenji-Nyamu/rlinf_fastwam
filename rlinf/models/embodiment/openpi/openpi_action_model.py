@@ -14,6 +14,9 @@
 
 import math
 import random
+from contextlib import nullcontext
+
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -221,6 +224,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 raise ValueError("DSRL U requires use_dsrl=True")
             self.dsrl_u_spec = validate_signal_spec(self.config.dsrl_u_spec)
             expected_u_spec = make_signal_spec(
+                signal_kind=self.dsrl_u_spec["name"],
                 main_steps=self.config.num_steps,
                 action_dim=self.config.action_env_dim,
                 action_horizon=self.config.action_horizon,
@@ -1114,6 +1118,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
+        collect_norm = collect_dsrl_u and self.dsrl_u_spec["name"] == "norm_residual_t5_l3"
         result = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
@@ -1122,8 +1127,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             noise=noise,
             mode=mode,
             compute_values=compute_values,
+            **({"collect_norm": True} if collect_norm else {}),
         )
-        if collect_dsrl_u:
+        if collect_norm:
+            result["dsrl_u"] = result.pop("action_norm")[:, : self.dsrl_u_spec["chunk_length"]].contiguous()
+            result["dsrl_u_valid"] = torch.ones_like(result["dsrl_u"], dtype=torch.bool)
+        elif collect_dsrl_u:
             rng_devices = (
                 [initial_noise.device.index]
                 if initial_noise.device.type == "cuda"
@@ -1160,6 +1169,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        collect_norm=False,
         num_steps: int | None = None,
     ) -> torch.Tensor:
         bsize = state.shape[0]
@@ -1180,6 +1190,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
+        if collect_norm and (mode != "eval" or num_steps != 10):
+            raise ValueError("Norm requires deterministic ODE10")
+        norm_values = []
         x_t = noise
         # add sde sample and traj collect
         chains = []
@@ -1227,16 +1240,23 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
+            capture = (
+                capture_expert_norm(self, self.config.action_horizon)
+                if collect_norm and idx >= num_steps - 5 else nullcontext()
             )
+            with capture as step_norms:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
@@ -1273,6 +1293,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
+        if collect_norm:
+            result["action_norm"] = reduce_expert_norm(norm_values)
         return result
 
     def _get_timesteps(self, denoise_steps, device):

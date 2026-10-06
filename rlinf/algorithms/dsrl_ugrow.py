@@ -43,6 +43,7 @@ def _positive_int(value: Any, name: str) -> int:
 
 def make_signal_spec(
     *,
+    signal_kind: str = "ugrow_ode10_vs5",
     main_steps: int = 10,
     side_steps: int = 5,
     action_dim: int = 14,
@@ -61,6 +62,17 @@ def make_signal_spec(
         raise ValueError("This signal is defined on complete ODE10 and ODE5 solves")
     if chunk_length > action_horizon:
         raise ValueError("chunk_length exceeds the predicted action horizon")
+    if signal_kind == "norm_residual_t5_l3":
+        return {
+            "name": signal_kind, "schema_version": 1, "main_steps": main_steps,
+            "action_dim": action_dim, "action_horizon": action_horizon,
+            "chunk_length": chunk_length, "tail_steps": 5, "deep_layers": 3,
+            "readout": "post_residual_pre_final_norm", "reduction": "mean_of_l2",
+            "mask": "submitted_prefix", "compute_dtype": "float32",
+            "noise": "cast_behavior_latent", "extra_solver_steps": 0,
+        }
+    if signal_kind != "ugrow_ode10_vs5":
+        raise ValueError("Unknown DSRL signal identity")
     return {
         "name": "ugrow_ode10_vs5",
         "schema_version": 1,
@@ -85,6 +97,14 @@ def validate_signal_spec(spec: Mapping) -> dict[str, Any]:
     """Return a canonical copy or reject missing, changed, and unknown fields."""
     if not isinstance(spec, Mapping):
         raise ValueError("DSRL U signal spec must be a mapping")
+    if spec.get("name") == "norm_residual_t5_l3":
+        canonical = make_signal_spec(
+            signal_kind=spec["name"],
+            **{key: spec[key] for key in ("main_steps", "action_dim", "action_horizon", "chunk_length")},
+        )
+        if dict(spec) != canonical or any(isinstance(v, bool) for v in spec.values()):
+            raise ValueError("DSRL Norm signal specification mismatch")
+        return canonical
     if set(spec) != set(U_SPEC):
         raise ValueError(
             f"DSRL U spec keys mismatch: {sorted(spec)} != {sorted(U_SPEC)}"
