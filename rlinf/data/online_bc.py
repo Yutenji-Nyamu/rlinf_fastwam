@@ -36,6 +36,42 @@ def validate_ugrow_record(record):
         raise ValueError("BC U requires finite [H] scores and a nonempty Hx14 mask.")
 
 
+def validate_norm_record(record):
+    """Reject other signals and incompatible Norm producer metadata."""
+    from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
+
+    if "dvac_v" in record or "ugrow_u" in record or "norm_raw" not in record:
+        raise ValueError("BC Norm replay requires its own raw Norm, never old DV.")
+    expected = {
+        "norm_signal_version": torch.tensor(NORM_SIGNAL_SPEC["version"]),
+        "norm_steps": torch.tensor(NORM_SIGNAL_SPEC["steps"]),
+        "norm_action_dim": torch.tensor(NORM_SIGNAL_SPEC["action_dim"]),
+        "norm_tail_steps": torch.tensor(NORM_SIGNAL_SPEC["tail_steps"]),
+        "norm_deep_layers": torch.tensor(NORM_SIGNAL_SPEC["deep_layers"]),
+    }
+    for key, value in expected.items():
+        if key not in record or not torch.equal(record[key].cpu(), value):
+            raise ValueError(f"BC Norm replay producer metadata mismatch: {key}")
+    u, mask = record["norm_raw"], record["action_valid_mask"]
+    if (
+        mask.ndim != 2 or mask.shape[-1] != 14 or u.shape != mask.shape[:1]
+        or not torch.isfinite(mask).all() or not ((mask == 0) | (mask == 1)).all()
+        or not mask.any() or not torch.isfinite(u).all() or (u < 0).any()
+    ):
+        raise ValueError("BC Norm requires finite [H] scores and a nonempty Hx14 mask.")
+
+
+def validate_signal_record(record, signal_spec=None):
+    if signal_spec is not None:
+        expected = "norm_raw" if signal_spec.get("kind") == "norm_residual_t5_l3" else "ugrow_u"
+        if expected not in record:
+            raise ValueError("Replay record signal differs from its frozen specification")
+    if "norm_raw" in record:
+        validate_norm_record(record)
+    else:
+        validate_ugrow_record(record)
+
+
 def masked_fm_loss(
     loss: torch.Tensor, mask: torch.Tensor, action_weights: torch.Tensor | None = None
 ) -> torch.Tensor:
@@ -60,11 +96,11 @@ class SuccessEpisodeCollector:
         self.completed = []
         self.episode_ids = [0] * num_envs
         self.dvac_log_eps = dvac_log_eps
-        if signal_kind not in ("dvac", "ugrow_10_5"):
+        if signal_kind not in ("dvac", "ugrow_10_5", "norm_residual_t5_l3"):
             raise ValueError("Unknown online BC collector signal.")
         self.signal_kind = signal_kind
-        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "dvac_v"
-        self.moments_key = "ugrow_moments" if signal_kind == "ugrow_10_5" else "dvac_moments"
+        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "norm_raw" if signal_kind == "norm_residual_t5_l3" else "dvac_v"
+        self.moments_key = "ugrow_moments" if signal_kind == "ugrow_10_5" else "norm_moments" if signal_kind == "norm_residual_t5_l3" else "dvac_moments"
         self.dvac_moments = torch.zeros(3, dtype=torch.float64)
         self.reset()
 
@@ -118,6 +154,11 @@ class SuccessEpisodeCollector:
                     record["ugrow_action_dim"] = torch.tensor(UGROW_SIGNAL_SPEC["action_dim"])
                     record["ugrow_epsilon"] = torch.tensor(UGROW_SIGNAL_SPEC["epsilon"], dtype=torch.float64)
                     validate_ugrow_record(record)
+                elif self.signal_kind == "norm_residual_t5_l3":
+                    from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
+                    for key in ("version", "steps", "action_dim", "tail_steps", "deep_layers"):
+                        record["norm_signal_version" if key == "version" else "norm_" + key] = torch.tensor(NORM_SIGNAL_SPEC[key])
+                    validate_norm_record(record)
             record["query_idx"] = torch.tensor(len(self.pending[i]))
             record["episode_id"] = torch.tensor([i, self.episode_ids[i]])
             if versions is not None:
@@ -178,7 +219,7 @@ class SuccessReplay:
         if self.signal_spec is not None:
             for episode in episodes:
                 for record in episode:
-                    validate_ugrow_record(record)
+                    validate_signal_record(record, self.signal_spec)
         self.archive_path.mkdir(parents=True, exist_ok=True)
         archive = self.archive_path / f"batch_{self.archive_id:06d}.pt"
         # Exclusive creation prevents an accidental fresh run overwriting data.
@@ -224,10 +265,10 @@ class SuccessReplay:
             raise ValueError("BC replay signal specification mismatch; use a fresh U pool.")
         if self.signal_spec is not None:
             for record in state["records"]:
-                validate_ugrow_record(record)
+                validate_signal_record(record, self.signal_spec)
                 weights = record.get("action_weights")
                 if (
-                    weights is None or weights.shape != record["ugrow_u"].shape
+                    weights is None or weights.shape != record["norm_raw" if self.signal_spec.get("kind") == "norm_residual_t5_l3" else "ugrow_u"].shape
                     or not torch.isfinite(weights).all() or (weights < 0).any()
                     or (weights > 5).any()
                 ):

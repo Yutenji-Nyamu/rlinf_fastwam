@@ -78,16 +78,17 @@ class OnlineBCDvac:
             )
         self.history = deque(maxlen=int(window))
         self.round_id = 0
-        if signal_kind not in ("dvac", "ugrow_10_5"):
+        if signal_kind not in ("dvac", "ugrow_10_5", "norm_residual_t5_l3"):
             raise ValueError("Unknown online BC signal kind.")
         self.signal_kind = signal_kind
-        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "dvac_v"
-        if signal_kind == "ugrow_10_5":
+        self.raw_key = "ugrow_u" if signal_kind == "ugrow_10_5" else "norm_raw" if signal_kind == "norm_residual_t5_l3" else "dvac_v"
+        if signal_kind in ("ugrow_10_5", "norm_residual_t5_l3"):
             from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
 
             if mapping != "bounded_linear" or weight_min != 0 or weight_max != 5:
                 raise ValueError("BC U inherits the frozen bounded [0,5] mapper.")
-            self.settings["signal_spec"] = dict(UGROW_SIGNAL_SPEC)
+            from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
+            self.settings["signal_spec"] = dict(NORM_SIGNAL_SPEC if signal_kind == "norm_residual_t5_l3" else UGROW_SIGNAL_SPEC)
 
     def annotate(self, episodes: list, moments: torch.Tensor) -> dict:
         moments = moments.detach().to(device="cpu", dtype=torch.float64)
@@ -110,10 +111,10 @@ class OnlineBCDvac:
         raw_scores = []
         for episode in episodes:
             for row in episode:
-                if self.signal_kind == "ugrow_10_5":
-                    from rlinf.data.online_bc import validate_ugrow_record
+                if self.signal_kind in ("ugrow_10_5", "norm_residual_t5_l3"):
+                    from rlinf.data.online_bc import validate_signal_record
 
-                    validate_ugrow_record(row)
+                    validate_signal_record(row)
                 v = row[self.raw_key].detach().to(dtype=torch.float64, device="cpu")
                 q = (
                     row["action_valid_mask"]
@@ -135,10 +136,10 @@ class OnlineBCDvac:
                     else:
                         w = 1 + self.settings["alpha"] * (z - (z * q).sum() / q.sum())
                 row["action_weights"] = w.float()
-                calibration_key = "ugrow_calibration_round" if self.signal_kind == "ugrow_10_5" else "dvac_calibration_round"
+                calibration_key = "norm_calibration_round" if self.signal_kind == "norm_residual_t5_l3" else "ugrow_calibration_round" if self.signal_kind == "ugrow_10_5" else "dvac_calibration_round"
                 row[calibration_key] = torch.tensor(self.round_id)
                 weights.append(w[q > 0])
-                if self.signal_kind == "ugrow_10_5":
+                if self.signal_kind in ("ugrow_10_5", "norm_residual_t5_l3"):
                     raw_scores.append(v[q > 0])
         metrics = {
             "dvac/round": float(self.round_id + 1),
@@ -160,7 +161,7 @@ class OnlineBCDvac:
             )
         self.history.append(moments.clone())
         self.round_id += 1
-        if self.signal_kind == "ugrow_10_5":
+        if self.signal_kind in ("ugrow_10_5", "norm_residual_t5_l3"):
             metrics = {key.replace("dvac/", "ugrow/"): value for key, value in metrics.items()}
             metrics["ugrow/success_action_count"] = float(sum(v.numel() for v in raw_scores))
             if raw_scores:
@@ -172,6 +173,8 @@ class OnlineBCDvac:
                     "ugrow/raw_max": raw.max().item(),
                     "ugrow/weight_nonunit_fraction": (torch.cat(weights).sub(1).abs() > 1e-7).double().mean().item(),
                 })
+        if self.signal_kind == "norm_residual_t5_l3":
+            metrics = {key.replace("ugrow/", "norm/"): value for key, value in metrics.items()}
         return metrics
 
     def state_dict(self):

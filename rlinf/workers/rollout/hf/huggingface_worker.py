@@ -515,7 +515,11 @@ class MultiStepRolloutWorker(Worker):
         if self.algorithm_cfg.get("loss_type") == "online_bc" and mode == "train":
             dvac = self.algorithm_cfg.online_bc.get("dvac", {})
             if dvac.get("enabled", False):
-                if dvac.get("signal_kind", "dvac") == "ugrow_10_5":
+                if dvac.get("signal_kind") == "norm_residual_t5_l3":
+                    if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
+                        raise ValueError("BC Norm requires native OpenPI")
+                    kwargs["norm_enabled"] = True
+                elif dvac.get("signal_kind", "dvac") == "ugrow_10_5":
                     if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
                         raise ValueError("Online BC U currently requires native OpenPI.")
                     kwargs["ugrow_enabled"] = True

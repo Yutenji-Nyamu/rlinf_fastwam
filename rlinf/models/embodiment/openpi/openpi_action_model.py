@@ -14,6 +14,8 @@
 
 import math
 import random
+from contextlib import nullcontext
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -917,6 +919,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     compute_values=compute_values,
                     dvac_tail_steps=kwargs.get("dvac_tail_steps", 0),
                     ugrow_enabled=kwargs.get("ugrow_enabled", False),
+                    norm_enabled=kwargs.get("norm_enabled", False),
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -943,6 +946,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         if "dvac_v" in outputs:
             forward_inputs["dvac_v"] = outputs["dvac_v"]
+        if "norm_raw" in outputs:
+            forward_inputs["norm_raw"] = outputs["norm_raw"]
         if "ugrow_u" in outputs:
             forward_inputs["ugrow_u"] = outputs["ugrow_u"]
 
@@ -998,6 +1003,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         compute_values=True,
         dvac_tail_steps=0,
         ugrow_enabled=False,
+        norm_enabled=False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -1017,7 +1023,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
-        if ugrow_enabled and (
+        if ugrow_enabled and norm_enabled:
+            raise ValueError("Select exactly one action signal")
+        if (ugrow_enabled or norm_enabled) and (
             mode != "eval" or self.config.num_steps != 10
             or self.config.action_env_dim != 14 or dvac_tail_steps
         ):
@@ -1033,6 +1041,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode=mode,
             compute_values=compute_values,
             dvac_tail_steps=dvac_tail_steps,
+            **({"collect_norm": True} if norm_enabled else {}),
         )
         if ugrow_enabled:
             from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
@@ -1054,6 +1063,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 outputs["actions"][:, : self.config.action_chunk],
                 comparison["actions"][:, : self.config.action_chunk],
             )
+        if norm_enabled:
+            outputs["norm_raw"] = outputs.pop("action_norm")[:, : self.config.action_chunk]
         return outputs
 
     def _sample_actions_with_prefix_cache(
@@ -1065,6 +1076,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        collect_norm=False,
         dvac_tail_steps=0,
         num_steps_override=None,
     ) -> torch.Tensor:
@@ -1082,6 +1094,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
+        if collect_norm and (mode != "eval" or num_steps != 10):
+            raise ValueError("Norm requires deterministic ODE10")
+        norm_values = []
         x_t = noise
         # add sde sample and traj collect
         chains = []
@@ -1129,16 +1144,23 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
+            capture = (
+                capture_expert_norm(self, self.config.action_horizon)
+                if collect_norm and idx >= num_steps - 5 else nullcontext()
             )
+            with capture as step_norms:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
             if dvac_tail_steps and idx >= num_steps - dvac_tail_steps:
@@ -1186,6 +1208,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             from rlinf.algorithms.online_bc_dvac import endpoint_variance
 
             result["dvac_v"] = endpoint_variance(torch.stack(dvac_endpoints, dim=1))
+        if collect_norm:
+            result["action_norm"] = reduce_expert_norm(norm_values)
         return result
 
     def _get_timesteps(self, denoise_steps, device):

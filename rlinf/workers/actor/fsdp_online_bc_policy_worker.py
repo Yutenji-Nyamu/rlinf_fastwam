@@ -46,12 +46,14 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         if self.demo_weight < 0:
             raise ValueError("online_bc.demo_weight must be non-negative.")
         dvac_cfg = bc.get("dvac", {})
-        self.ugrow_enabled = bool(dvac_cfg.get("enabled", False)) and dvac_cfg.get("signal_kind", "dvac") == "ugrow_10_5"
+        self.norm_enabled = bool(dvac_cfg.get("enabled", False)) and dvac_cfg.get("signal_kind") == "norm_residual_t5_l3"
+        self.ugrow_enabled = bool(dvac_cfg.get("enabled", False)) and dvac_cfg.get("signal_kind", "dvac") in ("ugrow_10_5", "norm_residual_t5_l3")
         signal_spec = None
         if self.ugrow_enabled:
             from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
 
-            signal_spec = dict(UGROW_SIGNAL_SPEC)
+            from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
+            signal_spec = dict(NORM_SIGNAL_SPEC if self.norm_enabled else UGROW_SIGNAL_SPEC)
             if self.demo_weight != 0:
                 raise ValueError("BC U keeps success-only BC.")
         self.replay_buffer = SuccessReplay(
@@ -119,7 +121,7 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
                 self.replay_buffer.add_episodes(packet)
             else:
                 new_episodes.extend(packet["episodes"])
-                moments_key = "ugrow_moments" if self.ugrow_enabled else "dvac_moments"
+                moments_key = "norm_moments" if self.norm_enabled else "ugrow_moments" if self.ugrow_enabled else "dvac_moments"
                 moments += packet[moments_key].cpu()
         if self.dvac is not None:
             moments = moments.to(self.device)
@@ -191,17 +193,17 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         self.replay_buffer.save_checkpoint(target)
         torch.save({"update_step": self.update_step}, target / "learner.pt")
         if self.dvac is not None:
-            torch.save(self.dvac.state_dict(), target / ("ugrow.pt" if getattr(self, "ugrow_enabled", False) else "dvac.pt"))
+            torch.save(self.dvac.state_dict(), target / (("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt") if getattr(self, "ugrow_enabled", False) else "dvac.pt"))
 
     def load_checkpoint(self, load_base_path):
         target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
         ugrow_enabled = getattr(self, "ugrow_enabled", False)
         if ugrow_enabled:
-            if not (target / "ugrow.pt").is_file() or (target / "dvac.pt").exists():
+            if not (target / ("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt")).is_file() or (target / "dvac.pt").exists():
                 raise ValueError("BC U requires a distinct U checkpoint and fresh calibration.")
-            self.dvac.load_state_dict(torch.load(target / "ugrow.pt", weights_only=True))
+            self.dvac.load_state_dict(torch.load(target / ("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt"), weights_only=True))
             self.replay_buffer.load_checkpoint(target)
-        elif (target / "ugrow.pt").exists():
+        elif (target / ("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt")).exists():
             raise ValueError("Cannot load a U checkpoint as clean BC or DV.")
         # Match save_checkpoint: initialization may have offloaded these states.
         if ugrow_enabled and self.is_weight_offloaded:
