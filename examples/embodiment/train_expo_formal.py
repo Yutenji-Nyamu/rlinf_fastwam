@@ -119,7 +119,10 @@ def periodic_evaluation_due(cadence, evaluation, progress):
 
 def validate_inputs(inputs, budget):
     cfg = inputs['formal']
-    expected = dict(batch_size=64, parallel_devices=4, candidate_microbatch=8,
+    devices = cfg.get('parallel_devices')
+    if type(devices) is not int or devices not in (1, 2, 4):
+        raise ValueError('Validated EXPO device count must be 1, 2 or 4')
+    expected = dict(batch_size=64, parallel_devices=devices, candidate_microbatch=8,
                     observation_microbatch=64, fm_microbatch=64, base_lr=2.5e-5,
                     num_envs=1, warmup_episodes=10, physical_actions_per_update_call=40,
                     critic_updates_per_call=20, augmentation=False,
@@ -129,7 +132,7 @@ def validate_inputs(inputs, budget):
             raise ValueError('Approved formal contract differs: ' + name)
     core = ExpoConfig(**inputs['core'])
     for name, value in dict(chunk_length=10, action_dim=14, proprio_dim=14,
-                            n_base=8, n_edit=8, critic_updates=20, parallel_devices=4,
+                            n_base=8, n_edit=8, critic_updates=20, parallel_devices=devices,
                             critic_microbatch_size=64, editor_microbatch_size=64,
                             selection_observation_microbatch_size=64,
                             selection_candidate_microbatch_size=8).items():
@@ -337,7 +340,7 @@ def main():
         seed = cfg['seed']; random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
         torch.set_num_threads(4)
         if torch.cuda.device_count() != cfg['parallel_devices']:
-            raise ValueError('Visible device count differs from validated four-replica contract')
+            raise ValueError('Visible device count differs from validated runtime contract')
         for device in range(torch.cuda.device_count()):
             with torch.cuda.device(device):
                 torch.cuda.manual_seed(seed + 1009 * device)
