@@ -930,7 +930,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         os.replace(temporary, path)
 
     @Worker.timer("run_training")
-    def run_training(self) -> None:
+    def _wmrl_original_run_training(self) -> None:
         """
         Run the training process using the received rollout batch.
         """
@@ -1283,3 +1283,25 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         if len(lr_list) > 1:
             metric_data["critic/lr"] = lr_list[1]
         append_to_dict(metrics, metric_data)
+
+    def run_training(self, *args, **kwargs):
+        import json as _json
+        import time as _time
+        import math as _math
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
+        _start = _time.perf_counter()
+        result = self._wmrl_original_run_training(*args, **kwargs)
+        torch.cuda.synchronize()
+        _proof = {"seconds": _time.perf_counter()-_start,
+                  "micro_batch_size": int(self.cfg.actor.micro_batch_size),
+                  "allocated_peak_bytes": torch.cuda.max_memory_allocated(),
+                  "reserved_peak_bytes": torch.cuda.max_memory_reserved()}
+        if isinstance(result, dict):
+            for _key, _value in result.items():
+                if "grad_norm" in _key:
+                    _norm = float(_value)
+                    assert _math.isfinite(_norm)
+                    _proof[_key] = _norm
+        print("WMRL_ACTOR_MEMORY " + _json.dumps(_proof), flush=True)
+        return result

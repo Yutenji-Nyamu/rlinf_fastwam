@@ -1,0 +1,195 @@
+{
+  "observed_at": "2026-10-06T23:28:05.770825+08:00",
+  "task": "lift_pot",
+  "source_head": "9ce50c602c5e773e87e3306218fdde0cf167e8a8",
+  "layout": {
+    "policy_gpu": 4,
+    "wm_gpu": 5,
+    "policy_batch": 64,
+    "wm_batch": 32,
+    "N": 64,
+    "R": 8,
+    "G": 8,
+    "trajectories_per_formal_round": 512,
+    "actor_micro": 16,
+    "global_batch": 2048,
+    "C": 32,
+    "max_actions": 384,
+    "max_steps": 200,
+    "save_and_native_eval_interval": 10
+  },
+  "checkpoint_resume": {
+    "original_step": 10,
+    "optimizer_preservation_cpu_test": "passed",
+    "unsaved_old_completed_steps": [
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "owner_directory": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-two-gpu-b32-v2",
+  "state": {
+    "owner-identity.json": {
+      "pid": 3070202,
+      "uid": 20001,
+      "start": 727044248,
+      "state": "R",
+      "ppid": 1,
+      "cmdline_sha256": "5e800ebbd3ff68fd2268b3fba9e79acfa177fdddeb125cf9424c39ba58a5df63",
+      "time": "2026-10-06T23:10:23.826913+08:00"
+    },
+    "state.json": {
+      "time": "2026-10-06T23:27:57.592643+08:00",
+      "phase": "startup_smoke",
+      "elapsed_seconds": 710.0180014614016
+    },
+    "services/wm5/service-cpu-ready.json": {
+      "ok": true,
+      "pid": 3070672,
+      "phase": "ready_offloaded",
+      "is_offloaded": true,
+      "fatal_error": null,
+      "requests_completed": 0,
+      "rows_completed": 0,
+      "execution_mode": "batched",
+      "wm_batch_size": 32,
+      "batch_calls_completed": 0,
+      "max_actual_wm_batch": 0,
+      "physical_gpu": 5,
+      "physical_gpu_identity": {
+        "physical_gpu": 5,
+        "gpu_uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "pci": "00000000:97:00.0"
+      }
+    }
+  },
+  "proofs": {
+    "startup_smoke/WMRL_TWO_TO_ONE_RESTORE": {
+      "source": "startup_smoke/driver.log",
+      "data": {
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/runs/lift-pot-v1/formal/lift-pot-v1-formal/checkpoints/global_step_10/actor/local_shard_checkpoint",
+        "source_world_size": 2,
+        "target_world_size": 1,
+        "full_model_keys": 813,
+        "model_strict_loaded": true,
+        "optimizer_preserved": true,
+        "scheduler_preserved": true,
+        "rng_source_rank": 0,
+        "optimizer_parameter_count": 60,
+        "optimizer_steps": [
+          0.0,
+          60.0
+        ]
+      }
+    },
+    "startup_smoke/WMRL_POLICY_BATCH_PROBE": {
+      "source": "startup_smoke/driver.log",
+      "data": [
+        {
+          "batch": 32,
+          "warmup_seconds": 2.2725004851818085,
+          "measured_seconds": [
+            0.718044794164598,
+            0.7332635680213571
+          ],
+          "allocated_peak_bytes": 12365489664,
+          "reserved_peak_bytes": 14856224768,
+          "status": "ok"
+        },
+        {
+          "batch": 64,
+          "warmup_seconds": 1.5090356096625328,
+          "measured_seconds": [
+            1.4420461654663086,
+            1.4049198711290956
+          ],
+          "allocated_peak_bytes": 17207160320,
+          "reserved_peak_bytes": 21997027328,
+          "status": "ok"
+        },
+        {
+          "batch": 128,
+          "warmup_seconds": 3.0450956085696816,
+          "measured_seconds": [
+            2.837462780997157,
+            2.79793244600296
+          ],
+          "allocated_peak_bytes": 26894795264,
+          "reserved_peak_bytes": 36442210304,
+          "status": "ok"
+        }
+      ]
+    },
+    "startup_smoke/WMRL_POLICY_ACTUAL_BATCH": {
+      "source": "startup_smoke/driver.log",
+      "data": 64
+    },
+    "startup_smoke/WMRL_ACTOR_MEMORY": {
+      "source": "startup_smoke/driver.log",
+      "data": {
+        "seconds": 6.207726705819368,
+        "micro_batch_size": 16,
+        "allocated_peak_bytes": 17570873344,
+        "reserved_peak_bytes": 17888706560,
+        "actor/grad_norm": 0.0
+      }
+    }
+  },
+  "wm_batches": {
+    "count": 2,
+    "recent": [
+      {
+        "timestamp_utc": "2026-10-06T15:25:02.318411+00:00",
+        "actual_wm_batch": 32,
+        "outputs_finite": true,
+        "seconds": 10.373492085374892,
+        "world_model_seconds": 10.10711414553225,
+        "reward_seconds": 0.26619315706193447,
+        "wm_peak": {
+          "cuda_max_allocated_bytes": 69211059200,
+          "cuda_max_reserved_bytes": 80245424128
+        },
+        "reward_peak": {
+          "cuda_max_allocated_bytes": 26716188672,
+          "cuda_max_reserved_bytes": 80245424128
+        },
+        "rows_per_second": 3.084785695755755
+      },
+      {
+        "timestamp_utc": "2026-10-06T15:25:19.973015+00:00",
+        "actual_wm_batch": 32,
+        "outputs_finite": true,
+        "seconds": 6.560052909888327,
+        "world_model_seconds": 6.464872604236007,
+        "reward_seconds": 0.09511527046561241,
+        "wm_peak": {
+          "cuda_max_allocated_bytes": 69211059200,
+          "cuda_max_reserved_bytes": 80247521280
+        },
+        "reward_peak": {
+          "cuda_max_allocated_bytes": 26716188672,
+          "cuda_max_reserved_bytes": 80247521280
+        },
+        "rows_per_second": 4.878009436747781
+      }
+    ]
+  },
+  "rlt_gpu6_gpu7": {
+    "gpu6": {
+      "pid": 1721514,
+      "start": 726970407,
+      "alive": true
+    },
+    "gpu7": {
+      "pid": 1801744,
+      "start": 726971165,
+      "alive": true
+    }
+  },
+  "gpu_snapshot_csv": "0, 4, 0\n1, 4, 0\n2, 4, 0\n3, 4, 0\n4, 20236, 0\n5, 1423, 0\n6, 23542, 0\n7, 23542, 0\n",
+  "gpu_context_snapshot": "# gpu         pid   type     fb   ccpm    command \n# Idx           #    C/G     MB     MB    name \n    0          -     -      -      -    -              \n    1          -     -      -      -    -              \n    2          -     -      -      -    -              \n    3          -     -      -      -    -              \n    4    3691090     C  12214      0    ray::EmbodiedFS\n    4    3691095     C   7964      0    ray::MultiStepR\n    5    3070672     C    722      0    python         \n    5    3691100   C+G    691      0    ray::EnvWorker.\n    6    1825196     C   1576      0    ray::RLTACFSDPP\n    6    1825198     C  11150      0    ray::MultiStepR\n    6    1825200   C+G  10757      0    ray::EnvWorker.\n    7    1825961     C   1576      0    ray::RLTACFSDPP\n    7    1825965     C  11150      0    ray::MultiStepR\n    7    1825969   C+G  10757      0    ray::EnvWorker.\n",
+  "prior_attempt": "CPU CLI rejected B32; no GPU borrowing; corrected in immutable service-v2",
+  "ready_for_publication": true
+}

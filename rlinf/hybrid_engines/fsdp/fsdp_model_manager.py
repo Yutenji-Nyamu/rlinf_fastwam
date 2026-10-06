@@ -361,6 +361,11 @@ class FSDPModelManager:
             self.load_optimizer(self.device)
             self.is_optimizer_offloaded = False
 
+        if self._cfg.fsdp_config.get("resume_source_world_size", 1) == 2:
+            from rlinf.utils.wmrl_resume_two_rank import load_two_rank
+            load_two_rank(self.model, self.optimizer, self.lr_scheduler, load_path)
+            return
+
         self._strategy.load_checkpoint(
             self.model,
             self.optimizer,

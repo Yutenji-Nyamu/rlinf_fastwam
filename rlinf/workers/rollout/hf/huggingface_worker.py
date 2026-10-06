@@ -642,6 +642,12 @@ class MultiStepRolloutWorker(Worker):
     def predict(
         self, env_obs: dict[str, Any], mode: Literal["train", "eval"] = "train"
     ) -> tuple[torch.Tensor, dict[str, Any]]:
+        if mode == "train":
+            from rlinf.utils.wmrl_batch_probe import run_policy_probe
+            run_policy_probe(self, env_obs)
+            if not getattr(self, "_wmrl_actual_batch_logged", False):
+                self._wmrl_actual_batch_logged = True
+                print("WMRL_POLICY_ACTUAL_BATCH " + str(env_obs["states"].shape[0]), flush=True)
         kwargs = (
             self._train_sampling_params
             if mode == "train"
