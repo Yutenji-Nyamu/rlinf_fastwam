@@ -6,6 +6,15 @@ CPU owner and dated lightweight evidence. It is not the running model checkout.
 See [the consolidated context](../ugrow_CONTEXT_20261006.md) for the method,
 original recipes, physical GPU ownership and current phase.
 
+Current update (14:24:38 CST, 2026-10-06): GPU5 formal is running under the
+explicit user instruction, with the original 800-round recipe and unchanged
+training HEAD. `gpu5-formal-v3.json` / `current.json` record the actual first
+formal U collection (80 replay rows, update 0), precise old-driver
+release and the unchanged GPU4 owner. The short smoke's successful-weighting
+coverage remains pending; it was not relabeled as passed. `current-1325.json`
+and the closing-capture text below are historical. The v3 owner returns old
+RLT only after the entire U transaction ends and its contexts are released.
+
 BC's first two-round smoke exited zero, collected natural successes and applied
 nonunit U weights in its second round. Its original owner gate looked for a
 nonexistent `update_step` scalar. The corrected gate uses completed same-round
@@ -27,7 +36,7 @@ same cards. No GPU reset, shared Ray restart or operation on GPUs 6/7 is used.
 The lane owner returns RLT once only after its whole U transaction terminates
 and clears its namespace, process identities and compute/graphics contexts.
 
-`current.json` carries a capture timestamp. A missing `formal_first_round` means
+`current.json` carries a capture timestamp. A missing `first_round` means
 that acceptance evidence is still pending at that capture. RLT's first formal
 receipt may prove only teacher precollection while the original 10k replay
 threshold and 15k initialization-update schedule delay online learning.
