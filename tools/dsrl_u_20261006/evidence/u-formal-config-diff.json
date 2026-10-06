@@ -1,0 +1,315 @@
+{
+  "role": "u",
+  "gpu": 7,
+  "phase": "formal",
+  "changes": {
+    "actor.micro_batch_size": {
+      "old": 64,
+      "new": 256
+    },
+    "actor.model.model_path": {
+      "old": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+      "new": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+    },
+    "actor.model.num_action_chunks": {
+      "old": 20,
+      "new": 10
+    },
+    "actor.model.num_steps": {
+      "old": 4,
+      "new": 10
+    },
+    "actor.model.openpi.action_chunk": {
+      "old": 20,
+      "new": 10
+    },
+    "actor.model.openpi.config_name": {
+      "old": "pi0_aloha_robotwin",
+      "new": "pi05_sidney_robotwin"
+    },
+    "actor.model.openpi.dsrl_u_enabled": {
+      "old": null,
+      "new": true
+    },
+    "actor.model.openpi.dsrl_u_spec.action_dim": {
+      "old": null,
+      "new": 14
+    },
+    "actor.model.openpi.dsrl_u_spec.action_horizon": {
+      "old": null,
+      "new": 50
+    },
+    "actor.model.openpi.dsrl_u_spec.action_space": {
+      "old": null,
+      "new": "model"
+    },
+    "actor.model.openpi.dsrl_u_spec.chunk_length": {
+      "old": null,
+      "new": 10
+    },
+    "actor.model.openpi.dsrl_u_spec.compute_dtype": {
+      "old": null,
+      "new": "float32"
+    },
+    "actor.model.openpi.dsrl_u_spec.coordinate_reduction": {
+      "old": null,
+      "new": "mean_population_std_over_rms"
+    },
+    "actor.model.openpi.dsrl_u_spec.epsilon": {
+      "old": null,
+      "new": 1e-08
+    },
+    "actor.model.openpi.dsrl_u_spec.main_steps": {
+      "old": null,
+      "new": 10
+    },
+    "actor.model.openpi.dsrl_u_spec.mask": {
+      "old": null,
+      "new": "submitted_prefix"
+    },
+    "actor.model.openpi.dsrl_u_spec.name": {
+      "old": null,
+      "new": "ugrow_ode10_vs5"
+    },
+    "actor.model.openpi.dsrl_u_spec.noise": {
+      "old": null,
+      "new": "same_full_cast_behavior_latent"
+    },
+    "actor.model.openpi.dsrl_u_spec.schema_version": {
+      "old": null,
+      "new": 1
+    },
+    "actor.model.openpi.dsrl_u_spec.side_steps": {
+      "old": null,
+      "new": 5
+    },
+    "actor.model.openpi.num_steps": {
+      "old": 4,
+      "new": 10
+    },
+    "actor.model.openpi_data.default_prompt": {
+      "old": null,
+      "new": "adjust the bottle"
+    },
+    "actor.model.openpi_data.norm_stats_path": {
+      "old": null,
+      "new": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+    },
+    "actor.model.openpi_data.repo_id": {
+      "old": null,
+      "new": "SidneyXie/pi05_robotwin"
+    },
+    "algorithm.dsrl_u.enabled": {
+      "old": null,
+      "new": true
+    },
+    "algorithm.dsrl_u.log_eps": {
+      "old": null,
+      "new": 1e-12
+    },
+    "algorithm.dsrl_u.minmax_eps": {
+      "old": null,
+      "new": 1e-06
+    },
+    "algorithm.dsrl_u.spec.action_dim": {
+      "old": null,
+      "new": 14
+    },
+    "algorithm.dsrl_u.spec.action_horizon": {
+      "old": null,
+      "new": 50
+    },
+    "algorithm.dsrl_u.spec.action_space": {
+      "old": null,
+      "new": "model"
+    },
+    "algorithm.dsrl_u.spec.chunk_length": {
+      "old": null,
+      "new": 10
+    },
+    "algorithm.dsrl_u.spec.compute_dtype": {
+      "old": null,
+      "new": "float32"
+    },
+    "algorithm.dsrl_u.spec.coordinate_reduction": {
+      "old": null,
+      "new": "mean_population_std_over_rms"
+    },
+    "algorithm.dsrl_u.spec.epsilon": {
+      "old": null,
+      "new": 1e-08
+    },
+    "algorithm.dsrl_u.spec.main_steps": {
+      "old": null,
+      "new": 10
+    },
+    "algorithm.dsrl_u.spec.mask": {
+      "old": null,
+      "new": "submitted_prefix"
+    },
+    "algorithm.dsrl_u.spec.name": {
+      "old": null,
+      "new": "ugrow_ode10_vs5"
+    },
+    "algorithm.dsrl_u.spec.noise": {
+      "old": null,
+      "new": "same_full_cast_behavior_latent"
+    },
+    "algorithm.dsrl_u.spec.schema_version": {
+      "old": null,
+      "new": 1
+    },
+    "algorithm.dsrl_u.spec.side_steps": {
+      "old": null,
+      "new": 5
+    },
+    "algorithm.dsrl_u.temperature": {
+      "old": null,
+      "new": 2.5
+    },
+    "algorithm.replay_buffer.schema_version": {
+      "old": 1,
+      "new": 2
+    },
+    "cluster.component_placement.actor, env, rollout": {
+      "old": "6-7",
+      "new": null
+    },
+    "cluster.component_placement.actor,env,rollout.node_group": {
+      "old": null,
+      "new": "dsrl_gpu7"
+    },
+    "cluster.component_placement.actor,env,rollout.placement": {
+      "old": null,
+      "new": "7"
+    },
+    "cluster.node_groups": {
+      "old": null,
+      "new": [
+        {
+          "label": "dsrl_gpu7",
+          "node_ranks": "0",
+          "env_configs": [
+            {
+              "node_ranks": "0",
+              "python_interpreter_path": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+              "env_vars": [
+                {
+                  "EMBODIED_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/examples/embodiment"
+                },
+                {
+                  "HOME": "/home/chenyiteng"
+                },
+                {
+                  "HYDRA_FULL_ERROR": "1"
+                },
+                {
+                  "JAX_PLATFORMS": "cpu"
+                },
+                {
+                  "LD_PRELOAD": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/libdsrl_u_g7_20261006.so"
+                },
+                {
+                  "MUJOCO_GL": "egl"
+                },
+                {
+                  "OMP_NUM_THREADS": "1"
+                },
+                {
+                  "OPENPI_DATA_HOME": "/home/chenyiteng/.cache/openpi"
+                },
+                {
+                  "PATH": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+                },
+                {
+                  "PYOPENGL_PLATFORM": "egl"
+                },
+                {
+                  "PYTHONDONTWRITEBYTECODE": "1"
+                },
+                {
+                  "PYTHONPATH": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/bootstrap:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+                },
+                {
+                  "PYTHONUNBUFFERED": "1"
+                },
+                {
+                  "RAY_ADDRESS": "172.17.0.1:6389"
+                },
+                {
+                  "REPO_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006"
+                },
+                {
+                  "RLINF_CODE_WORKING_DIR": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006"
+                },
+                {
+                  "RLINF_OPENDW_GPU_SCOPE_MANIFEST": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/scope.json"
+                },
+                {
+                  "ROBOTWIN_ASSETS_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+                },
+                {
+                  "ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+                },
+                {
+                  "ROBOTWIN_PI0_BASE_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+                },
+                {
+                  "ROBOTWIN_PI0_NORM_STATS_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+                },
+                {
+                  "ROBOT_PLATFORM": "ALOHA"
+                },
+                {
+                  "TOKENIZERS_PARALLELISM": "false"
+                },
+                {
+                  "__GL_APPLICATION_PROFILE": "1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "env.eval.seeds_path": {
+      "old": "/data/chenyiteng/projects/rlinf-current-dsrl/RLinf-7d07-dsrl-robotwin/rlinf/envs/robotwin/seeds/eval_seeds.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/rlinf/envs/robotwin/seeds/eval_seeds.json"
+    },
+    "env.eval.task_config.save_path": {
+      "old": "/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/robotwin_data/eval",
+      "new": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-formal-200-mb256-v1/robotwin_data/eval"
+    },
+    "env.eval.video_cfg.video_base_dir": {
+      "old": "/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/video/eval",
+      "new": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-formal-200-mb256-v1/video/eval"
+    },
+    "env.train.seeds_path": {
+      "old": "/data/chenyiteng/projects/rlinf-current-dsrl/RLinf-7d07-dsrl-robotwin/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/rlinf/envs/robotwin/seeds/train_seeds.json"
+    },
+    "env.train.task_config.save_path": {
+      "old": "/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/robotwin_data/train",
+      "new": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-formal-200-mb256-v1/robotwin_data/train"
+    },
+    "env.train.video_cfg.video_base_dir": {
+      "old": "/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/video/train",
+      "new": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-formal-200-mb256-v1/video/train"
+    },
+    "rollout.model.model_path": {
+      "old": "/data/chenyiteng/models/rlinf/RLinf-Pi0-RoboTwin-SFT-adjust_bottle@92684e50",
+      "new": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+    },
+    "runner.logger.experiment_name": {
+      "old": "dsrl-current-formal-200c-v2",
+      "new": "u-formal-200-mb256-v1"
+    },
+    "runner.logger.log_path": {
+      "old": "/data/chenyiteng/results/rlinf-current-dsrl/formal-dsrl-pi0-robotwin-2gpu4env-200c-20260824-v2/run",
+      "new": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-formal-200-mb256-v1"
+    }
+  },
+  "base_sha256": "a7f13ca6bccf346a562a2c815a5ae37869603df87f1f05600f666d3c56b91582",
+  "meaning": "Historical collection U weights the whole actor SAC loss; TD/alpha/sampling unchanged.",
+  "resolved_sha256": "d2b99c01d724b53fd5479cf95d28db4e0dd6e96fc38abd036fcbc0dc7c15d24e"
+}

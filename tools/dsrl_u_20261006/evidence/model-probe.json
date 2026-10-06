@@ -1,0 +1,168 @@
+{
+  "status": "PASS",
+  "input_source": "synthetic_interface_probe",
+  "config_sha256": "d1e65485ddb9973c22f76ae82c2566dbfca73b173aff7550bcd6d2a0705556ad",
+  "gpu": {
+    "visible": "6",
+    "name": "NVIDIA H100 80GB HBM3"
+  },
+  "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+  "load_and_freeze": {
+    "trainable_by_module": {
+      "dsrl_action_noise_net": 58560,
+      "actor_image_encoder": 2125984,
+      "actor_state_encoder": 1088,
+      "critic_image_encoder": 2125984,
+      "critic_state_encoder": 1088,
+      "q_head": 545290
+    },
+    "frozen_parameter_count": 3616757520,
+    "missing_sac_key_count": 189,
+    "missing_vla_keys": [],
+    "unexpected_keys": [],
+    "pi05": true,
+    "discrete_state_input": true,
+    "action_projection_dtype": "torch.float32"
+  },
+  "producer": {
+    "phases": [
+      {
+        "phase": 0,
+        "main_action_exact": true,
+        "latent_and_logprob_exact": true,
+        "cpu_cuda_rng_exact": true,
+        "same_full_noise": true,
+        "same_prefix_cache": true,
+        "noise_shape": [
+          1,
+          50,
+          32
+        ],
+        "u_shape": [
+          1,
+          10
+        ],
+        "u_min": 0.23035793006420135,
+        "u_mean": 0.23796167969703674,
+        "u_max": 0.25227418541908264,
+        "numpy_max_abs_error": 2.7832976423614042e-08
+      },
+      {
+        "phase": 1,
+        "main_action_exact": true,
+        "latent_and_logprob_exact": true,
+        "cpu_cuda_rng_exact": true,
+        "same_full_noise": true,
+        "same_prefix_cache": true,
+        "noise_shape": [
+          1,
+          50,
+          32
+        ],
+        "u_shape": [
+          1,
+          10
+        ],
+        "u_min": 0.307518869638443,
+        "u_mean": 0.32236647605895996,
+        "u_max": 0.36203426122665405,
+        "numpy_max_abs_error": 4.852693524792784e-08
+      }
+    ],
+    "eval_does_not_compute_u": true
+  },
+  "microbatch_benchmark": {
+    "global_batch_size": 256,
+    "train_env_total_unchanged": 4,
+    "eval_env_total_unchanged": 4,
+    "drq_enabled": true,
+    "actual_worker_actor_loss": true,
+    "encoder_features_cached": false,
+    "optimizer_steps": 0,
+    "timing_scope": "compact H2D, configured DRQ curr/next, actual actor+Q forward/backward",
+    "excluded": [
+      "critic TD pass",
+      "alpha update",
+      "optimizer states/step",
+      "target model",
+      "FSDP",
+      "environment",
+      "VLA generation"
+    ],
+    "gradient_comparison": "same augmented inputs and per-row Normal epsilon; native BF16 accumulation may differ",
+    "records": [
+      {
+        "micro_batch_size": 64,
+        "measured_trials": [
+          {
+            "seconds": 0.048164629843086004,
+            "peak_allocated_bytes": 7623677440,
+            "incremental_peak_bytes": 60733440,
+            "mean_actor_loss": -21.21982192993164,
+            "gradient_l2": 9.73376113991434
+          },
+          {
+            "seconds": 0.04080800199881196,
+            "peak_allocated_bytes": 7623677440,
+            "incremental_peak_bytes": 60733440,
+            "mean_actor_loss": -21.21982192993164,
+            "gradient_l2": 9.73376113991434
+          }
+        ],
+        "mean_seconds": 0.04448631592094898,
+        "controlled_actor_loss": -21.14528751373291,
+        "controlled_gradient_relative_l2_vs_mb256": 0.0030555534754476373,
+        "controlled_gradient_max_abs_vs_mb256": 0.00390625
+      },
+      {
+        "micro_batch_size": 128,
+        "measured_trials": [
+          {
+            "seconds": 0.02386564901098609,
+            "peak_allocated_bytes": 7666793984,
+            "incremental_peak_bytes": 103849984,
+            "mean_actor_loss": -21.441978454589844,
+            "gradient_l2": 9.703292732088338
+          },
+          {
+            "seconds": 0.027280266862362623,
+            "peak_allocated_bytes": 7666793984,
+            "incremental_peak_bytes": 103849984,
+            "mean_actor_loss": -21.441978454589844,
+            "gradient_l2": 9.703292732088338
+          }
+        ],
+        "mean_seconds": 0.025572957936674356,
+        "controlled_actor_loss": -21.14528751373291,
+        "controlled_gradient_relative_l2_vs_mb256": 0.0028273468024545756,
+        "controlled_gradient_max_abs_vs_mb256": 0.00390625
+      },
+      {
+        "micro_batch_size": 256,
+        "measured_trials": [
+          {
+            "seconds": 0.012206640094518661,
+            "peak_allocated_bytes": 7744912896,
+            "incremental_peak_bytes": 181968896,
+            "mean_actor_loss": -21.222034454345703,
+            "gradient_l2": 10.07722074889843
+          },
+          {
+            "seconds": 0.012573448941111565,
+            "peak_allocated_bytes": 7744912896,
+            "incremental_peak_bytes": 181968896,
+            "mean_actor_loss": -21.222034454345703,
+            "gradient_l2": 10.07722074889843
+          }
+        ],
+        "mean_seconds": 0.012390044517815113,
+        "controlled_actor_loss": -21.145286560058594,
+        "controlled_gradient_relative_l2_vs_mb256": 0.0,
+        "controlled_gradient_max_abs_vs_mb256": 0.0
+      }
+    ]
+  },
+  "peak_allocated_bytes": 7744896512,
+  "peak_reserved_bytes": 7914651648,
+  "elapsed_seconds": 54.99697700282559
+}

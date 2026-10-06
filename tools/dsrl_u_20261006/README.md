@@ -14,8 +14,8 @@ The inspected server source was clean at
 - Original method parameters: global batch256, replay25000, warmup500, UTD20,
   gamma.999, ten mean-aggregated Q heads, unchanged SAC critic/alpha/target and
   uniform replay. Formal budget200, evaluation13, save65 plus final save.
-- Microbatch64 initially; 128/256 can be measured on both roles without changing
-  global batch, environment totals, UTD or the formal budget.
+- Microbatch256 selected on both roles after the 64/128/256 probe and successful
+  fresh smoke. Global batch, environment totals, UTD and formal budget are unchanged.
 
 `make_config.py` only writes fresh run input files, never starts jobs. It copies
 `provenance/dsrl_pi0_formal_200.yaml` (SHA256
@@ -49,8 +49,32 @@ checkpoints reject incompatible signal definitions or weighting contracts.
 
 At the p009 checkpoint, four CPU test modules passed 30 tests on the server:
 `test_dsrl_ugrow`, `test_dsrl_u_actor`, `test_dsrl_transition_replay`, and
-`test_dsrl_target_shadow_resume`. Real GPU sampling, single-card memory peaks,
-fresh/resume smoke and formal training were not yet validated at that checkpoint.
+`test_dsrl_target_shadow_resume`.
+
+The GPU model probe passed for Gaussian warmup and learned-latent sampling:
+the additional ODE5 solve preserved the normal action, sampled latent, log-probability
+and CPU/CUDA RNG state; the per-action U matched an independent NumPy calculation.
+Evaluation did not calculate U. The microbatch timing probe favored 256, but its
+memory/timing numbers exclude full environment/FSDP training and are not formal-run
+performance estimates.
+
+At p036, Clean/GPU6 and U/GPU7 each completed fresh two-round smoke with exit zero,
+real SAC updates, checkpoint step2, and verified namespace/process/GPU cleanup.
+U replay and actor weights were nonconstant. At p041, both checkpoints passed the
+structural CPU audit: replay/RNG, optimizer/alpha and all 156 target-shadow tensors
+were checked. The initial audit rejection was caused by FSDP name prefixes in the
+auditor; name normalization yielded exact target-shadow round trips. This structural
+audit is not a native completion marker or proof of a resumed training driver.
+
+The verified implementation was published as
+`95c193f6ebf51a9192788e307663a8c85577bec2`. At p052, both new-process resume
+smokes completed CP2 to CP3 with exit zero and full cleanup. Acceptance evidence
+binds the input checkpoint, explicit startup restore, optimizer updates320 to480,
+replay16 to24, and final checkpoint audits (p053). The formal200/MB256 configs
+are frozen; formal launch status is recorded separately.
+Formal jobs must start fresh with warmup500, not inherit smoke's warmup1 or its
+20-action collection horizon. A request must bind the final published source and
+its own frozen resolved config before submission.
 
 The final provenance manifest must bind the modified source commit, resolved
 config, model/conversion manifest, model weight hash, normalization hash and both

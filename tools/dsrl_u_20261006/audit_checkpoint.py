@@ -87,6 +87,24 @@ def q_parameter(name):
                for part in name.split("."))
 
 
+def canonical_shadow(shadow):
+    """Match FSDP named_parameters names to canonical saved state_dict names.
+
+    The trainer intentionally saves its live named_parameters keys, while
+    get_model_state_dict removes FSDP wrapper path components. Strip only that
+    exact wrapper token, and reject collisions instead of accepting a subset.
+    """
+    canonical = {}
+    renamed = 0
+    for name, value in shadow.items():
+        key = ".".join(part for part in name.split(".")
+                       if part != "_fsdp_wrapped_module")
+        require(key not in canonical, f"Target shadow canonical-name collision: {key}")
+        canonical[key] = value
+        renamed += key != name
+    return canonical, renamed
+
+
 def audit_alpha(alpha_dir):
     """Load only the small tensor entries of the actual DCP alpha checkpoint."""
     from torch.distributed.checkpoint import FileSystemReader, load
@@ -300,8 +318,12 @@ def audit(checkpoint, role, expected_runner_step=None):
     require(online_phase == target_phase == phase, "Online/target/sidecar phase mismatch")
     shadow = trainer.get("target_shadow_f32")
     require(isinstance(shadow, dict) and bool(shadow), "FP32 target shadow missing")
+    shadow, renamed_shadow_names = canonical_shadow(shadow)
     expected_q = {name for name in target if q_parameter(name)}
-    require(set(shadow) == expected_q, "Target shadow names differ from target-Q")
+    require(set(shadow) == expected_q,
+            "Target shadow names differ from target-Q after FSDP normalization: "
+            f"missing={sorted(expected_q - set(shadow))[:8]}, "
+            f"extra={sorted(set(shadow) - expected_q)[:8]}")
     for name, value in shadow.items():
         require(value.dtype == torch.float32 and value.shape == target[name].shape,
                 f"Target shadow dtype/shape mismatch: {name}")
@@ -323,6 +345,7 @@ def audit(checkpoint, role, expected_runner_step=None):
         "files_stable_during_audit": True,
         "online_sac_finite_tensors": online_finite, "optimizer_finite_tensors": optimizer_finite,
         "optimizer_steps": optimizer_steps, "target_shadow_tensors": len(shadow),
+        "target_shadow_fsdp_names_normalized": renamed_shadow_names,
         "target_shadow_roundtrip_exact": True, "alpha": alpha, "replay": replay,
         "limits": ["No native DSRL completion marker or saved_runner_step in current source",
                    "Frozen VLA weights are not scanned for finiteness; bind the source manifest",
