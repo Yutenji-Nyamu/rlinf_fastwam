@@ -26,3 +26,15 @@ CUDA_VISIBLE_DEVICES='' /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/py
 已完成服务器CPU验证：37项loss/信号/回放/合同测试、1项生命周期测试、4套配置/绑定边界检查，Ruff检查通过。正式配置diff只含Q方法字段、信号生产开关、输出路径和SZ2逐卡放置。启动前源码SHA、权重SHA和配置pins将写入每组`plan.json`。
 
 本地操作与轻量回执：`local_scripts/rlt_q_signals_20261006/{ops,evidence}`。不上传模型、回放或完整原始日志。
+
+2026-10-07 00:41：源码`b1d2d8d553fa057435e0169846ec99c3a2c48c28`已推并核远端。原Stage1 CP2000共10018009814字节，源读取及SZ2落盘回读SHA均为`f2462366fd7822afde29fe245bdfaaadb37fc6cac39fef81b1e36d098bb2cad1`。实际teacher checkpoint与norm-stats SHA另进入新Q合同，历史resume元数据保留；历史`stage1_manifest_path`是遗留标识，不参与实际模型加载。
+
+CPU协调器owner3008973/start410890278接替原owner18670，EXPO driver3503441/start410425820保持。两组smoke owner3110508/3110509、driver3110602/3110603已启动；00:45模型加载完成，6/7分别出现本组计算及C+G环境进程，0–3无上下文，尚无首次更新验收。
+
+00:53两组smoke已通过，CP2均saved_runner_step=2/update_step=4，回放160条；两个namespace、精确进程树、计算/图形上下文均释放。首轮Q-U/Q-Norm权重std分别0.10437/0.09972，actor梯度8.7477/9.0887，weighted-Q 0.00639/-0.00835；BC的DVCA开关为0。smoke成功率0/4只用于接线验收，不评价方法收益。
+
+独立正式启动：Q-U owner3110508/start410893910、driver50987/start410961868；Q-Norm owner3110509/start410893914、driver50956/start410961692。正式从原Stage1和空回放开始，smoke状态未续入；首轮实采核验待补。
+
+01:00正式首轮已核：每组真实采集80条chunk，U/Norm均值0.014518/487.388；预采集update0符合原10k门槛。两个owner持续刷新，6/7仅本组C/C+G，0–3无上下文；EXPO原driver心跳12.6秒，仍4/5。数据盘余6.1TiB、root余32GiB。CP2在CPU实际重载160条回放，抽32条后信号[32,10]、Q权重非均匀，trainer/resume合同SHA匹配；未作GPU断点续训或沿用smoke状态。
+
+启动回执、解析后配置和差异、smoke指标/释放、CP回读及正式首轮记录保存在发布副本`docs/rlt_q_signals/evidence/`。正式运行源码保持`b1d2d8d55`；后续文档提交不改变该运行checkout。
