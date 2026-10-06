@@ -52,8 +52,8 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
 
             signal_spec = dict(UGROW_SIGNAL_SPEC)
-            if self.demo_weight != 0 or bc.get("max_success_chunks") is not None:
-                raise ValueError("BC U keeps success-only BC and length filtering off.")
+            if self.demo_weight != 0:
+                raise ValueError("BC U keeps success-only BC.")
         self.replay_buffer = SuccessReplay(
             seed=self.cfg.actor.seed + self._rank,
             archive_path=str(Path(bc.data_path) / f"rank_{self._rank}"),
