@@ -12,7 +12,7 @@
 |---|---|---|
 | 历史来源 | Clean01d770db，旧DV ad3da329 | π0.5 N4 pair460008008aea310f83a0b19008c7c105a0a19980 |
 | 任务/模型 | move_pillbottle_pad / Sidney π0.5 | adjust_bottle / Sidney π0.5 |
-| 预算 | 100轮，N4/U5，global1024/micro32 | 800轮，N4/U5，B512/micro256；回放至少10k，再做15k初始化更新 |
+| 预算 | 400轮（100后接续），N4/U5，global1024/micro32 | 2000轮（800后接续），N4/U5，B512/micro256；回放至少10k，再做15k初始化更新 |
 | 动作 | ODE10/H50/D14，200动作上限 | 教师ODE10/H50，学生C10/D14，200动作上限 |
 | 信号映射 | 过去5轮log统计，旧bounded_linear[0,5]，首轮1、入成功池冻结，长度过滤off | 成功query上两层exp_mean，τ2.5/dropout0.2/双α按全局R500退火；失败权重1 |
 | 更新位置 | 逐H FM误差 | reference BC逐H MSE；原Q/critic保持 |
@@ -27,22 +27,22 @@
 
 借卡前核完整CP、UID/PID/start/boot、namespace、配置、GPU UUID。原RLT是N8候补，恢复时保留其原任务/方法/累计3000轮，与新N4实验区分。smoke至正式之间属于同一租用期；清理完成且本事务明确终止后才恢复原卡RLT。只更新4/5对应watch条目，并使用现有锁。
 
-## 当前执行 · 14:24:38 北京时间
+## 当前执行 · 2026-10-06 15:05 北京时间
 
-用户明确要求5卡直接正式。14:19:49启动新事务`/data/chenyiteng/deployment-20261006/ugrow-rlt-g5-formal-v3/rlt`，owner2665562/start415430853，driver2665696/start415431106；namespace/run `ugrow-rlt-g5-formal-1006-v3`，结果根`/data/chenyiteng/results/rlinf-rlt/`。沿原任务Stage1新开Stage2，800轮、N4/U5、B512/micro256、10k预采集/15k初始化更新、每25轮固定20条评估/保存均保持；实配仅6处输出路径/实验名变化。
+用户将累计预算调整为BC **400轮**、RLT **2000轮**，并明确批准仅本次BC保留最近2个完整断点、接续锚点和最终400步，评估日志全部保留。训练N4/U5、batch、任务、种子、固定评估/保存频率、RLT 10k/15k预热与U权重R500退火均保持。
 
-正式首轮采集与U回执已验，当前回放80条、update0；这是原预热阶段，尚未证实成功样本的非均匀权重更新或训练收益。既有4轮teacher smoke为exit0、完整CP4/update8/回放320、0/16成功；本次按用户新指令直接正式，不把旧成功覆盖缺口改写为smoke通过，不再追加smoke。训练源码仍为RLT `bfbc9c889bfe687dc24de7c3dc1d66138d3010df`，只在独立runtime_v3中加入带授权记录的直接正式入口。
+当前原训练不打断、不修改运行中的源码或实配。已准备并启用原终点完整CP自动接续：BC在CP100后继续至累计400，RLT在CP800后继续至累计2000；不是另加400/2000轮。接续同时保存/恢复模型、优化器、回放、学习计数，以及BC U校准状态/RLT U恢复合同。runner.max_steps和max_epochs均设为目标，避免RLT原1000上限截断。
 
-旧5卡RLT driver2516932/start415042475已精确停止，其cleanup/namespace/进程/C与G清空后才启动U；完整CP100/回放15557保留，CP100之后未保存的预采集在日后恢复时重做。新U事务结束或异常并验证释放后，原place_fan combo N8/3000由同owner单次接回`rlt-g5-after-ugrow-1006-v3`。不并行抢占，不重放旧归还入口。
+权威预算入口：`/data/chenyiteng/deployment-20261006/ugrow-budget-400-2000-v1/{bc,rlt}`。BC等待/保留owner2765168/start415701241，RLT等待owner2765178/start415701245；15:05均存活、armed、心跳正常，原RLT归还operation.lock分别由本等待owner排他持有。原BC owner2485016/driver2485173与原RLT-U owner2665562/driver2665696仍在v2/v3正常训练，最近记录21轮/24轮，计算与渲染仍各在4/5；6/7不动。
 
-4卡BC＋U仍由v2 owner2485016/start414961836、driver2485173/start414962252运行，当前已记录14/100轮，当前轮成功3/4；该进程未切换。两条源码与pins现场核同、工作树干净；计算/图形均在本卡4/5，无本任务跨卡上下文。磁盘余量/home 297.3GiB、/data 443.4GiB。6/7另窗保持。
+当前段必须真实exit0、原owner终态COMPLETE、C/G与namespace完全释放、目标CP完整后才接续。当前段失败则不接续，沿原协议归还候补RLT。旧owner终点会在已被接续owner持有的非阻塞lease锁处退出；其可能出现的BlockingIOError属于已登记的CPU归还移交，训练exit0/完整CP和新的handoff.json应独立检查。不要看到旧owner退出就重放归还。接续owner完成/失败清理后才恢复旧RLT，保持U全段优先。
 
-原127项服务器CPU检查（另3子测试）和真实smoke证据沿用；本次通过实际身份/配置diff/清理/正式首轮验证，不更改训练实现、不重复扩展测试。RLT owner沿原7天上限，输出盘低于40GiB、异卡绑定或进程失败停止，清理后才接候补RLT。旧全文本地归档`archive/CONTEXT_20261006_1325.md`，发布副本为`docs/ugrow_execution_20261006/CONTEXT_1325.md`。
+接续输出：BC `/home/chenyiteng/results/rlinf-shenzhen/online-bc/ugrow-bc-g4-400-1006-v1`；RLT `/data/chenyiteng/results/rlinf-rlt/ugrow-rlt-g5-2000-1006-v1`。各自namespace为目录名。候补旧RLT仍沿原lease：4卡v2、5卡v3，原完整CP100保留。
 
-发布路由：[独立证据分支](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/ugrow-g45-evidence-20261006)；`tools/ugrow_ops_v3/`是本次独立入口，`docs/ugrow_execution_20261006/gpu5-formal-v3.json`含身份、实配差异、原RLT释放与正式首轮实证。训练源码BC `1c4b3810a1cddcd1ae38312126448c80348f5686`、RLT `bfbc9c889bfe687dc24de7c3dc1d66138d3010df`保持已推版本；发布不改运行HEAD。
+BC每个完整CP实测20,342,681,138字节，约18.95GiB；全留40个会超盘。保留器只在原/接续这两个BC路径内操作：以同步保存后写出的轮次指标确认完成；保留最近两个完整CP、CP100接续锚点及CP400；检查pin、UID、符号链接、打开文件引用后，先写精确文件清单再删除旧CP。未完成CP和所有日志/成功数据不动。当前已启用但尚无待删旧CP，后续看prune-step-N.json。原训练盘低于40GiB保护继续有效。
 
-## 前序记录
+6项新服务器CPU检查通过：累计预算/恢复路径、成功与失败终态、lease排他、最近2个与未完成保护、接续锚点/日志保护、pin依赖拒删。配置实际diff仅预算、resume、输出路径；BC额外success_data路径是输出项，首次准备白名单漏列时已安全停止并修正，未改变训练方法。尚未到原终点，未来接续不是已完成实跑的结论。
 
-v1两条smoke训练均正常退出；BC第二轮真实非1权重，原owner误用不存在的update_step阻断。v2改用BC真实loss/grad/lr/replay并复用原smoke，13:01接100轮正式；RLT固定4轮teacher补验仍0成功，于13:15先归还原RLT，13:21恢复首轮回放15557→15710已验。14:19按用户新指令启动本次5卡正式。完整历史和原始证据保留，禁止把历史路由当当前入口。
+耗时估计：BC总约38.3小时（35–42），15:05起余约36.2小时（33–40）；RLT总约57.6小时（52–68），余约56.8小时（51–67）。BC依据本次普通轮274秒+每5轮350秒评估，以及历史94轮326.95秒/轮；RLT依据历史同π0.5 N4成功配对127轮预采集、18轮初始化、655轮online，将本次采集99.91秒/历史82.26秒的1.215倍用于采集/评估成本，再计原训练/保存。非置信区间；本次RLT尚未开始更新，在线耗时仍是历史迁移估计。推算中心完成时间：BC10月8日03:20，RLT10月8日23:55。
 
-本轮工作文件`local_scripts/ugrow_bc_rlt_20261006/`。其他窗口请保持GPU4的v2 BC、GPU5的v3 RLT-BC＋U所有权，读取各自status/terminal/return回执，勿重放owner。
+发布仍为`codex/ugrow-g45-evidence-20261006`，本次独立ops在`tools/ugrow_budget_400_2000/`；预算、armed与ETA轻量证据在`docs/ugrow_execution_20261006/budget-*.json`。训练源码BC1c4b3810、RLTbfbc9c88及原pins不动。前序全文在本地`archive/CONTEXT_20261006_1424.md`，发布副本`docs/ugrow_execution_20261006/CONTEXT_1424.md`。

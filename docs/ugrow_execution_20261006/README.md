@@ -1,5 +1,13 @@
 # U signal integration: exact source and live acceptance evidence
 
+Budget update (15:05 CST): total BC400 / RLT2000 is armed as a checkpoint
+continuation from original endpoints 100 / 800. Current trainers stay live.
+Read `budget-armed.json`, `budget-forecast.json` and the consolidated context;
+`current.json` remains the earlier GPU5 launch snapshot. The explicit user-approved
+BC retention keeps latest two complete CPs plus resume CP100 and final CP400,
+preserving all logs. Six CPU lifecycle/retention checks passed. Continuation
+at the future endpoint has not executed yet.
+
 The two training sources remain frozen at BC `1c4b3810a1cddcd1ae38312126448c80348f5686`
 and RLT `bfbc9c889bfe687dc24de7c3dc1d66138d3010df`. This branch adds the corrected
 CPU owner and dated lightweight evidence. It is not the running model checkout.
