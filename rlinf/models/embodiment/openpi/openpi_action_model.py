@@ -28,6 +28,11 @@ from openpi.models.pi0_config import Pi0Config
 from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
+from rlinf.algorithms.dsrl_ugrow import (
+    make_signal_spec,
+    relative_disagreement,
+    validate_signal_spec,
+)
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -134,6 +139,8 @@ class OpenPi0Config(Pi0Config):
     )  # Hidden dims for Q-head and GaussianPolicy
     dsrl_gaussian_warmup: bool = False
     dsrl_eval_deterministic: bool = True
+    dsrl_u_enabled: bool = False
+    dsrl_u_spec: dict[str, Any] | None = None
 
     # ===== NFT-specific parameters =====
     is_nft: bool = False
@@ -206,6 +213,23 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         self.sample_actions = sample_actions_func
         self.logger = get_logger()
         self.global_step = 0
+        self.dsrl_u_spec = None
+        if not isinstance(self.config.dsrl_u_enabled, bool):
+            raise ValueError("dsrl_u_enabled must be a boolean")
+        if self.config.dsrl_u_enabled:
+            if not self.config.use_dsrl:
+                raise ValueError("DSRL U requires use_dsrl=True")
+            self.dsrl_u_spec = validate_signal_spec(self.config.dsrl_u_spec)
+            expected_u_spec = make_signal_spec(
+                main_steps=self.config.num_steps,
+                action_dim=self.config.action_env_dim,
+                action_horizon=self.config.action_horizon,
+                chunk_length=self.config.action_chunk,
+            )
+            if self.dsrl_u_spec != expected_u_spec:
+                raise ValueError("DSRL U spec does not match the active model config")
+            if self.config.dsrl_action_noise_dim != self.config.action_dim:
+                raise ValueError("DSRL U requires the complete model-space latent")
         # assert
         assert not (self.config.double_layer and self.config.joint_logprob), (
             "double_layer and joint_logprob can not be set at the same time"
@@ -933,6 +957,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 noise=noise_actions,
                 mode="eval",
                 compute_values=compute_values,
+                collect_dsrl_u=self.config.dsrl_u_enabled and mode == "train",
             )
 
             # Step 3: Extract actual actions for environment interaction
@@ -984,6 +1009,22 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         }
         if forward_action is not None:
             forward_inputs["action"] = forward_action
+        if "dsrl_u" in outputs:
+            forward_inputs["dsrl_u"] = outputs["dsrl_u"]
+            forward_inputs["dsrl_u_valid"] = outputs["dsrl_u_valid"]
+            metadata_shape = (outputs["dsrl_u"].shape[0], 1)
+            forward_inputs["dsrl_u_policy_step"] = torch.full(
+                metadata_shape,
+                int(self.global_step),
+                dtype=torch.int64,
+                device=outputs["dsrl_u"].device,
+            )
+            forward_inputs["dsrl_u_phase"] = (
+                self.dsrl_policy_phase.detach()
+                .to(device=outputs["dsrl_u"].device, dtype=torch.int64)
+                .expand(metadata_shape)
+                .clone()
+            )
 
         if self.config.is_nft:
             nft_outputs = {
@@ -1035,8 +1076,19 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        collect_dsrl_u: bool = False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
+        if collect_dsrl_u and (
+            mode != "eval"
+            or not self.config.use_dsrl
+            or not self.config.dsrl_u_enabled
+            or self.dsrl_u_spec is None
+            or noise is None
+        ):
+            raise ValueError(
+                "DSRL U requires configured ODE inference with behavior noise"
+            )
         bsize = observation.state.shape[0]
         device = observation.state.device
         if noise is None:
@@ -1045,6 +1097,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
+        if collect_dsrl_u:
+            expected_shape = (bsize, self.config.action_horizon, self.config.action_dim)
+            if tuple(noise.shape) != expected_shape or noise.device != device:
+                raise ValueError(
+                    "DSRL U requires full model-space noise on the state device"
+                )
+            # Capture the actual cast noise before either complete solve.
+            initial_noise = noise.detach().clone()
 
         images, img_masks, lang_tokens, lang_masks, state = (
             self._preprocess_observation(observation, train=False)
@@ -1054,7 +1114,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
-        return self._sample_actions_with_prefix_cache(
+        result = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
             prefix_pad_masks,
@@ -1063,6 +1123,33 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode=mode,
             compute_values=compute_values,
         )
+        if collect_dsrl_u:
+            rng_devices = (
+                [initial_noise.device.index]
+                if initial_noise.device.type == "cuda"
+                else []
+            )
+            # Even native ODE samples zero-weight noise each round. Restore CPU
+            # and this GPU's RNG so the extra solve cannot change later rollouts.
+            with torch.random.fork_rng(devices=rng_devices, enabled=True):
+                side = self._sample_actions_with_prefix_cache(
+                    state,
+                    prefix_output,
+                    prefix_pad_masks,
+                    past_key_values,
+                    noise=initial_noise.clone(),
+                    mode="eval",
+                    compute_values=False,
+                    num_steps=self.dsrl_u_spec["side_steps"],
+                )
+            chunk_length = self.dsrl_u_spec["chunk_length"]
+            action_dim = self.dsrl_u_spec["action_dim"]
+            result["dsrl_u"], result["dsrl_u_valid"] = relative_disagreement(
+                result["actions"][:, :chunk_length, :action_dim],
+                side["actions"][:, :chunk_length, :action_dim],
+                epsilon=self.dsrl_u_spec["epsilon"],
+            )
+        return result
 
     def _sample_actions_with_prefix_cache(
         self,
@@ -1073,10 +1160,19 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        num_steps: int | None = None,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        if num_steps is None:
+            num_steps = self.config.num_steps
+        elif (
+            mode != "eval"
+            or isinstance(num_steps, bool)
+            or not isinstance(num_steps, int)
+            or num_steps < 1
+        ):
+            raise ValueError("num_steps override requires eval and a positive integer")
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)

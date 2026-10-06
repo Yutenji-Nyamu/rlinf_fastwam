@@ -85,8 +85,7 @@ def test_target_shadow_resume_matches_continuous_ema(tmp_path):
     assert resumed._local_new_transitions == 3
     assert resumed._get_dsrl_policy_phase() == 1
     assert all(
-        resumed._is_dsrl_target_q_parameter(name)
-        for name in resumed._target_shadow_f32
+        resumed._is_dsrl_target_q_parameter(name) for name in resumed._target_shadow_f32
     )
 
     frozen_before = copy.deepcopy(resumed.target_model.frozen_base.state_dict())
@@ -98,7 +97,9 @@ def test_target_shadow_resume_matches_continuous_ema(tmp_path):
     for name, expected in continuous.target_model.state_dict().items():
         assert torch.equal(resumed.target_model.state_dict()[name], expected)
     for name, expected in frozen_before.items():
-        assert torch.equal(resumed.target_model.frozen_base.state_dict()[name], expected)
+        assert torch.equal(
+            resumed.target_model.frozen_base.state_dict()[name], expected
+        )
 
 
 def test_dsrl_actor_and_critic_clips_exclude_incidental_grads():
@@ -134,3 +135,21 @@ def test_trainer_state_is_strict_and_phase_bound(tmp_path):
     resumed.target_model.dsrl_policy_phase.fill_(0)
     with pytest.raises(ValueError, match="phase mismatch"):
         resumed._load_dsrl_trainer_state(str(tmp_path))
+
+
+def test_trainer_resume_binds_u_mapping_and_rejects_legacy_mixing(tmp_path):
+    worker = _make_worker()
+    worker.use_dsrl_u = True
+    worker.dsrl_u_contract = {"signal_spec": {"name": "test-u"}, "temperature": 2.5}
+    worker._save_dsrl_trainer_state(str(tmp_path))
+    resumed = _make_worker()
+    resumed.target_model.load_state_dict(worker.target_model.state_dict())
+    with pytest.raises(ValueError, match="dsrl_u_contract"):
+        resumed._load_dsrl_trainer_state(str(tmp_path))
+    resumed.use_dsrl_u = True
+    resumed.dsrl_u_contract = copy.deepcopy(worker.dsrl_u_contract)
+    resumed.dsrl_u_contract["temperature"] = 1.0
+    with pytest.raises(ValueError, match="dsrl_u_contract"):
+        resumed._load_dsrl_trainer_state(str(tmp_path))
+    resumed.dsrl_u_contract = copy.deepcopy(worker.dsrl_u_contract)
+    resumed._load_dsrl_trainer_state(str(tmp_path))

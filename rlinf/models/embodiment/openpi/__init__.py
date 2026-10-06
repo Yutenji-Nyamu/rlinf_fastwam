@@ -71,11 +71,11 @@ def get_model(cfg: DictConfig, torch_dtype=None):
     if os.path.exists(full_weights_path):
         # Direct checkpoint directory
         model_state_dict = torch.load(full_weights_path, map_location="cpu")
-        model.load_state_dict(model_state_dict, strict=False)
+        load_report = model.load_state_dict(model_state_dict, strict=False)
     elif os.path.exists(actor_full_weights_path):
         # Checkpoint directory from runner
         model_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
-        model.load_state_dict(model_state_dict, strict=False)
+        load_report = model.load_state_dict(model_state_dict, strict=False)
     else:
         # Original model directory with safetensors files
         weight_paths = sorted(glob.glob(os.path.join(checkpoint_dir, "*.safetensors")))
@@ -85,7 +85,33 @@ def get_model(cfg: DictConfig, torch_dtype=None):
         for weight_path in weight_paths:
             state_dict = safetensors.torch.load_file(weight_path, device="cpu")
             all_state_dict.update(state_dict)
-        model.load_state_dict(all_state_dict, strict=False)
+        load_report = model.load_state_dict(all_state_dict, strict=False)
+
+    if config_name == "pi05_sidney_robotwin" and actor_model_config.use_dsrl:
+        # The fresh SFT has no SAC heads, but every VLA tensor must match.
+        dsrl_prefixes = (
+            "dsrl_action_noise_net.",
+            "actor_image_encoder.",
+            "actor_state_encoder.",
+            "critic_image_encoder.",
+            "critic_state_encoder.",
+            "q_head.",
+        )
+        missing_vla = [
+            key
+            for key in load_report.missing_keys
+            if key != "dsrl_policy_phase" and not key.startswith(dsrl_prefixes)
+        ]
+        if missing_vla or load_report.unexpected_keys:
+            raise ValueError(
+                "Sidney DSRL checkpoint mismatch: "
+                f"missing_vla={missing_vla}, unexpected={load_report.unexpected_keys}"
+            )
+        model.dsrl_checkpoint_load_report = {
+            "missing_sac_keys": list(load_report.missing_keys),
+            "missing_vla_keys": missing_vla,
+            "unexpected_keys": list(load_report.unexpected_keys),
+        }
 
     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
     # fsdp replace

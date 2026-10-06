@@ -53,6 +53,7 @@ def project_dsrl_trajectory(
     state_dim: int,
     num_action_chunks: int,
     gamma: float,
+    u_spec: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Project a rollout trajectory into compact DSRL macro transitions."""
     if trajectory.rewards is None or trajectory.actions is None:
@@ -155,7 +156,7 @@ def project_dsrl_trajectory(
     num_transitions = int(selected_success.numel())
     discount = float(gamma) ** int(num_action_chunks)
 
-    return {
+    projected = {
         "curr_obs": {
             "main_images": curr_images.to(torch.bfloat16).cpu().contiguous(),
             "states": curr_states.float().cpu().contiguous(),
@@ -178,6 +179,55 @@ def project_dsrl_trajectory(
         "truncations": selected_truncated.unsqueeze(-1).cpu().contiguous(),
         "discounts": torch.full((num_transitions, 1), discount, dtype=torch.float32),
     }
+    forward_inputs = trajectory.forward_inputs or {}
+    if u_spec is not None:
+        from rlinf.algorithms.dsrl_ugrow import validate_signal_spec
+
+        spec = validate_signal_spec(u_spec)
+        if int(spec["chunk_length"]) != int(num_action_chunks):
+            raise ValueError("DSRL U projection chunk length differs from signal spec")
+        for key in _U_FIELDS:
+            value = forward_inputs.get(key)
+            if not isinstance(value, torch.Tensor) or value.shape[:2] != (
+                trajectory_length,
+                batch_size,
+            ):
+                raise ValueError(f"DSRL U projection requires aligned {key}")
+            projected[key] = value[keep].detach().cpu().contiguous()
+        _validate_u_fields(projected, spec)
+    elif any(key in forward_inputs for key in _U_FIELDS):
+        raise ValueError("DSRL U rollout cannot enter legacy replay without a spec")
+    return projected
+
+
+_U_FIELDS = ("dsrl_u", "dsrl_u_valid", "dsrl_u_policy_step", "dsrl_u_phase")
+
+
+def _validate_u_fields(batch: dict[str, Any], spec: dict[str, Any]) -> None:
+    """Validate cached collection scores and their policy provenance."""
+    raw, valid = batch["dsrl_u"], batch["dsrl_u_valid"]
+    if (
+        not isinstance(raw, torch.Tensor)
+        or raw.ndim != 2
+        or raw.shape[1] != int(spec["chunk_length"])
+        or raw.dtype != torch.float32
+        or not isinstance(valid, torch.Tensor)
+        or valid.dtype != torch.bool
+        or valid.shape != raw.shape
+    ):
+        raise ValueError("DSRL U requires float32 scores and bool validity [B,C]")
+    if not valid.any(dim=1).all():
+        raise ValueError("Every DSRL U replay chunk needs a valid action position")
+    if not torch.isfinite(raw[valid]).all() or (raw[valid] < 0).any():
+        raise ValueError("DSRL U valid scores must be finite and nonnegative")
+    for key in ("dsrl_u_policy_step", "dsrl_u_phase"):
+        value = batch[key]
+        if value.dtype != torch.int64 or value.shape != (raw.shape[0], 1):
+            raise ValueError(f"DSRL U {key} must be int64 [B,1]")
+        if (value < 0).any():
+            raise ValueError(f"DSRL U {key} must be nonnegative")
+    if (batch["dsrl_u_phase"] > 1).any():
+        raise ValueError("DSRL U collection phase must be Gaussian(0) or learned(1)")
 
 
 def _tree_map(fn, tree):
@@ -231,6 +281,7 @@ class DSRLTransitionReplayBuffer:
         rank: int,
         world_size: int,
         schema_version: int = 1,
+        u_spec: dict[str, Any] | None = None,
     ):
         if capacity <= 0 or world_size <= 0 or not 0 <= rank < world_size:
             raise ValueError(
@@ -244,6 +295,15 @@ class DSRLTransitionReplayBuffer:
         if self.capacity <= 0:
             raise ValueError("Global replay capacity is smaller than actor world size")
         self.schema_version = int(schema_version)
+        self.u_spec = None
+        if u_spec is not None:
+            from rlinf.algorithms.dsrl_ugrow import validate_signal_spec
+
+            self.u_spec = validate_signal_spec(u_spec)
+            if self.schema_version != 2:
+                raise ValueError("DSRL U replay requires schema_version=2")
+        elif self.schema_version == 2:
+            raise ValueError("DSRL replay schema_version=2 requires a U signal spec")
         self.seed = int(seed)
         self.random_generator = torch.Generator(device="cpu")
         self.random_generator.manual_seed(self.seed + self.rank)
@@ -263,6 +323,8 @@ class DSRLTransitionReplayBuffer:
             "truncations",
             "discounts",
         }
+        if self.u_spec is not None:
+            required.update(_U_FIELDS)
         if set(batch) != required:
             raise ValueError(
                 f"DSRL replay keys mismatch: {sorted(batch)} != {sorted(required)}"
@@ -274,6 +336,8 @@ class DSRLTransitionReplayBuffer:
         batch_size = int(leaves[0].shape[0])
         if batch_size <= 0 or any(int(leaf.shape[0]) != batch_size for leaf in leaves):
             raise ValueError("All DSRL replay leaves must share a non-empty batch dim")
+        if self.u_spec is not None:
+            _validate_u_fields(prepared, self.u_spec)
         return prepared, batch_size
 
     def add_batch(self, batch: dict[str, Any]) -> int:
@@ -359,6 +423,8 @@ class DSRLTransitionReplayBuffer:
             "rng_state": self.random_generator.get_state(),
             "storage": self._storage,
         }
+        if self.u_spec is not None:
+            checkpoint["u_spec"] = self.u_spec
         target_path = os.path.join(save_path, self.CHECKPOINT_FILE)
         temp_path = f"{target_path}.tmp"
         torch.save(checkpoint, temp_path)
@@ -387,6 +453,8 @@ class DSRLTransitionReplayBuffer:
             for key, value in expected.items()
             if checkpoint.get(key) != value
         }
+        if checkpoint.get("u_spec") != self.u_spec:
+            mismatches["u_spec"] = (checkpoint.get("u_spec"), self.u_spec)
         if mismatches:
             raise ValueError(f"DSRL replay checkpoint layout mismatch: {mismatches}")
         storage = checkpoint.get("storage")
@@ -412,6 +480,8 @@ class DSRLTransitionReplayBuffer:
             )
         if resident_size > 0 and storage is None:
             raise ValueError("Non-empty DSRL replay checkpoint has no storage")
+        if self.u_spec is not None and resident_size > 0:
+            self._prepare_batch(_tree_map(lambda x: x[:resident_size], storage))
         self._storage = storage
         self.resident_size = resident_size
         self.write_cursor = write_cursor

@@ -203,3 +203,168 @@ def test_projection_rejects_non_repeated_latent():
             num_action_chunks=20,
             gamma=0.999,
         )
+
+
+def _u_batch(size: int):
+    batch = _synthetic_batch(size)
+    batch["dsrl_u"] = torch.arange(size * 10, dtype=torch.float32).reshape(size, 10)
+    batch["dsrl_u_valid"] = torch.ones(size, 10, dtype=torch.bool)
+    batch["dsrl_u_policy_step"] = torch.arange(size, dtype=torch.int64)[:, None]
+    batch["dsrl_u_phase"] = torch.ones(size, 1, dtype=torch.int64)
+    return batch
+
+
+def test_u_ring_preserves_signal_and_provenance_rng_resume(tmp_path):
+    from rlinf.algorithms.dsrl_ugrow import U_SPEC
+
+    kwargs = {
+        "capacity": 5,
+        "seed": 17,
+        "rank": 0,
+        "world_size": 1,
+        "schema_version": 2,
+    }
+    replay = DSRLTransitionReplayBuffer(**kwargs, u_spec=U_SPEC)
+    replay.add_batch(_u_batch(7))
+    replay.save_checkpoint(str(tmp_path))
+    expected = replay.sample(12)
+    restored = DSRLTransitionReplayBuffer(**kwargs, u_spec=U_SPEC)
+    restored.load_checkpoint(str(tmp_path))
+    actual = restored.sample(12)
+    for field in (
+        "actions",
+        "dsrl_u",
+        "dsrl_u_valid",
+        "dsrl_u_policy_step",
+        "dsrl_u_phase",
+    ):
+        assert torch.equal(actual[field], expected[field])
+    assert torch.equal(
+        actual["dsrl_u"][:, 0] / 10,
+        actual["dsrl_u_policy_step"][:, 0].float(),
+    )
+
+
+def test_u_ring_rejects_legacy_missing_scores_and_invalid_rows(tmp_path):
+    from rlinf.algorithms.dsrl_ugrow import U_SPEC
+
+    kwargs = {"capacity": 5, "seed": 17, "rank": 0, "world_size": 1}
+    legacy = DSRLTransitionReplayBuffer(**kwargs)
+    legacy.add_batch(_synthetic_batch(2))
+    legacy.save_checkpoint(str(tmp_path))
+    replay = DSRLTransitionReplayBuffer(**kwargs, schema_version=2, u_spec=U_SPEC)
+    with pytest.raises(ValueError, match="layout mismatch"):
+        replay.load_checkpoint(str(tmp_path))
+    with pytest.raises(ValueError, match="keys mismatch"):
+        replay.add_batch(_synthetic_batch(2))
+    bad = _u_batch(2)
+    bad["dsrl_u"][0, 0] = float("nan")
+    with pytest.raises(ValueError, match="finite"):
+        replay.add_batch(bad)
+    bad = _u_batch(2)
+    bad["dsrl_u_valid"][0] = False
+    with pytest.raises(ValueError, match="valid action"):
+        replay.add_batch(bad)
+    with pytest.raises(ValueError, match="keys mismatch"):
+        legacy.add_batch(_u_batch(2))
+
+
+def test_u_resume_rejects_tampered_spec_and_corrupt_cached_scores(tmp_path):
+    from rlinf.algorithms.dsrl_ugrow import U_SPEC
+
+    kwargs = {
+        "capacity": 5,
+        "seed": 17,
+        "rank": 0,
+        "world_size": 1,
+        "schema_version": 2,
+        "u_spec": U_SPEC,
+    }
+    replay = DSRLTransitionReplayBuffer(**kwargs)
+    replay.add_batch(_u_batch(2))
+    replay.save_checkpoint(str(tmp_path))
+    path = tmp_path / replay.CHECKPOINT_FILE
+    saved = torch.load(path, weights_only=True)
+    saved["u_spec"]["epsilon"] = 1e-6
+    torch.save(saved, path)
+    with pytest.raises(ValueError, match="layout mismatch"):
+        DSRLTransitionReplayBuffer(**kwargs).load_checkpoint(str(tmp_path))
+    replay.save_checkpoint(str(tmp_path))
+    saved = torch.load(path, weights_only=True)
+    saved["storage"]["dsrl_u"][0, 0] = -1
+    torch.save(saved, path)
+    with pytest.raises(ValueError, match="nonnegative"):
+        DSRLTransitionReplayBuffer(**kwargs).load_checkpoint(str(tmp_path))
+
+
+def test_u_projection_follows_same_terminal_mask_and_preserves_values():
+    pytest.importorskip("openpi")
+    from rlinf.algorithms.dsrl_ugrow import U_SPEC
+
+    trajectory = _make_robotwin_trajectory()
+    scores = torch.arange(60, dtype=torch.float32).reshape(3, 2, 10)
+    steps = torch.arange(6, dtype=torch.int64).reshape(3, 2, 1)
+    trajectory.forward_inputs = {
+        "dsrl_u": scores,
+        "dsrl_u_valid": torch.ones_like(scores, dtype=torch.bool),
+        "dsrl_u_policy_step": steps,
+        "dsrl_u_phase": torch.ones_like(steps),
+    }
+    projected = project_dsrl_trajectory(
+        trajectory,
+        action_horizon=50,
+        latent_dim=32,
+        state_dim=14,
+        num_action_chunks=10,
+        gamma=0.999,
+        u_spec=U_SPEC,
+    )
+    assert projected["dsrl_u_policy_step"].flatten().tolist() == [0, 1, 2, 3, 5]
+    assert torch.equal(
+        projected["dsrl_u"][:, 0], torch.tensor([0.0, 10.0, 20.0, 30.0, 50.0])
+    )
+    assert torch.allclose(projected["discounts"], torch.full((5, 1), 0.999**10))
+
+
+def test_real_trajectory_builder_keeps_u_with_actions_not_bootstrap_slots():
+    from rlinf.data.schema.embodied_trajectory_builder import EmbodiedTrajectoryBuilder
+    from rlinf.data.schema.embodied_types import ChunkStepResult
+
+    source = _make_robotwin_trajectory()
+    builder = EmbodiedTrajectoryBuilder(max_episode_length=200)
+    for index in range(4):
+        active = index < 3
+        forward_inputs = {}
+        if active:
+            forward_inputs = {
+                "dsrl_u": torch.full((2, 10), float(index + 1)),
+                "dsrl_u_valid": torch.ones(2, 10, dtype=torch.bool),
+                "dsrl_u_policy_step": torch.full((2, 1), index, dtype=torch.int64),
+                "dsrl_u_phase": torch.ones(2, 1, dtype=torch.int64),
+            }
+            builder.append_transitions(
+                {key: value[index] for key, value in source.curr_obs.items()},
+                {key: value[index] for key, value in source.next_obs.items()},
+            )
+        # The first env reply has bootstrap flags but no preceding reward.
+        # The last reply has a reward/flags but no new action or forward_inputs.
+        builder.append_step_result(
+            ChunkStepResult(
+                actions=source.actions[index] if active else None,
+                rewards=source.rewards[index - 1] if index else None,
+                terminations=source.terminations[index],
+                truncations=source.truncations[index],
+                dones=source.dones[index],
+                forward_inputs=forward_inputs,
+            )
+        )
+    trajectory = builder.to_trajectory()
+    assert trajectory.actions.shape[:2] == trajectory.rewards.shape[:2] == (3, 2)
+    assert trajectory.terminations.shape[:2] == (4, 2)
+    assert trajectory.forward_inputs["dsrl_u"].shape == (3, 2, 10)
+    assert trajectory.forward_inputs["dsrl_u"][:, 0, 0].tolist() == [1, 2, 3]
+    assert trajectory.forward_inputs["dsrl_u_policy_step"][:, 0, 0].tolist() == [
+        0,
+        1,
+        2,
+    ]

@@ -19,7 +19,7 @@ from typing import Optional
 import numpy as np
 import torch
 import torch.nn.functional as F
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 
 from rlinf.config import SupportedModel
@@ -62,6 +62,8 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         self.update_step = 0
         self.enable_drq = bool(getattr(self.cfg.actor, "enable_drq", False))
         self.use_dsrl_flat_replay = False
+        self.use_dsrl_u = False
+        self.dsrl_u_contract = None
         self._local_new_transitions = 0
 
     def init_worker(self):
@@ -183,6 +185,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         )
         if replay_type == "dsrl_transition" and not self.use_dsrl:
             raise ValueError("dsrl_transition replay requires openpi.use_dsrl=True")
+        self._setup_dsrl_u_contract(replay_cfg)
 
         if self.use_dsrl_flat_replay:
             self.replay_buffer = DSRLTransitionReplayBuffer(
@@ -191,6 +194,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 rank=self._rank,
                 world_size=self._world_size,
                 schema_version=replay_cfg.get("schema_version", 1),
+                u_spec=(
+                    self.dsrl_u_contract["signal_spec"] if self.use_dsrl_u else None
+                ),
             )
         else:
             auto_save_path = replay_cfg.get("auto_save_path", None)
@@ -276,6 +282,64 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             f"{self.target_update_type=} is not suppported!"
         )
         self._local_new_transitions = 0
+
+    def _setup_dsrl_u_contract(self, replay_cfg):
+        """Bind collection scores, replay schema, and actor weighting explicitly."""
+        u_cfg = self.cfg.algorithm.get("dsrl_u", {})
+        model_cfg = self.cfg.actor.model.get("openpi", {})
+        self.use_dsrl_u = u_cfg.get("enabled", False)
+        model_enabled = model_cfg.get("dsrl_u_enabled", False)
+        if not isinstance(self.use_dsrl_u, bool) or not isinstance(model_enabled, bool):
+            raise ValueError("DSRL U collection and weighting flags must be booleans")
+        if self.use_dsrl_u != model_enabled:
+            raise ValueError("DSRL U model collection and actor weighting must agree")
+        self.dsrl_u_contract = None
+        if not self.use_dsrl_u:
+            return
+        if not self.use_dsrl_flat_replay or not self.use_dsrl:
+            raise ValueError("DSRL U requires compact DSRL transition replay")
+        if self._world_size != 1:
+            raise ValueError("DSRL U v1 requires actor world_size=1 for batch weights")
+        if replay_cfg.get("schema_version", 1) != 2:
+            raise ValueError("DSRL U requires replay schema_version=2")
+
+        from rlinf.algorithms.dsrl_ugrow import (
+            build_dsrl_u_weights,
+            validate_signal_spec,
+        )
+
+        def plain_spec(value):
+            if isinstance(value, DictConfig):
+                value = OmegaConf.to_container(value, resolve=True)
+            return validate_signal_spec(value)
+
+        signal_spec = plain_spec(u_cfg.get("spec"))
+        model_spec = plain_spec(model_cfg.get("dsrl_u_spec"))
+        if signal_spec != model_spec:
+            raise ValueError("DSRL U actor/model signal specs differ")
+        if int(self.cfg.actor.model.num_action_chunks) != signal_spec["chunk_length"]:
+            raise ValueError("DSRL U actor chunk length differs from signal spec")
+        temperature = u_cfg.get("temperature", 2.5)
+        log_eps = u_cfg.get("log_eps", 1e-12)
+        minmax_eps = u_cfg.get("minmax_eps", 1e-6)
+        # Validate numerical mapping parameters before the first collection.
+        build_dsrl_u_weights(
+            torch.ones(1, signal_spec["chunk_length"]),
+            torch.ones(1, signal_spec["chunk_length"], dtype=torch.bool),
+            temperature=temperature,
+            log_eps=log_eps,
+            minmax_eps=minmax_eps,
+        )
+        self.dsrl_u_contract = {
+            "signal_spec": signal_spec,
+            "temperature": float(temperature),
+            "log_eps": float(log_eps),
+            "minmax_eps": float(minmax_eps),
+            "scope": "all_replay_chunks_global_batch",
+            "application": "whole_actor_sac_loss",
+            "mapping": "mean_log_minmax_exp_mean",
+            "global_batch_size": int(self.cfg.actor.global_batch_size),
+        }
 
     @staticmethod
     def _is_dsrl_target_q_parameter(name: str) -> bool:
@@ -429,6 +493,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                     state_dim=openpi_cfg.dsrl_state_dim,
                     num_action_chunks=self.cfg.actor.model.num_action_chunks,
                     gamma=self.cfg.algorithm.gamma,
+                    u_spec=(
+                        self.dsrl_u_contract["signal_spec"] if self.use_dsrl_u else None
+                    ),
                 )
                 self._local_new_transitions += self.replay_buffer.add_batch(projected)
         else:
@@ -570,7 +637,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 qf_next = qf_next.to(dtype=self.torch_dtype)
 
             if self.use_dsrl_flat_replay:
-                target_q_values = rewards_for_bootstrap + continuations * discount * qf_next
+                target_q_values = (
+                    rewards_for_bootstrap + continuations * discount * qf_next
+                )
             elif bootstrap_type == "always":
                 target_q_values = rewards_for_bootstrap + discount * qf_next  # [bsz, 1]
             elif bootstrap_type == "standard":
@@ -638,7 +707,23 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         elif agg_q == "mean":
             qf_pi = torch.mean(all_qf_pi, dim=1, keepdim=True)
         metrics["q_pi"] = qf_pi.mean().item()
-        actor_loss = ((self.entropy_temp.alpha * log_pi) - qf_pi).mean()
+        if getattr(self, "use_dsrl_u", False):
+            weights = batch.get("dsrl_u_weight")
+            if (
+                not isinstance(weights, torch.Tensor)
+                or weights.shape != qf_pi.shape
+                or weights.requires_grad
+                or not torch.isfinite(weights).all()
+                or (weights <= 0).any()
+            ):
+                raise ValueError(
+                    "DSRL U actor requires detached positive weights [B,1]"
+                )
+            per_chunk_loss = self.entropy_temp.alpha * log_pi - qf_pi
+            actor_loss = (weights * per_chunk_loss).mean()
+            metrics["u_unweighted_loss"] = per_chunk_loss.detach().mean().item()
+        else:
+            actor_loss = ((self.entropy_temp.alpha * log_pi) - qf_pi).mean()
 
         entropy = -log_pi.mean()
         return actor_loss, entropy, metrics
@@ -682,6 +767,22 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         with self.worker_timer("sample"):
             global_batch = next(self.buffer_dataloader_iter)
 
+        u_metrics = {}
+        if getattr(self, "use_dsrl_u", False):
+            from rlinf.algorithms.dsrl_ugrow import build_dsrl_u_weights
+
+            if global_batch["dsrl_u"].shape[0] != global_batch_size_per_rank:
+                raise ValueError("DSRL U weighting requires the complete global batch")
+            contract = self.dsrl_u_contract
+            weights, u_metrics = build_dsrl_u_weights(
+                global_batch["dsrl_u"],
+                global_batch["dsrl_u_valid"],
+                temperature=contract["temperature"],
+                log_eps=contract["log_eps"],
+                minmax_eps=contract["minmax_eps"],
+            )
+            global_batch["dsrl_u_weight"] = weights
+
         train_micro_batch_list = split_dict_to_chunk(
             global_batch,
             global_batch_size_per_rank // self.cfg.actor.micro_batch_size,
@@ -720,6 +821,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             "critic/lr": self.qf_optimizer.param_groups[0]["lr"],
             "critic/grad_norm": qf_grad_norm,
             **all_critic_metrics,
+            **{f"dsrl_u/{key}": value for key, value in u_metrics.items()},
         }
 
         if self.update_step % self.critic_actor_ratio == 0 and train_actor:
@@ -857,8 +959,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             buffers = self._phase_buffers(model)
             if len(buffers) != 1:
                 raise RuntimeError(
-                    f"Expected one {model_name} DSRL phase buffer, "
-                    f"found {len(buffers)}"
+                    f"Expected one {model_name} DSRL phase buffer, found {len(buffers)}"
                 )
             buffers[0].fill_(phase)
 
@@ -1003,6 +1104,8 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             "flat_replay": self.use_dsrl_flat_replay,
             "target_shadow_f32": shadow_cpu,
         }
+        if getattr(self, "use_dsrl_u", False):
+            state["dsrl_u_contract"] = self.dsrl_u_contract
         target_path = self._dsrl_trainer_state_path(save_base_path)
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         temp_path = f"{target_path}.tmp"
@@ -1013,7 +1116,7 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
         state_path = self._dsrl_trainer_state_path(load_base_path)
         if not os.path.isfile(state_path):
             raise FileNotFoundError(
-                "Strict DSRL resume requires trainer sidecar: " f"{state_path}"
+                f"Strict DSRL resume requires trainer sidecar: {state_path}"
             )
 
         state = torch.load(state_path, map_location="cpu", weights_only=True)
@@ -1028,6 +1131,12 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             for key, expected in expected_layout.items()
             if state.get(key) != expected
         }
+        expected_u = getattr(self, "dsrl_u_contract", None)
+        if state.get("dsrl_u_contract") != expected_u:
+            mismatches["dsrl_u_contract"] = (
+                state.get("dsrl_u_contract"),
+                expected_u,
+            )
         if mismatches:
             raise ValueError(f"DSRL trainer-state layout mismatch: {mismatches}")
 
@@ -1051,7 +1160,9 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             if not torch.equal(
                 shadow.to(target_parameter.dtype), target_parameter.data
             ):
-                raise ValueError(f"Saved DSRL shadow does not match loaded target {name}")
+                raise ValueError(
+                    f"Saved DSRL shadow does not match loaded target {name}"
+                )
             restored_shadow[name] = shadow
         self._target_shadow_f32 = restored_shadow
 
