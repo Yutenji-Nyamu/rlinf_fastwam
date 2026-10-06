@@ -29,6 +29,7 @@ from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
 from rlinf.algorithms.rlt.dvac_weighting import compute_endpoint_variances
+from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -114,6 +115,7 @@ class OpenPi0Config(Pi0Config):
     rlt_use_mask: bool = False
     rlt_action_adapter: str = "identity"
     rlt_dvac_mode: Literal["off", "observe", "apply"] = "off"
+    rlt_ugrow_enabled: bool = False
     state_indices: list[int] | None = None
 
 
@@ -608,6 +610,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode="eval",
             compute_values=False,
             collect_endpoint_previews=self.config.rlt_dvac_mode != "off",
+            collect_ugrow=getattr(self.config, "rlt_ugrow_enabled", False),
         )
         decode_context = None
         if self.config.rlt_action_adapter == "identity":
@@ -660,6 +663,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         }
         if "teacher_dvac_v" in outputs:
             rlt_obs["teacher_dvac_v"] = outputs["teacher_dvac_v"].to(
+                device=z_rl.device, dtype=torch.float32
+            )
+        if "teacher_ugrow_u" in outputs:
+            rlt_obs["teacher_ugrow_u"] = outputs["teacher_ugrow_u"].to(
                 device=z_rl.device, dtype=torch.float32
             )
         if return_decode_context:
@@ -1138,14 +1145,21 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         collect_endpoint_previews: bool = False,
+        collect_ugrow: bool = False,
+        num_steps: int | None = None,
+        noise_is_prepared: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        num_steps = self.config.num_steps if num_steps is None else num_steps
+        if collect_ugrow and (
+            mode != "eval" or num_steps != 10 or self.config.action_env_dim != 14
+        ):
+            raise ValueError("RLT U-GROW requires eval ODE10 and 14 action coordinates.")
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
-        else:
+        elif not noise_is_prepared:
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
@@ -1258,6 +1272,31 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             result["teacher_dvac_v"] = torch.stack(
                 [endpoint_variances[l_value] for l_value in (2, 3, 4)], dim=1
             ).to(dtype=torch.float32)
+        if collect_ugrow:
+            # Reuse the exact complete initial noise after the main path's dtype
+            # handling. ODE still draws zero-coefficient noise in the legacy
+            # sampler, so isolate the entire side solve's random state.
+            python_rng, numpy_rng = random.getstate(), np.random.get_state()
+            devices = [device] if device.type == "cuda" else []
+            try:
+                with torch.random.fork_rng(devices=devices), torch.no_grad():
+                    comparison = self._sample_actions_with_prefix_cache(
+                        state,
+                        prefix_output,
+                        prefix_pad_masks,
+                        past_key_values,
+                        noise=noise.clone(),
+                        mode="eval",
+                        compute_values=False,
+                        num_steps=5,
+                        noise_is_prepared=True,
+                    )
+                result["teacher_ugrow_u"] = compute_ugrow_signal(
+                    x_0, comparison["actions"]
+                )
+            finally:
+                random.setstate(python_rng)
+                np.random.set_state(numpy_rng)
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()

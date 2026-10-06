@@ -1,0 +1,18 @@
+# Merge onto the verified 4600080 combo resolved configuration. Identity,
+# physical GPU, paths and smoke-only budget belong to the deployment plan.
+rollout:
+  rlt_feature_model:
+    openpi:
+      rlt_dvac_mode: 'off'
+      rlt_ugrow_enabled: true
+algorithm:
+  rlt_dvac:
+    signal_source: ugrow_10_5
+    signal_spec:
+      version: 1
+      kind: ugrow_10_5
+      steps: [10, 5]
+      solver: flow_ode
+      coordinate_space: normalized
+      action_dim: 14
+      epsilon: 1.0e-8
