@@ -466,6 +466,10 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
             return self.update_buffer_one_epoch()
         return self.update_lerobot_one_epoch()
 
+    def prepare_replay_batch(self, batch):
+        """Allow full-batch weighting before microbatch splitting."""
+        return batch
+
     def update_buffer_one_epoch(self):
         """Run one replay-buffer update epoch for DAgger."""
         global_batch_size_per_rank = (
@@ -476,6 +480,7 @@ class EmbodiedDAGGERFSDPPolicy(EmbodiedFSDPActor):
                 num_chunks=global_batch_size_per_rank
             )
 
+        global_batch = self.prepare_replay_batch(global_batch)
         train_micro_batch_list = split_dict_to_chunk(
             global_batch,
             global_batch_size_per_rank // self.cfg.actor.micro_batch_size,

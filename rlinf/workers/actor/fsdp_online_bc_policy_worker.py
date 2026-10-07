@@ -64,7 +64,18 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         )
         self.dvac = None
         self.dvac_metrics = {}
-        if dvac_cfg.get("enabled", False):
+        self.signal_tau = None
+        self.signal_tau_metrics = {}
+        if dvac_cfg.get("normalization", "recent") == "two_level_batch":
+            from omegaconf import OmegaConf
+            from rlinf.algorithms.online_bc_signal_tau import signal_tau_contract
+
+            if not self.ugrow_enabled or self._world_size != 1:
+                raise ValueError("BC signal tau requires U/Norm and one actor rank.")
+            self.signal_tau = signal_tau_contract(
+                OmegaConf.to_container(dvac_cfg, resolve=True), signal_spec
+            )
+        elif dvac_cfg.get("enabled", False):
             from rlinf.algorithms.online_bc_dvac import OnlineBCDvac
 
             self.dvac = OnlineBCDvac(
@@ -117,7 +128,12 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         for _ in range(compute_split_num(send_num, recv_num)):
             # Every env stage sends its exact split count, including empty lists.
             packet = await input_channel.get(async_op=True).async_wait()
-            if self.dvac is None:
+            if self.signal_tau is not None:
+                episodes = packet["episodes"]
+                if any("action_weights" in r for episode in episodes for r in episode):
+                    raise ValueError("Signal tau replay must store raw signal, not weights.")
+                self.replay_buffer.add_episodes(episodes)
+            elif self.dvac is None:
                 self.replay_buffer.add_episodes(packet)
             else:
                 new_episodes.extend(packet["episodes"])
@@ -130,6 +146,25 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
             self.replay_buffer.add_episodes(new_episodes)
             label = "U" if self.ugrow_enabled else "DVAC"
             self.log_info(f"Online BC {label}: {self.dvac_metrics}")
+
+    def prepare_replay_batch(self, batch):
+        """Map raw signal over the complete optimizer batch before splitting."""
+        if self.signal_tau is None:
+            return batch
+        from rlinf.algorithms.online_bc_signal_tau import apply_signal_tau
+
+        inputs = batch["forward_inputs"]
+        if inputs["action_valid_mask"].shape[0] != self.cfg.actor.global_batch_size:
+            raise ValueError("Signal tau must see the complete optimizer batch.")
+        inputs["action_weights"], metrics = apply_signal_tau(
+            inputs, self.signal_tau, runner_step=self.version,
+            update_step=self.update_step,
+        )
+        self.signal_tau_metrics = {f"bc_signal_tau/{k}": v for k, v in metrics.items()}
+        return batch
+
+    def update_buffer_one_epoch(self):
+        return super().update_buffer_one_epoch() | self.signal_tau_metrics
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):
@@ -192,13 +227,24 @@ class EmbodiedOnlineBCFSDPPolicy(EmbodiedDAGGERFSDPPolicy):
         target = Path(save_base_path) / "online_bc" / f"rank_{self._rank}"
         self.replay_buffer.save_checkpoint(target)
         torch.save({"update_step": self.update_step}, target / "learner.pt")
+        if self.signal_tau is not None:
+            torch.save(self.signal_tau, target / "signal_tau.pt")
         if self.dvac is not None:
             torch.save(self.dvac.state_dict(), target / (("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt") if getattr(self, "ugrow_enabled", False) else "dvac.pt"))
 
     def load_checkpoint(self, load_base_path):
         target = Path(load_base_path) / "online_bc" / f"rank_{self._rank}"
         ugrow_enabled = getattr(self, "ugrow_enabled", False)
-        if ugrow_enabled:
+        if self.signal_tau is not None:
+            state_path = target / "signal_tau.pt"
+            if not state_path.is_file():
+                raise ValueError("Signal tau requires its own fresh checkpoint contract.")
+            if torch.load(state_path, weights_only=True) != self.signal_tau:
+                raise ValueError("Signal tau checkpoint kind/temperature/control mismatch.")
+            self.replay_buffer.load_checkpoint(target)
+            if any("action_weights" in r for r in self.replay_buffer.records):
+                raise ValueError("Signal tau checkpoint contains old frozen weights.")
+        elif ugrow_enabled:
             if not (target / ("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt")).is_file() or (target / "dvac.pt").exists():
                 raise ValueError("BC U requires a distinct U checkpoint and fresh calibration.")
             self.dvac.load_state_dict(torch.load(target / ("norm.pt" if getattr(self, "norm_enabled", False) else "ugrow.pt"), weights_only=True))
