@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 assert os.getuid()==20001 and socket.gethostname()=='h100-gpu01'
 S=Path('/data/chenyiteng/projects/opendw-robotwin-smoke-20261003')
-F=S/'lift-two-gpu-b16-20261007-v1';O=S/'runs/lift-two-gpu-b16-20261007-v1'
+F=S/'lift-two-gpu-b16-lean-20261007-v1';O=S/'runs/lift-two-gpu-b16-lean-20261007-v1'
 read=lambda p:json.loads(Path(p).read_text())
 def tail(p,n=4000):
  if not p.is_file():return None
@@ -44,5 +44,8 @@ if cp.is_file():
  out['rlt']={k:{'original_alive':same(r['original_identity']),'new_run':r['new_run'],'checkpoint':stops.get(k,r)['recovery']['checkpoint']['step']} for k,r in read(cp)['runs'].items()}
  out['borrowed']=(cp.parent/'rlt-stopped.json').exists()
 out['protected']=[{'pid':p,'start':s,'alive_now':same({'pid':p,'start':s})} for p,s in [(3182779,727781893),(3182804,727782101),(3651109,727565004)]]
+catalog=O/'process-catalog.json'
+if catalog.is_file():
+ out['managed_processes']=[{'pid':r['pid'],'start':r['start'],'phase':r['phase'],'proof':r['proof'],'alive_now':same(r)} for r in read(catalog)['processes']]
 out['gpu']=subprocess.check_output(['nvidia-smi'],text=True,timeout=20)
 print(json.dumps(out))

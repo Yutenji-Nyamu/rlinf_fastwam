@@ -2,7 +2,7 @@
 import datetime,hashlib,json,os,socket,subprocess
 from pathlib import Path
 assert os.getuid()==20001 and socket.gethostname()=='h100-gpu01'
-F=Path('/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b16-20261007-v1')
+F=Path('/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b16-lean-20261007-v1')
 read=lambda p:json.loads(Path(p).read_text())
 ready=read(F/'ready.json');plan=read(ready['plan'])
 assert ready['skip_smoke'] and ready['config_equal_except_output_names']

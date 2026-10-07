@@ -1,6 +1,6 @@
-"""Two-card lift_pot formal run: B16 WM, unchanged N64/R8 and automatic RLT return.
+"""One B16 formal owner: run training, clean its processes, return GPU4/5 to RLT.
 
-One supervisor entry; no smoke, adoption wrapper, or automatic WM retry.
+No Ray dashboard polling. Optional resource observations cannot stop training.
 """
 import argparse
 import copy
@@ -11,7 +11,6 @@ import json
 import os
 from pathlib import Path
 import platform
-import re
 import resource
 import runpy
 import signal
@@ -20,7 +19,6 @@ import subprocess
 import sys
 import time
 import traceback
-import urllib.parse
 import urllib.request
 import uuid
 
@@ -29,14 +27,11 @@ UID = 20001
 TOKEN = 'OPENDW_SMOKE_OWNER_TOKEN'
 PHASE = 'OPENDW_SMOKE_OWNER_PHASE'
 MASKS = ('CUDA_VISIBLE_DEVICES', 'ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES')
-C = None
-H = None
 GPUS = [4, 5]
-PLACEMENT = {'actor': '4', 'env': '5', 'rollout': '4'}
 VISIBLE = {'actor': [['4']], 'env': [['5']], 'rollout': [['4']]}
 SCOPE_KEYS = {'RLINF_OPENDW_FORMAL_GRAPHICS_MANIFEST', 'PYTHONPATH', 'LD_PRELOAD',
               '__GL_APPLICATION_PROFILE', '__GL_APPLICATION_PROFILE_LOG', 'HOME', 'USER', 'LOGNAME'}
-
+C = H = None
 
 def _pidfd_syscall(number, *arguments):
     """Existing resource_switch/common.py Linux x86_64 LP64 fallback.
@@ -57,7 +52,6 @@ def _pidfd_syscall(number, *arguments):
         raise OSError(error, os.strerror(error))
     return int(result)
 
-
 def pidfd_open(pid):
     native = getattr(os, 'pidfd_open', None)
     if callable(native):
@@ -71,7 +65,6 @@ def pidfd_open(pid):
         raise
     return fd
 
-
 def pidfd_send(fd, sig):
     native = getattr(signal, 'pidfd_send_signal', None)
     if callable(native):
@@ -79,7 +72,6 @@ def pidfd_send(fd, sig):
     import ctypes
     return _pidfd_syscall(424, ctypes.c_int(int(fd)), ctypes.c_int(int(sig)),
                           ctypes.c_void_p(None), ctypes.c_uint(0))
-
 
 def pidfd_probe():
     """Check kernel/API support before borrowing; signal 0 changes no state."""
@@ -89,14 +81,11 @@ def pidfd_probe():
     finally:
         os.close(fd)
 
-
 def read(path):
     return json.loads(Path(path).read_text())
 
-
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
 
 def owned_path(path, exists=True):
     path = Path(path)
@@ -105,7 +94,6 @@ def owned_path(path, exists=True):
     if exists:
         assert path.exists() and path.stat().st_uid == UID
     return path
-
 
 def load_lifecycle(plan):
     """Load only an explicitly frozen lifecycle implementation, before use."""
@@ -119,50 +107,6 @@ def load_lifecycle(plan):
     spec.loader.exec_module(C)
     C.install_helper(stage)
     H = C.H
-    C.load_plan(stage)
-
-
-
-
-
-
-def one_arg(argv, flag):
-    assert argv.count(flag) == 1, 'Service requires exactly one '+flag
-    position = argv.index(flag)
-    assert position + 1 < len(argv)
-    return argv[position + 1]
-
-
-def validate_services(services, owner):
-    assert [s['physical_gpu'] for s in services] == [5]
-    assert len({s['key'] for s in services}) == len({s['url'].rstrip('/') for s in services}) == 1
-    ports = set()
-    for service in services:
-        assert re.fullmatch(r'[A-Za-z0-9_-]+', service['key'])
-        argv = service['argv']
-        assert isinstance(argv, list) and argv and all(isinstance(x, str) for x in argv)
-        interpreter = Path(argv[0])
-        # Interpreter symlinks may target the managed Python outside this venv.
-        assert interpreter.is_absolute() and interpreter.is_relative_to(ROOT)
-        assert interpreter.is_file() and os.access(interpreter, os.X_OK)
-        owned_path(service['cwd'])
-        parsed = urllib.parse.urlparse(service['url'])
-        assert parsed.scheme == 'http' and parsed.hostname == '127.0.0.1' and parsed.port
-        assert parsed.path in ('', '/') and parsed.query == parsed.fragment == ''
-        assert parsed.username is None and parsed.password is None
-        assert parsed.port not in ports
-        ports.add(parsed.port)
-        assert one_arg(argv, '--physical-gpu') == str(service['physical_gpu'])
-        assert one_arg(argv, '--execution-mode') == 'batched'
-        assert one_arg(argv, '--wm-batch-size') == '16'
-        assert one_arg(argv, '--reward-checkpoint') == service['reward_checkpoint']
-        assert sha(owned_path(service['reward_checkpoint'])) == service['reward_checkpoint_sha256']
-        assert one_arg(argv, '--port') == str(parsed.port)
-        output = owned_path(one_arg(argv, '--output-dir'), exists=False)
-        assert output.resolve().is_relative_to((owner / 'services' / service['key']).resolve())
-        assert 0 < service.get('startup_seconds', 1200) <= 1800
-        assert not any(k in service.get('environment', {}) for k in MASKS)
-
 
 def normalized(cfg):
     value = copy.deepcopy(cfg)
@@ -177,67 +121,15 @@ def normalized(cfg):
         parent.pop(path[-1], None)
     return value
 
-
-def validate(plan, frozen=False):
-    assert os.getuid() == 20001 and socket.gethostname() == 'h100-gpu01'
-    pidfd_probe()
-    owner = owned_path(plan['owner_dir'], exists=frozen)
-    cycle = owned_path(plan['lifecycle_path'])
-    cp = C.load_plan(cycle)
-    assert cp['physical_gpus'] == plan['physical_gpus'] == [4, 5]
-    assert plan['python'] == cp['python']
-    repo = owned_path(plan['repo'])
-    assert subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip() == plan['repo_head']
-    assert plan['mode'] == 'two_gpu_b16_from0'
-    for path, digest in plan['source_sha256'].items():
-        assert sha(owned_path(path)) == digest, 'Frozen source changed: ' + path
-    assert [r['key'] for r in plan['trials']] == ['formal']
-    formal = read(plan['trials'][0]['config'])
-    expected = read(plan['reference_config'])
-    expected['actor']['fsdp_config']['resume_source_world_size'] = 1
-    expected['runner']['resume_dir'] = None
-    assert normalized(formal) == normalized(expected), 'Unexpected formal protocol change'
-    assert formal['cluster']['component_placement'] == {'actor': '4', 'env': '5', 'rollout': '4'}
-    assert formal['env']['train']['service_urls'] == [plan['services'][0]['url']]
-    assert formal['env']['train']['total_num_envs'] == 64 and formal['env']['train']['rollout_epoch'] == 8
-    assert formal['algorithm']['group_size'] == 8 and formal['actor']['global_batch_size'] == 2048
-    assert formal['actor']['micro_batch_size'] == 16
-    assert formal['runner']['max_steps'] == 200 and formal['runner'].get('ckpt_path') is None
-    assert formal['runner']['save_interval'] == formal['runner']['val_check_interval'] == 10
-    assert plan['resume_dir'] is None and plan['resume_step'] == 0
-    assert plan['skip_smoke'] is True
-    for row in plan['trials']:
-        assert row['namespace'].startswith('opendw_') and re.fullmatch('[A-Za-z0-9_-]+', row['namespace'])
-        assert row['num_envs'] == 64 and 0 < row['timeout_seconds'] <= 60 * 86400
-        assert Path(formal['runner']['logger']['log_path']).is_relative_to(owner / row['key'])
-        if frozen:
-            assert row['config_sha256'] == sha(row['config'])
-    validate_services(plan['services'], owner)
-    environment = read(plan['environment_file'])
-    assert not any(key in environment for key in MASKS)
-    fragment = read(plan['graphics_fragment'])
-    assert set(fragment) == SCOPE_KEYS
-    if frozen:
-        assert read(owner / 'scope-activated.json')['physical_gpus'] == [4, 5]
-        assert plan['owner_script_sha256'] == sha(__file__)
-        assert plan['environment_sha256'] == sha(plan['environment_file'])
-        assert plan['lifecycle_plan_sha256'] == sha(cycle / 'plan.json')
-        environment.update(fragment)
-    return owner, cycle, repo, environment
-
-
 def atomic(path, value):
     H.atomic(path, value)
-
 
 def record(path, value):
     H.save(path, value)
 
-
 def proc_env(pid):
     entries = (Path('/proc')/str(pid)/'environ').read_bytes().split(b'\0')
     return dict(item.split(b'=', 1) for item in entries if b'=' in item)
-
 
 class Catalog:
     def __init__(self, path, token):
@@ -297,101 +189,11 @@ class Catalog:
         finally:
             os.close(fd)
 
-
-def register_actors(plan, row, catalog):
-    path = Path(plan['owner_dir'])/row['key']/'ray-job.json'
-    selected = H.active(H.actors(plan), row['namespace'])
-    if not path.exists():
-        assert not selected, 'Actors exist without this driver job receipt'
-        return []
-    job = read(path)
-    assert job['namespace'] == row['namespace']
-    H.validate_actor_rows(selected, row['namespace'], {job['job_id']})
-    for actor in selected:
-        ident = H.proc(actor.get('pid', 0))
-        if ident and ident['state'] not in ('Z', 'X'):
-            catalog.add(ident, row['key'], 'exact Ray namespace/job/actor')
-    return selected
-
-
-def cleanup(plan, catalog, phase=None):
-    trials = [r for r in plan['trials'] if phase is None or r['key'] == phase]
-    selected = []
-    for row in trials:
-        selected.extend(register_actors(plan, row, catalog))
-    catalog.scan()
-    if selected:
-        H.kill_actors(plan, selected)
-    allowed = {row['namespace'] for row in plan['trials']}
-    sent = []
-    for sig, seconds in ((signal.SIGTERM, 30), (signal.SIGKILL, 15)):
-        deadline = time.monotonic()+seconds
-        while True:
-            catalog.scan()
-            targets = catalog.live(phase)
-            if not targets:
-                break
-            pids = {r['pid'] for r in targets}
-            for actor in H.actors(plan):
-                if actor.get('state') != 'DEAD' and actor.get('pid') in pids:
-                    assert actor.get('ray_namespace') in allowed, 'Target process serves unrelated actor'
-                    bound = next(r for r in plan['trials'] if r['namespace'] == actor['ray_namespace'])
-                    receipt = read(Path(plan['owner_dir'])/bound['key']/'ray-job.json')
-                    assert actor['job_id'] == receipt['job_id']
-            for ident in targets:
-                catalog.send(ident, sig)
-                sent.append({'pid': ident['pid'], 'start': ident['start'], 'signal': int(sig)})
-            if time.monotonic() >= deadline:
-                break
-            time.sleep(1)
-    assert not catalog.live(phase), 'Exact smoke processes did not stop'
-    for row in trials:
-        assert not H.active(H.actors(plan), row['namespace']), 'Smoke actors remain'
-    return {'time': H.now(), 'phase': phase, 'signals': sent, 'all_stopped': True}
-
-
 def http(url, endpoint='/health', post=False, timeout=5):
     request = urllib.request.Request(url.rstrip('/')+endpoint, data=b'{}' if post else None,
                                     headers={'Content-Type': 'application/json'})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
-
-
-def resource_snapshot(plan, catalog, phase):
-    catalog.scan()
-    rows = []
-    for ident in catalog.live():
-        path = Path('/proc')/str(ident['pid'])
-        memory = {}
-        try:
-            for line in (path/'status').read_text().splitlines():
-                if line.startswith(('VmRSS:', 'VmHWM:', 'VmSize:')):
-                    key, value = line.split(':', 1)
-                    memory[key+'_kib'] = int(value.split()[0])
-        except (FileNotFoundError, ProcessLookupError):
-            pass
-        rows.append(dict(ident, **memory))
-    value = {'time': H.now(), 'phase': phase, 'processes': rows,
-             'gpu_processes': H.gpu_processes(list(range(8)))}
-    try:
-        value['compute_memory_csv'] = subprocess.check_output(
-            ['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory', '--format=csv,noheader'],
-            text=True, timeout=20).strip()
-    except subprocess.TimeoutExpired:
-        value['compute_memory_csv'] = None
-        value['compute_memory_error'] = {'type': 'TimeoutExpired', 'timeout_seconds': 20,
-                                         'optional_statistic': True}
-    with (Path(plan['owner_dir'])/'resources.jsonl').open('a') as stream:
-        stream.write(json.dumps(value)+'\n')
-    managed_pids = {r['pid'] for r in catalog.live()}
-    assert not [r for r in value['gpu_processes'] if r['pid'] in managed_pids and r['gpu'] not in GPUS], \
-        'Smoke created a compute/graphics context outside GPU4-7'
-    for service in plan['services']:
-        service_pids = {r['pid'] for r in catalog.live('service_'+service['key'])}
-        assert not [r for r in value['gpu_processes'] if r['pid'] in service_pids
-                    and r['gpu'] != service['physical_gpu']], 'WM service used a different physical GPU'
-    return value
-
 
 def add_allowlist(plan):
     path = ROOT/'security/ray-guard/training_allowlist.json'
@@ -404,9 +206,66 @@ def add_allowlist(plan):
         record(Path(plan['owner_dir'])/'allowlist-added.json', {'time': H.now(), 'added': sorted(names-set(before['namespaces']))})
         atomic(path, after)
 
+def cleanup(plan, catalog):
+    sent = []
+    for sig, seconds in ((signal.SIGTERM, 30), (signal.SIGKILL, 15)):
+        deadline = time.monotonic() + seconds
+        while True:
+            catalog.scan()
+            targets = catalog.live()
+            if not targets:
+                return {'time': H.now(), 'signals': sent, 'all_stopped': True}
+            for ident in targets:
+                catalog.send(ident, sig)
+                sent.append({'pid': ident['pid'], 'start': ident['start'], 'signal': int(sig)})
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(1)
+    raise RuntimeError('Owned processes did not exit; RLT return remains blocked')
+
+
+def observe(plan, catalog, phase):
+    """Optional minute-level record; only observed wrong-card use is fatal."""
+    try:
+        catalog.scan()
+        rows = catalog.live()
+        gpu = H.gpu_processes(list(range(8)))
+        value = {'time': H.now(), 'phase': phase, 'processes': rows, 'gpu_processes': gpu}
+        with (Path(plan['owner_dir'])/'resources.jsonl').open('a') as stream:
+            stream.write(json.dumps(value)+'\n')
+    except Exception as exc:
+        print('RESOURCE_OBSERVATION_SKIPPED '+type(exc).__name__+': '+str(exc), flush=True)
+        return
+    owned_pids = {r['pid'] for r in rows}
+    wm_pids = {r['pid'] for r in rows if r['phase'].startswith('service_')}
+    assert not [r for r in gpu if r['pid'] in owned_pids and r['gpu'] not in GPUS], 'Owned process used an unassigned GPU'
+    assert not [r for r in gpu if r['pid'] in wm_pids and r['gpu'] != 5], 'WM used an unassigned GPU'
+
+
+def wait_training(plan, driver, service, catalog):
+    started, observed = time.monotonic(), -60
+    while driver.poll() is None:
+        if service.poll() is not None:
+            raise RuntimeError('WM service exited during training')
+        elapsed = time.monotonic()-started
+        if elapsed >= plan['trials'][0]['timeout_seconds']:
+            raise TimeoutError('Formal training deadline')
+        if elapsed-observed >= 60:
+            observe(plan, catalog, 'formal')
+            try:
+                atomic(Path(plan['owner_dir'])/'state.json',
+                       {'time': H.now(), 'phase': 'formal', 'elapsed_seconds': elapsed})
+            except OSError as exc:
+                print('HEARTBEAT_WRITE_SKIPPED '+str(exc), flush=True)
+            observed = elapsed
+        time.sleep(5)
+    return driver.returncode
+
 
 def run_driver(plan, key):
-    owner, cycle, repo, env = validate(plan, True)
+    owner, repo = Path(plan['owner_dir']), Path(plan['repo'])
+    env = read(plan['environment_file'])
+    env.update(read(plan['graphics_fragment']))
     row = next(r for r in plan['trials'] if r['key'] == key)
     target = owner/key
     assert os.environ[TOKEN] == plan['token'] and os.environ[PHASE] == key
@@ -475,29 +334,27 @@ def run_driver(plan, key):
         if ray.is_initialized():
             ray.shutdown()
 
-
 def owner_main(input_plan):
-    owner, cycle, repo, base_env = validate(input_plan)
-    owner.mkdir(parents=True, exist_ok=True, mode=0o700)
+    assert os.getuid() == UID and socket.gethostname() == 'h100-gpu01'
+    pidfd_probe()
+    owner, cycle, repo = map(Path, (input_plan['owner_dir'], input_plan['lifecycle_path'], input_plan['repo']))
+    cp = C.load_plan(cycle)
+    assert cp['physical_gpus'] == GPUS and not (cycle/'rlt-stopped.json').exists()
+    for path, digest in input_plan['source_sha256'].items():
+        assert sha(owned_path(path)) == digest, 'Source changed: '+path
+    owner.mkdir(mode=0o700)
     lock = (owner/'owner.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    assert not (owner/'owner-identity.json').exists(), 'Do not replay an owner'
-    assert not (cycle/'rlt-stopped.json').exists(), 'Owner must witness its own borrowing'
-    plan = copy.deepcopy(input_plan)
-    cp = C.load_plan(cycle)
-    plan.update(token=uuid.uuid4().hex, ray_address=cp['ray_address'], ray_dashboard_url=cp['ray_dashboard_url'],
-                management_namespace='opendw_ops_'+owner.name[-40:], uid=UID,
-                owner_script_sha256=sha(__file__), environment_sha256=sha(plan['environment_file']),
-                lifecycle_plan_sha256=sha(cycle/'plan.json'))
-    for row in plan['trials']:
-        row['config_sha256'] = sha(row['config'])
-        assert not H.active(H.actors(cp), row['namespace'])
-        (owner/row['key']).mkdir(exist_ok=False)
-    for service in plan['services']:
-        (owner/'services'/service['key']).mkdir(parents=True, exist_ok=False)
+    plan = dict(input_plan, token=uuid.uuid4().hex, uid=UID,
+                ray_address=cp['ray_address'], ray_dashboard_url=cp['ray_dashboard_url'],
+                management_namespace='opendw_ops_'+owner.name[-40:])
+    row, service = plan['trials'][0], plan['services'][0]
+    (owner/'formal').mkdir()
+    target = owner/'services'/service['key']; target.mkdir(parents=True)
     record(owner/'owner-plan.json', plan)
     record(owner/'owner-identity.json', dict(H.proc(os.getpid()), time=H.now()))
     catalog = Catalog(owner/'process-catalog.json', plan['token'])
+    env = read(plan['environment_file'])
     closing = {'value': False, 'launching': False, 'signal': None}
     def terminate(sig, frame):
         closing['signal'] = sig
@@ -505,187 +362,95 @@ def owner_main(input_plan):
             raise RuntimeError('Owner received signal '+str(sig))
     signal.signal(signal.SIGTERM, terminate)
     signal.signal(signal.SIGINT, terminate)
-    children = []
-    def launch(argv, cwd, env, phase, log):
+    def launch(argv, cwd, child_env, phase, log):
         closing['launching'] = True
         try:
-            env = dict(env, **{TOKEN: plan['token'], PHASE: phase})
+            child_env = dict(child_env, **{TOKEN: plan['token'], PHASE: phase})
             with Path(log).open('x') as stream:
-                child = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                child = subprocess.Popen(argv, cwd=cwd, env=child_env, stdin=subprocess.DEVNULL,
                                          stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
-            ident = H.proc(child.pid)
-            catalog.add(ident, phase, 'exact Popen child')
-            children.append(child)
+            catalog.add(H.proc(child.pid), phase, 'exact Popen child')
         finally:
             closing['launching'] = False
         if closing['signal']:
             raise RuntimeError('Termination requested during launch')
         return child
-    error = None
-    borrowed = False
-    results = []
-    terminal = 'failed'
+    error = recovery_error = None
+    terminal, results = 'failed', []
     try:
         add_allowlist(plan)
-        # Each service initializes on CPU. Both health/PID proofs are complete
-        # before the separately reviewed four-card borrow transaction begins.
-        service_children = {}
-        for service in plan['services']:
-            port = urllib.parse.urlparse(service['url']).port
-            with socket.socket() as probe:
-                probe.bind(('127.0.0.1', port))
-            env = dict(base_env)
-            env.update(service.get('environment', {}))
-            env['CUDA_VISIBLE_DEVICES'] = str(service['physical_gpu'])
-            for key in MASKS[1:]:
-                env.pop(key, None)
-            target = owner/'services'/service['key']
-            service_child = launch(service['argv'], service['cwd'], env, 'service_'+service['key'], target/'service.log')
-            service_children[service['key']] = service_child
-            deadline = time.monotonic()+service.get('startup_seconds', 1200)
-            while True:
-                assert all(p.poll() is None for p in service_children.values()), 'Service exited before CPU readiness'
-                resource_snapshot(plan, catalog, 'service_cpu_load_'+service['key'])
-                live_pids = {r['pid'] for r in catalog.live()}
-                assert not [r for r in H.gpu_processes(list(range(8))) if r['pid'] in live_pids], 'Service used GPU before borrowing'
-                try:
-                    health = http(service['url'])
-                except (OSError, ValueError):
-                    health = None
-                if health:
-                    assert health['ok'] and health['is_offloaded'] and health['pid'] == service_child.pid
-                    assert health['physical_gpu'] == service['physical_gpu']
-                    record(target/'service-cpu-ready.json', health)
-                    break
-                if time.monotonic() >= deadline:
-                    raise TimeoutError('Service CPU startup deadline: '+service['key'])
-                time.sleep(5)
-        # Complete the exact stop/receipt transaction before reacting to a
-        # termination; finally must have a conclusive borrowing receipt.
+        service_env = dict(env, **service.get('environment', {}))
+        service_env['CUDA_VISIBLE_DEVICES'] = '5'
+        wm = launch(service['argv'], service['cwd'], service_env, 'service_'+service['key'], target/'service.log')
+        deadline = time.monotonic()+service.get('startup_seconds', 1200)
+        while True:
+            assert wm.poll() is None, 'WM exited while loading'
+            try:
+                health = http(service['url'])
+            except (OSError, ValueError):
+                health = None
+            if health:
+                assert health['ok'] and health['is_offloaded'] and health['pid'] == wm.pid
+                assert health['physical_gpu'] == 5 and health['wm_batch_size'] == 16
+                record(target/'service-cpu-ready.json', health)
+                break
+            if time.monotonic() >= deadline:
+                raise TimeoutError('WM startup deadline')
+            time.sleep(5)
+        observe(plan, catalog, 'service_cpu_ready')
+        # Preserve the exact per-card checkpoint and partial-borrow transaction.
         closing['launching'] = True
         try:
-            with (cycle/'operation.lock').open('a') as operation_lock:
-                fcntl.flock(operation_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with (cycle/'operation.lock').open('a') as operation:
+                fcntl.flock(operation, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 C.stop(cycle)
-                fragment = read(plan['graphics_fragment'])
-                manifest = owned_path(fragment['RLINF_OPENDW_FORMAL_GRAPHICS_MANIFEST'])
-                assert sha(manifest) == plan['scope_manifest_sha256']
-                assert not H.gpu_processes([4, 5])
-                base_env.update(fragment)
-                record(owner/'scope-activated.json', {'physical_gpus':[4,5],
-                       'reused_existing_profile':True, 'manifest_sha256':sha(manifest)})
-                assert (cycle/'rlt-stopped.json').is_file(), 'Two-card stop returned without a complete receipt'
-                borrowed = True
+            assert (cycle/'rlt-stopped.json').is_file() and not H.gpu_processes(GPUS)
         finally:
             closing['launching'] = False
         if closing['signal']:
-            raise RuntimeError('Termination requested during RLT borrowing')
-        for row in plan['trials']:
-            env = dict(base_env)
-            for key in MASKS:
-                env.pop(key, None)
-            env.update(PYTHONPATH=str(repo)+':'+env.get('PYTHONPATH', ''), RAY_ADDRESS=plan['ray_address'])
-            argv = [plan['python'], '-u', '-B', str(Path(__file__).resolve()), '--plan', str(owner/'owner-plan.json'),
-                    'driver', '--key', row['key']]
-            child = launch(argv, str(repo), env, row['key'], owner/row['key']/'driver.log')
-            started = time.monotonic()
-            while child.poll() is None:
-                register_actors(plan, row, catalog)
-                resource_snapshot(plan, catalog, row['key'])
-                assert all(p.poll() is None for p in service_children.values()), 'Service exited during training'
-                if time.monotonic()-started >= row['timeout_seconds']:
-                    terminal = 'timed_out'
-                    raise TimeoutError('Training deadline: '+row['key'])
-                atomic(owner/'state.json', {'time': H.now(), 'phase': row['key'], 'elapsed_seconds': time.monotonic()-started})
-                time.sleep(10)
-            cleanup_result = cleanup(plan, catalog, row['key'])
-            record(owner/row['key']/'cleanup.json', cleanup_result)
-            result = {'key': row['key'], 'num_envs': row['num_envs'], 'exit_code': child.returncode,
-                      'seconds': time.monotonic()-started}
-            results.append(result)
-            record(owner/row['key']/'result.json', result)
-            assert child.returncode == 0, 'Training failed: '+row['key']
-            assert read(owner/row['key']/'driver-finished.json')['exit_code'] == 0
-            assert (owner/row['key']/'verified-placement.json').is_file()
-            for service in plan['services']:
-                response = http(service['url'], '/offload', post=True, timeout=120)
-                assert response['ok'] and response['is_offloaded']
-                health = http(service['url'])
-                assert health['ok'] and health['is_offloaded']
-                assert health['pid'] == service_children[service['key']].pid
-                assert health['physical_gpu'] == service['physical_gpu']
-            resource_snapshot(plan, catalog, row['key']+'_complete')
+            raise RuntimeError('Termination requested during borrowing')
+        env.update(read(plan['graphics_fragment']))
+        for name in MASKS:
+            env.pop(name, None)
+        env.update(PYTHONPATH=str(repo)+':'+env.get('PYTHONPATH', ''), RAY_ADDRESS=plan['ray_address'])
+        record(owner/'scope-activated.json', {'physical_gpus': GPUS})
+        argv = [plan['python'], '-u', '-B', str(Path(__file__).resolve()), '--plan', str(owner/'owner-plan.json'), 'driver', '--key', 'formal']
+        driver = launch(argv, str(repo), env, 'formal', owner/'formal/driver.log')
+        code = wait_training(plan, driver, wm, catalog)
+        result = {'key': 'formal', 'exit_code': code}
+        results.append(result); record(owner/'formal/result.json', result)
+        assert code == 0, 'Training process exited with code '+str(code)
         terminal = 'completed'
     except BaseException as exc:
         error = {'type': type(exc).__name__, 'error': str(exc), 'traceback': traceback.format_exc()}
         record(owner/'error.json', error)
     finally:
         closing['value'] = True
-        recovery_error = None
+        borrowed = (cycle/'rlt-stopped.json').exists()
         try:
-            cleanup_result = cleanup(plan, catalog)
-            record(owner/'cleanup.json', cleanup_result)
-            assert cleanup_result['all_stopped'] and not catalog.live(), 'Owner cleanup proof is incomplete'
-            for child in children:
-                try:
-                    child.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    pass
-            full_stop_receipt = (cycle/'rlt-stopped.json').is_file()
-            if not full_stop_receipt and (cycle/'clean-old-stop-attempt.json').exists():
-                # Only our workers are proven gone. Original RLT may still be
-                # healthy on some cards, so this is not an all-GPUs-empty claim.
-                borrowed = False
-                partial = {'time': H.now(), 'cycle_id': cycle.name, 'gpus': GPUS,
-                           'terminal_status': terminal, 'all_workers_stopped': True,
-                           'managed_processes': list(catalog.rows.values())}
-                receipt = owner/'partial-smoke-release.json'
-                record(receipt, partial)
-                with (cycle/'operation.lock').open('a') as operation_lock:
-                    fcntl.flock(operation_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    recovered = C.recover_partial(cycle, receipt)
-                record(owner/'partial-rlt-recovery.json', recovered)
-            elif not full_stop_receipt and (cycle/'clean-old-stopped.json').exists():
-                raise RuntimeError('Partial RLT completion marker has no top-level stop-attempt receipt')
-            else:
-                borrowed = borrowed or full_stop_receipt
+            record(owner/'cleanup.json', cleanup(plan, catalog))
+            release = {'time': H.now(), 'cycle_id': cycle.name, 'gpus': GPUS, 'terminal_status': terminal,
+                       'all_workers_stopped': True, 'managed_processes': list(catalog.rows.values())}
             if borrowed:
-                assert full_stop_receipt, 'A full return requires the complete two-card stopped receipt'
-                assert not H.gpu_processes(GPUS), 'GPU4-7 compute/graphics not released'
-                release = {'time': H.now(), 'cycle_id': cycle.name, 'gpus': GPUS, 'terminal_status': terminal,
-                           'all_workers_stopped': True, 'managed_processes': list(catalog.rows.values())}
-                receipt = owner/'smoke-release.json'
-                record(receipt, release)
-                with (cycle/'operation.lock').open('a') as operation_lock:
-                    fcntl.flock(operation_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    dispatched = H.resume(cycle, receipt)
-                record(owner/'rlt-return-dispatched.json', {'time': H.now(), 'result': dispatched})
-                deadline = time.monotonic()+plan.get('restore_wait_seconds', 60)
-                while True:
-                    state = H.status(cycle)
-                    atomic(owner/'rlt-status.json', state)
-                    assert set(state['runs']) == {'gpu4', 'gpu5'}
-                    if state['all_first_rounds_verified']:
-                        record(owner/'rlt-first-round.json', state)
-                        break
-                    if any(run.get('finished') for run in state['runs'].values()):
-                        raise RuntimeError('Restored RLT exited before first-round validation')
-                    if time.monotonic() >= deadline:
-                        record(owner/'rlt-first-round-pending.json', {'time': H.now(),
-                            'status': 'return_dispatched_first_round_pending', 'state': state})
-                        break
-                    time.sleep(15)
+                assert not H.gpu_processes(GPUS), 'GPU4/5 still occupied; do not resume RLT'
+                receipt = owner/'smoke-release.json'; record(receipt, release)
+                with (cycle/'operation.lock').open('a') as operation:
+                    fcntl.flock(operation, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    returned = H.resume(cycle, receipt)
+                record(owner/'rlt-return-dispatched.json', {'time': H.now(), 'result': returned})
+            elif (cycle/'clean-old-stop-attempt.json').exists():
+                receipt = owner/'partial-smoke-release.json'; record(receipt, release)
+                with (cycle/'operation.lock').open('a') as operation:
+                    fcntl.flock(operation, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    returned = C.recover_partial(cycle, receipt)
+                record(owner/'partial-rlt-recovery.json', returned)
         except BaseException as exc:
             recovery_error = {'type': type(exc).__name__, 'error': str(exc), 'traceback': traceback.format_exc()}
             record(owner/'recovery-error.json', recovery_error)
         record(owner/'final.json', {'time': H.now(), 'mode': plan['mode'], 'physical_gpus': GPUS,
-            'terminal_status': terminal, 'trials': results,
-            'error': error, 'recovery_error': recovery_error, 'rlt_borrowed': borrowed,
-            'partial_rlt_recovery_recorded': (owner/'partial-rlt-recovery.json').exists(),
-            'rlt_return_dispatched': (owner/'rlt-return-dispatched.json').exists(),
-            'rlt_first_round_pending': (owner/'rlt-first-round-pending.json').exists(),
-            'rlt_first_round_verified': (owner/'rlt-first-round.json').exists(),
-            'gpu_processes': H.gpu_processes(list(range(8)))})
+               'terminal_status': terminal, 'trials': results, 'error': error, 'recovery_error': recovery_error,
+               'rlt_borrowed': borrowed, 'rlt_return_dispatched': (owner/'rlt-return-dispatched.json').exists(),
+               'rlt_first_round_verified': False})
     if error or recovery_error:
         raise SystemExit(1)
 
@@ -703,7 +468,6 @@ def main():
         run_driver(plan, args.key)
     else:
         owner_main(plan)
-
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,6 @@
 # 单任务小奖励模型：收敛方案
 
-2026-10-07 12:09 WMRL B16正式：用户批准跳过smoke，仅WM B32→16，GPU4策略B64/micro16＋GPU5单WM，N64/R8/G8、512条/轮、原π0.5从0跑200、C32/384及每10轮原生32保持。4/5已借卡，正式driver初始化，首批WM生成尚未记录，owner3111039/start731673231、driver3833419；新唯一控制lift-two-gpu-b16-20261007-v1，RLT4/5经新cycle候补，6/7 Norm保持。合并正式owner入口，顶层冻结依赖71→32，身份/卡位/清理/归还保留。勿重放旧WM或旧RLT归还。详见[执行与精简记录](two_gpu_b16_restart_20261007.md)。
+2026-10-07 13:42 WMRL精简重启：控制lift-two-gpu-b16-lean-20261007-v1，owner 242804/start 732234854，driver 861883，phase=formal_initialization，WM已完成0批。GPU4/5、B16/N64/R8/512条/200轮/每10轮评估保持，从原π0.5起训；旧轮无完整CP。已移除运行期Ray Dashboard依赖和重复清理，709→473行，6项CPU回归通过；真正退出后才清理并自动归还RLT，6/7原实验不动。当前仅新入口有效，不重放旧owner。详见[精简记录](two_gpu_b16_simplification_20261007.md)。
 
 2026-10-07 01:35：**按用户要求暂停WM，GPU4/5恢复RLT。** CP225/250已派发，driver1046451/1047081及worker存活、正在初始化；6/7 Norm原实验保持。WM from0-v2视频VAE解码OOM退出，未完成首轮、无新CP。新归还cycle为`rlt45-return-20261007-v1/cycle`，请勿重放旧WM/归还入口。详见[归还记录](rlt45_return_20261007.md)。
 
