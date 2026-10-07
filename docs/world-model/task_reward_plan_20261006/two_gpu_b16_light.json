@@ -1,5 +1,5 @@
 {
-  "time": "2026-10-07T12:02:06.840619+08:00",
+  "time": "2026-10-07T12:09:19.481441+08:00",
   "files": {
     "lift-two-gpu-b16-20261007-v1/ready.json": {
       "time": "2026-10-07T12:01:08.857968+08:00",
@@ -58,25 +58,85 @@
       "cmdline_sha256": "ef5433a58b86503c317f1fa17e5896e6300b8c625bfeaecb8611f086384c5297",
       "time": "2026-10-07T12:01:52.367154+08:00",
       "alive_now": true
+    },
+    "runs/lift-two-gpu-b16-20261007-v1/state.json": {
+      "time": "2026-10-07T12:09:18.139154+08:00",
+      "phase": "formal",
+      "elapsed_seconds": 63.17046142462641
+    },
+    "runs/lift-two-gpu-b16-20261007-v1/scope-activated.json": {
+      "physical_gpus": [
+        4,
+        5
+      ],
+      "reused_existing_profile": true,
+      "manifest_sha256": "45a2f37c9447512de4e0dedb6095a8db5f051114a46097e830ca9b3f4dcd0ab0"
+    },
+    "runs/lift-two-gpu-b16-20261007-v1/formal/driver-identity.json": {
+      "pid": 3833419,
+      "uid": 20001,
+      "start": 731711861,
+      "state": "R",
+      "ppid": 3111039,
+      "cmdline_sha256": "6162f66ed7867f79b88d4fe56a38ac579f511423eaabad69f2699851b7f859e7",
+      "namespace": "opendw_lift_b16_200_1007",
+      "alive_now": true
+    },
+    "runs/lift-two-gpu-b16-20261007-v1/services/wm5/service-cpu-ready.json": {
+      "ok": true,
+      "pid": 3111406,
+      "phase": "ready_offloaded",
+      "is_offloaded": true,
+      "fatal_error": null,
+      "requests_completed": 0,
+      "rows_completed": 0,
+      "execution_mode": "batched",
+      "wm_batch_size": 16,
+      "batch_calls_completed": 0,
+      "max_actual_wm_batch": 0,
+      "physical_gpu": 5,
+      "physical_gpu_identity": {
+        "physical_gpu": 5,
+        "gpu_uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "pci": "00000000:97:00.0"
+      }
     }
   },
   "wm": {
     "batches": 0,
     "first": [],
     "last": [],
-    "phase": "loading_cpu",
+    "phase": "ready_offloaded",
     "errors": []
   },
-  "health": null,
-  "borrowed": false,
+  "health": {
+    "ok": true,
+    "pid": 3111406,
+    "phase": "ready_offloaded",
+    "is_offloaded": true,
+    "fatal_error": null,
+    "requests_completed": 0,
+    "rows_completed": 0,
+    "execution_mode": "batched",
+    "wm_batch_size": 16,
+    "batch_calls_completed": 0,
+    "max_actual_wm_batch": 0,
+    "physical_gpu": 5,
+    "physical_gpu_identity": {
+      "physical_gpu": 5,
+      "gpu_uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+      "pci": "00000000:97:00.0"
+    }
+  },
+  "borrowed": true,
   "rlt": {
     "gpu4": {
-      "original_alive": true,
+      "original_alive": false,
       "new_run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g4-after-lift-g4-v1-after-two-g4-after-fresh-g4-after-fresh2-g4-audit1007-after-b16-g4",
       "checkpoint": 300
     },
     "gpu5": {
-      "original_alive": true,
+      "original_alive": false,
       "new_run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g5-after-lift-g567-v1-after-two-g5-after-fresh-g5-after-fresh2-g5-audit1007-after-b16-g5",
       "checkpoint": 325
     }
@@ -98,9 +158,9 @@
       "alive_now": true
     }
   ],
-  "gpu": "Wed Oct  7 12:02:07 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA H100 80GB HBM3          On  |   00000000:16:00.0 Off |                    0 |\n| N/A   27C    P0             69W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   1  NVIDIA H100 80GB HBM3          On  |   00000000:17:00.0 Off |                    0 |\n| N/A   28C    P0             71W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   2  NVIDIA H100 80GB HBM3          On  |   00000000:40:00.0 Off |                    0 |\n| N/A   27C    P0             72W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   3  NVIDIA H100 80GB HBM3          On  |   00000000:41:00.0 Off |                    0 |\n| N/A   29C    P0             69W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   4  NVIDIA H100 80GB HBM3          On  |   00000000:96:00.0 Off |                    0 |\n| N/A   29C    P0            117W /  700W |   22550MiB /  81559MiB |      4%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   5  NVIDIA H100 80GB HBM3          On  |   00000000:97:00.0 Off |                    0 |\n| N/A   33C    P0            120W /  700W |   19314MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   6  NVIDIA H100 80GB HBM3          On  |   00000000:C0:00.0 Off |                    0 |\n| N/A   55C    P0            604W /  700W |   51681MiB /  81559MiB |    100%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   7  NVIDIA H100 80GB HBM3          On  |   00000000:C1:00.0 Off |                    0 |\n| N/A   40C    P0            197W /  700W |   38888MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    4   N/A  N/A         1050006      C   ...icy.recv_rollout_trajectories       1576MiB |\n|    4   N/A  N/A         1050866      C   ...ltiStepRolloutWorker.generate       9390MiB |\n|    4   N/A  N/A         1051916    C+G   ray::EnvWorker.interact               11542MiB |\n|    5   N/A  N/A         1149684      C   ...icy.recv_rollout_trajectories       1576MiB |\n|    5   N/A  N/A         1149783      C   ...ltiStepRolloutWorker.generate       9390MiB |\n|    5   N/A  N/A         1149793    C+G   ray::EnvWorker.interact                8306MiB |\n|    6   N/A  N/A         3285272      C   ...lineBCFSDPPolicy.run_training      31422MiB |\n|    6   N/A  N/A         3285275      C   ray::MultiStepRolloutWorker             788MiB |\n|    6   N/A  N/A         3285281    C+G   ray::EnvWorker                        19374MiB |\n|    7   N/A  N/A         3285269      C   ...icy.recv_rollout_trajectories      18938MiB |\n|    7   N/A  N/A         3285273      C   ...ltiStepRolloutWorker.generate       8844MiB |\n|    7   N/A  N/A         3285277    C+G   ray::EnvWorker.interact               11064MiB |\n+-----------------------------------------------------------------------------------------+\n",
+  "gpu": "Wed Oct  7 12:09:19 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA H100 80GB HBM3          On  |   00000000:16:00.0 Off |                    0 |\n| N/A   28C    P0             69W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   1  NVIDIA H100 80GB HBM3          On  |   00000000:17:00.0 Off |                    0 |\n| N/A   28C    P0             72W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   2  NVIDIA H100 80GB HBM3          On  |   00000000:40:00.0 Off |                    0 |\n| N/A   27C    P0             72W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   3  NVIDIA H100 80GB HBM3          On  |   00000000:41:00.0 Off |                    0 |\n| N/A   30C    P0             69W /  700W |       4MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   4  NVIDIA H100 80GB HBM3          On  |   00000000:96:00.0 Off |                    0 |\n| N/A   27C    P0             71W /  700W |       6MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   5  NVIDIA H100 80GB HBM3          On  |   00000000:97:00.0 Off |                    0 |\n| N/A   29C    P0             70W /  700W |       6MiB /  81559MiB |      0%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   6  NVIDIA H100 80GB HBM3          On  |   00000000:C0:00.0 Off |                    0 |\n| N/A   49C    P0            565W /  700W |   51684MiB /  81559MiB |    100%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n|   7  NVIDIA H100 80GB HBM3          On  |   00000000:C1:00.0 Off |                    0 |\n| N/A   39C    P0            163W /  700W |   38888MiB /  81559MiB |    100%      Default |\n|                                         |                        |             Disabled |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    6   N/A  N/A         3285272      C   ...lineBCFSDPPolicy.run_training      31426MiB |\n|    6   N/A  N/A         3285275      C   ray::MultiStepRolloutWorker             788MiB |\n|    6   N/A  N/A         3285281    C+G   ray::EnvWorker                        19374MiB |\n|    7   N/A  N/A         3285269      C   ...icy.recv_rollout_trajectories      18938MiB |\n|    7   N/A  N/A         3285273      C   ...ltiStepRolloutWorker.generate       8844MiB |\n|    7   N/A  N/A         3285277    C+G   ray::EnvWorker.interact               11064MiB |\n+-----------------------------------------------------------------------------------------+\n",
   "worker_proofs": [],
-  "phase": "cpu_loading",
+  "phase": "formal_initialization",
   "task": "lift_pot",
   "source_head": "9ce50c602c5e773e87e3306218fdde0cf167e8a8",
   "protocol": {

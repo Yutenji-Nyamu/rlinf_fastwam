@@ -40,7 +40,8 @@ try:
 except OSError:out['health']=None
 cp=F/'cycles/cycle/plan.json'
 if cp.is_file():
- out['rlt']={k:{'original_alive':same(r['original_identity']),'new_run':r['new_run'],'checkpoint':r['recovery']['checkpoint']['step']} for k,r in read(cp)['runs'].items()}
+ stops=read(cp.parent/'rlt-stopped.json')['runs'] if (cp.parent/'rlt-stopped.json').is_file() else {}
+ out['rlt']={k:{'original_alive':same(r['original_identity']),'new_run':r['new_run'],'checkpoint':stops.get(k,r)['recovery']['checkpoint']['step']} for k,r in read(cp)['runs'].items()}
  out['borrowed']=(cp.parent/'rlt-stopped.json').exists()
 out['protected']=[{'pid':p,'start':s,'alive_now':same({'pid':p,'start':s})} for p,s in [(3182779,727781893),(3182804,727782101),(3651109,727565004)]]
 out['gpu']=subprocess.check_output(['nvidia-smi'],text=True,timeout=20)

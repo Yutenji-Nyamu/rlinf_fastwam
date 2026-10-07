@@ -6,7 +6,7 @@ sys.path.insert(0,str(H.parent/'lift_two_gpu_20261006'))
 from make_result_publication import REMOTE
 followup='--result' in sys.argv
 prior=json.loads((D/('two_gpu_b16_published.json' if followup else 'rlt45_return_final_published.json')).read_text())
-names=['docs/world-model/task_reward_plan_20261006/'+n for n in ['README.md','two_gpu_b16_restart_20261007.md','two_gpu_b16_light.json']]
+names=['docs/world-model/task_reward_plan_20261006/'+n for n in ['README.md','two_gpu_b16_restart_20261007.md','two_gpu_b16_light.json','two_gpu_b32_execution.md']]
 names+=['local_scripts/wm_b16_retry_20261007/'+n for n in ['owner.py','prepare.py','build_owner.py','make_package.py','launch_remote.py','start_audit_remote.py','status_remote.py','record.py','make_publication.py']]
 if followup:names.append('docs/world-model/task_reward_plan_20261006/two_gpu_b16_published.json')
 files={}
