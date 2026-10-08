@@ -1,0 +1,12 @@
+diff --git a/rlinf/envs/robotwin/robotwin_env.py b/rlinf/envs/robotwin/robotwin_env.py
+index f8a4452f3c..fb0eb5b823 100644
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -82,6 +82,8 @@ class RoboTwinEnv(gym.Env):
+         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+ 
+         from robotwin.envs.vector_env import VectorEnv
++        from wm_native_capture import install as install_native_capture
++        install_native_capture()
+ 
+         env_seeds = self.reset_state_ids.tolist()
