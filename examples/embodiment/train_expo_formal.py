@@ -279,9 +279,17 @@ def main():
             closing = env; env = None
             close_robotwin_env(closing)
 
+    def release_cuda_cache_for_renderer():
+        # Vulkan/OIDN cannot reuse PyTorch allocator blocks held after learning.
+        before = [torch.cuda.memory_reserved(i) for i in range(cfg['parallel_devices'])]
+        torch.cuda.empty_cache()
+        log(run, 'renderer_memory_release', reserved_before=before,
+            reserved_after=[torch.cuda.memory_reserved(i) for i in range(cfg['parallel_devices'])])
+
     def run_evaluation(label, *, base_only=False):
         # The helper owns/offloads its four-env vector. Never overlap vectors.
         close_env(); status('evaluation_started', label=label, base_only=base_only)
+        release_cuda_cache_for_renderer()
         saved_rng = rng_state(generator)
         owned_rng = learner.generator.get_state()
         saved_selection = list(learner.last_selection_q_indices)
@@ -420,6 +428,7 @@ def main():
                 break
             stop.check()
             if env is None:
+                release_cuda_cache_for_renderer()
                 status('environment_started')
                 env = create_robotwin_env(OmegaConf.create(inputs['env']), num_envs=1, seed_offset=0)
                 log(run, 'simulator_binding', **env.expo_renderer_binding)
