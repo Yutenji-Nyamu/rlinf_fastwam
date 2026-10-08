@@ -86,6 +86,14 @@ UTD20旨在多用已有交互数据训练Q，优先样本效率；不是所有�
 - 渲染修正仅在创建训练/评估仿真前调用`torch.cuda.empty_cache()`并记录前后reserved字节，使PyTorch闲置显存可供Vulkan/OIDN分配；保留活跃模型张量、CPU回放缓存、随机状态和全部算法配置。参考[PyTorch显存管理说明](https://docs.pytorch.org/docs/stable/notes/cuda.html#memory-management)。其收益通过正式采集/学习/评估切换验收。
 - EXPO退出后，4/5两路RLT确实由既有逐卡队列启动，但因scope.json权限未满足既有只读要求，在Python启动阶段退出，未开始训练；修正4/5各自scope与引用的marker/profile/bootstrap/runtime共10份锁定文件权限，内容SHA保持；两路Python启动检查通过，保留失败回执并重新挂到EXPO之后。6/7 BC训练进程保持，CPU队列协调器仅更新4/5等待状态。
 
-## 当前执行状态
+## 正式接续验收 · 2026-10-09 00:04:59 +08:00
 
-渲染修正已从842完整断点重新启动：driver357974/start427782238、observer357981/start427782257；SZ2逐卡CPU队列owner358370/start427783043，4/5为WAIT_EXTERNAL，6/7 BC原driver92252/92254保持。新第250回合/35720动作与第843次学习已完整保存；后续原定N4评估切换验收进行中；使用既有CPU observer和逐卡队列，操作记录在`/data/chenyiteng/projects/expo-ft-sz2-20261001/cache-fix-20261008/renderer-fix`。原正式目录、物理4/5、60k动作、B64、候选8+8、Q20、采集N1、评估N4×20/每10回合和滚动保存机制保持。
+- 第250回合已保存：35,720/60,000真实动作；其5次学习843–847全部完成并保存，pending=0。完整恢复核对六类载荷摘要，17份运行源码指纹一致。
+- 新进程首次填充调用843为247.5秒；之后844–847平均144.4秒（2.41分钟）。缓存23.994 GiB，300条；末次命中率99.92%。采样/预算/更新参数保持。
+- 当前处于原定第250回合N4×20评估，已通过初始化、reset、候选生成、Q选择与四环境各10个真实动作。全20场结果仍待完成，本记录只确认当前切换成功。
+- 新增释放函数已执行；这次评估前既有`close_env`已经归还大部分闲置分配，记录的reserved前后相同（4卡26.52 GiB、5卡0.066 GiB），因此不将显存下降全归因于新增调用。新增调用补齐恢复时无旧环境可关闭、先学习后创建环境的路径；本次从无pending的842恢复，未另行重跑原OOM顺序的独立对照。
+- 当前CPU进程RSS 33.30 GiB、峰值34.73 GiB、swap0；计算/图形仅物理4/5。CPU缓存上限64 GiB仍不是进程总内存上限。
+- driver357974/start427782238、observer357981/start427782257；唯一权威入口`deployment-20261008/bc-signal-tau-v1/expo-owner/current.json`。逐卡CPU队列owner358370/start427783043，4/5等待EXPO释放，6/7 BC原driver92252/92254保留。
+- 缓存源码提交`c3aa05267`；渲染创建边界补丁及第一次计时证据提交`1ecb05b44`，GitHub分支与报告回读200/SHA一致。最终本条与验收JSON另作轻量文档同步。
+
+验收文件：[formal-acceptance-20261009.json](evidence/cache-20261008/formal-acceptance-20261009.json)。代码和轻量证据在`codex/expo-replay-cache-20261008`，模型、回放与完整日志留服务器。
