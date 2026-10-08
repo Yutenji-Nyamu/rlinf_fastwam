@@ -8,7 +8,7 @@ absorbing placeholder (last real observation, continuation=0). Online final
 observations and every executed action are required to be real.
 
 Episodes remain disk-backed with immutable SHA/identity and per-frame manifests.
-The small CPU cache never eagerly loads all demo/online image frames. No image
+A byte-bounded CPU cache retains loaded episodes on demand. No image
 augmentation, ratio cap, invented action tail or 256-chunk capacity is used.
 """
 from __future__ import annotations
@@ -23,6 +23,7 @@ import math
 import os
 from pathlib import Path
 import random
+import sys
 import uuid
 
 import numpy as np
@@ -38,6 +39,30 @@ D = 14
 GAMMA = .99
 IMAGE_COLUMNS = ('observation.images.cam_high', 'observation.images.cam_left_wrist',
                  'observation.images.cam_right_wrist')
+
+
+def _resident_bytes(value):
+    """Count resident tensor/Arrow buffers plus Python objects once per episode."""
+    seen, storages = set(), set()
+    def size(item):
+        if id(item) in seen:
+            return 0
+        seen.add(id(item))
+        overhead = sys.getsizeof(item)
+        if torch.is_tensor(item):
+            storage = item.untyped_storage()
+            key = (storage.data_ptr(), storage.nbytes())
+            extra = 0 if key in storages else storage.nbytes()
+            storages.add(key)
+            return overhead + extra
+        if hasattr(item, 'get_total_buffer_size'):  # Arrow image table.
+            return max(overhead, item.get_total_buffer_size())
+        if isinstance(item, dict):
+            return overhead + sum(size(k) + size(v) for k, v in item.items())
+        if isinstance(item, (tuple, list)):
+            return overhead + sum(size(v) for v in item)
+        return overhead
+    return size(value)
 
 
 def _cpu(value):
@@ -211,13 +236,18 @@ class FormalReplay:
     constructor's complete/revision/episode/frame checks and full source SHA
     pins preserve that reviewed provenance. There is no capacity eviction.
     """
-    def __init__(self, root, demo_path, seed=42):
+    def __init__(self, root, demo_path, seed=42, cache_limit_bytes=64 * 1024**3):
         import pyarrow.parquet as pq
         self.root = Path(root).absolute(); self.demo_path = Path(demo_path).absolute()
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         _checked(self.root, self.root); _checked(self.demo_path, self.demo_path)
         self.uid = os.getuid(); self.seed = int(seed); self.rng = random.Random(seed)
-        self._cache = OrderedDict(); self._cache_limit = 1
+        if type(cache_limit_bytes) is not int or cache_limit_bytes < 0:
+            raise ValueError('Replay cache byte limit must be a nonnegative integer')
+        self._cache = OrderedDict()
+        self._cache_sizes = {}
+        self.cache_limit_bytes = cache_limit_bytes
+        self.cache_bytes = self.cache_hits = self.cache_misses = 0
         self.samples_q = self.samples_fm = 0
         self.last_sample = self.last_fm = None
         self.demo_entries = []; self._demo_data = {}
@@ -394,8 +424,14 @@ class FormalReplay:
     def _cached(self, entry):
         key = (entry['kind'], entry['id'])
         if key in self._cache:
+            root = self.demo_path if entry['kind'] == 'demo' else self.root
+            _verify(root / entry['path'], entry['pin'])
+            if entry['kind'] != 'demo':
+                _verify(self.root / entry['manifest_path'], entry['manifest_pin'])
             self._cache.move_to_end(key)
+            self.cache_hits += 1
             return self._cache[key]
+        self.cache_misses += 1
         if entry['kind'] == 'demo':
             import pyarrow.parquet as pq
             path = _checked(self.demo_path, self.demo_path / entry['path'])
@@ -421,10 +457,20 @@ class FormalReplay:
                     _digest(value['rewards']) != manifest['rewards_sha256'] or
                     _digest(dict(terminated=value['terminated'], truncated=value['truncated'])) != manifest['flags_sha256']):
                 raise ValueError('Online episode does not match its real per-frame/action manifest')
-        self._cache[key] = value
-        while len(self._cache) > self._cache_limit:
-            self._cache.popitem(last=False)
+        size = _resident_bytes(value)
+        if size <= self.cache_limit_bytes:
+            while self.cache_bytes + size > self.cache_limit_bytes:
+                evicted, _ = self._cache.popitem(last=False)
+                self.cache_bytes -= self._cache_sizes.pop(evicted)
+            self._cache[key] = value
+            self._cache_sizes[key] = size
+            self.cache_bytes += size
         return value
+
+    def cache_metrics(self):
+        return dict(cache_hits=self.cache_hits, cache_misses=self.cache_misses,
+                    cache_bytes=self.cache_bytes, cache_entries=len(self._cache),
+                    cache_limit_bytes=self.cache_limit_bytes)
 
     def _demo_observation(self, entry, table, index):
         def decode(column):
@@ -543,4 +589,6 @@ class FormalReplay:
             raise ValueError('Replay eligible physical-step window counts differ')
         self.rng.setstate(state['rng']); self.seed = state['seed']
         self.samples_q = int(state['samples_q']); self.samples_fm = int(state['samples_fm'])
-        self._cache.clear(); self.last_sample = self.last_fm = None
+        self._cache.clear(); self._cache_sizes.clear()
+        self.cache_bytes = self.cache_hits = self.cache_misses = 0
+        self.last_sample = self.last_fm = None

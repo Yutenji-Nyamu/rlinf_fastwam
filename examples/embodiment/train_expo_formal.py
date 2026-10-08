@@ -309,19 +309,42 @@ def main():
         while cadence.pending_calls and cadence.can_learn:
             stop.check(); status('learner_started', call=cadence.completed_calls + 1)
             call_started = time.time()
+            times = dict(replay=0.0, candidates=0.0)
+            cache_before = replay.cache_metrics()
             def next_candidates(next_obs):
                 heartbeat()
-                return backend.sample_normalized(next_obs['env_obs'], num_candidates=8,
-                                                  generator=generator)[:, :, :10, :14]
+                started = time.perf_counter()
+                try:
+                    return backend.sample_normalized(next_obs['env_obs'], num_candidates=8,
+                                                      generator=generator)[:, :, :10, :14]
+                finally:
+                    times['candidates'] += time.perf_counter() - started
             def sample_batch():
                 heartbeat()
-                return replay.sample(cfg['batch_size'], backend, 'cuda:0')
+                started = time.perf_counter()
+                try:
+                    return replay.sample(cfg['batch_size'], backend, 'cuda:0')
+                finally:
+                    times['replay'] += time.perf_counter() - started
             def fm_callback():
                 heartbeat()
+                started = time.perf_counter()
                 fm_obs, fm_actions, counts = replay.sample_fm(cfg['batch_size'])
+                times['replay'] += time.perf_counter() - started
                 log(run, 'base_fm_source', global_batch=cfg['batch_size'], sources=counts)
                 return backend.fm_update(fm_obs, fm_actions)
+            update_started = time.perf_counter()
             metrics = learner.update_call(sample_batch, next_candidates, fm_callback)
+            elapsed = time.perf_counter() - update_started
+            # Host wall times; no extra GPU synchronization in the training path.
+            metrics.update(replay_seconds=times['replay'], candidate_seconds=times['candidates'],
+                           update_other_seconds=elapsed - sum(times.values()))
+            cache = replay.cache_metrics()
+            metrics.update(cache)
+            hits = cache['cache_hits'] - cache_before['cache_hits']
+            misses = cache['cache_misses'] - cache_before['cache_misses']
+            metrics.update(cache_call_hits=hits, cache_call_misses=misses,
+                           cache_hit_rate=hits / max(1, hits + misses))
             finite(metrics)
             if metrics.get('base/fm_callback_called') != 1.0:
                 raise ValueError('Formal learner omitted its native FM step')
