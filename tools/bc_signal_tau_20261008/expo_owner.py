@@ -1,275 +1,60 @@
-# Copyright 2026 The RLinf Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-"""Adopt only the EXPO CPU monitor; keep its training driver and return cycle.
-
-Release only EXPO cards 4/5. The independent per-card queue resumes their RLT.
-No training process is restarted during this ownership transfer.
-"""
-
-import fcntl
-import hashlib
-import importlib.util
-import os
-import signal
-import socket
-import subprocess
-import sys
-import time
-import traceback
+"""CPU-only EXPO observer: query errors never stop training; release cards 4/5."""
+import fcntl,importlib.util,os,signal,sys,time,traceback
 from pathlib import Path
-
-ROOT = Path("/data/chenyiteng/projects/expo-ft-sz2-20261001")
-PREVIOUS = ROOT / "parallel-trial-20261006"
-OLD = ROOT / "continue-60k-20261005"
-TRAIN = ROOT / "formal-turn-switch-repair-20261002"
-TASK = Path("/data/chenyiteng/deployment-20261006/rlt-q-signals-g67-v1")
-CURRENT = TASK / "coexist"
-HERE = Path("/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-owner")
-
-
-def priority_released(terminals, *, boot_id, uuids):
-    """Only explicit terminal plus release evidence permits the original return."""
-    if set(terminals) != {"u", "norm"} or any(v is None for v in terminals.values()):
-        return False
-    for lane, gpu in (("u", 6), ("norm", 7)):
-        row = terminals[lane]
-        if (
-            row.get("stage") not in ("COMPLETE", "FAILED")
-            or row.get("released") is not True
-        ):
-            return False
-        if (
-            row.get("boot_id") != boot_id
-            or row.get("gpu") != gpu
-            or row.get("gpu_uuid") != uuids[gpu]
-        ):
-            raise ValueError("Priority experiment terminal identity mismatch")
-        if row.get("operation_id") != "rlt-q-signals-g67-v1-" + lane:
-            raise ValueError("Priority experiment operation mismatch")
-    return True
-
+ROOT=Path('/data/chenyiteng/projects/expo-ft-sz2-20261001')
+PREVIOUS=ROOT/'parallel-trial-20261006';OLD=ROOT/'continue-60k-20261005'
+TRAIN=ROOT/'formal-turn-switch-repair-20261002'
+CURRENT=Path('/data/chenyiteng/deployment-20261006/rlt-q-signals-g67-v1/coexist')
+HERE=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-owner')
 
 def main():
-    assert os.getuid() == 20001 and socket.gethostname() == "h100-gpu02"
-    assert os.environ.get("CUDA_VISIBLE_DEVICES") == ""
-    sys.path.insert(0, str(PREVIOUS / "source/tools/expo_parallel_20261006"))
-    spec = importlib.util.spec_from_file_location(
-        "previous_expo_owner", PREVIOUS / "source/tools/expo_parallel_20261006/owner.py"
-    )
-    old = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(old)
-    read, save, identity, owned = old.read, old.atomic, old.identity, old.owned
-    assert HERE.is_dir() and not (HERE / "owner.json").exists()
-    locks = []
-    handle = (HERE / "owner.lock").open("a")
-    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    locks.append(handle)
-    initial = read(CURRENT / "current.json")
-    assert initial["status"] == "EXPO_RUNNING" and initial["physical_gpus"] == [4, 5]
-    assert time.time() - initial["time"] < 45
-    assert owned(initial["owner"]) and owned(initial["child"])
-    assert (
-        initial["owner"]["pid"] == 3008973
-        and initial["owner"]["start_ticks"] == 410890278
-    )
-    assert not any(
-        (OLD / n).exists()
-        for n in ("release.json", "final.json", "rlt-resume-intent.json")
-    )
-    assert not (old.CYCLE / "resumed-dispatched.json").exists()
-    me = identity(os.getpid())
-    boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
-    uuids = old.gpu_map()
-    save(
-        HERE / "owner.json",
-        {
-            "owner": me,
-            "previous": initial["owner"],
-            "driver": initial["child"],
-            "time": time.time(),
-        },
-    )
-    save(HERE / "handoff-intent.json", initial)
-    held = retired = False
-    active = None
-    expo_released = False
-    passed = False
-    error = None
-    meta = dict(
-        initial,
-        owner=me,
-        control=str(HERE),
-        priority_control=str(TASK),
-        original_control=str(PREVIOUS),
-    )
-    requested = [False]
-
-    def stop(*_):
-        requested[0] = True
-
-    signal.signal(signal.SIGTERM, stop)
-    signal.signal(signal.SIGINT, stop)
-
-    def state(status, **more):
-        meta.update(status=status, time=time.time(), **more)
-        for path in (
-            HERE / "current.json",
-            PREVIOUS / "current.json",
-            OLD / "current.json",
-        ):
-            save(path, meta)
-
-    try:
-        old.exact_signal(initial["owner"], signal.SIGSTOP)
-        held = True
-        old.wait_stopped(initial["owner"])
-        assert (
-            owned(initial["child"])
-            and read(CURRENT / "current.json")["status"] == "EXPO_RUNNING"
-        )
-        active = old.Roster(
-            initial["child"], initial["scope"], "formal", HERE / "expo-roster.json"
-        )
-        original_roster = read(CURRENT / "expo-roster.json")
-        assert old.same(original_roster["root"], initial["child"])
-        for row in original_roster["registered"]:
-            active.rows[(row["pid"], row["start_ticks"])] = row
-        active.scan()
-        active.write()
-        old.exact_signal(initial["owner"], signal.SIGKILL)
-        retired = True
-        held = False
-        deadline = time.monotonic() + 10
-        while owned(initial["owner"]) and time.monotonic() < deadline:
-            time.sleep(0.1)
-        assert not owned(initial["owner"]) and owned(initial["child"])
-        for path in (
-            CURRENT / "owner.lock",
-            PREVIOUS / "owner.lock",
-            OLD / "owner.lock",
-            TRAIN / "resource-owner.lock",
-            ROOT / "eval10-continuation-20261003/resource-owner.lock",
-            *[q / "owner.lock" for q in old.QUEUES],
-        ):
-            handle = path.open("a")
-            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            locks.append(handle)
-        proof = {
-            "time": time.time(),
-            "owner": me,
-            "previous_owner": initial["owner"],
-            "driver": identity(initial["child"]["pid"]),
-            "driver_unchanged": True,
-            "deferred_rlt_gpus": [4, 5],
-        }
-        save(HERE / "ready.json", proof)
-        pointer = {
-            "control": str(HERE),
-            "current": str(HERE / "current.json"),
-            "owner": me,
-            "child": initial["child"],
-            "cycle": str(old.CYCLE),
-            "physical_gpus": [4, 5],
-            "priority_control": str(TASK),
-        }
-        save(TRAIN / "active-continuation.json", pointer)
-        for queue in old.QUEUES:
-            save(queue / "active-continuation.json", pointer)
-            save(
-                queue / "queue-status.json",
-                {
-                    "time": time.time(),
-                    "stage1": "COMPLETE",
-                    "roles": {
-                        "clean": "PER_CARD_PRIORITY",
-                        "combo": "PER_CARD_PRIORITY",
-                    },
-                    "control": str(HERE),
-                    "owner": me,
-                },
-            )
-        while owned(initial["child"]):
-            assert not requested[0], "Coordinator stop requested"
-            active.scan()
-            heartbeat = TRAIN / "driver-heartbeat"
-            assert (
-                heartbeat.is_file() and time.time() - heartbeat.stat().st_mtime < 900
-            ), "EXPO heartbeat stale"
-            pids = {r["pid"] for r in active.rows.values()}
-            contexts = [g for g in old.gpu_rows() if g["pid"] in pids]
-            assert all(g["index"] in (4, 5) for g in contexts), contexts
-            state("EXPO_RUNNING", gpu_processes=contexts, other_cards="INDEPENDENT_BC_TAU_QUEUE")
-            time.sleep(10)
-        done = (
-            read(TRAIN / "run/complete.json")
-            if (TRAIN / "run/complete.json").exists()
-            else {}
-        )
-        passed = bool(
-            done.get("ok")
-            and done.get("budget_completed")
-            and done.get("cadence", {}).get("counters", {}).get("physical_actions")
-            == 60000
-        )
-        if not passed:
-            error = "Adopted EXPO driver exited without a complete 60000-action receipt"
-    except BaseException:
-        error = traceback.format_exc()
-    finally:
-        if held and owned(initial["owner"]):
-            old.exact_signal(initial["owner"], signal.SIGCONT)
-        if not retired:
-            save(
-                HERE / "handoff-failed.json",
-                {"time": time.time(), "error": error, "original_owner_retained": True},
-            )
-            return 1
-        try:
-            assert active is not None
-            if owned(active.root):
-                active.signal(active.root, signal.SIGTERM)
-                deadline = time.monotonic() + 180
-                while owned(active.root) and time.monotonic() < deadline:
-                    active.scan()
-                    time.sleep(2)
-            cleanup = active.cleanup()
-            assert not any(owned(r) for r in active.rows.values())
-            assert not any(g["index"] in (4, 5) for g in old.gpu_rows())
-            expo_released = True
-            save(
-                HERE / "expo-released.json",
-                {
-                    "time": time.time(),
-                    "expo_completed": passed,
-                    "cleanup": cleanup,
-                    "error": error,
-                },
-            )
-            state("EXPO_RELEASED", expo_completed=passed, expo_released=True)
-            save(HERE / "final.json", dict(meta, expo_released=True))
-            return 0
-        except BaseException:
-            state(
-                "ACTION_REQUIRED",
-                error=traceback.format_exc(),
-                expo_released=expo_released,
-            )
-            save(HERE / "final.json", meta)
-    return 0 if passed else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+ assert os.getuid()==20001 and os.environ.get('CUDA_VISIBLE_DEVICES')==''
+ sys.path.insert(0,str(PREVIOUS/'source/tools/expo_parallel_20261006'))
+ spec=importlib.util.spec_from_file_location('previous_expo_owner',PREVIOUS/'source/tools/expo_parallel_20261006/owner.py')
+ old=importlib.util.module_from_spec(spec);spec.loader.exec_module(old)
+ read,save,identity,owned=old.read,old.atomic,old.identity,old.owned
+ locks=[]
+ for path in [HERE/'owner.lock',CURRENT/'owner.lock',PREVIOUS/'owner.lock',OLD/'owner.lock',TRAIN/'resource-owner.lock',ROOT/'eval10-continuation-20261003/resource-owner.lock',*[q/'owner.lock' for q in old.QUEUES]]:
+  f=path.open('a');fcntl.flock(f,fcntl.LOCK_EX|fcntl.LOCK_NB);locks.append(f)
+ meta=read(HERE/'current.json');driver=meta['child'];previous=meta['owner'];me=identity(os.getpid())
+ assert not owned(previous), 'Previous observer remains alive'
+ original=read(HERE/'expo-roster.json');assert old.same(original['root'],driver)
+ active=old.Roster(driver,meta['scope'],'formal',HERE/'expo-roster.json')
+ for row in original['registered']:active.rows[(row['pid'],row['start_ticks'])]=row
+ active.scan();active.write();requested=[False]
+ signal.signal(signal.SIGTERM,lambda *_:requested.__setitem__(0,True))
+ signal.signal(signal.SIGINT,lambda *_:requested.__setitem__(0,True))
+ def state(status,**more):
+  meta.update(status=status,time=time.time(),owner=me,control=str(HERE),**more)
+  for p in [HERE/'current.json',PREVIOUS/'current.json',OLD/'current.json']:save(p,meta)
+ save(HERE/'owner.json',dict(owner=me,previous=previous,driver=driver,time=time.time()))
+ state('EXPO_RUNNING',observer_revision='20261008-query-isolation-per-card',monitoring_error=None)
+ save(HERE/'observer-adopted-20261008.json',dict(time=time.time(),owner=me,driver=driver,driver_unchanged=owned(driver)))
+ while True:
+  if requested[0]:
+   state('MONITOR_STOPPED_CHILD_RETAINED');return 0
+  try:
+   active.scan();pids={r['pid'] for r in active.rows.values() if owned(r)};gpu=old.gpu_rows()
+  except Exception:
+   state('EXPO_RUNNING' if owned(driver) else 'WAIT_RELEASE_PROOF',monitoring_error=traceback.format_exc());time.sleep(15);continue
+  contexts=[g for g in gpu if g['pid'] in pids]
+  if any(g['index'] not in (4,5) for g in contexts):
+   state('ACTION_REQUIRED',monitoring_error='Observed owned context outside cards 4/5')
+   if owned(driver):active.signal(driver,signal.SIGTERM)
+   time.sleep(15);continue
+  if owned(driver):
+   hb=TRAIN/'driver-heartbeat';age=time.time()-hb.stat().st_mtime if hb.exists() else None
+   state('EXPO_RUNNING',gpu_processes=contexts,monitoring_error=None,driver_heartbeat_age=age)
+  else:
+   try:
+    active.cleanup()
+    assert not any(owned(r) for r in active.rows.values())
+    assert not any(g['pid'] in pids for g in old.gpu_rows())
+   except Exception:
+    state('WAIT_RELEASE_PROOF',monitoring_error=traceback.format_exc());time.sleep(15);continue
+   done=read(TRAIN/'run/complete.json') if (TRAIN/'run/complete.json').exists() else {}
+   passed=bool(done.get('ok') and done.get('budget_completed') and done.get('cadence',{}).get('counters',{}).get('physical_actions')==60000)
+   save(HERE/'expo-released.json',dict(time=time.time(),driver=driver,expo_completed=passed,owned_contexts_clear=True))
+   state('EXPO_RELEASED',expo_completed=passed,expo_released=True);save(HERE/'final.json',meta);return 0
+  time.sleep(15)
+if __name__=='__main__':raise SystemExit(main())

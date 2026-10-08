@@ -1,5 +1,5 @@
 """One CPU owner per host: independent priority -> original RLT per card."""
-import argparse,fcntl,importlib.util,os,signal,subprocess,sys,time,traceback
+import argparse,fcntl,importlib.util,os,signal,subprocess,sys,time,traceback,zipfile
 from pathlib import Path
 from common import read,save,proc,same,exact_signal,actors,gpus,releasable
 
@@ -11,19 +11,19 @@ def launch(plan,request):
   child=subprocess.Popen([plan['python'],'-u','-B',str(Path(__file__).with_name('driver.py')),'--plan',plan['plan_path'],'--request',request],cwd=q['repo'],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
  ident=proc(child.pid);save(rt/'started.json',dict(time=time.time(),identity=ident,request=request));return ident,child
 
-def retain_two(q):
+def retain_latest(q):
  if q.get('kind')!='bc':return
  run=Path(q['run']);root=run/run.name/'checkpoints';complete=[]
  for cp in root.glob('global_step_*'):
   required=['actor/local_shard_checkpoint/checkpoint_rank_0.pt','actor/online_bc/rank_0/learner.pt','actor/online_bc/rank_0/success_replay.pt','actor/online_bc/rank_0/signal_tau.pt']
-  if all((cp/f).is_file() for f in required):complete.append(cp)
- for cp in sorted(complete,key=lambda p:int(p.name.split('_')[-1]))[:-2]:
+  if all((cp/f).is_file() and zipfile.is_zipfile(cp/f) for f in required):complete.append(cp)
+ for cp in sorted(complete,key=lambda p:int(p.name.split('_')[-1]))[:-1]:
   for relative in ['actor/local_shard_checkpoint/checkpoint_rank_0.pt','actor/model_state_dict/full_weights.pt','actor/online_bc/rank_0/success_replay.pt']:
    f=cp/relative
    if not f.is_file():continue
    st=f.lstat();assert not f.is_symlink() and f.resolve().is_relative_to(run.resolve()) and st.st_uid==os.getuid()
    if st.st_size>1024**3:
-    with (run/'runtime/retention.jsonl').open('a') as log:log.write(__import__('json').dumps(dict(time=time.time(),path=str(f),bytes=st.st_size,reason='keep latest two complete BC checkpoints'))+'\n')
+    with (run/'runtime/retention.jsonl').open('a') as log:log.write(__import__('json').dumps(dict(time=time.time(),path=str(f),bytes=st.st_size,reason='keep latest complete BC checkpoint'))+'\n')
     f.unlink()
 
 def main():
@@ -34,10 +34,15 @@ def main():
  for g,slot in p['slots'].items():state['slots'].setdefault(g,{'phase':'WAIT_EXTERNAL' if 'external_release' in slot else 'PENDING_PRIORITY'})
  stop=[False];signal.signal(signal.SIGTERM,lambda *_:stop.__setitem__(0,True));children={}
  while not stop[0]:
-  snapshot=gpus()
+  try:
+   snapshot=gpus();state.pop('gpu_query_error',None)
+  except Exception:
+   state.update(time=time.time(),owner=me,gpu_query_error=traceback.format_exc());save(C/'status.json',state)
+   time.sleep(15);continue
   for g,slot in p['slots'].items():
-   row=state['slots'][g];card=snapshot[int(g)]
+   row=state['slots'][g]
    try:
+    card=snapshot[int(g)]
     assert card['uuid']==slot['gpu_uuid']
     if row['phase']=='WAIT_EXTERNAL':
      if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not card['processes']:row['phase']='WAITING_RLT'
@@ -53,7 +58,10 @@ def main():
         except OSError:continue
         if pe.get('CLUSTER_NAMESPACE')==q['namespace'] and index!=int(g):
          exact_signal(row['identity'],signal.SIGTERM);raise RuntimeError('Own context escaped assigned GPU')
-      if row['phase']=='PRIORITY_RUNNING':retain_two(q)
+      if row['phase']=='PRIORITY_RUNNING' and time.time()-row.get('retention_checked',0)>=300:
+       try:retain_latest(q);row.pop('retention_error',None)
+       except Exception:row['retention_error']=traceback.format_exc()
+       row['retention_checked']=time.time()
       continue
      if g in children:children[g].poll()
      if not releasable(row['identity'],actors(p,q['namespace']),card):row['waiting']='EXIT_CLEANUP';continue

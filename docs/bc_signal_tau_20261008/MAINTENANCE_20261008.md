@@ -1,0 +1,11 @@
+# Per-card RLT maintenance, 2026-10-08
+
+A failed GPU query previously terminated the CPU owner; on SZ3 this disabled RLT fallback and checkpoint retention while BC itself continued. The owner now records transient query errors, retries after 15 seconds, and isolates checkpoint cleanup failures per card. Retention runs every 300 seconds and keeps the latest complete BC recovery point, as requested. Recovery completeness checks the ZIP directory for actor, learner, replay, and signal state before pruning older heavy payloads.
+
+The explicitly approved SZ2 EXPO CPU observer replacement removes termination caused by resource-query errors and the 900-second heartbeat threshold. Monitor termination retains the driver. The 60-line observer reuses existing identity/roster helpers; only confirmed owned processes are considered. Once EXPO exits, it proves its own processes/contexts are released; each card queue independently checks physical-card availability, so unrelated occupancy on one card does not hold another free card. There is no new daemon or training budget change.
+
+Validated on server with CPU fault injection: query timeout/recovery, retention isolation/throttling, no duplicate launch, observer termination retaining training, no false release, and foreign single-card occupancy. Live adoption retained BC driver identities and EXPO driver PID 3503441/start 410425820. SZ3 WM and its existing return path were untouched.
+
+Current owner source SHA256: 592852f7ccdf2771646628a3a5f739590c6e71f33f98a8caa5392cf20c2bfccc. EXPO observer SHA256: 465ae0c2700675291227772ca255c4a1969e3e1d100a0da75aa289fc8de045f6.
+
+Authorized SZ1 cleanup removed 233.26 GiB of payload (255.28 GiB allocated file blocks) from exact old intermediate checkpoint/replay manifests and failed DSRL payloads. Fallback checkpoints, current complete recovery points, diagnostic DSRL checkpoints, logs, configs, and metrics were retained. Together with rolling BC pruning, the data filesystem fell from 95% to 85%, with 516.4 GiB available at 17:51 CST. Full file manifests and backup/identity receipts remain under the control directory's maintenance-20261008 directory; no credentials, model weights, or other-user data are published.
