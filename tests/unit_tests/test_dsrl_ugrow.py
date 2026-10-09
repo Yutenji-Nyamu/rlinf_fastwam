@@ -189,7 +189,7 @@ class _FakeSampler:
     ):
         assert prefix is mask is cache is self.prefix
         assert mode == "eval" and not torch.is_grad_enabled()
-        steps = 10 if num_steps is None else num_steps
+        steps = self.config.num_steps if num_steps is None else num_steps
         self.calls.append((steps, noise.clone(), compute_values))
         # Match the real ODE sampler's otherwise unused random draws.
         for _ in range(steps):
@@ -197,23 +197,33 @@ class _FakeSampler:
         return {"actions": noise.float() + 1.0 / steps, "chains": noise.clone()}
 
 
-def test_actual_sampler_sidechain_reuses_cast_noise_and_preserves_rng():
+@pytest.mark.parametrize("main_steps,side_steps", [(10, 5), (4, 2)])
+def test_actual_sampler_sidechain_reuses_cast_noise_and_preserves_rng(
+    main_steps, side_steps
+):
     observation = SimpleNamespace(state=torch.zeros(2, 14))
     initial = torch.linspace(-0.9999, 1.0001, 2 * 50 * 32).reshape(2, 50, 32)
     initial_copy = initial.clone()
     before = torch.random.get_rng_state()
     clean = _FakeSampler()
+    clean.config.num_steps = main_steps
     main = clean.sample_actions(observation, noise=initial, mode="eval")
     after_main = torch.random.get_rng_state()
     torch.random.set_rng_state(before)
     weighted = _FakeSampler()
+    weighted.config.num_steps = main_steps
+    weighted.dsrl_u_spec = u.make_signal_spec(
+        signal_kind=f"ugrow_ode{main_steps}_vs{side_steps}",
+        main_steps=main_steps,
+        side_steps=side_steps,
+    )
     result = weighted.sample_actions(
         observation, noise=initial, mode="eval", collect_dsrl_u=True
     )
     assert torch.equal(after_main, torch.random.get_rng_state())
     assert torch.equal(initial, initial_copy)
     assert weighted.prefix_calls == clean.prefix_calls == 1
-    assert [call[0] for call in weighted.calls] == [10, 5]
+    assert [call[0] for call in weighted.calls] == [main_steps, side_steps]
     assert weighted.calls[1][2] is False
     assert weighted.calls[0][1].dtype == torch.bfloat16
     assert torch.equal(weighted.calls[0][1], weighted.calls[1][1])

@@ -14,11 +14,9 @@
 
 import math
 import random
-from contextlib import nullcontext
-
-from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -36,6 +34,7 @@ from rlinf.algorithms.dsrl_ugrow import (
     relative_disagreement,
     validate_signal_spec,
 )
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -226,6 +225,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             expected_u_spec = make_signal_spec(
                 signal_kind=self.dsrl_u_spec["name"],
                 main_steps=self.config.num_steps,
+                side_steps=self.dsrl_u_spec.get("side_steps", 5),
                 action_dim=self.config.action_env_dim,
                 action_horizon=self.config.action_horizon,
                 chunk_length=self.config.action_chunk,
@@ -1118,7 +1118,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
-        collect_norm = collect_dsrl_u and self.dsrl_u_spec["name"] == "norm_residual_t5_l3"
+        collect_norm = collect_dsrl_u and self.dsrl_u_spec["name"].startswith(
+            "norm_residual_"
+        )
         result = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
@@ -1130,7 +1132,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             **({"collect_norm": True} if collect_norm else {}),
         )
         if collect_norm:
-            result["dsrl_u"] = result.pop("action_norm")[:, : self.dsrl_u_spec["chunk_length"]].contiguous()
+            result["dsrl_u"] = result.pop("action_norm")[
+                :, : self.dsrl_u_spec["chunk_length"]
+            ].contiguous()
             result["dsrl_u_valid"] = torch.ones_like(result["dsrl_u"], dtype=torch.bool)
         elif collect_dsrl_u:
             rng_devices = (
@@ -1190,8 +1194,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
-        if collect_norm and (mode != "eval" or num_steps != 10):
-            raise ValueError("Norm requires deterministic ODE10")
+        if collect_norm and (mode != "eval" or num_steps not in (4, 10)):
+            raise ValueError("Norm requires deterministic ODE4 or ODE10")
+        norm_tail_steps = min(5, num_steps)
         norm_values = []
         x_t = noise
         # add sde sample and traj collect
@@ -1242,7 +1247,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             x_t_prev = x_t
             capture = (
                 capture_expert_norm(self, self.config.action_horizon)
-                if collect_norm and idx >= num_steps - 5 else nullcontext()
+                if collect_norm and idx >= num_steps - norm_tail_steps
+                else nullcontext()
             )
             with capture as step_norms:
                 x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
@@ -1294,7 +1300,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
         if collect_norm:
-            result["action_norm"] = reduce_expert_norm(norm_values)
+            result["action_norm"] = reduce_expert_norm(
+                norm_values, tail_steps=norm_tail_steps
+            )
         return result
 
     def _get_timesteps(self, denoise_steps, device):

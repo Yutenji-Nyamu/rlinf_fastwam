@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Frozen-behavior ODE10/5 disagreement and replay-chunk actor weights.
+"""Frozen-behavior solver disagreement and replay-chunk actor weights.
 
 The signal describes a historical latent-conditioned generation. It is not
 recomputed for the new latent drawn inside a later SAC update.
@@ -58,23 +58,36 @@ def make_signal_spec(
     action_horizon = _positive_int(action_horizon, "action_horizon")
     chunk_length = _positive_int(chunk_length, "chunk_length")
     epsilon = _positive_float(epsilon, "epsilon")
-    if (main_steps, side_steps) != (10, 5):
-        raise ValueError("This signal is defined on complete ODE10 and ODE5 solves")
     if chunk_length > action_horizon:
         raise ValueError("chunk_length exceeds the predicted action horizon")
-    if signal_kind == "norm_residual_t5_l3":
+    norm_steps = {"norm_residual_t5_l3": (10, 5), "norm_residual_t4_l3": (4, 4)}
+    if signal_kind in norm_steps:
+        expected_main, tail_steps = norm_steps[signal_kind]
+        if main_steps != expected_main:
+            raise ValueError("Norm identity does not match its main solver steps")
         return {
-            "name": signal_kind, "schema_version": 1, "main_steps": main_steps,
-            "action_dim": action_dim, "action_horizon": action_horizon,
-            "chunk_length": chunk_length, "tail_steps": 5, "deep_layers": 3,
-            "readout": "post_residual_pre_final_norm", "reduction": "mean_of_l2",
-            "mask": "submitted_prefix", "compute_dtype": "float32",
-            "noise": "cast_behavior_latent", "extra_solver_steps": 0,
+            "name": signal_kind,
+            "schema_version": 1,
+            "main_steps": main_steps,
+            "action_dim": action_dim,
+            "action_horizon": action_horizon,
+            "chunk_length": chunk_length,
+            "tail_steps": tail_steps,
+            "deep_layers": 3,
+            "readout": "post_residual_pre_final_norm",
+            "reduction": "mean_of_l2",
+            "mask": "submitted_prefix",
+            "compute_dtype": "float32",
+            "noise": "cast_behavior_latent",
+            "extra_solver_steps": 0,
         }
-    if signal_kind != "ugrow_ode10_vs5":
+    solver_pairs = {"ugrow_ode10_vs5": (10, 5), "ugrow_ode4_vs2": (4, 2)}
+    if signal_kind not in solver_pairs:
         raise ValueError("Unknown DSRL signal identity")
+    if (main_steps, side_steps) != solver_pairs[signal_kind]:
+        raise ValueError("U identity does not match its complete solver pair")
     return {
-        "name": "ugrow_ode10_vs5",
+        "name": signal_kind,
         "schema_version": 1,
         "main_steps": main_steps,
         "side_steps": side_steps,
@@ -97,10 +110,18 @@ def validate_signal_spec(spec: Mapping) -> dict[str, Any]:
     """Return a canonical copy or reject missing, changed, and unknown fields."""
     if not isinstance(spec, Mapping):
         raise ValueError("DSRL U signal spec must be a mapping")
-    if spec.get("name") == "norm_residual_t5_l3":
+    if spec.get("name") in {"norm_residual_t5_l3", "norm_residual_t4_l3"}:
         canonical = make_signal_spec(
             signal_kind=spec["name"],
-            **{key: spec[key] for key in ("main_steps", "action_dim", "action_horizon", "chunk_length")},
+            **{
+                key: spec[key]
+                for key in (
+                    "main_steps",
+                    "action_dim",
+                    "action_horizon",
+                    "chunk_length",
+                )
+            },
         )
         if dict(spec) != canonical or any(isinstance(v, bool) for v in spec.values()):
             raise ValueError("DSRL Norm signal specification mismatch")
@@ -110,6 +131,7 @@ def validate_signal_spec(spec: Mapping) -> dict[str, Any]:
             f"DSRL U spec keys mismatch: {sorted(spec)} != {sorted(U_SPEC)}"
         )
     canonical = make_signal_spec(
+        signal_kind=spec.get("name"),
         **{
             key: spec[key]
             for key in (
@@ -120,7 +142,7 @@ def validate_signal_spec(spec: Mapping) -> dict[str, Any]:
                 "chunk_length",
                 "epsilon",
             )
-        }
+        },
     )
     for key, expected in canonical.items():
         if isinstance(spec[key], bool) or spec[key] != expected:
@@ -175,11 +197,16 @@ def build_dsrl_u_weights(
     temperature: float = 2.5,
     log_eps: float = 1e-12,
     minmax_eps: float = 1e-6,
+    alpha_chunk: float = 1.0,
+    controls: dict | None = None,
+    runner_step: int = 0,
+    update_step: int = 0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Map full-global-batch mean(log U) to detached mean-one [B,1] weights.
+    """Map full-global-batch mean(log signal) to detached [B,1] weights.
 
     The caller must run this once before splitting the global replay batch into
-    microbatches. False mask entries do not contribute; every row needs at
+    microbatches. Weights have mean one before optional chunk neutralization.
+    False mask entries do not contribute; every row needs at
     least one valid submitted action. Nonfinite or negative valid U is an error.
     """
     temperature = _positive_float(temperature, "temperature")
@@ -223,8 +250,18 @@ def build_dsrl_u_weights(
         weights = exponential / exponential.mean()
     if not torch.isfinite(weights).all() or not (weights > 0).all():
         raise ValueError("DSRL U weights are not finite and strictly positive")
+    from rlinf.algorithms.dsrl_chunk_controls import apply_dsrl_controls
+
+    weights, control_metrics = apply_dsrl_controls(
+        weights,
+        alpha_chunk,
+        controls or {},
+        runner_step=runner_step,
+        update_step=update_step,
+    )
     ess = weights.sum().square() / weights.square().sum()
     metrics = {
+        **control_metrics,
         "weight_mean": float(weights.mean().item()),
         "weight_min": float(weights.min().item()),
         "weight_max": float(weights.max().item()),

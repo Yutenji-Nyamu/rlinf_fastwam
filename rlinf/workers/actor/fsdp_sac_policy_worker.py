@@ -319,6 +319,10 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             raise ValueError("DSRL U actor/model signal specs differ")
         if int(self.cfg.actor.model.num_action_chunks) != signal_spec["chunk_length"]:
             raise ValueError("DSRL U actor chunk length differs from signal spec")
+        from rlinf.algorithms.dsrl_chunk_controls import dsrl_controls_contract
+
+        controls = dsrl_controls_contract(u_cfg)
+        alpha_chunk = float(u_cfg.get("alpha_chunk", 1.0))
         temperature = u_cfg.get("temperature", 2.5)
         log_eps = u_cfg.get("log_eps", 1e-12)
         minmax_eps = u_cfg.get("minmax_eps", 1e-6)
@@ -340,6 +344,11 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
             "mapping": "mean_log_minmax_exp_mean",
             "global_batch_size": int(self.cfg.actor.global_batch_size),
         }
+        # Omitted or disabled tricks retain the original serialized contract.
+        if controls:
+            self.dsrl_u_contract["controls"] = controls
+        if alpha_chunk != 1.0:
+            self.dsrl_u_contract["alpha_chunk"] = alpha_chunk
 
     @staticmethod
     def _is_dsrl_target_q_parameter(name: str) -> bool:
@@ -780,6 +789,10 @@ class EmbodiedSACFSDPPolicy(EmbodiedFSDPActor):
                 temperature=contract["temperature"],
                 log_eps=contract["log_eps"],
                 minmax_eps=contract["minmax_eps"],
+                alpha_chunk=contract.get("alpha_chunk", 1.0),
+                controls=contract.get("controls", {}),
+                runner_step=self.version,
+                update_step=self.update_step,
             )
             global_batch["dsrl_u_weight"] = weights
 

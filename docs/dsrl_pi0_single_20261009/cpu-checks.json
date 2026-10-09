@@ -1,0 +1,61 @@
+[
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-m",
+      "ruff",
+      "format",
+      "rlinf/algorithms/dsrl_ugrow.py",
+      "rlinf/algorithms/dsrl_chunk_controls.py",
+      "rlinf/algorithms/norm_signal.py",
+      "rlinf/models/embodiment/openpi/openpi_action_model.py",
+      "rlinf/workers/actor/fsdp_sac_policy_worker.py",
+      "tests/unit_tests/test_norm_signal.py",
+      "tests/unit_tests/test_dsrl_ugrow.py",
+      "tests/unit_tests/test_dsrl_chunk_controls.py"
+    ],
+    "rc": 0,
+    "stdout": "7 files reformatted, 1 file left unchanged\n",
+    "stderr": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+  },
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-m",
+      "ruff",
+      "check",
+      "--fix",
+      "rlinf/algorithms/dsrl_ugrow.py",
+      "rlinf/algorithms/dsrl_chunk_controls.py",
+      "rlinf/algorithms/norm_signal.py",
+      "rlinf/models/embodiment/openpi/openpi_action_model.py",
+      "rlinf/workers/actor/fsdp_sac_policy_worker.py",
+      "tests/unit_tests/test_norm_signal.py",
+      "tests/unit_tests/test_dsrl_ugrow.py",
+      "tests/unit_tests/test_dsrl_chunk_controls.py"
+    ],
+    "rc": 1,
+    "stdout": "CPY001 Missing copyright notice at top of file\n--> rlinf/algorithms/norm_signal.py:1:1\n\nCPY001 Missing copyright notice at top of file\n--> tests/unit_tests/test_norm_signal.py:1:1\n\nFound 7 errors (5 fixed, 2 remaining).\n",
+    "stderr": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+  },
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/unit_tests/test_dsrl_ugrow.py",
+      "tests/unit_tests/test_norm_signal.py",
+      "tests/unit_tests/test_dsrl_u_actor.py",
+      "tests/unit_tests/test_dsrl_transition_replay.py",
+      "tests/unit_tests/test_dsrl_target_shadow_resume.py",
+      "tests/unit_tests/test_dsrl_chunk_controls.py"
+    ],
+    "rc": 0,
+    "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/nvme/team-data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi0-single-u-n-20261009/tests/unit_tests\nconfigfile: pytest.ini\nplugins: zarr-3.1.5, jaxtyping-0.2.36, dash-4.4.1, hydra-core-1.3.5, typeguard-4.6.0, anyio-4.15.1\ncollected 51 items\n\ntests/unit_tests/test_dsrl_ugrow.py .............                        [ 25%]\ntests/unit_tests/test_norm_signal.py ....                                [ 33%]\ntests/unit_tests/test_dsrl_u_actor.py .....                              [ 43%]\ntests/unit_tests/test_dsrl_transition_replay.py .........                [ 60%]\ntests/unit_tests/test_dsrl_target_shadow_resume.py ....                  [ 68%]\ntests/unit_tests/test_dsrl_chunk_controls.py ................            [100%]\n\n=============================== warnings summary ===============================\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================== 51 passed, 16 warnings in 70.92s (0:01:10) ==================\n",
+    "stderr": ""
+  }
+]
