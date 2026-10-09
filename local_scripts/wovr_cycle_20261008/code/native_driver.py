@@ -25,7 +25,6 @@ def main():
     p.add_argument("--private-repo", required=True, type=Path)
     p.add_argument("--environment-fragment", required=True, type=Path)
     p.add_argument("--capture-dir", required=True, type=Path)
-    p.add_argument("--capture-mode", choices=("binary_terminal", "reward_native"), default="binary_terminal")
     p.add_argument("--namespace", required=True)
     p.add_argument("--ray-address", default="127.0.0.1:26379")
     args = p.parse_args()

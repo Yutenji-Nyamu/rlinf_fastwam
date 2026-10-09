@@ -32,7 +32,7 @@ class NativeChunks(Dataset):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--bundle',required=True);p.add_argument('--checkpoint',required=True)
-    p.add_argument('--dataset',required=True);p.add_argument('--output',required=True);p.add_argument('--batch',type=int,default=1)
+    p.add_argument('--dataset',required=True);p.add_argument('--output',required=True);p.add_argument('--batch',type=int,default=4)
     p.add_argument('--epochs',type=int,default=5);p.add_argument('--steps',type=int);p.add_argument('--accum',type=int,default=1)
     p.add_argument('--lr',type=float,default=1e-5);a=p.parse_args()
     os.environ['DIFFSYNTH_MODEL_BASE_PATH']=a.bundle
@@ -42,13 +42,9 @@ def main():
     from dexbotic.exp.base_dw_exp import DWTrainerConfig
     from dexbotic.policy.dw05_policy import _load_norm_stats,ROBOTWIN_PROMPT_FORMAT
     from torch.utils.data._utils.collate import default_collate
-    acc=Accelerator(mixed_precision='bf16',gradient_accumulation_steps=a.accum,
+    acc=Accelerator(mixed_precision='bf16',gradient_accumulation_steps=a.accum,step_scheduler_with_optimizer=False,
         kwargs_handlers=[DistributedDataParallelKwargs(gradient_as_bucket_view=True,find_unused_parameters=True)])
     output=Path(a.output); output.mkdir(parents=True,exist_ok=True)
-    recipe_path=output.parents[2]/'wm_training.json'
-    fallback=bool(a.steps and recipe_path.exists())
-    if recipe_path.exists():
-        a.batch=int(json.loads(recipe_path.read_text())['microbatch'])
     torch.cuda.set_device(acc.device)
     cfg=DW05ModelConfig(load_text_encoder=True,skip_dit_load_from_pretrain=True,
         action_dim=14,proprio_dim=14,mot_checkpoint_mixed_attn=True)
@@ -75,9 +71,11 @@ def main():
             # Export the service-compatible weights once, without a duplicate model
             # plus optimizer dump that this pipeline never reloads.
             self.accelerator.wait_for_everyone()
+            weights_path = None
             if self.accelerator.is_main_process:
-                self._save_weights_checkpoint(f'step_{self.global_step:06d}')
+                weights_path = self._save_weights_checkpoint(f'step_{self.global_step:06d}')
             self.accelerator.wait_for_everyone()
+            return {'weights_path': weights_path, 'state_path': None}
         def compute_training_loss(self,sample): return self.model(sample)
         @torch.no_grad()
         def evaluate(self):
@@ -104,44 +102,15 @@ def main():
                     peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved(),**metrics))+'\n')
     tc=DWTrainerConfig(output_dir=str(output),batch_size=a.batch,num_epochs=a.epochs,max_steps=a.steps,
         num_workers=2,persistent_workers=True,learning_rate=a.lr,gradient_accumulation_steps=a.accum,
-        log_every=1,save_every=0,eval_every=0,save_final=not bool(a.steps),
-        lr_scheduler_type='constant' if a.steps else 'cosine')
+        log_every=1,save_every=0,eval_every=0,save_final=True,lr_scheduler_type='cosine')
     trainer=Trainer(model=model,train_dataset=train,val_dataset=val,cfg=tc.to_trainer_cfg(),accelerator=acc)
     before=trainer.evaluate();torch.cuda.reset_peak_memory_stats();trainer.train()
-    if a.steps:
-        # Full Adam state and DDP buffers now exist. Estimate activation growth
-        # from the measured peak, then validate ONE larger batch in this load.
-        torch.cuda.synchronize();gc.collect()
-        allocated=torch.cuda.memory_allocated();peak=torch.cuda.max_memory_allocated()
-        free,total=torch.cuda.mem_get_info();external=max(0,total-free-torch.cuda.memory_reserved())
-        transient=max(peak-allocated,512*1024**2)
-        target=total*.90-external
-        candidate=max(a.batch,int(a.batch*max(0,target-allocated)/transient))
-        candidate=min(candidate,max(a.batch,len(train)//acc.num_processes))
-        if fallback:candidate=a.batch
-        sizes=acc.gather(torch.tensor([candidate],device=acc.device));candidate=int(sizes.min())
-        baseline=dict(microbatch=a.batch,peak_allocated=peak,allocated_after_update=allocated,
-            external_bytes=external,total_bytes=total,target_fraction=.90,candidate=candidate)
-        if acc.is_main_process:
-            (output/'batch_measurement.json').write_text(json.dumps(baseline,indent=2)+'\n')
-            # A failed larger probe leaves this already passed size available.
-            recipe_path.write_text(json.dumps(dict(microbatch=a.batch,validated=True,source=str(output),baseline=baseline),indent=2)+'\n')
-        acc.wait_for_everyone()
-        if candidate>a.batch:
-            trainer.batch_size=candidate;trainer.cfg.batch_size=candidate
-            loader=trainer.build_train_loader(train)
-            trainer.train_loader=acc.prepare_data_loader(loader)
-            trainer.max_steps=trainer.global_step+a.steps
-            torch.cuda.reset_peak_memory_stats();trainer.train();a.batch=candidate
-        trainer.save_checkpoint()
-        if acc.is_main_process:
-            recipe_path.write_text(json.dumps(dict(microbatch=a.batch,validated=True,source=str(output),baseline=baseline),indent=2)+'\n')
     after=trainer.evaluate()
     acc.wait_for_everyone()
     if acc.is_main_process:
-        files=sorted((output/'checkpoints/weights').glob('*.pt'))
-        assert files,'Official trainer did not export a checkpoint'
-        (output/'result.json').write_text(json.dumps(dict(checkpoint=str(files[-1]),steps=trainer.global_step,
+        checkpoint=output/'checkpoints/weights'/f'step_{trainer.global_step:06d}.pt'
+        assert checkpoint.is_file(),'Official trainer did not export a checkpoint'
+        (output/'result.json').write_text(json.dumps(dict(checkpoint=str(checkpoint),steps=trainer.global_step,
             world_size=acc.num_processes,microbatch=a.batch,global_batch=a.batch*acc.num_processes*a.accum,
             before=before,after=after,peak_allocated=torch.cuda.max_memory_allocated(),peak_reserved=torch.cuda.max_memory_reserved()),indent=2)+'\n')
 

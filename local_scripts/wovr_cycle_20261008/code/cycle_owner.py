@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 import signal
 import subprocess
-import sys
 import time
 import traceback
 import uuid
@@ -26,7 +25,8 @@ def save(p,value):
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--plan',required=True);a=ap.parse_args()
-    plan=read(a.plan); root=Path(plan['root']);code=root/'code';out=root/'run'
+    plan=read(a.plan); root=Path(plan['root']);code=root/'code';out=Path(plan.get('run_dir',root/'run'))
+    namespace_prefix=plan.get('namespace_prefix','wmcycle1009_')
     spec=importlib.util.spec_from_file_location('existing_owner',plan['existing_owner'])
     old=importlib.util.module_from_spec(spec);spec.loader.exec_module(old)
     origin=read(plan['origin_plan']);old.load_lifecycle(origin);H=old.H
@@ -47,7 +47,7 @@ def main():
     def stopped(sig,frame):raise RuntimeError('Owner received signal '+str(sig))
     signal.signal(signal.SIGTERM,stopped);signal.signal(signal.SIGINT,stopped)
     namespaces=['initial']+[f'native{i:03d}' for i in range(10,200,10)]+[f'rl{i:03d}' for i in range(10,201,10)]
-    allow=dict(origin,owner_dir=str(out),management_namespace='wmcycle1009_ops',trials=[dict(namespace='wmcycle1009_'+n) for n in namespaces])
+    allow=dict(origin,owner_dir=str(out),management_namespace=namespace_prefix+'ops',trials=[dict(namespace=namespace_prefix+n) for n in namespaces])
     old.add_allowlist(allow)
     def launch(argv,phase,child_env,cwd=None):
         target=out/phase;target.mkdir(parents=True,exist_ok=True)
@@ -57,24 +57,21 @@ def main():
                 stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
         catalog.add(H.proc(child.pid),phase,'exact Popen child')
         return child
-    def run(argv,phase,child_env,cwd=None,optional_oom=False):
+    def run(argv,phase,child_env,cwd=None):
         started=time.monotonic();child=launch(argv,phase,child_env,cwd)
-        while child.poll() is None:time.sleep(5)
-        old.cleanup(origin,catalog)
+        child.wait()
         result=dict(exit_code=child.returncode,seconds=time.monotonic()-started)
         save(out/phase/'result.json',result)
         if child.returncode:
-            log=(out/phase/'process.log').read_text(errors='replace')
-            if optional_oom and ('out of memory' in log.lower() or 'outofmemoryerror' in log.lower()):return None
             raise RuntimeError(phase+' failed: '+str(child.returncode))
         return result
-    def native(phase,n,ids,checkpoint=None,smoke=False):
+    def native(phase,n,ids,checkpoint=None):
         target=out/phase;target.mkdir(parents=True,exist_ok=True)
         cfg=copy.deepcopy(native_base);e=cfg['env']['eval'];r=cfg['runner']
         seed_file=target/'seeds.json';entry=copy.deepcopy(seeds['source_entry']);entry['success_seeds']=ids
         save(seed_file,{'lift_pot':entry})
         e.update(total_num_envs=n,rollout_epoch=len(ids)//n,seeds_path=str(seed_file),
-            use_fixed_reset_state_ids=False,max_steps_per_rollout_epoch=64 if smoke else 384)
+            use_fixed_reset_state_ids=False,max_steps_per_rollout_epoch=384)
         e['task_config']['save_path']=str(target/'robotwin_data')
         cfg['cluster']['component_placement']={'env':'4-5' if n==64 else '5','rollout':'4'}
         cfg['env']['group_name']='WMCycleEnv_'+phase;cfg['rollout']['group_name']='WMCycleRollout_'+phase
@@ -83,29 +80,26 @@ def main():
         config=target/'config.json';save(config,cfg)
         argv=[plan['rl_python'],'-u','-B',str(code/'native_driver.py'),'--config',str(config),
             '--receipt-dir',str(target),'--private-repo',plan['repo'],'--environment-fragment',str(root/'scope.json'),
-            '--capture-dir',str(target/'capture'),'--namespace','wmcycle1009_'+phase]
-        result=run(argv,phase,env,plan['repo'],optional_oom=smoke)
-        if result:
-            eps=list((target/'capture').glob('*/episode.json'));records=[read(p) for p in eps]
-            result.update(episodes=len(records),complete=sum(int(x['complete']) for x in records),
-                chunks=sum(len(x['chunks']) for x in records),successes=sum(int(x['success']) for x in records))
-            save(target/'result.json',result)
-            if smoke:assert result['chunks']>=n, 'No complete native action blocks'
-            else:assert result['complete']==len(ids), 'Incomplete native collection'
+            '--capture-dir',str(target/'capture'),'--namespace',namespace_prefix+phase]
+        result=run(argv,phase,env,plan['repo'])
+        old.cleanup(origin,catalog)
+        eps=list((target/'capture').glob('*/episode.json'));records=[read(p) for p in eps]
+        result.update(episodes=len(records),complete=sum(int(x['complete']) for x in records),
+            chunks=sum(len(x['chunks']) for x in records),successes=sum(int(x['success']) for x in records))
+        save(target/'result.json',result)
+        assert result['complete']==len(ids), 'Incomplete native collection'
         return result
-    def pack(phase,roots,partial=False):
+    def pack(phase,roots):
         argv=[plan['wm_python'],'-u',str(code/'cycle_data.py'),'--roots',*map(str,roots),
             '--output',str(out/phase/'data'),'--seed-plan',str(root/'seed_plan.json')]
-        if partial:argv.append('--allow-partial')
         run(argv,phase+'_pack',dict(gpu_env,CUDA_VISIBLE_DEVICES=''))
         return out/phase/'data'
-    def wm(phase,dataset,checkpoint,batch,steps=None,optional=False):
+    def wm(phase,dataset,checkpoint,batch):
         argv=[plan['wm_python'],'-u','-m','torch.distributed.run','--standalone','--nproc_per_node=2',str(code/'wm_train.py'),
             '--bundle',plan['bundle'],'--checkpoint',checkpoint,'--dataset',str(dataset),
             '--output',str(out/phase/'train'),'--batch',str(batch),'--epochs','5']
-        if steps:argv.extend(['--steps',str(steps)])
-        result=run(argv,phase,gpu_env,optional_oom=optional)
-        return read(out/phase/'train/result.json') if result else None
+        run(argv,phase,gpu_env)
+        return read(out/phase/'train/result.json')
     def policy(end,checkpoint,wm_checkpoint,rm_checkpoint,threshold):
         phase=f'rl{end:03d}';target=out/phase;target.mkdir(parents=True,exist_ok=True)
         bundle=target/'bundle';bundle.mkdir()
@@ -115,13 +109,11 @@ def main():
         argv[argv.index('--reward-checkpoint')+1]=rm_checkpoint;argv[argv.index('--output-dir')+1]=str(target/'wm_records')
         service_env=dict(raw_env,**service['environment'],CUDA_VISIBLE_DEVICES='5')
         server=launch(argv,phase+'_service',service_env,service['cwd'])
-        deadline=time.monotonic()+1200
         while True:
             if server.poll() is not None:raise RuntimeError('WM service exited loading '+phase)
             try:health=old.http(service['url'])
             except (OSError,ValueError):health=None
             if health and health.get('ok') and health.get('pid')==server.pid:break
-            if time.monotonic()>deadline:raise TimeoutError('WM service startup')
             time.sleep(5)
         cfg=copy.deepcopy(rl_base);r=cfg['runner']
         r.update(max_epochs=200,max_steps=end,resume_dir=checkpoint,save_interval=10,val_check_interval=10,
@@ -131,7 +123,7 @@ def main():
         cfg['env']['train']['success_reward_threshold']=threshold
         save(target/'config.yaml',cfg)
         driver_plan=dict(origin,owner_dir=str(out),repo=plan['repo'],token=token,graphics_fragment=str(root/'scope.json'),
-            trials=[dict(key=phase,config=str(target/'config.yaml'),namespace='wmcycle1009_'+phase)])
+            trials=[dict(key=phase,config=str(target/'config.yaml'),namespace=namespace_prefix+phase)])
         save(target/'driver_plan.json',driver_plan)
         driver=launch([plan['rl_python'],'-u','-B',plan['existing_owner'],'--plan',str(target/'driver_plan.json'),
             'driver','--key',phase],phase,env,plan['repo'])
@@ -145,23 +137,22 @@ def main():
         return str(cp)
     error=None
     try:
-        # Reuse already captured complete native blocks for the WM update
-        # smoke. Initial N64 collection is the formal collection itself.
         n=64
-        data=pack('wm_probe_data',[Path(plan['probe_capture'])],True)
-        trained=wm('wm_probe4',data,plan['wm_checkpoint'],4,steps=2,optional=True)
-        if trained is None:
-            trained=wm('wm_probe2',data,plan['wm_checkpoint'],2,steps=2)
-        batch=int(trained['microbatch'])
-        initial=192;additional=128 if n==64 else 96
+        resume=plan.get('resume_completed_wm')
+        batch=int(plan.get('wm_train_batch',4))
+        initial=192;additional=128
         save(out/'selected.json',dict(native_n=n,initial_total=initial,initial_train=160,heldout=32,
             initial_r=initial//n,additional=additional,additional_r=additional//n,wm_microbatch=batch,
             wm_train_gpus=[4,5],rl_n=64,rl_r=8,rl_g=8,wm_inference_batch=16))
         initial_ids=seeds['train_pool'][:160]+seeds['heldout']
-        native('initial',n,initial_ids)
-        dataset=pack('initial',[out/'initial/capture'])
-        policy_cp=None;wm_cp=plan['wm_checkpoint'];rm_cp=plan['rm_checkpoint'];threshold=plan['threshold']
-        previous_roots=[out/'initial/capture']
+        initial_dir=Path(resume['initial_dir']) if resume else out/'initial'
+        if resume:
+            dataset=initial_dir/'data'
+        else:
+            native('initial',n,initial_ids)
+            dataset=pack('initial',[initial_dir/'capture'])
+        policy_cp=None;wm_cp=resume['checkpoint'] if resume else plan['wm_checkpoint']
+        rm_cp=plan['rm_checkpoint'];threshold=plan['threshold']
         for start in range(0,200,10):
             if start:
                 phase=f'native{start:03d}'
@@ -170,17 +161,21 @@ def main():
                 weights=str(Path(policy_cp)/'actor/model_state_dict/full_weights.pt')
                 native(phase,n,ids,weights)
                 # Keep the initial real data/holdout plus newest on-policy trajectories.
-                dataset=pack(phase,[out/'initial/capture',out/phase/'capture'])
+                dataset=pack(phase,[initial_dir/'capture',out/phase/'capture'])
             phase=f'wm{start:03d}'
-            trained=wm(phase,dataset,wm_cp,batch);wm_cp=trained['checkpoint']
-            rm_phase=f'rm{start:03d}'
-            argv=[plan['rl_python'],'-u','-B',str(code/'rm_train.py'),'--dataset-dir',str(dataset/'rm'),
-                '--output-dir',str(out/rm_phase/'train'),'--pretrained-path',plan['rm_pretrained'],
-                '--resume-checkpoint',rm_cp,'--global-batch','64','--micro-batch','64']
-            run(argv,rm_phase,dict(gpu_env,CUDA_VISIBLE_DEVICES='4',PYTHONPATH=str(code)))
-            report=read(out/rm_phase/'train/report.json')
-            if report['validation']['recall']>0 and 0<report['validation']['threshold']<=1:
-                rm_cp=report['checkpoint'];threshold=report['validation']['threshold']
+            if not (resume and start==0):
+                trained=wm(phase,dataset,wm_cp,batch);wm_cp=trained['checkpoint']
+            if resume and start==0 and resume.get('rm_checkpoint'):
+                rm_cp=resume['rm_checkpoint'];threshold=resume['threshold']
+            else:
+                rm_phase=f'rm{start:03d}'
+                argv=[plan['rl_python'],'-u','-B',str(code/'rm_train.py'),'--dataset-dir',str(dataset/'rm'),
+                    '--output-dir',str(out/rm_phase/'train'),'--pretrained-path',plan['rm_pretrained'],
+                    '--resume-checkpoint',rm_cp,'--global-batch','64','--micro-batch','64']
+                run(argv,rm_phase,dict(gpu_env,CUDA_VISIBLE_DEVICES='4',PYTHONPATH=str(code)))
+                report=read(out/rm_phase/'train/report.json')
+                if report['validation']['recall']>0 and 0<report['validation']['threshold']<=1:
+                    rm_cp=report['checkpoint'];threshold=report['validation']['threshold']
             save(out/f'offline_{start:03d}.json',dict(wm_checkpoint=wm_cp,rm_checkpoint=rm_cp,threshold=threshold))
             policy_cp=policy(start+10,policy_cp,wm_cp,rm_cp,threshold)
         save(out/'complete.json',dict(time=H.now(),checkpoint=policy_cp))

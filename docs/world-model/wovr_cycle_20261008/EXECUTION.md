@@ -2,15 +2,18 @@
 
 更新：2026-10-09。用户已授权实现、紧凑短测、正式实验。深圳3物理GPU4/5；6/7原BC实验不动。旧固定WM实验完整CP40保留。
 
+
+2026-10-09事故修复：保留192条原生采集、835步WM权重和已完成的新RM，从`run-retry2`接续策略RL。删除固定旧RM哈希白名单、正式入口重复batch探测和短测独立保存分支；每卡B4已选定。当前运行阶段与身份见[事故及精简记录](INCIDENT_20261009.md)，不重放下方历史启动命令。
+
 ## 当前入口与主干
 
 `/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2`
 
-`<rl_python> -u -B <root>/code/cycle_owner.py --plan <root>/plan.json`
+`<rl_python> -u -B <root>/code/cycle_owner.py --plan <root>/plan-retry2.json`
 
 只有一个有限阶段入口：**原生采集 → 更新OpenDW → 分别更新RM → 策略RL十轮**，重复至RL200。复用官方OpenDW训练器及现有RLinf/RM入口；不查询Ray健康状态来决定停训。只在子进程真实失败时停止并清理本实验进程。
 
-4/5的RLT已挂回其他卡使用的既有逐卡队列，当前WAIT_EXTERNAL。它等待整个WM入口退出、run/final.json出现及本卡计算/图形进程清空，才分别从CP300/CP325恢复原N8训练；阶段切换不插队。WM算法入口没有候补逻辑，队列只做配置扩展。
+4/5的RLT已挂回其他卡使用的既有逐卡队列，当前WAIT_EXTERNAL。它等待整个WM入口退出、run-retry2/final.json出现及本卡计算/图形进程清空，才从本次队列登记的完整断点恢复原N8训练；阶段切换不插队。WM算法入口没有候补逻辑，队列只做配置扩展。
 
 ## 保留的训练协议
 
@@ -20,7 +23,7 @@
 - 初始原生N64×R3＝192条：160训练、32固定留出；后续每10轮N64×R2＝128条新数据，与初始训练数据混合。
 - WM每阶段先用官方通用5 epochs、LR1e-5；RM单卡batch64，二者分别训练。WM更新后沿用同一policy及optimizer断点继续RL。
 
-## 本轮短测
+## 首次启动的历史短测（正式入口已删除重复探测）
 
 原生N64已实际运行，首块触发原入口120秒超时；不是显存OOM。9个完整C32块实测82–135秒，故仅在开启完整轨迹记录时把单步等待放宽至600秒，普通评估不变。已有9个有效块直接复用作WM参数更新短测，不重新采极小样本。
 
@@ -28,7 +31,7 @@ WM直接两卡、每卡batch4、两次完整更新（global8）。这是依据�
 
 OpenDW默认示例每卡batch2，但未公开该配方的实测硬件容量；WoVR论文报告8张H100，未给可直接照搬的WM训练batch。不能拼成“官方8卡×2”的配置。
 
-短测通过后直接进入上述正式原生采集；不再追加长测或完整RL轮smoke。当前状态/异常在`run/status.json`、`run/error.json`，选定参数在`run/selected.json`，更新证据在`run/wm_probe*/train/metrics.jsonl`。加载模型或生成批次不等于参数更新。
+短测通过后直接进入上述正式原生采集；不再追加长测或完整RL轮smoke。当前状态/异常在`run-retry2/status.json`、`run-retry2/error.json`，选定参数在`run-retry2/selected.json`，更新证据在`run/wm_probe*/train/metrics.jsonl`。加载模型或生成批次不等于参数更新。
 
 ## 必要的数据适配
 
@@ -44,6 +47,6 @@ OpenDW默认示例每卡batch2，但未公开该配方的实测硬件容量；Wo
 
 00:54:12已自动进入正式`initial`阶段，N64×R3＝192条。WM正式仍从原OpenDW权重开始，策略仍原始π0.5/RL0；短测权重不用。正式阶段WM只保存一次可直接供服务加载的权重，不再输出不回读的重复模型与optimizer文件；策略完整恢复不变。
 
-当前阶段是正式实验的真实数据采集，尚未产生新实验的RL更新。采集后服务器后台继续WM→RM→策略；无需此聊天保持在线。
+这是00:56时的历史状态；03:49保存返回值错误及本次恢复、清理以[事故记录](INCIDENT_20261009.md)为准。
 
 候补接回回执：`rlt_queue_20261009.json`。本次只重载现有CPU队列owner；WM及6/7训练身份保持。
