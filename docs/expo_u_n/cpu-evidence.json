@@ -1,0 +1,38 @@
+{
+  "server": "SZ3",
+  "gpu_visibility": "hidden for CPU checks",
+  "total_tests": 32,
+  "results": [
+    {
+      "suite": "test_expo_signals.py",
+      "tests": 10,
+      "passed": true,
+      "proof": "signal_cpu_fixed.out; fixed common epsilon for microbatch comparison"
+    },
+    {
+      "suite": "test_expo_core.py",
+      "tests": 7,
+      "passed": true
+    },
+    {
+      "suite": "test_expo_formal_driver.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "test_expo_replay_cache.py",
+      "tests": 5,
+      "passed": true,
+      "proof": "cache_cpu_fixed.out; direct script entrypoint"
+    }
+  ],
+  "style": "Ruff F/I and formatting for new modules; git diff --check passed",
+  "base_commit": "3685f54df",
+  "algorithm_commit": "8a1e96c87",
+  "output_sha256": {
+    "cpu-direct.out": "4750f4c471dcf6b4eaa455e795322a22bc26fde998b5d07617c2f1794db17f1f",
+    "signal_cpu_fixed.out": "892d12218d337a7c4a7b400f582a3008e148a5a4848752a05a81ad8d6152d0f8",
+    "cache_cpu_fixed.out": "d56df3c5887206cb9d1ef175b739613ec209a5cd0e57b460a665533b5199beb3"
+  },
+  "server_receipts": "/data/chenyiteng/deployment-20261009/expo-u-n-smoke-v1/{signal-cpu-final.json,cache-cpu-final.json,cpu-checks.json}; initial invocation failures are superseded by the two final receipts"
+}

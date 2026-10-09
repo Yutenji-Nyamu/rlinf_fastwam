@@ -25,6 +25,23 @@
 - 停止条件：两信号更新及保存通过即退出；3回合没有成功H50、非有限值、绑定越界或30分钟限时则停止并记录。
 - 输出：`smoke-v1/{events.jsonl,complete.json,failure.json,checkpoint.pt}`；操作回执`smoke-launch.json`、`smoke-finished.json`、`smoke-passed.json`。
 
-## 待完成
+## GPU 实测结果
 
-GPU smoke结果、精确释放、原逐卡RLT回卡、推送提交在完成后补入。
+- 单次进程，首个原训练seed131330在57个物理动作成功，提供真实成功H50；没有扩展采集或重复smoke。
+- 原ODE10主动作逐元素相等，U补算前后主RNG相等；真实信号均有限且非恒定。SAPIEN显式绑定物理6，计算仅6/7；现场0–3无C/G上下文，4/5原WM进程不变。
+- U和Norm各完成一次B64/Q20→FM1→Editor1→alpha1；合计Q40、FM2、Editor2、alpha2。每次约270秒。每种信号的FM与Editor合并在同一次更新作通路覆盖，不是四组独立效果实验。
+
+| 信号 | FM loss | FM grad norm | FM权重范围（含demo） | Editor grad norm | Editor权重范围（含demo） |
+|---|---:|---:|---|---:|---|
+| U | 0.025915 | 0.266745 | 0.711457–1.587899 | 8.702312 | 0.802625–1.197375 |
+| Norm | 0.043831 | 0.214669 | 0.980255–1.462369 | 8.159132 | 1.000000–1.197375 |
+
+- 每次FM均有208个抽样参数发生变化，冻结前缀梯度为0。Norm的FM及Editor各有一个online窗口被dropout恢复为1，未重归一，故整batch均值可略偏离1。
+- 22:16正常退出RC0，完整checkpoint保存及同进程状态/计数恢复通过，冻结前缀参数不变；owner cleanup.ok=true，remaining=[]，6/7的C/G上下文均清零。没有启动正式EXPO训练。
+- 22:19已把6/7加入原统一owner的独立候补槽：6卡原Clean、7卡原Combo，均CP150；新CPU owner3948394，4/5原WM等待槽未变。旧owner正常退出略超过首个25秒等待，检查退出回执后续接完成，没有强杀或重跑smoke。
+- 22:23回卡核验通过：两个槽均RLT_RUNNING；driver6=3948416、driver7=3948417，owner/driver身份匹配，候选namespace分别仅有各自6/7卡上下文，无越界。日志于22:23:29/31确认从各自CP150开始载入；此时处于恢复初始化，尚未据此声称完成新训练轮。
+- 精确owner/driver、CP路径、namespace、释放证明与指标见`smoke-evidence.json`、`return-evidence.json`；服务器原始回执保留在本事务目录。
+
+## 发布
+
+实现提交`8a1e96c87`已推送`codex/expo-u-n-20261009`；继承基线`3685f54df`。发布范围为审过的源码、四份配置、短测入口、测试和轻量文档，无凭据/模型/数据集。
