@@ -1,0 +1,44 @@
+{
+  "tests": 54,
+  "pytest_passed": true,
+  "checks": [
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "rlinf/algorithms/rlt/q_chunk_weighting.py",
+        "tests/unit_tests/test_rlt_q_chunk.py"
+      ],
+      "exit_code": 0,
+      "stdout": "1 file reformatted, 1 file left unchanged\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "rlinf/algorithms/rlt/q_chunk_weighting.py",
+        "tests/unit_tests/test_rlt_q_chunk.py"
+      ],
+      "exit_code": 0,
+      "stdout": "All checks passed!\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/unit_tests/test_rlt_q_chunk.py",
+        "tests/unit_tests/test_rlt_dvac_controls.py",
+        "tests/unit_tests/test_rlt_dvac_temperature.py"
+      ],
+      "exit_code": 0,
+      "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/nvme/team-data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-q-tau-tricks-20261009/tests/unit_tests\nconfigfile: pytest.ini\nplugins: zarr-3.1.5, jaxtyping-0.2.36, dash-4.4.1, hydra-core-1.3.5, typeguard-4.6.0, anyio-4.15.1\ncollected 54 items\n\ntests/unit_tests/test_rlt_q_chunk.py ................                    [ 29%]\ntests/unit_tests/test_rlt_dvac_controls.py ............                  [ 51%]\ntests/unit_tests/test_rlt_dvac_temperature.py .......................... [100%]\n\n=============================== warnings summary ===============================\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n../../../../../../../chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings\n  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================= 54 passed, 16 warnings in 20.84s =======================\n"
+    }
+  ]
+}
