@@ -1,0 +1,111 @@
+{
+  "time": 1791561445.9163966,
+  "formal_enabled": true,
+  "source_commit": "c2c64706",
+  "source_manifest": {
+    "rlinf/algorithms/dsrl_ugrow.py": "48c3a3eef3abc4a8c9ea8d9e6e8d76a11c37c5f2c9aafeaf2a8cda8064818e63",
+    "rlinf/algorithms/dsrl_chunk_controls.py": "af3d23c1f169f0991df667b59edb13fa0d89190ca60459671a3cb0de8e9b8285",
+    "rlinf/algorithms/norm_signal.py": "ea2759d6075cc4f6f19485d76d6abdad0e620cee4a8c1b3ba3adbd9ac628e353",
+    "rlinf/models/embodiment/openpi/openpi_action_model.py": "3c60251bb3e66fa40d3f3c0771067e78b27a569018bcf5980bcf5b9196a6e881",
+    "rlinf/workers/actor/fsdp_sac_policy_worker.py": "3a8554db65600a271eeb13c01652d3f391f93151bf5ec994757a510d5669cbe2",
+    "rlinf/models/embodiment/openpi/__init__.py": "aa4d64a050da299004644ec1ec2d94c05289b9c627770590b81b6e798583660d",
+    "rlinf/data/storage/replay/dsrl_transition.py": "0ca5fc8e9e5e6ef4261f0e0fc0e92600c6bc09c978473a73ba198d9fef7a18bb",
+    "rlinf/models/embodiment/openpi/dataconfig/__init__.py": "f4f5378ede25e1963110bdfe80979de3d7d6a84a161163f83e7057cab94bffb0"
+  },
+  "rows": [
+    {
+      "gpu": 6,
+      "role": "clean",
+      "request": "/data/chenyiteng/deployment-20261009/dsrl-pi0-clean-u2-formal-v1/priority-g6.json",
+      "run": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-clean-g6-formal200-20261009-v1",
+      "namespace": "pi0-clean-g6-formal200-20261009-v1",
+      "config_sha256": "692e841ce9e9456b6b2f060df53279835b36f07d4c4010e06a45fa52c6bd2ea0",
+      "controls": {},
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops/driver.py",
+        "--plan",
+        "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/plan.json",
+        "--request",
+        "/data/chenyiteng/deployment-20261009/dsrl-pi0-clean-u2-formal-v1/priority-g6.json"
+      ],
+      "gpu_uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+      "scope": {
+        "schema": 1,
+        "uid": 20001,
+        "hostname": "h100-gpu01",
+        "token": "control-g6",
+        "physical_gpu": 6,
+        "gpu_uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+        "minor": 6,
+        "mask": 64,
+        "receipts_dir": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g6/receipts",
+        "marker_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g6/libnorm_g6_20261007.so",
+        "marker_sha256": "95f711513edeef036e1d3a69a654c606e507eda36dd1e159fd5b49ee640a227d",
+        "profile_path": "/home/chenyiteng/.nv/nvidia-application-profiles-rc.d/00-norm-g6-20261007.json",
+        "profile_sha256": "f20701bfbdde29340e47f9ffad7d62337313c7b671ca8a5588f930b0bf44c491",
+        "bootstrap_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g6/bootstrap/sitecustomize.py",
+        "bootstrap_sha256": "ee693bab328eebafd4f4c37fe8ea97db7f96f59f4e749f421f855d3b44fe5c44",
+        "runtime_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g6/bootstrap/gpu_scope_runtime.py",
+        "runtime_sha256": "2a51d8720a29c66ffa31e5a84237e8fcd614352d5753fba91baa37b07f2455b1"
+      },
+      "delta_file": "configs/clean-g6-diff.json"
+    },
+    {
+      "gpu": 7,
+      "role": "u",
+      "request": "/data/chenyiteng/deployment-20261009/dsrl-pi0-clean-u2-formal-v1/priority-g7.json",
+      "run": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1",
+      "namespace": "pi0-u-tau2-both-g7-formal200-20261009-v1",
+      "config_sha256": "7fbbabbfd3a5d02f13c02be8c19f024e44fc3f38e6c17cc82e18bbb67302bff0",
+      "controls": {
+        "chunk_dropout": {
+          "enabled": true,
+          "probability": 0.2,
+          "seed": 42
+        },
+        "alpha_schedule": {
+          "enabled": true,
+          "start_step": 1,
+          "end_step": 200,
+          "end_alpha": 0.0
+        }
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops/driver.py",
+        "--plan",
+        "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/plan.json",
+        "--request",
+        "/data/chenyiteng/deployment-20261009/dsrl-pi0-clean-u2-formal-v1/priority-g7.json"
+      ],
+      "gpu_uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+      "scope": {
+        "schema": 1,
+        "uid": 20001,
+        "hostname": "h100-gpu01",
+        "token": "control-g7",
+        "physical_gpu": 7,
+        "gpu_uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+        "minor": 7,
+        "mask": 128,
+        "receipts_dir": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/receipts",
+        "marker_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/libnorm_g7_20261007.so",
+        "marker_sha256": "2c5b9ea334e0b933b3118bbfb97daabe6083beec6f67919119e85b823599e27c",
+        "profile_path": "/home/chenyiteng/.nv/nvidia-application-profiles-rc.d/00-norm-g7-20261007.json",
+        "profile_sha256": "35825628b509c7613e6188004856a4a973a3d43efe43a6c77e41ed1a9ac0caa8",
+        "bootstrap_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/bootstrap/sitecustomize.py",
+        "bootstrap_sha256": "ee693bab328eebafd4f4c37fe8ea97db7f96f59f4e749f421f855d3b44fe5c44",
+        "runtime_path": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/bootstrap/gpu_scope_runtime.py",
+        "runtime_sha256": "2a51d8720a29c66ffa31e5a84237e8fcd614352d5753fba91baa37b07f2455b1"
+      },
+      "delta_file": "configs/u2-g7-diff.json"
+    }
+  ],
+  "config_checks_passed": true,
+  "gpu_smoke_repeated": false
+}
