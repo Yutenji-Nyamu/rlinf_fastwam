@@ -1,6 +1,7 @@
 """Execute the production sampler with a tiny deterministic velocity oracle."""
 
 import ast
+from contextlib import nullcontext
 import random
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ import pytest
 import torch
 
 from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 
 
 def _production_sampler():
@@ -24,7 +26,7 @@ def _production_sampler():
                   if isinstance(node, ast.FunctionDef)
                   and node.name == "_sample_actions_with_prefix_cache")
     module = ast.Module(body=[method], type_ignores=[])
-    namespace = dict(torch=torch, random=random, np=np,
+    namespace = dict(torch=torch, random=random, np=np, nullcontext=nullcontext, capture_expert_norm=capture_expert_norm, reduce_expert_norm=reduce_expert_norm,
                      compute_ugrow_signal=compute_ugrow_signal)
     exec(compile(ast.fix_missing_locations(module), str(path), "exec"), namespace)
     return namespace[method.name]
@@ -117,3 +119,29 @@ def test_exception_restores_side_rng():
     assert torch.equal(torch.get_rng_state(), expected[0])
     assert random.getstate() == expected[1]
     np.testing.assert_array_equal(np.random.get_state()[1], expected[2][1])
+
+
+def test_norm_uses_existing_forward_without_changing_action_or_rng():
+    class NormSampler(_TinySampler):
+        def __init__(self):
+            super().__init__()
+            self.layers = torch.nn.ModuleList([torch.nn.Identity() for _ in range(3)])
+            self.paligemma_with_expert = SimpleNamespace(gemma_expert=SimpleNamespace(model=SimpleNamespace(layers=self.layers)))
+        def sample_mean_var_val(self, x, *args):
+            for layer in self.layers:
+                layer(x)
+            return super().sample_mean_var_val(x, *args)
+    results=[]
+    for enabled in (False, True):
+        torch.manual_seed(8);random.seed(9);np.random.seed(10)
+        sampler=NormSampler()
+        output=sampler._sample_actions_with_prefix_cache(torch.ones(2,14),torch.zeros(2,3,8),torch.ones(2,3),object(),mode="eval",compute_values=False,collect_norm=enabled)
+        results.append((output,torch.get_rng_state(),random.getstate(),np.random.get_state(),len(sampler.calls)))
+        assert all(not layer._forward_hooks for layer in sampler.layers)
+    a,b=results
+    assert all(torch.equal(value,b[0][key]) for key,value in a[0].items())
+    assert torch.equal(a[1],b[1]) and a[2]==b[2]
+    np.testing.assert_array_equal(a[3][1],b[3][1])
+    assert a[4]==b[4]==10
+    assert b[0]["teacher_norm_raw"].shape==(2,50)
+    assert torch.isfinite(b[0]["teacher_norm_raw"]).all()

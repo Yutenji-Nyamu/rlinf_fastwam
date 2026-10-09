@@ -14,6 +14,8 @@
 
 import math
 import random
+from contextlib import nullcontext
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -116,6 +118,7 @@ class OpenPi0Config(Pi0Config):
     rlt_action_adapter: str = "identity"
     rlt_dvac_mode: Literal["off", "observe", "apply"] = "off"
     rlt_ugrow_enabled: bool = False
+    rlt_norm_enabled: bool = False
     state_indices: list[int] | None = None
 
 
@@ -611,6 +614,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             compute_values=False,
             collect_endpoint_previews=self.config.rlt_dvac_mode != "off",
             collect_ugrow=getattr(self.config, "rlt_ugrow_enabled", False),
+            collect_norm=getattr(self.config, "rlt_norm_enabled", False),
         )
         decode_context = None
         if self.config.rlt_action_adapter == "identity":
@@ -667,6 +671,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             )
         if "teacher_ugrow_u" in outputs:
             rlt_obs["teacher_ugrow_u"] = outputs["teacher_ugrow_u"].to(
+                device=z_rl.device, dtype=torch.float32
+            )
+        if "teacher_norm_raw" in outputs:
+            rlt_obs["teacher_norm_raw"] = outputs["teacher_norm_raw"].to(
                 device=z_rl.device, dtype=torch.float32
             )
         if return_decode_context:
@@ -1146,12 +1154,18 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         compute_values=True,
         collect_endpoint_previews: bool = False,
         collect_ugrow: bool = False,
+        collect_norm: bool = False,
         num_steps: int | None = None,
         noise_is_prepared: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
         num_steps = self.config.num_steps if num_steps is None else num_steps
+        if collect_norm and (collect_ugrow or collect_endpoint_previews):
+            raise ValueError("Select one RLT teacher signal.")
+        if collect_norm and (mode != "eval" or num_steps != 10 or self.config.action_env_dim != 14):
+            raise ValueError("RLT Norm requires eval ODE10 and D14.")
+        norm_values = []
         if collect_ugrow and (
             mode != "eval" or num_steps != 10 or self.config.action_env_dim != 14
         ):
@@ -1216,16 +1230,20 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
-            )
+            with (capture_expert_norm(self, self.config.action_horizon)
+                  if collect_norm and idx >= num_steps - 5 else nullcontext()) as step_norms:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             if endpoint_previews is not None:
                 endpoint_previews.append(
                     (x_t_prev - v_t * endpoint_timesteps[idx].to(dtype=x_t_prev.dtype))[
@@ -1272,6 +1290,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             result["teacher_dvac_v"] = torch.stack(
                 [endpoint_variances[l_value] for l_value in (2, 3, 4)], dim=1
             ).to(dtype=torch.float32)
+        if collect_norm:
+            result["teacher_norm_raw"] = reduce_expert_norm(norm_values)
         if collect_ugrow:
             # Reuse the exact complete initial noise after the main path's dtype
             # handling. ODE still draws zero-coefficient noise in the legacy

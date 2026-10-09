@@ -11,6 +11,7 @@ from omegaconf import OmegaConf
 
 from rlinf.algorithms.rlt.transition import extract_rlt_obs_from_forward_inputs
 from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
 from rlinf.data.storage.replay.buffer import TrajectoryCache
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.utils.nested_dict_process import split_dict_to_chunk
@@ -50,13 +51,14 @@ def make_worker(monkeypatch):
 
     def make(*, source="ugrow_10_5", mode="apply", dropout=0.0, spec=None):
         signal = dict(signal_source=source, signal_spec=copy.deepcopy(
-            UGROW_SIGNAL_SPEC if spec is None else spec
-        )) if source == "ugrow_10_5" else {}
+            (NORM_SIGNAL_SPEC if source == "norm_residual_t5_l3" else UGROW_SIGNAL_SPEC) if spec is None else spec
+        )) if source in {"ugrow_10_5", "norm_residual_t5_l3"} else {}
         cfg = OmegaConf.create({
             "actor": {"global_batch_size": 512, "micro_batch_size": 256,
                       "model": {"num_action_chunks": 10, "action_dim": 14}},
             "rollout": {"rlt_feature_model": {"openpi": {
                 "rlt_ugrow_enabled": source == "ugrow_10_5",
+                "rlt_norm_enabled": source == "norm_residual_t5_l3",
                 "num_steps": 10, "action_env_dim": 14,
             }}},
             "algorithm": {
@@ -211,3 +213,17 @@ def test_missing_or_invalid_u_never_falls_back_to_dv(make_worker, kind):
         batch["curr_obs"]["teacher_ugrow_u"] = torch.zeros(512, 3, 50)
     with pytest.raises(ValueError):
         make_worker()._prepare_global_batch(batch, train_actor=True)
+
+
+def test_norm_reuses_exact_u_dvca_weights_and_reference_bc_gradient(make_worker):
+    ub=_batch();nb=_batch();nb["curr_obs"]["teacher_norm_raw"]=nb["curr_obs"].pop("teacher_ugrow_u")
+    uw=make_worker();nw=make_worker(source="norm_residual_t5_l3")
+    up,um=uw._prepare_global_batch(ub,train_actor=True);np_,nm=nw._prepare_global_batch(nb,train_actor=True)
+    torch.testing.assert_close(up["rlt_dvac_new_weights"],np_["rlt_dvac_new_weights"])
+    assert nm["rlt_norm/w_nonuniform_count"]>0
+    out=extract_rlt_obs_from_forward_inputs(nb["curr_obs"] | {"z_rl":torch.zeros(512,8),"proprio":torch.zeros(512,14)})
+    assert "teacher_norm_raw" in out
+    ul,_,_=_actor(uw,up);nl,_,_=_actor(nw,np_)
+    torch.testing.assert_close(ul,nl)
+    ul.backward();nl.backward()
+    torch.testing.assert_close(uw.model.actor_actions.grad,nw.model.actor_actions.grad)

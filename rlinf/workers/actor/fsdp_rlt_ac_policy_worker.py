@@ -44,6 +44,7 @@ from rlinf.algorithms.rlt.transition import (
     use_simulator_transition_replay,
 )
 from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
+from rlinf.algorithms.norm_signal import NORM_SIGNAL_SPEC
 from rlinf.data.schema.embodied_types import Trajectory
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.scheduler import Worker
@@ -201,8 +202,9 @@ class RLTACLossMixin:
     def _rlt_dvac_selected_variances(
         self, obs: dict[str, torch.Tensor]
     ) -> torch.Tensor:
-        if getattr(self, "rlt_signal_source", "dvac") == "ugrow_10_5":
-            signal = obs.get("teacher_ugrow_u")
+        if getattr(self, "rlt_signal_source", "dvac") in {"ugrow_10_5", "norm_residual_t5_l3"}:
+            key = "teacher_ugrow_u" if self.rlt_signal_source == "ugrow_10_5" else "teacher_norm_raw"
+            signal = obs.get(key)
             horizon = self.rlt_dvac_horizon
             if (
                 not isinstance(signal, torch.Tensor)
@@ -210,7 +212,7 @@ class RLTACLossMixin:
                 or signal.shape[-1] < horizon
                 or not torch.is_floating_point(signal)
             ):
-                raise ValueError("RLT U-GROW requires cached teacher_ugrow_u [B,H].")
+                raise ValueError(f"RLT requires cached {key} [B,H].")
             return signal[:, :horizon].detach()
         teacher_v = obs.get("teacher_dvac_v")
         if not isinstance(teacher_v, torch.Tensor):
@@ -349,18 +351,19 @@ class RLTACLossMixin:
         # Transient sampled-batch field: never store permanently in replay.
         prepared = dict(global_batch)
         prepared["rlt_dvac_new_weights"] = weights
-        if getattr(self, "rlt_signal_source", "dvac") == "ugrow_10_5":
+        if getattr(self, "rlt_signal_source", "dvac") in {"ugrow_10_5", "norm_residual_t5_l3"}:
+            prefix = "rlt_ugrow" if self.rlt_signal_source == "ugrow_10_5" else "rlt_norm"
             metrics.update({
-                "rlt_ugrow/enabled": 1.0,
-                "rlt_ugrow/u_mean": float(selected_v.mean().item()),
-                "rlt_ugrow/u_std": float(selected_v.std(unbiased=False).item()),
-                "rlt_ugrow/u_min": float(selected_v.min().item()),
-                "rlt_ugrow/u_max": float(selected_v.max().item()),
-                "rlt_ugrow/w_std": float(weights.std(unbiased=False).item()),
-                "rlt_ugrow/w_nonuniform_count": float(
+                f"{prefix}/enabled": 1.0,
+                f"{prefix}/u_mean": float(selected_v.mean().item()),
+                f"{prefix}/u_std": float(selected_v.std(unbiased=False).item()),
+                f"{prefix}/u_min": float(selected_v.min().item()),
+                f"{prefix}/u_max": float(selected_v.max().item()),
+                f"{prefix}/w_std": float(weights.std(unbiased=False).item()),
+                f"{prefix}/w_nonuniform_count": float(
                     ((weights - 1.0).abs() > 1e-6).sum().item()
                 ),
-                "rlt_ugrow/success_query_count": float(success.sum().item()),
+                f"{prefix}/success_query_count": float(success.sum().item()),
             })
         metrics.update(
             {
@@ -994,20 +997,22 @@ class RLTACReplayMixin:
 
     def _ugrow_ingest_metrics(self, trajectories: list[Trajectory]) -> dict[str, float]:
         """Report new teacher U once at ingestion, including precollection rounds."""
-        if getattr(self, "rlt_signal_source", "dvac") != "ugrow_10_5":
+        if getattr(self, "rlt_signal_source", "dvac") not in {"ugrow_10_5", "norm_residual_t5_l3"}:
             return {}
+        key = "teacher_ugrow_u" if self.rlt_signal_source == "ugrow_10_5" else "teacher_norm_raw"
+        prefix = "rlt_ugrow" if self.rlt_signal_source == "ugrow_10_5" else "rlt_norm"
         values = []
         success_count = 0
         for trajectory in trajectories:
             obs = trajectory.curr_obs
-            signal = obs.get("teacher_ugrow_u") if isinstance(obs, dict) else None
+            signal = obs.get(key) if isinstance(obs, dict) else None
             if (
                 not isinstance(signal, torch.Tensor)
                 or signal.ndim < 2
                 or signal.shape[-1] < self.rlt_dvac_horizon
                 or not torch.is_floating_point(signal)
             ):
-                raise ValueError("New RLT replay rows must contain teacher_ugrow_u.")
+                raise ValueError(f"New RLT replay rows must contain {key}.")
             signal = signal.detach().reshape(-1, signal.shape[-1])
             signal = signal[:, :self.rlt_dvac_horizon].float().cpu()
             if not torch.isfinite(signal).all() or (signal < 0).any():
@@ -1017,16 +1022,16 @@ class RLTACReplayMixin:
             if isinstance(success, torch.Tensor):
                 success_count += int(success.to(torch.bool).sum().item())
         if not values:
-            return {"rlt_ugrow/rollout_query_count": 0.0}
+            return {f"{prefix}/rollout_query_count": 0.0}
         signal = torch.cat(values)
         return {
-            "rlt_ugrow/rollout_query_count": float(signal.shape[0]),
-            "rlt_ugrow/rollout_success_query_count": float(success_count),
-            "rlt_ugrow/rollout_u_mean": float(signal.mean().item()),
-            "rlt_ugrow/rollout_u_std": float(signal.std(unbiased=False).item()),
-            "rlt_ugrow/rollout_u_min": float(signal.min().item()),
-            "rlt_ugrow/rollout_u_max": float(signal.max().item()),
-            "rlt_ugrow/rollout_u_nonzero_count": float((signal > 0).sum().item()),
+            f"{prefix}/rollout_query_count": float(signal.shape[0]),
+            f"{prefix}/rollout_success_query_count": float(success_count),
+            f"{prefix}/rollout_u_mean": float(signal.mean().item()),
+            f"{prefix}/rollout_u_std": float(signal.std(unbiased=False).item()),
+            f"{prefix}/rollout_u_min": float(signal.min().item()),
+            f"{prefix}/rollout_u_max": float(signal.max().item()),
+            f"{prefix}/rollout_u_nonzero_count": float((signal > 0).sum().item()),
         }
 
     def _ingest_rollout_trajectories(
@@ -1143,8 +1148,18 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             self.rlt_dvac_cfg.get("success_scale", 1.0)
         )
         self.rlt_signal_source = str(self.rlt_dvac_cfg.get("signal_source", "dvac"))
-        if self.rlt_signal_source not in {"dvac", "ugrow_10_5"}:
-            raise ValueError("RLT signal_source must be dvac or ugrow_10_5.")
+        if self.rlt_signal_source not in {"dvac", "ugrow_10_5", "norm_residual_t5_l3"}:
+            raise ValueError("RLT signal_source must be dvac, ugrow_10_5 or norm_residual_t5_l3.")
+        if self.rlt_signal_source == "norm_residual_t5_l3":
+            feature_cfg = OmegaConf.select(cfg, "rollout.rlt_feature_model.openpi")
+            if (self.rlt_dvac_mapping != "two_level_batch" or self.rlt_dvac_mode == "off"
+                    or self.rlt_dvac_cfg.get("signal_spec") != NORM_SIGNAL_SPEC
+                    or feature_cfg is None or feature_cfg.get("rlt_norm_enabled") is not True
+                    or feature_cfg.get("rlt_ugrow_enabled", False)
+                    or feature_cfg.get("rlt_dvac_mode", "off") != "off"
+                    or feature_cfg.get("num_steps") != 10 or feature_cfg.get("action_env_dim") != 14
+                    or int(cfg.actor.model.action_dim) != 14):
+                raise ValueError("RLT Norm requires its exact spec and ODE10/D14 producer.")
         if self.rlt_signal_source == "ugrow_10_5":
             if (
                 self.rlt_dvac_mapping != "two_level_batch"
@@ -1300,6 +1315,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
         if getattr(self, "rlt_signal_source", "dvac") == "ugrow_10_5":
             contract["rlt_ugrow_signal_spec"] = dict(UGROW_SIGNAL_SPEC)
+        if getattr(self, "rlt_signal_source", "dvac") == "norm_residual_t5_l3":
+            contract["rlt_norm_signal_spec"] = dict(NORM_SIGNAL_SPEC)
         scale_schedule = self._rlt_dvac_success_scale_schedule()
         if scale_schedule is not None:
             # The rlt_dvac dict already carries the scale settings. Protect the

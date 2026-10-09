@@ -20,7 +20,7 @@ from rlinf.envs import SupportedEnvType
 from rlinf.utils.nested_dict_process import copy_dict_tensor
 
 RLT_OBS_KEYS = ("z_rl", "proprio", "ref_chunk")
-RLT_OPTIONAL_OBS_KEYS = ("teacher_dvac_v", "teacher_ugrow_u")
+RLT_OPTIONAL_OBS_KEYS = ("teacher_dvac_v", "teacher_ugrow_u", "teacher_norm_raw")
 RLT_TRANSITION_PREFIX = "rlt_transition_"
 
 
