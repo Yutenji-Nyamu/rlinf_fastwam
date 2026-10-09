@@ -6,6 +6,6 @@ Base: SZ2 Clean256, commit cd1753ee63b5f68214cebe383be6c871dc2473bb, turn_switch
 
 Later move_can_pot256 used32x8 after host-memory failures. This implementation uses the directly verified earlier turn_switch64x4 Control.
 
-Current ownership: BC/EXPO were stopped by another user-authorized task. Its reserved67 receipt removes SZ2/3 GPU6/7 from the owner. Live SZ2 read found no C/G processes on6/7. Shared Ray stays intact.
+Ownership at initial dispatch: BC/EXPO were stopped by another user-authorized task. Its reserved67 receipt removed SZ2/3 GPU6/7 from the owner; the prelaunch snapshot confirmed no C/G processes on SZ2 GPU6/7. Current status and return receipts are in EXECUTION.md. Shared Ray stays intact.
 
 References: existing GRPO endpoint telemetry -> forward_inputs -> frozen global scene groups -> two-level action-advantage weights; RLT-Q b1d2d8d/348005d for same-noise ODE10/5 and last-five-step/deepest-three-layer Norm; existing DVCA exp controls for tau/dropout/alpha. No new optimizer, replay, scheduler, resource cap or dataset.

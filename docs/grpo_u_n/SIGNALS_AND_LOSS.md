@@ -8,4 +8,5 @@ Use the **current rollout policy**, not a frozen teacher. Capture once with roll
 - Scope both, alpha_local/chunk1. Tau independently configurable; smoke uses both2.5.
 - Existing dropout p0.2 sets selected whole-chunk W to1; no deletion, rescaling or renormalization. Existing alpha schedule follows absolute runner rounds. Switches independent; example R1=1 -> R200=0.
 - Checkpoint includes signal kind/version/readout and existing mapper/controls. Legacy DVCA contract unchanged; cross-signal resume refused.
+- Saved DVCA diagnostics retain the legacy tensor key variance; its contents are the selected U/Norm scalar signal, identified by config.signal, not necessarily a statistical variance.
 - Scalar signal tensors only, no hidden-state dumps or training hot-path file scans. Checks: sampler action/RNG parity, hooks, real actor grouping/gradients, controls/endpoints, resume.
