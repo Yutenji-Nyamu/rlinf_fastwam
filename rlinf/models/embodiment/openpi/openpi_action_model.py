@@ -1099,6 +1099,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
+        num_steps_override=None,
+        norm_enabled=False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -1126,6 +1128,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             noise=noise,
             mode=mode,
             compute_values=compute_values,
+            num_steps_override=num_steps_override,
+            norm_enabled=norm_enabled,
         )
 
     def _sample_actions_with_prefix_cache(
@@ -1138,10 +1142,17 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         collect_endpoint_previews: bool = False,
+        num_steps_override=None,
+        norm_enabled=False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        num_steps = self.config.num_steps if num_steps_override is None else num_steps_override
+        if num_steps_override is not None and (mode != "eval" or num_steps_override != 5):
+            raise ValueError("EXPO comparison requires evaluation ODE5")
+        if norm_enabled and (mode != "eval" or num_steps != 10):
+            raise ValueError("Norm requires evaluation ODE10")
+        norm_values = []
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
@@ -1202,16 +1213,25 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
-            )
+            if norm_enabled and idx >= num_steps - 5:
+                from rlinf.algorithms.norm_signal import capture_expert_norm
+                with capture_expert_norm(self, self.config.action_horizon) as norms:
+                    x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                        x_t, idx, state, prefix_pad_masks, past_key_values,
+                        sample_method, num_steps, compute_values,
+                    )
+                norm_values.extend(norms)
+            else:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
             if endpoint_previews is not None:
                 endpoint_previews.append(
                     (x_t_prev - v_t * endpoint_timesteps[idx].to(dtype=x_t_prev.dtype))[
@@ -1251,6 +1271,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "prev_values": values,
             "denoise_inds": denoise_inds,
         }
+        if norm_enabled:
+            from rlinf.algorithms.norm_signal import reduce_expert_norm
+            result["norm_raw"] = reduce_expert_norm(norm_values)
         if endpoint_previews is not None:
             endpoint_variances = compute_endpoint_variances(
                 torch.stack(endpoint_previews, dim=1), l_values=(2, 3, 4)

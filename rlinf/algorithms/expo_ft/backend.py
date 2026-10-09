@@ -13,6 +13,7 @@ import hashlib
 import inspect
 import json
 import os
+import random
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -136,16 +137,18 @@ class _NativeBatchAdapter(torch.nn.Module):
         super().__init__()
         self.model = model
 
-    def forward(self, processed, noise_or_target, operation):
+    def forward(self, processed, noise_or_target, operation, action_weights=None):
         from openpi.models import model as openpi_model
         observation = openpi_model.Observation.from_dict(dict(processed))
         with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
-            if operation == 'sample':
+            if operation in ('sample', 'sample_norm', 'compare5'):
                 # Factory stores sample_actions as a bound instance attribute;
                 # DP shallow-copies that attribute and would call the master.
                 # Bind the class implementation to the actual local replica.
-                return type(self.model).sample_actions(self.model,observation, noise=noise_or_target,
-                    mode='eval', compute_values=False)['actions']
+                result = type(self.model).sample_actions(self.model, observation, noise=noise_or_target,
+                    mode='eval', compute_values=False, norm_enabled=operation == 'sample_norm',
+                    num_steps_override=5 if operation == 'compare5' else None)
+                return (result['actions'], result['norm_raw']) if operation == 'sample_norm' else result['actions']
             if operation == 'fm':
                 # A [1] result avoids DataParallel's scalar gather special case.
                 # Pinned OpenPiActionModel.sft_forward(use_rlt=False) returns
@@ -158,7 +161,10 @@ class _NativeBatchAdapter(torch.nn.Module):
                     raise RuntimeError('EXPO native FM must not enter RLT loss')
                 if hasattr(self.model,'gradient_checkpointing_disable'):
                     self.model.gradient_checkpointing_disable()
-                return PI0Pytorch.forward(self.model,observation,noise_or_target.float()).mean().reshape(1)
+                loss = PI0Pytorch.forward(self.model, observation, noise_or_target.float())
+                if action_weights is not None:
+                    loss = loss * action_weights.detach().to(loss.device)[..., None]
+                return loss.mean().reshape(1)
         raise ValueError('Unknown native parallel operation')
 
 
@@ -448,8 +454,17 @@ class Pi05Backend:
         num_candidates: int = 8,
         *,
         generator: torch.Generator | None = None,
-    ) -> torch.Tensor:
-        """Independent current-base model-space candidates, [B,N,H50,32]."""
+        signal_kind: str | None = None,
+    ) -> torch.Tensor | dict:
+        """Current-base candidates, with optional transient collection trace.
+
+        U stores original noise until selection; Norm observes the same forwards.
+        Neither path changes candidate RNG consumption or Q selection.
+        """
+        if signal_kind not in (None, 'ugrow_10_5', 'norm_residual_t5_l3'):
+            raise ValueError('Unknown EXPO collection signal')
+        operation = 'sample_norm' if signal_kind == 'norm_residual_t5_l3' else 'sample'
+        norm_rows = []
         if num_candidates < 1:
             raise ValueError("No base candidates")
         from torch.utils._pytree import tree_map
@@ -464,7 +479,7 @@ class Pi05Backend:
             for bstart in range(0, batch_size, self.observation_microbatch):
                 bend = min(batch_size, bstart + self.observation_microbatch)
                 sub = tree_map(lambda x:x[bstart:bend] if torch.is_tensor(x) else x,processed)
-                candidate_rows = []
+                candidate_rows = []; candidate_norms = []
                 for offset in range(0, num_candidates, self.candidate_microbatch):
                     count = min(self.candidate_microbatch, num_candidates - offset)
                     repeated = tree_map(lambda x:x.repeat_interleave(count,dim=0)
@@ -472,18 +487,54 @@ class Pi05Backend:
                     noise = noise_all[bstart:bend,offset:offset+count].reshape(-1,self.HORIZON,self.MODEL_DIM)
                     if self.parallel_devices > 1:
                         raw = torch.nn.parallel.data_parallel(self.parallel_adapter,
-                            (repeated,noise,'sample'),device_ids=list(range(self.parallel_devices)),output_device=0)
+                            (repeated,noise,operation),device_ids=list(range(self.parallel_devices)),output_device=0)
                     else:
-                        raw = self.parallel_adapter(repeated,noise,'sample')
+                        raw = self.parallel_adapter(repeated,noise,operation)
+                    if operation == 'sample_norm':
+                        raw, norm = raw
+                        candidate_norms.append(norm.reshape(bend-bstart,count,self.HORIZON))
                     raw = _finite(raw.float(), 'base model candidates')
                     if tuple(raw.shape) != ((bend-bstart)*count,self.HORIZON,self.MODEL_DIM):
                         raise ValueError(f'Unexpected base output shape {tuple(raw.shape)}')
                     candidate_rows.append(raw.reshape(bend-bstart,count,self.HORIZON,self.MODEL_DIM))
                 rows.append(torch.cat(candidate_rows,dim=1))
+                if candidate_norms:
+                    norm_rows.append(torch.cat(candidate_norms,dim=1))
         self.inference_receipts.append({'B':batch_size,'N':num_candidates,'flat_batch':batch_size*num_candidates,
             'devices':self.parallel_devices,'observation_microbatch':self.observation_microbatch,
             'candidate_microbatch':self.candidate_microbatch})
-        return torch.cat(rows, dim=0).detach()
+        actions = torch.cat(rows, dim=0).detach()
+        if signal_kind is None:
+            return actions
+        return dict(actions=actions, noise=noise_all.detach(), kind=signal_kind,
+                    norm_raw=torch.cat(norm_rows, dim=0).detach() if norm_rows else None,
+                    base_version=self.base_updates)
+
+    @torch.no_grad()
+    def selected_signal(self, env_obs, trace, selected_index):
+        """Return [B,H] signal of the selected parent; edited j maps to base j.
+
+        Only the selected U parent needs one comparison ODE5 plus prefix encode.
+        The side solve restores CUDA/CPU/Python RNG, including unused ODE noise.
+        """
+        from rlinf.algorithms.ugrow_signal import compute_ugrow_signal
+        actions = trace['actions']; b, n = actions.shape[:2]
+        selected = torch.as_tensor(selected_index, device=actions.device).long()
+        if selected.shape != (b,) or (selected < 0).any() or (selected >= 2*n).any():
+            raise ValueError('Selected candidate does not have a valid base parent')
+        parent = selected.remainder(n); rows = torch.arange(b, device=actions.device)
+        if trace['kind'] == 'norm_residual_t5_l3':
+            raw = trace['norm_raw'][rows, parent]
+        else:
+            processed = self._prepare(env_obs)
+            python_rng = random.getstate()
+            try:
+                with torch.random.fork_rng(devices=list(range(self.parallel_devices))), torch.inference_mode():
+                    comparison = self.parallel_adapter(processed, trace['noise'][rows, parent], 'compare5')
+            finally:
+                random.setstate(python_rng)
+            raw = compute_ugrow_signal(actions[rows, parent], comparison)
+        return raw.detach(), parent.detach()
 
     def decode(self, env_obs: Mapping[str, Any], normalized_chunk) -> torch.Tensor:
         """Decode only the selected normalized C10/14D chunk exactly once."""
@@ -519,7 +570,7 @@ class Pi05Backend:
             raise ValueError("Native action encoding changed the execution horizon")
         return _finite(normalized, "normalized replay target").detach()
 
-    def fm_update(self, observations, canonical_full_actions) -> dict[str, float]:
+    def fm_update(self, observations, canonical_full_actions, action_weights=None) -> dict[str, float]:
         """Native FM on genuine successful/demo H50 action windows."""
         obs = stack_env_observations(observations) if isinstance(observations, (list, tuple)) else observations
         actions = torch.as_tensor(canonical_full_actions).float()
@@ -527,9 +578,9 @@ class Pi05Backend:
             raise ValueError("Base FM requires real full-H50 canonical actions, no invented tail")
         processed = self._prepare(obs, actions=actions)
         target = processed.pop("actions")
-        return self.fm_update_native(processed, target)
+        return self.fm_update_native(processed, target, action_weights=action_weights)
 
-    def fm_update_native(self, observation, normalized_padded_actions) -> dict[str, float]:
+    def fm_update_native(self, observation, normalized_padded_actions, action_weights=None) -> dict[str, float]:
         """Accept a native RLinf SFT dataset (Observation, H50×32 target) batch."""
         if not isinstance(observation, Mapping):
             raise TypeError('FM uses a tensor observation dict for native per-device construction')
@@ -537,6 +588,11 @@ class Pi05Backend:
         if target.ndim != 3 or tuple(target.shape[1:]) != (self.HORIZON, self.MODEL_DIM):
             raise ValueError("Native FM target must be normalized [B,50,32]")
         _finite(target, "FM target")
+        if action_weights is not None:
+            action_weights = torch.as_tensor(action_weights, device=self.device).detach().float()
+            if (action_weights.shape != target.shape[:2] or
+                    not torch.isfinite(action_weights).all() or (action_weights < 0).any()):
+                raise ValueError('FM weights must be finite nonnegative [B,H50]')
         self.model.train()
         self.model.paligemma_with_expert.paligemma.eval()
         self.optimizer.zero_grad(set_to_none=True)
@@ -553,11 +609,12 @@ class Pi05Backend:
             if self.parallel_devices > 1 and size % self.parallel_devices:
                 raise ValueError('FM data parallel batch must divide evenly across configured cards')
             sub=tree_map(lambda x:x[start:end] if torch.is_tensor(x) else x,observation)
+            weights = None if action_weights is None else action_weights[start:end]
             if self.parallel_devices > 1:
-                values=torch.nn.parallel.data_parallel(self.parallel_adapter,(sub,target[start:end],'fm'),
+                values=torch.nn.parallel.data_parallel(self.parallel_adapter,(sub,target[start:end],'fm',weights),
                     device_ids=list(range(self.parallel_devices)),output_device=0)
             else:
-                values=self.parallel_adapter(sub,target[start:end],'fm')
+                values=self.parallel_adapter(sub,target[start:end],'fm',weights)
             loss=values.mean();_finite(loss,'FM loss')
             (loss*(size/batch_size)).backward();total_loss+=float(loss.detach())*size/batch_size;forwards+=1
         frozen_with_grad = sum(

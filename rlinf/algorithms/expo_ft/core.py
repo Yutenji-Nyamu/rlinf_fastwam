@@ -671,10 +671,14 @@ class ExpoLearner(nn.Module):
                 "q_mean": float(q_sum), "target_mean": float(target_sum),
                 "critic_global_batch": float(b), "critic_microbatches": float(microbatches)}
 
-    def _editor_temperature_update(self, batch: Mapping[str, Any]) -> dict[str, float]:
+    def _editor_temperature_update(self, batch: Mapping[str, Any], weights=None) -> dict[str, float]:
         b = batch["obs"]["images"].shape[0]
         if b < 1 or batch["actions"].shape != (b, self.config.chunk_length, self.config.action_dim):
             raise ValueError("editor replay must contain normalized nonempty B,C,D actions")
+        if weights is not None:
+            weights = torch.as_tensor(weights, device=self.device).detach().float()
+            if weights.shape != (b,) or not torch.isfinite(weights).all() or (weights < 0).any():
+                raise ValueError('Editor weights must be finite nonnegative [B]')
         self.editor_optimizer.zero_grad(set_to_none=True)
         self.critic_optimizer.zero_grad(set_to_none=True)
         original_requires_grad = [parameter.requires_grad for parameter in self.critic.parameters()]
@@ -696,7 +700,10 @@ class ExpoLearner(nn.Module):
                 delta, log_prob = self._sample_editor(features.detach(), obs["proprio"], reference)
                 # ALL online heads mean; selection's min pair is not used here.
                 q = self._forward(self.critic, features.detach(), obs["proprio"], reference + delta).mean(dim=0)
-                loss = (self.config.entropy_scale * self.temperature.detach() * log_prob - q).sum() / b
+                objective = self.config.entropy_scale * self.temperature.detach() * log_prob - q
+                if weights is not None:
+                    objective = objective * weights[start:stop]
+                loss = objective.sum() / b
                 if not torch.isfinite(loss):
                     raise FloatingPointError("nonfinite editor loss")
                 loss.backward()
@@ -727,7 +734,8 @@ class ExpoLearner(nn.Module):
                 "editor_microbatches": float(microbatches)}
 
     def update_call(self, sample_batch: Callable[[], Mapping[str, Any]], next_base_sampler: Callable,
-                    base_fm_callback: Callable[[], Mapping[str, float]] | None = None) -> dict[str, float]:
+                    base_fm_callback: Callable[[], Mapping[str, float]] | None = None,
+                    editor_weight_callback: Callable | None = None) -> dict[str, float]:
         """Q x UTD -> driver FM x 1 -> edit/temperature x 1.
 
         Each sampled batch is global B; microbatches/replicas never increment
@@ -749,7 +757,11 @@ class ExpoLearner(nn.Module):
             metrics["base/fm_callback_called"] = 1.0
         else:
             metrics["base/fm_callback_called"] = 0.0
-        metrics.update(self._editor_temperature_update(last_batch))
+        weights = None
+        if editor_weight_callback is not None:
+            weights, diagnostics = editor_weight_callback(last_batch)
+            metrics.update({f'editor_signal/{key}': float(value) for key, value in diagnostics.items()})
+        metrics.update(self._editor_temperature_update(last_batch, weights))
         self.update_calls += 1
         metrics.update({"update_calls": float(self.update_calls), "critic_steps": float(self.critic_steps),
                         "editor_steps": float(self.editor_steps), "temperature_steps": float(self.temperature_steps)})

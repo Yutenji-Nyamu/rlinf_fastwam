@@ -29,6 +29,7 @@ from rlinf.algorithms.expo_ft.backend import (
 from rlinf.algorithms.expo_ft.core import ExpoConfig, ExpoLearner
 from rlinf.algorithms.expo_ft.formal_cadence import FormalCadence
 from rlinf.algorithms.expo_ft.formal_replay import FormalReplay
+from rlinf.algorithms.expo_ft.signals import SignalWeighting, TRACE_FIELDS
 from rlinf.algorithms.expo_ft.lifecycle import close_robotwin_env
 
 
@@ -186,6 +187,7 @@ def main():
     inputs_bytes = inputs_path.read_bytes(); inputs = json.loads(inputs_bytes)
     inputs_hash = hashlib.sha256(inputs_bytes).hexdigest()
     cfg, core_config = validate_inputs(inputs, args.max_physical_actions)
+    signal_weights = SignalWeighting(inputs.get('signal'))
     run = Path(args.run).resolve(); run.mkdir(parents=True, exist_ok=True)
     replay_root = run.parent / 'replay'
     contract = dict(version=VERSION, run=str(run), inputs_path=str(inputs_path),
@@ -340,9 +342,17 @@ def main():
                 fm_obs, fm_actions, counts = replay.sample_fm(cfg['batch_size'])
                 times['replay'] += time.perf_counter() - started
                 log(run, 'base_fm_source', global_batch=cfg['batch_size'], sources=counts)
-                return backend.fm_update(fm_obs, fm_actions)
+                weights, diagnostics = signal_weights.weights(replay.last_fm_signal, 'fm',
+                    completed_episodes=cadence.episodes_completed, update_step=learner.update_calls)
+                metrics = backend.fm_update(fm_obs, fm_actions, action_weights=weights)
+                metrics.update({f'signal/{key}': value for key, value in diagnostics.items()})
+                return metrics
+            def editor_weights(batch):
+                return signal_weights.weights(batch, 'editor',
+                    completed_episodes=cadence.episodes_completed, update_step=learner.update_calls)
             update_started = time.perf_counter()
-            metrics = learner.update_call(sample_batch, next_candidates, fm_callback)
+            metrics = learner.update_call(sample_batch, next_candidates, fm_callback,
+                editor_weight_callback=editor_weights if signal_weights.active('editor') else None)
             elapsed = time.perf_counter() - update_started
             # Host wall times; no extra GPU synchronization in the training path.
             metrics.update(replay_seconds=times['replay'], candidate_seconds=times['candidates'],
@@ -381,7 +391,8 @@ def main():
             image_augmentation=False, source_head=inputs['source_head'])
         learner = ExpoLearner(core_config, device='cuda:0', seed=seed)
         generator = torch.Generator(device='cuda:0').manual_seed(seed)
-        replay = FormalReplay(root=replay_root, demo_path=inputs['demo_path'], seed=seed)
+        replay = FormalReplay(root=replay_root, demo_path=inputs['demo_path'], seed=seed,
+                              signal_contract=signal_weights.contract)
         heartbeat()
         if args.resume:
             saved = torch.load(resume, map_location='cpu', weights_only=False)
@@ -443,18 +454,30 @@ def main():
             stop.collecting = True
             obs, _info = env.reset(env_seeds=[env_seed])
             frames = []; actions = []; rewards = []; terminated = []; truncated = []
+            signal_trace = {key: [] for key in TRACE_FIELDS} if signal_weights.contract else None
             done = success = budget_truncated = stopped = False; chunks = 0
             status('episode_started', episode=episode, env_seed=env_seed)
             log(run, 'episode_started', episode=episode, env_seed=env_seed, warmup=cadence.in_warmup)
             while not done:
-                base = backend.sample_normalized(obs, num_candidates=8, generator=generator)[:, :, :10, :14]
+                collected = backend.sample_normalized(obs, num_candidates=8, generator=generator,
+                                                      signal_kind=signal_weights.kind)
+                base = (collected['actions'] if signal_weights.contract else collected)[:, :, :10, :14]
                 selected = learner.select_actions(backend.critic_observation(obs), base)
+                if signal_weights.contract:
+                    raw_signal, parent = backend.selected_signal(obs, collected, selected['index'])
+                    raw_signal = raw_signal[0].cpu()
+                    parent_id = int(parent[0]); edited = int(selected['index'][0]) >= 8
                 canonical = backend.decode(obs, selected['actions']); finite(canonical)
                 executed = 0
                 for index in range(10):
                     frames.append(clone_env_observation(obs)); command = canonical[:, index:index + 1, :].clone()
                     obs, reward, term, trunc, _info = env.step(command, auto_reset=False)
                     actions.append(command[0, 0].cpu())
+                    if signal_trace is not None:
+                        step_trace = dict(raw=float(raw_signal[index]), query=chunks, position=index,
+                            parent=parent_id, edited=edited, base_version=collected['base_version'])
+                        for key, value in step_trace.items():
+                            signal_trace[key].append(value)
                     rewards.append(float(torch.as_tensor(reward).reshape(-1)[0]))
                     terminal, timeout, horizon_term_precedence = native_boundary(
                         bool(torch.as_tensor(term).any()), bool(torch.as_tensor(trunc).any()))
@@ -478,7 +501,8 @@ def main():
             with stop.transaction():
                 entry = replay.append_episode(frames=frames, canonical_actions=torch.stack(actions), rewards=rewards,
                     terminated=terminated, truncated=truncated, success=success,
-                    episode_id=f'online-{episode:06d}', final_obs=clone_env_observation(obs))
+                    episode_id=f'online-{episode:06d}', final_obs=clone_env_observation(obs),
+                    signal_trace=signal_trace)
                 cadence.finish_episode(len(actions), budget_truncated=budget_truncated)
                 progress['online_success'] += int(success); progress['stopped_episodes'] += int(stopped)
                 progress['horizon_term_precedence'] += int(horizon_term_precedence)

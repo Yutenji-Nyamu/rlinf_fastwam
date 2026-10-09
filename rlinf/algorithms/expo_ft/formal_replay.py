@@ -236,7 +236,8 @@ class FormalReplay:
     constructor's complete/revision/episode/frame checks and full source SHA
     pins preserve that reviewed provenance. There is no capacity eviction.
     """
-    def __init__(self, root, demo_path, seed=42, cache_limit_bytes=64 * 1024**3):
+    def __init__(self, root, demo_path, seed=42, cache_limit_bytes=64 * 1024**3,
+                 signal_contract=None):
         import pyarrow.parquet as pq
         self.root = Path(root).absolute(); self.demo_path = Path(demo_path).absolute()
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -248,6 +249,8 @@ class FormalReplay:
         self._cache_sizes = {}
         self.cache_limit_bytes = cache_limit_bytes
         self.cache_bytes = self.cache_hits = self.cache_misses = 0
+        self.signal_contract = copy.deepcopy(signal_contract)
+        self.last_fm_signal = None
         self.samples_q = self.samples_fm = 0
         self.last_sample = self.last_fm = None
         self.demo_entries = []; self._demo_data = {}
@@ -310,6 +313,8 @@ class FormalReplay:
             demo_terminal_next_obs='last real observation, absorbing placeholder only, continuation0',
             online_final_obs='required real post-final-action observation',
             image_batch_geometry='aspect-preserving bilinear resize+black-pad224; no augmentation; raw hashes retained')
+        if self.signal_contract is not None:
+            self.contract['signal'] = self.signal_contract
         self.contract_sha256 = hashlib.sha256(json.dumps(self.contract, sort_keys=True).encode()).hexdigest()
         online = _checked(self.root, self.root / 'online'); online.mkdir(mode=0o700, exist_ok=True)
         index_path = _checked(self.root, self.root / 'index.json')
@@ -368,7 +373,7 @@ class FormalReplay:
             raise ValueError('Online per-frame manifest identity differs')
 
     def append_episode(self, frames, canonical_actions, rewards, terminated, truncated,
-                       success, episode_id, final_obs):
+                       success, episode_id, final_obs, signal_trace=None):
         if isinstance(episode_id, bool) or not isinstance(episode_id, (int, str)) or str(episode_id) == '':
             raise ValueError('Online episode_id must be a unique integer/string')
         if any(entry['episode_id'] == episode_id for entry in self.online_entries):
@@ -398,6 +403,11 @@ class FormalReplay:
         payload = dict(version=VERSION, root_id=self.root_id, episode_id=episode_id,
                        observations=observations, final_obs=final, actions=actions, rewards=reward,
                        terminated=term, truncated=trunc, success=bool(success))
+        if self.signal_contract is not None:
+            from rlinf.algorithms.expo_ft.signals import validate_trace
+            payload['signal_trace'] = validate_trace(signal_trace, count)
+        elif signal_trace is not None:
+            raise ValueError('Signal trace requires an explicit replay contract')
         temp = path.with_suffix('.pt.partial')
         if temp.exists():
             raise ValueError('Partial episode exists; inspect its exact artifact')
@@ -410,6 +420,8 @@ class FormalReplay:
                         flags_sha256=_digest(dict(terminated=term, truncated=trunc)), frames=count,
                         success=bool(success), terminal=bool(term[-1]), timeout=bool(trunc[-1]),
                         final_obs_source='real post-final-action online observation')
+        if self.signal_contract is not None:
+            manifest['signal_trace_sha256'] = _digest(payload['signal_trace'])
         _atomic_json(manifest_path, manifest)
         q_count = max(0, count - C + 1) - int(bool(trunc[-1]) and count >= C)
         entry = dict(kind='online', id=stem, episode_id=episode_id,
@@ -457,6 +469,11 @@ class FormalReplay:
                     _digest(value['rewards']) != manifest['rewards_sha256'] or
                     _digest(dict(terminated=value['terminated'], truncated=value['truncated'])) != manifest['flags_sha256']):
                 raise ValueError('Online episode does not match its real per-frame/action manifest')
+            if self.signal_contract is not None:
+                from rlinf.algorithms.expo_ft.signals import validate_trace
+                value['signal_trace'] = validate_trace(value.get('signal_trace'), entry['frames'])
+                if _digest(value['signal_trace']) != manifest.get('signal_trace_sha256'):
+                    raise ValueError('Historical signal differs from immutable episode manifest')
         size = _resident_bytes(value)
         if size <= self.cache_limit_bytes:
             while self.cache_bytes + size > self.cache_limit_bytes:
@@ -530,6 +547,11 @@ class FormalReplay:
                     terminal=terminal, ref=dict(kind=entry['kind'], episode=entry['id'], start=start, end=end,
                         reward_source=entry['reward_source'], terminal_next_obs_placeholder=placeholder,
                         raw_obs_sha256=_digest(current), raw_next_obs_sha256=_digest(nxt)))
+                if self.signal_contract is not None:
+                    is_online = entry['kind'] == 'online'
+                    windows[position]['signal_raw'] = (data['signal_trace']['raw'][start:end]
+                        if is_online else torch.zeros(horizon))
+                    windows[position]['signal_valid'] = torch.full((horizon,), is_online, dtype=torch.bool)
         return windows
 
     def sample(self, B, backend, device):
@@ -549,10 +571,14 @@ class FormalReplay:
             windows=[window['ref'] for window in windows], eligible_q_windows=self.q_windows,
             terminal_next_obs_placeholders=sum(window['ref']['terminal_next_obs_placeholder'] for window in windows),
             demo_reward_annotation='success-source offline reward0/last1; not parquet recorded rewards')
-        return dict(obs=observations, next_obs=next_observations, actions=normalized,
+        result = dict(obs=observations, next_obs=next_observations, actions=normalized,
             rewards=rewards, continuations=torch.tensor([0. if window['terminal'] else 1. for window in windows], device=device),
             executed_steps=torch.full((B,), C, dtype=torch.long, device=device),
             valids=torch.ones(B, device=device))
+        if self.signal_contract is not None:
+            result.update({key: torch.stack([window[key] for window in windows])
+                           for key in ('signal_raw', 'signal_valid')})
+        return result
 
     def sample_fm(self, B):
         windows = self._windows(self._draw(B, fm=True), H)
@@ -564,6 +590,9 @@ class FormalReplay:
         self.samples_fm += B
         self.last_fm = dict(source_counts=counts, windows=[window['ref'] for window in windows],
                             eligible_successful_h50_windows=self.fm_windows, fabricated_action_tails=0)
+        self.last_fm_signal = ({key: torch.stack([window[key] for window in windows])
+                               for key in ('signal_raw', 'signal_valid')}
+                              if self.signal_contract is not None else None)
         return observations, actions, counts
 
     def state_dict(self):
