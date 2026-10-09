@@ -41,6 +41,7 @@ from rlinf.algorithms.dvac_two_level import (
     compute_dvac_two_level_weights,
     dvac_mapping_contract,
 )
+from rlinf.algorithms.grpo_signals import grpo_signal_contract, grpo_signal_key
 from rlinf.algorithms.losses import compute_ppo_actor_loss
 from rlinf.algorithms.utils import preprocess_loss_inputs
 
@@ -105,6 +106,8 @@ def actor_harness():
     )
     namespace = {
         "torch": torch,
+        "grpo_signal_contract": grpo_signal_contract,
+        "grpo_signal_key": grpo_signal_key,
         "Path": Path,
         "json": json,
         "os": os,

@@ -16,6 +16,7 @@ import math
 import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -28,6 +29,7 @@ from openpi.models.pi0_config import Pi0Config
 from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
+from rlinf.algorithms.grpo_signals import capture_expert_norm, compute_ugrow_signal
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -844,6 +846,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         compute_values=True,
         rtc_context: RTCGuidanceContext | None = None,
         return_dvac_telemetry: bool = False,
+        return_grpo_signal: str | None = None,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         to_process_obs = self.obs_processor(env_obs)  # env obs -> policy input obs
@@ -855,6 +858,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         )  # obs precision processor
         observation = _model.Observation.from_dict(processed_obs)
 
+        if return_grpo_signal is not None and (mode != "train" or self.config.use_dsrl):
+            raise ValueError("GRPO signals require the native training policy.")
         is_dsrl_active = self.config.use_dsrl
         if is_dsrl_active:
             # DSRL mode (both train and eval)
@@ -873,6 +878,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 mode="eval",
                 compute_values=compute_values,
                 return_dvac_telemetry=return_dvac_telemetry,
+                return_grpo_signal=return_grpo_signal,
             )
 
             # Step 3: Extract actual actions for environment interaction
@@ -909,6 +915,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     mode=mode,
                     compute_values=compute_values,
                     return_dvac_telemetry=return_dvac_telemetry,
+                    return_grpo_signal=return_grpo_signal,
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -951,6 +958,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "forward_inputs": forward_inputs,
             "model_actions": outputs["actions"],
         }
+        if return_grpo_signal is not None:
+            result["grpo_signal"] = outputs["grpo_signal"]
         if return_dvac_telemetry:
             result["dvac_telemetry"] = outputs["dvac_telemetry"]
         return actions, result
@@ -986,6 +995,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         return_dvac_telemetry: bool = False,
+        return_grpo_signal: str | None = None,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         bsize = observation.state.shape[0]
@@ -1014,6 +1024,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             mode=mode,
             compute_values=compute_values,
             return_dvac_telemetry=return_dvac_telemetry,
+            return_grpo_signal=return_grpo_signal,
         )
 
     def _sample_actions_with_prefix_cache(
@@ -1026,14 +1037,30 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         return_dvac_telemetry: bool = False,
+        return_grpo_signal: str | None = None,
+        num_steps: int | None = None,
+        noise_is_prepared: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
-        num_steps = self.config.num_steps
+        num_steps = self.config.num_steps if num_steps is None else num_steps
+        if return_grpo_signal is not None:
+            if return_grpo_signal not in {"ugrow_10_5", "norm_tail5_layers3"}:
+                raise ValueError("Unknown GRPO rollout signal.")
+            if (
+                mode != "train"
+                or num_steps != 10
+                or self.config.action_horizon != 50
+                or self.config.action_env_dim != 14
+            ):
+                raise ValueError(
+                    "GRPO signals require the native train M10/H50/D14 sampler."
+                )
+        norm_values = []
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
-        else:
+        elif not noise_is_prepared:
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
@@ -1088,16 +1115,24 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
-                x_t,
-                idx,
-                state,
-                prefix_pad_masks,
-                past_key_values,
-                sample_method,
-                num_steps,
-                compute_values,
+            capture = (
+                capture_expert_norm(self, self.config.action_horizon)
+                if return_grpo_signal == "norm_tail5_layers3" and idx >= num_steps - 5
+                else nullcontext()
             )
+            with capture as step_norms:
+                x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
+                    x_t,
+                    idx,
+                    state,
+                    prefix_pad_masks,
+                    past_key_values,
+                    sample_method,
+                    num_steps,
+                    compute_values,
+                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             if endpoint_trace is not None:
                 t_i = telemetry_timesteps[idx].to(dtype=x_t_prev.dtype)
                 endpoint_trace.append(
@@ -1139,6 +1174,36 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
+        if return_grpo_signal == "norm_tail5_layers3":
+            if len(norm_values) != 15:
+                raise ValueError("Norm requires five steps times three expert layers.")
+            result["grpo_signal"] = torch.stack(norm_values).mean(0).detach()
+            if not torch.isfinite(result["grpo_signal"]).all():
+                raise ValueError("Nonfinite GRPO Norm signal.")
+        elif return_grpo_signal == "ugrow_10_5":
+            # GRPO executes SDE; measure both ODE endpoints on isolated side paths.
+            python_rng, numpy_rng = random.getstate(), np.random.get_state()
+            devices = [device] if device.type == "cuda" else []
+            try:
+                with torch.random.fork_rng(devices=devices), torch.no_grad():
+                    endpoints = [
+                        self._sample_actions_with_prefix_cache(
+                            state,
+                            prefix_output,
+                            prefix_pad_masks,
+                            past_key_values,
+                            noise=noise.clone(),
+                            mode="eval",
+                            compute_values=False,
+                            num_steps=steps,
+                            noise_is_prepared=True,
+                        )["actions"]
+                        for steps in (10, 5)
+                    ]
+                result["grpo_signal"] = compute_ugrow_signal(*endpoints)
+            finally:
+                random.setstate(python_rng)
+                np.random.set_state(numpy_rng)
         if endpoint_trace is not None:
             result["dvac_telemetry"] = {
                 "x_chain": chains[..., : self.config.action_env_dim].detach(),

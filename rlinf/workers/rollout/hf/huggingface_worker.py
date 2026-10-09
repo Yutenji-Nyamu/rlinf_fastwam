@@ -27,6 +27,7 @@ from tqdm import tqdm
 
 from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variance
 from rlinf.algorithms.expert import build_expert_model_config
+from rlinf.algorithms.grpo_signals import grpo_signal_contract, grpo_signal_key
 from rlinf.algorithms.rlt import (
     build_rlt_route,
     predict_rlt_actions,
@@ -167,15 +168,14 @@ class MultiStepRolloutWorker(Worker):
             if dvac_train_cfg is None
             else OmegaConf.to_container(dvac_train_cfg, resolve=True)
         )
-        self.dvac_train_mode = str(
-            self.dvac_train_cfg.get("mode", "off")
-        ).lower()
+        self.dvac_train_mode = str(self.dvac_train_cfg.get("mode", "off")).lower()
         if self.dvac_train_mode not in {"off", "observe", "apply"}:
             raise ValueError(
                 "algorithm.dvac_gradient_weighting.mode must be 'off', 'observe', or 'apply'"
             )
         self.dvac_train_enabled = self.dvac_train_mode in {"observe", "apply"}
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        grpo_signal_contract(self.dvac_train_cfg)
         if self.dvac_train_enabled:
             if self.only_eval:
                 raise ValueError("DVAC gradient weighting requires a training run.")
@@ -681,7 +681,11 @@ class MultiStepRolloutWorker(Worker):
         ):
             kwargs["return_dvac_telemetry"] = True
         if self.dvac_train_enabled and mode == "train":
-            kwargs["return_dvac_telemetry"] = True
+            source = self.dvac_train_cfg.get("signal_source", "dvca")
+            if source == "dvca":
+                kwargs["return_dvac_telemetry"] = True
+            else:
+                kwargs["return_grpo_signal"] = source
 
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
             "only_save_expert", True
@@ -729,14 +733,21 @@ class MultiStepRolloutWorker(Worker):
                 expert_label_flag = True
 
         if self.dvac_train_enabled and mode == "train":
-            telemetry = result.pop("dvac_telemetry", None)
-            if telemetry is None or "z_endpoint" not in telemetry:
-                raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
-            variance = compute_endpoint_variance(
-                telemetry["z_endpoint"], self.dvac_selected_l
-            )
-            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
-                variance.detach().cpu().contiguous()
+            if self.dvac_train_cfg.get("signal_source", "dvca") == "dvca":
+                telemetry = result.pop("dvac_telemetry", None)
+                if telemetry is None or "z_endpoint" not in telemetry:
+                    raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
+                signal = compute_endpoint_variance(
+                    telemetry["z_endpoint"], self.dvac_selected_l
+                )
+            else:
+                signal = result.pop("grpo_signal", None)
+                if signal is None:
+                    raise ValueError(
+                        "OpenPI did not return the configured GRPO signal."
+                    )
+            result["forward_inputs"][grpo_signal_key(self.dvac_train_cfg)] = (
+                signal.detach().cpu().contiguous()
             )
 
         if isinstance(actions, np.ndarray):

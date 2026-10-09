@@ -39,6 +39,7 @@ from rlinf.algorithms.dvac_two_level import (
     dvac_mapping_contract,
 )
 from rlinf.algorithms.expert import build_expert_model_config
+from rlinf.algorithms.grpo_signals import grpo_signal_contract, grpo_signal_key
 from rlinf.algorithms.registry import calculate_adv_and_returns, policy_loss
 from rlinf.config import SupportedModel
 from rlinf.data.schema.embodied_types import Trajectory, convert_trajectories_to_batch
@@ -170,6 +171,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         ):
             raise ValueError("chunk_clipped_action_advantage requires two_level_group")
         self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
+        grpo_signal_contract(self.dvac_train_cfg)
         self.dvac_recent_stats = (
             self._new_dvac_recent_stats()
             if self.dvac_train_enabled and not self.dvac_two_level_enabled
@@ -665,12 +667,15 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         controls = linear_controls_contract(self.dvac_train_cfg)
         if controls:
             contract["linear_controls"] = controls
+        signal_contract = grpo_signal_contract(self.dvac_train_cfg)
+        if signal_contract:
+            contract["signal"] = signal_contract
         return contract
 
     @torch.no_grad()
     def _prepare_dvac_two_level_step(self) -> None:
         inputs = self.rollout_batch.get("forward_inputs")
-        key = f"dvac_v_l{self.dvac_selected_l}"
+        key = grpo_signal_key(self.dvac_train_cfg)
         if not isinstance(inputs, dict) or key not in inputs:
             raise ValueError(f"Missing rollout DVAC signal {key}")
         variance = inputs.pop(key).detach()
@@ -722,7 +727,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
         weight_config = {
             k: v
             for k, v in contract.items()
-            if k not in {"normalization", "linear_controls"}
+            if k not in {"normalization", "linear_controls", "signal"}
         }
         if controls:
             alpha_local, alpha_chunk = effective_linear_alphas(
@@ -1117,7 +1122,10 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
             prev_logprobs = output_dict["prev_logprobs"]
 
         logprobs_for_loss = output_dict["logprobs"]
-        if self.dvac_train_mode == "apply" and self.dvac_train_application == "logprob_st":
+        if (
+            self.dvac_train_mode == "apply"
+            and self.dvac_train_application == "logprob_st"
+        ):
             logprobs_for_loss = straight_through_scale_logprobs(
                 logprobs_for_loss, dvac_weights
             )
