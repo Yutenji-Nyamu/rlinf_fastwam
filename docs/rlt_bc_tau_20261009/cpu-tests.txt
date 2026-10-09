@@ -1,0 +1,32 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/tests/unit_tests
+configfile: pytest.ini
+plugins: anyio-4.14.2, typeguard-4.6.0, dash-4.4.1, hydra-core-1.3.5, jaxtyping-0.2.36, zarr-3.1.5
+collected 71 items
+
+tests/unit_tests/test_ugrow_signal.py ......                             [  8%]
+tests/unit_tests/test_rlt_ugrow_sampler.py ....                          [ 14%]
+tests/unit_tests/test_rlt_ugrow_worker.py ..........                     [ 28%]
+tests/unit_tests/test_rlt_dvac_two_level_worker.py .............         [ 46%]
+tests/unit_tests/test_rlt_dvac_temperature.py .......................... [ 83%]
+                                                                         [ 83%]
+tests/unit_tests/test_rlt_dvac_controls.py ............                  [100%]
+
+=============================== warnings summary ===============================
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+../../../../../../home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: 14 warnings
+  /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+test_ugrow_signal.py::test_ugrow_matches_scalar_reference_and_ignores_padding
+  /data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/tests/unit_tests/test_ugrow_signal.py:17: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+    abs(float(a[i, h, d]) / 2 - float(b[i, h, d]) / 2)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 71 passed, 17 warnings in 6.28s ========================
