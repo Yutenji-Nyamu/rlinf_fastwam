@@ -1,0 +1,218 @@
+{
+  "non_method_config_differences": [
+    [
+      "runner.max_epochs",
+      100,
+      300
+    ],
+    [
+      "runner.max_steps",
+      -1,
+      300
+    ]
+  ],
+  "clean_path": "/home/chenyiteng/results/rlinf-shenzhen/online-bc/pi05-bc-clean-8u5-len3-fixed-gpu6-formal100-20260910-v1",
+  "clean_eval_80_100_mean": 0.625,
+  "runs": [
+    {
+      "host": "sz1",
+      "gpu": 4,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-u-tau2.5-none-sz1-g4-300-1008-v1",
+      "rounds": 214,
+      "eval_80_100_mean": 0.4875,
+      "last5eval_mean": 0.51875,
+      "recent20_seconds": {
+        "time/step": 359.0426025390625,
+        "time/generate_rollouts": 72.96014823913575,
+        "time/actor_training": 222.76824874877929
+      }
+    },
+    {
+      "host": "sz1",
+      "gpu": 5,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-norm-tau2.5-none-sz1-g5-300-1008-v1",
+      "rounds": 216,
+      "eval_80_100_mean": 0.63125,
+      "last5eval_mean": 0.65625,
+      "recent20_seconds": {
+        "time/step": 359.2977264404297,
+        "time/generate_rollouts": 74.44239730834961,
+        "time/actor_training": 220.68098526000978
+      }
+    },
+    {
+      "host": "sz1",
+      "gpu": 6,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-u-tau3-both-sz1-g6-300-1008-v1",
+      "rounds": 215,
+      "eval_80_100_mean": 0.60625,
+      "last5eval_mean": 0.63125,
+      "recent20_seconds": {
+        "time/step": 356.87849884033204,
+        "time/generate_rollouts": 69.22629280090332,
+        "time/actor_training": 220.9253952026367
+      }
+    },
+    {
+      "host": "sz1",
+      "gpu": 7,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-norm-tau2-both-sz1-g7-300-1008-v1",
+      "rounds": 215,
+      "eval_80_100_mean": 0.59375,
+      "last5eval_mean": 0.6,
+      "recent20_seconds": {
+        "time/step": 356.23669281005857,
+        "time/generate_rollouts": 69.90054359436036,
+        "time/actor_training": 220.8366958618164
+      }
+    },
+    {
+      "host": "sz2",
+      "gpu": 6,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-u-tau3-drop-sz2-g6-300-1008-v1",
+      "rounds": 142,
+      "eval_80_100_mean": 0.5875,
+      "last5eval_mean": 0.66875,
+      "recent20_seconds": {
+        "time/step": 828.2534240722656,
+        "time/generate_rollouts": 181.5744369506836,
+        "time/actor_training": 483.3130355834961
+      }
+    },
+    {
+      "host": "sz2",
+      "gpu": 7,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-norm-tau2-drop-sz2-g7-300-1008-v1",
+      "rounds": 142,
+      "eval_80_100_mean": 0.60625,
+      "last5eval_mean": 0.5625,
+      "recent20_seconds": {
+        "time/step": 835.2185699462891,
+        "time/generate_rollouts": 198.94292144775392,
+        "time/actor_training": 474.1772659301758
+      }
+    },
+    {
+      "host": "sz3",
+      "gpu": 6,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-u-tau3-anneal-sz3-g6-300-1008-v1",
+      "rounds": 114,
+      "eval_80_100_mean": 0.575,
+      "last5eval_mean": 0.59375,
+      "recent20_seconds": {
+        "time/step": 667.3755645751953,
+        "time/generate_rollouts": 159.26877059936524,
+        "time/actor_training": 362.63242797851564
+      }
+    },
+    {
+      "host": "sz3",
+      "gpu": 7,
+      "run": "/data/chenyiteng/results/bc-tricks-20261008/bc-norm-tau2-anneal-sz3-g7-300-1008-v1",
+      "rounds": 114,
+      "eval_80_100_mean": 0.61875,
+      "last5eval_mean": 0.6125,
+      "recent20_seconds": {
+        "time/step": 671.6743408203125,
+        "time/generate_rollouts": 161.15314483642578,
+        "time/actor_training": 364.8148956298828
+      }
+    }
+  ],
+  "live_seed_and_filter_check": {
+    "bc_seeds": {
+      "train": {
+        "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+      },
+      "eval": {
+        "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+        "sha256": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e"
+      }
+    },
+    "bc_code": {
+      "clean": {
+        "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-bc8u5-fixed-clean-20260910/rlinf/data/online_bc.py",
+        "filter_lines": [
+          [
+            "        # Collector success metrics and DVAC moments have already been recorded.",
+            "        if self.max_success_chunks is not None:",
+            "            accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]",
+            "            self.filtered_success_episodes += len(episodes) - len(accepted)",
+            "            episodes = accepted"
+          ]
+        ]
+      },
+      "method": {
+        "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/data/online_bc.py",
+        "filter_lines": [
+          [
+            "        # Collector success metrics and DVAC moments have already been recorded.",
+            "        if self.max_success_chunks is not None:",
+            "            accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]",
+            "            self.filtered_success_episodes += len(episodes) - len(accepted)",
+            "            episodes = accepted"
+          ]
+        ]
+      }
+    },
+    "rlt_seeds": {
+      "train": {
+        "base": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ugrow-rlt-bc-20261006/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/rlinf/envs/robotwin/seeds/train_seeds.json",
+        "base_sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2",
+        "new_sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+      },
+      "eval": {
+        "base": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ugrow-rlt-bc-20261006/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json",
+        "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json",
+        "base_sha256": "fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7",
+        "new_sha256": "fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7"
+      }
+    },
+    "fallbacks": {
+      "4": {
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g4-after-reset4-1006-v9/rlt-sz1-g4-after-reset4-1006-v9/checkpoints/global_step_100",
+        "checkpoint_exists": true,
+        "runtime_files": [
+          "resolved.yaml",
+          "environment.json"
+        ]
+      },
+      "5": {
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/checkpoints/global_step_100",
+        "checkpoint_exists": true,
+        "runtime_files": [
+          "resolved.yaml",
+          "environment.json"
+        ]
+      },
+      "6": {
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/checkpoints/global_step_25",
+        "checkpoint_exists": true,
+        "runtime_files": [
+          "resolved.yaml",
+          "environment.json"
+        ]
+      },
+      "7": {
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g7-after-reset4-1006-v9/rlt-sz1-g7-after-reset4-1006-v9/checkpoints/global_step_300",
+        "checkpoint_exists": true,
+        "runtime_files": [
+          "resolved.yaml",
+          "environment.json"
+        ]
+      }
+    }
+  },
+  "clean_seed_files": {
+    "train": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-bc8u5-fixed-clean-20260910/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+    },
+    "eval": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-bc8u5-fixed-clean-20260910/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "sha256": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e"
+    }
+  }
+}

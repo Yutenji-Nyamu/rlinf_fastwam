@@ -1,0 +1,86 @@
+{
+  "bc_seeds": {
+    "train": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+    },
+    "eval": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/envs/robotwin/seeds/eval_sidney_fixed32.json",
+      "sha256": "f0059e543cdcb23b6813d4532d0ecf05954c3c1fdf75a109b2de7b31dace816e"
+    }
+  },
+  "bc_code": {
+    "clean": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-bc8u5-fixed-clean-20260910/rlinf/data/online_bc.py",
+      "filter_lines": [
+        [
+          "        # Collector success metrics and DVAC moments have already been recorded.",
+          "        if self.max_success_chunks is not None:",
+          "            accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]",
+          "            self.filtered_success_episodes += len(episodes) - len(accepted)",
+          "            episodes = accepted"
+        ]
+      ]
+    },
+    "method": {
+      "path": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008/rlinf/data/online_bc.py",
+      "filter_lines": [
+        [
+          "        # Collector success metrics and DVAC moments have already been recorded.",
+          "        if self.max_success_chunks is not None:",
+          "            accepted = [ep for ep in episodes if len(ep) <= self.max_success_chunks]",
+          "            self.filtered_success_episodes += len(episodes) - len(accepted)",
+          "            episodes = accepted"
+        ]
+      ]
+    }
+  },
+  "rlt_seeds": {
+    "train": {
+      "base": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ugrow-rlt-bc-20261006/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/rlinf/envs/robotwin/seeds/train_seeds.json",
+      "base_sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2",
+      "new_sha256": "55b25866308d4e7da486282982ead4d5857b53fd977f659b216045f1950b45e2"
+    },
+    "eval": {
+      "base": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/ugrow-rlt-bc-20261006/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json",
+      "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rlt-bc-tau-20261009/rlinf/envs/robotwin/seeds/eval_seeds_adjust_bottle_rlt_periodic20_v1.json",
+      "base_sha256": "fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7",
+      "new_sha256": "fb9c3353e27b83aad6fe7ff778437d960b084de9d981c2af68615d52769952a7"
+    }
+  },
+  "fallbacks": {
+    "4": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g4-after-reset4-1006-v9/rlt-sz1-g4-after-reset4-1006-v9/checkpoints/global_step_100",
+      "checkpoint_exists": true,
+      "runtime_files": [
+        "resolved.yaml",
+        "environment.json"
+      ]
+    },
+    "5": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/checkpoints/global_step_100",
+      "checkpoint_exists": true,
+      "runtime_files": [
+        "resolved.yaml",
+        "environment.json"
+      ]
+    },
+    "6": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/checkpoints/global_step_25",
+      "checkpoint_exists": true,
+      "runtime_files": [
+        "resolved.yaml",
+        "environment.json"
+      ]
+    },
+    "7": {
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g7-after-reset4-1006-v9/rlt-sz1-g7-after-reset4-1006-v9/checkpoints/global_step_300",
+      "checkpoint_exists": true,
+      "runtime_files": [
+        "resolved.yaml",
+        "environment.json"
+      ]
+    }
+  }
+}
