@@ -17,6 +17,11 @@
 
 import torch
 
+from rlinf.algorithms.rlt.dvac_controls import (
+    apply_chunk_dropout,
+    effective_alphas,
+    rlt_controls_contract,
+)
 from rlinf.algorithms.rlt.dvac_two_level import build_two_level_success_weights
 from rlinf.algorithms.ugrow_signal import UGROW_SIGNAL_SPEC
 
@@ -66,27 +71,69 @@ def validate_q_config(config: dict, feature: dict, *, chunk_len: int) -> dict:
         ("minmax_eps", 1e-6),
     ):
         result.setdefault(key, default)
+    # Reuse the same controls as replay BC, with no local/action-position layer.
+    schedule = dict(result.get("alpha_schedule", {}))
+    schedule.setdefault("local", {"enabled": False})
+    controls = rlt_controls_contract(
+        {
+            "mode": "apply",
+            "mapping": "two_level_batch",
+            "factor_mapping": "exp_mean",
+            "alpha_local": 0.0,
+            "alpha_chunk": result["alpha"],
+            "chunk_dropout": result.get("chunk_dropout", {}),
+            "alpha_schedule": schedule,
+        }
+    )
+    if "local" in controls.get("alpha_schedule", {}):
+        raise ValueError("Scalar Q weights require alpha_schedule.local.enabled=false.")
+    # Disabled controls retain the original checkpoint contract exactly.
+    result.pop("chunk_dropout", None)
+    result.pop("alpha_schedule", None)
+    result.update(controls)
     # Reuse the reviewed mapper's validation and exact outer reduction.
     chunk_q_weights(torch.zeros(2, chunk_len), result)
     return result
 
 
-def chunk_q_weights(signal: torch.Tensor, config: dict) -> tuple[torch.Tensor, dict]:
-    """Map all sampled rows, including failures, before microbatch splitting."""
+def chunk_q_weights(
+    signal: torch.Tensor,
+    config: dict,
+    *,
+    runner_step: int = 0,
+    update_step: int = 0,
+) -> tuple[torch.Tensor, dict]:
+    """Map all sampled rows, including failures, before microbatch splitting.
+
+    Annealing follows the runner round; dropout follows the checkpointed update
+    counter using a private RNG. Dropped weights become one without rescaling.
+    """
+    _, alpha = effective_alphas(
+        0.0, float(config["alpha"]), config, runner_step=runner_step
+    )
+    eligible = torch.ones(signal.shape[0], dtype=torch.bool, device=signal.device)
     weights, _ = build_two_level_success_weights(
         signal,
-        torch.ones(signal.shape[0], dtype=torch.bool, device=signal.device),
+        eligible,
         alpha_local=0.0,
-        alpha_chunk=float(config["alpha"]),
+        alpha_chunk=alpha,
         log_eps=float(config["log_eps"]),
         minmax_eps=float(config["minmax_eps"]),
         factor_mapping="exp_mean",
         temperature_chunk=float(config["temperature"]),
     )
     weights = weights[:, :1].contiguous().detach()
+    weights, dropped = apply_chunk_dropout(
+        weights, eligible, config, update_step=update_step
+    )
     ess = weights.sum().square() / (weights.numel() * weights.square().sum())
     metrics = {
         "enabled": 1.0,
+        "temperature": float(config["temperature"]),
+        "alpha_chunk": alpha,
+        "runner_round": float(runner_step + 1),
+        "update_step": float(update_step),
+        "dropout_fraction": float(dropped.float().mean().item()),
         "rows": float(signal.shape[0]),
         "signal_mean": float(signal.mean().item()),
         "signal_std": float(signal.std(unbiased=False).item()),

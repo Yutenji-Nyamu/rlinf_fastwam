@@ -60,7 +60,7 @@ def make(monkeypatch):
 
     monkeypatch.setattr(EmbodiedSACFSDPPolicy, "__init__", base_init)
 
-    def create(source="ugrow_10_5", alpha=1.0):
+    def create(source="ugrow_10_5", alpha=1.0, **q_options):
         spec = UGROW_SIGNAL_SPEC if source == "ugrow_10_5" else NORM_SIGNAL_SPEC
         cfg = OmegaConf.create(
             {
@@ -102,6 +102,7 @@ def make(monkeypatch):
                 "env": {"train": {"auto_reset": False}},
             }
         )
+        cfg.algorithm.rlt_q_weighting.update(q_options)
         worker = RLTACFSDPPolicy(cfg)
         worker.model = TinyModel()
         return worker
@@ -241,3 +242,101 @@ def test_norm_reads_residual_before_final_norm_without_action_or_rng_change():
         with capture_expert_norm(model, 50):
             pass
     assert all(not layer._forward_hooks for layer in layers)
+
+
+@pytest.mark.parametrize("source", ["ugrow_10_5", "norm_tail5_layers3"])
+@pytest.mark.parametrize("mode", ["drop", "anneal", "both"])
+def test_q_controls_full_batch_rng_and_microbatch(make, source, mode):
+    options = q_controls(mode)
+    w = make(source, **options)
+    w.version, w.update_step = 1, 101
+    b = batch(source)
+    rng = torch.get_rng_state().clone()
+    p, stats = w._prepare_global_batch(b, train_actor=True)
+    assert torch.equal(rng, torch.get_rng_state())
+    assert stats["rlt_q/alpha_chunk"] == (0.5 if mode != "drop" else 1.0)
+    assert stats["rlt_q/runner_round"] == 2
+    assert stats["rlt_q/update_step"] == 101
+    full = loss(w, p)[0]
+    full.backward()
+    expected = w.model.actions.grad.clone()
+    w.model.zero_grad()
+    for micro in split_dict_to_chunk(p, 2):
+        (loss(w, micro)[0] / 2).backward()
+    torch.testing.assert_close(w.model.actions.grad, expected)
+    # Q allocation (including dropout) must not inherit BC's success-only mask.
+    b["curr_obs"]["episode_success"].logical_not_()
+    again, _ = w._prepare_global_batch(b, train_actor=True)
+    assert torch.equal(p["rlt_q_weights"], again["rlt_q_weights"])
+
+
+def q_controls(mode):
+    return {
+        "chunk_dropout": {
+            "enabled": mode in ("drop", "both"),
+            "probability": 0.2,
+            "seed": 42,
+        },
+        "alpha_schedule": {
+            "enabled": mode in ("anneal", "both"),
+            "local": {"enabled": False},
+            "chunk": {"start_step": 1, "end_step": 3, "end_alpha": 0.0},
+        },
+    }
+
+
+@pytest.mark.parametrize("endpoint", ["drop", "anneal"])
+def test_q_controls_endpoints_restore_clean_loss_and_gradients(make, endpoint):
+    options = q_controls(endpoint)
+    options["chunk_dropout"]["probability"] = 1.0
+    w = make(**options)
+    w.version = 2
+    b = batch("ugrow_10_5")
+    p, stats = w._prepare_global_batch(b, train_actor=True)
+    assert torch.equal(p["rlt_q_weights"], torch.ones(4, 1))
+    weighted = loss(w, p)[0]
+    weighted.backward()
+    expected = w.model.actions.grad.clone()
+    w.model.zero_grad()
+    w.rlt_q_cfg = None
+    clean = loss(w, b)[0]
+    clean.backward()
+    assert torch.equal(weighted, clean)
+    assert torch.equal(w.model.actions.grad, expected)
+    assert stats["rlt_q/dropout_fraction"] == (1.0 if endpoint == "drop" else 0.0)
+
+
+def test_q_controls_resume_temperature_and_legacy_contract(make):
+    assert make()._rlt_contract() == make(**q_controls("none"))._rlt_contract()
+    w = make(**q_controls("both"))
+    w.version, w.update_step = 1, 103
+    state = w._rlt_state_payload(runner_step=w.version)
+    resumed = make(**q_controls("both"))
+    resumed._validate_rlt_state(state)
+    resumed.version = state["saved_runner_step"]
+    resumed.update_step = state["update_step"]
+    b = batch("ugrow_10_5")
+    actual, _ = w._prepare_global_batch(b, train_actor=True)
+    restored, _ = resumed._prepare_global_batch(b, train_actor=True)
+    assert torch.equal(actual["rlt_q_weights"], restored["rlt_q_weights"])
+    for opts in (
+        q_controls("drop"),
+        q_controls("anneal"),
+        {**q_controls("both"), "temperature": 3.0},
+    ):
+        with pytest.raises(ValueError, match="rlt_resume_contract"):
+            make(**opts)._validate_rlt_state(state)
+    low, _ = make(temperature=1.0)._prepare_global_batch(b, train_actor=True)
+    high, _ = make(temperature=3.0)._prepare_global_batch(b, train_actor=True)
+    assert low["rlt_q_weights"].std() > high["rlt_q_weights"].std()
+
+
+def test_q_controls_validate_scalar_schedule_and_probability(make):
+    opts = q_controls("both")
+    opts["alpha_schedule"]["local"]["enabled"] = True
+    with pytest.raises(ValueError, match="local.enabled=false"):
+        make(**opts)
+    opts = q_controls("drop")
+    opts["chunk_dropout"]["probability"] = 1.1
+    with pytest.raises(ValueError, match="probability"):
+        make(**opts)

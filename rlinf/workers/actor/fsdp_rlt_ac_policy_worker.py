@@ -290,7 +290,10 @@ class RLTACLossMixin:
             signal = selected_q_signal(global_batch["curr_obs"], q_config)
             if int(self._world_size) != 1 or signal.shape[0] != int(self.cfg.actor.global_batch_size):
                 raise ValueError("Q weights require a complete batch on one actor rank.")
-            weights, metrics = chunk_q_weights(signal, q_config)
+            weights, metrics = chunk_q_weights(
+                signal, q_config,
+                runner_step=int(self.version), update_step=int(self.update_step),
+            )
             prepared = dict(global_batch)
             prepared["rlt_q_weights"] = weights
             return prepared, metrics
