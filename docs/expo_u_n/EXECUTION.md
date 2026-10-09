@@ -39,7 +39,7 @@
 - 每次FM均有208个抽样参数发生变化，冻结前缀梯度为0。Norm的FM及Editor各有一个online窗口被dropout恢复为1，未重归一，故整batch均值可略偏离1。
 - 22:16正常退出RC0，完整checkpoint保存及同进程状态/计数恢复通过，冻结前缀参数不变；owner cleanup.ok=true，remaining=[]，6/7的C/G上下文均清零。没有启动正式EXPO训练。
 - 22:19已把6/7加入原统一owner的独立候补槽：6卡原Clean、7卡原Combo，均CP150；新CPU owner3948394，4/5原WM等待槽未变。旧owner正常退出略超过首个25秒等待，检查退出回执后续接完成，没有强杀或重跑smoke。
-- 22:23回卡核验通过：两个槽均RLT_RUNNING；driver6=3948416、driver7=3948417，owner/driver身份匹配，候选namespace分别仅有各自6/7卡上下文，无越界。日志于22:23:29/31确认从各自CP150开始载入；此时处于恢复初始化，尚未据此声称完成新训练轮。
+- 22:23回卡核验通过：两个槽均RLT_RUNNING；driver6=3948416、driver7=3948417，owner/driver身份匹配，候选namespace分别仅有各自6/7卡上下文，无越界。日志于22:23:29/31确认从各自CP150载入，22:24:52/57两路均进入Generating Rollout Epochs采集阶段；尚未据此声称完成新训练轮。
 - 精确owner/driver、CP路径、namespace、释放证明与指标见`smoke-evidence.json`、`return-evidence.json`；服务器原始回执保留在本事务目录。
 
 ## 发布
