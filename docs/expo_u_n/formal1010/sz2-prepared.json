@@ -1,0 +1,79 @@
+{
+  "time": 1791608777.5169582,
+  "fallbacks": [
+    {
+      "gpu": 4,
+      "request": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-fm-u-20261010/fallback-g4.json",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz2-g4-after-bc-tau-1008-v1/rlt-sz2-g4-after-bc-tau-1008-v1/checkpoints/global_step_525",
+      "task": "place_object_stand",
+      "step": 525
+    },
+    {
+      "gpu": 5,
+      "request": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-fm-u-20261010/fallback-g5.json",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_object_stand-combo-n8full-3000-20261002-sz2/pi05-rlt-place_object_stand-combo-n8full-3000-20261002-sz2/checkpoints/global_step_275",
+      "task": "place_object_stand",
+      "step": 275
+    }
+  ],
+  "launches": [
+    {
+      "request": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-fm-u-20261010/expo-tau3.json",
+      "uid": 20001,
+      "scope": "expo-fm-u-tau3-sz2-g45-60000-1010-v1",
+      "tau": 3,
+      "gpus": [
+        4,
+        5
+      ],
+      "uuids": [
+        "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+        "GPU-2cd891ea-180d-da39-6419-2d7033f8b21b"
+      ],
+      "source": "/data/chenyiteng/projects/expo-fm-u-20261010/source",
+      "runtime": "/data/chenyiteng/results/expo-fm-u-tau3-sz2-g45-60000-1010-v1/runtime",
+      "run": "/data/chenyiteng/results/expo-fm-u-tau3-sz2-g45-60000-1010-v1",
+      "environment": {
+        "LD_LIBRARY_PATH": "/home/chenyiteng/tools/cuda-12.9/lib64",
+        "OPENPI_DATA_HOME": "/home/chenyiteng/.cache/openpi",
+        "LD_PRELOAD": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/scope-g4/librlt_tau_g4_20261008.so",
+        "CUDA_VISIBLE_DEVICES": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d,GPU-2cd891ea-180d-da39-6419-2d7033f8b21b",
+        "PYTHONPATH": "/data/chenyiteng/projects/expo-fm-u-20261010/source:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "ROBOT_PLATFORM": "ALOHA",
+        "ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "ROBOTWIN_ASSETS_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "MUJOCO_GL": "egl",
+        "PYOPENGL_PLATFORM": "egl",
+        "EGL_DEVICE_ID": "0",
+        "MUJOCO_EGL_DEVICE_ID": "0",
+        "__GL_APPLICATION_PROFILE": "1",
+        "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+        "VK_DRIVER_FILES": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+        "SDL_AUDIODRIVER": "dsp",
+        "JAX_PLATFORMS": "cpu",
+        "MPLBACKEND": "Agg"
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/expo-fm-u-20261010/source/examples/embodiment/train_expo_formal.py",
+        "--inputs",
+        "/data/chenyiteng/results/expo-fm-u-tau3-sz2-g45-60000-1010-v1/inputs.json",
+        "--run",
+        "/data/chenyiteng/results/expo-fm-u-tau3-sz2-g45-60000-1010-v1/run",
+        "--max-physical-actions",
+        "60000",
+        "--enable-evaluation"
+      ],
+      "stop": "60000 physical actions; fail or requested stop unwinds exact descendants; per-card RLT waits for release"
+    }
+  ],
+  "source_sha256": "d2134719a7f6defb3ebf7bd22252de01509676373fb43c4714848cfdd9cc82ae",
+  "cpu_rc": 0
+}
