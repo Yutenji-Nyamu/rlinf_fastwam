@@ -23,7 +23,8 @@ def run(config):
     from rlinf.models.embodiment.openpi import get_model
     from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
     c=json.loads(Path(config).read_text());out=Path(c['output']);out.mkdir(parents=True,exist_ok=False)
-    assert os.environ['CUDA_VISIBLE_DEVICES']==str(c['gpu']) and c['num_envs'] in [16,32]
+    assert os.environ['CUDA_VISIBLE_DEVICES']==str(c['gpu'])
+    assert c['num_envs']==16 or (c.get('capacity_only',False) and c['num_envs'] in [32,48])
     torch.set_num_threads(1);torch.cuda.set_device(0);torch.backends.cuda.enable_cudnn_sdp(False)
     batch=c['num_envs'];started=time.time();save(out/'started.json',dict(time=started,pid=os.getpid(),gpu=c['gpu']));save(out/'config.json',c)
     model=get_model(OmegaConf.create(c['model'])).cuda().eval()
