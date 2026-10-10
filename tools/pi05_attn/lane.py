@@ -60,8 +60,8 @@ try:
   update_index()
   state='VALIDATED' if rc==0 and (out/'validation.json').exists() and read(out/'validation.json')['passed'] else 'FAILED'
   save(D/(out.name+'-result.json'),dict(time=time.time(),state=state,returncode=rc,config=str(path),clearance=clear))
-  if rc in [-11,-6,99,134,139]:raise RuntimeError(f'Native fatal exit {rc}; no automatic continuation')
+  if state!='VALIDATED':raise RuntimeError(f'Batch did not validate (exit {rc}); hold priority reservation for inspection')
  save(D/f'lane-g{g}-released.json',dict(time=time.time(),identity=me,completed=True,clearance=cleanup()))
 except BaseException:
  save(D/f'lane-g{g}-error.json',dict(time=time.time(),error=traceback.format_exc()))
- clear=cleanup();save(D/f'lane-g{g}-released.json',dict(time=time.time(),identity=me,completed=False,clearance=clear));raise
+ clear=cleanup();save(D/f'lane-g{g}-held.json',dict(time=time.time(),identity=me,completed=False,clearance=clear));raise
