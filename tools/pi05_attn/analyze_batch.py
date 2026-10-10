@@ -1,5 +1,5 @@
 """Reconstruct once per saved query; generate complete episode-indexed atlas."""
-import argparse,json,time
+import argparse,json,time,traceback
 from pathlib import Path
 import numpy as np
 import torch
@@ -41,4 +41,7 @@ def run(config):
  (out/'index.html').write_text(template.replace('__TITLE__',c['task']+' · batch '+str(c['batch'])))
  print(json.dumps(report))
 if __name__=='__main__':
- ap=argparse.ArgumentParser();ap.add_argument('config');run(ap.parse_args().config)
+ ap=argparse.ArgumentParser();ap.add_argument('config');config=ap.parse_args().config
+ try:run(config)
+ except BaseException:
+  c=json.loads(Path(config).read_text());(Path(c['output'])/'error.json').write_text(json.dumps(dict(time=time.time(),phase='offline',error=traceback.format_exc())));raise
