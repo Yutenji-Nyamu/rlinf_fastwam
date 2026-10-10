@@ -6,7 +6,7 @@ body{font:16px system-ui,sans-serif;margin:24px auto;max-width:1180px;padding:0 
 <h1>__TITLE__ · Attn E / Flow</h1><p class="note">π0.5 · B16 / H50 / M10 · expert 10 / 14 / 18层 · 原始8头与10轮独立保存。主图为末轮先头后层平均；不代表训练收益。</p>
 <label>轨迹 <select id="slot"></select></label><label>Query <select id="query"></select></label><div id="info"></div>
 <div id="charts"></div>
-<h2>当前观测 · 原始相机预览</h2><div id="cameras" class="cameras"></div>
+<h2>本次实际推理视频 · chunk 前后帧</h2><video id="episode_video" controls preload="metadata" style="width:100%;max-width:800px"></video><p class="note">沿用已验收的主相机 4 fps 预览：query q 对应第 q、q+1 帧。只能解释峰值所在阶段，不能定位单个动作的精确接触时刻。</p><h2>当前观测 · 原始相机预览</h2><div id="cameras" class="cameras"></div>
 <h2>动作→动作读取（原联合概率）</h2><canvas id="aa" width="650" height="280"></canvas>
 <h2>视觉内部熵 · 层×动作</h2><canvas id="layer" width="650" height="160"></canvas>
 <h2>视觉内部熵 · 去噪轮×动作</h2><canvas id="denoise" width="650" height="260"></canvas>
@@ -28,6 +28,7 @@ body{font:16px system-ui,sans-serif;margin:24px auto;max-width:1180px;padding:0 
  plot('四来源内部熵（归一化）',names.map((n,i)=>[cn[i],r['E_'+n]]));plot('整体观测读取熵',[['观测（含格式位置）',r.E_obs]]);plot('四来源读取总量',names.map((n,i)=>[cn[i],r['M_'+n]]));
  plot('读取跨度与跨度突变',[['跨度',r.D_span],['跨度突变',r.B_span]]);plot('相邻动作读取分布变化（JS）',names.map((n,i)=>[cn[i],r['B_'+n]]));
  plot('动作Anchor',[['全体其他动作',r.I_anchor],['后续位置',r.I_future]]);plot('DV（末5轮、有效14维）',[['DV',r.dv]]);plot('动作幅度与夹爪',[['动作 RMS',r.action_amplitude],['左夹爪',r.gripper_left],['右夹爪',r.gripper_right]]);plot('自读与其他格式位置读取量',[['自读（动作内）',r.self_read],['格式 / 边界 token',r.M_other]]);
+ const player=document.getElementById('episode_video'),vp='episode_'+String(r.slot).padStart(2,'0')+'.mp4';if(player.getAttribute('src')!==vp){player.src=vp;player.onloadedmetadata=()=>{player.currentTime=r.query/4}}else player.currentTime=r.query/4;
  const stem='q'+String(r.query).padStart(3,'0')+'_s'+String(r.slot).padStart(2,'0');
  document.getElementById('cameras').innerHTML=['head','left','right'].map(n=>'<figure><img src="frames/'+stem+'_'+n+'.jpg" alt="'+n+' camera"><figcaption>'+n+'</figcaption></figure>').join('');
  const d=await(await fetch('details/'+stem+'.json')).json();heat('aa',d.aa,Array.from({length:50},(_,i)=>i%10===0?'读'+(i+1):''));heat('layer',d.layer,['L10','L14','L18']);heat('denoise',d.denoise,Array.from({length:10},(_,i)=>'k'+(i+1)));heat('head',d.head,Array.from({length:8},(_,i)=>'头'+i));

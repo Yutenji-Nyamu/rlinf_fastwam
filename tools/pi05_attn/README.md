@@ -12,7 +12,7 @@ This observer records native B16/H50/M10 inference without training. The model, 
 
 The initial generic per-head FP32 max-absolute threshold 0.02 was exceeded in the two calibration attempts (BF16 reference vs FP32 reconstruction), while actions/chain/RNG remained exact. Those failed attempts are retained, not silently relabeled successful. The initial implementation stopped before saving the first raw query; this evidence gap was fixed so any subsequent numerical rejection preserves its raw tensors and unexecuted observation.
 
-v1.1 reproduces the actual native arithmetic from saved Q/K and requires zero error against native A. It separately checks the intended head-then-layer mean FP32 distribution using the original 0.02 absolute / 0.08 row-L1 limits. Every per-head FP32 discrepancy, peak agreement, and entropy error remains in `parity.json`; the legacy threshold result is retained explicitly. Original native attention, actions, and RNG are not modified to meet a check.
+v1.1 reproduces the actual native arithmetic from saved Q/K and requires zero error against native A for the slot0 calibration reference (all three layers and ten calls). Action, chain and RNG parity covers the entire batch. It separately checks the intended head-then-layer mean FP32 distribution using the original 0.02 absolute / 0.08 row-L1 limits. Every per-head FP32 discrepancy, peak agreement, and entropy error remains in `parity.json`; the legacy threshold result is retained explicitly. Original native attention, actions, and RNG are not modified to meet a check.
 
 ## Evidence and interpretation
 
@@ -21,3 +21,11 @@ The two initial real batches passed v1.1: native attention reconstruction error 
 Each query saves all B16 slots and an active mask. Failed episodes remain in the atlas. Native reset retries and actual seeds are recorded; totals of requested records and distinct task/actual-seed pairs are separate. Position source labels do not imply pure causal modality content; mixed boundary tokens are `other`. Different cameras have separate patch coordinates. The FP32 path is an analysis reconstruction, not a bitwise replacement for BF16 inference.
 
 Data and atlas: `/data/chenyiteng/results/pi05-attn/20261010-v1` on SZ3 only. Transaction receipts: `/data/chenyiteng/deployment-20261010/pi05-attn-v1`. 500 GiB is the planning budget, updated from measured batches; it is not an artificial hard cap. Original weights, trajectories, images, raw Q/K and credentials are not published to Git.
+
+## Reuse correction (2026-10-10)
+
+The initial no-video collection was stopped and excluded from the new video-enabled total. The rejected control-step video observer exceeded the native 120-second environment timeout. The accepted 2026-10-03 signal runner is now the video baseline: native head-camera observations before/after each chunk, OpenCV mp4v at 4 fps, query q mapped to video frames q and q+1, and complete decode/frame-count validation. No additional camera/render/physics call is inserted. Video explains the chunk stage, not the exact action/contact instant. The rejected per-card two-worker scheduler was never launched.
+
+Formal collection remains the accepted B16 protocol. The same runner also supports a separately labeled native B32 capacity probe; its single noise stream is not equivalent to the two old B16 noise streams, so probe records are excluded from formal counts. Whole-card memory includes model, simulator and rendering; Torch tensor peaks alone are insufficient for scheduling. See REUSE_AUDIT.md for provenance and incident scope.
+
+Current data: `/data/chenyiteng/results/pi05-attn/20261010-video-v4`; receipts: `/data/chenyiteng/deployment-20261010/pi05-attn-video-v4`. The previous v1 directory is history.

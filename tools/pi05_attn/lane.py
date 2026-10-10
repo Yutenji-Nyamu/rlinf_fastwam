@@ -4,8 +4,8 @@ from pathlib import Path
 S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'))
 from common import read,save,proc,same,gpus,exact_signal
 from index import update as update_index
-R=Path(__file__).resolve().parents[2];O=Path('/data/chenyiteng/results/pi05-attn/20261010-v1');D=Path('/data/chenyiteng/deployment-20261010/pi05-attn-v1')
-g=sys.argv[1];assert g in ['6','7'];me=proc(os.getpid());env=dict(os.environ,**read(O/f'environment-g{g}.json'),ATTN_LANE_TOKEN=f'pi05-attn-20261010-g{g}')
+R=Path(__file__).resolve().parents[2];O=Path(os.environ['ATTN_RUN_ROOT']);D=Path(os.environ['ATTN_TRANSACTION_ROOT'])
+g=sys.argv[1];assert g in ['6','7'];me=proc(os.getpid());env=dict(os.environ,**read(O/f'environment-g{g}.json'),ATTN_LANE_TOKEN=f'{D.name}-g{g}')
 python='/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
 save(D/f'lane-g{g}-identity.json',me)
 child=None

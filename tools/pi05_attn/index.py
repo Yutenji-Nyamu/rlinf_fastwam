@@ -1,7 +1,7 @@
 """Generate the compact static atlas index from batch receipts, without raw reload."""
 import json,html,time,os
 from pathlib import Path
-O=Path('/data/chenyiteng/results/pi05-attn/20261010-v1')
+O=Path(os.environ.get('ATTN_RUN_ROOT','/data/chenyiteng/results/pi05-attn/20261010-v1'))
 def update():
  m=json.loads((O/'manifest.json').read_text());rows=[];summary=dict(validated_batches=0,recorded_episodes=0,successes=0,failed_batches=0,duplicate_seed_batches=0)
  unique_episodes=set()

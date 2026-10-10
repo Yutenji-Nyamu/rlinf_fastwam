@@ -9,11 +9,27 @@ def run(config):
  c=json.loads(Path(config).read_text());out=Path(c['output']);done=json.loads((out/'done.json').read_text());cost=[];atlas=[];errors=[]
  (out/'details').mkdir(exist_ok=True);(out/'frames').mkdir(exist_ok=True)
  episodes=json.loads((out/'episodes.json').read_text())
+ # Reuse the complete decode and frame-count check from the accepted 2026-10-03 validator.
+ video_check_start=time.perf_counter();decoded_videos=[]
+ frame_times=json.loads((out/'frame_times.json').read_text())
+ for e in episodes:
+  cap=cv2.VideoCapture(str(out/e['video']));decoded=0
+  try:
+   assert cap.isOpened(),('cannot open video',e['video'])
+   while True:
+    ok,frame=cap.read()
+    if not ok:break
+    assert frame is not None and frame.ndim==3
+    decoded+=1
+  finally:cap.release()
+  assert decoded==e['frames']==len(frame_times[e['slot']])==done['queries']+1
+  decoded_videos.append(dict(slot=e['slot'],file=e['video'],decoded_frames=decoded))
+ video_check_seconds=time.perf_counter()-video_check_start
  torch.set_num_threads(1);device='cuda' if torch.cuda.is_available() else 'cpu'
  paths=sorted(out.glob('query_*.pt'));assert len(paths)==done['queries'] and [p.stem for p in paths]==[f'query_{i:03d}' for i in range(done['queries'])], 'Incomplete raw query sequence'
  for path in paths:
   t=time.perf_counter();raw=torch.load(path,map_location='cpu',weights_only=False);meta=json.loads(path.with_suffix('.json').read_text())
-  assert raw['q_action'].shape[:5]==(16,10,3,8,50) and raw['k_prefix'].shape[1:3]==(3,1)
+  assert raw['q_action'].shape[:5]==(c['num_envs'],10,3,8,50) and raw['k_prefix'].shape[1:3]==(3,1)
   scores,refs=reconstruct(raw,device);np.savez_compressed(path.with_name(path.stem+'_scores.npz'),**scores)
   active=raw['active'].numpy();obs=np.load(path.with_name(path.stem+'_obs.npz'))
   for slot in np.where(active)[0]:
@@ -35,7 +51,7 @@ def run(config):
  # Missing entropy diagnostics in JSON use null, never a fabricated zero.
  text=(out/'atlas-data.json').read_text().replace('NaN','null');(out/'atlas-data.json').write_text(text)
  episodes=json.loads((out/'episodes.json').read_text());seeds=[r['actual'] for r in episodes]
- report=dict(passed=True,time=time.time(),queries=len(cost),episodes=len(episodes),successes=done['successes'],unique_actual_seeds=len(set(seeds)),seed_duplicate_warning=len(set(seeds))<16,offline=cost,interpretation='Recording and offline reconstruction only; no training evidence')
+ report=dict(passed=True,video_passed=True,video_frames=sum(v['decoded_frames'] for v in decoded_videos),decoded_videos=decoded_videos,video_check_seconds=video_check_seconds,time=time.time(),queries=len(cost),episodes=len(episodes),successes=done['successes'],unique_actual_seeds=len(set(seeds)),seed_duplicate_warning=len(set(seeds))<c['num_envs'],offline=cost,interpretation='Recording and offline reconstruction only; no training evidence')
  (out/'validation.json').write_text(json.dumps(report,indent=2))
  template=Path(__file__).with_name('atlas.html').read_text()
  (out/'index.html').write_text(template.replace('__TITLE__',c['task']+' · batch '+str(c['batch'])))
