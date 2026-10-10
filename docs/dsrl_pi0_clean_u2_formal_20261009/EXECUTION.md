@@ -25,3 +25,18 @@
 2026-10-10 00:09:07：两路均PRIORITY_RUNNING并进入Generating Rollout Epochs正式预采集；owner心跳距核验约1.35秒。每路actor/rollout/env的C/G上下文仅在对应6/7，0–3无C/G，4/5原WM进程不变；没有finished回执或本次异常。原RLT两个新fallback request均未派发，CP150完整标记SHA保留。此处仅确认已开始预采集，未声称完成首轮或已越过warmup500。
 
 本次无算法源码改动，只发布两份实配、差异和轻量启动/候补证据；基线c2c64706已与Yutenji-Nyamu仓库核同。
+
+## 10-10延长至400轮
+
+用户本轮授权两组延至400。各自先完成当前200轮并保存完整CP200，确认exit0、cleanup_error=null、精确driver及同卡C/G释放后，由原逐卡owner直接接续200→400；随后才接原RLT CP150。不打断当前训练，4/5 WM原槽不变。
+
+- 新事务：原D下`extend400-20261010/priority-g6.json`、`priority-g7.json`；命令沿用上文driver/plan，仅request换成本次路径。
+- 输出：原结果根下`pi0-clean-g6-formal400-from200-20261010-v1`、`pi0-u-tau2-both-g7-formal400-from200-20261010-v1`；resume_dir分别指原200轮输出的`<原实验名>/checkpoints/global_step_200`。两份实配在本页同目录`extend400/g6-resolved.yaml`、`g7-resolved.yaml`。
+- 只改max_steps=400及必要输出/恢复路径。SAC参数、优化器/调度器、alpha、target、trainer计数与replay均从完整CP恢复；N4/C20/ODE4/B256/UTD20、评估13/保存65不变。
+- **U退火仍R1→R200降至0**，不因延预算改方法合同。因此R201–400继续训练，但U重加权关闭；这不是把原退火曲线拉长到400。
+- 原owner1780556已精确替换为1344615，训练子进程保持。既有WAIT_EXTERNAL只加可选`priority_after_external`分支，等待成功原任务后进入PENDING_PRIORITY；其余槽默认逻辑不变，无新增后台层。最小补丁和启动证据在同目录`extend400/`。
+- 16:23核验：7卡原200轮退出0且释放，已自动启动400轮driver2369148，处于模型加载；6卡原训练尚未退出，接续已排队。400轮完成或异常结束后按既有规则接原RLT；原200阶段异常则不自动以不完整CP接续。当前未把加载视为恢复首轮成功。
+
+## 10-10 DSRL收束并切换Attn
+
+按用户新授权收束：Clean完成R218，U完成R224，完整恢复点均保留CP200；两路exit15、cleanup_error=null，逐namespace与GPU C/G清场通过。400轮预算未跑完。原RLT CP150逐卡候补改为等待Attn。配置、曲线、结论与回执见[CLOSEOUT.md](CLOSEOUT.md)。

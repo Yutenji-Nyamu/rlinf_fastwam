@@ -1,0 +1,15 @@
+--- ops/owner.py (before)
++++ ops/owner.py (400-round continuation)
+@@ -45,7 +45,11 @@
+     card=snapshot[int(g)]
+     assert card['uuid']==slot['gpu_uuid']
+     if row['phase']=='WAIT_EXTERNAL':
+-     if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not card['processes']:row['phase']='WAITING_RLT'
++     if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not card['processes']:
++      if slot.get('priority_after_external'):
++       receipt=read(slot['external_release']);assert receipt.get('exit_code')==0 and receipt.get('cleanup_error') is None, 'Continuation requires successful prior completion'
++       row['phase']='PENDING_PRIORITY'
++      else:row['phase']='WAITING_RLT'
+     elif row['phase']=='PENDING_PRIORITY':
+      if card['processes']:row['waiting']='GPU_OCCUPIED';continue
+      row['identity'],children[g]=launch(p,slot['priority']);row.update(phase='PRIORITY_RUNNING',request=slot['priority'],started_at=time.time());row.pop('waiting',None)
