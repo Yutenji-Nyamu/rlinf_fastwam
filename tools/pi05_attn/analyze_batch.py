@@ -1,10 +1,16 @@
 """Reconstruct once per saved query; generate complete episode-indexed atlas."""
-import argparse,json,time,traceback
+import argparse,json,time,traceback,subprocess
 from pathlib import Path
 import numpy as np
 import torch
 import cv2
 from analysis import reconstruct,GROUPS
+def video_preview(source,target):
+ if target.exists():return
+ target.parent.mkdir(exist_ok=True)
+ temp=target.with_suffix('.tmp.mp4')
+ subprocess.run(['ffmpeg','-nostdin','-v','error','-y','-i',str(source),'-c:v','libx264','-threads','1','-pix_fmt','yuv420p','-movflags','+faststart',str(temp)],check=True)
+ temp.replace(target)
 def run(config):
  c=json.loads(Path(config).read_text());out=Path(c['output']);done=json.loads((out/'done.json').read_text());cost=[];atlas=[];errors=[]
  (out/'details').mkdir(exist_ok=True);(out/'frames').mkdir(exist_ok=True)
@@ -23,6 +29,7 @@ def run(config):
     decoded+=1
   finally:cap.release()
   assert decoded==e['frames']==len(frame_times[e['slot']])==done['queries']+1
+  video_preview(out/e['video'],out/'preview'/e['video'])
   decoded_videos.append(dict(slot=e['slot'],file=e['video'],decoded_frames=decoded))
  video_check_seconds=time.perf_counter()-video_check_start
  torch.set_num_threads(1);device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -54,7 +61,7 @@ def run(config):
  report=dict(passed=True,video_passed=True,video_frames=sum(v['decoded_frames'] for v in decoded_videos),decoded_videos=decoded_videos,video_check_seconds=video_check_seconds,time=time.time(),queries=len(cost),episodes=len(episodes),successes=done['successes'],unique_actual_seeds=len(set(seeds)),seed_duplicate_warning=len(set(seeds))<c['num_envs'],offline=cost,interpretation='Recording and offline reconstruction only; no training evidence')
  (out/'validation.json').write_text(json.dumps(report,indent=2))
  template=Path(__file__).with_name('atlas.html').read_text()
- (out/'index.html').write_text(template.replace('__TITLE__',c['task']+' · batch '+str(c['batch'])))
+ (out/'index.html').write_text(template.replace('__TITLE__',c['task']+' · batch '+str(c['batch'])).replace('B16 /',f'B{c["num_envs"]} /'))
  print(json.dumps(report))
 if __name__=='__main__':
  ap=argparse.ArgumentParser();ap.add_argument('config');config=ap.parse_args().config
