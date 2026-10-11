@@ -1,0 +1,70 @@
+{
+  "env.train.video_cfg.video_base_dir": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1/video/train",
+    "new": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau1-notrick-sz2-g6-r300-1011/video/train"
+  },
+  "env.train.task_config.save_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1/robotwin_data/train",
+    "new": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau1-notrick-sz2-g6-r300-1011/robotwin_data/train"
+  },
+  "env.eval.video_cfg.video_base_dir": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1/video/eval",
+    "new": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau1-notrick-sz2-g6-r300-1011/video/eval"
+  },
+  "env.eval.task_config.save_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1/robotwin_data/eval",
+    "new": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau1-notrick-sz2-g6-r300-1011/robotwin_data/eval"
+  },
+  "cluster.component_placement.actor, env, rollout": {
+    "old": "7",
+    "new": "6"
+  },
+  "cluster.node_groups.0.label": {
+    "old": "dsrl_pi0_g7",
+    "new": "dsrl_pi0_g6"
+  },
+  "cluster.node_groups.0.env_configs.0.env_vars.7.LD_PRELOAD": {
+    "old": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/libnorm_g7_20261007.so",
+    "new": "/data/chenyiteng/deployment-20261006/rlt-q-signals-g67-v1/scope-gpu6/librlt_q_g6_20261006.so"
+  },
+  "cluster.node_groups.0.env_configs.0.env_vars.9.NO_PROXY": {
+    "old": "127.0.0.1,localhost,h100-gpu01",
+    "new": "127.0.0.1,localhost,h100-gpu02"
+  },
+  "cluster.node_groups.0.env_configs.0.env_vars.15.PYTHONPATH": {
+    "old": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/bootstrap:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi0-single-u-n-20261009:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+    "new": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/scope-code:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi0-single-u-n-20261009:/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+  },
+  "cluster.node_groups.0.env_configs.0.env_vars.20.RLINF_OPENDW_GPU_SCOPE_MANIFEST": {
+    "old": "/data/chenyiteng/projects/norm-bc-dsrl-sz3-20261007/control/scope-g7/scope.json",
+    "new": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/scope-g6/scope.json"
+  },
+  "cluster.node_groups.0.env_configs.0.env_vars.32.no_proxy": {
+    "old": "127.0.0.1,localhost,h100-gpu01",
+    "new": "127.0.0.1,localhost,h100-gpu02"
+  },
+  "runner.logger.log_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau2-both-g7-formal200-20261009-v1",
+    "new": "/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau1-notrick-sz2-g6-r300-1011"
+  },
+  "runner.logger.experiment_name": {
+    "old": "pi0-u-tau2-both-g7-formal200-20261009-v1",
+    "new": "pi0-u-tau1-notrick-sz2-g6-r300-1011"
+  },
+  "runner.max_steps": {
+    "old": 200,
+    "new": 300
+  },
+  "algorithm.dsrl_u.temperature": {
+    "old": 2.0,
+    "new": 1.0
+  },
+  "algorithm.dsrl_u.chunk_dropout.enabled": {
+    "old": true,
+    "new": false
+  },
+  "algorithm.dsrl_u.alpha_schedule.enabled": {
+    "old": true,
+    "new": false
+  }
+}
