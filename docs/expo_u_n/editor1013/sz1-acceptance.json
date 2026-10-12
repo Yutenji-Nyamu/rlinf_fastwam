@@ -1,0 +1,131 @@
+{
+  "time": 1791823080.5033858,
+  "host": "admin",
+  "owner_alive": true,
+  "status": {
+    "slots": {
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "4": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "5": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    },
+    "time": 1791823079.0194004,
+    "owner": {
+      "pid": 2359846,
+      "uid": 1003,
+      "start": 470893291,
+      "state": "R"
+    }
+  },
+  "fallbacks": [
+    {
+      "gpu": 6,
+      "request": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-fm-u-20261010/fallback-g6-v3.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/pi05-rlt-click_bell-clean-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2/checkpoints/global_step_25",
+      "complete": true,
+      "scope": "rlt-sz1-g6-after-expo-fmu-1010-v3"
+    },
+    {
+      "gpu": 7,
+      "request": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/expo-fm-u-20261010/fallback-g7-v3.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g7-after-reset4-1006-v9/rlt-sz1-g7-after-reset4-1006-v9/checkpoints/global_step_300",
+      "complete": true,
+      "scope": "rlt-sz1-g7-after-expo-fmu-1010-v3"
+    },
+    {
+      "gpu": 4,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g4.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g4-after-reset4-1006-v9/rlt-sz1-g4-after-reset4-1006-v9/checkpoints/global_step_100",
+      "complete": true,
+      "scope": "rlt-admin-g4-after-editor-u-1013"
+    },
+    {
+      "gpu": 5,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g5.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/pi05-rlt-place_fan-combo-n8full-3000-20261002-sz1-after-dojo-n25-20261004-v1-per-card-20261005-v2-after-dojo-priority-20261005-after-dojo-return-20261005/checkpoints/global_step_100",
+      "complete": true,
+      "scope": "rlt-admin-g5-after-editor-u-1013"
+    }
+  ],
+  "experiments": [
+    {
+      "tau": 2,
+      "gpus": [
+        4,
+        5
+      ],
+      "status": {
+        "time": 1791822261.3199825,
+        "pid": 2359273,
+        "phase": "evaluation_started",
+        "cadence": {
+          "version": 2,
+          "contract": {
+            "max_physical_actions": 60000,
+            "warmup_episodes": 10,
+            "actions_per_call": 40,
+            "max_episode_actions": 200,
+            "minimum_online_actions": 64
+          },
+          "counters": {
+            "episodes_completed": 0,
+            "physical_actions": 0,
+            "warmup_actions": 0,
+            "post_warmup_actions": 0,
+            "carry_actions": 0,
+            "pending_calls": 0,
+            "completed_calls": 0,
+            "budget_truncated_episodes": 0
+          }
+        },
+        "core_updates": 0,
+        "base_updates": 0,
+        "label": "initial-base",
+        "base_only": true
+      },
+      "owner": {
+        "time": 1791823072.0970097,
+        "phase": "EXPO_RUNNING",
+        "driver": {
+          "pid": 2359273,
+          "uid": 1003,
+          "start": 470891850,
+          "state": "S"
+        },
+        "contexts": [
+          {
+            "gpu": 4,
+            "pid": 2359273,
+            "type": "C+G"
+          },
+          {
+            "gpu": 5,
+            "pid": 2359273,
+            "type": "C"
+          }
+        ]
+      },
+      "released": null,
+      "log_tail": "ense.bias\", \"paligemma_with_expert.gemma_expert.model.norm.dense.weight\", \"time_mlp_in.bias\", \"time_mlp_in.weight\", \"time_mlp_out.bias\", \"time_mlp_out.weight\"], \"critic_cameras\": [\"main\", \"left_wrist\", \"right_wrist\"], \"runtime_attention\": {\"torch_version\": \"2.11.0+cu129\", \"cuda_version\": \"12.9\", \"cudnn_version\": 91701, \"cudnn_sdp_enabled\": false, \"flash_sdp_enabled\": true, \"mem_efficient_sdp_enabled\": true, \"math_sdp_enabled\": true}, \"parallel\": {\"devices\": 2, \"kind\": \"replicated_model_batch_scatter_grad_reduce\", \"observation_microbatch\": 64, \"candidate_microbatch\": 8, \"fm_microbatch\": 64}, \"image_augmentation\": false, \"preprocessing_source_sha256\": \"0a2f77871e4f8beb0753bb4a154f82fe7868be187135031e7333cd63c2981e54\", \"fm_api\": \"pinned-use_rlt-false-native-PI0Pytorch.forward.mean; tensor-scattered-device-inputs\", \"optimizer\": {\"lr\": 2.5e-05, \"betas\": [0.9, 0.95], \"eps\": 1e-08, \"weight_decay\": 1e-10, \"clip_grad\": 1.0}}, \"core_config\": {\"n_base\": 8, \"n_edit\": 8, \"num_qs\": 10, \"num_min_qs\": 2, \"chunk_length\": 10, \"action_dim\": 14, \"proprio_dim\": 14, \"num_views\": 3, \"critic_updates\": 20, \"edit_scale\": 0.2, \"discount\": 0.99, \"vision_kind\": \"official_resnetv2_joint_groupnorm4_spatial_flatten\", \"parallel_devices\": 2, \"critic_microbatch_size\": 64, \"editor_microbatch_size\": 64, \"selection_observation_microbatch_size\": 64, \"selection_candidate_microbatch_size\": 8}, \"formal\": {\"seed\": 42, \"batch_size\": 64, \"parallel_devices\": 2, \"candidate_microbatch\": 8, \"observation_microbatch\": 64, \"fm_microbatch\": 64, \"base_lr\": 2.5e-05, \"num_envs\": 1, \"warmup_episodes\": 10, \"physical_actions_per_update_call\": 40, \"critic_updates_per_call\": 20, \"augmentation\": false, \"scope\": \"60000 fresh physical online actions including warmup; evaluation excluded\", \"max_physical_actions\": 60000, \"initialization\": \"fresh native base and fresh EXPO components; not smoke checkpoint\", \"prior_budget_truncations\": 0}, \"resumed\": false, \"initialization\": \"fresh-native-base/new-learner\"}\n{\"time\": 1791822261.323235, \"event\": \"renderer_memory_release\", \"reserved_before\": [9422503936, 0], \"reserved_after\": [9420406784, 0]}\n{\"time\": 1791822261.3234582, \"event\": \"evaluation_native_enter\", \"label\": \"initial-base\"}\n",
+      "last_events": [],
+      "eval_progress": "20, \"success_once\": [false, false, false, false]}\n{\"time\": 1791822949.651536, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 30, \"success_once\": [false, false, false, false]}\n{\"time\": 1791822964.2609453, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 40, \"success_once\": [false, false, false, false]}\n{\"time\": 1791822980.853733, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 50, \"success_once\": [false, false, false, false]}\n{\"time\": 1791822996.5022683, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 60, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823012.8714871, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 70, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823029.1573007, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 80, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823045.2381089, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 90, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823060.8247519, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 100, \"success_once\": [true, false, false, false]}\n{\"time\": 1791823075.7195156, \"event\": \"chunk\", \"group\": 2, \"actions_per_env\": 110, \"success_once\": [true, false, false, false]}\n"
+    }
+  ],
+  "all_four_fallbacks_valid": true
+}

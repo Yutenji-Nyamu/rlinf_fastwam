@@ -1,0 +1,193 @@
+{
+  "time": 1791823097.4831755,
+  "host": "h100-gpu01",
+  "owner_alive": true,
+  "status": {
+    "slots": {
+      "4": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "5": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    },
+    "time": 1791823080.1663373,
+    "owner": {
+      "pid": 690084,
+      "uid": 20001,
+      "start": 779324919,
+      "state": "R"
+    }
+  },
+  "fallbacks": [
+    {
+      "gpu": 4,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g4.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g4-after-pi0-u300-1011/rlt-sz3-g4-after-pi0-u300-1011/checkpoints/global_step_375",
+      "complete": true,
+      "scope": "rlt-h100-gpu01-g4-after-editor-u-1013"
+    },
+    {
+      "gpu": 5,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g5.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g5-after-wm-cycle-1009/rlt-sz3-g5-after-wm-cycle-1009/checkpoints/global_step_350",
+      "complete": true,
+      "scope": "rlt-h100-gpu01-g5-after-editor-u-1013"
+    },
+    {
+      "gpu": 6,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g6.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-attn-progress-1012/rlt-sz3-g6-after-attn-progress-1012/checkpoints/global_step_225",
+      "complete": true,
+      "scope": "rlt-h100-gpu01-g6-after-editor-u-1013"
+    },
+    {
+      "gpu": 7,
+      "request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g7.json",
+      "config": true,
+      "environment": true,
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-progress-1012/rlt-sz3-g7-after-attn-progress-1012/checkpoints/global_step_225",
+      "complete": true,
+      "scope": "rlt-h100-gpu01-g7-after-editor-u-1013"
+    }
+  ],
+  "experiments": [
+    {
+      "tau": 1,
+      "gpus": [
+        4,
+        5
+      ],
+      "status": {
+        "time": 1791822422.2857242,
+        "pid": 689926,
+        "phase": "evaluation_started",
+        "cadence": {
+          "version": 2,
+          "contract": {
+            "max_physical_actions": 60000,
+            "warmup_episodes": 10,
+            "actions_per_call": 40,
+            "max_episode_actions": 200,
+            "minimum_online_actions": 64
+          },
+          "counters": {
+            "episodes_completed": 0,
+            "physical_actions": 0,
+            "warmup_actions": 0,
+            "post_warmup_actions": 0,
+            "carry_actions": 0,
+            "pending_calls": 0,
+            "completed_calls": 0,
+            "budget_truncated_episodes": 0
+          }
+        },
+        "core_updates": 0,
+        "base_updates": 0,
+        "label": "initial-base",
+        "base_only": true
+      },
+      "owner": {
+        "time": 1791823080.9593668,
+        "phase": "EXPO_RUNNING",
+        "driver": {
+          "pid": 689926,
+          "uid": 20001,
+          "start": 779324603,
+          "state": "S"
+        },
+        "contexts": [
+          {
+            "gpu": 4,
+            "pid": 689926,
+            "type": "C+G"
+          },
+          {
+            "gpu": 5,
+            "pid": 689926,
+            "type": "C"
+          }
+        ]
+      },
+      "released": null,
+      "log_tail": "1701, \"cudnn_sdp_enabled\": false, \"flash_sdp_enabled\": true, \"mem_efficient_sdp_enabled\": true, \"math_sdp_enabled\": true}, \"parallel\": {\"devices\": 2, \"kind\": \"replicated_model_batch_scatter_grad_reduce\", \"observation_microbatch\": 64, \"candidate_microbatch\": 8, \"fm_microbatch\": 64}, \"image_augmentation\": false, \"preprocessing_source_sha256\": \"0a2f77871e4f8beb0753bb4a154f82fe7868be187135031e7333cd63c2981e54\", \"fm_api\": \"pinned-use_rlt-false-native-PI0Pytorch.forward.mean; tensor-scattered-device-inputs\", \"optimizer\": {\"lr\": 2.5e-05, \"betas\": [0.9, 0.95], \"eps\": 1e-08, \"weight_decay\": 1e-10, \"clip_grad\": 1.0}}, \"core_config\": {\"n_base\": 8, \"n_edit\": 8, \"num_qs\": 10, \"num_min_qs\": 2, \"chunk_length\": 10, \"action_dim\": 14, \"proprio_dim\": 14, \"num_views\": 3, \"critic_updates\": 20, \"edit_scale\": 0.2, \"discount\": 0.99, \"vision_kind\": \"official_resnetv2_joint_groupnorm4_spatial_flatten\", \"parallel_devices\": 2, \"critic_microbatch_size\": 64, \"editor_microbatch_size\": 64, \"selection_observation_microbatch_size\": 64, \"selection_candidate_microbatch_size\": 8}, \"formal\": {\"seed\": 42, \"batch_size\": 64, \"parallel_devices\": 2, \"candidate_microbatch\": 8, \"observation_microbatch\": 64, \"fm_microbatch\": 64, \"base_lr\": 2.5e-05, \"num_envs\": 1, \"warmup_episodes\": 10, \"physical_actions_per_update_call\": 40, \"critic_updates_per_call\": 20, \"augmentation\": false, \"scope\": \"60000 fresh physical online actions including warmup; evaluation excluded\", \"max_physical_actions\": 60000, \"initialization\": \"fresh native base and fresh EXPO components; not smoke checkpoint\", \"prior_budget_truncations\": 0}, \"resumed\": false, \"initialization\": \"fresh-native-base/new-learner\"}\n{\"time\": 1791822422.2879355, \"event\": \"renderer_memory_release\", \"reserved_before\": [9422503936, 0], \"reserved_after\": [9420406784, 0]}\n{\"time\": 1791822422.2888565, \"event\": \"evaluation_native_enter\", \"label\": \"initial-base\"}\n/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:95: UserWarning: Failed to find glvnd ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.\n  warn(\n",
+      "last_events": [],
+      "eval_progress": "unk\", \"group\": 0, \"actions_per_env\": 170, \"success_once\": [true, false, false, false]}\n{\"time\": 1791822947.468287, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 180, \"success_once\": [true, false, false, false]}\n{\"time\": 1791822990.7655463, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 190, \"success_once\": [true, false, false, false]}\n{\"time\": 1791823006.9845738, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 200, \"success_once\": [true, false, false, false]}\n{\"time\": 1791823006.985588, \"event\": \"group_finished\", \"group\": 0, \"rows\": [{\"seed\": 100125057, \"success_once\": true, \"physical_actions\": 200}, {\"seed\": 100187524, \"success_once\": false, \"physical_actions\": 200}, {\"seed\": 100137537, \"success_once\": false, \"physical_actions\": 200}, {\"seed\": 100187558, \"success_once\": false, \"physical_actions\": 200}]}\n{\"time\": 1791823065.7135117, \"event\": \"group_started\", \"group\": 1, \"seeds\": [100137528, 100125038, 100112501, 100187505]}\n{\"time\": 1791823080.0374868, \"event\": \"chunk\", \"group\": 1, \"actions_per_env\": 10, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823094.2349913, \"event\": \"chunk\", \"group\": 1, \"actions_per_env\": 20, \"success_once\": [false, false, false, false]}\n"
+    },
+    {
+      "tau": 3,
+      "gpus": [
+        6,
+        7
+      ],
+      "status": {
+        "time": 1791822422.879253,
+        "pid": 689945,
+        "phase": "evaluation_started",
+        "cadence": {
+          "version": 2,
+          "contract": {
+            "max_physical_actions": 60000,
+            "warmup_episodes": 10,
+            "actions_per_call": 40,
+            "max_episode_actions": 200,
+            "minimum_online_actions": 64
+          },
+          "counters": {
+            "episodes_completed": 0,
+            "physical_actions": 0,
+            "warmup_actions": 0,
+            "post_warmup_actions": 0,
+            "carry_actions": 0,
+            "pending_calls": 0,
+            "completed_calls": 0,
+            "budget_truncated_episodes": 0
+          }
+        },
+        "core_updates": 0,
+        "base_updates": 0,
+        "label": "initial-base",
+        "base_only": true
+      },
+      "owner": {
+        "time": 1791823080.9963324,
+        "phase": "EXPO_RUNNING",
+        "driver": {
+          "pid": 689945,
+          "uid": 20001,
+          "start": 779324787,
+          "state": "S"
+        },
+        "contexts": [
+          {
+            "gpu": 6,
+            "pid": 689945,
+            "type": "C+G"
+          },
+          {
+            "gpu": 7,
+            "pid": 689945,
+            "type": "C"
+          }
+        ]
+      },
+      "released": null,
+      "log_tail": "1701, \"cudnn_sdp_enabled\": false, \"flash_sdp_enabled\": true, \"mem_efficient_sdp_enabled\": true, \"math_sdp_enabled\": true}, \"parallel\": {\"devices\": 2, \"kind\": \"replicated_model_batch_scatter_grad_reduce\", \"observation_microbatch\": 64, \"candidate_microbatch\": 8, \"fm_microbatch\": 64}, \"image_augmentation\": false, \"preprocessing_source_sha256\": \"0a2f77871e4f8beb0753bb4a154f82fe7868be187135031e7333cd63c2981e54\", \"fm_api\": \"pinned-use_rlt-false-native-PI0Pytorch.forward.mean; tensor-scattered-device-inputs\", \"optimizer\": {\"lr\": 2.5e-05, \"betas\": [0.9, 0.95], \"eps\": 1e-08, \"weight_decay\": 1e-10, \"clip_grad\": 1.0}}, \"core_config\": {\"n_base\": 8, \"n_edit\": 8, \"num_qs\": 10, \"num_min_qs\": 2, \"chunk_length\": 10, \"action_dim\": 14, \"proprio_dim\": 14, \"num_views\": 3, \"critic_updates\": 20, \"edit_scale\": 0.2, \"discount\": 0.99, \"vision_kind\": \"official_resnetv2_joint_groupnorm4_spatial_flatten\", \"parallel_devices\": 2, \"critic_microbatch_size\": 64, \"editor_microbatch_size\": 64, \"selection_observation_microbatch_size\": 64, \"selection_candidate_microbatch_size\": 8}, \"formal\": {\"seed\": 42, \"batch_size\": 64, \"parallel_devices\": 2, \"candidate_microbatch\": 8, \"observation_microbatch\": 64, \"fm_microbatch\": 64, \"base_lr\": 2.5e-05, \"num_envs\": 1, \"warmup_episodes\": 10, \"physical_actions_per_update_call\": 40, \"critic_updates_per_call\": 20, \"augmentation\": false, \"scope\": \"60000 fresh physical online actions including warmup; evaluation excluded\", \"max_physical_actions\": 60000, \"initialization\": \"fresh native base and fresh EXPO components; not smoke checkpoint\", \"prior_budget_truncations\": 0}, \"resumed\": false, \"initialization\": \"fresh-native-base/new-learner\"}\n{\"time\": 1791822422.8815777, \"event\": \"renderer_memory_release\", \"reserved_before\": [9422503936, 0], \"reserved_after\": [9420406784, 0]}\n{\"time\": 1791822422.8826063, \"event\": \"evaluation_native_enter\", \"label\": \"initial-base\"}\n/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/sapien/_vulkan_tricks.py:95: UserWarning: Failed to find glvnd ICD file. This is probably due to an incorrect or partial installation of the NVIDIA driver. SAPIEN will attempt to provide an ICD file anyway but it may not work.\n  warn(\n",
+      "last_events": [],
+      "eval_progress": "k\", \"group\": 0, \"actions_per_env\": 170, \"success_once\": [true, false, false, false]}\n{\"time\": 1791822948.5807369, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 180, \"success_once\": [true, false, false, false]}\n{\"time\": 1791822992.2490416, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 190, \"success_once\": [true, false, false, false]}\n{\"time\": 1791823008.6590118, \"event\": \"chunk\", \"group\": 0, \"actions_per_env\": 200, \"success_once\": [true, false, false, false]}\n{\"time\": 1791823008.6600797, \"event\": \"group_finished\", \"group\": 0, \"rows\": [{\"seed\": 100125057, \"success_once\": true, \"physical_actions\": 200}, {\"seed\": 100187524, \"success_once\": false, \"physical_actions\": 200}, {\"seed\": 100137537, \"success_once\": false, \"physical_actions\": 200}, {\"seed\": 100187558, \"success_once\": false, \"physical_actions\": 200}]}\n{\"time\": 1791823066.5176158, \"event\": \"group_started\", \"group\": 1, \"seeds\": [100137528, 100125038, 100112501, 100187505]}\n{\"time\": 1791823081.2695138, \"event\": \"chunk\", \"group\": 1, \"actions_per_env\": 10, \"success_once\": [false, false, false, false]}\n{\"time\": 1791823095.3818011, \"event\": \"chunk\", \"group\": 1, \"actions_per_env\": 20, \"success_once\": [false, false, false, false]}\n"
+    }
+  ],
+  "all_four_fallbacks_valid": true
+}

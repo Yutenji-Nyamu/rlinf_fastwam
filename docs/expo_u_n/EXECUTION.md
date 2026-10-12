@@ -1,6 +1,26 @@
 # EXPO U/Norm 执行记录
 
-当前：10-10三组FM-U正式运行；下方10-09部分保留为已完成的smoke历史。
+当前：10-13 FM-U τ1按用户结论停止；FM-U τ2/3继续。新增Editor-U τ1/2/3正式启动，复用已验收目标，无算法代码改动。
+
+## 10-13 Editor-U τ1/2/3与FM-U τ1收束
+
+用户确认“Q-U”为已有Editor策略目标 `w_U * (alpha log pi - Q)`，不是critic TD误差。FM恢复普通原式，critic、alpha更新、回放和候选排序不改。C10窗口U、exp/mean映射、τ、dropout=.2及R1→R200强度退火均已在10-09的现有实现和一次真实更新中验收；本轮仅改target、τ及部署路径，不增加GPU smoke。
+
+| 新实验 | 卡位 | 预算与配置 |
+|---|---|---|
+| Editor-U τ1 | SZ3 4/5 | 双卡，60000动作，双trick |
+| Editor-U τ2 | SZ1 4/5 | 同上 |
+| Editor-U τ3 | SZ3 6/7 | 同上 |
+
+继承FM-U/Clean实配：turn_switch、N1、B64、H50/C10/ODE10、候选8+8、Q20→FM1→Editor1→alpha1、10回合预热、40动作/学习、64GiB CPU回放缓存、初始/每10回合/最终20条真实评估。全部从原生模型和新优化器开始。τ_local字段沿用配置，但Editor只应用τ_chunk的外层权重；无逐动作内层重权。
+
+实际配置、命令、环境、输出和停止条件见[editor1013](editor1013)。服务器事务T=`/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1`。SZ1复用原运行源码，SZ3使用同一已发布`a1b301179`源码导出；普通用户的既有单卡EGL profile与双卡CUDA UUID绑定保持。达到预算或用户停止后精确收束该组，原owner逐卡接各自RLT。
+
+FM-U τ1于39481动作、279回合、946次学习主动停止，exit143、所有子进程与两卡C/G清空；最后固定评估R270为10/20，最新完整恢复权重保留。主要events、driver日志、配置和全部评估回执压缩约1.71MiB，见`editor1013/fm-u-tau1-closeout-logs.tar.gz`。
+
+为把分散空卡组成同机双卡，原SZ3 GPU5的RLT Q-U τ3以完整CP150迁至SZ2 GPU6；算法、源码b1d2d8d和800轮预算不变，保留旧日志及未存轮次说明。原SZ2 Q-U τ1按用户结论停止；SZ3 GPU4的Agent已结束并归还，本轮只撤下自动接续的RLT。三机只复用原owner/driver和已验收pair_owner，没有新常驻管理实现。
+
+00:38检查：三组均有真实动作推进。τ2已到初评第3组110/200动作，τ1/3均完成第1组200动作并进入第2组；仍属原定初评，尚未完成新学习。SZ3两组渲染绑定物理4、6，CUDA分别限4/5、6/7。迁移Q-U已恢复采集及actor/critic学习，更新数由19200到22400。12个逐卡候补配置、环境、完整断点均有效，三机原owner存活；回执见`editor1013/*-acceptance.json`。本次不是方法效果结论。
 
 ## 10-12 日志补推
 
