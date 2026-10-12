@@ -5,8 +5,16 @@ This observer records native B16/H50/M10 inference without training. The model, 
 - `observer.py`: post-RoPE native Q/K at action expert layers 10/14/18, all 8 Q heads, all 10 denoising calls. Original eager kernel remains in use. Prefix K is shared once per query; all action Q/K are saved. Includes real mask/positions/token-source/camera mapping, original full FP32 random draw, actual solver initial latent, full D32 chain/velocity/t/dt, and final environment actions.
 - `run_batch.py CONFIG.json`: original task/seed inference. The first two batches repeat the native first observation and compare observer on/off with exact actions, full chain, and RNG. Full observations and action submission mappings accompany each query. Terminal TOPP physical execution prefix remains unknown, with an explicit validity mask.
 - `analysis.py` and `analyze_batch.py CONFIG.json`: one pass over saved raw tensors, FP32 attention reconstruction, probability average over 8 heads then 3 layers, modal conditioning, normalized and raw entropy, token counts, mass, JS/span, all-other/future Anchor, head/layer/step diagnostics, native final-five-step DV over effective D14, action/gripper comparisons, camera previews, and the interactive atlas.
-- `lane.py 6|7`: per-card queue and one receipt-only barrier before expansion from 12 to 50 tasks x 32 requested episodes. No raw reload at the barrier, no silent failed-batch retry, no new cache quota. Completion plus exact compute/graphics clearance produces the release receipt consumed by the original RLT CP150 fallback owner. Existing slots4/5 stay intact.
-- `test_math.py`: focused CPU tests of entropy vs mass, N0/1, JS and batch independence, and column/future Anchor direction.
+- `lane.py 6|7`: one formal queue per card. The completed expansion gate is removed; a missing or temporarily unreadable progress file means unknown, not a fatal error. Keep the existing batch deadline and skip recorded native task failures. On exit, write the receipt consumed by the existing per-card RLT owner after compute/graphics clearance. The current fallback request determines the checkpoint.
+- `test_math.py`: seven focused CPU checks covering signal math and missing/fresh/stalled/transient progress files.
+
+## 2026-10-12 recovery
+
+The previous parent queue crashed while reading `progress.json`; this was our lifecycle bug. The check now uses file mtime, and a missing/transient file is unknown. The original 3600-second batch deadline remains. Removed the already completed 12-to-100 expansion loop; no new supervisor was added.
+
+Seven CPU regression checks passed. SZ3 GPU6/7 resumed `stack_bowls_two_b1` and `stamp_seal_b1` using the original B16/H50/M10/model/seed/video chain. Both completed native action queries. The interrupted bowl attempt was archived intact. The 1376 validated records are retained; 12 known native-error/deferred batches (192 requested records) remain unresolved and are not silently retried or labeled complete. Both per-card RLT fallbacks now resume complete CP200, and use the same existing owner.
+
+This also publishes previously unpushed runtime fixes: accepted model-before-simulator warmup order, native-error skip behavior, and exit receipts for RLT. It does not establish the root cause of OIDN/Vulkan stalls. `evidence/recovery-20261012` contains primary compressed logs, configuration and per-batch validation receipts, the exact cutover and CPU test result. Raw Q/K, models and videos stay on SZ3.
 
 ## Numerical acceptance v1.1
 
@@ -20,7 +28,11 @@ The two initial real batches passed v1.1: native attention reconstruction error 
 
 Each query saves all B16 slots and an active mask. Failed episodes remain in the atlas. Native reset retries and actual seeds are recorded; totals of requested records and distinct task/actual-seed pairs are separate. Position source labels do not imply pure causal modality content; mixed boundary tokens are `other`. Different cameras have separate patch coordinates. The FP32 path is an analysis reconstruction, not a bitwise replacement for BF16 inference.
 
-Data and atlas: `/data/chenyiteng/results/pi05-attn/20261010-v1` on SZ3 only. Transaction receipts: `/data/chenyiteng/deployment-20261010/pi05-attn-v1`. 500 GiB is the planning budget, updated from measured batches; it is not an artificial hard cap. Original weights, trajectories, images, raw Q/K and credentials are not published to Git.
+Data and atlas: `/data/chenyiteng/results/pi05-attn/20261010-video-v4` on SZ3 only. Transaction receipts: `/data/chenyiteng/deployment-20261010/pi05-attn-video-v4`. 500 GiB is the planning budget, updated from measured batches; it is not an artificial hard cap. Original weights, trajectories, images, raw Q/K and credentials are not published to Git.
+
+The accepted runner initializes the model with one native B16 forward before creating the simulator. Keep this order, the original chunk-endpoint video, and the 3600-second batch deadline. The temporary observation lock and CUDA loading override were removed after failing to resolve the stall. Current acceptance state is in `docs/pi05-attn-20261010/EXECUTION.md`.
+
+Historical setup, smoke, publication scripts and old source archives (24 files) are preserved with per-file SHA256 in `E:/Codex/home/visualizations/2026/10/03/01a0ffb6-b309-7fa1-9ae0-b20e6d63a11c/attn-setup-history-20261011.zip`. They are not runtime dependencies; obsolete v1 status tools are archived there too. Keep this folder for the runner, observer, offline analysis, lane, atlas and preview only.
 
 ## Reuse correction (2026-10-10)
 

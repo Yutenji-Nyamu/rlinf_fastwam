@@ -31,9 +31,18 @@ def run(config):
     assert model.config.num_steps==10 and model.config.action_horizon==50
     observer=AttentionObserver(model);env=None;videos=[];frame_times=[[] for _ in range(batch)];success=np.zeros(batch,bool);counts=np.zeros(batch,int);costs=[];rows=[]
     try:
+        # Restore the accepted 20261003 initialization order: run the model
+        # before constructing SAPIEN scenes. No environment actions are submitted.
+        dummy={'main_images':torch.zeros((batch,224,224,3),dtype=torch.uint8),
+               'wrist_images':torch.zeros((batch,2,224,224,3),dtype=torch.uint8),
+               'extra_view_images':None,'states':torch.zeros((batch,14)),
+               'task_descriptions':['adjust the bottle']*batch}
+        t=time.perf_counter();warm_action,warm_result=infer(model,dummy);torch.cuda.synchronize()
+        save(out/'started.json',dict(time=started,pid=os.getpid(),gpu=c['gpu'],warmup_seconds=time.perf_counter()-t,initialization='native model before simulator'))
+        del dummy,warm_action,warm_result
         ec=OmegaConf.create(c['env']);assert not ec.auto_reset and ec.ignore_terminations
-        env=RoboTwinEnv(ec,batch,0,1,None);obs,_=env.reset()
-        assert c['env']['video_cfg']['save_video']
+        env=RoboTwinEnv(ec,batch,0,1,None)
+        obs,_=env.reset()
         requested=env.reset_state_ids.cpu().tolist();actual=[int(e.task.ep_num) for e in env.venv.envs]
         seeds=[dict(slot=i,requested=int(requested[i]),actual=actual[i],native_retry=int(requested[i])!=actual[i]) for i in range(batch)]
         save(out/'seeds.json',seeds)
@@ -82,6 +91,7 @@ def run(config):
                 if not report['passed']:
                     torch.save(raw,out/'parity-failure.pt');np.savez_compressed(out/'parity-failure-obs.npz',**obs_arrays);save(out/'parity-failure.json',dict(metadata,execution='not submitted'));raise AssertionError('Native capture or FP32 main-distribution check failed; raw saved')
                 del base,again,base_action,again_action
+            save(out/'progress.json',dict(time=time.time(),phase='environment',query=query,successes=int(success.sum())))
             t=time.perf_counter();obss,_,_,_,_=env.chunk_step(arr(action));obs=obss[-1];snapshot(arr(obs['main_images']))
             counts=np.array([int(e.task.take_action_cnt) for e in env.venv.envs]);after=np.array([bool(e.task.eval_success) for e in env.venv.envs])
             submitted=active[:,None]&(np.arange(50)[None,:]<(counts-before)[:,None])

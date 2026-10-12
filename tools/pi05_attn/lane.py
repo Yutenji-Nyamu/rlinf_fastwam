@@ -1,4 +1,4 @@
-"""Two independent original-config lanes; gated expansion, then exact RLT return."""
+"""One formal queue per card; validate once, then return to existing RLT."""
 import os,sys,json,time,subprocess,signal,hashlib,traceback
 from pathlib import Path
 S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'))
@@ -9,6 +9,18 @@ g=sys.argv[1];assert g in ['6','7'];me=proc(os.getpid());env=dict(os.environ,**r
 python='/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
 save(D/f'lane-g{g}-identity.json',me)
 child=None
+
+def progress_stalled(out):
+ try:return time.time()-(out/'progress.json').stat().st_mtime>600
+ except OSError:return False  # Missing or transiently unreadable means unknown.
+def native_task_attribute_error(c,out):
+ p=out/'error.json'
+ return p.exists() and f"AttributeError: '{c['task']}' object has no attribute" in read(p).get('error','')
+
+def skippable_failure(c,out,rc):
+ if rc==124 or (rc==1 and native_task_attribute_error(c,out)):return True
+ log=D/(out.name+f'-g{g}.log')
+ return rc==-6 and log.exists() and 'vk::DeviceLostError' in log.read_text(errors='replace')[-4000:]
 def stop(*_):
  if child and child.poll() is None:exact_signal(proc(child.pid),signal.SIGTERM)
  raise SystemExit(143)
@@ -26,31 +38,36 @@ def cleanup():
  after=gpus();assert not after[int(g)]['processes'],'Assigned card remains occupied after batch exit'
  return dict(time=time.time(),owned_signalled=owned,card_clear=True)
 try:
- plan=read(D/f'lane-g{g}-plan.json')
+ plan=read(D/f'lane-g{g}-plan.json');failed_jobs=[]
+ assert read(D/'expansion-stage.json')['stage']==100,'Formal expansion is not admitted'
  for row in plan['jobs']:
-  if row['stage']>read(D/'expansion-stage.json')['stage']:
-   while row['stage']>read(D/'expansion-stage.json')['stage']:
-    # One lightweight stage barrier. Raw tensors are not reopened for admission.
-    other='7' if g=='6' else '6'
-    if (D/f'lane-g{other}-error.json').exists():raise RuntimeError('Peer lane stopped; expansion withheld')
-    manifest=read(O/'manifest.json')
-    candidates=[read(p) for p in manifest['configs'] if read(p)['task'] in manifest['stage12'] and read(p)['batch']==0]
-    if any((Path(c['output'])/'error.json').exists() for c in candidates):raise RuntimeError('Stage12 batch failed; expansion withheld')
-    if g=='6' and all((Path(c['output'])/'validation.json').exists() and read(Path(c['output'])/'validation.json')['passed'] for c in candidates):
-     started=time.perf_counter();costs=[v for c in candidates for v in read(Path(c['output'])/'storage_and_timing.json')]
-     rawbytes=sum(v['raw_bytes']+v['obs_bytes'] for v in costs);projected=rawbytes/12*100
-     save(D/'expansion-stage.json',dict(time=time.time(),stage=100,reason='All 12 original-config batches have complete validated raw/offline receipts; first two passed native exact parity',validated_batches=12,measured_raw_bytes=rawbytes,mean_projection_bytes=projected,free_bytes=__import__('shutil').disk_usage(O).free,receipt_read_seconds=time.perf_counter()-started))
-     break
-    save(D/f'lane-g{g}-status.json',dict(time=time.time(),phase='WAITING_STAGE',next=row));time.sleep(15)
   path=Path(row['config']);c=read(path);out=Path(c['output'])
   if (out/'validation.json').exists() and read(out/'validation.json')['passed']:continue
+  previous=D/(out.name+'-result.json')
+  if previous.exists() and skippable_failure(c,out,read(previous).get('returncode')):
+   failed_jobs.append(str(path));continue  # Original formal queue continued after native task errors, without replay.
   assert not out.exists(),'An attempted batch cannot be silently replayed'
   assert not gpus()[int(g)]['processes'];c.update(gpu=int(g),parity=False);save(path,c)
   record=dict(time=time.time(),phase='RUNNING',config=str(path),gpu=g,stage=row['stage'])
   logfile=D/(out.name+f'-g{g}.log')
   with logfile.open('x') as f:
    child=subprocess.Popen([python,'-u','-B',str(R/'tools/pi05_attn/run_batch.py'),str(path)],env=env,cwd=R,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
-   record['child']=proc(child.pid);save(D/f'lane-g{g}-status.json',record);rc=child.wait()
+   record['child']=proc(child.pid);save(D/f'lane-g{g}-status.json',record)
+   deadline=time.monotonic()+3600
+   try:
+    while True:
+     try:rc=child.wait(timeout=15);break
+     except subprocess.TimeoutExpired:
+      # Accepted complete batches needed at most 72s per query. A native
+      # renderer wait may hold the GIL, so this existing parent checks progress.
+      stalled=progress_stalled(out)
+      if stalled or time.monotonic()>deadline:raise
+   except subprocess.TimeoutExpired:
+    exact_signal(record['child'],signal.SIGTERM)
+    try:child.wait(timeout=10)
+    except subprocess.TimeoutExpired:exact_signal(record['child'],signal.SIGKILL);child.wait(timeout=20)
+    save(out/'error.json',dict(time=time.time(),error='No query progress for 600s' if stalled else 'Batch exceeded the accepted 3600-second deadline'))
+    rc=124
   clear=cleanup()
   if rc==0:
    with (D/(out.name+f'-g{g}-analysis.log')).open('x') as f:
@@ -60,8 +77,13 @@ try:
   update_index()
   state='VALIDATED' if rc==0 and (out/'validation.json').exists() and read(out/'validation.json')['passed'] else 'FAILED'
   save(D/(out.name+'-result.json'),dict(time=time.time(),state=state,returncode=rc,config=str(path),clearance=clear))
-  if state!='VALIDATED':raise RuntimeError(f'Batch did not validate (exit {rc}); hold priority reservation for inspection')
- save(D/f'lane-g{g}-released.json',dict(time=time.time(),identity=me,completed=True,clearance=cleanup()))
+  if state!='VALIDATED':
+   if skippable_failure(c,out,rc):failed_jobs.append(str(path));continue
+   raise RuntimeError(f'Batch did not validate (exit {rc}); release to the original RLT fallback')
+ save(D/f'lane-g{g}-released.json',dict(time=time.time(),identity=me,completed=True,dataset_complete=not plan.get('deferred_jobs') and not failed_jobs,deferred_jobs=plan.get('deferred_jobs',[]),failed_jobs=failed_jobs,clearance=cleanup()))
 except BaseException:
  save(D/f'lane-g{g}-error.json',dict(time=time.time(),error=traceback.format_exc()))
- clear=cleanup();save(D/f'lane-g{g}-held.json',dict(time=time.time(),identity=me,completed=False,clearance=clear));raise
+ clear=None
+ try:clear=cleanup()
+ finally:save(D/f'lane-g{g}-released.json',dict(time=time.time(),identity=me,completed=False,dataset_complete=False,reason='Lane stopped; owner must verify exit and GPU clearance before RLT',clearance=clear))
+ raise
