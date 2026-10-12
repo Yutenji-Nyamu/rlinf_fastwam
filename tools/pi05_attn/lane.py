@@ -1,5 +1,5 @@
 """One formal queue per card; validate once, then return to existing RLT."""
-import os,sys,json,time,subprocess,signal,hashlib,traceback
+import os,sys,json,time,subprocess,signal,traceback
 from pathlib import Path
 S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'))
 from common import read,save,proc,same,gpus,exact_signal
@@ -39,7 +39,6 @@ def cleanup():
  return dict(time=time.time(),owned_signalled=owned,card_clear=True)
 try:
  plan=read(D/f'lane-g{g}-plan.json');failed_jobs=[]
- assert read(D/'expansion-stage.json')['stage']==100,'Formal expansion is not admitted'
  for row in plan['jobs']:
   path=Path(row['config']);c=read(path);out=Path(c['output'])
   if (out/'validation.json').exists() and read(out/'validation.json')['passed']:continue
@@ -47,8 +46,9 @@ try:
   if previous.exists() and skippable_failure(c,out,read(previous).get('returncode')):
    failed_jobs.append(str(path));continue  # Original formal queue continued after native task errors, without replay.
   assert not out.exists(),'An attempted batch cannot be silently replayed'
-  assert not gpus()[int(g)]['processes'];c.update(gpu=int(g),parity=False);save(path,c)
-  record=dict(time=time.time(),phase='RUNNING',config=str(path),gpu=g,stage=row['stage'])
+  assert c['gpu']==int(g) and not c.get('parity',False),'Use the prepared formal config'
+  assert not gpus()[int(g)]['processes']
+  record=dict(time=time.time(),phase='RUNNING',config=str(path),gpu=g)
   logfile=D/(out.name+f'-g{g}.log')
   with logfile.open('x') as f:
    child=subprocess.Popen([python,'-u','-B',str(R/'tools/pi05_attn/run_batch.py'),str(path)],env=env,cwd=R,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)

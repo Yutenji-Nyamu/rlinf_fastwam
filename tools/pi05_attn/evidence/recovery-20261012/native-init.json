@@ -1,0 +1,597 @@
+{
+  "time": 1791805127.3413846,
+  "amendment": {
+    "time": 1791805127.3400805,
+    "transaction": "/data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init",
+    "change": "Reset native get_info on actual open_laptop, place_object_scale and put_object_cabinet tasks; remove obsolete lane gate and per-batch config rewriting",
+    "unchanged": "model, Attn observer, seeds, B16/H50/M10, native stepping, renderer and accepted video",
+    "acceptance": "open_laptop_b0 raw records and videos validated; remaining native OIDN/Vulkan failures unresolved"
+  },
+  "tests": {
+    "code": 0,
+    "stdout": "",
+    "stderr": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.062s\n\nOK\n"
+  },
+  "first_batch": {
+    "config": {
+      "task": "open_laptop",
+      "batch": 0,
+      "num_envs": 16,
+      "gpu": 6,
+      "selected_l": 5,
+      "step_limit": 700,
+      "seed_source": "fixed generated; not expert-filtered",
+      "noise_seed": 74,
+      "source_commit": "d74e7edc93d346caa9758dadd4537197eeaf0081",
+      "robotwin_commit": "0008ae6800df9f75fc8de7098bacb01735fd8fd2",
+      "output": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/batches/open_laptop_b0",
+      "model": {
+        "model_type": "openpi",
+        "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+        "precision": null,
+        "num_action_chunks": 50,
+        "action_dim": 14,
+        "is_lora": false,
+        "lora_rank": 32,
+        "use_proprio": true,
+        "num_steps": 10,
+        "add_value_head": false,
+        "openpi": {
+          "config_name": "pi05_sidney_robotwin",
+          "num_images_in_input": 3,
+          "noise_level": 0.5,
+          "action_chunk": 50,
+          "num_steps": 10,
+          "train_expert_only": true,
+          "action_env_dim": 14,
+          "noise_method": "flow_sde",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": true,
+          "use_dsrl": false,
+          "dsrl_state_dim": 8,
+          "dsrl_action_noise_dim": 32,
+          "dsrl_num_q_heads": 10,
+          "dsrl_agg_q": "mean",
+          "dsrl_image_latent_dim": 64,
+          "dsrl_state_latent_dim": 64,
+          "dsrl_hidden_dims": [
+            128,
+            128,
+            128
+          ]
+        }
+      },
+      "env": {
+        "env_type": "robotwin",
+        "total_num_envs": 16,
+        "auto_reset": false,
+        "ignore_terminations": true,
+        "reward_coef": 1.0,
+        "use_custom_reward": true,
+        "use_rel_reward": true,
+        "center_crop": false,
+        "seed": 0,
+        "group_size": 1,
+        "use_fixed_reset_state_ids": true,
+        "max_steps_per_rollout_epoch": 700,
+        "max_episode_steps": 700,
+        "is_eval": true,
+        "assets_path": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support",
+        "seeds_path": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/open_laptop_b0_seeds.json",
+        "video_cfg": {
+          "save_video": false,
+          "info_on_video": true,
+          "video_base_dir": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/batches/open_laptop_b0/video"
+        },
+        "enable_offload": false,
+        "task_config": {
+          "task_name": "open_laptop",
+          "step_lim": 700,
+          "planner_backend": "mplib",
+          "render_freq": 0,
+          "episode_num": 100,
+          "use_seed": false,
+          "save_freq": 15,
+          "embodiment": [
+            "aloha-agilex"
+          ],
+          "language_num": 100,
+          "domain_randomization": {
+            "random_background": false,
+            "cluttered_table": false,
+            "clean_background_rate": 1,
+            "random_head_camera_dis": 0,
+            "random_table_height": 0,
+            "random_light": false,
+            "crazy_random_light_rate": 0
+          },
+          "camera": {
+            "head_camera_type": "D435",
+            "wrist_camera_type": "D435",
+            "collect_head_camera": true,
+            "collect_wrist_camera": true
+          },
+          "data_type": {
+            "rgb": true,
+            "third_view": false,
+            "depth": false,
+            "pointcloud": false,
+            "observer": false,
+            "endpose": false,
+            "qpos": true,
+            "mesh_segmentation": false,
+            "actor_segmentation": false
+          },
+          "pcd_down_sample_num": 1024,
+          "pcd_crop": true,
+          "save_path": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/batches/open_laptop_b0/env",
+          "clear_cache_freq": 1,
+          "collect_data": false,
+          "eval_video_log": false
+        },
+        "rollout_epoch": 1
+      },
+      "attention_schema": "pi05-attn-raw-v2-video",
+      "split": "expansion",
+      "parity": false,
+      "video_capture": {
+        "enabled": true,
+        "implementation": "20261003 accepted snapshot(obs main_images)",
+        "camera": "head only; wrists in query observations",
+        "sampling": "each native chunk before/after",
+        "fps": 4
+      }
+    },
+    "done": {
+      "time": 1791804789.296403,
+      "elapsed_seconds": 757.7890660762787,
+      "queries": 12,
+      "episodes": 16,
+      "successes": 16,
+      "unique_actual_seeds": 16,
+      "schema": "pi05-attn-raw-v1",
+      "video_sampling": "accepted 20261003 chunk endpoints"
+    },
+    "validation": {
+      "passed": true,
+      "video_passed": true,
+      "video_frames": 208,
+      "decoded_videos": [
+        {
+          "slot": 0,
+          "file": "episode_00.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 1,
+          "file": "episode_01.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 2,
+          "file": "episode_02.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 3,
+          "file": "episode_03.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 4,
+          "file": "episode_04.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 5,
+          "file": "episode_05.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 6,
+          "file": "episode_06.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 7,
+          "file": "episode_07.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 8,
+          "file": "episode_08.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 9,
+          "file": "episode_09.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 10,
+          "file": "episode_10.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 11,
+          "file": "episode_11.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 12,
+          "file": "episode_12.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 13,
+          "file": "episode_13.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 14,
+          "file": "episode_14.mp4",
+          "decoded_frames": 13
+        },
+        {
+          "slot": 15,
+          "file": "episode_15.mp4",
+          "decoded_frames": 13
+        }
+      ],
+      "video_check_seconds": 2.48932714946568,
+      "time": 1791804831.1874044,
+      "queries": 12,
+      "episodes": 16,
+      "successes": 16,
+      "unique_actual_seeds": 16,
+      "seed_duplicate_warning": false,
+      "offline": [
+        {
+          "query": 0,
+          "seconds": 4.12496580183506,
+          "score_bytes": 11265742
+        },
+        {
+          "query": 1,
+          "seconds": 3.1504092756658792,
+          "score_bytes": 11281102
+        },
+        {
+          "query": 2,
+          "seconds": 3.1228536618873477,
+          "score_bytes": 11271507
+        },
+        {
+          "query": 3,
+          "seconds": 2.075046109035611,
+          "score_bytes": 11268601
+        },
+        {
+          "query": 4,
+          "seconds": 1.7159521356225014,
+          "score_bytes": 11267576
+        },
+        {
+          "query": 5,
+          "seconds": 1.8381833210587502,
+          "score_bytes": 11267015
+        },
+        {
+          "query": 6,
+          "seconds": 1.8012573635205626,
+          "score_bytes": 11268140
+        },
+        {
+          "query": 7,
+          "seconds": 2.0413747634738684,
+          "score_bytes": 11266236
+        },
+        {
+          "query": 8,
+          "seconds": 1.8627528427168727,
+          "score_bytes": 11267054
+        },
+        {
+          "query": 9,
+          "seconds": 1.8067481340840459,
+          "score_bytes": 11267058
+        },
+        {
+          "query": 10,
+          "seconds": 1.7027197601273656,
+          "score_bytes": 11267238
+        },
+        {
+          "query": 11,
+          "seconds": 1.631586465984583,
+          "score_bytes": 11267193
+        }
+      ],
+      "interpretation": "Recording and offline reconstruction only; no training evidence"
+    }
+  },
+  "first_result": {
+    "time": 1791804835.3467197,
+    "state": "VALIDATED",
+    "returncode": 0,
+    "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/open_laptop_b0.json",
+    "clearance": {
+      "time": 1791804835.2056496,
+      "owned_signalled": [],
+      "card_clear": true
+    }
+  },
+  "fallbacks": {
+    "6": {
+      "kind": "rlt",
+      "gpu": 6,
+      "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+      "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-attn-init-1012",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-attn-init-1012/runtime",
+      "namespace": "rlt-sz3-g6-after-attn-init-1012",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-attn-progress-1012/rlt-sz3-g6-after-attn-progress-1012/checkpoints/global_step_225",
+      "step": 225
+    },
+    "7": {
+      "kind": "rlt",
+      "gpu": 7,
+      "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+      "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-init-1012",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-init-1012/runtime",
+      "namespace": "rlt-sz3-g7-after-attn-init-1012",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-progress-1012/rlt-sz3-g7-after-attn-progress-1012/checkpoints/global_step_225",
+      "step": 225
+    }
+  },
+  "baseline_plain_admitted": {
+    "time": 1791804733.9623926,
+    "target": {
+      "phase": "RLT_RUNNING",
+      "identity": {
+        "pid": 3246065,
+        "uid": 20001,
+        "start": 777521784,
+        "state": "D"
+      },
+      "request": "/data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/fallback-g7.json",
+      "started_at": 1791804194.1941822
+    },
+    "launched": {
+      "pid": 4177376,
+      "uid": 20001,
+      "start": 777575754,
+      "state": "D"
+    },
+    "fallback": "/data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/fallback-g7-oldplain.json",
+    "other_slots": {
+      "4": {
+        "phase": "RLT_RUNNING",
+        "identity": {
+          "pid": 2925701,
+          "uid": 20001,
+          "start": 776290524,
+          "state": "S"
+        },
+        "request": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/fallback-g4.json",
+        "started_at": 1791791881.6458972,
+        "retention_checked": 1791791655.6369245
+      },
+      "5": {
+        "phase": "PRIORITY_RUNNING",
+        "identity": {
+          "pid": 1032503,
+          "uid": 20001,
+          "start": 775449989,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261012/rlt-q-u-tau123-v1/priority-g5.json",
+        "started_at": 1791783476.2647629,
+        "retention_checked": 1791804513.9874349
+      },
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    }
+  },
+  "old_baseline_native_stack": {
+    "pid": 4177385,
+    "start": "777575786",
+    "stdout": "Process 4177385: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B -c import sys,runpy,importlib.util;src=sys.argv[1];config=sys.argv[2];sys.path.insert(0,src);name='rlinf.models.embodiment.openpi.openpi_action_model';spec=importlib.util.spec_from_file_location(name,src+'/accepted_signal_model.py');module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module);sys.argv=[src+'/run_batch.py',config];runpy.run_path(sys.argv[0],run_name='__main__') /data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/old-baseline-g7-plain/accepted_source /data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/old-baseline-g7-plain/config.json\nPython v3.11.14 (/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11)\n\nThread 4177385 (idle): \"MainThread\"\n    0x7f3b722b0197 (libc.so.6)\n    pthread_cond_timedwait (libc.so.6)\n    lock_PyThread_acquire_lock (python3.11)\n    wait (threading.py:331)\n    result (concurrent/futures/_base.py:451)\n    step (robotwin/envs/vector_env.py:367)\n    chunk_step (rlinf/envs/robotwin/robotwin_env.py:332)\n    run (run_batch.py:330)\n    main (run_batch.py:404)\n    <module> (run_batch.py:418)\n    _run_code (<frozen runpy>:88)\n    _run_module_code (<frozen runpy>:98)\n    run_path (<frozen runpy>:291)\n    <module> (<string>:1)\n    0x7f3b72248d90 (libc.so.6)\nThread 395903 (idle): \"ThreadPoolExecutor-2_0\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395913 (idle): \"ThreadPoolExecutor-2_1\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395914 (idle): \"ThreadPoolExecutor-2_2\"\n    0x7f3b722b0197 (libc.so.6)\n    pthread_cond_timedwait (libc.so.6)\n    raw_array_assign_array (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)\n    PyArray_AssignArray (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)\n    PyArray_NewCopy (numpy/core/_multiarray_umath.cpython-311-x86_64-linux-gnu.so)\n    0x7f3750a7006c (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    0x7f3750a795c0 (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    0x7f3750adf2d8 (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    0x7f3750a6ca9f (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    check_success (envs/place_mouse_pad.py:130)\n    gen_sparse_reward_data (envs/_base_task.py:1931)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395915 (idle): \"ThreadPoolExecutor-2_3\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395916 (idle): \"ThreadPoolExecutor-2_4\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395917 (idle): \"ThreadPoolExecutor-2_5\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395918 (idle): \"ThreadPoolExecutor-2_6\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395919 (active+gil): \"ThreadPoolExecutor-2_7\"\n    0x7f3b3606ac8f (libcuda.so.595.71.05)\n    0x7f3b35e738ef (libcuda.so.595.71.05)\n    0x7f3b35e9323f (libcuda.so.595.71.05)\n    0x7f3b36dcd9a1 (libcuda.so.595.71.05)\n    0x7f3b36dcdc23 (libcuda.so.595.71.05)\n    0x7f3b35e8109d (libcuda.so.595.71.05)\n    0x7f3b35f2ebe9 (libcuda.so.595.71.05)\n    0x7f3b36d7b665 (libcuda.so.595.71.05)\n    0x7f3b35fd7897 (libcuda.so.595.71.05)\n    cuStreamSynchronize (libcuda.so.595.71.05)\n    __cudart1079 (libOpenImageDenoise_device_cuda.so.2.0.1)\n    cudaStreamSynchronize (libOpenImageDenoise_device_cuda.so.2.0.1)\n    oidn::CUDAEngine::wait (libOpenImageDenoise_device_cuda.so.2.0.1)\n    oidn::UNetFilter::execute (libOpenImageDenoise_core.so.2.0.1)\n    oidnExecuteFilter (libOpenImageDenoise.so.2.0.1)\n    svulkan2::renderer::DenoiserOidn::denoise (libsvulkan2.so)\n    svulkan2::renderer::RTRenderer::render (libsvulkan2.so)\n    sapien::sapien_renderer::SapienRenderCameraComponent::takePicture (libsapien.so)\n    0x7f3750b1a06e (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    0x7f3750a6ca9f (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    update_picture (envs/camera/camera.py:277)\n    get_obs (envs/_base_task.py:464)\n    step (robotwin/envs/vector_env.py:130)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395920 (idle): \"ThreadPoolExecutor-2_8\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395922 (idle): \"ThreadPoolExecutor-2_9\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395923 (idle): \"ThreadPoolExecutor-2_10\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1824)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395924 (idle): \"ThreadPoolExecutor-2_11\"\n    0x7f3b722b0197 (libc.so.6)\n    pthread_cond_timedwait (libc.so.6)\n    os_stat (python3.11)\n    _path_stat (<frozen importlib._bootstrap_external>:147)\n    find_spec (<frozen importlib._bootstrap_external>:1615)\n    _get_spec (<frozen importlib._bootstrap_external>:1479)\n    find_spec (<frozen importlib._bootstrap_external>:1507)\n    _find_spec (<frozen importlib._bootstrap>:1078)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395925 (idle): \"ThreadPoolExecutor-2_12\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:18)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395926 (idle): \"ThreadPoolExecutor-2_13\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395927 (idle): \"ThreadPoolExecutor-2_14\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\nThread 395928 (idle): \"ThreadPoolExecutor-2_15\"\n    0x7f3b722b0197 (libc.so.6)\n    0x7f3b722bbcf8 (libc.so.6)\n    PyThread_acquire_lock (python3.11)\n    __enter__ (<frozen importlib._bootstrap>:1028)\n    _find_spec (<frozen importlib._bootstrap>:1070)\n    find_spec (<frozen importlib.util>:104)\n    available_solvers (toppra/solverwrapper/solverwrapper.py:17)\n    __init__ (toppra/algorithm/reachabilitybased/reachability_algorithm.py:63)\n    TOPP (mplib/planner.py:369)\n    gen_sparse_reward_data (envs/_base_task.py:1843)\n    step (robotwin/envs/vector_env.py:129)\n    run (concurrent/futures/thread.py:58)\n    _worker (concurrent/futures/thread.py:83)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f3b722b3b43 (libc.so.6)\n    0x7f3b72345a00 (libc.so.6)\n",
+    "stderr": "",
+    "rc": 0
+  },
+  "old_baseline_stop": {
+    "stop": {
+      "time": 1791805704.134112,
+      "identity": {
+        "pid": 4177385,
+        "uid": 20001,
+        "start": 777575786,
+        "state": "S"
+      },
+      "progress": {
+        "time": 1791805309.4558194,
+        "query": 2,
+        "phase": "model",
+        "successes": 0,
+        "queries_max": 8
+      },
+      "reason": "Original accepted runner reproduced native camera/OIDN CUDA stream wait; read-only native stack obtained. End diagnostic, preserve evidence, return card to original RLT."
+    },
+    "release": {
+      "time": 1791805706.0472026,
+      "exit_code": -15,
+      "identity": {
+        "pid": 4177376,
+        "uid": 20001,
+        "start": 777575754,
+        "state": "R"
+      },
+      "reason": "One accepted-source batch comparison completed or timed out; original RLT fallback may resume after clearance"
+    },
+    "gpu": {
+      "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+      "processes": []
+    },
+    "owner_alive": true
+  },
+  "interpretation": "Complete accepted Oct3 runner and paired model reproduce native camera/OIDN CUDA stream wait without the Attn observer. Underlying trigger unresolved; stopped diagnostic and returned GPU7 to RLT.",
+  "verified_state": {
+    "time": 1791805874.8433716,
+    "summary": {
+      "time": 1791805777.534201,
+      "validated_batches": 90,
+      "recorded_episodes": 1440,
+      "successes": 830,
+      "failed_batches": 3,
+      "deferred_batches": 2,
+      "duplicate_seed_batches": 2,
+      "unique_task_seed_episodes": 1432
+    },
+    "slots": {
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "RLT_RUNNING",
+        "identity": {
+          "pid": 1737638,
+          "uid": 20001,
+          "start": 777677804,
+          "state": "S"
+        },
+        "request": "/data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/fallback-g7-oldplain.json",
+        "started_at": 1791805754.3991168
+      },
+      "4": {
+        "phase": "RLT_RUNNING",
+        "identity": {
+          "pid": 2925701,
+          "uid": 20001,
+          "start": 776290524,
+          "state": "S"
+        },
+        "request": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/fallback-g4.json",
+        "started_at": 1791791881.6458972,
+        "retention_checked": 1791791655.6369245
+      },
+      "5": {
+        "phase": "PRIORITY_RUNNING",
+        "identity": {
+          "pid": 1032503,
+          "uid": 20001,
+          "start": 775449989,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261012/rlt-q-u-tau123-v1/priority-g5.json",
+        "started_at": 1791783476.2647629,
+        "retention_checked": 1791805787.0338159
+      }
+    },
+    "owner_alive": true,
+    "gpu": {
+      "0": {
+        "uuid": "GPU-aa8dbad5-91f7-11f1-527e-201b6b606671",
+        "processes": []
+      },
+      "1": {
+        "uuid": "GPU-6577382f-f55d-e83d-547d-7830bd4c9297",
+        "processes": []
+      },
+      "2": {
+        "uuid": "GPU-9a1ca518-42ce-a702-dc4c-e04cbbf81c12",
+        "processes": []
+      },
+      "3": {
+        "uuid": "GPU-a61c0c5b-cba7-2159-ab09-be5651f58972",
+        "processes": []
+      },
+      "4": {
+        "uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+        "processes": [
+          {
+            "pid": 3028918,
+            "type": "C"
+          },
+          {
+            "pid": 3028925,
+            "type": "C"
+          },
+          {
+            "pid": 3028927,
+            "type": "C+G"
+          }
+        ]
+      },
+      "5": {
+        "uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "processes": [
+          {
+            "pid": 1195896,
+            "type": "C"
+          },
+          {
+            "pid": 1197577,
+            "type": "C"
+          },
+          {
+            "pid": 1199243,
+            "type": "C+G"
+          }
+        ]
+      },
+      "6": {
+        "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+        "processes": [
+          {
+            "pid": 1738590,
+            "type": "C"
+          }
+        ]
+      },
+      "7": {
+        "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+        "processes": [
+          {
+            "pid": 1738764,
+            "type": "C"
+          },
+          {
+            "pid": 1738823,
+            "type": "C"
+          },
+          {
+            "pid": 1738897,
+            "type": "C+G"
+          }
+        ]
+      }
+    }
+  },
+  "batch_receipts": {
+    "open_laptop_b0-result.json": {
+      "time": 1791804835.3467197,
+      "state": "VALIDATED",
+      "returncode": 0,
+      "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/open_laptop_b0.json",
+      "clearance": {
+        "time": 1791804835.2056496,
+        "owned_signalled": [],
+        "card_clear": true
+      }
+    },
+    "open_laptop_b1-result.json": {
+      "time": 1791805777.5392094,
+      "state": "VALIDATED",
+      "returncode": 0,
+      "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/open_laptop_b1.json",
+      "clearance": {
+        "time": 1791805777.3366046,
+        "owned_signalled": [],
+        "card_clear": true
+      }
+    }
+  }
+}

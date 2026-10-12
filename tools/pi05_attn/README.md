@@ -8,13 +8,7 @@ This observer records native B16/H50/M10 inference without training. The model, 
 - `lane.py 6|7`: one formal queue per card. The completed expansion gate is removed; a missing or temporarily unreadable progress file means unknown, not a fatal error. Keep the existing batch deadline and skip recorded native task failures. On exit, write the receipt consumed by the existing per-card RLT owner after compute/graphics clearance. The current fallback request determines the checkpoint.
 - `test_math.py`: seven focused CPU checks covering signal math and missing/fresh/stalled/transient progress files.
 
-## 2026-10-12 recovery
-
-The previous parent queue crashed while reading `progress.json`; this was our lifecycle bug. The check now uses file mtime, and a missing/transient file is unknown. The original 3600-second batch deadline remains. Removed the already completed 12-to-100 expansion loop; no new supervisor was added.
-
-Seven CPU regression checks passed. SZ3 GPU6/7 resumed `stack_bowls_two_b1` and `stamp_seal_b1` using the original B16/H50/M10/model/seed/video chain. Both completed native action queries and passed raw/offline/video validation: +32 records, 1408/1600 total (1400 distinct task/actual-seed pairs). The existing owner then returned both cards to RLT from CP200. The interrupted bowl attempt was archived intact. The 1376 validated records are retained; 12 known native-error/deferred batches (192 requested records) remain unresolved and are not silently retried or labeled complete. Both per-card RLT fallbacks now resume complete CP200, and use the same existing owner.
-
-This also publishes previously unpushed runtime fixes: accepted model-before-simulator warmup order, native-error skip behavior, and exit receipts for RLT. It does not establish the root cause of OIDN/Vulkan stalls. `evidence/recovery-20261012` contains primary compressed logs, configuration and per-batch validation receipts, the exact cutover and CPU test result. Raw Q/K, models and videos stay on SZ3.
+For `open_laptop`, `place_object_scale`, and `put_object_cabinet`, the native temporary setup task initializes success-check attributes in `get_info()`, but the actual reset task does not. The runner reuses that task's own `get_info()` immediately after reset. It does not execute expert actions, draw randomness, or render an extra frame. The first repaired laptop B16 batch passed full raw-record and video validation on 2026-10-12; remaining native rendering failures are a separate issue. Lane configurations are prepared once, not rewritten during collection.
 
 ## Numerical acceptance v1.1
 
@@ -41,3 +35,7 @@ The initial no-video collection was stopped and excluded from the new video-enab
 Formal collection remains the accepted B16 protocol. The same runner also supports separately labeled native B32 and B48 capacity probes; the single noise stream is not equivalent to separate old B16 noise streams, so probe records are excluded from formal counts. Larger batches require `capacity_only=true`. Whole-card memory includes model, simulator and rendering; Torch tensor peaks alone are insufficient for scheduling. See REUSE_AUDIT.md for provenance and incident scope.
 
 Current data: `/data/chenyiteng/results/pi05-attn/20261010-video-v4`; receipts: `/data/chenyiteng/deployment-20261010/pi05-attn-video-v4`. The previous v1 directory is history.
+
+2026-10-12: removed the obsolete v1-only `start_preview.py` launcher from this working folder; its original bytes are in `maintenance-oneoffs-20261012.zip` on E:. The running HTTP service and current reconnecting preview are unchanged.
+
+2026-10-12 20:34: both SZ3 GPU6/7 returned to Attn; 1488/1600 episodes fully validated. Native get_info repaired five complete batches. A main-thread environment-step trial still stalled in OIDN/CUDA at mouse-pad query2, so the extra path was removed; an already-started stapler attempt retains its recorded configuration. The renderer problem remains unresolved. Existing per-card release/RLT handling is unchanged; see evidence/recovery-20261012/both-gpus.json.

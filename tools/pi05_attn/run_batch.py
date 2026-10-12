@@ -43,6 +43,11 @@ def run(config):
         ec=OmegaConf.create(c['env']);assert not ec.auto_reset and ec.ignore_terminations
         env=RoboTwinEnv(ec,batch,0,1,None)
         obs,_=env.reset()
+        # Native setup_task initializes metadata on a temporary task only.
+        # These success checks also need it on the actual reset task; reuse
+        # their own get_info(), without running the expert or changing RNG.
+        if c['task'] in ('open_laptop','place_object_scale','put_object_cabinet'):
+            for sub in env.venv.envs:sub.task.get_info()
         requested=env.reset_state_ids.cpu().tolist();actual=[int(e.task.ep_num) for e in env.venv.envs]
         seeds=[dict(slot=i,requested=int(requested[i]),actual=actual[i],native_retry=int(requested[i])!=actual[i]) for i in range(batch)]
         save(out/'seeds.json',seeds)

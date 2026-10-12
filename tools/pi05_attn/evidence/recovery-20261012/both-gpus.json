@@ -1,0 +1,221 @@
+{
+  "admitted": {
+    "time": 1791807114.2048252,
+    "stopped": {
+      "phase": "RLT_RUNNING",
+      "identity": {
+        "pid": 1737638,
+        "uid": 20001,
+        "start": 777677804,
+        "state": "S"
+      },
+      "request": "/data/chenyiteng/deployment-20261010/pi05-attn-video-v4/continue-20261012-native-init/fallback-g7-oldplain.json",
+      "started_at": 1791805754.3991168
+    },
+    "launched": {
+      "pid": 4015614,
+      "uid": 20001,
+      "start": 777813783,
+      "state": "D"
+    },
+    "fallback": {
+      "kind": "rlt",
+      "gpu": 7,
+      "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+      "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-mainthread-1012",
+      "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-mainthread-1012/runtime",
+      "namespace": "rlt-sz3-g7-after-attn-mainthread-1012",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-attn-progress-1012/rlt-sz3-g7-after-attn-progress-1012/checkpoints/global_step_225",
+      "step": 225
+    },
+    "jobs": [
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_mouse_pad_b1.json",
+        "stage": 100
+      },
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/move_stapler_pad_b0.json",
+        "stage": 100
+      },
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/move_stapler_pad_b1.json",
+        "stage": 100
+      },
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_fan_b0.json",
+        "stage": 100
+      },
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_fan_b1.json",
+        "stage": 100
+      },
+      {
+        "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_mouse_pad_b0.json",
+        "stage": 100
+      }
+    ],
+    "other_slots": {
+      "4": {
+        "phase": "RLT_RUNNING",
+        "identity": {
+          "pid": 2925701,
+          "uid": 20001,
+          "start": 776290524,
+          "state": "S"
+        },
+        "request": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/fallback-g4.json",
+        "started_at": 1791791881.6458972,
+        "retention_checked": 1791791655.6369245
+      },
+      "5": {
+        "phase": "PRIORITY_RUNNING",
+        "identity": {
+          "pid": 1032503,
+          "uid": 20001,
+          "start": 775449989,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261012/rlt-q-u-tau123-v1/priority-g5.json",
+        "started_at": 1791783476.2647629,
+        "retention_checked": 1791807034.3061893
+      },
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    }
+  },
+  "ineffective_trial_removed": {
+    "time": 1791808422.0098727,
+    "reason": "Main-thread execution also stalled at mouse-pad query 2; native stack still waits in OIDN CUDA. Remove ineffective extra runtime path.",
+    "restored_source": true,
+    "cleared_pending_configs": [
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/move_stapler_pad_b1.json",
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_fan_b0.json",
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_fan_b1.json",
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_mouse_pad_b0.json"
+    ],
+    "started_attempt_configs_retained": [
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_mouse_pad_b1.json",
+      "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/move_stapler_pad_b0.json"
+    ]
+  },
+  "native_stack": {
+    "out": "Process 4015660: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /home/nvme/team-data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-attn-sz3-20261010/tools/pi05_attn/run_batch.py /data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/place_mouse_pad_b1.json\nPython v3.11.14 (/home/nvme/team-home/chenyiteng/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/bin/python3.11)\n\nThread 4015660 (active+gil): \"MainThread\"\n    0x7f8738c6ac80 (libcuda.so.595.71.05)\n    0x7f8738a738ef (libcuda.so.595.71.05)\n    0x7f8738a9323f (libcuda.so.595.71.05)\n    0x7f87399cd9a1 (libcuda.so.595.71.05)\n    0x7f87399cdc23 (libcuda.so.595.71.05)\n    0x7f8738a8109d (libcuda.so.595.71.05)\n    0x7f8738b2ebe9 (libcuda.so.595.71.05)\n    0x7f873997b665 (libcuda.so.595.71.05)\n    0x7f8738bd7897 (libcuda.so.595.71.05)\n    cuStreamSynchronize (libcuda.so.595.71.05)\n    __cudart1079 (libOpenImageDenoise_device_cuda.so.2.0.1)\n    cudaStreamSynchronize (libOpenImageDenoise_device_cuda.so.2.0.1)\n    oidn::CUDAEngine::wait (libOpenImageDenoise_device_cuda.so.2.0.1)\n    oidn::UNetFilter::execute (libOpenImageDenoise_core.so.2.0.1)\n    oidnExecuteFilter (libOpenImageDenoise.so.2.0.1)\n    svulkan2::renderer::DenoiserOidn::denoise (libsvulkan2.so)\n    svulkan2::renderer::RTRenderer::render (libsvulkan2.so)\n    sapien::sapien_renderer::SapienRenderCameraComponent::takePicture (libsapien.so)\n    0x7f8325d3606e (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    0x7f8325c88a9f (sapien/pysapien.cpython-311-x86_64-linux-gnu.so)\n    update_picture (envs/camera/camera.py:277)\n    get_obs (envs/_base_task.py:464)\n    step (robotwin/envs/vector_env.py:130)\n    <listcomp> (run_batch.py:55)\n    <lambda> (run_batch.py:55)\n    chunk_step (rlinf/envs/robotwin/robotwin_env.py:332)\n    run (run_batch.py:105)\n    <module> (run_batch.py:131)\n    0x7f8774f91d90 (libc.so.6)\nThread 335688 (idle): \"ThreadPoolExecutor-1_0\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335706 (idle): \"ThreadPoolExecutor-1_1\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335707 (idle): \"ThreadPoolExecutor-1_2\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335708 (idle): \"ThreadPoolExecutor-1_3\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335709 (idle): \"ThreadPoolExecutor-1_4\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335710 (idle): \"ThreadPoolExecutor-1_5\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335711 (idle): \"ThreadPoolExecutor-1_6\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335712 (idle): \"ThreadPoolExecutor-1_7\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335713 (idle): \"ThreadPoolExecutor-1_8\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335714 (idle): \"ThreadPoolExecutor-1_9\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335715 (idle): \"ThreadPoolExecutor-1_10\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335716 (idle): \"ThreadPoolExecutor-1_11\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335717 (idle): \"ThreadPoolExecutor-1_12\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335718 (idle): \"ThreadPoolExecutor-1_13\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335719 (idle): \"ThreadPoolExecutor-1_14\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\nThread 335720 (idle): \"ThreadPoolExecutor-1_15\"\n    0x7f8774ff9197 (libc.so.6)\n    0x7f8775004cf8 (libc.so.6)\n    PyThread_acquire_lock_timed (python3.11)\n    _worker (concurrent/futures/thread.py:81)\n    run (threading.py:982)\n    _bootstrap_inner (threading.py:1045)\n    _bootstrap (threading.py:1002)\n    thread_run (python3.11)\n    0x7f8774ffcb43 (libc.so.6)\n    0x7f877508ea00 (libc.so.6)\n",
+    "err": "",
+    "code": 0
+  },
+  "snapshot": {
+    "time": 1791808422.3415375,
+    "summary": {
+      "time": 1791808396.1465266,
+      "validated_batches": 93,
+      "recorded_episodes": 1488,
+      "successes": 853,
+      "failed_batches": 1,
+      "deferred_batches": 0,
+      "duplicate_seed_batches": 2,
+      "unique_task_seed_episodes": 1480
+    },
+    "slots": {
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "4": {
+        "phase": "RLT_RUNNING",
+        "identity": {
+          "pid": 2925701,
+          "uid": 20001,
+          "start": 776290524,
+          "state": "S"
+        },
+        "request": "/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1/fallback-g4.json",
+        "started_at": 1791791881.6458972,
+        "retention_checked": 1791791655.6369245
+      },
+      "5": {
+        "phase": "PRIORITY_RUNNING",
+        "identity": {
+          "pid": 1032503,
+          "uid": 20001,
+          "start": 775449989,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261012/rlt-q-u-tau123-v1/priority-g5.json",
+        "started_at": 1791783476.2647629,
+        "retention_checked": 1791808312.4709988
+      }
+    },
+    "lanes": {
+      "6": {
+        "identity": {
+          "pid": 2937532,
+          "uid": 20001,
+          "start": 777503947,
+          "state": "R"
+        },
+        "status": {
+          "time": 1791808397.298933,
+          "phase": "RUNNING",
+          "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/put_object_cabinet_b1.json",
+          "gpu": "6",
+          "child": {
+            "pid": 2087567,
+            "uid": 20001,
+            "start": 777942101,
+            "state": "S"
+          }
+        },
+        "released": null,
+        "error": null,
+        "batch": {
+          "started": {
+            "time": 1791808410.2252345,
+            "pid": 2087567,
+            "gpu": 6
+          },
+          "progress": null,
+          "done": null,
+          "validation": null,
+          "error": null
+        }
+      },
+      "7": {
+        "identity": {
+          "pid": 4015614,
+          "uid": 20001,
+          "start": 777813783,
+          "state": "R"
+        },
+        "status": {
+          "time": 1791808300.9641454,
+          "phase": "RUNNING",
+          "config": "/data/chenyiteng/results/pi05-attn/20261010-video-v4/configs/move_stapler_pad_b0.json",
+          "gpu": "7",
+          "child": {
+            "pid": 1882290,
+            "uid": 20001,
+            "start": 777932467,
+            "state": "S"
+          }
+        },
+        "released": null,
+        "error": null,
+        "batch": {
+          "started": {
+            "time": 1791808313.668527,
+            "pid": 1882290,
+            "gpu": 7
+          },
+          "progress": null,
+          "done": null,
+          "validation": null,
+          "error": null
+        }
+      }
+    }
+  },
+  "note": "Main-thread trial failed on mouse-pad query2. Removed from current source and pending jobs; already-started stapler_b0 retains its recorded runtime. Do not claim native renderer fixed."
+}
