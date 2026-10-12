@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "denoising_round": 10,
+  "action_horizon": 50,
+  "groups": [
+    "visual",
+    "instruction",
+    "state",
+    "action"
+  ],
+  "episodes": 1504,
+  "tasks": 47,
+  "unique_task_seed_pairs": 1496,
+  "task_successes": 858,
+  "known_action_positions": 586950,
+  "bytes": 51552733,
+  "population": {
+    "E_visual": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.7343209981918335,
+        0.8311070203781128,
+        0.8763440251350403
+      ]
+    },
+    "E_instruction": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.6329843699932098,
+        0.9174010157585144,
+        0.9718539714813232
+      ]
+    },
+    "E_state": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.7069403499364852,
+        0.7954570055007935,
+        0.8982155531644821
+      ]
+    },
+    "E_action": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.8848710060119629,
+        0.9809499979019165,
+        0.9965325474739074
+      ]
+    },
+    "M_visual": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.06851744875311852,
+        0.12304800003767014,
+        0.18085899949073792
+      ]
+    },
+    "M_instruction": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.000910000002477318,
+        0.0024309998843818903,
+        0.011196999810636044
+      ]
+    },
+    "M_state": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.07004400342702866,
+        0.11736200004816055,
+        0.1928075529634952
+      ]
+    },
+    "M_action": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.5090054661035538,
+        0.6349239945411682,
+        0.7455580234527588
+      ]
+    },
+    "M_other": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.06454363949596882,
+        0.11699848622083664,
+        0.17262504100799556
+      ]
+    },
+    "E_obs": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.5939300060272217,
+        0.6729289889335632,
+        0.7579140067100525
+      ]
+    },
+    "dv": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.00032383631041739137,
+        0.0011770972050726414,
+        0.005537189263850445
+      ]
+    },
+    "action_amplitude": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.5535969913005829,
+        0.9206180274486542,
+        1.3330010592937467
+      ]
+    },
+    "gripper_left": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        -0.007393535692244768,
+        0.9990934431552887,
+        1.0072585999965669
+      ]
+    },
+    "gripper_right": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        -0.006062107277102768,
+        0.9980319440364838,
+        1.005417823791504
+      ]
+    },
+    "E_weighted": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.8579677879810333,
+        0.929771363735199,
+        0.9616925686597824
+      ]
+    },
+    "valid_mass": {
+      "finite_fraction": 1.0,
+      "q05_q50_q95": [
+        0.8273754835128784,
+        0.883001983165741,
+        0.9354560106992722
+      ]
+    }
+  },
+  "deferred_tasks": [
+    "move_stapler_pad",
+    "place_fan",
+    "place_mouse_pad"
+  ],
+  "definitions": {
+    "E": "within-source H/log(N), N>1; invalid is NaN",
+    "M": "read mass under the original full attention distribution",
+    "ME": "M*E, zero only for invalid aggregation contribution",
+    "contribution": "valid M*E / sum(valid M)",
+    "E_weighted": "sum(contribution); not joint token entropy",
+    "row": "one active query/episode; each curve has 50 predicted action positions",
+    "execution": "submitted and executed_known are separate; terminal prefix is unknown",
+    "video": "query q is bracketed by frames q and q+1, not action-resolved video"
+  }
+}
