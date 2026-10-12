@@ -1,8 +1,24 @@
-# π0 DSRL U τ1/2/3/4：无 trick，300 轮
+# π0 DSRL U τ1/2/3/4：无 trick，τ1/2延至400轮，τ3/4仍300轮
 
 2026-10-11，深圳。按用户指令收束 GeoWAM 与 WM，用原四卡启动四组正式实验；先撤对应 RLT，再放正式任务，最后逐卡挂回候补。
 
-## 本轮结果
+## 10-12 收束与日志补推
+
+按用户结论，SZ3 GPU5的τ4于258轮后主动停止，driver exit143、cleanup_error=null，namespace和同卡C/G均清空；最新固定评估为R247的10/12。完整原始日志、TensorBoard事件与全量scalar CSV已归入 `evidence-20261012/primary-logs.tar.gz`，重文件仍留服务器。
+
+SZ2 τ1/2已完整跑到400轮，300段与400接续段均exit0；末评12/12、10/12。SZ3 τ3继续300轮预算，日志快照至272轮、R260评估12/12。`summary.json`标真实零起始TB step，展示轮次为step+1；固定评估与训练采样分开。
+
+本次补推90项轻量文件，包含四组DSRL及已收束WM/GeoWAM的近期主要日志/实配/指标，文件清单在 `files.json`。原来f01d14ad主要是启动与旧任务交接材料，后续运行日志此前没有全部入Git。
+
+新调度：SZ2 GPU6/7和SZ3 GPU5改为RLT Q-U τ1/2/3正式，原RLT逐卡候补；本DSRL不自动重启。新Q-U记录见 `codex/rlt-q-u-tau123-20261012`。
+
+## 10-11 22:01：SZ2 τ1/2延至400轮
+
+用户指定仅延长2机6/7。原300轮进程保持；复用此前续训入口，正常保存CP300、退出清场后，同卡恢复至400轮，参数、τ与无trick均保持。统一owner=4168055，plan已指向extend400请求；当前状态WAIT_EXTERNAL是在等待原DSRL完成，不是RLT抢占。异常结束直接原RLT；续训400结束后也交还原CP350候补。SZ3 τ3/4仍300轮。
+
+两路原driver身份未变，配置max_steps=400/resume_dir=各自CP300已读回；当前只验证接续配置，尚未到实际CP300续训时点。事务`dsrl-pi0-u-tau1234-v1/extend400`保存最小owner差异、配置差异、回执。未新增看护。
+
+## 10-11 13:53原始启动记录
 
 | 位置 | 正式任务 | RLT 保留恢复点 |
 |---|---|---|
@@ -31,7 +47,7 @@
 ## 执行入口与证据
 
 - 两机事务：`/data/chenyiteng/deployment-20261011/dsrl-pi0-u-tau1234-v1`，读 prepared/admitted 与 priority-g*.json；统一逐卡队列仍为 `/data/chenyiteng/deployment-20261008/bc-signal-tau-v1`。
-- 启动沿用该队列 `ops/driver.py`，具体请求与参数见 priority JSON；每组单卡，达到300轮自然结束，异常退出清场后由同卡RLT接替。
+- 启动沿用该队列 `ops/driver.py`，具体请求与参数见 priority JSON；每组单卡，初始预算300轮。SZ2 τ1/2已安排CP300续至400轮，SZ3 τ3/4仍300；正式任务结束清场后由同卡RLT接替。
 - 输出：`/data/chenyiteng/results/rlinf-dsrl-pi0-single/pi0-u-tau{tau}-notrick-{sz2|sz3}-g{gpu}-r300-1011`。
 - `configs` 保存实配、逐叶差异和候补引用；`provenance.json` 保存源文件比对及精确交还/派发回执；`first-round.json` 保存正式首轮与绑定证据；`curves.csv` 保存本次同族曲线原值。
 - [单列大图](http://127.0.0.1:8179/tau4-1011/)：DSRL对比历史Clean/U、EXPO同族、WM原生评估与想象指标分开，滑动20、高区分颜色和标记，可勾选/全屏。旧基线非本次同时重新跑的对照。
