@@ -1,6 +1,6 @@
 # EXPO U/Norm 执行记录
 
-当前：10-13 FM-U τ1按用户结论停止；FM-U τ2/3继续。新增Editor-U τ1/2/3正式启动，复用已验收目标，无算法代码改动。
+当前：10-13 FM-U τ1/2/3均按用户结论收束，完整主日志已归档；Editor-U τ1/2/3继续。本轮未改算法。
 
 ## 10-13 Editor-U τ1/2/3与FM-U τ1收束
 
@@ -84,3 +84,8 @@ FM-U τ1于39481动作、279回合、946次学习主动停止，exit143、所有
 1机首次缺prepared.json：确认50个parquet及任务元数据与2机一致后只补回执；随后修正本机Vulkan ICD实际路径为`/etc/vulkan/icd.d/nvidia_icd.json`，复用已安装的每卡EGL命名profile。两次无动作初始化失败均保留回执；从v2新训练的0动作完整CP恢复，无学习预算损失。两个渲染场景验证通过，未复位GPU。
 
 13:33验收：τ1/2初始评估第一批均已推进70/200动作，τ3第五批80/200动作；owner、driver、逐卡WAIT_EXTERNAL均正常，计算/图形只在各自双卡。此时均尚未开始参数更新，不能视为方法效果。源配置、确切身份、恢复点与验收只发布轻量文件，不含权重/密码。
+
+
+## 2026-10-13 FM-U closeout
+
+User concluded the remaining FM-U runs. Tau2 (SZ1 GPU6/7) stopped at 46026 physical actions / 1110 learner calls; tau3 (SZ2 GPU4/5) at 41319 / 990. Both received the requested SIGTERM, exited143, exact descendant cleanup succeeded, and compute/graphics contexts cleared. Latest weights remain on the servers. Inputs, resolved configs, primary events/driver logs, all fixed-evaluation receipts and stop receipts are in `closeout1013-fm/tau2` and `tau3`. The three Editor-U runs are unchanged. These four GPUs were reassigned to the authorized GRPO U sweep, with per-card RLT queued behind it.
