@@ -4,6 +4,8 @@
 
 ## 当前结果
 
+10-13最新：Q-U三组均按用户结论停止；τ2/3完整恢复点为CP750/525。最新主日志见closeout1013/tau2、tau3；以下迁移和启动记录保留作来源。
+
 10-13更新：用户判定τ1已得出结论，主动停止于351轮，保留完整CP350（66065更新）和最后R350固定评估20/20。driver/namespace/C/G清场通过，未追加评估；配置、主要日志和TensorBoard事件见[closeout1013](closeout1013)，压缩约0.71MiB。
 
 为新EXPO组成同机双卡，τ3从SZ3 GPU5迁至SZ2 GPU6，完整CP150含19200更新及回放。实配只调整物理卡、进程环境、输出和恢复路径；算法逐项相同，源码仍b1d2d8d、无trick、总800轮。旧机未写入断点的轮次需从CP150之后重采，旧产物保留；新机00:38已恢复真实采集及actor/critic学习，更新数到22400。迁移实配与恢复证据见`closeout1013/tau3-sz2-g6-resolved.yaml`和`tau3-resume-proof.json`。τ2继续SZ2 GPU7，未中断。两卡均保留原逐卡RLT候补。
@@ -45,3 +47,8 @@
 | 旧RLT-BC六组 | 已有停止轮次、配置、曲线和回执，本轮未重复提交 | [f1df47a](https://github.com/Yutenji-Nyamu/rlinf_fastwam/commit/f1df47a2f5b786fcbe71dc5589b2476d210333db) |
 
 之前的Git主要覆盖方法、启动与部分早期曲线，后续日志确有缺口；本轮补齐上述明确范围。日志按原文件名保存在压缩包，文件索引与关键结果可直接阅读。模型权重、回放、原始Q/K、视频与凭据不上传。
+
+
+## 2026-10-13 remaining Q-U closeout
+
+User concluded Q-U tau2 (SZ2 GPU7) and tau3 (SZ2 GPU6). Both exact drivers stopped; their Ray namespaces and compute/graphics contexts cleared, cleanup_error=null. Latest complete recovery points are CP750 and CP525, respectively; weights/replay remain on the server. Primary TensorBoard files, runtime logs/configs and completion/stop evidence are under `closeout1013/tau2` and `tau3`. Tau3 earlier SZ3 progress and CP150 migration evidence remain in the prior closeout packet. These two GPUs now host GRPO U tau3; original per-card RLT fallbacks wait behind it.
