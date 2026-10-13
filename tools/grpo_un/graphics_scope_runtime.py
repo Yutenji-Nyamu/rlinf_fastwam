@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
-"""Opt-in, per-worker GPU6-7 graphics scope, derived from the GPU6 v5 runtime.
+"""Opt-in, per-worker graphics scope for an explicitly assigned GPU pair.
 
 The worker's single-device CVD selects a physical card before GPU imports. The
-one observed full-node CPU ChannelWorker mask is narrowed to GPU6; CPU discovery
-with an unset/empty mask is unchanged. Rendering always requires a single card.
+one observed full-node CPU ChannelWorker mask is narrowed to the pair's first
+GPU; CPU discovery with an unset/empty mask is unchanged. Rendering always
+requires a single card.
 """
 
 import functools
@@ -36,22 +37,22 @@ from pathlib import Path
 
 MANIFEST_ENV = "RLINF_OPENDW_FORMAL_GRAPHICS_MANIFEST"
 LEGACY_MANIFEST_ENV = "RLINF_OPENDW_GPU_SCOPE_MANIFEST"
-PHYSICAL_GPUS = (6, 7)
 FULL_NODE_MASK = "0,1,2,3,4,5,6,7"
 
 
 def select_target(manifest, cuda_visibility):
     """Pure selector; no CUDA import or environment mutation."""
-    if manifest.get("physical_gpus") != list(PHYSICAL_GPUS):
+    physical_gpus = manifest.get("physical_gpus")
+    if physical_gpus not in ([4, 5], [6, 7]):
         raise RuntimeError(
-            "Formal scope requires the explicit physical GPU6-7 inventory"
+            "Formal scope requires an explicit physical GPU4-5 or GPU6-7 pair"
         )
     cards = manifest.get("cards", {})
-    if set(cards) != {str(gpu) for gpu in PHYSICAL_GPUS}:
+    if set(cards) != {str(gpu) for gpu in physical_gpus}:
         raise RuntimeError("Formal scope needs exactly two pinned card identities")
     if cuda_visibility in (None, "", FULL_NODE_MASK):
-        return 6
-    for gpu in PHYSICAL_GPUS:
+        return physical_gpus[0]
+    for gpu in physical_gpus:
         if cuda_visibility in (str(gpu), cards[str(gpu)]["gpu_uuid"]):
             return gpu
     raise RuntimeError(
@@ -84,19 +85,20 @@ def read_manifest(path):
     if m["uid"] != os.getuid() or m["hostname"] != socket.gethostname():
         raise RuntimeError("Scope host/UID mismatch")
     target = select_target(m, os.environ.get("CUDA_VISIBLE_DEVICES"))
-    if m.get("schema") != 1 or m.get("cpu_full_mask_target") != 6:
+    physical_gpus = m["physical_gpus"]
+    if m.get("schema") != 1 or m.get("cpu_full_mask_target") != physical_gpus[0]:
         raise RuntimeError("Unrecognized formal graphics contract")
     if m.get("boot_id") != Path("/proc/sys/kernel/random/boot_id").read_text().strip():
         raise RuntimeError("Scope preparation predates the current host boot")
-    for gpu in PHYSICAL_GPUS:
+    for gpu in physical_gpus:
         card = m["cards"][str(gpu)]
         if card["physical_gpu"] != gpu or not card["gpu_uuid"].startswith("GPU-"):
             raise RuntimeError("Invalid pinned physical card identity")
         if not 0 <= card["minor"] < 32 or card["mask"] != 1 << card["minor"]:
             raise RuntimeError("Invalid physical minor/mask contract")
-    if len({row["gpu_uuid"] for row in m["cards"].values()}) != len(PHYSICAL_GPUS):
+    if len({row["gpu_uuid"] for row in m["cards"].values()}) != len(physical_gpus):
         raise RuntimeError("Duplicate pinned GPU UUID")
-    if len({row["commname"] for row in m["cards"].values()}) != len(PHYSICAL_GPUS):
+    if len({row["commname"] for row in m["cards"].values()}) != len(physical_gpus):
         raise RuntimeError("Duplicate per-card process commname")
     for key in ("marker", "profile", "bootstrap", "runtime"):
         owned_file(m[key + "_path"], m[key + "_sha256"])
@@ -132,11 +134,11 @@ def read_manifest(path):
             "Graphics profile must contain exactly the two explicit rules"
         )
     rules = actual_profile["rules"]
-    if not isinstance(rules, list) or len(rules) != len(PHYSICAL_GPUS):
+    if not isinstance(rules, list) or len(rules) != len(physical_gpus):
         raise RuntimeError(
             "Graphics profile must contain exactly the two explicit rules"
         )
-    for gpu, rule in zip(PHYSICAL_GPUS, rules):
+    for gpu, rule in zip(physical_gpus, rules):
         if not isinstance(rule, dict) or set(rule) != {"pattern", "profile"}:
             raise RuntimeError("Graphics rule contains unexpected fields")
         profile = rule["profile"]
@@ -156,7 +158,7 @@ def read_manifest(path):
                 },
                 "profile": ["EGLVisibleDGPUDevices", m["cards"][str(gpu)]["mask"]],
             }
-            for gpu in PHYSICAL_GPUS
+            for gpu in physical_gpus
         ]
     }
     if actual_profile != expected_profile:
@@ -276,10 +278,12 @@ def check_cuda(m, *, require=False):
     # inventory. Narrow only this exact observed mask before Ray/Torch imports;
     # discovery drivers with no mask and explicit wrong-device masks stay as-is.
     if value == FULL_NODE_MASK:
-        if m["physical_gpu"] != 6:
-            raise RuntimeError("CPU full-node compatibility is only permitted on GPU6")
-        os.environ["CUDA_VISIBLE_DEVICES"] = "6"
-        value = "6"
+        if m["physical_gpu"] != m.get("cpu_full_mask_target", 6):
+            raise RuntimeError(
+                "CPU full-node compatibility requires the pair's first GPU"
+            )
+        value = str(m["physical_gpu"])
+        os.environ["CUDA_VISIBLE_DEVICES"] = value
     # RLinf's physical placement sets a single physical card before exec. Do not mask its CPU
     # discovery driver/managers: they need the physical cluster inventory.
     if value in (None, ""):

@@ -230,28 +230,39 @@ def test_legacy_contract_and_wrong_signal_configuration():
         grpo_signal_contract({"signal_source": "ugrow_10_5", "mode": "apply"})
 
 
-def test_graphics_scope_only_selects_gpu6_or_gpu7(monkeypatch):
+@pytest.mark.parametrize("pair", [(4, 5), (6, 7)])
+def test_graphics_scope_only_selects_assigned_pair(monkeypatch, pair):
     import importlib.util
 
     p = Path(__file__).resolve().parents[2] / "tools/grpo_un/graphics_scope_runtime.py"
     spec = importlib.util.spec_from_file_location("grpo_scope", p)
     scope = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(scope)
+    first, second = pair
     manifest = {
-        "physical_gpus": [6, 7],
-        "cards": {"6": {"gpu_uuid": "GPU-six"}, "7": {"gpu_uuid": "GPU-seven"}},
+        "physical_gpus": list(pair),
+        "cards": {
+            str(first): {"gpu_uuid": "GPU-first"},
+            str(second): {"gpu_uuid": "GPU-second"},
+        },
     }
     for raw, expected in [
-        (None, 6),
-        ("", 6),
-        ("6", 6),
-        ("7", 7),
-        ("GPU-seven", 7),
-        (scope.FULL_NODE_MASK, 6),
+        (None, first),
+        ("", first),
+        (str(first), first),
+        (str(second), second),
+        ("GPU-second", second),
+        (scope.FULL_NODE_MASK, first),
     ]:
         assert scope.select_target(manifest, raw) == expected
-    for bad in ["0", "4", "5", "6,7"]:
+    for bad in [str(g) for g in range(8) if g not in pair] + ["4,5", "6,7"]:
         with pytest.raises(RuntimeError):
             scope.select_target(manifest, bad)
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", scope.FULL_NODE_MASK)
-    assert scope.check_cuda({"physical_gpu": 6, "gpu_uuid": "GPU-six"}) == "6"
+    assert scope.check_cuda(
+        {
+            "physical_gpu": first,
+            "cpu_full_mask_target": first,
+            "gpu_uuid": "GPU-first",
+        }
+    ) == str(first)

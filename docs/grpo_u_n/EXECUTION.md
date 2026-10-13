@@ -1,6 +1,6 @@
 # GRPO U / Norm execution
 
-Updated2026-10-09 21:32 China. Implementation e04e9d4fbc041519019f7e642765f157ffb78553 is pushed to codex/grpo-u-n-20261009. U and Norm passed their complete one-round smokes. Original GPU6/7 RLT was restored and verified at21:32. No formal GRPO training was launched.
+Updated2026-10-09 21:32 China. Implementation e04e9d4fbc041519019f7e642765f157ffb78553 is pushed to codex/grpo-u-n-20261009. U and Norm passed their complete one-round smokes. Original GPU6/7 RLT was restored and verified at21:32. The October9 run was a smoke; the October13 formal launch is recorded below.
 
 ## Fixed configuration
 
@@ -41,3 +41,18 @@ Run root: /data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/.
 Authoritative6/7 control is /data/chenyiteng/deployment-20261009/grpo-un-smoke-g67-v1/return-rlt/plan.json and status.json. The parent control has rlt-return-dispatched.json and rlt-return-verified.json. Original requests are /data/chenyiteng/deployment-20261008/bc-signal-tau-v1/requests/rlt-g6.json and rlt-g7.json. Do not dispatch them again or add6/7 to a competing owner.
 
 [Storage incident and retained mounts](STORAGE_INCIDENT.md) records the authorized online2.33.5 recovery and Ray socket correction. Old inode domains remain intentionally retained until their users release them.
+
+
+## 2026-10-13 U tau1/2/3 formal launch
+
+User concluded EXPO FM-U tau2/3 and RLT Q-U tau2/3, releasing exactly6 cards. New pairs: tau1=SZ1 GPU6/7; tau2=SZ2 GPU4/5; tau3=SZ2 GPU6/7. The three Editor-U jobs remain unchanged.
+
+Reuse the validated U source e04e9d4fbc and the actual September23 Clean256 resolved config: turn_switch,64x4=256 trajectories/round, group8, globalB512/micro32, update_epoch2, H50/D14,200-action cap, native Flow-SDE0.5 and original seeds/optimizer/filtering. Budget200 rounds, evaluation every2 rounds, checkpoint every10. Fresh original model/optimizer; no smoke checkpoint. Method delta is signal_source=ugrow_10_5, mode=apply, local/chunk tau=1/2/3, fixed alpha1, chunk_dropout=false and alpha schedules=false. No extra GPU smoke.
+
+Historical controls already exist: Clean256107 rounds; DVCA tau1=108, tau2=98, tau3 resumed through70. Saved curves and configs are in formal1013/historical-baselines.json; these are existing partial runs, not completed200-round controls. No control was relaunched.
+
+The only source change makes the existing graphics binding accept either the explicit4/5 or6/7 pair, preserving per-worker CUDA/renderer UUID validation and private process-name profiles. Two selected CPU scope tests passed. The three real launches each produced both assigned renderer UUID receipts. Existing driver and one CPU owner per host are reused without new permanent monitors: each card waits for its group's finished receipt, exact driver exit and its own C/G release, then starts its original RLT. All12 slots have valid configs/complete recovery points and live original owners.
+
+Prepared configs, exact commands, baseline-only diffs, CPU validation, launch receipts and initial driver logs are under formal1013/sz1 and sz2. Server transaction: /data/chenyiteng/deployment-20261013/grpo-u-tau123-v1. Stop at200 rounds or on training failure/user stop; existing driver cleans only its exact Ray namespace. Initialization and rollout liveness are not evidence of learning gain.
+
+11:58 China acceptance: all3 drivers and owners live; six renderer UUIDs match assigned cards. Tau1 has completed2/4 rollout epochs, tau2=1/4 and tau3=2/4 in round1. This proves real collection, not a completed optimizer update; no gain/ETA claim is made from initialization. The initial-rollout receipts preserve exact progress and logs.
