@@ -8,4 +8,3 @@
 末次权重：`run/checkpoint-latest.pt`。新事务：`/data/chenyiteng/deployment-20261015/expo-clean-entropy-b64-v1`。
 
 `primary-logs.tar.gz`包含原始inputs、完整主events、两次driver日志、34份评估回执及退出证明；`summary.json`与`evaluations.csv`用于复核。关闭U后的新Clean另起run和优化器，旧τ1/3及GRPO保持；RLT逐卡候补沿用当时最新请求。
-

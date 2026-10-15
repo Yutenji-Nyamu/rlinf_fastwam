@@ -1,6 +1,6 @@
 # EXPO U/Norm 执行记录
 
-当前：FM-U三组已收束；10-15 Editor-U τ2按用户结论于47810动作/1156学习收束，τ1/3继续。τ2日志与退出证明见[closeout1015-tau2](closeout1015-tau2/RESULT.md)。
+当前：FM-U三组已收束；10-15 Editor-U τ2按用户结论于47810动作/1156学习收束，τ1/3继续。τ2日志与退出证明见[closeout1015-tau2](closeout1015-tau2/RESULT.md)。新B64 Clean已在SZ1 4/5启动，见[执行记录](../expo_clean_entropy_b64/EXECUTION.md)。
 
 ## 10-13 Editor-U τ1/2/3与FM-U τ1收束
 
