@@ -1,0 +1,418 @@
+{
+  "time": 1792161457.555773,
+  "groups": [
+    {
+      "tau": 1,
+      "request": "/data/chenyiteng/deployment-20261016/expo-ubc-b64-tau123-v1/tau1.json",
+      "run": "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016",
+      "source": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source",
+      "gpus": [
+        4,
+        5
+      ],
+      "target_entropy": -295.32130774077405,
+      "signal_contract": {
+        "version": 1,
+        "producer": {
+          "version": 1,
+          "kind": "ugrow_10_5",
+          "steps": [
+            10,
+            5
+          ],
+          "solver": "flow_ode",
+          "coordinate_space": "normalized",
+          "action_dim": 14,
+          "epsilon": 1e-08
+        },
+        "target": "fm",
+        "source": "collection_selected_parent_base; edited_j_has_parent_j",
+        "granularity": {
+          "fm": "physical_action_inner_times_real_H50_window_outer",
+          "editor": "real_C10_window_outer_full_alpha_logpi_minus_Q"
+        },
+        "demos": "neutral_one_excluded_from_signal_normalization",
+        "settings": {
+          "alpha_local": 1.0,
+          "alpha_chunk": 1.0,
+          "variance_eps": 1e-12,
+          "range_eps": 1e-06,
+          "factor_mapping": "exp_mean",
+          "temperature_local": 1.0,
+          "temperature_chunk": 1.0
+        },
+        "controls": {
+          "chunk_dropout": {
+            "enabled": true,
+            "probability": 0.2,
+            "seed": 42
+          },
+          "alpha_schedule": {
+            "enabled": true,
+            "local": {
+              "enabled": true,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            },
+            "chunk": {
+              "enabled": true,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            }
+          }
+        },
+        "schedule": "completed_collection_episodes_including_warmup; R1=1 R200=0",
+        "dropout_counter": "2*completed_update_calls + (0_fm_or_1_editor)"
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/examples/embodiment/train_expo_formal.py",
+        "--inputs",
+        "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/inputs.json",
+        "--run",
+        "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/run",
+        "--max-physical-actions",
+        "60000",
+        "--enable-evaluation"
+      ],
+      "config_diff": [
+        {
+          "key": "demo_path",
+          "before": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+          "after": "/data/chenyiteng/projects/expo-u-n-sz3-20261009/assets/clean50"
+        },
+        {
+          "key": "env.seeds_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/train.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/train.json"
+        },
+        {
+          "key": "env.task_config.save_path",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/env-data/train",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/env-data/train"
+        },
+        {
+          "key": "env.video_cfg.video_base_dir",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/videos/train",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/videos/train"
+        },
+        {
+          "key": "evaluation.config.seeds_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/eval.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/eval.json"
+        },
+        {
+          "key": "evaluation.config.task_config.save_path",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/env-data/eval",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/env-data/eval"
+        },
+        {
+          "key": "evaluation.config.video_cfg.video_base_dir",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/videos/eval",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau1-sz3-g45-60000-1016/videos/eval"
+        },
+        {
+          "key": "evaluation.seed_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/eval.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/eval.json"
+        },
+        {
+          "key": "signal",
+          "before": null,
+          "after": {
+            "kind": "ugrow_10_5",
+            "target": "fm",
+            "temperature_local": 1.0,
+            "temperature_chunk": 1.0,
+            "dropout": true,
+            "dropout_probability": 0.2,
+            "anneal": true,
+            "anneal_start_episode": 1,
+            "anneal_end_episode": 200,
+            "seed": 42
+          }
+        },
+        {
+          "key": "source_head",
+          "before": "a1b301179 unchanged runtime; Clean (signal=null), official adjusted entropy target; B64",
+          "after": "a1b301179 unchanged runtime; U-BC/FM tau1; official adjusted entropy target; B64"
+        }
+      ],
+      "old_identity": {
+        "pid": 689926,
+        "uid": 20001,
+        "start": 779324603,
+        "state": "S"
+      },
+      "old_release": "/data/chenyiteng/results/expo-editor-u-tau1-sz3-g45-60000-1013/runtime/released.json",
+      "old_request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/expo-tau1.json",
+      "protected_slots": {},
+      "profiles": [
+        {
+          "path": "/home/chenyiteng/.nv/nvidia-application-profiles-rc.d/00-dsrl-u-tau3-g4-20261011.json",
+          "data": {
+            "rules": [
+              {
+                "pattern": {
+                  "feature": "dso",
+                  "matches": "libdsrl_u_tau3_g4_1011.so"
+                },
+                "profile": [
+                  "EGLVisibleDGPUDevices",
+                  16
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "tau": 3,
+      "request": "/data/chenyiteng/deployment-20261016/expo-ubc-b64-tau123-v1/tau3.json",
+      "run": "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016",
+      "source": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source",
+      "gpus": [
+        6,
+        7
+      ],
+      "target_entropy": -295.32130774077405,
+      "signal_contract": {
+        "version": 1,
+        "producer": {
+          "version": 1,
+          "kind": "ugrow_10_5",
+          "steps": [
+            10,
+            5
+          ],
+          "solver": "flow_ode",
+          "coordinate_space": "normalized",
+          "action_dim": 14,
+          "epsilon": 1e-08
+        },
+        "target": "fm",
+        "source": "collection_selected_parent_base; edited_j_has_parent_j",
+        "granularity": {
+          "fm": "physical_action_inner_times_real_H50_window_outer",
+          "editor": "real_C10_window_outer_full_alpha_logpi_minus_Q"
+        },
+        "demos": "neutral_one_excluded_from_signal_normalization",
+        "settings": {
+          "alpha_local": 1.0,
+          "alpha_chunk": 1.0,
+          "variance_eps": 1e-12,
+          "range_eps": 1e-06,
+          "factor_mapping": "exp_mean",
+          "temperature_local": 3.0,
+          "temperature_chunk": 3.0
+        },
+        "controls": {
+          "chunk_dropout": {
+            "enabled": true,
+            "probability": 0.2,
+            "seed": 42
+          },
+          "alpha_schedule": {
+            "enabled": true,
+            "local": {
+              "enabled": true,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            },
+            "chunk": {
+              "enabled": true,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            }
+          }
+        },
+        "schedule": "completed_collection_episodes_including_warmup; R1=1 R200=0",
+        "dropout_counter": "2*completed_update_calls + (0_fm_or_1_editor)"
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/examples/embodiment/train_expo_formal.py",
+        "--inputs",
+        "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/inputs.json",
+        "--run",
+        "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/run",
+        "--max-physical-actions",
+        "60000",
+        "--enable-evaluation"
+      ],
+      "config_diff": [
+        {
+          "key": "demo_path",
+          "before": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+          "after": "/data/chenyiteng/projects/expo-u-n-sz3-20261009/assets/clean50"
+        },
+        {
+          "key": "env.seeds_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/train.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/train.json"
+        },
+        {
+          "key": "env.task_config.save_path",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/env-data/train",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/env-data/train"
+        },
+        {
+          "key": "env.video_cfg.video_base_dir",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/videos/train",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/videos/train"
+        },
+        {
+          "key": "evaluation.config.seeds_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/eval.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/eval.json"
+        },
+        {
+          "key": "evaluation.config.task_config.save_path",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/env-data/eval",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/env-data/eval"
+        },
+        {
+          "key": "evaluation.config.video_cfg.video_base_dir",
+          "before": "/data/chenyiteng/results/expo-clean-entropy-b64-sz1-g45-60000-1015/videos/eval",
+          "after": "/data/chenyiteng/results/expo-ubc-b64-tau3-sz3-g67-60000-1016/videos/eval"
+        },
+        {
+          "key": "evaluation.seed_path",
+          "before": "/data/chenyiteng/projects/expo-fm-u-20261010/source/tools/expo_fm_u_20261010/seeds/eval.json",
+          "after": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/source/tools/expo_fm_u_20261010/seeds/eval.json"
+        },
+        {
+          "key": "physical_gpu",
+          "before": 4,
+          "after": 6
+        },
+        {
+          "key": "physical_gpus",
+          "before": [
+            4,
+            5
+          ],
+          "after": [
+            6,
+            7
+          ]
+        },
+        {
+          "key": "signal",
+          "before": null,
+          "after": {
+            "kind": "ugrow_10_5",
+            "target": "fm",
+            "temperature_local": 3.0,
+            "temperature_chunk": 3.0,
+            "dropout": true,
+            "dropout_probability": 0.2,
+            "anneal": true,
+            "anneal_start_episode": 1,
+            "anneal_end_episode": 200,
+            "seed": 42
+          }
+        },
+        {
+          "key": "source_head",
+          "before": "a1b301179 unchanged runtime; Clean (signal=null), official adjusted entropy target; B64",
+          "after": "a1b301179 unchanged runtime; U-BC/FM tau3; official adjusted entropy target; B64"
+        }
+      ],
+      "old_identity": {
+        "pid": 689945,
+        "uid": 20001,
+        "start": 779324787,
+        "state": "D"
+      },
+      "old_release": "/data/chenyiteng/results/expo-editor-u-tau3-sz3-g67-60000-1013/runtime/released.json",
+      "old_request": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/expo-tau3.json",
+      "protected_slots": {},
+      "profiles": [
+        {
+          "path": "/home/chenyiteng/.nv/nvidia-application-profiles-rc.d/00-norm-g6-20261007.json",
+          "data": {
+            "rules": [
+              {
+                "pattern": {
+                  "feature": "dso",
+                  "matches": "libnorm_g6_20261007.so"
+                },
+                "profile": [
+                  "EGLVisibleDGPUDevices",
+                  64
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "plan_before": {
+    "host": "sz3",
+    "uid": 20001,
+    "boot_id": "47e64b8d-f02b-4dc3-bcdc-e37000390e2b",
+    "python": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+    "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/bc-signal-tau-20261008",
+    "head": "105170b87167a9f86b2d3c98ff2b74c4ec7025c3",
+    "ray_address": "127.0.0.1:26379",
+    "ray_dashboard_url": "http://127.0.0.1:28266",
+    "plan_path": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/plan.json",
+    "slots": {
+      "4": {
+        "gpu_uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+        "fallback": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g4.json",
+        "external_release": "/data/chenyiteng/results/expo-editor-u-tau1-sz3-g45-60000-1013/runtime/released.json",
+        "external_identity": {
+          "pid": 689926,
+          "uid": 20001,
+          "start": 779324603,
+          "state": "S"
+        }
+      },
+      "5": {
+        "gpu_uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "fallback": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g5.json",
+        "external_release": "/data/chenyiteng/results/expo-editor-u-tau1-sz3-g45-60000-1013/runtime/released.json",
+        "external_identity": {
+          "pid": 689926,
+          "uid": 20001,
+          "start": 779324603,
+          "state": "S"
+        }
+      },
+      "6": {
+        "gpu_uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+        "fallback": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g6.json",
+        "external_release": "/data/chenyiteng/results/expo-editor-u-tau3-sz3-g67-60000-1013/runtime/released.json",
+        "external_identity": {
+          "pid": 689945,
+          "uid": 20001,
+          "start": 779324787,
+          "state": "D"
+        }
+      },
+      "7": {
+        "gpu_uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+        "fallback": "/data/chenyiteng/deployment-20261013/expo-editor-u-tau123-v1/fallback-g7.json",
+        "external_release": "/data/chenyiteng/results/expo-editor-u-tau3-sz3-g67-60000-1013/runtime/released.json",
+        "external_identity": {
+          "pid": 689945,
+          "uid": 20001,
+          "start": 779324787,
+          "state": "D"
+        }
+      }
+    }
+  }
+}
