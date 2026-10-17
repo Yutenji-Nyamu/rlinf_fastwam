@@ -114,6 +114,8 @@ try:
                             child.wait(timeout=20)
                         rc = 124
         clear = cleanup()
+        if rc == 78:
+            raise RuntimeError('Graphics bootstrap rejected startup; stop instead of skipping tasks')
         if rc != 0:
             failed.append(str(path))
             save(D / f'{out.name}-result.json', dict(time=time.time(), config=str(path), state='FAILED',
