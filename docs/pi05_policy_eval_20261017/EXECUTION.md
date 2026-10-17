@@ -26,7 +26,7 @@
 - 高/低/随机门都在完整动作块生成边界选择；每个新观察重新计算弱模型U。强模型目前整批推理，计时如实包括该成本。
 - C10/20/30只执行H50输出的前缀。C30末次最多20动作，保持总上限200。用户确认省略C100，不改H。
 
-源码：[tools/pi05_policy_eval](../../tools/pi05_policy_eval/README.md)。服务器3项CPU测试通过：有效槽位门控、仅校准数据定阈值、拒绝C100；正式U批次首次warmup检查主动作与RNG完全一致。运行中的首批原始模型不等于已经完成所有强模型/双模型验收。
+源码：[tools/pi05_policy_eval](../../tools/pi05_policy_eval/README.md)。服务器3项CPU测试通过：有效槽位门控、仅校准数据定阈值、拒绝C100；每卡首次校准warmup检查主动作与RNG完全一致，后续U批次不重复该校验。运行中的首批原始模型不等于已经完成所有强模型/双模型验收。
 
 ## 调度与产物
 
@@ -40,3 +40,7 @@
 GRPO τ1收束：198/200轮，最新20/32＝62.5%，前5均值35.625%、末5均值60%、峰值75%；CP180/190保留。训练有改善但仍波动，尚无等预算Clean支持U净收益结论。[收束证据](https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/codex/grpo-u-n-20261009/docs/grpo_u_n/closeout1017-tau1/RESULT.md)。
 
 清理已完成：48个精确大文件、401.26GiB；执行后/data余554.2GiB。只含当前GRPO CP40–170、已停Editor-U τ2上份备份、旧DVAC-GRPO末代。原始模型、Clean CP140/160、RLT恢复点保留。[清单](E:/Codex/home/visualizations/2026/10/13/01a1354d-42a1-74a3-adc8-6e9c3421e45a/cleanup-inf1017-manifest.json)。
+
+## 启动与发布回执
+
+约15:57首批两卡均已进入原生动作回合，C/G分别仅在物理6/7，原owner存活，4/5 EXPO保持。此为启动验收，尚未完成全部128回合及强/双模型阶段。源码与实配已推[68242b8fb](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/pi05-policy-budget-eval-20261017/tools/pi05_policy_eval)，GRPO收束已推[c37c27c9f](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/grpo-u-n-20261009/docs/grpo_u_n/closeout1017-tau1)。
