@@ -66,6 +66,28 @@ def variable_chunk_step(env, actions, lengths):
     return env._extract_obs_image(raw_obs)
 
 
+def configure_recording_wait(env, seconds=300):
+    """Allow measured video overhead without changing native actions or physics.
+
+    B32 complete video needed144s for a native block, above its120s default.
+    Keep the installed dispatcher byte-for-byte except this wall-clock wait.
+    The finite lane's600s stall limit remains the outer bound.
+    """
+    import inspect
+    import textwrap
+    import types
+
+    assert seconds == 300
+    original = env.venv.step.__func__
+    source = textwrap.dedent(inspect.getsource(original))
+    anchor = "future.result(timeout=120)"
+    assert source.count(anchor) == 1, "Native dispatcher changed; review first"
+    namespace = {}
+    exec(compile(source.replace(anchor, f"future.result(timeout={seconds})"),
+                 "<native-video-wait>", "exec"), original.__globals__, namespace)
+    env.venv.step = types.MethodType(namespace[original.__name__], env.venv)
+
+
 def choose(policy, u, active, threshold, random_values):
     """Choose complete strong chunks only for active environments."""
     if policy == "strong":

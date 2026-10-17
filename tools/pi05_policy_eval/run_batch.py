@@ -26,7 +26,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from protocol import choose, execution_lengths, read, save, validate_config, variable_chunk_step
+from protocol import choose, configure_recording_wait, execution_lengths, read, save, validate_config, variable_chunk_step
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
@@ -153,6 +153,8 @@ def run(config):
         ec = OmegaConf.create(c["env"])
         assert not ec.auto_reset and ec.ignore_terminations
         env = RoboTwinEnv(ec, batch, 0, 1, None)
+        if full_video:
+            configure_recording_wait(env)
         obs, _ = env.reset()
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]

@@ -19,7 +19,7 @@ import unittest
 from pathlib import Path
 
 import numpy as np
-from protocol import choose, execution_lengths, save, thresholds, validate_config, variable_chunk_step
+from protocol import choose, configure_recording_wait, execution_lengths, save, thresholds, validate_config, variable_chunk_step
 
 
 class ProtocolTests(unittest.TestCase):
@@ -29,7 +29,7 @@ class ProtocolTests(unittest.TestCase):
         import ast
         import os
         from concurrent.futures import ThreadPoolExecutor
-        from types import SimpleNamespace
+        from types import MethodType, SimpleNamespace
         source = Path(os.environ["ROBOTWIN_PATH"]) / "robotwin/envs/vector_env.py"
         tree = ast.parse(source.read_text())
         cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "VectorEnv")
@@ -47,7 +47,7 @@ class ProtocolTests(unittest.TestCase):
 
         with ThreadPoolExecutor(4) as pool:
             native = SimpleNamespace(envs=[Slot(i) for i in range(4)], env_thread_pool=pool, n_envs=4)
-            native.step = lambda actions: namespace["step"](native, actions)
+            native.step = MethodType(namespace["step"], native)
             native.transform = lambda results: namespace["transform"](native, results)
             env = SimpleNamespace(venv=native, _extract_obs_image=lambda observations: observations)
             actions = np.arange(4 * 50 * 14).reshape(4, 50, 14)
@@ -56,6 +56,9 @@ class ProtocolTests(unittest.TestCase):
                                         np.array([0, 0, 190, 200]), mode="c20")
             self.assertEqual(lengths.tolist(), [20, 50, 10, 0])
             variable_chunk_step(env, actions, lengths)
+            configure_recording_wait(env)
+            variable_chunk_step(env, actions, lengths)
+            self.assertEqual(len(received), 8)
             for i, data in received:
                 np.testing.assert_array_equal(data, actions[i, :[20, 50, 10, 50][i]])
 
