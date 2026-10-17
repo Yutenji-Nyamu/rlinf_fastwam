@@ -96,6 +96,11 @@ try:
             out = Path(c["output"])
             assert not out.exists(), "Do not silently replay an attempted batch"
             assert c["gpu"] == int(g)
+            if c["policy"] == "strong":
+                # Cross-host protected copies become visible by atomic rename.
+                # Reuse the finite queue wait; do not load a partial transfer.
+                save(D / f"lane-g{g}-status.json", dict(time=time.time(), phase="WAIT_WEIGHTS", config=config))
+                wait_for(Path(c["strong_weights"]), seconds=10800)
             assert not gpus()[int(g)]["processes"]
             record = {
                 "time": time.time(),

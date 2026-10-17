@@ -19,10 +19,46 @@ import unittest
 from pathlib import Path
 
 import numpy as np
-from protocol import choose, save, thresholds, validate_config
+from protocol import choose, execution_lengths, save, thresholds, validate_config, variable_chunk_step
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_native_vector_receives_whole_mixed_prefixes_and_exact_remaining_budget(self):
+        # Execute the installed VectorEnv.step against lightweight SubEnv doubles.
+        # This exercises its dispatch contract without constructing CUDA/SAPIEN.
+        import ast
+        import os
+        from concurrent.futures import ThreadPoolExecutor
+        from types import SimpleNamespace
+        source = Path(os.environ["ROBOTWIN_PATH"]) / "robotwin/envs/vector_env.py"
+        tree = ast.parse(source.read_text())
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "VectorEnv")
+        methods = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name in ("step", "transform")]
+        from collections import defaultdict
+        namespace = {"defaultdict": defaultdict}
+        exec(compile(ast.Module(body=methods, type_ignores=[]), str(source), "exec"), namespace)
+        received = []
+
+        class Slot:
+            def __init__(self, index): self.index = index
+            def step(self, actions):
+                received.append((self.index, actions.copy()))
+                return dict(obs=self.index, reward=0, terminated=False, truncated=False, info={})
+
+        with ThreadPoolExecutor(4) as pool:
+            native = SimpleNamespace(envs=[Slot(i) for i in range(4)], env_thread_pool=pool, n_envs=4)
+            native.step = lambda actions: namespace["step"](native, actions)
+            native.transform = lambda results: namespace["transform"](native, results)
+            env = SimpleNamespace(venv=native, _extract_obs_image=lambda observations: observations)
+            actions = np.arange(4 * 50 * 14).reshape(4, 50, 14)
+            lengths = execution_lengths(np.array([True, False, True, False]),
+                                        np.array([True, True, True, False]),
+                                        np.array([0, 0, 190, 200]), mode="c20")
+            self.assertEqual(lengths.tolist(), [20, 50, 10, 0])
+            variable_chunk_step(env, actions, lengths)
+            for i, data in received:
+                np.testing.assert_array_equal(data, actions[i, :[20, 50, 10, 50][i]])
+
     def test_equal_and_inactive_states_do_not_trigger_threshold_gate(self):
         active = np.array([True, True, False])
         u = np.array([0.2, 0.8, 0.9])

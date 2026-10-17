@@ -44,6 +44,8 @@ def summarize(root, condition):
     actual = [e["actual"] for e in episodes]
     result = {
         "condition": condition,
+        "takeover_mode": decisions[0].get("takeover_mode", "weights"),
+        "fraction_definition": "decision fraction and submitted-action fraction; C20 is original model with earlier re-observation",
         "episodes": n,
         "successes": k,
         "success_rate": k / n,

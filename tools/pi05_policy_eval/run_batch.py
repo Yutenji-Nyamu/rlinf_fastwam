@@ -26,11 +26,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from protocol import choose, read, save, validate_config
+from protocol import choose, execution_lengths, read, save, validate_config, variable_chunk_step
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
 from signal_math import ugrow_10_vs_5  # noqa: E402
+sys.path.insert(0, str(ROOT / "tools/pi05_u_video"))
+from recording import Recorder  # noqa: E402
 
 
 class EndpointOnly:
@@ -77,8 +79,10 @@ def run(config):
     torch.cuda.set_device(0)
     torch.backends.cuda.enable_cudnn_sdp(False)
     policy, batch = c["policy"], c["num_envs"]
+    takeover = c.get("takeover_mode", "weights")
+    full_video = c.get("record_full_video", False)
     signals = policy in ("calibration", "high", "low", "random")
-    need_strong = policy in ("strong", "high", "low", "random")
+    need_strong = policy in ("strong", "high", "low", "random") and takeover == "weights"
     weak = (
         None
         if policy == "strong"
@@ -109,7 +113,7 @@ def run(config):
             assert (
                 model.config.action_horizon == 50 and model.config.action_env_dim == 14
             )
-    env, videos = None, []
+    env, videos, recorders = None, [], []
     success, counts = np.zeros(batch, bool), np.zeros(batch, int)
     decisions, costs, frames = [], [], [[] for _ in range(batch)]
     threshold = read(c["threshold_path"]) if policy in ("high", "low") else {}
@@ -168,6 +172,9 @@ def run(config):
         heads = arr(obs["main_images"]).astype(np.uint8)
         height, width = heads.shape[1:3]
         for slot in range(batch):
+            if full_video:
+                recorders.append(Recorder(env.venv.envs[slot].task, out, slot, actual[slot], fps=25))
+                continue
             writer = cv2.VideoWriter(
                 str(out / f"episode_{slot:02d}.mp4"),
                 cv2.VideoWriter_fourcc(*"mp4v"),
@@ -178,6 +185,8 @@ def run(config):
             videos.append(writer)
 
         def snapshot(images):
+            if full_video:
+                return
             for slot, image in enumerate(images):
                 videos[slot].write(
                     cv2.cvtColor(image.astype(np.uint8), cv2.COLOR_RGB2BGR)
@@ -186,7 +195,8 @@ def run(config):
 
         snapshot(heads)
         chunk = c["execute_chunk"]
-        for query in range((c["step_limit"] + chunk - 1) // chunk):
+        min_chunk = 20 if takeover == "c20" else chunk
+        for query in range((c["step_limit"] + min_chunk - 1) // min_chunk):
             active = ~success & (counts < c["step_limit"])
             if not active.any():
                 break
@@ -204,6 +214,7 @@ def run(config):
             torch.cuda.synchronize()
             tic = time.perf_counter()
             u = None
+            signal_data = None
             if weak is not None:
                 actions, result = infer(weak, obs, c["num_steps"], signals)
                 if signals:
@@ -215,6 +226,11 @@ def run(config):
                     assert score.valid.all()
                     u = score.score.mean(axis=1)
                     save(out / f"u_{query:03d}.json", score.score.tolist())
+                    if full_video:
+                        signal_data = {k: arr(trace[k]) for k in (
+                            "initial_noise_full", "final_model_action", "side_action_model")}
+                        signal_data.update(u=score.score, active=active, before=before)
+                    del trace
                 del result
             selected = choose(
                 policy,
@@ -244,16 +260,31 @@ def run(config):
             assert action.shape == (batch, 50, 14) and np.isfinite(action).all()
             torch.cuda.synchronize()
             inference_seconds = time.perf_counter() - tic
-            length = min(chunk, c["step_limit"] - query * chunk)
+            lengths = execution_lengths(selected, active, counts, chunk, c["step_limit"], takeover)
+            if signal_data is not None:
+                signal_data.update(env_action=action, selected=selected, offered=lengths)
+                np.savez_compressed(out / f"query_{query:03d}.npz", **signal_data)
             save(
                 out / "progress.json",
                 {"time": time.time(), "phase": "environment", "query": query},
             )
             tic = time.perf_counter()
-            obss, _, _, _, _ = env.chunk_step(action[:, :length])
-            obs = obss[-1]
+            for recorder in recorders:
+                recorder.begin(query)
+            if takeover == "c20":
+                obs = variable_chunk_step(env, action, lengths)
+            else:
+                length = min(chunk, c["step_limit"] - query * chunk)
+                obss, _, _, _, _ = env.chunk_step(action[:, :length])
+                obs = obss[-1]
             counts = np.array([int(e.task.take_action_cnt) for e in env.venv.envs])
             after = np.array([bool(e.task.eval_success) for e in env.venv.envs])
+            assert np.all(counts <= c["step_limit"])
+            for slot, recorder in enumerate(recorders):
+                recorder.end(after[slot])
+            if signal_data is not None:
+                signal_data.update(after=counts, success_after=after)
+                np.savez_compressed(out / f"query_{query:03d}.npz", **signal_data)
             snapshot(arr(obs["main_images"]))
             for slot in np.flatnonzero(active):
                 decisions.append(
@@ -263,9 +294,10 @@ def run(config):
                         "actual_seed": actual[slot],
                         "u": float(u[slot]) if u is not None else None,
                         "strong": bool(selected[slot]),
+                        "takeover_mode": takeover,
                         "start": int(before[slot]),
                         "end": int(counts[slot]),
-                        "offered_actions": length,
+                        "offered_actions": int(lengths[slot]),
                         "success_after": bool(after[slot]),
                         "noise_seed": noise_seed,
                     }
@@ -300,7 +332,9 @@ def run(config):
                 condition=c["condition"],
                 success=bool(success[i]),
                 submitted=int(counts[i]),
-                frames=len(frames[i]),
+                frames=len(recorders[i].frames) if full_video else len(frames[i]),
+                control_steps=recorders[i].ticks if full_video else None,
+                frame_map=f"episode_{i:02d}_frames.json" if full_video else None,
                 video=f"episode_{i:02d}.mp4",
                 termination="success" if success[i] else "step_limit",
             )
@@ -308,11 +342,14 @@ def run(config):
         ]
         save(out / "episodes.json", episodes)
     finally:
+        if env is not None:
+            env.venv.env_thread_pool.shutdown(wait=True)
+        for recorder in recorders:
+            recorder.close()
         for writer in videos:
             writer.release()
         save(out / "frame_times.json", frames)
         if env is not None:
-            env.venv.env_thread_pool.shutdown(wait=True)
             env.offload(clear_cache=True)
     save(
         out / "done.json",
@@ -322,6 +359,8 @@ def run(config):
             "episodes": batch,
             "successes": int(success.sum()),
             "condition": c["condition"],
+            "takeover_mode": takeover,
+            "record_full_video": full_video,
             "unique_actual_seeds": len(set(actual)),
             "native_seed_retries": sum(s["native_retry"] for s in seeds),
             "strong_decisions": sum(d["strong"] for d in decisions),
