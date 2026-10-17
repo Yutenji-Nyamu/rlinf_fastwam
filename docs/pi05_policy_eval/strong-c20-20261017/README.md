@@ -29,11 +29,16 @@ save the N10/N5 endpoints and U arrays without extra model passes.
 
 Validation: four server CPU protocol tests pass, including the installed
 native VectorEnv mixed-prefix dispatch, plus the existing native-controller
-video test verifying identical actions, physics steps and RNG. Formal queues
-launched on Shenzhen1 physical6/7 at20:15 CST on2026-10-17. First real-batch
-results and recordings remain pending; no improvement claim is made yet.
+video test verifying identical actions, physics steps and RNG. The initial
+B32 complete-video attempt took about144s for one native block and exceeded
+the native120s wall wait. It yielded no completed formal episodes. The local
+video dispatcher now waits up to300s; its native actions, physics, seeds,
+parallelism and200-action budget are unchanged. Server CPU dispatch tests
+pass after this adjustment. A new v3 transaction restarts the same seeds on
+Shenzhen1 physical6/7; failed v2 artifacts remain separate. Results remain
+pending; no improvement claim is made yet.
 
-Code commit: `1db0d5124`. The finite queue retains the existing batch deadlines,
+Code commit: `5c67b4b67`. The finite queue retains the existing batch deadlines,
 stops on error without automatic retries, and hands each card to its original
 RLT fallback after release. Evaluated/candidate weights are separately retained
 under `models/protected-eval`, with per-model source and evaluation metadata;
