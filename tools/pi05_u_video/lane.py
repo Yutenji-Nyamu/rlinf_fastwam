@@ -17,7 +17,9 @@ R = Path(__file__).resolve().parents[2]
 O = Path(os.environ['U_VIDEO_ROOT'])
 D = Path(os.environ['U_VIDEO_TRANSACTION'])
 g = sys.argv[1]
-assert g in ['6', '7'] and os.getuid() == 1003
+manifest = read(O / 'manifest.json')
+cards = [str(v) for v in manifest['physical_gpus']]
+assert len(cards) == 2 and g in cards and os.getuid() == manifest['plan_before']['uid']
 me = proc(os.getpid())
 python = '/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
 env = dict(os.environ, **read(O / f'environment-g{g}.json'), U_VIDEO_TOKEN=f'{D.name}-g{g}')
@@ -139,7 +141,7 @@ try:
             accepted = True
             save(D / f'acceptance-g{g}.json', dict(time=time.time(), config=str(path), validation=validation))
             save(D / f'lane-g{g}-status.json', dict(time=time.time(), phase='WAIT_PEER_ACCEPTANCE'))
-            other = str(13 - int(g))
+            other = next(card for card in cards if card != g)
             while not (D / f'acceptance-g{other}.json').exists():
                 assert not (D / f'lane-g{other}-error.json').exists()
                 assert not (D / f'lane-g{other}-released.json').exists(), 'Peer finished without accepted video batch'
