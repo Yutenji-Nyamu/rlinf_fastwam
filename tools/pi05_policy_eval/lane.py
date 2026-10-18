@@ -30,7 +30,7 @@ R = Path(__file__).resolve().parents[2]
 O = Path(os.environ["POLICY_EVAL_ROOT"])
 D = Path(os.environ["POLICY_EVAL_TRANSACTION"])
 g = sys.argv[1]
-assert g in ("6", "7") and os.getuid() == 1003
+assert g in ("6", "7") and os.getuid() == int(os.environ.get("POLICY_EVAL_UID", "1003"))
 me = proc(os.getpid())
 env = dict(
     os.environ, **read(O / f"environment-g{g}.json"), POLICY_EVAL_TOKEN=f"{D.name}-g{g}"
@@ -96,7 +96,7 @@ try:
             out = Path(c["output"])
             assert not out.exists(), "Do not silently replay an attempted batch"
             assert c["gpu"] == int(g)
-            if c["policy"] == "strong":
+            if c.get("strong_weights") and c.get("takeover_mode", "weights") == "weights":
                 # Cross-host protected copies become visible by atomic rename.
                 # Reuse the finite queue wait; do not load a partial transfer.
                 save(D / f"lane-g{g}-status.json", dict(time=time.time(), phase="WAIT_WEIGHTS", config=config))
