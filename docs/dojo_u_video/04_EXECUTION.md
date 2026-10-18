@@ -1,0 +1,13 @@
+# 执行记录
+
+2026-10-18：深圳3·3执行smoke；3·6/7仍CP180扫描。正式计划54任务各N25×5＝125回合，接扫描后、原RLT前；当前正式队列尚未接入。
+
+第一次N4 smoke在AppLauncher阶段出现NVTT找不到CUDA、Vulkan DEVICE_LOST，没有产生动作或U。原因核对发现新启动器遗漏旧SZ3流程的`cache/nvidia-libs`入口；该目录已有指向本机595库的libcuda.so及libnvidia-ml.so。精确停止本次driver与带唯一token的子进程，GPU3清场；未reset或影响4–7任务。只补回原库路径，直接改用历史已运行的N25，不再做N4→N16爬档。
+
+22:08:42第二次smoke启动：PID1942354/start830354662，`deployment-20261018/dojo-u-video-v1/smoke-n25.json`，stack_bowls、25并行×25回合、模型seed0/M10/H50，M5旁路。输出`results/dojo-u-video/20261018-v1/smoke-g3-n25-stack-bowls`。4项服务器CPU检查通过（原生控制/帧数不变、源码锚点、布局不足重复的125预算）。真实U、三路视频、末帧及C/G绑定待GPU验收，不将启动当通过。
+
+22:10：补库后的N25仍在AppLauncher渲染启动阶段DEVICE_LOST，0动作；driver已自动捕获、精确清理，GPU3回到1MiB、无C/G，ECC=0、recovery=None。补库是恢复旧启动配置，不是已经证明能修复此次设备故障。`fuser /dev/nvidia3`显示现役4–7实验仍有枚举句柄，因此不reset。历史09-29同机0–3已有同类启动失败、4/6经空卡reset后跑通；本轮不重复扫这些卡。
+
+替代smoke选深圳1·3：该机模型、环境、资产齐全，普通N25正式跑通过，驱动575。深圳2没有现成Pi_05环境/权重，不新增安装或传大模型。只借空闲3卡验证源码；深圳3正式6/7仍等前序任务释放。
+
+22:15:17深圳1替代smoke启动，PID1455538/start521963689；22:19已保存25条真实query，25环境进入动作，主M10复算逐位一致与RNG检查通过，计算/图形均限3卡，约44.5GiB。原texturecache大文件清理后存在读缓存报错，当前动作仍推进；画面是否完整须看实际采样，不能仅凭报错宣称无影响。
