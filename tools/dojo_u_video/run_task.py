@@ -175,7 +175,8 @@ def run(config):
             ] + main
         sim = launch(main, "sim")
         save(out / "commands.json", dict(sim=main, policy=policy.args))
-        deadline = time.monotonic() + c.get("timeout_seconds", 7200)
+        duration = c.get("timeout_seconds")
+        deadline = time.monotonic() + duration if duration else float("inf")
         while sim.poll() is None:
             assert policy.poll() is None, "Policy server exited during episode"
             time.sleep(10)

@@ -56,6 +56,17 @@ The finite `lane.py` waits for the current inference identity and release receip
 then runs the assigned tasks and releases to the unchanged per-card RLT fallback.
 No shared Ray or unrelated experiment is stopped.
 
+The deployment also records a finite local `accept_then_enqueue.py` transaction
+(two-hour limit). It waits for the SZ1 N25 smoke's complete native result,
+recording validation and GPU clearance, then invokes the one-time SZ3
+`enqueue.py`. It reuses this workspace's pinned-host-key SSH helper, keeps the
+password only in process memory and never replays an uncertain enqueue. While
+smoke is pending or fails, the existing inference/RLT schedule stays in place.
+
+Formal tasks use their finite 125-episode/native-action budgets and progress
+timeouts. They have no additional three-hour cutoff: five healthy N25 batches
+may legitimately take longer. A smoke may specify its own absolute timeout.
+
 ## Output
 
 `episodes/layout_NNNNN/` is keyed by **episode ID**, not the source layout number:
