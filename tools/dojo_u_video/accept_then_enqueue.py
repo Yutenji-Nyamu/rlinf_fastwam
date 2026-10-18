@@ -157,7 +157,7 @@ try:
             raise RuntimeError(
                 "Acceptance receipt already exists; inspect before reuse"
             )
-        with s.open(D + "/smoke-accepted.json.pending", "x") as f:
+        with s.open(D + "/smoke-accepted.json.pending", "wx") as f:
             f.write(json.dumps(receipt))
         s.rename(D + "/smoke-accepted.json.pending", D + "/smoke-accepted.json")
     save("accept-queue-status.json", dict(time=time.time(), phase="ENQUEUE_ONCE"))
