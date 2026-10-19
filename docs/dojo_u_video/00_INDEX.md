@@ -7,5 +7,6 @@
 - [绘图数据与筛选流程](03_PLOTTING.md)
 - [任务预算依据](05_TASK_BUDGETS.md)
 - [执行与验收](04_EXECUTION.md)
+- [设备故障跳过与7卡续接](05_DEVICE_SKIP_20261019.md)
 
 源码维护于`worktrees/pi05-policy-budget-eval-20261017`，独立分支`codex/dojo-u-video-20261018`；运行状态以04及服务器回执为准。

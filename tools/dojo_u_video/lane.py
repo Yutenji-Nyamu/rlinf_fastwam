@@ -13,6 +13,19 @@ from common import read, save
 from run_task import ops
 
 
+def accept_task(returncode, result, clearance, allow_device_skip):
+    """Accept a finished task only after its explicit GPU clearance receipt."""
+    if not clearance or not clearance.get("clear"):
+        raise RuntimeError("Cleanup not confirmed; stop before next task/RLT")
+    if not result:
+        raise RuntimeError("Missing task result; stop lane")
+    if returncode == 79 and allow_device_skip:
+        return True
+    if returncode != 0:
+        raise RuntimeError(f"Recording/cleanup/device fault, rc={returncode}")
+    return False
+
+
 def main():
     d = Path(sys.argv[1])
     g = int(sys.argv[2])
@@ -24,7 +37,9 @@ def main():
     state = d / f"lane-g{g}-status.json"
     child = None
     predecessor_done = False
-    release_allowed = True
+    release_allowed = False
+    device_unresolved = plan.get("device_fault_unresolved", False)
+    skipped_devices = 0
     predecessor = plan["predecessor"]
 
     def stop(*_):
@@ -77,20 +92,33 @@ def main():
                         phase="RUNNING",
                         config=config,
                         child=o.proc(child.pid),
+                        device_fault_unresolved=device_unresolved,
+                        skipped_device_tasks=skipped_devices,
                     ),
                 )
                 rc = child.wait()
-            if rc == 79:
-                release_allowed = False
             assert not o.gpus()[g]["processes"], (
                 "Cleanup failed; no automatic RLT launch"
             )
             result = Path(c["output"]) / "result.json"
-            if rc or not result.is_file():
-                raise RuntimeError(
-                    f"Recording/cleanup/device fault for {config}, rc={rc}"
+            clearance = Path(c["output"]) / "clearance.json"
+            row = read(result) if result.is_file() else None
+            device_failed = accept_task(
+                rc,
+                row,
+                read(clearance) if clearance.is_file() else None,
+                plan.get("skip_cleared_device_fault", False),
+            )
+            if device_failed:
+                device_unresolved = True
+                skipped_devices += 1
+                save(
+                    d / f"{Path(c['output']).name}-device-skipped.json",
+                    dict(time=time.time(), config=config, cleared=True, next_task=True),
                 )
-            with (d / "index.lock").open("a") as lock:
+            elif row.get("episodes", 0) > 0:
+                device_unresolved = False
+            with Path(plan.get("index_lock", d / "index.lock")).open("a") as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX)
                 rows = [
                     read(p)
@@ -106,7 +134,16 @@ def main():
                         rows=rows,
                     ),
                 )
-        save(state, dict(time=time.time(), phase="COMPLETE"))
+        release_allowed = not device_unresolved
+        save(
+            state,
+            dict(
+                time=time.time(),
+                phase="COMPLETE" if release_allowed else "BLOCKED_DEVICE",
+                skipped_device_tasks=skipped_devices,
+                device_fault_unresolved=device_unresolved,
+            ),
+        )
     except BaseException:
         save(
             d / f"lane-g{g}-error.json",
