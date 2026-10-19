@@ -164,6 +164,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 self.dvac_train_cfg.get("mapping", "linear_centered"),
                 self.dvac_train_cfg.get("temperature_local", 1.0),
                 self.dvac_train_cfg.get("temperature_chunk", 1.0),
+                self.dvac_train_cfg.get("direction", "increasing"),
             )
         elif (
             self.dvac_train_enabled
@@ -662,6 +663,7 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 self.dvac_train_cfg.get("mapping", "linear_centered"),
                 self.dvac_train_cfg.get("temperature_local", 1.0),
                 self.dvac_train_cfg.get("temperature_chunk", 1.0),
+                self.dvac_train_cfg.get("direction", "increasing"),
             )
         )
         controls = linear_controls_contract(self.dvac_train_cfg)

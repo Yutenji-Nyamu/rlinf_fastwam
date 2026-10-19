@@ -16,8 +16,8 @@
 
 Call once on the gathered rollout tensors, before optimization shuffling. This
 module does not gather ranks, infer group IDs, change advantages, or change the
-actor loss mask/reduction. Both mappings increase with log variance, matching
-the direction of the previous action-advantage DVAC implementation.
+actor loss mask/reduction. The default increases with log variance. The optional
+advantage-sign direction reverses negative advantages within separate sign pools.
 """
 
 from __future__ import annotations
@@ -31,17 +31,21 @@ def dvac_mapping_contract(
     mapping: str = "linear_centered",
     temperature_local: float = 1.0,
     temperature_chunk: float = 1.0,
+    direction: str = "increasing",
 ) -> dict:
     """Validate effective mapping fields; omit inactive linear-only defaults.
 
     Keeping the legacy linear contract unchanged permits exact legacy resume.
     Temperatures have no mathematical meaning in the linear branch.
     """
+    if direction not in ("increasing", "advantage_sign"):
+        raise ValueError("DVAC direction must be increasing or advantage_sign")
+    result = {} if direction == "increasing" else {"direction": direction}
     if mapping == "linear_centered":
-        return {}
+        return result
     if mapping != "exp_mean":
         raise ValueError("DVAC mapping must be linear_centered or exp_mean")
-    result = {"mapping": mapping}
+    result["mapping"] = mapping
     for name, value in (
         ("temperature_local", temperature_local),
         ("temperature_chunk", temperature_chunk),
@@ -60,6 +64,7 @@ def canonicalize_dvac_two_level_contract(contract: dict) -> dict:
             result.pop("mapping", "linear_centered"),
             result.pop("temperature_local", 1.0),
             result.pop("temperature_chunk", 1.0),
+            result.pop("direction", "increasing"),
         )
     )
     return result
@@ -108,6 +113,7 @@ def compute_dvac_two_level_weights(
     mapping: str = "linear_centered",
     temperature_local: float = 1.0,
     temperature_chunk: float = 1.0,
+    direction: str = "increasing",
     log_eps: float = 1e-12,
     minmax_eps: float = 1e-6,
     chunk_contributions: torch.Tensor | None = None,
@@ -118,7 +124,7 @@ def compute_dvac_two_level_weights(
     ``[T,B,1]``. Every H position of an actor-valid chunk participates; an
     executed-action mask is deliberately not accepted. ``group_ids[B]`` contains
     stable integer scene-group IDs assigned before shuffling. ``advantages``
-    has shape ``[T,B,1]`` and is used only to select the scope.
+    has shape ``[T,B,1]`` and selects scope and optional weighting direction.
 
     For ``both``, all valid chunks with positive contribution participate,
     including zero-advantage chunks. ``positive``/``negative`` select strictly
@@ -134,6 +140,13 @@ def compute_dvac_two_level_weights(
     ``exp_mean`` instead maps each MinMax score z to exp(z / temperature),
     divides by the corresponding (loss-mass weighted) mean, and mixes with one
     using the existing alpha. It preserves the same score direction and domains.
+
+    ``direction=advantage_sign`` reverses the MinMax scores for A<0 at both
+    levels. Outer normalization is separate for A>0 and A<0 within each scene
+    group, so changing the failure rule cannot rescale the successful pool.
+    A=0 is excluded and receives identity weights; no new advantage is created.
+    With ``scope=positive``, failures also keep identity weights. This is a
+    sign-aware variant of the existing two-level mapper, not token entropy.
 
     Computation uses float32, retaining float64 when variance is float64.
     Diagnostics: local_factors/log_variance [T,B,H]; chunk_factors,
@@ -164,7 +177,7 @@ def compute_dvac_two_level_weights(
         raise TypeError("group_ids must contain integer IDs, not inferred positions")
     if scope not in ("both", "positive", "negative"):
         raise ValueError("scope must be 'both', 'positive', or 'negative'")
-    dvac_mapping_contract(mapping, temperature_local, temperature_chunk)
+    dvac_mapping_contract(mapping, temperature_local, temperature_chunk, direction)
     for name, value in (("alpha_local", alpha_local), ("alpha_chunk", alpha_chunk)):
         if not math.isfinite(float(value)) or not 0.0 <= float(value) <= 1.0:
             raise ValueError(f"{name} must be finite and in [0,1]")
@@ -210,6 +223,8 @@ def compute_dvac_two_level_weights(
         eligible = eligible & (adv > 0)
     elif scope == "negative":
         eligible = eligible & (adv < 0)
+    if direction == "advantage_sign":
+        eligible = eligible & (adv != 0)
 
     safe_values = torch.where(valid_h, values, torch.zeros_like(values))
     log_variance = torch.log(safe_values + float(log_eps))
@@ -223,25 +238,34 @@ def compute_dvac_two_level_weights(
     local_min = log_variance.amin(dim=-1, keepdim=True)
     local_span = log_variance.amax(dim=-1, keepdim=True) - local_min
     local_unit = (log_variance - local_min) / (local_span + float(minmax_eps))
+    if direction == "advantage_sign":
+        local_unit = torch.where((adv < 0).unsqueeze(-1), -local_unit, local_unit)
     if mapping == "linear_centered":
         local_factors = 1.0 + float(alpha_local) * (
             local_unit - local_unit.mean(dim=-1, keepdim=True)
         )
     else:
-        local_factors = _exp_mean_factor(
-            local_unit, alpha_local, temperature_local
-        )
+        local_factors = _exp_mean_factor(local_unit, alpha_local, temperature_local)
     local_factors = torch.where(
         eligible.unsqueeze(-1), local_factors, torch.ones_like(local_factors)
     )
 
     chunk_factors = torch.ones(chunk_shape, device=device, dtype=dtype)
-    for group_id in torch.unique(ids[eligible.any(dim=0)]):
-        selected = eligible & (ids == group_id).unsqueeze(0)
+    pools = [eligible]
+    if direction == "advantage_sign":
+        pools = [eligible & (adv > 0), eligible & (adv < 0)]
+    selections = (
+        pool & (ids == group_id).unsqueeze(0)
+        for pool in pools
+        for group_id in torch.unique(ids[pool.any(dim=0)])
+    )
+    for selected in selections:
         scores = chunk_scores[selected]
         unit = (scores - scores.min()) / (
             scores.max() - scores.min() + float(minmax_eps)
         )
+        if direction == "advantage_sign":
+            unit = torch.where(adv[selected] < 0, -unit, unit)
         mass = contributions[selected]
         # Rescaling mass leaves the weighted center unchanged and avoids an
         # overflowing sum when the actor contribution coefficients are large.

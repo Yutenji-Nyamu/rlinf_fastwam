@@ -25,7 +25,7 @@ from common import actors, gpus, proc, read, save
 
 p = argparse.ArgumentParser()
 p.add_argument("--plan", required=True)
-p.add_argument("--lane", choices=("u", "norm"), required=True)
+p.add_argument("--lane", choices=("u", "norm", "signed", "positive"), required=True)
 a = p.parse_args()
 plan = read(a.plan)
 assert os.getuid() == plan["uid"]
@@ -34,11 +34,15 @@ request = str(Path(a.plan).with_name(a.lane + "-request.json"))
 q = read(request)
 rt = Path(q["runtime"])
 cfg = read(rt / "resolved.yaml")
-assert cfg["runner"]["max_steps"] == 1 and q["gpus"] == [6, 7]
+assert (
+    cfg["runner"]["max_steps"] == 1
+    and q["gpus"] == plan["gpus"]
+    and q["gpus"] in ([2, 3], [4, 5], [6, 7])
+)
 assert not (rt / "started.json").exists()
 snapshot = gpus()
 scope = read(Path(a.plan).parent / "scope/scope.json")
-for g in (6, 7):
+for g in q["gpus"]:
     assert snapshot[g]["uuid"] == scope["cards"][str(g)]["gpu_uuid"]
     assert not snapshot[g]["processes"], snapshot[g]
 assert not actors(plan, q["namespace"])

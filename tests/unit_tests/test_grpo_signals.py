@@ -230,7 +230,7 @@ def test_legacy_contract_and_wrong_signal_configuration():
         grpo_signal_contract({"signal_source": "ugrow_10_5", "mode": "apply"})
 
 
-@pytest.mark.parametrize("pair", [(4, 5), (6, 7)])
+@pytest.mark.parametrize("pair", [(2, 3), (4, 5), (6, 7)])
 def test_graphics_scope_only_selects_assigned_pair(monkeypatch, pair):
     import importlib.util
 

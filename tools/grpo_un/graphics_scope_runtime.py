@@ -43,9 +43,9 @@ FULL_NODE_MASK = "0,1,2,3,4,5,6,7"
 def select_target(manifest, cuda_visibility):
     """Pure selector; no CUDA import or environment mutation."""
     physical_gpus = manifest.get("physical_gpus")
-    if physical_gpus not in ([4, 5], [6, 7]):
+    if physical_gpus not in ([2, 3], [4, 5], [6, 7]):
         raise RuntimeError(
-            "Formal scope requires an explicit physical GPU4-5 or GPU6-7 pair"
+            "Formal scope requires an explicit physical GPU2-3, GPU4-5 or GPU6-7 pair"
         )
     cards = manifest.get("cards", {})
     if set(cards) != {str(gpu) for gpu in physical_gpus}:
