@@ -45,7 +45,7 @@ def summarize(root, condition):
     result = {
         "condition": condition,
         "takeover_mode": decisions[0].get("takeover_mode", "weights"),
-        "fraction_definition": "decision fraction and submitted-action fraction; C20 is original model with earlier re-observation",
+        "fraction_definition": "selected decisions / active decisions; selected submitted actions / all submitted actions",
         "episodes": n,
         "successes": k,
         "success_rate": k / n,

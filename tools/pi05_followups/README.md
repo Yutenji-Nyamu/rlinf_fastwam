@@ -34,7 +34,10 @@ smoke, signal/video check, or GPU cleanup stops dependent work. Existing lane
 limits remain600s stalled/3600s per batch; physics and shared Ray are untouched.
 
 Entry: `prepare.py <pooled-early-calibration.json>`, then
-`sequence.py /data/chenyiteng/deployment-20261019/pi05-noise-early-c20-sz1-v1`.
+`sequence.py /data/chenyiteng/deployment-20261019/pi05-noise-early-c20-sz1-v2`.
+Preparation uses `PI05_FOLLOWUP_VERSION=v2`. The v1 smoke stopped before
+simulation because the new archive export cast native float64 actions to
+float32. Export now preserves their dtype; v1 evidence is retained separately.
 The exact launch needs prepared configs, verified predecessor identity,
 graphics/compute environment and the one-time scheduler cutover receipt.
 `continue.json` is written by the controlling session only after actual smoke
