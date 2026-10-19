@@ -265,3 +265,21 @@ def ugrow_10_vs_5(
         coordinate_score = numerator / (denominator + epsilon)
         score = np.mean(coordinate_score, axis=-1)
     return _finish(score, valid)
+
+
+def noise_disagreement(actions: np.ndarray, *, epsilon: float = 1e-8) -> SignalScore:
+    """Same-budget, different-noise dispersion for [B,K,H,D] final actions.
+
+    Use population std across K samples divided by their RMS, then average
+    real action coordinates. This generalizes the existing two-output U
+    statistic; it does not compare solver budgets or choose an executed action.
+    """
+    values = _array(actions, 4, "actions[B,K,H,D]")
+    epsilon = _epsilon(epsilon)
+    if values.shape[1] < 2:
+        raise ValueError("At least two noise samples are required")
+    valid = np.all(np.isfinite(values), axis=(1, 3))
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        score = np.mean(np.std(values, axis=1, ddof=0) /
+                        (np.sqrt(np.mean(values * values, axis=1)) + epsilon), axis=-1)
+    return _finish(score, valid)

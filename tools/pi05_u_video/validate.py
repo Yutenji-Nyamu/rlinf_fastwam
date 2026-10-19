@@ -9,7 +9,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
-from signal_math import ugrow_10_vs_5
+from signal_math import noise_disagreement, ugrow_10_vs_5
 
 
 def validate(config):
@@ -44,9 +44,21 @@ def validate(config):
             score = ugrow_10_vs_5(z["final_model_action"], z["side_action_model"])
             assert score.score.shape == (16, 50)
             assert np.array_equal(score.score, z["u"]) and score.valid.all()
+            if c.get("noise_samples") == 4:
+                assert z["noise4_model_actions"].shape == (16, 4, 50, 14)
+                assert np.array_equal(z["noise4_model_actions"][:, 0], z["final_model_action"])
+                assert np.array_equal(z["noise4_env_actions"][:, 0], z["env_action"])
+                assert np.array_equal(z["noise4_initial_noise"][:, 0], z["initial_noise_full"])
+                dispersion = noise_disagreement(z["noise4_model_actions"])
+                assert dispersion.valid.all() and np.array_equal(dispersion.score, z["noise4_u"])
+                assert all(not np.array_equal(z["noise4_initial_noise"][:, a], z["noise4_initial_noise"][:, b])
+                           for a in range(4) for b in range(a + 1, 4))
     if c["acceptance"]:
         parity = json.loads((out / "u-parity.json").read_text())
         assert parity["action_exact"] and parity["rng_exact"]
+        if c.get("noise_samples") == 4:
+            parity = json.loads((out / "noise4-parity.json").read_text())
+            assert parity["main_action_exact"] and parity["rng_exact"]
     result = dict(time=time.time(), passed=True, video_passed=True, episodes=16,
                   decoded=checked, queries=done["queries"], successes=done["successes"])
     (out / "validation.json").write_text(json.dumps(result, indent=2))

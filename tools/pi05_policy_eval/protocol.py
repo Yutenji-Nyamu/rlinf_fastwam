@@ -41,8 +41,12 @@ def validate_config(c):
     assert c.get("takeover_mode", "weights") in ("weights", "c20")
     if c.get("takeover_mode") == "c20":
         assert c["policy"] in ("high", "low", "random")
+        assert c["execute_chunk"] == 50
     if c["policy"] in ("calibration", "high", "low", "random"):
-        assert c["num_steps"] == 10 and c["execute_chunk"] == 50
+        assert c["num_steps"] == 10 and c["execute_chunk"] in (20, 50)
+    assert c.get("max_takeover_queries") in (None, 2)
+    if c.get("max_takeover_queries") is not None:
+        assert c["policy"] in ("high", "low", "random")
 
 
 def execution_lengths(selected, active, counts, chunk=50, limit=200, mode="weights"):
@@ -88,7 +92,7 @@ def configure_recording_wait(env, seconds=300):
     env.venv.step = types.MethodType(namespace[original.__name__], env.venv)
 
 
-def choose(policy, u, active, threshold, random_values):
+def choose(policy, u, active, threshold, random_values, *, query=0, max_takeover_queries=None):
     """Choose complete strong chunks only for active environments."""
     if policy == "strong":
         selected = np.ones_like(active)
@@ -100,7 +104,8 @@ def choose(policy, u, active, threshold, random_values):
         selected = random_values < 1 / 3
     else:
         selected = np.zeros_like(active)
-    return selected & active
+    eligible = max_takeover_queries is None or query < max_takeover_queries
+    return selected & active & eligible
 
 
 def thresholds(query_files):

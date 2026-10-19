@@ -13,8 +13,9 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
-from signal_math import ugrow_10_vs_5
+from signal_math import noise_disagreement, ugrow_10_vs_5
 from recording import Recorder
+from noise_samples import collect_noise_samples
 
 
 def read(path):
@@ -53,6 +54,8 @@ def run(path):
     from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
 
     c = read(path)
+    noise4 = c.get("noise_samples", 0) == 4
+    assert c.get("noise_samples", 0) in (0, 4)
     assert c["num_envs"] == 16 and c["model"]["num_action_chunks"] == 50
     assert os.environ["CUDA_VISIBLE_DEVICES"] == os.environ["DOJO_GPU_SCOPE"] == str(c["gpu"])
     out = Path(c["output"])
@@ -82,6 +85,17 @@ def run(path):
         assert torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state())
         assert float(result["dvac_telemetry"]["side_final_time"]) == 0
         save(out / "u-parity.json", {"action_exact": True, "rng_exact": True, "side_final_time": 0})
+        if noise4:
+            observed = collect_noise_samples(model, dummy, result["dvac_telemetry"], b,
+                                             c["noise_seed"] + 440000003)
+            assert np.array_equal(observed["noise4_env_actions"][:, 0], array(b))
+            assert torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state())
+            assert observed["noise4_model_actions"].shape == (16, 4, 50, 14)
+            assert noise_disagreement(observed["noise4_model_actions"]).valid.all()
+            save(out / "noise4-parity.json", {"main_action_exact": True, "rng_exact": True,
+                 "samples": 4, "extra_batch": 48, "num_steps": 10,
+                 "cuda_peak_bytes": torch.cuda.max_memory_allocated()})
+            del observed
         del b, result
     del dummy, a
     env, recorders = None, []
@@ -123,6 +137,12 @@ def run(path):
             action = array(actions)
             assert action.shape == (16, 50, 14) and np.isfinite(action).all()
             data.update(env_action=action, u=score.score, u_valid=score.valid, active=active, before=before)
+            if noise4:
+                data.update(collect_noise_samples(model, obs, trace, actions,
+                            c["noise_seed"] + 440000003 + 1009 * q))
+                dispersion = noise_disagreement(data["noise4_model_actions"])
+                assert dispersion.valid.all()
+                data.update(noise4_u=dispersion.score, noise4_valid=dispersion.valid)
             inference_seconds = time.perf_counter() - tic
             np.savez_compressed(out / f"query_{q:03d}_obs.npz", **input_obs)
             # Signals survive a task error; completeness still requires done+validation.
@@ -167,7 +187,9 @@ def run(path):
     save(out / "done.json", dict(time=time.time(), elapsed_seconds=time.time() - start,
                                   episodes=16, successes=int(success.sum()), queries=len(queries),
                                   video="25Hz simulated timeline plus query endpoints; every control step mapped",
-                                  u="same observation/full noise M10 vs M5, H50 D14"))
+                                  u="same observation/full noise M10 vs M5, H50 D14",
+                                  noise_samples=4 if noise4 else 0,
+                                  noise_signal="population std / RMS across four N10 samples; mean D14" if noise4 else None))
 
 
 if __name__ == "__main__":

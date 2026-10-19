@@ -25,6 +25,7 @@ python = '/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python'
 env = dict(os.environ, **read(O / f'environment-g{g}.json'), U_VIDEO_TOKEN=f'{D.name}-g{g}')
 child = None
 started_gpu = False
+prior_acceptance = Path(os.environ['U_VIDEO_ACCEPTED_TRANSACTION']) if os.environ.get('U_VIDEO_ACCEPTED_TRANSACTION') else None
 save(D / f'lane-g{g}-identity.json', me)
 
 
@@ -64,6 +65,8 @@ def index():
     with (D / 'index.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         rows = [read(path) for path in sorted(D.glob('*_b*-result.json'))]
+        if prior_acceptance:
+            rows += [read(path) for path in sorted(prior_acceptance.glob('*_b*-result.json'))]
         save(O / 'summary.json', dict(time=time.time(), validated_batches=sum(r['state'] == 'VALIDATED' for r in rows),
                                       episodes=16 * sum(r['state'] == 'VALIDATED' for r in rows),
                                       failed_batches=sum(r['state'] == 'FAILED' for r in rows), batches=rows))
@@ -78,6 +81,10 @@ try:
         time.sleep(15)
     assert not gpus()[int(g)]['processes'], 'Predecessor has not cleared its assigned card'
     accepted = False
+    if prior_acceptance:
+        prior = read(prior_acceptance / f'acceptance-g{g}.json')
+        assert prior['validation']['passed'] and prior['validation']['video_passed']
+        accepted = True
     failed = []
     for job in plan['jobs']:
         if list(D.glob('lane-g*-error.json')):

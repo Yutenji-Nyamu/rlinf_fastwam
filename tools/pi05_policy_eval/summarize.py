@@ -61,14 +61,26 @@ def summarize(root, condition):
         / sum(d["end"] - d["start"] for d in decisions),
         "source_batches": [str(p.parent) for p in paths],
     }
-    base = root / "summaries/weak_n10_c50-episodes.json"
-    if base.exists() and condition != "calibration":
+    eligible = [d for d in decisions if d.get("eligible", True)]
+    result["eligible_decisions"] = len(eligible)
+    result["eligible_strong_fraction"] = sum(d["strong"] for d in eligible) / len(eligible) if eligible else 0
+    for label, subset in [("first_two", [d for d in decisions if d["query"] < 2]),
+                          ("later", [d for d in decisions if d["query"] >= 2])]:
+        result[label] = {"decisions": len(subset), "strong": sum(d["strong"] for d in subset),
+                         "fraction": sum(d["strong"] for d in subset) / len(subset) if subset else 0}
+    config = read(paths[0].with_name("config.json"))
+    baseline = config.get("comparison_baseline", "weak_n10_c50")
+    result["execute_chunk"] = config["execute_chunk"]
+    result["max_takeover_queries"] = config.get("max_takeover_queries")
+    base = root / f"summaries/{baseline}-episodes.json"
+    if base.exists() and condition not in ("calibration", baseline):
         w = {e["actual"]: e for e in read(base)}
         other = {e["actual"]: e for e in episodes}
         matched = sorted(set(w) & set(other))
         gain = sum(not w[s]["success"] and other[s]["success"] for s in matched)
         loss = sum(w[s]["success"] and not other[s]["success"] for s in matched)
         result["paired_with_weak"] = {
+            "baseline": baseline,
             "matched": len(matched),
             "gained": gain,
             "lost": loss,

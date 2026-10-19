@@ -30,7 +30,9 @@ R = Path(__file__).resolve().parents[2]
 O = Path(os.environ["POLICY_EVAL_ROOT"])
 D = Path(os.environ["POLICY_EVAL_TRANSACTION"])
 g = sys.argv[1]
-assert g in ("6", "7") and os.getuid() == int(os.environ.get("POLICY_EVAL_UID", "1003"))
+cards = os.environ.get("POLICY_EVAL_GPUS", "6,7").split(",")
+assert len(cards) == 2 and g in cards and os.getuid() == int(os.environ.get("POLICY_EVAL_UID", "1003"))
+peer = next(card for card in cards if card != g)
 me = proc(os.getpid())
 env = dict(
     os.environ, **read(O / f"environment-g{g}.json"), POLICY_EVAL_TOKEN=f"{D.name}-g{g}"
@@ -169,8 +171,8 @@ try:
             D / f"lane-g{g}-status.json",
             {"time": time.time(), "phase": "CONDITION_BARRIER", "condition": name},
         )
-        wait_for(D / f"{name}-g{13 - int(g)}-complete.json")
-        if g == "6":
+        wait_for(D / f"{name}-g{peer}-complete.json")
+        if g == cards[0] and stage.get("summarize", True):
             # This summarizer never creates a CUDA context.
             subprocess.run(
                 [
@@ -185,6 +187,8 @@ try:
                 check=True,
             )
             save(D / f"{name}-ready.json", {"time": time.time()})
+        elif g == cards[0]:
+            save(D / f"{name}-ready.json", {"time": time.time(), "smoke_only": True})
         else:
             wait_for(D / f"{name}-ready.json", seconds=300)
     save(

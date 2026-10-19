@@ -81,11 +81,11 @@ def run(config):
     policy, batch = c["policy"], c["num_envs"]
     takeover = c.get("takeover_mode", "weights")
     full_video = c.get("record_full_video", False)
-    signals = policy in ("calibration", "high", "low", "random")
+    signals = policy in ("calibration", "high", "low", "random") or c.get("collect_weak_u", False)
     need_strong = policy in ("strong", "high", "low", "random") and takeover == "weights"
     weak = (
         None
-        if policy == "strong"
+        if policy == "strong" and not c.get("collect_weak_u", False)
         else get_model(OmegaConf.create(c["model"])).cuda().eval()
     )
     strong = None
@@ -240,6 +240,8 @@ def run(config):
                 active,
                 threshold,
                 np.random.default_rng(c["gate_seed"] + query).random(batch),
+                query=query,
+                max_takeover_queries=c.get("max_takeover_queries"),
             )
             if strong is not None and selected.any():
                 # Full fixed batch retains slot identity and same natural noise.
@@ -297,6 +299,7 @@ def run(config):
                         "u": float(u[slot]) if u is not None else None,
                         "strong": bool(selected[slot]),
                         "takeover_mode": takeover,
+                        "eligible": c.get("max_takeover_queries") is None or query < c["max_takeover_queries"],
                         "start": int(before[slot]),
                         "end": int(counts[slot]),
                         "offered_actions": int(lengths[slot]),
