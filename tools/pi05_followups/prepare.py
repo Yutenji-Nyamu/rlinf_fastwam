@@ -13,7 +13,9 @@ from protocol import read,save,validate_config
 from threshold_sweep import conditions
 from calibration_pool import collect,deduplicate
 
-D=Path('/data/chenyiteng/deployment-20261019/pi05-noise-early-c20-sz1-v1')
+VERSION=os.environ.get('PI05_FOLLOWUP_VERSION','v1')
+assert VERSION in ('v1','v2')
+D=Path('/data/chenyiteng/deployment-20261019')/f'pi05-noise-early-c20-sz1-{VERSION}'
 BASE=Path('/data/chenyiteng/results')
 OLD=BASE/'pi05-policy-eval/pillbottle-strong-c20-20261017-v3'
 UV=BASE/'pi05-u-video/20261017-v1'
@@ -22,11 +24,11 @@ CARDS=(4,5)
 CANDIDATES=('grpo_u_tau1_cp180','grpo_u_tau2_cp160','grpo_u_tau2_cp150',
             'grpo_u_tau3_cp70','clean_c17_cp140','clean_c15_cp160')
 ROOTS={
- 'noise':BASE/'pi05-noise-video/20261019-sz1-v1',
- 'smoke':BASE/'pi05-policy-eval/pillbottle-followup-smoke-20261019-v1',
- 'early':BASE/'pi05-policy-eval/pillbottle-early2-20261019-v1',
- 'rank':BASE/'pi05-policy-eval/pillbottle-c20-rank-20261019-v1',
- 'c20':BASE/'pi05-policy-eval/pillbottle-c20-sweep-20261019-v1',
+ 'noise':BASE/f'pi05-noise-video/20261019-sz1-{VERSION}',
+ 'smoke':BASE/f'pi05-policy-eval/pillbottle-followup-smoke-20261019-{VERSION}',
+ 'early':BASE/f'pi05-policy-eval/pillbottle-early2-20261019-{VERSION}',
+ 'rank':BASE/f'pi05-policy-eval/pillbottle-c20-rank-20261019-{VERSION}',
+ 'c20':BASE/f'pi05-policy-eval/pillbottle-c20-sweep-20261019-{VERSION}',
 }
 
 
@@ -78,10 +80,11 @@ def make_stages(root,transaction,specs):
         save(transaction/f'lane-g{g}-plan.json',{'gpu':g,'stages':stages})
 
 
-def prepare(pool_path):
+def prepare(pool_path,predecessor_plan=None):
     assert os.getuid()==1003 and not(D/'prepared.json').exists()
     D.mkdir(parents=True,exist_ok=True)
-    plan=read(S/'plan.json')
+    scheduler_plan=read(S/'plan.json')
+    plan=predecessor_plan or scheduler_plan
     for g in ('4','5'):
         assert 'expo-clean-entropy-b64-sz1-g45-60000-1015' in plan['slots'][g]['external_release']
     pool=read(pool_path);assert pool['unique_decisions']>0
@@ -129,7 +132,8 @@ def prepare(pool_path):
         p=policy_config(ROOTS['smoke'],'smoke_early' if g==4 else 'smoke_c20',g-4,'high',
                         50 if g==4 else 20,cp,2 if g==4 else None,{'high':median})
         save(D/'switch-smoke'/f'lane-g{g}-plan.json',{'gpu':g,'stages':[{'condition':'smoke','configs':[p],'summarize':False}]})
-    q=dict(time=time.time(),source=str(R),transaction=str(D),roots={k:str(v)for k,v in ROOTS.items()},
+    q=dict(time=time.time(),version=VERSION,source=str(R),transaction=str(D),roots={k:str(v)for k,v in ROOTS.items()},
+           scheduler_plan_before=scheduler_plan,
            plan_before=plan,physical_gpus=list(CARDS),uid=1003,candidates=list(CANDIDATES),
            phase_order=['noise-smoke','switch-smoke','noise-full','early','c20-rank','c20-sweep','RLT'],
            early_conditions=len(specs),rank_conditions=len(rank),c20_sweep_conditions=30)
@@ -166,4 +170,4 @@ def prepare_c20():
 
 if __name__=='__main__':
     if sys.argv[1]=='c20':prepare_c20()
-    else:prepare(sys.argv[1])
+    else:prepare(sys.argv[1],read(sys.argv[2])['plan_before'] if len(sys.argv)>2 else None)

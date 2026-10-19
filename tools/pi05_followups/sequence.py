@@ -95,7 +95,7 @@ try:
     phase('c20-rank','policy',ROOTS['rank'])
     with(D/'c20-prepare.log').open('x')as log:
         child=subprocess.Popen([PY,'-u','-B',str(R/'tools/pi05_followups/prepare.py'),'c20'],
-              cwd=R,env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),stdout=log,stderr=subprocess.STDOUT)
+              cwd=R,env=dict(os.environ,CUDA_VISIBLE_DEVICES='',PI05_FOLLOWUP_VERSION=p.get('version','v1')),stdout=log,stderr=subprocess.STDOUT)
         children=[child];assert child.wait(timeout=300)==0,'C20 calibration/selection preparation failed'
     if not(D/'c20-not-stronger.json').exists():phase('c20-sweep','policy',ROOTS['c20'])
     clear=clearance();assert all(clear['cards_clear'].values())

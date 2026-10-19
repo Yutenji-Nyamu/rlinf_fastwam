@@ -3,6 +3,12 @@ import numpy as np
 import torch
 
 
+def numpy_exact(value):
+    """Preserve the environment action dtype; only NumPy-unsupported bf16 casts."""
+    value=value.detach().cpu()
+    return (value.float() if value.dtype==torch.bfloat16 else value).numpy()
+
+
 def repeated_observation(obs, copies):
     """Sample-major ordering: all B slots for sample1, then sample2, etc."""
     result = {}
@@ -39,7 +45,7 @@ def collect_noise_samples(model, obs, main_trace, main_actions, seed):
         final = result["dvac_telemetry"]["final_model_action"]
         def stack(main, extra):
             extra = extra.reshape(3, batch, *extra.shape[1:]).transpose(0, 1)
-            return torch.cat([main[:, None], extra], dim=1).detach().float().cpu().numpy()
+            return numpy_exact(torch.cat([main[:, None], extra], dim=1))
         return {
             "noise4_initial_noise": stack(initial, noise),
             "noise4_model_actions": stack(main_trace["final_model_action"], final),
