@@ -21,6 +21,14 @@ DEVICE_ERRORS = (
 )
 
 
+def check_policy_port_available(port):
+    # Match the WebSocket server: allow a closed connection's TIME_WAIT,
+    # while still rejecting a live listener on the same port.
+    with socket.socket() as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("127.0.0.1", port))
+
+
 def device_fault(log):
     if not log.exists():
         return False
@@ -108,8 +116,7 @@ def run(config):
 
     signal.signal(signal.SIGTERM, stop)
     try:
-        with socket.socket() as s:
-            s.bind(("127.0.0.1", c["policy"]["port"]))
+        check_policy_port_available(c["policy"]["port"])
         policy = launch(
             [
                 c["policy_python"],

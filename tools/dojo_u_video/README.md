@@ -67,6 +67,13 @@ Formal tasks use their finite 125-episode/native-action budgets and progress
 timeouts. They have no additional three-hour cutoff: five healthy N25 batches
 may legitimately take longer. A smoke may specify its own absolute timeout.
 
+An isolated deployment must keep the sibling `pi05_signals/signal_math.py`
+module used by both inference and validation. Copy the accepted implementation.
+The port availability check uses the same address-reuse setting as the WebSocket
+server: a closed connection in TIME_WAIT does not skip the next task, while a
+live listener remains an error. `test_ports.py` checks both cases on real local
+sockets without loading a model or using a GPU.
+
 ## Output
 
 `episodes/layout_NNNNN/` is keyed by **episode ID**, not the source layout number:
