@@ -1,0 +1,44 @@
+# 四噪声信号：绘图取数入口
+
+本轮沿用已成功的RoboTwin U＋完整视频采集，50任务×32回合、每卡16并行、原任务预算。当前执行与状态见[15](EXECUTION.md)。这里解释如何取数，不另开实验。
+
+## 两条信号的区别
+
+- `u`：同一观察、同一初始噪声，分别完整推理10步和5步，比较两个动作输出；沿用原实现。
+- `noise4_u`：同一观察，4种不同初始噪声均完整推理10步，比较4个动作输出。第0份就是实际执行的原样本，另外3份只供观察。
+- 两者都保留预测块内每个动作的位置，对真实14维动作坐标取平均。每个坐标用“各输出的总体标准差／均方根”衡量分歧；不是用环境物理单位直接混算。
+- 4样本与2样本的数值尺度可能不同，不能仅凭曲线更高判断更好。它们是否更接近失误、动作变化等现象，要在相同轨迹上比较。
+
+## 文件在哪里
+
+深圳1：`/data/chenyiteng/results/pi05-noise-video/20261019-sz1-v2`。
+
+每个任务两批：`batches/<task>_b0`与`batches/<task>_b1`，各16回合。每批须有`done.json`和通过的`validation.json`才算完整采集；报错批保留原产物，不能冒充完整轨迹。
+
+“query”表示一次重新观察并生成50个预测动作。每批文件：
+
+| 文件/字段 | 用途 |
+|---|---|
+| `episodes.json` | slot、请求/实际种子、成功标记、视频及帧映射路径 |
+| `query_000.npz`里的`u`、`noise4_u` | `[16,50]`，同批16个slot，每个50个逐动作信号；后续query递增 |
+| `noise4_model_actions` | `[16,4,50,14]`，4份模型坐标中的完整动作输出 |
+| `noise4_env_actions` | `[16,4,50,14]`，4份转换到环境坐标的动作；第0份等于原`env_action` |
+| `noise4_initial_noise` | `[16,4,50,32]`，完整初始噪声，包括模型原有补齐维度 |
+| `noise4_seed` | 额外3份噪声的独立随机种子 |
+| `initial_noise_full`、`final_model_action`、`side_action_model` | 原U的同噪声N10/N5原始输出，继续保留 |
+| `active`、`before`、`after`、`success_after` | 本query开始时哪些slot有效、动作计数和执行后成功状态 |
+| `query_000_obs.npz` | 当次主相机/腕部图像、机器人状态；任务文字在`queries.json` |
+| `episode_00.mp4` | slot0完整主相机视频，25Hz仿真时间采样，并保存块末/成功末帧 |
+| `episode_00_frames.json` | 每帧的query、物理步tick、时间与末帧状态 |
+| `episode_00_control.jsonl` | 每个物理控制步的左右臂动作位置投影 |
+| `q000_s00_controller.npz` | 原动作路径、控制器压缩路径、目标与投影误差，沿用原DV/U录像实现 |
+
+## 画图时保持三条约束
+
+1. 用同一个`task/batch/slot/actual seed`串起两条信号、控制映射和视频。不要只用成功率表中的行号猜是哪段视频。
+2. 保留逐动作曲线。成功或终止后仍预测出的尾部不等于实际执行过；结合`active`、动作计数与控制映射筛选实际执行部分。`before/after`是动作计数，不是物理步，也不是视频帧号。
+3. 先选曲线峰值或阶段变化，再通过控制映射找到同一回合的真实帧，逐张目检。左右臂的投影分别保存且是几何近似，不能声称一个预测动作与一个物理帧严格一一对应。
+
+首批验收任务为turn_switch b0和adjust_bottle b1，已计入正式1600回合，不重复采集。完整解码、信号重算和末帧检查通过；中帧/末帧抽看正常。首批中位数仅作取数自检：原U约0.010–0.011，四噪声信号约0.060–0.063，不能据此判断哪个信号更有效。
+
+源码：`tools/pi05_u_video/noise_samples.py`、`run_batch.py`、`recording.py`；公式在`tools/pi05_signals/signal_math.py`。公开分支：[codex/pi05-noise-early-c20-20261019](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/codex/pi05-noise-early-c20-20261019)。完整视频及原始大数组在服务器，公开轻量归档保留配置、种子、阈值、验收和绘图相关JSON。

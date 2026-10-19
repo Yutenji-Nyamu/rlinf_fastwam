@@ -42,3 +42,6 @@ The exact launch needs prepared configs, verified predecessor identity,
 graphics/compute environment and the one-time scheduler cutover receipt.
 `continue.json` is written by the controlling session only after actual smoke
 and public-source publication; it is not a request for another user approval.
+
+Execution and small evidence: [record](../../docs/experiments/pi05-followups-20261019/EXECUTION.md).
+Action-level signal/video fields: [plotting handoff](../../docs/experiments/pi05-followups-20261019/PLOTTING.md).
