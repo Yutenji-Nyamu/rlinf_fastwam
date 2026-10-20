@@ -68,6 +68,12 @@ def run(path):
     torch.backends.cuda.enable_cudnn_sdp(False)
     model = get_model(OmegaConf.create(c["model"])).cuda().eval()
     model._signal_observer = Endpoints()
+    attention = None
+    if c.get("attention_objects"):
+        sys.path.insert(0, str(ROOT / "tools/pi05_attn_objects"))
+        from observer import ObjectAttentionObserver
+        from analysis import reconstruct
+        attention = ObjectAttentionObserver(model)
     dummy = {"main_images": torch.zeros((16, 224, 224, 3), dtype=torch.uint8),
              "wrist_images": torch.zeros((16, 2, 224, 224, 3), dtype=torch.uint8),
              "extra_view_images": None, "states": torch.zeros((16, 14)),
@@ -107,6 +113,10 @@ def run(path):
         assert not ec.auto_reset and ec.ignore_terminations and not ec.video_cfg.save_video
         env = RoboTwinEnv(ec, 16, 0, 1, None)
         obs, _ = env.reset()
+        if attention and c["task"] in ("open_laptop", "place_object_scale", "put_object_cabinet"):
+            # Accepted native metadata repair from the 20261012 attention run.
+            for sub in env.venv.envs:
+                sub.task.get_info()
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]
         seeds = [dict(slot=i, requested=int(requested[i]), actual=actual[i],
@@ -128,8 +138,49 @@ def run(path):
             descriptions = list(obs["task_descriptions"])
             save(out / "progress.json", {"time": time.time(), "phase": "inference", "query": q})
             tic = time.perf_counter()
+            reference = bool(attention and q == 0 and c["acceptance"])
+            if reference:
+                cpu, cuda = torch.get_rng_state(), torch.cuda.get_rng_state()
+                baseline_actions, baseline = infer(model, obs, True)
+                cpu_after, cuda_after = torch.get_rng_state(), torch.cuda.get_rng_state()
+                torch.set_rng_state(cpu)
+                torch.cuda.set_rng_state(cuda)
+            if attention:
+                attention.begin(reference=reference)
             actions, result = infer(model, obs, True)
             trace = result["dvac_telemetry"]
+            if attention:
+                raw, metadata = attention.finish(result, actions)
+                if reference:
+                    parity = dict(
+                        action_exact=torch.equal(actions, baseline_actions),
+                        chain_exact=torch.equal(result["forward_inputs"]["chains"], baseline["forward_inputs"]["chains"]),
+                        u_endpoints_exact=torch.equal(trace["side_action_model"], baseline["dvac_telemetry"]["side_action_model"]),
+                        rng_exact=torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state()),
+                    )
+                    assert all(parity.values()), parity
+                    del baseline_actions, baseline
+                score_started = time.perf_counter()
+                attention_data, attention_report = reconstruct(raw, metadata, device="cuda")
+                metadata.update(attention_report, query=q, task=c["task"], task_descriptions=descriptions,
+                                actual_seeds=actual, requested_seeds=requested,
+                                score_seconds=time.perf_counter() - score_started,
+                                execution_mapping="episode_XX_control.jsonl + episode_XX_frames.json; inactive/tail excluded",
+                                raw=f"query_{q:03d}_attention.pt", scores=f"query_{q:03d}_attention.npz")
+                if reference:
+                    save(out / "attention-parity.json", dict(parity, **{k: v for k, v in attention_report.items() if k != "annotations"}))
+                raw.update(active=torch.from_numpy(active), before=torch.from_numpy(before))
+                save(out / f"query_{q:03d}_attention.json", metadata)
+                # One write per raw query; later execution comes from the existing
+                # query NPZ/control log. Do not reread whole trajectories.
+                write_started = time.perf_counter()
+                torch.save(raw, out / f"query_{q:03d}_attention.pt")
+                np.savez_compressed(out / f"query_{q:03d}_attention.npz", **attention_data)
+                metadata.update(write_seconds=time.perf_counter() - write_started,
+                                raw_bytes=(out / f"query_{q:03d}_attention.pt").stat().st_size,
+                                cuda_peak_bytes=torch.cuda.max_memory_allocated())
+                save(out / f"query_{q:03d}_attention.json", metadata)
+                del raw, attention_data
             data = {k: array(trace[k]) for k in ("initial_noise_full", "final_model_action",
                     "side_action_model", "side_timesteps", "side_final_time", "x_chain")}
             score = ugrow_10_vs_5(data["final_model_action"], data["side_action_model"])
@@ -137,6 +188,8 @@ def run(path):
             action = array(actions)
             assert action.shape == (16, 50, 14) and np.isfinite(action).all()
             data.update(env_action=action, u=score.score, u_valid=score.valid, active=active, before=before)
+            if attention:
+                data["dv"] = array(trace["z_endpoint"]).astype(np.float64)[:, -5:].var(axis=1).sum(-1)
             if noise4:
                 data.update(collect_noise_samples(model, obs, trace, actions,
                             c["noise_seed"] + 440000003 + 1009 * q))
@@ -178,6 +231,8 @@ def run(path):
                          frame_map=f"episode_{i:02d}_frames.json") for i in range(16)]
         save(out / "episodes.json", episodes)
     finally:
+        if attention:
+            attention.close()
         if env is not None:
             env.venv.env_thread_pool.shutdown(wait=True)
         for recorder in recorders:
@@ -198,5 +253,8 @@ if __name__ == "__main__":
     except BaseException:
         out = Path(read(sys.argv[1])["output"])
         if out.exists():
-            save(out / "error.json", {"time": time.time(), "error": traceback.format_exc()})
+            error = traceback.format_exc()
+            save(out / "error.json", {"time": time.time(), "error": error})
+            if "pi05_attn_objects" in error:
+                save(out / "attention_error.json", {"time": time.time(), "error": error})
         raise

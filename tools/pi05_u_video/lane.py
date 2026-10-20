@@ -124,6 +124,8 @@ try:
         if rc == 78:
             raise RuntimeError('Graphics bootstrap rejected startup; stop instead of skipping tasks')
         if rc != 0:
+            if (out / 'attention_error.json').exists():
+                raise RuntimeError('Attention method validation failed; do not skip through the dataset')
             failed.append(str(path))
             save(D / f'{out.name}-result.json', dict(time=time.time(), config=str(path), state='FAILED',
                                                     returncode=rc, clearance=clear))

@@ -86,10 +86,20 @@ def run(config):
     weak = (
         None
         if policy == "strong" and not c.get("collect_weak_u", False)
-        else get_model(OmegaConf.create(c["model"])).cuda().eval()
+        else get_model(OmegaConf.create(c["model"]))
     )
     strong = None
     if weak is not None:
+        if c.get("weak_weights"):
+            state = torch.load(c["weak_weights"], map_location="cpu", weights_only=True)
+            loaded = weak.load_state_dict(state, strict=True)
+            del state
+            save(out / "weak-loaded.json", {
+                "path": c["weak_weights"], "strict": True,
+                "missing_keys": list(loaded.missing_keys),
+                "unexpected_keys": list(loaded.unexpected_keys),
+            })
+        weak = weak.cuda().eval()
         weak._signal_observer = EndpointOnly()
     if need_strong:
         # Same base model/wrappers/normalization; use the rollout worker's

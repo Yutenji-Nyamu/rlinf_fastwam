@@ -16,12 +16,13 @@ from protocol import read, save, validate_config
 FRACTIONS = (0.10, 0.90, 0.30, 0.70, 0.50, 0.05, 0.95, 0.20, 0.80, 0.40, 0.60, 0.15, 0.85, 0.25, 0.75)
 
 
-def conditions(calibration):
-    """Return 30 frozen gates; target fractions refer only to calibration."""
+def conditions(calibration, fractions=FRACTIONS):
+    """Return frozen gates; target fractions refer only to calibration."""
     values = np.asarray([row["u"] for row in calibration], dtype=float)
     assert len(values) and np.isfinite(values).all()
     rows = []
-    for fraction in FRACTIONS:
+    assert len(set(fractions)) == len(fractions) and all(0 < f < 1 for f in fractions)
+    for fraction in fractions:
         for policy in ("high", "low"):
             quantile = 1 - fraction if policy == "high" else fraction
             threshold = float(np.quantile(values, quantile))

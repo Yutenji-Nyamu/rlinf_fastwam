@@ -59,6 +59,18 @@ def validate(config):
         if c.get("noise_samples") == 4:
             parity = json.loads((out / "noise4-parity.json").read_text())
             assert parity["main_action_exact"] and parity["rng_exact"]
+        if c.get("attention_objects"):
+            parity = json.loads((out / "attention-parity.json").read_text())
+            assert parity["action_exact"] and parity["chain_exact"] and parity["u_endpoints_exact"] and parity["rng_exact"]
+            assert parity["prefix_native_max_error"] == parity["action_native_max_error"] == 0
+    if c.get("attention_objects"):
+        # Lightweight derived files only; raw QK is written once, never reloaded here.
+        for q in range(done["queries"]):
+            meta = json.loads((out / f"query_{q:03d}_attention.json").read_text())
+            assert meta["passed"] and (out / meta["raw"]).is_file()
+            with np.load(out / meta["scores"]) as z:
+                assert z["I_direct"].shape == (16, 10, 50, 6)
+                assert np.allclose(z["I_total"], z["I_direct"] + z["I_via_visual"], equal_nan=True)
     result = dict(time=time.time(), passed=True, video_passed=True, episodes=16,
                   decoded=checked, queries=done["queries"], successes=done["successes"])
     (out / "validation.json").write_text(json.dumps(result, indent=2))

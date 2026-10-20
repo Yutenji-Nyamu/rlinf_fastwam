@@ -19,7 +19,8 @@ def collect(roots, chunk, max_queries=None):
                 c.get('takeover_mode','weights')!='weights' or
                 c.get('env',{}).get('task_config',{}).get('task_name')!='move_pillbottle_pad' or
                 c.get('model',{}).get('openpi',{}).get('action_chunk')!=50):continue
-            weak=c['model']['model_path'];strong=Path(c.get('strong_weights','unused')).parent.name
+            weak=[c['model']['model_path'],c['weak_weights']] if c.get('weak_weights') else c['model']['model_path']
+            strong=Path(c.get('strong_weights','unused')).parent.name
             histories={}
             for d in decisions:
                 slot=d['slot'];prefix=histories.setdefault(slot,[])
