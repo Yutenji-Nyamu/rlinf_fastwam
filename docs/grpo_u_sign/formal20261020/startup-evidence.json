@@ -1,0 +1,514 @@
+{
+  "sz1": {
+    "observed_at": 1792468267.4092917,
+    "owner_alive": true,
+    "grpo": {
+      "status": {
+        "time": 1792466475.0999494,
+        "phase": "GRPO_RUNNING",
+        "runtime": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau1-notrick-pillbottle256-sz1-g67-200-1020/runtime"
+      },
+      "started": {
+        "time": 1792466475.0537057,
+        "identity": {
+          "pid": 948223,
+          "uid": 1003,
+          "start": 535319410,
+          "state": "R"
+        },
+        "request": "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json",
+        "command": [
+          "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+          "-u",
+          "-B",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/source/tools/grpo_un/driver.py",
+          "--plan",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/plan.json",
+          "--request",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json"
+        ]
+      },
+      "config": {
+        "task": null,
+        "max_steps": 200,
+        "weighting": {
+          "mode": "apply",
+          "application": "chunk_clipped_action_advantage",
+          "selected_l": 3,
+          "warmup_steps": 1,
+          "window_steps": 5,
+          "log_eps": 1e-12,
+          "std_floor": 1e-06,
+          "z_clip": 2.0,
+          "strength": 0.5,
+          "weight_min": null,
+          "weight_max": null,
+          "save_step_tensors": true,
+          "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau1-notrick-pillbottle256-sz1-g67-200-1020/dvac_train",
+          "normalization": "two_level_group",
+          "scope": "both",
+          "mapping": "exp_mean",
+          "alpha_local": 1.0,
+          "alpha_chunk": 1.0,
+          "temperature_local": 1.0,
+          "temperature_chunk": 1.0,
+          "chunk_dropout": {
+            "enabled": false,
+            "probability": 0.2,
+            "seed": 42
+          },
+          "alpha_schedule": {
+            "enabled": false,
+            "local": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            },
+            "chunk": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            }
+          },
+          "minmax_eps": 1e-06,
+          "signal_source": "ugrow_10_5",
+          "direction": "advantage_sign"
+        },
+        "gpus": [
+          6,
+          7
+        ],
+        "global_batch": 512,
+        "micro_batch": 32,
+        "updates": 2,
+        "training_envs": 64,
+        "rollout_epoch": 4
+      },
+      "log_tail": "��────╮\n├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤\n│ Global Step:    1/200 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.5%                                  │\n│ Elapsed: 23:09 │ ETA: 76:47:43 │ Step Time: 1389.266s                                                                │\n├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│actor/actor/compute_adv=0.037          │actor/actor/recv_traj=1344.6           │actor/actor/sync_model_to_rollout=17.…│\n│actor/run_training=23.713              │actor_training=23.719                  │cal_adv_and_returns=0.044             │\n│env/compute_bootstrap_rewards=0.0019   │env/env/bootstrap_step=953.1           │env/env/send_rollout_trajectories=1.0…│\n│env/env_interact_step=361.4            │env/interact=1343.3                    │env/run_interact_once=1343.3          │\n│generate_rollouts=1347.7               │rollout/generate_one_epoch=1340.6      │rollout/predict=22.660                │\n│rollout/rollout/generate=1347.6        │rollout/sync_model_from_actor=16.883   │step=1389.2                           │\n│sync_weights=17.779                    │                                       │                                      │\n│                                                                                                                      │\n├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│episode_len=200.0                      │num_trajectories=256                   │return=0.34375                        │\n│reward=0.0017187499                    │success_once=0.34375                   │                                      │\n│                                                                                                                      │\n├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│advantages_max=2.475                   │advantages_mean=-0.061                 │advantages_min=-2.475                 │\n│rewards=0.0020                         │                                       │                                      │\n│                                                                                                                      │\n├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤\n│                                                                                                                      │\n│actor/approx_kl=0.365                  │actor/clip_fraction=0.179              │actor/clipped_ratio=0.975             │\n│actor/dual_cliped_ratio=0.0000         │actor/dvac_chunk_factor_std=0.273      │actor/dvac_group_count=32.000         │\n│actor/dvac_local_center_error=3.58e-07 │actor/dvac_negative_adv_mass_ratio=1.0…│actor/dvac_positive_adv_mass_ratio=1.…│\n│actor/dvac_valid_chunks=876.0          │actor/dvac_weight_ess_fraction=0.887   │actor/dvac_weight_max=3.535           │\n│actor/dvac_weight_mean=1.000           │actor/dvac_weight_min=0.249            │actor/dvac_weight_sq_mean=1.128       │\n│actor/entropy_loss=0.0000              │actor/grad_norm=25.788                 │actor/lr=5.00e-06                     │\n│actor/policy_loss=0.025                │actor/policy_loss_abs=0.699            │actor/ratio=0.997                     │\n│actor/ratio_abs=0.282                  │actor/total_loss=0.0031                │                                      │\n│                                                                                                                      │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯\n\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=948527)\u001b[0m \rGenerating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]\n"
+    },
+    "rlt_phases": {
+      "4": "WAIT_EXTERNAL",
+      "5": "WAIT_EXTERNAL",
+      "6": "WAIT_EXTERNAL",
+      "7": "WAIT_EXTERNAL"
+    },
+    "gpu": {
+      "0": {
+        "uuid": "GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070",
+        "processes": []
+      },
+      "1": {
+        "uuid": "GPU-a5db195a-ea49-b641-5355-ea060827f70c",
+        "processes": []
+      },
+      "2": {
+        "uuid": "GPU-4ec384bf-4828-063b-a26e-6812eca09f75",
+        "processes": []
+      },
+      "3": {
+        "uuid": "GPU-2f0e1a8f-d784-6388-4e12-d211c97e9174",
+        "processes": []
+      },
+      "4": {
+        "uuid": "GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5",
+        "processes": [
+          {
+            "pid": 1001327,
+            "type": "C+G"
+          }
+        ]
+      },
+      "5": {
+        "uuid": "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e",
+        "processes": [
+          {
+            "pid": 1001309,
+            "type": "C+G"
+          }
+        ]
+      },
+      "6": {
+        "uuid": "GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2",
+        "processes": [
+          {
+            "pid": 948523,
+            "type": "C"
+          },
+          {
+            "pid": 948527,
+            "type": "C"
+          },
+          {
+            "pid": 948530,
+            "type": "C+G"
+          }
+        ]
+      },
+      "7": {
+        "uuid": "GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba",
+        "processes": [
+          {
+            "pid": 948526,
+            "type": "C"
+          },
+          {
+            "pid": 948529,
+            "type": "C"
+          },
+          {
+            "pid": 948532,
+            "type": "C+G"
+          }
+        ]
+      }
+    },
+    "completed_training_update_observed": true,
+    "note": "Training rollout success is not fixed-seed evaluation success."
+  },
+  "sz2": {
+    "observed_at": 1792468267.4322517,
+    "owner_alive": true,
+    "grpo": {
+      "status": {
+        "time": 1792465976.4002907,
+        "phase": "GRPO_RUNNING",
+        "runtime": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau2-notrick-pillbottle256-sz2-g67-200-1020/runtime"
+      },
+      "started": {
+        "time": 1792465976.3520117,
+        "identity": {
+          "pid": 2949913,
+          "uid": 20001,
+          "start": 527001787,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json",
+        "command": [
+          "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+          "-u",
+          "-B",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/source/tools/grpo_un/driver.py",
+          "--plan",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/plan.json",
+          "--request",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json"
+        ]
+      },
+      "config": {
+        "task": null,
+        "max_steps": 200,
+        "weighting": {
+          "mode": "apply",
+          "application": "chunk_clipped_action_advantage",
+          "selected_l": 3,
+          "warmup_steps": 1,
+          "window_steps": 5,
+          "log_eps": 1e-12,
+          "std_floor": 1e-06,
+          "z_clip": 2.0,
+          "strength": 0.5,
+          "weight_min": null,
+          "weight_max": null,
+          "save_step_tensors": true,
+          "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau2-notrick-pillbottle256-sz2-g67-200-1020/dvac_train",
+          "normalization": "two_level_group",
+          "scope": "both",
+          "mapping": "exp_mean",
+          "alpha_local": 1.0,
+          "alpha_chunk": 1.0,
+          "temperature_local": 2.0,
+          "temperature_chunk": 2.0,
+          "chunk_dropout": {
+            "enabled": false,
+            "probability": 0.2,
+            "seed": 42
+          },
+          "alpha_schedule": {
+            "enabled": false,
+            "local": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            },
+            "chunk": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            }
+          },
+          "minmax_eps": 1e-06,
+          "signal_source": "ugrow_10_5",
+          "direction": "advantage_sign"
+        },
+        "gpus": [
+          6,
+          7
+        ],
+        "global_batch": 512,
+        "micro_batch": 32,
+        "updates": 2,
+        "training_envs": 64,
+        "rollout_epoch": 4
+      },
+      "log_tail": "��──────── Metric Table ────────────────────────────────────────────────────┤\n│ Global Step:    1/200 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.5%                                  │\n│ Elapsed: 24:54 │ ETA: 82:37:01 │ Step Time: 1494.579s                                                                │\n├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│actor/actor/compute_adv=0.062          │actor/actor/recv_traj=1457.1           │actor/actor/sync_model_to_rollout=9.8…│\n│actor/run_training=24.769              │actor_training=24.772                  │cal_adv_and_returns=0.065             │\n│env/compute_bootstrap_rewards=0.0012   │env/env/bootstrap_step=1114.9          │env/env/send_rollout_trajectories=0.7…│\n│env/env_interact_step=313.3            │env/interact=1456.1                    │env/run_interact_once=1456.1          │\n│generate_rollouts=1459.9               │rollout/generate_one_epoch=1452.7      │rollout/predict=22.672                │\n│rollout/rollout/generate=1459.8        │rollout/sync_model_from_actor=8.547    │step=1494.5                           │\n│sync_weights=9.822                     │                                       │                                      │\n│                                                                                                                      │\n├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│episode_len=200.0                      │num_trajectories=256                   │return=0.3046875                      │\n│reward=0.0015234374                    │success_once=0.3046875                 │                                      │\n│                                                                                                                      │\n├────────────────────────────────────────────────────── Rollout ───────────────────────────────────────────────────────┤\n│                                                                                                                      │\n│advantages_max=2.475                   │advantages_mean=-0.065                 │advantages_min=-2.475                 │\n│rewards=0.0020                         │                                       │                                      │\n│                                                                                                                      │\n├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤\n│                                                                                                                      │\n│actor/approx_kl=0.386                  │actor/clip_fraction=0.188              │actor/clipped_ratio=0.973             │\n│actor/dual_cliped_ratio=0.0000         │actor/dvac_chunk_factor_std=0.137      │actor/dvac_group_count=32.000         │\n│actor/dvac_local_center_error=2.38e-07 │actor/dvac_negative_adv_mass_ratio=1.0…│actor/dvac_positive_adv_mass_ratio=1.…│\n│actor/dvac_valid_chunks=782.0          │actor/dvac_weight_ess_fraction=0.970   │actor/dvac_weight_max=1.850           │\n│actor/dvac_weight_mean=1.000           │actor/dvac_weight_min=0.515            │actor/dvac_weight_sq_mean=1.031       │\n│actor/entropy_loss=0.0000              │actor/grad_norm=25.458                 │actor/lr=5.00e-06                     │\n│actor/policy_loss=0.025                │actor/policy_loss_abs=0.626            │actor/ratio=1.219                     │\n│actor/ratio_abs=0.513                  │actor/total_loss=0.0031                │                                      │\n│                                                                                                                      │\n╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯\n\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=3026530)\u001b[0m \rGenerating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=3026530)\u001b[0m \rGenerating Rollout Epochs:  25%|██▌       | 1/4 [05:53<17:40, 353.59s/it]\n"
+    },
+    "rlt_phases": {
+      "4": "WAIT_EXTERNAL",
+      "5": "WAIT_EXTERNAL",
+      "6": "WAIT_EXTERNAL",
+      "7": "WAIT_EXTERNAL"
+    },
+    "gpu": {
+      "0": {
+        "uuid": "GPU-0a5bed83-5e92-23b6-2f41-5aee55629ac9",
+        "processes": []
+      },
+      "1": {
+        "uuid": "GPU-974b69f5-1d79-f222-cb27-47b8f06b141e",
+        "processes": []
+      },
+      "2": {
+        "uuid": "GPU-b7a2792b-feab-d7bf-b4aa-829df16e4f73",
+        "processes": []
+      },
+      "3": {
+        "uuid": "GPU-07910b32-fd6c-74f1-8fee-5e1b24e6449e",
+        "processes": []
+      },
+      "4": {
+        "uuid": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+        "processes": [
+          {
+            "pid": 631640,
+            "type": "C+G"
+          }
+        ]
+      },
+      "5": {
+        "uuid": "GPU-2cd891ea-180d-da39-6419-2d7033f8b21b",
+        "processes": [
+          {
+            "pid": 631642,
+            "type": "C+G"
+          }
+        ]
+      },
+      "6": {
+        "uuid": "GPU-dc5d6921-fa81-b666-bac7-566c126f1dd4",
+        "processes": [
+          {
+            "pid": 3023072,
+            "type": "C"
+          },
+          {
+            "pid": 3026530,
+            "type": "C"
+          },
+          {
+            "pid": 3030321,
+            "type": "C+G"
+          }
+        ]
+      },
+      "7": {
+        "uuid": "GPU-3c6321c1-3e58-c071-3867-533391152fe7",
+        "processes": [
+          {
+            "pid": 3024691,
+            "type": "C"
+          },
+          {
+            "pid": 3028109,
+            "type": "C"
+          },
+          {
+            "pid": 3032647,
+            "type": "C+G"
+          }
+        ]
+      }
+    },
+    "completed_training_update_observed": true,
+    "note": "Training rollout success is not fixed-seed evaluation success."
+  },
+  "sz3": {
+    "observed_at": 1792468267.4649894,
+    "owner_alive": true,
+    "grpo": {
+      "status": {
+        "time": 1792466029.557824,
+        "phase": "GRPO_RUNNING",
+        "runtime": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau3-notrick-pillbottle256-sz3-g45-200-1020/runtime"
+      },
+      "started": {
+        "time": 1792466029.4848037,
+        "identity": {
+          "pid": 1119489,
+          "uid": 20001,
+          "start": 843705314,
+          "state": "D"
+        },
+        "request": "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json",
+        "command": [
+          "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+          "-u",
+          "-B",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/source/tools/grpo_un/driver.py",
+          "--plan",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/plan.json",
+          "--request",
+          "/data/chenyiteng/deployment-20261020/grpo-u-signed-tau123-v1/signed-request.json"
+        ]
+      },
+      "config": {
+        "task": null,
+        "max_steps": 200,
+        "weighting": {
+          "mode": "apply",
+          "application": "chunk_clipped_action_advantage",
+          "selected_l": 3,
+          "warmup_steps": 1,
+          "window_steps": 5,
+          "log_eps": 1e-12,
+          "std_floor": 1e-06,
+          "z_clip": 2.0,
+          "strength": 0.5,
+          "weight_min": null,
+          "weight_max": null,
+          "save_step_tensors": true,
+          "output_dir": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-u-signed-tau3-notrick-pillbottle256-sz3-g45-200-1020/dvac_train",
+          "normalization": "two_level_group",
+          "scope": "both",
+          "mapping": "exp_mean",
+          "alpha_local": 1.0,
+          "alpha_chunk": 1.0,
+          "temperature_local": 3.0,
+          "temperature_chunk": 3.0,
+          "chunk_dropout": {
+            "enabled": false,
+            "probability": 0.2,
+            "seed": 42
+          },
+          "alpha_schedule": {
+            "enabled": false,
+            "local": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            },
+            "chunk": {
+              "enabled": false,
+              "start_step": 1,
+              "end_step": 200,
+              "end_alpha": 0.0
+            }
+          },
+          "minmax_eps": 1e-06,
+          "signal_source": "ugrow_10_5",
+          "direction": "advantage_sign"
+        },
+        "gpus": [
+          4,
+          5
+        ],
+        "global_batch": 512,
+        "micro_batch": 32,
+        "updates": 2,
+        "training_envs": 64,
+        "rollout_epoch": 4
+      },
+      "log_tail": "on orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m I0000 00:00:1792466096.925197 1222598 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=1) pid=1221113)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=1) pid=1221113)\u001b[0m I0000 00:00:1792466096.944141 1222595 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m INFO:root:Loaded norm stats from /home/nvme/team-data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=1) pid=1221113)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=1) pid=1221113)\u001b[0m INFO:root:Loaded norm stats from /home/nvme/team-data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m Rollout RNG seed=42; fresh noise per query; eval RNG isolated\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=1) pid=1221113)\u001b[0m Rollout RNG seed=43; fresh noise per query; eval RNG isolated\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m I0000 00:00:1792466277.667545 1222817 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m I0000 00:00:1792466277.667543 1222820 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m I0000 00:00:1792466283.545972 1222820 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m I0000 00:00:1792466283.751237 1222817 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m INFO:root:Loaded norm stats from /home/nvme/team-data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m INFO:root:Loaded norm stats from /home/nvme/team-data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=0) pid=1221107)\u001b[0m [INFO 11:19:52 ActorGroup_cleanhalfseed42_formal45-Rank-0][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled\n\u001b[36m(ActorGroup_cleanhalfseed42_formal45(rank=1) pid=1221109)\u001b[0m [INFO 11:19:52 ActorGroup_cleanhalfseed42_formal45-Rank-1][fsdp_model_manager.py:294] [FSDP] Gradient checkpointing is disabled\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m \rGenerating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m \rGenerating Rollout Epochs:  25%|██▌       | 1/4 [08:31<25:35, 511.94s/it]\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m \rGenerating Rollout Epochs:  50%|█████     | 2/4 [16:43<16:39, 499.71s/it]\n\u001b[36m(RolloutGroup_cleanhalfseed42_formal45(rank=0) pid=1221110)\u001b[0m \rGenerating Rollout Epochs:  75%|███████▌  | 3/4 [25:09<08:22, 502.81s/it]\n"
+    },
+    "rlt_phases": {
+      "4": "WAIT_EXTERNAL",
+      "5": "WAIT_EXTERNAL",
+      "6": "WAIT_EXTERNAL",
+      "7": "WAIT_EXTERNAL"
+    },
+    "gpu": {
+      "0": {
+        "uuid": "GPU-aa8dbad5-91f7-11f1-527e-201b6b606671",
+        "processes": []
+      },
+      "1": {
+        "uuid": "GPU-6577382f-f55d-e83d-547d-7830bd4c9297",
+        "processes": []
+      },
+      "2": {
+        "uuid": "GPU-9a1ca518-42ce-a702-dc4c-e04cbbf81c12",
+        "processes": []
+      },
+      "3": {
+        "uuid": "GPU-a61c0c5b-cba7-2159-ab09-be5651f58972",
+        "processes": []
+      },
+      "4": {
+        "uuid": "GPU-6c7afe5c-5238-60af-3ce2-329b3497133c",
+        "processes": [
+          {
+            "pid": 1221107,
+            "type": "C"
+          },
+          {
+            "pid": 1221110,
+            "type": "C"
+          },
+          {
+            "pid": 1221114,
+            "type": "C+G"
+          }
+        ]
+      },
+      "5": {
+        "uuid": "GPU-e656886b-e472-125f-6139-5ade9cf609a4",
+        "processes": [
+          {
+            "pid": 1221109,
+            "type": "C"
+          },
+          {
+            "pid": 1221113,
+            "type": "C"
+          },
+          {
+            "pid": 1221118,
+            "type": "C+G"
+          }
+        ]
+      },
+      "6": {
+        "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+        "processes": [
+          {
+            "pid": 1010063,
+            "type": "C"
+          },
+          {
+            "pid": 1011769,
+            "type": "C+G"
+          }
+        ]
+      },
+      "7": {
+        "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+        "processes": [
+          {
+            "pid": 2876729,
+            "type": "C"
+          },
+          {
+            "pid": 2878879,
+            "type": "C+G"
+          }
+        ]
+      }
+    },
+    "completed_training_update_observed": false,
+    "note": "Training rollout success is not fixed-seed evaluation success."
+  }
+}

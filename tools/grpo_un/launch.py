@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-"""Launch one authorized smoke after exact namespace and card availability checks."""
+"""Launch one authorized run after exact namespace and card availability checks."""
 
 import argparse
 import os
@@ -35,7 +35,7 @@ q = read(request)
 rt = Path(q["runtime"])
 cfg = read(rt / "resolved.yaml")
 assert (
-    cfg["runner"]["max_steps"] == 1
+    cfg["runner"]["max_steps"] == (200 if q["kind"] == "grpo_signed_formal" else 1)
     and q["gpus"] == plan["gpus"]
     and q["gpus"] in ([2, 3], [4, 5], [6, 7])
 )
