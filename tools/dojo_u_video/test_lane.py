@@ -35,7 +35,7 @@ class FailureRoutingTests(unittest.TestCase):
 
 
 class LaneIntegrationTests(unittest.TestCase):
-    def run_queue(self, codes):
+    def run_queue(self, codes, episode_counts=None):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             jobs = []
@@ -75,6 +75,10 @@ class LaneIntegrationTests(unittest.TestCase):
                 def __init__(self, argv, **kwargs):
                     self.config = argv[-1]
                     self.code = codes[len(launched)]
+                    self.episodes = (
+                        episode_counts[len(launched)] if episode_counts is not None
+                        else 25 if self.code == 0 else 0
+                    )
                     launched.append(self.config)
 
                 def wait(self):
@@ -82,7 +86,7 @@ class LaneIntegrationTests(unittest.TestCase):
                     save(out / "clearance.json", {"clear": True})
                     save(
                         out / "result.json",
-                        {"episodes": 25 if self.code == 0 else 0, "successes": 0},
+                        {"episodes": self.episodes, "successes": 0},
                     )
                     return self.code
 
@@ -102,6 +106,12 @@ class LaneIntegrationTests(unittest.TestCase):
 
     def test_device_fault_then_success_advances_and_releases(self):
         count, state, release = self.run_queue([79, 0])
+        self.assertEqual(count, 2)
+        self.assertEqual(state["phase"], "COMPLETE")
+        self.assertTrue(release)
+
+    def test_cleaned_policy_skip_advances_to_next_task(self):
+        count, state, release = self.run_queue([0, 0], [0, 25])
         self.assertEqual(count, 2)
         self.assertEqual(state["phase"], "COMPLETE")
         self.assertTrue(release)

@@ -19,6 +19,7 @@ DEVICE_ERRORS = (
     "VK_ERROR_DEVICE_LOST",
     "GPU page fault",
 )
+POLICY_TASK_ERRORS = ("Repeated query identity",)
 
 
 def check_policy_port_available(port):
@@ -36,6 +37,17 @@ def device_fault(log):
         stream.seek(max(0, log.stat().st_size - 65536))
         tail = stream.read().decode(errors="replace")
     return any(marker in tail for marker in DEVICE_ERRORS)
+
+
+def policy_task_error(log):
+    """A rejected recording identity cannot yield a valid task recording."""
+    try:
+        with log.open("rb") as stream:
+            stream.seek(max(0, log.stat().st_size - 16384))
+            tail = stream.read().decode(errors="replace")
+    except FileNotFoundError:
+        return None
+    return next((marker for marker in POLICY_TASK_ERRORS if marker in tail), None)
 
 
 def ops():
@@ -184,13 +196,23 @@ def run(config):
         save(out / "commands.json", dict(sim=main, policy=policy.args))
         duration = c.get("timeout_seconds")
         deadline = time.monotonic() + duration if duration else float("inf")
+        last_state = {}
         while sim.poll() is None:
             assert policy.poll() is None, "Policy server exited during episode"
             time.sleep(10)
             if device_fault(out / "sim.log"):
                 raise RuntimeError("Native GPU device fault; stop this lane")
+            policy_error = policy_task_error(out / "policy.log")
+            if policy_error:
+                raise RuntimeError(f"Policy recording error; skip task: {policy_error}")
             p = out / "progress.json"
-            state = read(p) if p.exists() else {}
+            try:
+                state = read(p)
+            except FileNotFoundError:
+                # The native writer briefly unlinks its progress file on reset.
+                # Retain the last observed time instead of treating this as failure.
+                state = last_state
+            last_state = state
             age = time.time() - state.get("time", start)
             allowance = 1200 if state.get("phase") in ("policy_loading", None) else 600
             if age > allowance or time.monotonic() > deadline:
