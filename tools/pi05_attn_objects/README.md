@@ -112,3 +112,31 @@ remain in the existing `uaca_cv27_draw_bkp/materials/dojo_selected4_20261020`.
 `evidence/sz1-closeout.tar.gz` and `evidence/sz3-closeout.tar.gz` contain the
 lightweight configurations, decisions, episode records, summaries and logs.
 Large raw arrays, videos and protected checkpoints remain on their servers.
+
+## Verified launch and first preview
+
+The 13 inherited policy-evaluation checks, two weak-overlay/calibration checks
+and two object-attention checks passed on the servers. The first real B16
+batch on each SZ3 card also passed unchanged action/chain/U/RNG checks,
+native attention reconstruction and complete video/frame-map validation:
+32 accepted episodes in total. Both lanes then advanced to their next task.
+The SZ1 calibration batches loaded the specified Clean CP140 weights strictly
+and passed U/action/RNG parity while continuing their native environment runs.
+Small launch receipts are in `evidence/sz1-launch.tar.gz` and
+`evidence/sz3-smoke.tar.gz`.
+
+The first three successful preview trajectories include all action-level
+signals, peak-neighbor real frames and full videos. `export_preview.py` reuses
+the accepted noise4 selection/mapping code; `build_preview.py` renders the
+export directory. All three selected total-attention maxima are at action 49,
+the end of the first prediction chunk. This small preview therefore warrants
+checking action-position effects before interpreting a peak as task importance.
+
+Observed first-query extra recording/analysis/write cost is about four seconds
+per B16 query, with about 425 MB of raw attention per query. Native simulation
+remains the main wall-time cost in these initial batches.
+
+RLT fallback permissions still require the exact external job to exit and
+its assigned GPU to clear. The prewritten SZ1 release has `completed=false`;
+it permits fallback after a failed sequence and is not an experiment-completion
+receipt. Successful completion replaces it with the final receipt.

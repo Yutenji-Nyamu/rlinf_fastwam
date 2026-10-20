@@ -53,6 +53,12 @@ def prepare():
                 original_fallbacks_preserved=True)
     save(D / "prepared.json", spec)
     save(O / "manifest.json", spec)
+    # The existing owner also requires this exact sequence PID to exit and
+    # both assigned cards to clear. This is a conditional fallback permission,
+    # not a success receipt; normal completion replaces it with completed=True.
+    save(D / "sequence-released.json", dict(time=time.time(), completed=False,
+        conditional_fallback=True, activation="sequence exited AND assigned card empty",
+        reason="Original RLT may resume if this finite evaluation sequence fails"))
     save(D / "sequence-launch.json", dict(argv=[PY, "-u", "-B", str(Path(__file__)), "run"],
                                         cwd=str(R), env={"CUDA_VISIBLE_DEVICES": ""}))
     print(json.dumps(spec))
