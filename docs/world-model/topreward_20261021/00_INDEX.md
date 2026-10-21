@@ -9,6 +9,7 @@
 - [03 标定和验收](03_VALIDATION.md)：数据划分、提前误报、耗时及训练放行条件。
 - [04 执行记录](04_EXECUTION.md)：现场回执、测试、发布与下一步，以本页链接为准。
 - [06 结果与决定](06_RESULTS.md)：999个窗口、提前误报、旧RM漏判、实际耗时及停止理由。
+- [07 结果解释与VLM路线对照](07_EXPLANATION_AND_VLM_COMPARISON.md)：51/64与0/32的含义、暂停范围、TOPReward与主线Trend/Success微调的区别。
 - [05 C20收束](05_C20_CLOSEOUT.md)：2机4/5旧扫描的结论、完整条件与停止边界。
 
 本地独立分支 `codex/wm-topreward-sz2-20261021`，从已发布旧链 `9475915` 建立。服务器现用源码和实配优先于该历史发布点；差异先读取再移植。新代码位于 `local_scripts/topreward_20261021/`。
