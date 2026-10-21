@@ -1,0 +1,521 @@
+{
+  "collected_at": 1792564975.2296507,
+  "publication.json": {
+    "head": "d75f779ceb662eaad732dee413770a8302b07710",
+    "snapshot": "9fa01eb2bfb8537ee82fbf8e8b07231739cb69ad",
+    "source": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source",
+    "published_branch": "codex/wm-topreward-continuous-sz2-20261021"
+  },
+  "runtime-fix.json": {
+    "time": 1792563514.2644057,
+    "head": "41fe4dd06fa7fea19d69d4abcad3510a496592e5",
+    "scope": "Formal driver reloads patched entry; existing smoke has original imported code",
+    "source": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source"
+  },
+  "metrics-fix.json": {
+    "time": 1792564155.650037,
+    "head": "d75cd707cfc98ba9062fd2c3a171b7592f353d3e",
+    "source": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source",
+    "scope": "Validation path only; existing live owner uses the actual event-file alias."
+  },
+  "live-metrics-path-fix.json": {
+    "time": 1792564113.1344354,
+    "actual_event_file": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/run/smoke/tensorboard/all/events.out.tfevents.1792563133.h100-gpu02.2954841.0",
+    "compatibility_alias": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/run/smoke/smoke/events.out.tfevents.1792563133.h100-gpu02.2954841.0",
+    "reason": "Running owner retains pre-fix validator; alias exposes the actual unchanged TensorBoard event file beside the genuine checkpoint directory."
+  },
+  "postfix-smoke-validation.json": {
+    "time": 1792564648.697186,
+    "actual_layout_validation_matches_smoke_receipt": true,
+    "grad_norm": 44.86339569091797,
+    "eval_success": 0.53125,
+    "checkpoint_bytes": 8526557492
+  },
+  "borrowed.json": {
+    "time": 1792563104.9865644,
+    "gpus": [
+      4,
+      5
+    ],
+    "cards_clear": true,
+    "original_namespaces_clear": true,
+    "protected_67_alive": true,
+    "new_owner": {
+      "pid": 2434690,
+      "uid": 20001,
+      "start": 536687098,
+      "state": "R",
+      "ppid": 1
+    },
+    "old_drivers": {
+      "4": {
+        "pid": 2800174,
+        "uid": 20001,
+        "start": 536224061,
+        "state": "D"
+      },
+      "5": {
+        "pid": 2800175,
+        "uid": 20001,
+        "start": 536224062,
+        "state": "D"
+      }
+    },
+    "fallback_requests": {
+      "4": {
+        "kind": "rlt",
+        "gpu": 4,
+        "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz2-20261002",
+        "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz2-g4-after-topreward-terminal-1021-v1",
+        "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz2-g4-after-topreward-terminal-1021-v1/runtime",
+        "namespace": "rlt-sz2-g4-after-topreward-terminal-1021-v1",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu02-g4-after-grpo-u-1013-resetwait1-after-uvideo1017/rlt-h100-gpu02-g4-after-grpo-u-1013-resetwait1-after-uvideo1017/checkpoints/global_step_600",
+        "step": 600
+      },
+      "5": {
+        "kind": "rlt",
+        "gpu": 5,
+        "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-next-six-sz2-20261002",
+        "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz2-g5-after-topreward-terminal-1021-v1",
+        "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz2-g5-after-topreward-terminal-1021-v1/runtime",
+        "namespace": "rlt-sz2-g5-after-topreward-terminal-1021-v1",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu02-g5-after-grpo-u-1013-resetwait1-after-uvideo1017/rlt-h100-gpu02-g5-after-grpo-u-1013-resetwait1-after-uvideo1017/checkpoints/global_step_350",
+        "step": 350
+      }
+    }
+  },
+  "run/smoke-passed.json": {
+    "metrics": {
+      "eval/return": 0.53125,
+      "eval/success_once": 0.53125,
+      "eval/episode_len": 384.0,
+      "eval/reward": 0.0013834636192768812,
+      "eval/success_at_end": 0.53125,
+      "eval/num_trajectories": 32.0,
+      "env/reward": 0.0014122356660664082,
+      "env/return": 0.5422984957695007,
+      "env/success_once": 0.0,
+      "env/episode_len": 384.0,
+      "env/num_trajectories": 16.0,
+      "rollout/rewards": 0.0014122356660664082,
+      "rollout/advantages_mean": -2.086162567138672e-07,
+      "rollout/advantages_max": 1.275162696838379,
+      "rollout/advantages_min": -1.9917433261871338,
+      "time/sync_weights": 9.48223876953125,
+      "time/generate_rollouts": 239.23207092285156,
+      "time/cal_adv_and_returns": 0.05062699317932129,
+      "time/actor_training": 6.261857986450195,
+      "time/eval": 940.3177490234375,
+      "time/step": 1253.7174072265625,
+      "time/env/env/bootstrap_step": 0.056827761232852936,
+      "time/env/compute_bootstrap_rewards": 0.000780787318944931,
+      "time/env/env_interact_step": 199.9832000732422,
+      "time/env/env/send_rollout_trajectories": 0.44784459471702576,
+      "time/env/run_interact_once": 209.72366333007812,
+      "time/env/interact": 236.96487426757812,
+      "time/env/evaluate": 932.6456298828125,
+      "time/rollout/sync_model_from_actor": 13.042362213134766,
+      "time/rollout/predict": 14.949702262878418,
+      "time/rollout/generate_one_epoch": 208.14898681640625,
+      "time/rollout/rollout/generate": 215.60838317871094,
+      "time/rollout/evaluate": 647.5806884765625,
+      "time/actor/actor/sync_model_to_rollout": 12.310284614562988,
+      "time/actor/actor/recv_traj": 212.51800537109375,
+      "time/actor/actor/compute_adv": 0.0460745170712471,
+      "time/actor/run_training": 6.258859157562256,
+      "train/actor/approx_kl": -0.002115923212841153,
+      "train/actor/clip_fraction": 0.02604166604578495,
+      "train/actor/clipped_ratio": 1.0030860900878906,
+      "train/actor/dual_cliped_ratio": 0.0,
+      "train/actor/entropy_loss": 0.0,
+      "train/actor/grad_norm": 44.86339569091797,
+      "train/actor/lr": 4.999999873689376e-06,
+      "train/actor/policy_loss": 0.0331435352563858,
+      "train/actor/policy_loss_abs": 0.7935154438018799,
+      "train/actor/ratio": 1.0263160467147827,
+      "train/actor/ratio_abs": 0.08848051726818085,
+      "train/actor/total_loss": 0.011047844775021076
+    },
+    "checkpoint": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/run/smoke/smoke/checkpoints/global_step_1/actor/model_state_dict/full_weights.pt",
+    "terminal_scores": [
+      0.748271644115448,
+      0.5303491950035095,
+      0.6261488199234009,
+      0.7548905611038208,
+      0.6119639873504639,
+      0.6977233290672302,
+      0.6253934502601624,
+      0.3679879903793335,
+      0.28419381380081177,
+      0.40689265727996826,
+      0.6070306897163391,
+      0.40476134419441223,
+      0.5243680477142334,
+      0.5446833968162537,
+      0.5657721161842346,
+      0.3763446807861328
+    ],
+    "group_ranges": [
+      0.3869025707244873,
+      0.32283687591552734
+    ],
+    "service_rows": 192,
+    "formal_initialization": "Original policy; smoke checkpoint is not reused"
+  },
+  "run/formal/driver-identity.json": {
+    "pid": 1361883,
+    "uid": 20001,
+    "start": 536865149,
+    "state": "R",
+    "ppid": 2434690,
+    "namespace": "topreward_terminal_sz2_1021_formal"
+  },
+  "run/formal/ray-job.json": {
+    "time": 1792564622.4984748,
+    "namespace": "topreward_terminal_sz2_1021_formal",
+    "job_id": "80000000",
+    "driver": {
+      "pid": 1361883,
+      "uid": 20001,
+      "start": 536865149,
+      "state": "R",
+      "ppid": 2434690
+    }
+  },
+  "run/formal/verified-placement.json": {
+    "actor": [
+      {
+        "rank": 0,
+        "cluster_node_rank": 0,
+        "placement_node_rank": 0,
+        "local_accelerator_rank": 4,
+        "accelerator_type": "NV_GPU",
+        "local_rank": 0,
+        "local_world_size": 1,
+        "visible_accelerators": [
+          "4"
+        ],
+        "isolate_accelerator": true,
+        "local_hardware_ranks": [
+          4
+        ],
+        "node_group_label": "cluster"
+      }
+    ],
+    "env": [
+      {
+        "rank": 0,
+        "cluster_node_rank": 0,
+        "placement_node_rank": 0,
+        "local_accelerator_rank": 5,
+        "accelerator_type": "NV_GPU",
+        "local_rank": 0,
+        "local_world_size": 1,
+        "visible_accelerators": [
+          "5"
+        ],
+        "isolate_accelerator": true,
+        "local_hardware_ranks": [
+          5
+        ],
+        "node_group_label": "cluster"
+      }
+    ],
+    "rollout": [
+      {
+        "rank": 0,
+        "cluster_node_rank": 0,
+        "placement_node_rank": 0,
+        "local_accelerator_rank": 4,
+        "accelerator_type": "NV_GPU",
+        "local_rank": 0,
+        "local_world_size": 1,
+        "visible_accelerators": [
+          "4"
+        ],
+        "isolate_accelerator": true,
+        "local_hardware_ranks": [
+          4
+        ],
+        "node_group_label": "cluster"
+      }
+    ]
+  },
+  "wm_batch_summary": {
+    "count": 20,
+    "actual_batch_sizes": [
+      16
+    ],
+    "all_finite": true,
+    "median_compute_s": 5.178763231728226,
+    "median_wm_s": 3.378450572490692,
+    "median_reward_s": 1.8085563220083714,
+    "max_wm_allocated_GiB": 44.98662519454956,
+    "max_wm_reserved_GiB": 52.865234375
+  },
+  "requests": [
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:17:08.122785+00:00",
+      "request_id": "seed0-call0",
+      "batch": 16,
+      "seconds": 13.072952563874424,
+      "compute_seconds": 8.25558637548238
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:17:21.380602+00:00",
+      "request_id": "seed0-call1",
+      "batch": 16,
+      "seconds": 12.34996837656945,
+      "compute_seconds": 5.415218569338322
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:17:34.106004+00:00",
+      "request_id": "seed0-call2",
+      "batch": 16,
+      "seconds": 11.847422258928418,
+      "compute_seconds": 5.175031357444823
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:17:47.003461+00:00",
+      "request_id": "seed0-call3",
+      "batch": 16,
+      "seconds": 12.082384258508682,
+      "compute_seconds": 5.3475534953176975
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:17:59.586025+00:00",
+      "request_id": "seed0-call4",
+      "batch": 16,
+      "seconds": 11.727999619208276,
+      "compute_seconds": 5.208914203569293
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:18:12.376276+00:00",
+      "request_id": "seed0-call5",
+      "batch": 16,
+      "seconds": 12.050484986044466,
+      "compute_seconds": 5.236606314778328
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:18:25.216893+00:00",
+      "request_id": "seed0-call6",
+      "batch": 16,
+      "seconds": 11.931993753649294,
+      "compute_seconds": 5.231216264888644
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:18:38.115330+00:00",
+      "request_id": "seed0-call7",
+      "batch": 16,
+      "seconds": 12.04864542093128,
+      "compute_seconds": 5.163059892132878
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:18:51.182629+00:00",
+      "request_id": "seed0-call8",
+      "batch": 16,
+      "seconds": 12.258234915323555,
+      "compute_seconds": 5.2664985517039895
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:19:04.612758+00:00",
+      "request_id": "seed0-call9",
+      "batch": 16,
+      "seconds": 12.596934447996318,
+      "compute_seconds": 5.198676601983607
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:19:18.507650+00:00",
+      "request_id": "seed0-call10",
+      "batch": 16,
+      "seconds": 13.02978265285492,
+      "compute_seconds": 5.196287860162556
+    },
+    {
+      "phase": "smoke",
+      "timestamp_utc": "2026-10-21T06:19:32.618624+00:00",
+      "request_id": "seed0-call11",
+      "batch": 16,
+      "seconds": 13.285697375424206,
+      "compute_seconds": 5.182495106011629
+    },
+    {
+      "phase": "formal",
+      "timestamp_utc": "2026-10-21T06:42:00.997068+00:00",
+      "request_id": "seed0-call0",
+      "batch": 64,
+      "seconds": 38.12052967771888,
+      "compute_seconds": 18.470142169855535
+    },
+    {
+      "phase": "formal",
+      "timestamp_utc": "2026-10-21T06:42:51.826333+00:00",
+      "request_id": "seed0-call1",
+      "batch": 64,
+      "seconds": 47.61165953055024,
+      "compute_seconds": 20.309602342545986
+    }
+  ],
+  "batch_counts_by_phase": {
+    "smoke": 12,
+    "formal": 8
+  },
+  "all_denoiser_steps_are_true_B16": true,
+  "offloads": [
+    {
+      "timestamp_utc": "2026-10-21T06:13:32.077579+00:00",
+      "is_offloaded": true,
+      "residual_model_cuda_tensors": 0,
+      "cuda_allocated_bytes": null
+    },
+    {
+      "timestamp_utc": "2026-10-21T06:20:00.990770+00:00",
+      "is_offloaded": true,
+      "residual_model_cuda_tensors": 0,
+      "cuda_allocated_bytes": 34603008
+    },
+    {
+      "timestamp_utc": "2026-10-21T06:38:34.597401+00:00",
+      "is_offloaded": true,
+      "residual_model_cuda_tensors": 0,
+      "cuda_allocated_bytes": 34603008
+    }
+  ],
+  "actor_memory": [
+    {
+      "phase": "smoke",
+      "seconds": 6.259001973085105,
+      "micro_batch_size": 64,
+      "allocated_peak_bytes": 31110071296,
+      "reserved_peak_bytes": 32319209472,
+      "actor/grad_norm": 44.86339569091797
+    }
+  ],
+  "policy_batches": {
+    "smoke": 16,
+    "formal": 64
+  },
+  "gpu": "0, GPU-0a5bed83-5e92-23b6-2f41-5aee55629ac9, NVIDIA H100 80GB HBM3, 81559, 24864, 0\n1, GPU-974b69f5-1d79-f222-cb27-47b8f06b141e, NVIDIA H100 80GB HBM3, 81559, 4, 0\n2, GPU-b7a2792b-feab-d7bf-b4aa-829df16e4f73, NVIDIA H100 80GB HBM3, 81559, 4, 0\n3, GPU-07910b32-fd6c-74f1-8fee-5e1b24e6449e, NVIDIA H100 80GB HBM3, 81559, 4, 0\n4, GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d, NVIDIA H100 80GB HBM3, 81559, 23229, 0\n5, GPU-2cd891ea-180d-da39-6419-2d7033f8b21b, NVIDIA H100 80GB HBM3, 81559, 73573, 99\n6, GPU-dc5d6921-fa81-b666-bac7-566c126f1dd4, NVIDIA H100 80GB HBM3, 81559, 66506, 0\n7, GPU-3c6321c1-3e58-c071-3867-533391152fe7, NVIDIA H100 80GB HBM3, 81559, 65645, 0\n",
+  "gpu_contexts": {
+    "0": {
+      "uuid": "GPU-0a5bed83-5e92-23b6-2f41-5aee55629ac9",
+      "processes": [
+        {
+          "pid": 3640968,
+          "type": "C"
+        }
+      ]
+    },
+    "1": {
+      "uuid": "GPU-974b69f5-1d79-f222-cb27-47b8f06b141e",
+      "processes": []
+    },
+    "2": {
+      "uuid": "GPU-b7a2792b-feab-d7bf-b4aa-829df16e4f73",
+      "processes": []
+    },
+    "3": {
+      "uuid": "GPU-07910b32-fd6c-74f1-8fee-5e1b24e6449e",
+      "processes": []
+    },
+    "4": {
+      "uuid": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+      "processes": [
+        {
+          "pid": 1362975,
+          "type": "C"
+        },
+        {
+          "pid": 1362989,
+          "type": "C"
+        }
+      ]
+    },
+    "5": {
+      "uuid": "GPU-2cd891ea-180d-da39-6419-2d7033f8b21b",
+      "processes": [
+        {
+          "pid": 1362993,
+          "type": "C"
+        },
+        {
+          "pid": 2434696,
+          "type": "C"
+        },
+        {
+          "pid": 2836464,
+          "type": "C"
+        }
+      ]
+    },
+    "6": {
+      "uuid": "GPU-dc5d6921-fa81-b666-bac7-566c126f1dd4",
+      "processes": [
+        {
+          "pid": 3023072,
+          "type": "C"
+        },
+        {
+          "pid": 3026530,
+          "type": "C"
+        },
+        {
+          "pid": 3030321,
+          "type": "C+G"
+        }
+      ]
+    },
+    "7": {
+      "uuid": "GPU-3c6321c1-3e58-c071-3867-533391152fe7",
+      "processes": [
+        {
+          "pid": 3024691,
+          "type": "C"
+        },
+        {
+          "pid": 3028109,
+          "type": "C"
+        },
+        {
+          "pid": 3032647,
+          "type": "C+G"
+        }
+      ]
+    }
+  },
+  "queue_status": {
+    "slots": {
+      "4": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "5": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    },
+    "time": 1792564968.7287424,
+    "owner": {
+      "pid": 2954362,
+      "uid": 20001,
+      "start": 536713877,
+      "state": "R"
+    }
+  },
+  "source_head": "d75cd707cfc98ba9062fd2c3a171b7592f353d3e"
+}

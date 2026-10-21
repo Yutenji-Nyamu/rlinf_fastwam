@@ -14,6 +14,8 @@ CUDA_VISIBLE_DEVICES= /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/pyth
 
 owner 先在 CPU 加载 WM/Qwen，等待 `borrowed.json`，此时 RLT 继续运行；资源交接完成后才 onload。短测 namespace 为 `topreward_terminal_sz2_1021_smoke`，正式为 `topreward_terminal_sz2_1021_formal`。短测 N16/R1/G8/C384、global batch192、micro64、1 epoch、1 round，保留 32 seed 原生评估及完整 checkpoint；验证实际梯度/有限值/B16/同组分差后，从原始策略启动正式实验，不使用短测权重。
 
-RLT 返回请求已准备在运行根目录 `fallback-g4.json` / `fallback-g5.json`，使用完整恢复点 600 / 350，包含 actor/target/optimizer/replay/trainer state；最终交接时再刷新是否已有更新的完整 checkpoint。不删除旧 checkpoint。只有写入清卡回执、当前 owner 退出后，已有队列才会接回这两个请求。
+14:11 已完成精确交接，原 RLT 4/5 driver 和各自 namespace 已退出，计算/图形上下文清空后写入 `borrowed.json`。返回请求位于运行根目录 `fallback-g4.json` / `fallback-g5.json`，最终核实的完整恢复点为 600 / 350，包含 actor/target/optimizer/replay/trainer state；交接时没有更新的完整 checkpoint。旧 checkpoint 保留。只有写入清卡回执、当前 owner 退出后，已有队列才会接回这两个请求；GPU6/7 的队列条目保持原状。
+
+继承的旧 owner 在 `state.json` 中把等待阶段固定写为 `formal`，因此阶段判定须以 `smoke-passed.json` 和 `formal/driver-identity.json` 为准，不能凭该旧心跳字段宣称正式训练已启动。
 
 停止条件：非有限 reward/loss、服务或训练异常、实际越出授权 4/5 卡。正常评估低成功率用于结果判断，不凭 Qwen 误报率或任意额外奖励阈值提前否决训练。任务结束/故障仅清理本次 token/namespace 的进程；确认 GPU C/G 均释放后写唯一 release 回执，由现有队列从所保留完整恢复点接回 RLT。
