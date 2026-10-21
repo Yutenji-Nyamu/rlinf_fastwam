@@ -33,6 +33,13 @@ def save(path, value):
 
 
 def validate_config(c):
+    if c.get("suite") == "pi05_distillation":
+        assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
+        assert c["step_limit"] == 400 and c["num_steps"] in (1, 10)
+        assert c["execute_chunk"] == c["model"]["openpi"]["action_chunk"] == 50
+        assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
+        assert not c.get("weak_weights") and not c.get("strong_weights")
+        return
     assert c["num_envs"] == 32 and c["step_limit"] == 200
     assert c["num_steps"] in (5, 10, 15, 20, 30)
     assert c["execute_chunk"] in (10, 20, 30, 50)

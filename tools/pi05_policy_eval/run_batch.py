@@ -90,6 +90,12 @@ def run(config):
     )
     strong = None
     if weak is not None:
+        if c.get("distill_weights"):
+            from rlinf.algorithms.pi05_distillation.model import load_expert
+            state = torch.load(c["distill_weights"], map_location="cpu", weights_only=True)
+            load_expert(weak, state["expert"])
+            save(out / "distill-loaded.json", {"path": c["distill_weights"], "method": state["method"]})
+            del state
         if c.get("weak_weights"):
             state = torch.load(c["weak_weights"], map_location="cpu", weights_only=True)
             loaded = weak.load_state_dict(state, strict=True)
@@ -134,7 +140,7 @@ def run(config):
             "wrist_images": torch.zeros((batch, 2, 224, 224, 3), dtype=torch.uint8),
             "extra_view_images": None,
             "states": torch.zeros((batch, 14)),
-            "task_descriptions": ["move the pillbottle to the pad"] * batch,
+            "task_descriptions": [c.get("warmup_prompt", "move the pillbottle to the pad")] * batch,
         }
         for model in (weak, strong):
             if model is not None:

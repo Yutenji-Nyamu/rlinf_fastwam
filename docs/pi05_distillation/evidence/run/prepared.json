@@ -1,0 +1,50 @@
+{
+  "time": 1792585857.3399737,
+  "source": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-distill-20261021",
+  "output": "/data/chenyiteng/results/pi05-distill/adjust-20261021-v1",
+  "physical_gpus": [
+    2,
+    3
+  ],
+  "per_card_parallelism": 32,
+  "episodes_per_condition": 128,
+  "model": {
+    "model_type": "openpi",
+    "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+    "precision": null,
+    "num_action_chunks": 50,
+    "action_dim": 14,
+    "is_lora": false,
+    "lora_rank": 32,
+    "use_proprio": true,
+    "num_steps": 10,
+    "add_value_head": false,
+    "openpi": {
+      "config_name": "pi05_sidney_robotwin",
+      "num_images_in_input": 3,
+      "noise_level": 0.5,
+      "action_chunk": 50,
+      "num_steps": 10,
+      "train_expert_only": true,
+      "action_env_dim": 14,
+      "noise_method": "flow_sde",
+      "add_value_head": false,
+      "value_after_vlm": false,
+      "value_vlm_mode": "mean_token",
+      "detach_critic_input": true,
+      "use_dsrl": false,
+      "dsrl_state_dim": 8,
+      "dsrl_action_noise_dim": 32,
+      "dsrl_num_q_heads": 10,
+      "dsrl_agg_q": "mean",
+      "dsrl_image_latent_dim": 64,
+      "dsrl_state_latent_dim": 64,
+      "dsrl_hidden_dims": [
+        128,
+        128,
+        128
+      ]
+    }
+  },
+  "data": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1"
+}

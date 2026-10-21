@@ -27,7 +27,11 @@ import torch.nn.functional as F
 from openpi import transforms as _transforms
 from openpi.models import model as _model
 from openpi.models.pi0_config import Pi0Config
-from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
+from openpi.models_pytorch.pi0_pytorch import (
+    PI0Pytorch,
+    create_sinusoidal_pos_embedding,
+    make_att_2d_masks,
+)
 from torch.utils._pytree import tree_map
 
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
@@ -75,6 +79,7 @@ class OpenPi0Config(Pi0Config):
     rtc_guidance_clip: float = 5.0
     # training config
     train_expert_only: bool = False
+    distill_target_time: bool = False
     safe_get_logprob: bool = False
     joint_logprob: bool = False  # designed for flow-noise
     double_layer: bool = False  # designed for flow-sde without acceleration
@@ -169,6 +174,11 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         self.sample_actions = sample_actions_func
         self.logger = get_logger()
         self.global_step = 0
+        if config.distill_target_time:
+            assert config.pi05, "Target-time conditioning is implemented for pi05"
+            width = self.action_in_proj.out_features
+            self.distill_stop_proj = torch.nn.Linear(width, width, bias=False)
+            torch.nn.init.zeros_(self.distill_stop_proj.weight)
         # assert
         assert not (self.config.double_layer and self.config.joint_logprob), (
             "double_layer and joint_logprob can not be set at the same time"
@@ -1328,11 +1338,22 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         past_key_values,
         x_t,
         timestep,
+        stop_time=None,
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep."""
         suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = (
             self.embed_suffix(state, x_t, timestep)
         )
+        if self.config.distill_target_time:
+            stop_time = torch.zeros_like(timestep) if stop_time is None else stop_time
+            stop_emb = create_sinusoidal_pos_embedding(
+                stop_time,
+                self.action_in_proj.out_features,
+                min_period=4e-3,
+                max_period=4.0,
+                device=stop_time.device,
+            ).to(timestep.dtype)
+            adarms_cond = adarms_cond + self.distill_stop_proj(stop_emb)
 
         suffix_len = suffix_pad_masks.shape[1]
         batch_size = prefix_pad_masks.shape[0]
@@ -1369,10 +1390,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         suffix_out = suffix_out.to(dtype=torch.float32)
         return suffix_out
 
-    def get_velocity(self, state, x_t, timestep, prefix_pad_masks, past_key_values):
+    def get_velocity(
+        self, state, x_t, timestep, prefix_pad_masks, past_key_values, stop_time=None
+    ):
         """Compute velocity prediction v_t and raw suffix_out at a given timestep."""
         suffix_out = self.get_suffix_out(
-            state, prefix_pad_masks, past_key_values, x_t, timestep
+            state, prefix_pad_masks, past_key_values, x_t, timestep, stop_time=stop_time
         )
         v_t = self.action_out_proj(suffix_out)
         return v_t, suffix_out

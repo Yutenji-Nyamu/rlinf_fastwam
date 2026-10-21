@@ -1,0 +1,107 @@
+# Copyright 2026 The RLinf Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Flow-coordinate adaptations of Consistency Policy and OneDP-S.
+
+Time 1 is Gaussian noise and time 0 is action, as in OpenPI. These are
+adaptations, not the papers' EDM/DDPM parameterizations. See the method note.
+"""
+
+import torch
+import torch.nn.functional as F
+
+
+def expand(t: torch.Tensor) -> torch.Tensor:
+    """Broadcast a batch of scalar times across a complete action block."""
+    return t[:, None, None]
+
+
+def flow_map(velocity, x, t, s, context):
+    """Predict the flow endpoint, with an exact identity boundary at s=t."""
+    return x - expand(t - s) * velocity(x, t, context, s)
+
+
+def cp_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Match official Huber_Loss(delta=-1), using a stable equivalent formula.
+
+    The reference applies sqrt(mse**2 + delta**2) - delta, where mse is
+    elementwise squared error. Preserve that exact choice, rather than
+    substituting PyTorch smooth_l1_loss or a differently defined Huber norm.
+    """
+    delta = (pred.shape[1] * pred.shape[2]) ** 0.5 * 0.00054
+    fourth = (pred.float() - target.float()).square().square()
+    return (fourth / ((fourth + delta**2).sqrt() + delta)).mean()
+
+
+def cp_loss(student, teacher, ema, actions, context, *, bins=80):
+    """Teacher one-step bridge, EMA composition consistency, and native FM anchor."""
+    b, device = len(actions), actions.device
+    index = torch.randint(1, bins + 1, (b,), device=device)
+    t = index.float() / bins
+    u = (index - 1).float() / bins
+    s = torch.floor(torch.rand(b, device=device) * index) / bins
+    zero = torch.zeros_like(t)
+    noise = torch.randn_like(actions)
+    x = (1 - expand(t)) * actions + expand(t) * noise
+    with torch.no_grad():
+        xu = x - expand(t - u) * teacher(x, t, context)
+        target = flow_map(ema, flow_map(ema, xu, u, s, context), s, zero, context)
+    middle = flow_map(student, x, t, s, context)
+    # EMA parameters are frozen, but this input derivative MUST reach student.
+    pred = flow_map(ema, middle, s, zero, context)
+    consistency = cp_distance(pred, target)
+    # Native pi05 flow-matching time distribution and velocity target.
+    tm = torch.distributions.Beta(1.5, 1.0).sample((b,)).to(device) * 0.999 + 0.001
+    epsilon = torch.randn_like(actions)
+    xm = (1 - expand(tm)) * actions + expand(tm) * epsilon
+    fm = F.mse_loss(student(xm, tm, context, zero), epsilon - actions)
+    return consistency + fm, {"consistency": consistency, "fm": fm}
+
+
+def fake_loss(fake, generated, context, *, time_min=0.02, time_max=0.95):
+    """Fit fake epsilon to the student's distribution; lambda(t)=1 as OneDP-S."""
+    t = (
+        torch.rand(len(generated), device=generated.device) * (time_max - time_min)
+        + time_min
+    )
+    noise = torch.randn_like(generated)
+    x = (1 - expand(t)) * generated.detach() + expand(t) * noise
+    eps_pred = x + (1 - expand(t)) * fake(x, t, context)
+    return F.mse_loss(eps_pred, noise)
+
+
+def onedp_loss(generated, teacher, fake, context, *, time_min=0.02, time_max=0.95):
+    """Reverse-KL score gradient with OneDP w=sigma^2 in flow coordinates.
+
+    epsilon_hat=x+(1-t)*v, score=-epsilon_hat/t. The detached coefficient
+    t*(epsilon_teacher-epsilon_fake) multiplies x_t, retaining its (1-t)
+    derivative w.r.t. the generated action. No teacher/fake Jacobian is used.
+    """
+    t = (
+        torch.rand(len(generated), device=generated.device) * (time_max - time_min)
+        + time_min
+    )
+    x = (1 - expand(t)) * generated + expand(t) * torch.randn_like(generated)
+    with torch.no_grad():
+        direction = (
+            expand(t)
+            * (1 - expand(t))
+            * (teacher(x.detach(), t, context) - fake(x.detach(), t, context))
+        )
+    return (direction * x).flatten(1).mean(1).mean(), direction.square().mean().sqrt()
+
+
+def ema_decay(step: int) -> float:
+    """Consistency Policy's inv_gamma=1, power=.75, max=.9999 EMA schedule."""
+    return min(0.9999, 1 - (1 + max(step - 1, 0)) ** -0.75)

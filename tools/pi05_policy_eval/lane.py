@@ -160,7 +160,7 @@ try:
                     done, episodes = read(out / "done.json"), read(out / "episodes.json")
                     assert len(episodes) == done["episodes"] == 32
                     assert sum(e["success"] for e in episodes) == done["successes"]
-                    assert all(e["success"] or e["submitted"] >= 200 for e in episodes)
+                    assert all(e["success"] or e["submitted"] >= c["step_limit"] for e in episodes)
                     save(
                         D / (out.name + "-result.json"),
                         {
