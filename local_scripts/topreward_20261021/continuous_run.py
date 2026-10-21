@@ -82,11 +82,10 @@ def validate_smoke(plan):
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
     cfg = json.loads(Path(plan["trials"][0]["config"]).read_text())
-    log = (
-        Path(cfg["runner"]["logger"]["log_path"])
-        / cfg["runner"]["logger"]["experiment_name"]
-    )
-    events = list(log.rglob("events.out.tfevents.*"))
+    log = Path(cfg["runner"]["logger"]["log_path"])
+    # MetricLogger writes directly below log_path; checkpoints additionally
+    # include experiment_name in EmbodiedRunner.save_checkpoint.
+    events = list((log / "tensorboard").rglob("events.out.tfevents.*"))
     assert events, "Smoke produced no training metrics"
     metrics = {}
     for directory in {p.parent for p in events}:
@@ -98,7 +97,11 @@ def validate_smoke(plan):
     assert all(math.isfinite(x) for x in metrics.values()), "Nonfinite smoke metrics"
     gradients = [v for k, v in metrics.items() if k.endswith("/grad_norm")]
     assert gradients and max(gradients) > 0, "Smoke did not produce an actor gradient"
-    cp = log / "checkpoints/global_step_1/actor/model_state_dict/full_weights.pt"
+    cp = (
+        log
+        / cfg["runner"]["logger"]["experiment_name"]
+        / "checkpoints/global_step_1/actor/model_state_dict/full_weights.pt"
+    )
     assert cp.is_file() and cp.stat().st_size > 1024**3, "Smoke checkpoint missing"
     records = Path(
         plan["services"][0]["argv"][
