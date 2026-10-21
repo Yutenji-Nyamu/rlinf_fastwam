@@ -44,7 +44,7 @@ def validate_config(c):
         assert c["execute_chunk"] == 50
     if c["policy"] in ("calibration", "high", "low", "random"):
         assert c["num_steps"] == 10 and c["execute_chunk"] in (20, 50)
-    assert c.get("max_takeover_queries") in (None, 2)
+    assert c.get("max_takeover_queries") in (None, 2, 3)
     if c.get("max_takeover_queries") is not None:
         assert c["policy"] in ("high", "low", "random")
 

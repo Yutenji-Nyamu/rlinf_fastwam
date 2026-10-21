@@ -64,7 +64,9 @@ def summarize(root, condition):
     eligible = [d for d in decisions if d.get("eligible", True)]
     result["eligible_decisions"] = len(eligible)
     result["eligible_strong_fraction"] = sum(d["strong"] for d in eligible) / len(eligible) if eligible else 0
-    for label, subset in [("first_two", [d for d in decisions if d["query"] < 2]),
+    for label, subset in [("first_three", [d for d in decisions if d["query"] < 3]),
+                          ("after_three", [d for d in decisions if d["query"] >= 3]),
+                          ("first_two", [d for d in decisions if d["query"] < 2]),
                           ("later", [d for d in decisions if d["query"] >= 2])]:
         result[label] = {"decisions": len(subset), "strong": sum(d["strong"] for d in subset),
                          "fraction": sum(d["strong"] for d in subset) / len(subset) if subset else 0}
