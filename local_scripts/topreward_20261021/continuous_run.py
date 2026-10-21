@@ -71,6 +71,8 @@ def load_runtime(plan):
         "HOME",
         "USER",
         "LOGNAME",
+        "JAX_PLATFORMS",
+        "RLINF_CODE_WORKING_DIR",
     }
     return old, common
 
@@ -134,6 +136,10 @@ def main():
     plan = json.loads(args.plan.read_text())
     old, common = load_runtime(plan)
     if args.action == "driver":
+        # Shared Ray can retain another checkout in its node environment.
+        # Keep JAX on CPU, as in the accepted WM runtime, and bind this job's
+        # workers to the source tree used by its driver.
+        os.environ.update(JAX_PLATFORMS="cpu", RLINF_CODE_WORKING_DIR=plan["repo"])
         old.run_driver(plan, args.key)
         return
     assert os.getuid() == 20001 and os.uname().nodename == "h100-gpu02"

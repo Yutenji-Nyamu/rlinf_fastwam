@@ -107,6 +107,8 @@ def main():
         HF_HUB_OFFLINE="1",
         TRANSFORMERS_OFFLINE="1",
         CUDA_DEVICE_ORDER="PCI_BUS_ID",
+        JAX_PLATFORMS="cpu",
+        RLINF_CODE_WORKING_DIR=str(repo),
     )
     scope = {
         k: inherited[k]
