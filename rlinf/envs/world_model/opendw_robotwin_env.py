@@ -70,6 +70,11 @@ class OpenDWRobotwinEnv:
         self.chunk = int(cfg.get("chunk", 32))
         self.auto_reset = bool(cfg.get("auto_reset", False))
         self.reward_mode = str(cfg.get("reward_mode", "frame_score"))
+        self.reward_backend = str(cfg.get("reward_backend", "resnet"))
+        if self.reward_backend not in {"resnet", "topreward"}:
+            raise ValueError("Unknown OpenDW reward backend")
+        if self.reward_backend == "topreward" and self.reward_mode != "first_success_binary":
+            raise ValueError("TOPReward requires the existing first-success binary reward")
         if self.reward_mode not in {"frame_score", "first_success_binary"}:
             raise ValueError("Unknown reward mode")
         if self.reward_mode == "first_success_binary" and (
@@ -145,6 +150,9 @@ class OpenDWRobotwinEnv:
         self.returns = np.zeros(self.num_envs, dtype=np.float32)
         self._terminated = np.zeros(self.num_envs, dtype=bool)
         self._truncated = np.zeros(self.num_envs, dtype=bool)
+        if self.reward_backend == "topreward":
+            self._reward_history = np.zeros((self.num_envs, 8, 256, 320, 3), dtype=np.uint8)
+            self._reward_history_lengths = np.zeros(self.num_envs, dtype=np.int64)
 
     def update_reset_state_ids(self):
         if self.reset_state_ids is not None and self.use_fixed_reset_state_ids:
@@ -234,6 +242,10 @@ class OpenDWRobotwinEnv:
                 self._env_generators[index].integers(0, 2**31 - 1) for index in indices
             ], dtype=np.int64)
             payload = io.BytesIO()
+            reward_context = {}
+            if self.reward_backend == "topreward":
+                reward_context = dict(reward_history=self._reward_history[alive],
+                    reward_history_lengths=self._reward_history_lengths[alive])
             np.savez(
                 payload, images=self.current_images[alive], actions=actions[alive],
                 states=self.states[alive], seeds=seeds,
@@ -243,11 +255,16 @@ class OpenDWRobotwinEnv:
                 env_process_index=np.asarray(self.process_index, dtype=np.int64),
                 env_process_count=np.asarray(self.total_num_processes, dtype=np.int64),
                 request_id=np.asarray(f"seed{self.seed}-call{self._call_index}"),
+                **reward_context,
             )
             reply = self._post("/infer", payload.getvalue(), "application/octet-stream")
             with np.load(io.BytesIO(reply), allow_pickle=False) as result:
                 next_images = result["next_images"].copy()
                 scores = result["scores"].copy()
+                if self.reward_backend == "topreward":
+                    history = result["reward_history"].copy()
+                    if history.shape != (len(indices), 8, 256, 320, 3) or history.dtype != np.uint8:
+                        raise ValueError("TOPReward response lacks ordered future head frames")
             if next_images.shape != (len(indices), 384, 320, 3) or next_images.dtype != np.uint8:
                 raise ValueError("Service next_images must be uint8[B,384,320,3]")
             feedback = map_frame_scores(
@@ -265,6 +282,12 @@ class OpenDWRobotwinEnv:
             self.states[alive] = next_command_state(actions[alive])
             self.elapsed_steps[alive] += self.chunk
             self.prev_step_reward[alive] = feedback.next_score
+            if self.reward_backend == "topreward":
+                self._reward_history[alive] = history
+                self._reward_history_lengths[alive] = 8
+                # This verdict observes the full block, so no sub-block success
+                # time can be inferred from its broadcast probability.
+                feedback.first_success_action = np.where(feedback.terminated[:, -1], self.chunk, -1)
             rewards[alive] = feedback.rewards
             first_success[alive] = feedback.first_success_action
             self._terminated[alive] |= feedback.terminated[:, -1]
@@ -295,6 +318,10 @@ class OpenDWRobotwinEnv:
         if self.current_images is None:
             raise RuntimeError("No initialized environment state")
         buffer = io.BytesIO()
+        reward_state = {}
+        if self.reward_backend == "topreward":
+            reward_state = dict(reward_history=self._reward_history,
+                reward_history_lengths=self._reward_history_lengths)
         np.savez(
             buffer, current_images=self.current_images, states=self.states,
             policy_main_images=self.policy_main_images, policy_wrist_images=self.policy_wrist_images,
@@ -305,11 +332,20 @@ class OpenDWRobotwinEnv:
             rng=np.asarray(json.dumps(self._generator.bit_generator.state)),
             env_rng=np.asarray([json.dumps(rng.bit_generator.state) for rng in self._env_generators]),
             call_index=np.asarray(self._call_index), is_start=np.asarray(self._is_start),
+            **reward_state,
         )
         return buffer.getvalue()
 
     def set_state(self, state):
         with np.load(io.BytesIO(state), allow_pickle=False) as source:
+            if self.reward_backend == "topreward":
+                history = source["reward_history"]
+                lengths = source["reward_history_lengths"]
+                if (history.shape != (self.num_envs,8,256,320,3) or history.dtype != np.uint8
+                        or lengths.shape != (self.num_envs,) or np.any((lengths < 0) | (lengths > 8))):
+                    raise ValueError("Invalid episode-local TOPReward state")
+                self._reward_history = history.copy()
+                self._reward_history_lengths = lengths.copy()
             for name in ("current_images", "policy_main_images", "policy_wrist_images", "states", "elapsed_steps", "prev_step_reward", "success_once", "returns", "reset_state_ids"):
                 setattr(self, name, source[name].copy())
             self.task_descriptions = source["instructions"].tolist()

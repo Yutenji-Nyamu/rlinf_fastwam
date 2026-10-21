@@ -1,0 +1,441 @@
+{
+  "calibration_zero_early_best": {
+    "threshold": 0.9227641224861145,
+    "episodes": 64,
+    "early_alarm_episodes": 0,
+    "episodes_with_negative_prefix": 64,
+    "early_alarm_rate": 0.0,
+    "early_alarm_wilson95": [
+      0.0,
+      0.05662405979280534
+    ],
+    "successful_episodes": 32,
+    "detected_successful_episodes": 0,
+    "success_recall": 0.0,
+    "success_recall_wilson95": [
+      0.0,
+      0.1071791982550706
+    ],
+    "window_counts": {
+      "tp": 0,
+      "fp": 0,
+      "tn": 473,
+      "fn": 32
+    }
+  },
+  "calibration_recall50_min_early": {
+    "threshold": 0.51970374584198,
+    "episodes": 64,
+    "early_alarm_episodes": 45,
+    "episodes_with_negative_prefix": 64,
+    "early_alarm_rate": 0.703125,
+    "early_alarm_wilson95": [
+      0.5822979889645707,
+      0.8009484867446022
+    ],
+    "successful_episodes": 32,
+    "detected_successful_episodes": 17,
+    "success_recall": 0.53125,
+    "success_recall_wilson95": [
+      0.3644951711897464,
+      0.6913061289193116
+    ],
+    "window_counts": {
+      "tp": 17,
+      "fp": 192,
+      "tn": 281,
+      "fn": 15
+    }
+  },
+  "quantiles": {
+    "calibration_not_yet_success_window": {
+      "windows": 473,
+      "qwen": [
+        0.08497533202171326,
+        0.18659689128398896,
+        0.2961811423301697,
+        0.4523780345916748,
+        0.6444429159164429,
+        0.7611193776130676,
+        0.9227640628814697
+      ],
+      "old_rm": [
+        4.419987931214564e-08,
+        3.313350907774293e-06,
+        1.0727073458838277e-05,
+        3.8764512282796204e-05,
+        0.00018064546748064458,
+        0.0008512447471730415,
+        0.9958252906799316
+      ]
+    },
+    "calibration_success_window": {
+      "windows": 32,
+      "qwen": [
+        0.22001253068447113,
+        0.34517695009708405,
+        0.4302860051393509,
+        0.5251344442367554,
+        0.6105816662311554,
+        0.6921393036842347,
+        0.822771430015564
+      ],
+      "old_rm": [
+        0.08183927088975906,
+        0.7653048992156982,
+        0.9771398603916168,
+        0.9928853213787079,
+        0.9987106919288635,
+        0.999603909254074,
+        0.9999401569366455
+      ]
+    },
+    "holdout_not_yet_success_window": {
+      "windows": 462,
+      "qwen": [
+        0.06665635108947754,
+        0.16366124451160433,
+        0.26680392771959305,
+        0.4441739618778229,
+        0.6045545041561127,
+        0.7553589940071106,
+        0.919632613658905
+      ],
+      "old_rm": [
+        5.3675321964874456e-08,
+        3.7072056557008183e-06,
+        1.5076900581334485e-05,
+        6.047613169357646e-05,
+        0.00020783778381883167,
+        0.0011612781323492543,
+        0.5252375602722168
+      ]
+    },
+    "holdout_success_window": {
+      "windows": 32,
+      "qwen": [
+        0.29251256585121155,
+        0.3466105222702026,
+        0.4543762356042862,
+        0.622078150510788,
+        0.7014885693788528,
+        0.7582245886325837,
+        0.7896848320960999
+      ],
+      "old_rm": [
+        0.0020483811385929585,
+        0.13390373513102533,
+        0.43808069080114365,
+        0.9507181942462921,
+        0.9940073937177658,
+        0.9980593919754028,
+        0.9998043179512024
+      ]
+    }
+  },
+  "examples": {
+    "high_negative": [
+      {
+        "actual_seed": 100171,
+        "split": "holdout",
+        "legacy_rm_split": "train",
+        "chunk": 3,
+        "native_success_once": false,
+        "final_native_success": false,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1250317_17_49ca506242f9/episode.json",
+        "chunk_file": "chunk_003.npz",
+        "frame_indices": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "frame_progress": [
+          0.12600000202655792,
+          0.25,
+          0.37599998712539673,
+          0.5,
+          0.6259999871253967,
+          0.75,
+          0.8759999871253967,
+          1.0
+        ],
+        "old_rm_probability": 2.089346162392758e-05,
+        "old_rm_frame_probabilities": [
+          2.089346162392758e-05,
+          6.027830295352032e-06,
+          3.1480535653827246e-06,
+          1.3307429981068708e-05,
+          1.2029039453409496e-06,
+          3.4671396065277804e-07,
+          2.835859618244285e-07,
+          8.204472692341369e-07
+        ],
+        "probability": 0.919632613658905,
+        "log_probability": -0.08378104865550995,
+        "input_frames": 16,
+        "processed_frames": 16,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            8,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.10317104868590832
+      },
+      {
+        "actual_seed": 100016,
+        "split": "holdout",
+        "legacy_rm_split": "val",
+        "chunk": 2,
+        "native_success_once": false,
+        "final_native_success": false,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1250317_17_e751b33ec070/episode.json",
+        "chunk_file": "chunk_002.npz",
+        "frame_indices": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "frame_progress": [
+          0.12600000202655792,
+          0.25,
+          0.37599998712539673,
+          0.5,
+          0.6259999871253967,
+          0.75,
+          0.8759999871253967,
+          1.0
+        ],
+        "old_rm_probability": 0.4590168297290802,
+        "old_rm_frame_probabilities": [
+          7.396288128802553e-05,
+          5.911900370847434e-05,
+          6.707727152388543e-05,
+          7.488905976060778e-05,
+          0.0001496713375672698,
+          0.0012851279461756349,
+          0.4590168297290802,
+          0.00016213823982980102
+        ],
+        "probability": 0.8960530161857605,
+        "log_probability": -0.10975571721792221,
+        "input_frames": 16,
+        "processed_frames": 16,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            8,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.11132951732724905
+      },
+      {
+        "actual_seed": 100004,
+        "split": "holdout",
+        "legacy_rm_split": "val",
+        "chunk": 3,
+        "native_success_once": false,
+        "final_native_success": false,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1250317_11_2e4beb2b0eee/episode.json",
+        "chunk_file": "chunk_003.npz",
+        "frame_indices": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "frame_progress": [
+          0.12600000202655792,
+          0.25,
+          0.37599998712539673,
+          0.5,
+          0.6259999871253967,
+          0.75,
+          0.8759999871253967,
+          1.0
+        ],
+        "old_rm_probability": 2.9816757887601852e-05,
+        "old_rm_frame_probabilities": [
+          2.9816757887601852e-05,
+          1.5394016372738406e-05,
+          7.397594345093239e-06,
+          6.438558557420038e-06,
+          4.9840159590530675e-06,
+          1.2829725164920092e-05,
+          8.958497346611694e-06,
+          8.487476407026406e-06
+        ],
+        "probability": 0.8817524313926697,
+        "log_probability": -0.12584397196769714,
+        "input_frames": 16,
+        "processed_frames": 16,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            8,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.1051689563319087
+      }
+    ],
+    "low_positive": [
+      {
+        "actual_seed": 100030,
+        "split": "holdout",
+        "legacy_rm_split": "val",
+        "chunk": 3,
+        "native_success_once": true,
+        "final_native_success": true,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1248444_28_e968bfb2e689/episode.json",
+        "chunk_file": "chunk_003.npz",
+        "frame_indices": [
+          1
+        ],
+        "frame_progress": [
+          0.00800000037997961
+        ],
+        "old_rm_probability": 0.44801291823387146,
+        "old_rm_frame_probabilities": [
+          0.44801291823387146
+        ],
+        "probability": 0.29251256585121155,
+        "log_probability": -1.2292476892471313,
+        "input_frames": 9,
+        "processed_frames": 10,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            5,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.10213102772831917
+      },
+      {
+        "actual_seed": 100011,
+        "split": "holdout",
+        "legacy_rm_split": "val",
+        "chunk": 2,
+        "native_success_once": true,
+        "final_native_success": true,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1250317_10_494a785764d1/episode.json",
+        "chunk_file": "chunk_002.npz",
+        "frame_indices": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "frame_progress": [
+          0.12600000202655792,
+          0.25,
+          0.37599998712539673,
+          0.5,
+          0.6259999871253967,
+          0.75,
+          0.8759999871253967,
+          0.9879999756813049
+        ],
+        "old_rm_probability": 0.8790391087532043,
+        "old_rm_frame_probabilities": [
+          1.8552684650785523e-06,
+          2.9010473099333467e-06,
+          4.644902219297364e-06,
+          5.679054083884694e-05,
+          2.764831151580438e-05,
+          0.00022323131270240992,
+          0.001939295674674213,
+          0.8790391087532043
+        ],
+        "probability": 0.32123273611068726,
+        "log_probability": -1.135589361190796,
+        "input_frames": 16,
+        "processed_frames": 16,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            8,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.10660723876208067
+      },
+      {
+        "actual_seed": 100002,
+        "split": "holdout",
+        "legacy_rm_split": "val",
+        "chunk": 3,
+        "native_success_once": true,
+        "final_native_success": true,
+        "source": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/wm-cycle-20261009-v2/run/initial/capture/1248444_11_d12d8268dee4/episode.json",
+        "chunk_file": "chunk_003.npz",
+        "frame_indices": [
+          1
+        ],
+        "frame_progress": [
+          0.03400000184774399
+        ],
+        "old_rm_probability": 0.220722034573555,
+        "old_rm_frame_probabilities": [
+          0.220722034573555
+        ],
+        "probability": 0.3394278585910797,
+        "log_probability": -1.0804938077926636,
+        "input_frames": 9,
+        "processed_frames": 10,
+        "explicit_temporal_padding": 0,
+        "video_grid_thw": [
+          [
+            5,
+            16,
+            20
+          ]
+        ],
+        "seconds": 0.0901833912357688
+      }
+    ]
+  },
+  "frame_counts": {
+    "8": 128,
+    "9": 10,
+    "10": 14,
+    "11": 7,
+    "12": 3,
+    "13": 1,
+    "15": 10,
+    "16": 826
+  },
+  "latency_quantiles_seconds": [
+    0.0619874931871891,
+    0.10357275698333979,
+    0.1103645944967866,
+    0.11619121657684445,
+    1.113679226487875
+  ]
+}

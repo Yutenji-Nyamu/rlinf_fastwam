@@ -1,0 +1,82 @@
+{
+  "native-smoke": {
+    "gpu": 5,
+    "argv": [
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/qwen-venv/bin/python",
+      "-u",
+      "-B",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/source/local_scripts/topreward_20261021/evaluate_native.py",
+      "--dataset",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/native128",
+      "--model",
+      "/data/chenyiteng/models/Qwen3-VL-8B-Instruct-0c351dd0",
+      "--legacy-code",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/legacy",
+      "--rm-checkpoint",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/legacy/best.pt",
+      "--rm-threshold",
+      "0.8137992024421692",
+      "--physical-gpu",
+      "5",
+      "--episodes",
+      "1",
+      "--output",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/native-smoke-v1"
+    ]
+  },
+  "native128": {
+    "gpu": 5,
+    "argv": [
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/qwen-venv/bin/python",
+      "-u",
+      "-B",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/source/local_scripts/topreward_20261021/evaluate_native.py",
+      "--dataset",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/native128",
+      "--model",
+      "/data/chenyiteng/models/Qwen3-VL-8B-Instruct-0c351dd0",
+      "--legacy-code",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/legacy",
+      "--rm-checkpoint",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/legacy/best.pt",
+      "--rm-threshold",
+      "0.8137992024421692",
+      "--physical-gpu",
+      "5",
+      "--episodes",
+      "128",
+      "--output",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/native128-scores-v1"
+    ]
+  },
+  "b16": {
+    "gpu": 4,
+    "argv": [
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/qwen-venv/bin/python",
+      "-u",
+      "-B",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/source/local_scripts/topreward_20261021/benchmark_qwen_process.py",
+      "--dataset",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/native128",
+      "--model",
+      "/data/chenyiteng/models/Qwen3-VL-8B-Instruct-0c351dd0",
+      "--python",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/qwen-venv/bin/python",
+      "--physical-gpu",
+      "4",
+      "--output",
+      "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/b16-v1"
+    ]
+  },
+  "cards_before": {
+    "4": {
+      "uuid": "GPU-a0a252d6-828d-29e1-1fd2-65187f573f4d",
+      "processes": []
+    },
+    "5": {
+      "uuid": "GPU-2cd891ea-180d-da39-6419-2d7033f8b21b",
+      "processes": []
+    }
+  },
+  "stop_conditions": "Finite 1+128 native episodes and one B16 request; smoke failure prevents subsequent launches. No training launch."
+}
