@@ -70,7 +70,10 @@ def main():
     args = parser.parse_args()
     c = json.loads(Path(args.config).read_text())
     rank, world = int(os.environ["LOCAL_RANK"]), int(os.environ["WORLD_SIZE"])
-    assert world == 2 and os.environ["CUDA_VISIBLE_DEVICES"] == "2,3"
+    assert world == 2
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == os.environ.get(
+        "DISTILL_GPU_PAIR", "2,3"
+    )
     torch.cuda.set_device(rank)
     torch.set_num_threads(1)
     torch.backends.cuda.enable_cudnn_sdp(False)

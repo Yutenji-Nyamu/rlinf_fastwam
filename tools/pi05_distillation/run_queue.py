@@ -71,6 +71,7 @@ def train(method, output, stop_step, resume=None, label=None):
     env = dict(os.environ, **read(O / f"environment-g{CARDS[0]}.json"))
     env.update(
         CUDA_VISIBLE_DEVICES=GPU_LIST,
+        DISTILL_GPU_PAIR=GPU_LIST,
         DISTILL_RUN_TOKEN=D.name,
         PYTHONPATH=str(R) + ":" + env["ROBOTWIN_PATH"],
         TORCH_NCCL_ASYNC_ERROR_HANDLING="1",
