@@ -36,6 +36,9 @@ from common import exact_signal, gpus, proc, read, same, save
 R = Path(__file__).resolve().parents[2]
 D = Path(sys.argv[1])
 O = Path(read(D / "prepared.json")["output"])
+CARDS = tuple(read(D / "prepared.json").get("physical_gpus", [2, 3]))
+assert len(CARDS) == 2 and len(set(CARDS)) == 2
+GPU_LIST = ",".join(map(str, CARDS))
 PYTHON = "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python"
 child = None
 owned_children = []
@@ -64,10 +67,10 @@ def event(phase, **fields):
 def train(method, output, stop_step, resume=None, label=None):
     """Run one complete two-rank segment and require its checkpoint receipt."""
     global child
-    assert all(not gpus()[g]["processes"] for g in [2, 3]), "GPU pair not clear"
-    env = dict(os.environ, **read(O / "environment-g2.json"))
+    assert all(not gpus()[g]["processes"] for g in CARDS), "GPU pair not clear"
+    env = dict(os.environ, **read(O / f"environment-g{CARDS[0]}.json"))
     env.update(
-        CUDA_VISIBLE_DEVICES="2,3",
+        CUDA_VISIBLE_DEVICES=GPU_LIST,
         DISTILL_RUN_TOKEN=D.name,
         PYTHONPATH=str(R) + ":" + env["ROBOTWIN_PATH"],
         TORCH_NCCL_ASYNC_ERROR_HANDLING="1",
@@ -137,9 +140,9 @@ def evaluate(method, receipt, label):
     transaction = D / f"eval-{label}"
     transaction.mkdir()
     configs = []
-    for g in [2, 3]:
+    for index, g in enumerate(CARDS):
         group = []
-        for b in [g - 2, g]:
+        for b in [index, index + 2]:
             c = copy.deepcopy(read(O / f"configs/raw_n1_b{b}.json"))
             c.update(gpu=g, condition=label, distill_weights=receipt["policy"])
             c["model"]["openpi"].update(distill_target_time=method == "cp")
@@ -166,13 +169,13 @@ def evaluate(method, receipt, label):
             },
         )
     children = []
-    for g in [2, 3]:
+    for g in CARDS:
         env = dict(
             os.environ,
             **read(O / f"environment-g{g}.json"),
             POLICY_EVAL_ROOT=str(O),
             POLICY_EVAL_TRANSACTION=str(transaction),
-            POLICY_EVAL_GPUS="2,3",
+            POLICY_EVAL_GPUS=GPU_LIST,
             POLICY_EVAL_UID=str(os.getuid()),
         )
         with (transaction / f"lane-g{g}.log").open("x") as log:
@@ -261,7 +264,7 @@ def main():
     save(D / "training-queue-identity.json", proc(os.getpid()))
     if not smoke_only:
         event("WAIT_RAW_EVALUATION")
-        for g in [2, 3]:
+        for g in CARDS:
             while not (D / f"lane-g{g}-released.json").exists():
                 time.sleep(15)
     # An incomplete simulator baseline remains explicitly incomplete; it does
@@ -307,7 +310,7 @@ def main():
             c = read(D / f"{method}.json")
             if "CUDA out of memory" not in log or c["microbatch_per_rank"] != 32:
                 raise
-            assert all(not gpus()[g]["processes"] for g in [2, 3])
+            assert all(not gpus()[g]["processes"] for g in CARDS)
             output.rename(O / f"smoke-{method}-micro32-failed")
             c["microbatch_per_rank"] = (
                 16  # global B64 and all learning settings stay fixed
@@ -342,8 +345,18 @@ def main():
         shape = read(O / f"smoke-{method}/resolved.json")
         total = shape["total_steps"]
         interval = c["eval_epochs"] * shape["steps_per_epoch"]
-        resume = None
+        saved_path = O / method / "checkpoint.json"
+        saved = read(saved_path) if saved_path.exists() else None
+        resume = saved["path"] if saved else None
+        if saved:
+            assert 0 < saved["step"] <= total
+            assert Path(saved["path"]).is_file() and Path(saved["policy"]).is_file()
+            label = f"{method}-s{saved['step']:06d}"
+            if not (O / f"summary-{label}.json").exists():
+                evaluate(method, saved, label)
         for stop in sorted({*range(interval, total, interval), total}):
+            if saved and stop <= saved["step"]:
+                continue
             receipt = train(method, O / method, stop, resume)
             evaluate(method, receipt, f"{method}-s{stop:06d}")
             resume = receipt["path"]
