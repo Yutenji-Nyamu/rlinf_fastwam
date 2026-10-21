@@ -1,0 +1,205 @@
+{
+  "time": 1792574013.0284743,
+  "owner_alive": true,
+  "status": {
+    "slots": {
+      "4": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "5": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "6": {
+        "phase": "WAIT_EXTERNAL"
+      },
+      "7": {
+        "phase": "WAIT_EXTERNAL"
+      }
+    },
+    "time": 1792574003.7675622,
+    "owner": {
+      "pid": 609964,
+      "uid": 20001,
+      "start": 854439973,
+      "state": "R"
+    }
+  },
+  "cutover": {
+    "time": 1792573376.0178275,
+    "gpus": [
+      6,
+      7
+    ],
+    "fallbacks": [
+      {
+        "gpu": "6",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g6-after-editor-u-1013/rlt-h100-gpu01-g6-after-editor-u-1013/checkpoints/global_step_250",
+        "step": 250,
+        "contract_match": true,
+        "type_corrections": [],
+        "prior": {
+          "kind": "rlt",
+          "gpu": 6,
+          "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+          "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-clean-c20-dense30-1021",
+          "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-clean-c20-dense30-1021/runtime",
+          "namespace": "rlt-sz3-g6-after-clean-c20-dense30-1021",
+          "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g6-after-editor-u-1013/rlt-h100-gpu01-g6-after-editor-u-1013/checkpoints/global_step_250",
+          "step": 250
+        }
+      },
+      {
+        "gpu": "7",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g7-after-editor-u-1013/rlt-h100-gpu01-g7-after-editor-u-1013/checkpoints/global_step_250",
+        "step": 250,
+        "contract_match": true,
+        "type_corrections": [
+          {
+            "key": "log_eps",
+            "before": "1e-12",
+            "after": 1e-12
+          },
+          {
+            "key": "minmax_eps",
+            "before": "1e-06",
+            "after": 1e-06
+          }
+        ],
+        "prior": {
+          "kind": "rlt",
+          "gpu": 7,
+          "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+          "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-clean-c20-dense30-1021",
+          "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-clean-c20-dense30-1021/runtime",
+          "namespace": "rlt-sz3-g7-after-clean-c20-dense30-1021",
+          "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g7-after-editor-u-1013/rlt-h100-gpu01-g7-after-editor-u-1013/checkpoints/global_step_250",
+          "step": 250
+        }
+      }
+    ],
+    "unrelated_45_unchanged": true
+  },
+  "tests": "...............\n----------------------------------------------------------------------\nRan 15 tests in 0.291s\n\nOK\n",
+  "errors": {},
+  "lane_errors": {},
+  "lanes": {
+    "6": {
+      "state": {
+        "time": 1792573375.820769,
+        "phase": "RUNNING",
+        "config": "/data/chenyiteng/results/pi05-policy-eval/clean-c20-dense30-20261021-v2/configs/dense30_high_p03_b0.json",
+        "gpu": 6,
+        "child": {
+          "pid": 606161,
+          "uid": 20001,
+          "start": 854439953,
+          "state": "D"
+        }
+      },
+      "alive": true,
+      "files": {
+        "weak-loaded.json": {
+          "path": "/data/chenyiteng/models/protected-eval/pillbottle/clean_c17_cp140/full_weights.pt",
+          "strict": true,
+          "missing_keys": [],
+          "unexpected_keys": []
+        },
+        "strong-loaded.json": {
+          "path": "/data/chenyiteng/models/protected-eval/pillbottle/grpo_u_tau3_cp70/full_weights.pt",
+          "strict": true,
+          "missing_keys": [],
+          "unexpected_keys": []
+        }
+      }
+    },
+    "7": {
+      "state": {
+        "time": 1792573377.5043035,
+        "phase": "RUNNING",
+        "config": "/data/chenyiteng/results/pi05-policy-eval/clean-c20-dense30-20261021-v2/configs/dense30_high_p03_b1.json",
+        "gpu": 7,
+        "child": {
+          "pid": 622487,
+          "uid": 20001,
+          "start": 854440121,
+          "state": "D"
+        }
+      },
+      "alive": true,
+      "files": {
+        "weak-loaded.json": {
+          "path": "/data/chenyiteng/models/protected-eval/pillbottle/clean_c17_cp140/full_weights.pt",
+          "strict": true,
+          "missing_keys": [],
+          "unexpected_keys": []
+        },
+        "strong-loaded.json": {
+          "path": "/data/chenyiteng/models/protected-eval/pillbottle/grpo_u_tau3_cp70/full_weights.pt",
+          "strict": true,
+          "missing_keys": [],
+          "unexpected_keys": []
+        }
+      }
+    }
+  },
+  "actual_gpu_binding": {
+    "6": {
+      "uuid": "GPU-fd35b6f1-d724-0bda-2444-7c75ba5c2715",
+      "processes": [
+        {
+          "pid": 606161,
+          "type": "C+G"
+        }
+      ]
+    },
+    "7": {
+      "uuid": "GPU-0423def8-ef84-a808-6582-7dc2130f58fc",
+      "processes": [
+        {
+          "pid": 622487,
+          "type": "C+G"
+        }
+      ]
+    }
+  },
+  "latest_progress": {
+    "time": 1792574101.7819757,
+    "lanes": {
+      "6": {
+        "status": {
+          "time": 1792573375.820769,
+          "phase": "RUNNING",
+          "config": "/data/chenyiteng/results/pi05-policy-eval/clean-c20-dense30-20261021-v2/configs/dense30_high_p03_b0.json",
+          "gpu": 6,
+          "child": {
+            "pid": 606161,
+            "uid": 20001,
+            "start": 854439953,
+            "state": "D"
+          }
+        },
+        "files": {},
+        "control_files": 0
+      },
+      "7": {
+        "status": {
+          "time": 1792573377.5043035,
+          "phase": "RUNNING",
+          "config": "/data/chenyiteng/results/pi05-policy-eval/clean-c20-dense30-20261021-v2/configs/dense30_high_p03_b1.json",
+          "gpu": 7,
+          "child": {
+            "pid": 622487,
+            "uid": 20001,
+            "start": 854440121,
+            "state": "D"
+          }
+        },
+        "files": {},
+        "control_files": 0
+      }
+    },
+    "errors": {},
+    "lane_errors": {}
+  },
+  "acceptance": "Strict weak/strong loads and physical C+G binding verified; simulation initialization ongoing; no completed batch yet."
+}
