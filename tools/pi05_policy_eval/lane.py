@@ -25,6 +25,7 @@ from pathlib import Path
 S = Path("/data/chenyiteng/deployment-20261008/bc-signal-tau-v1")
 sys.path.insert(0, str(S / "ops"))
 from common import exact_signal, gpus, proc, read, save  # noqa: E402
+from recovery import archive_failed_batch, limits
 
 R = Path(__file__).resolve().parents[2]
 O = Path(os.environ["POLICY_EVAL_ROOT"])
@@ -91,102 +92,125 @@ def wait_for(path, seconds=7500):
 
 try:
     plan = read(D / f"lane-g{g}-plan.json")
+    budget = limits(plan)
     for stage in plan["stages"]:
         name = stage["condition"]
         for config in stage["configs"]:
             c = read(config)
             out = Path(c["output"])
-            assert not out.exists(), "Do not silently replay an attempted batch"
-            assert c["gpu"] == int(g)
-            if c.get("strong_weights") and c.get("takeover_mode", "weights") == "weights":
-                # Cross-host protected copies become visible by atomic rename.
-                # Reuse the finite queue wait; do not load a partial transfer.
-                save(D / f"lane-g{g}-status.json", dict(time=time.time(), phase="WAIT_WEIGHTS", config=config))
-                wait_for(Path(c["strong_weights"]), seconds=10800)
-            assert not gpus()[int(g)]["processes"]
-            record = {
-                "time": time.time(),
-                "phase": "RUNNING",
-                "config": config,
-                "gpu": int(g),
-            }
-            with (D / (out.name + f"-g{g}.log")).open("x") as f:
-                child = subprocess.Popen(
-                    [
-                        python,
-                        "-u",
-                        "-B",
-                        str(R / "tools/pi05_policy_eval/run_batch.py"),
-                        config,
-                    ],
-                    cwd=R,
-                    env=env,
-                    stdin=subprocess.DEVNULL,
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
-                record["child"] = proc(child.pid)
-                save(D / f"lane-g{g}-status.json", record)
-                deadline = time.monotonic() + 3600
-                while child.poll() is None:
-                    try:
-                        rc = child.wait(timeout=15)
-                    except subprocess.TimeoutExpired:
-                        progress = out / "progress.json"
-                        stalled = (
-                            progress.exists()
-                            and time.time() - progress.stat().st_mtime > 600
+            for attempt in range(budget["attempts"]):
+                try:
+                    assert not out.exists(), "Do not silently replay an attempted batch"
+                    assert c["gpu"] == int(g)
+                    if c.get("strong_weights") and c.get("takeover_mode", "weights") == "weights":
+                        # Cross-host protected copies become visible by atomic rename.
+                        # Reuse the finite queue wait; do not load a partial transfer.
+                        save(D / f"lane-g{g}-status.json", dict(time=time.time(), phase="WAIT_WEIGHTS", config=config))
+                        wait_for(Path(c["strong_weights"]), seconds=10800)
+                    assert not gpus()[int(g)]["processes"]
+                    record = {
+                        "time": time.time(),
+                        "phase": "RUNNING",
+                        "config": config,
+                        "gpu": int(g),
+                    }
+                    with (D / (out.name + f"-g{g}-attempt{attempt}.log")).open("x") as f:
+                        child = subprocess.Popen(
+                            [
+                                python,
+                                "-u",
+                                "-B",
+                                str(R / "tools/pi05_policy_eval/run_batch.py"),
+                                config,
+                            ],
+                            cwd=R,
+                            env=env,
+                            stdin=subprocess.DEVNULL,
+                            stdout=f,
+                            stderr=subprocess.STDOUT,
+                            start_new_session=True,
                         )
-                        if stalled or time.monotonic() > deadline:
-                            exact_signal(record["child"], signal.SIGTERM)
+                        record["child"] = proc(child.pid)
+                        save(D / f"lane-g{g}-status.json", record)
+                        deadline = time.monotonic() + budget["batch_seconds"]
+                        while child.poll() is None:
                             try:
-                                child.wait(timeout=10)
+                                rc = child.wait(timeout=15)
                             except subprocess.TimeoutExpired:
-                                exact_signal(record["child"], signal.SIGKILL)
-                                child.wait(timeout=20)
-                            raise RuntimeError(
-                                "Native batch stalled for 600s or exceeded 3600s"
-                            )
-                rc = child.returncode
-            clear = cleanup()
-            assert rc == 0 and (out / "done.json").exists(), (
-                f"Batch failed ({rc}); no automatic retry"
-            )
-            done, episodes = read(out / "done.json"), read(out / "episodes.json")
-            assert len(episodes) == done["episodes"] == 32
-            assert sum(e["success"] for e in episodes) == done["successes"]
-            assert all(e["success"] or e["submitted"] >= 200 for e in episodes)
-            save(
-                D / (out.name + "-result.json"),
-                {
-                    "time": time.time(),
-                    "complete": True,
-                    "done": done,
-                    "clearance": clear,
-                },
-            )
+                                progress = out / "progress.json"
+                                stalled = (
+                                    progress.exists()
+                                    and time.time() - progress.stat().st_mtime > budget["stall_seconds"]
+                                )
+                                if stalled or time.monotonic() > deadline:
+                                    exact_signal(record["child"], signal.SIGTERM)
+                                    try:
+                                        child.wait(timeout=10)
+                                    except subprocess.TimeoutExpired:
+                                        exact_signal(record["child"], signal.SIGKILL)
+                                        child.wait(timeout=20)
+                                    raise RuntimeError(
+                                        f"Native batch exceeded stall={budget['stall_seconds']}s or total={budget['batch_seconds']}s"
+                                    )
+                        rc = child.returncode
+                    clear = cleanup()
+                    assert rc == 0 and (out / "done.json").exists(), (
+                        f"Batch failed ({rc}); no valid completion receipt"
+                    )
+                    done, episodes = read(out / "done.json"), read(out / "episodes.json")
+                    assert len(episodes) == done["episodes"] == 32
+                    assert sum(e["success"] for e in episodes) == done["successes"]
+                    assert all(e["success"] or e["submitted"] >= 200 for e in episodes)
+                    save(
+                        D / (out.name + "-result.json"),
+                        {
+                            "time": time.time(),
+                            "complete": True,
+                            "done": done,
+                            "clearance": clear,
+                        },
+                    )
+                    break
+                except Exception:
+                    if not budget["continue_errors"]:
+                        raise
+                    reason = traceback.format_exc()
+                    clear = cleanup()
+                    archive = archive_failed_batch(O, out, attempt)
+                    save(D / f"{out.name}-attempt{attempt}-failed.json", dict(
+                        time=time.time(), error=reason, archive=archive, clearance=clear))
+            else:
+                save(D / f"{out.name}-skipped.json", dict(
+                    time=time.time(), attempts=budget["attempts"], complete=False))
         save(D / f"{name}-g{g}-complete.json", {"time": time.time()})
         save(
             D / f"lane-g{g}-status.json",
             {"time": time.time(), "phase": "CONDITION_BARRIER", "condition": name},
         )
-        wait_for(D / f"{name}-g{peer}-complete.json")
+        wait_for(D / f"{name}-g{peer}-complete.json", seconds=budget["barrier_seconds"])
         if g == cards[0] and stage.get("summarize", True):
-            # This summarizer never creates a CUDA context.
-            subprocess.run(
-                [
-                    python,
-                    "-B",
-                    str(R / "tools/pi05_policy_eval/summarize.py"),
-                    str(O),
-                    name,
-                ],
-                cwd=R,
-                env=dict(env, CUDA_VISIBLE_DEVICES=""),
-                check=True,
-            )
-            save(D / f"{name}-ready.json", {"time": time.time()})
+            complete = all((Path(read(cfg)["output"]) / "done.json").is_file()
+                           for card in cards
+                           for st in read(D / f"lane-g{card}-plan.json")["stages"]
+                           if st["condition"] == name for cfg in st["configs"])
+            if not complete and budget["continue_errors"]:
+                save(D / f"{name}-incomplete.json", dict(time=time.time(), complete=False))
+                save(D / f"{name}-ready.json", dict(time=time.time(), complete=False))
+            else:
+                # This summarizer never creates a CUDA context.
+                subprocess.run(
+                    [
+                        python,
+                        "-B",
+                        str(R / "tools/pi05_policy_eval/summarize.py"),
+                        str(O),
+                        name,
+                    ],
+                    cwd=R,
+                    env=dict(env, CUDA_VISIBLE_DEVICES=""),
+                    check=True,
+                )
+                save(D / f"{name}-ready.json", {"time": time.time()})
         elif g == cards[0]:
             save(D / f"{name}-ready.json", {"time": time.time(), "smoke_only": True})
         else:
@@ -196,7 +220,9 @@ try:
         {
             "time": time.time(),
             "identity": me,
-            "completed": True,
+            "completed": not list(D.glob("*-skipped.json")),
+            "queue_exhausted": True,
+            "skipped_batches": [p.name for p in D.glob("*-skipped.json")],
             "clearance": cleanup(),
         },
     )

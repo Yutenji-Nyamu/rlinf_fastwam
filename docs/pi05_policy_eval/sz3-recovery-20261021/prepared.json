@@ -1,0 +1,51 @@
+{
+  "prepared": "/data/chenyiteng/deployment-20261021/clean-c20-dense30-sz3-v1-recovery1",
+  "output": "/data/chenyiteng/results/pi05-policy-eval/clean-c20-dense30-20261021-v2",
+  "fallbacks": [
+    {
+      "gpu": "6",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g6-after-editor-u-1013/rlt-h100-gpu01-g6-after-editor-u-1013/checkpoints/global_step_250",
+      "step": 250,
+      "contract_match": true,
+      "type_corrections": [],
+      "prior": {
+        "kind": "rlt",
+        "gpu": 6,
+        "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+        "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-clean-c20-dense30-1021",
+        "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g6-after-clean-c20-dense30-1021/runtime",
+        "namespace": "rlt-sz3-g6-after-clean-c20-dense30-1021",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g6-after-editor-u-1013/rlt-h100-gpu01-g6-after-editor-u-1013/checkpoints/global_step_250",
+        "step": 250
+      }
+    },
+    {
+      "gpu": "7",
+      "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g7-after-editor-u-1013/rlt-h100-gpu01-g7-after-editor-u-1013/checkpoints/global_step_250",
+      "step": 250,
+      "contract_match": true,
+      "type_corrections": [
+        {
+          "key": "log_eps",
+          "before": "1e-12",
+          "after": 1e-12
+        },
+        {
+          "key": "minmax_eps",
+          "before": "1e-06",
+          "after": 1e-06
+        }
+      ],
+      "prior": {
+        "kind": "rlt",
+        "gpu": 7,
+        "repo": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-rlt-step-timeout-sz3-20261003",
+        "run": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-clean-c20-dense30-1021",
+        "runtime": "/data/chenyiteng/results/rlinf-rlt/rlt-sz3-g7-after-clean-c20-dense30-1021/runtime",
+        "namespace": "rlt-sz3-g7-after-clean-c20-dense30-1021",
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-h100-gpu01-g7-after-editor-u-1013/rlt-h100-gpu01-g7-after-editor-u-1013/checkpoints/global_step_250",
+        "step": 250
+      }
+    }
+  ]
+}

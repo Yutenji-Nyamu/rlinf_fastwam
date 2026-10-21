@@ -164,7 +164,7 @@ def run(config):
         assert not ec.auto_reset and ec.ignore_terminations
         env = RoboTwinEnv(ec, batch, 0, 1, None)
         if full_video:
-            configure_recording_wait(env)
+            configure_recording_wait(env, seconds=c.get("environment_step_timeout_seconds", 300))
         obs, _ = env.reset()
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]

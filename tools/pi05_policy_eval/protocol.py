@@ -75,13 +75,14 @@ def configure_recording_wait(env, seconds=300):
 
     B32 complete video needed144s for a native block, above its120s default.
     Keep the installed dispatcher byte-for-byte except this wall-clock wait.
-    The finite lane's600s stall limit remains the outer bound.
+    The caller may supply the measured host-specific limit. The lane keeps
+    a separate finite stall and whole-batch limit.
     """
     import inspect
     import textwrap
     import types
 
-    assert seconds == 300
+    assert 300 <= seconds <= 1200
     original = env.venv.step.__func__
     source = textwrap.dedent(inspect.getsource(original))
     anchor = "future.result(timeout=120)"

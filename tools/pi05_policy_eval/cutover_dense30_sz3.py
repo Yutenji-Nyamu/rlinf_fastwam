@@ -1,5 +1,6 @@
 """One-shot exact RLT preemption -> finite paired eval -> fresh RLT runtimes."""
 import copy,fcntl,json,os,signal,subprocess,sys,time,traceback,yaml
+from omegaconf import OmegaConf
 from pathlib import Path
 T=Path('/data/chenyiteng/deployment-20261021/clean-c20-dense30-sz3-v1');S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1')
 sys.path.insert(0,str(S/'ops'));from common import read,save,proc,same,exact_signal,gpus,actors
@@ -65,7 +66,7 @@ try:
    # The observed exit is sufficient only after the exact process, GPU and Ray
    # namespace checks above; do not fabricate a native driver finish receipt.
    release=dict(time=time.time(),kind='externally_observed_release',driver_identity=row['identity'],driver_finish_receipt_present=False,driver_exited=True,gpu_clear=True,namespace_clear=True)
-  cfg=yaml.safe_load((oldrt/'resolved.yaml').read_text());oldroot=Path(old['run'])/Path(old['run']).name/'checkpoints'
+  cfg=OmegaConf.to_container(OmegaConf.load(oldrt/'resolved.yaml'),resolve=True);oldroot=Path(old['run'])/Path(old['run']).name/'checkpoints'
   candidates=[Path(cfg['runner']['resume_dir'])]+list(oldroot.glob('global_step_*'))
   required=['actor/dcp_checkpoint/.metadata','actor/dcp_checkpoint/__0_0.distcp','actor/sac_components/rlt_trainer_state/complete.json','actor/sac_components/rlt_trainer_state/checkpoint_rank_0.pt','actor/sac_components/target_model/checkpoint_rank_0.pt','actor/sac_components/replay_buffer/rank_0/metadata.json']
   complete=[cp for cp in candidates if all((cp/f).is_file() and (cp/f).stat().st_size>0 for f in required)]
