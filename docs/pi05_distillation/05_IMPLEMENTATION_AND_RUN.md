@@ -2,6 +2,8 @@
 
 2026-10-21。用户本轮授权：深圳3物理2/3卡，原始N1/N10各128回合、H50/C50；实现CP与OneDP，简洁smoke后直接正式训练，轻量源码/结果公开推送。此前“六任务筛选、先3000步工程验证”的建议已被本轮指令取代。
 
+**执行更新**：用户后来按IP明确将全部后续工作移至 `.105` 2/3卡，先smoke再补齐原始评估；实测后选择每卡64、全局B128，学习率与epochs保持不变。以下B64及步数是初始配置依据；最新容量、19,000/760步预算与迁移回执以[06](06_BATCH_SMOKE_SZ2.md)为准。
+
 ## 数据到底需要什么
 
 可以直接用 [TianxingChen/RoboTwin2.0 的 adjust_bottle / aloha-agilex_clean_50](https://huggingface.co/datasets/TianxingChen/RoboTwin2.0/tree/main/dataset/adjust_bottle)。它是50条专家示范：同一时刻三相机RGB、14维机器人关节状态、任务指令，以及后续绝对关节目标。

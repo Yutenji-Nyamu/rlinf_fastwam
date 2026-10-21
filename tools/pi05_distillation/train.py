@@ -268,6 +268,7 @@ def main():
                 lr=opt.param_groups[0]["lr"],
                 seconds_per_update=(time.monotonic() - begin) / (step + 1 - start),
                 peak_gib=torch.cuda.max_memory_allocated() / 2**30,
+                peak_reserved_gib=torch.cuda.max_memory_reserved() / 2**30,
                 time=time.time(),
                 rank=rank,
             )

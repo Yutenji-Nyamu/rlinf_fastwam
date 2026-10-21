@@ -257,14 +257,16 @@ def accept_smoke(method):
 def main():
     """Proceed automatically once both method smokes meet explicit criteria."""
     assert os.getuid() == 20001
+    smoke_only = "--smoke-only" in sys.argv[2:]
     save(D / "training-queue-identity.json", proc(os.getpid()))
-    event("WAIT_RAW_EVALUATION")
-    for g in [2, 3]:
-        while not (D / f"lane-g{g}-released.json").exists():
-            time.sleep(15)
+    if not smoke_only:
+        event("WAIT_RAW_EVALUATION")
+        for g in [2, 3]:
+            while not (D / f"lane-g{g}-released.json").exists():
+                time.sleep(15)
     # An incomplete simulator baseline remains explicitly incomplete; it does
     # not invalidate the independent offline training data or block its smoke.
-    for n in [1, 10]:
+    for n in [] if smoke_only else [1, 10]:
         results = [read(p) for p in (O / "batches").glob(f"raw_n{n}_b*/done.json")]
         valid = sum(r["episodes"] for r in results)
         successes = sum(r["successes"] for r in results)
@@ -279,9 +281,25 @@ def main():
                 "complete": valid == 128,
             },
         )
+    if not smoke_only and (D / "external-smoke-request.json").exists():
+        event("WAIT_EXTERNAL_SMOKE")
+        while not (D / "external-smoke.json").exists():
+            time.sleep(15)
     # Both algorithms are smoke-tested before either long formal run.
     for method in ["cp", "onedp"]:
         output = O / f"smoke-{method}"
+        if not smoke_only and (D / "external-smoke.json").exists():
+            evidence = read(D / "external-smoke.json")
+            assert evidence["host"] == "sz2" and evidence["passed"]
+            measured = read(output / "resolved.json")["config"].copy()
+            formal = read(D / f"{method}.json").copy()
+            for field in ["log_every", "checkpoint_steps"]:
+                measured.pop(field)
+                formal.pop(field)
+            assert measured == formal, "Measured training configuration changed"
+            accept_smoke(method)
+            event("REUSED_EXTERNAL_SMOKE", method=method, source=evidence)
+            continue
         try:
             receipt = train(method, output, 12, label=f"smoke-{method}")
         except RuntimeError:
@@ -316,6 +334,9 @@ def main():
             "automatic_checks_passed": True,
         },
     )
+    if smoke_only:
+        event("SMOKE_ONLY_COMPLETE")
+        return
     for method in ["cp", "onedp"]:
         c = read(D / f"{method}.json")
         shape = read(O / f"smoke-{method}/resolved.json")
