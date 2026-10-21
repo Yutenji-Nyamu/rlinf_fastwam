@@ -73,15 +73,21 @@ class OpenDWRobotwinEnv:
         self.reward_backend = str(cfg.get("reward_backend", "resnet"))
         if self.reward_backend not in {"resnet", "topreward"}:
             raise ValueError("Unknown OpenDW reward backend")
-        if self.reward_backend == "topreward" and self.reward_mode != "first_success_binary":
-            raise ValueError("TOPReward requires the existing first-success binary reward")
-        if self.reward_mode not in {"frame_score", "first_success_binary"}:
+        if self.reward_backend == "topreward" and self.reward_mode not in {
+            "first_success_binary", "terminal_score",
+        }:
+            raise ValueError("TOPReward requires binary success or terminal score")
+        if self.reward_mode not in {"frame_score", "first_success_binary", "terminal_score"}:
             raise ValueError("Unknown reward mode")
         if self.reward_mode == "first_success_binary" and (
             cfg.get("ignore_terminations", False) or cfg.get("use_rel_reward", True)
             or float(cfg.get("reward_coef", 1.0)) != 1.0
         ):
             raise ValueError("Binary success requires termination, no shaping, coefficient one")
+        if self.reward_mode == "terminal_score" and (
+            cfg.get("use_rel_reward", True) or float(cfg.get("reward_coef", 1.0)) != 1.0
+        ):
+            raise ValueError("Terminal score requires raw probability and coefficient one")
         self.ignore_terminations = bool(cfg.get("ignore_terminations", False))
         self.video_cfg = cfg.get("video_cfg", {})
         self.image_size = tuple(cfg.get("image_size", (256, 256)))

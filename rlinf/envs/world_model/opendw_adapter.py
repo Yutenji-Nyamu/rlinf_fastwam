@@ -108,10 +108,24 @@ native 400-action budget or training on unexecuted actions.
     elapsed = np.asarray(elapsed_steps, dtype=np.int64).reshape(batch)
     if np.any(elapsed + ACTION_CHUNK > int(max_episode_steps)):
         raise ValueError("Partial C32 chunk requires a separate valid-action mask adapter")
-    if reward_mode not in {"frame_score", "first_success_binary"}:
+    if reward_mode not in {"frame_score", "first_success_binary", "terminal_score"}:
         raise ValueError("Unknown reward mode")
     if reward_mode == "first_success_binary" and (relative_reward or float(reward_coef) != 1.0):
         raise ValueError("Binary success uses no score differences and coefficient one")
+    if reward_mode == "terminal_score":
+        if relative_reward or float(reward_coef) != 1.0:
+            raise ValueError("Terminal score uses raw probability and coefficient one")
+        # A score ranks complete, equal-budget candidates; it does not certify
+        # native success. Earlier scores must neither accumulate nor stop rows.
+        rewards = np.zeros((batch, ACTION_CHUNK), dtype=np.float32)
+        terminated = np.zeros_like(rewards, dtype=bool)
+        truncated = np.zeros_like(terminated)
+        truncated[:, -1] = elapsed + ACTION_CHUNK == int(max_episode_steps)
+        rewards[:, -1] = scores[:, -1] * truncated[:, -1]
+        return ChunkFeedback(
+            rewards, terminated, truncated, scores[:, -1].copy(),
+            np.full(batch, -1, dtype=np.int64),
+        )
     reward_frames = scores.copy()
     if relative_reward:
         reward_frames = np.diff(np.concatenate([previous[:, None], scores], axis=1), axis=1)

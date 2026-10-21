@@ -1,0 +1,78 @@
+{
+  "owner_dir": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/run",
+  "repo": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source",
+  "physical_gpus": [
+    4,
+    5
+  ],
+  "token": "4bb811231e1244399045bfce9de78cba",
+  "python": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+  "queue_ops": "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops",
+  "existing_owner": "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/lift-two-gpu-b16-lean-20261007-v1/code/owner.py",
+  "environment_file": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/environment.json",
+  "graphics_fragment": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/graphics-fragment.json",
+  "ray_address": "127.0.0.1:26379",
+  "ray_dashboard_url": "http://127.0.0.1:28266",
+  "management_namespace": "topreward_terminal_sz2_1021_ops",
+  "trials": [
+    {
+      "key": "smoke",
+      "config": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/config/smoke.yaml",
+      "namespace": "topreward_terminal_sz2_1021_smoke",
+      "episode_steps": 384,
+      "num_envs": 16,
+      "timeout_seconds": 7200
+    },
+    {
+      "key": "formal",
+      "config": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/config/formal.yaml",
+      "namespace": "topreward_terminal_sz2_1021_formal",
+      "episode_steps": 384,
+      "num_envs": 64,
+      "timeout_seconds": 5184000
+    }
+  ],
+  "borrow_receipt": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/borrowed.json",
+  "release_receipt": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/released.json",
+  "services": [
+    {
+      "key": "wm5",
+      "physical_gpu": 5,
+      "argv": [
+        "/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/venv/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source/local_scripts/wovr_cycle_20261008/code/opendw_service_batched.py",
+        "--bundle",
+        "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/wm-bundle",
+        "--reward-backend",
+        "topreward",
+        "--reward-checkpoint",
+        "/data/chenyiteng/models/Qwen3-VL-8B-Instruct-0c351dd0",
+        "--qwen-python",
+        "/data/chenyiteng/deployment-20261021/wm-topreward-sz2-g45-v1/qwen-venv/bin/python",
+        "--physical-gpu",
+        "5",
+        "--port",
+        "18986",
+        "--output-dir",
+        "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/run/services/wm5/records",
+        "--evidence-samples",
+        "640",
+        "--execution-mode",
+        "batched",
+        "--wm-batch-size",
+        "16"
+      ],
+      "cwd": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source/local_scripts/wovr_cycle_20261008/code",
+      "url": "http://127.0.0.1:18986",
+      "startup_seconds": 1200,
+      "environment": {
+        "PYTHONPATH": "/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source/local_scripts/wovr_cycle_20261008/code:/data/chenyiteng/deployment-20261021/wm-topreward-continuous-sz2-g45-v1/source/local_scripts/topreward_20261021:/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/opendw:/data/chenyiteng/projects/opendw-robotwin-smoke-20261003/payload_v2/tools",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "CUDA_DEVICE_ORDER": "PCI_BUS_ID"
+      }
+    }
+  ]
+}
