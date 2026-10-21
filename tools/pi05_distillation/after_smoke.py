@@ -81,6 +81,10 @@ def main():
         # Check the actual entrypoint once before any batch can be skipped.
         probe_env = dict(os.environ, **queue.read(queue.O / "environment-g2.json"))
         probe_env["CUDA_VISIBLE_DEVICES"] = ""
+        for variable in ["VK_DRIVER_FILES", "VK_ICD_FILENAMES"]:
+            for filename in probe_env.get(variable, "").split(os.pathsep):
+                if filename:
+                    assert Path(filename).is_file(), f"Missing {variable}: {filename}"
         probe = subprocess.run(
             [
                 queue.PYTHON,

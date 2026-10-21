@@ -29,4 +29,6 @@
 
 迁移首次启动发现训练专用部署包未带评估所需的既有`tools/pi05_signals`及`tools/pi05_u_video`，`signal_math`导入失败，6个剩余批次均未开始仿真。旧队列随后进入独立离线训练；本轮已精准停止这一无完整checkpoint的短段，保留日志，补齐已验收工具源码，并在接管前增加一次真实评估入口`--help`导入检查。已完成两批未重跑，缺失批不算失败成绩。
 
-22:03修复队列已启动：`.105` 的 `deployment-20261021/pi05-distill-adjust-migrated-recovery1`，产物仍在原`results/pi05-distill/adjust-20261021-v1`。当前顺序为剩余原始评估 → CP正式训练/评估 → OneDP正式训练/评估；B128 smoke证据直接复用。旧事务以`superseded-by.json`指向新队列，不再运行。
+另核实迁移沿用的旧环境把Vulkan驱动指向不存在的`/etc/vulkan/icd.d/nvidia_icd.json`。已改为目标机正常任务实际使用的`/usr/share/vulkan/icd.d/nvidia_icd.json`；2/3卡分别完成32×32真实相机渲染，实际GPU绑定分别仅为[2]/[3]，进程退出后卡释放。入口同时增加驱动文件存在检查。
+
+22:09最终修复队列已启动：`.105` 的 `deployment-20261021/pi05-distill-adjust-migrated-recovery2`，产物仍在原`results/pi05-distill/adjust-20261021-v1`。当前顺序为剩余原始评估 → CP正式训练/评估 → OneDP正式训练/评估；B128 smoke证据直接复用。旧事务以`superseded-by.json`逐级指向新队列，不再运行。中断/失败目录均保留，完整首批仍各32回合。
