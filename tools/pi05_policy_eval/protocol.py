@@ -33,9 +33,15 @@ def save(path, value):
 
 
 def validate_config(c):
-    if c.get("suite") == "pi05_distillation":
-        assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
-        assert c["step_limit"] == 400 and c["num_steps"] in (1, 10)
+    if c.get("suite") in ("pi05_distillation", "pi05_distillation_multitask"):
+        if c["suite"] == "pi05_distillation":
+            assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
+            assert c["step_limit"] == 400
+        else:
+            assert c["num_envs"] == 16 and c["step_limit"] > 0
+            assert c["official_step_limit"] == c["step_limit"]
+            assert c["env"]["task_config"]["task_name"] == c["task"]
+        assert c["num_steps"] in (1, 10)
         assert c["execute_chunk"] == c["model"]["openpi"]["action_chunk"] == 50
         assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
         assert not c.get("weak_weights") and not c.get("strong_weights")
@@ -60,7 +66,9 @@ def execution_lengths(selected, active, counts, chunk=50, limit=200, mode="weigh
     """Per-slot prefixes, clipping the last query to the native action budget."""
     counts = np.asarray(counts)
     assert np.all((counts >= 0) & (counts <= limit))
-    lengths = np.where(selected, 20, chunk) if mode == "c20" else np.full_like(counts, chunk)
+    lengths = (
+        np.where(selected, 20, chunk) if mode == "c20" else np.full_like(counts, chunk)
+    )
     return np.where(active, np.minimum(lengths, limit - counts), 0)
 
 
@@ -72,7 +80,7 @@ def variable_chunk_step(env, actions, lengths):
     ordinary C50 payload and do no additional controller work. This eval path
     reads success/counts directly and needs no rectangular reward tensor.
     """
-    payload = [actions[i, :int(n)] if n else actions[i] for i, n in enumerate(lengths)]
+    payload = [actions[i, : int(n)] if n else actions[i] for i, n in enumerate(lengths)]
     raw_obs, *_ = env.venv.step(payload)
     return env._extract_obs_image(raw_obs)
 
@@ -95,12 +103,21 @@ def configure_recording_wait(env, seconds=300):
     anchor = "future.result(timeout=120)"
     assert source.count(anchor) == 1, "Native dispatcher changed; review first"
     namespace = {}
-    exec(compile(source.replace(anchor, f"future.result(timeout={seconds})"),
-                 "<native-video-wait>", "exec"), original.__globals__, namespace)
+    exec(
+        compile(
+            source.replace(anchor, f"future.result(timeout={seconds})"),
+            "<native-video-wait>",
+            "exec",
+        ),
+        original.__globals__,
+        namespace,
+    )
     env.venv.step = types.MethodType(namespace[original.__name__], env.venv)
 
 
-def choose(policy, u, active, threshold, random_values, *, query=0, max_takeover_queries=None):
+def choose(
+    policy, u, active, threshold, random_values, *, query=0, max_takeover_queries=None
+):
     """Choose complete strong chunks only for active environments."""
     if policy == "strong":
         selected = np.ones_like(active)

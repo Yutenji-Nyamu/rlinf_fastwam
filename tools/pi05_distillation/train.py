@@ -29,7 +29,7 @@ import torch.distributed as dist
 from omegaconf import OmegaConf
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from rlinf.algorithms.pi05_distillation.data import DemoWindows
+from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
     cp_loss,
     ema_decay,
@@ -83,7 +83,11 @@ def main():
     random.seed(c["seed"] + rank)
     np.random.seed(c["seed"] + rank)
     torch.manual_seed(c["seed"] + rank)
-    data = DemoWindows(c["data"])
+    data = (
+        BalancedWindows(c["data_manifest"])
+        if c.get("data_manifest")
+        else DemoWindows(c["data"])
+    )
     global_batch, micro = c["batch_size"], c["microbatch_per_rank"]
     assert global_batch % (world * micro) == 0
     accum = global_batch // (world * micro)
@@ -141,6 +145,11 @@ def main():
         ck = torch.load(args.resume, map_location="cpu", weights_only=False)
         if ck["config"] != c or ck["windows"] != len(data) or ck["world_size"] != world:
             raise ValueError("Resume configuration/data/world-size mismatch")
+        if (
+            isinstance(data, BalancedWindows)
+            and ck.get("task_manifest") != data.manifest
+        ):
+            raise ValueError("Resume task manifest/window counts changed")
         load_expert(student.model, ck["student"])
         load_expert(auxiliary.model, ck["auxiliary"])
         opt.load_state_dict(ck["optimizer"])
@@ -172,22 +181,26 @@ def main():
                 "world_size": world,
                 "frozen_base_dependency": c["model"]["model_path"],
                 "mutable_parameters": sum(p.numel() for p in student_params),
+                "task_manifest": getattr(data, "manifest", None),
             },
         )
     begin = time.monotonic()
     permutation, last_epoch = None, None
     for step in range(start, stop):
         epoch, offset = divmod(step, per_epoch)
-        if last_epoch != epoch:
+        if not isinstance(data, BalancedWindows) and last_epoch != epoch:
             permutation = np.random.default_rng(c["seed"] + epoch).permutation(
                 len(data)
             )
             last_epoch = epoch
         # Deterministic global shuffled batches, padding only the last batch;
         # resume uses step+epoch, so no hidden data-loader state is omitted.
-        indices = np.resize(permutation, per_epoch * global_batch)[
-            offset * global_batch : (offset + 1) * global_batch
-        ]
+        if isinstance(data, BalancedWindows):
+            indices = data.indices(step, global_batch, c["seed"])
+        else:
+            indices = np.resize(permutation, per_epoch * global_batch)[
+                offset * global_batch : (offset + 1) * global_batch
+            ]
         local = indices[rank::world]
         lr_mult = 1.0
         if method == "cp":
@@ -304,6 +317,12 @@ def main():
                         "optimizer": opt.state_dict(),
                         "aux_optimizer": opt_aux.state_dict() if opt_aux else None,
                         "rng": all_rng,
+                        "task_manifest": getattr(data, "manifest", None),
+                        "task_exposure": (
+                            data.exposure((step + 1) * global_batch, c["seed"])
+                            if isinstance(data, BalancedWindows)
+                            else None
+                        ),
                     },
                 )
                 # CP uses its EMA policy at evaluation, following the reference.
