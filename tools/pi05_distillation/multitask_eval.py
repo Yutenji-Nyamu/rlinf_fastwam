@@ -62,7 +62,9 @@ def cleanup(token):
     return identities
 
 
-def make_config(template, task, gpu, output, seeds_path, label, policy=None, steps=1):
+def make_config(
+    template, task, gpu, output, seeds_path, label, policy=None, steps=1, method="cp"
+):
     c = copy.deepcopy(template)
     limit = int(task["step_limit"])
     c.update(
@@ -79,7 +81,9 @@ def make_config(template, task, gpu, output, seeds_path, label, policy=None, ste
         warmup_prompt=task["task"].replace("_", " "),
     )
     c.pop("distill_weights", None)
-    c["model"]["openpi"].update(num_steps=steps, distill_target_time=bool(policy))
+    c["model"]["openpi"].update(
+        num_steps=steps, distill_target_time=bool(policy) and method == "cp"
+    )
     if policy:
         c["distill_weights"] = policy
     ec = c["env"]
@@ -96,7 +100,7 @@ def make_config(template, task, gpu, output, seeds_path, label, policy=None, ste
     return c
 
 
-def sweep(deployment, label, *, policy=None, steps=1, tasks=None):
+def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
     prepared = read(deployment / "prepared.json")
@@ -147,6 +151,7 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None):
                     label,
                     policy,
                     steps,
+                    method,
                 )
                 cfg_path = tx / (task["task"] + ".json")
                 save(cfg_path, config)
@@ -255,7 +260,7 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None):
     summaries = [
         read(p)
         for p in sorted(output.glob("summary-*.json"))
-        if p.name.startswith(("summary-cp-s", "summary-raw-n"))
+        if p.name.startswith(("summary-cp-s", "summary-endpoint-s", "summary-raw-n"))
     ]
     if summaries:
         common = set.intersection(

@@ -1,0 +1,122 @@
+{
+  "initial": [
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--fix",
+        "rlinf/algorithms/pi05_distillation/losses.py",
+        "rlinf/algorithms/pi05_distillation/model.py",
+        "tools/pi05_distillation/train.py",
+        "tools/pi05_distillation/multitask_eval.py",
+        "tools/pi05_distillation/test_endpoint.py",
+        "tools/pi05_distillation/endpoint_queue.py"
+      ],
+      "exit": 0,
+      "out": "All checks passed!\n",
+      "error": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "rlinf/algorithms/pi05_distillation/losses.py",
+        "rlinf/algorithms/pi05_distillation/model.py",
+        "tools/pi05_distillation/train.py",
+        "tools/pi05_distillation/multitask_eval.py",
+        "tools/pi05_distillation/test_endpoint.py",
+        "tools/pi05_distillation/endpoint_queue.py"
+      ],
+      "exit": 0,
+      "out": "5 files reformatted, 1 file left unchanged\n",
+      "error": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tools/pi05_distillation/test_endpoint.py",
+        "tools/pi05_distillation/test_multitask.py"
+      ],
+      "exit": 0,
+      "out": "........                                                                 [100%]\n8 passed in 5.33s\n",
+      "error": ""
+    }
+  ],
+  "final": [
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--fix",
+        "tools/pi05_distillation/endpoint_queue.py",
+        "tools/pi05_distillation/endpoint_capacity.py",
+        "tools/pi05_distillation/test_endpoint.py"
+      ],
+      "exit": 0,
+      "out": "Found 1 error (1 fixed, 0 remaining).\n",
+      "error": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "tools/pi05_distillation/endpoint_queue.py",
+        "tools/pi05_distillation/endpoint_capacity.py",
+        "tools/pi05_distillation/test_endpoint.py"
+      ],
+      "exit": 0,
+      "out": "1 file reformatted, 2 files left unchanged\n",
+      "error": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tools/pi05_distillation/test_endpoint.py",
+        "tools/pi05_distillation/test_multitask.py"
+      ],
+      "exit": 0,
+      "out": ".........                                                                [100%]\n9 passed in 6.48s\n",
+      "error": ""
+    },
+    {
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "/data/chenyiteng/deployment-20261022/endpoint-multitask-sz2-g67/source/tools/pi05_policy_eval/run_batch.py",
+        "--help"
+      ],
+      "exit": 0,
+      "out": "usage: run_batch.py [-h] config\n\npositional arguments:\n  config\n\noptions:\n  -h, --help  show this help message and exit\n",
+      "error": ""
+    }
+  ],
+  "native_initial_n1": {
+    "time": 1792677449.4718938,
+    "passed": true,
+    "native": [
+      {
+        "max_abs": 0.0,
+        "teacher_target": "native_eval_flow_ode_N10",
+        "student_initial_N1_matches": true
+      },
+      {
+        "max_abs": 0.0,
+        "teacher_target": "native_eval_flow_ode_N10",
+        "student_initial_N1_matches": true
+      }
+    ]
+  }
+}

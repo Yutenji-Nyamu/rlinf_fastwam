@@ -70,6 +70,21 @@ class Velocity(nn.Module):
         """Return the action-expert parameters used by the optimizer."""
         return [p for p in self.parameters() if p.requires_grad]
 
+    @torch.no_grad()
+    def endpoint(self, noise, context, steps: int = 10):
+        """Use the accepted native eval ODE, including its exact time grid."""
+        state, masks, cache = context
+        return self.model._sample_actions_with_prefix_cache(
+            state,
+            None,
+            masks,
+            cache,
+            noise=noise,
+            mode="eval",
+            compute_values=False,
+            num_steps=steps,
+        )["actions"]
+
 
 @torch.no_grad()
 def prepare(model, obs, actions):

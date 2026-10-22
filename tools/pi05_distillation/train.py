@@ -33,6 +33,7 @@ from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
     cp_loss,
     ema_decay,
+    endpoint_loss,
     fake_loss,
     onedp_loss,
 )
@@ -95,6 +96,8 @@ def main():
     total = c["epochs"] * per_epoch
     stop = min(args.stop_step or total, total)
     method = c["method"]
+    if method not in {"cp", "onedp", "endpoint"}:
+        raise ValueError(f"Unknown distillation method: {method}")
     cfg = copy.deepcopy(c["model"])
     cfg["openpi"].update(
         distill_target_time=method == "cp",
@@ -106,10 +109,12 @@ def main():
     )
     teacher_model = get_model(OmegaConf.create(cfg))
     student_model = copy.deepcopy(teacher_model)
-    aux_model = copy.deepcopy(student_model)
-    # All three policies have an identical frozen VLM. Share those weights and
+    aux_model = copy.deepcopy(student_model) if method != "endpoint" else None
+    # All policies have an identical frozen VLM. Share those weights and
     # compute its observation prefix once, as the accepted native expert path.
     for model in (student_model, aux_model):
+        if model is None:
+            continue
         model.paligemma_with_expert.paligemma = (
             teacher_model.paligemma_with_expert.paligemma
         )
@@ -120,7 +125,11 @@ def main():
         )
     teacher = Velocity(teacher_model, False).cuda(rank)
     student = Velocity(student_model, True).cuda(rank)
-    auxiliary = Velocity(aux_model, method == "onedp").cuda(rank)
+    auxiliary = (
+        Velocity(aux_model, method == "onedp").cuda(rank)
+        if aux_model is not None
+        else None
+    )
     student_params = student.parameters_to_train()
     opt = torch.optim.AdamW(
         student_params,
@@ -151,7 +160,12 @@ def main():
         ):
             raise ValueError("Resume task manifest/window counts changed")
         load_expert(student.model, ck["student"])
-        load_expert(auxiliary.model, ck["auxiliary"])
+        if auxiliary is not None:
+            load_expert(auxiliary.model, ck["auxiliary"])
+        elif ck["auxiliary"] is not None:
+            raise ValueError(
+                "Endpoint checkpoint must not contain an auxiliary network"
+            )
         opt.load_state_dict(ck["optimizer"])
         if opt_aux:
             opt_aux.load_state_dict(ck["aux_optimizer"])
@@ -203,7 +217,7 @@ def main():
             ]
         local = indices[rank::world]
         lr_mult = 1.0
-        if method == "cp":
+        if method in {"cp", "endpoint"}:
             warm = c["warmup_steps"]
             lr_mult = (
                 min(1.0, (step + 1) / max(1, warm))
@@ -251,7 +265,37 @@ def main():
                         context,
                         bins=c["time_bins"],
                     )
-                else:
+                elif method == "endpoint":
+                    z = torch.randn_like(actions)
+                    if step == 0 and out.name.startswith("smoke-"):
+                        # Native N1 and the differentiable student expression
+                        # must agree before training. Only one smoke batch.
+                        with torch.no_grad():
+                            native = teacher.endpoint(z, context, steps=1)
+                            direct = z - student(
+                                z, torch.ones(len(z), device=z.device), context
+                            )
+                            torch.testing.assert_close(
+                                direct, native, rtol=1e-5, atol=1e-6
+                            )
+                        save_json(
+                            out / f"native-parity-rank{rank}.json",
+                            {
+                                "max_abs": float((direct - native).abs().max()),
+                                "teacher_target": "native_eval_flow_ode_N10",
+                                "student_initial_N1_matches": True,
+                            },
+                        )
+                        del native, direct
+                    loss, parts = endpoint_loss(
+                        student_ddp,
+                        teacher,
+                        z,
+                        context,
+                        teacher_steps=c["teacher_steps"],
+                        action_dim=c["loss_action_dim"],
+                    )
+                elif method == "onedp":
                     z = torch.randn_like(actions)
                     generated = z - student_ddp(
                         z, torch.ones(len(z), device=z.device), context
@@ -313,7 +357,9 @@ def main():
                         "windows": len(data),
                         "world_size": world,
                         "student": expert_state(student.model),
-                        "auxiliary": expert_state(auxiliary.model),
+                        "auxiliary": expert_state(auxiliary.model)
+                        if auxiliary is not None
+                        else None,
                         "optimizer": opt.state_dict(),
                         "aux_optimizer": opt_aux.state_dict() if opt_aux else None,
                         "rng": all_rng,
@@ -368,7 +414,10 @@ def main():
         load_expert(policy, export["expert"])
         policy.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
         del export
-        obs, _ = data.batch(list(range(micro)))
+        # Endpoint training capacity is independent of simulator parallelism.
+        # Exercise the actual multitask evaluation batch, 16 per task/lane.
+        inference_batch = 16 if method == "endpoint" else micro
+        obs, _ = data.batch(list(range(inference_batch)))
         obs["extra_view_images"] = None
         calls = []
         original = policy.get_suffix_out
@@ -383,7 +432,7 @@ def main():
                 obs, mode="eval", compute_values=False, num_steps=1
             )
         policy.get_suffix_out = original
-        assert len(calls) == 1 and tuple(action.shape) == (micro, 50, 14)
+        assert len(calls) == 1 and tuple(action.shape) == (inference_batch, 50, 14)
         assert torch.isfinite(torch.as_tensor(action)).all()
         assert all(p.grad is None for p in teacher.parameters())
         save_json(

@@ -105,3 +105,27 @@ def onedp_loss(generated, teacher, fake, context, *, time_min=0.02, time_max=0.9
 def ema_decay(step: int) -> float:
     """Consistency Policy's inv_gamma=1, power=.75, max=.9999 EMA schedule."""
     return min(0.9999, 1 - (1 + max(step - 1, 0)) ** -0.75)
+
+
+def endpoint_loss(student, teacher, noise, context, *, teacher_steps=10, action_dim=14):
+    """Pair native N10 teacher and N1 student endpoints using the SAME noise.
+
+    Compare normalized physical action coordinates over the whole H50 block.
+    The teacher integrates all internal coordinates, including padding, but
+    padding is not a regression target. No expert-action FM or EMA is added.
+    """
+    if teacher_steps != 10 or action_dim != 14 or noise.shape[-1] < action_dim:
+        raise ValueError("Endpoint baseline requires N10 teacher and 14D Aloha actions")
+    with torch.no_grad():
+        target = teacher.endpoint(noise, context, steps=teacher_steps)
+    one = torch.ones(len(noise), device=noise.device)
+    prediction = noise - student(noise, one, context)
+    error = (
+        prediction[..., :action_dim].float() - target[..., :action_dim].float()
+    ).square()
+    loss = error.mean()
+    return loss, {
+        "endpoint_mse": loss,
+        "joint_mse": error[..., [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12]].mean(),
+        "gripper_mse": error[..., [6, 13]].mean(),
+    }
