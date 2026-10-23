@@ -38,7 +38,7 @@ def validate_config(c):
             assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
             assert c["step_limit"] == 400
         else:
-            assert c["num_envs"] == 16 and c["step_limit"] > 0
+            assert c["num_envs"] in (8, 16) and c["step_limit"] > 0
             assert c["official_step_limit"] == c["step_limit"]
             assert c["env"]["task_config"]["task_name"] == c["task"]
         assert c["num_steps"] in (1, 10)
@@ -60,6 +60,15 @@ def validate_config(c):
     assert c.get("max_takeover_queries") in (None, 2, 3)
     if c.get("max_takeover_queries") is not None:
         assert c["policy"] in ("high", "low", "random")
+
+
+def recording_mode(config):
+    """An explicit none mode disables both full and legacy sparse video."""
+    mode = config.get(
+        "recording_mode", "full" if config.get("record_full_video", False) else "sparse"
+    )
+    assert mode in {"none", "sparse", "full"}
+    return mode
 
 
 def execution_lengths(selected, active, counts, chunk=50, limit=200, mode="weights"):

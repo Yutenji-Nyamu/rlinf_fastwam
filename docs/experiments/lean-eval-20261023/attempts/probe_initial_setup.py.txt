@@ -1,0 +1,73 @@
+# Copyright 2026 The RLinf Authors.
+# Licensed under the Apache License, Version 2.0.
+"""Bounded comparison of native versus deferred first scene construction."""
+
+import argparse
+import hashlib
+import os
+import random
+import time
+from contextlib import nullcontext
+from pathlib import Path
+
+import numpy as np
+import torch
+from lean_setup import deferred_setup
+from omegaconf import OmegaConf
+from protocol import read, save
+
+from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
+
+
+def main(config, output, defer):
+    """Compare the same seeds, instruction, joint state and actual input pixels."""
+    c = read(config)
+    assert (
+        os.environ["CUDA_VISIBLE_DEVICES"]
+        == os.environ["DOJO_GPU_SCOPE"]
+        == str(c["gpu"])
+    )
+    torch.set_num_threads(1)
+    torch.cuda.set_device(0)
+    random.seed(c["noise_seed"])
+    np.random.seed(c["noise_seed"])
+    torch.manual_seed(c["noise_seed"])
+    start = time.perf_counter()
+    env = None
+    try:
+        with deferred_setup() if defer else nullcontext():
+            env = RoboTwinEnv(OmegaConf.create(c["env"]), c["num_envs"], 0, 1, None)
+            obs, _ = env.reset()
+        seconds = time.perf_counter() - start
+        pixels = {}
+        for key in ["main_images", "wrist_images"]:
+            value = obs[key]
+            if torch.is_tensor(value):
+                value = value.cpu().numpy()
+            pixels[key] = hashlib.sha256(np.asarray(value).tobytes()).hexdigest()
+        states = obs["states"]
+        if torch.is_tensor(states):
+            states = states.cpu().numpy()
+        result = {
+            "deferred": defer,
+            "seconds": seconds,
+            "requested": env.reset_state_ids.cpu().tolist(),
+            "actual": [int(e.task.ep_num) for e in env.venv.envs],
+            "instructions": obs["task_descriptions"],
+            "states": np.asarray(states).tolist(),
+            "pixels": pixels,
+        }
+    finally:
+        if env is not None:
+            env.venv.env_thread_pool.shutdown(wait=True)
+            env.offload(clear_cache=True)
+    save(Path(output), result)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config")
+    parser.add_argument("output")
+    parser.add_argument("--defer", action="store_true")
+    args = parser.parse_args()
+    main(args.config, args.output, args.defer)

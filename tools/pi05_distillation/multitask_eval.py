@@ -15,6 +15,7 @@
 """Four task lanes on two GPUs, reusing the accepted native policy evaluator."""
 
 import copy
+import json
 import os
 import signal
 import subprocess
@@ -27,6 +28,19 @@ from common import exact_signal, proc, read, same, save
 
 ROOT = Path(__file__).resolve().parents[2]
 PYTHON = "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python"
+
+
+def completed_checkpoint(output, method, stops):
+    """Continue only from a saved evaluation boundary, preserving prior points."""
+    output = Path(output)
+    receipt = read(output / method / "checkpoint.json")
+    step = receipt["step"]
+    assert step in stops and Path(receipt["path"]).is_file()
+    for stop in stops:
+        if stop <= step:
+            result = read(output / f"summary-{method}-s{stop:06d}.json")
+            assert result["attempted_tasks"] == 50 and len(result["tasks"]) == 50
+    return receipt
 
 
 def token_processes(token):
@@ -63,14 +77,27 @@ def cleanup(token):
 
 
 def make_config(
-    template, task, gpu, output, seeds_path, label, policy=None, steps=1, method="cp"
+    template,
+    task,
+    gpu,
+    output,
+    seeds_path,
+    label,
+    policy=None,
+    steps=1,
+    method="cp",
+    *,
+    options=None,
 ):
+    options = options or {}
+    episodes = int(options.get("episodes_per_task", 16))
+    assert episodes in (8, 16)
     c = copy.deepcopy(template)
     limit = int(task["step_limit"])
     c.update(
         suite="pi05_distillation_multitask",
         task=task["task"],
-        num_envs=16,
+        num_envs=episodes,
         gpu=gpu,
         step_limit=limit,
         official_step_limit=limit,
@@ -80,6 +107,13 @@ def make_config(
         batch=0,
         warmup_prompt=task["task"].replace("_", " "),
     )
+    for key in (
+        "recording_mode",
+        "record_decisions",
+        "environment_step_timeout_seconds",
+    ):
+        if key in options:
+            c[key] = options[key]
     c.pop("distill_weights", None)
     c["model"]["openpi"].update(
         num_steps=steps, distill_target_time=bool(policy) and method == "cp"
@@ -88,7 +122,7 @@ def make_config(
         c["distill_weights"] = policy
     ec = c["env"]
     ec.update(
-        total_num_envs=16,
+        total_num_envs=episodes,
         seeds_path=str(seeds_path),
         max_steps_per_rollout_epoch=limit,
         max_episode_steps=limit,
@@ -104,14 +138,26 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
     prepared = read(deployment / "prepared.json")
+    sweep_started = time.time()
+    settings_path = deployment / "eval-settings.json"
+    options = read(settings_path) if settings_path.exists() else {}
+    episodes = int(options.get("episodes_per_task", 16))
+    lanes = int(options.get("tasks_per_gpu", 2))
+    resident = bool(options.get("resident_model", False))
+    assert episodes in (8, 16) and 1 <= lanes <= 4
     output = Path(prepared["output"])
     tx = deployment / ("eval-" + label)
     tx.mkdir(exist_ok=False)
     task_rows = tasks or read(deployment / "task-list.json")["tasks"]
     pending = list(task_rows)
     template = read(deployment / "eval-template.json")
-    slots = [(g, lane) for g in prepared["physical_gpus"] for lane in range(2)]
+    save(
+        tx / "settings.json",
+        dict(options, episodes_per_task=episodes, tasks_per_gpu=lanes),
+    )
+    slots = [(g, lane) for g in prepared["physical_gpus"] for lane in range(lanes)]
     running, finished = {}, []
+    workers, generations = {}, {}
 
     def publish():
         save(
@@ -131,6 +177,9 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     for s, j in running.items()
                 ],
                 "results": finished,
+                "episodes_per_task": episodes,
+                "tasks_per_gpu": lanes,
+                "resident_model": resident,
             },
         )
 
@@ -152,6 +201,7 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     policy,
                     steps,
                     method,
+                    options=options,
                 )
                 cfg_path = tx / (task["task"] + ".json")
                 save(cfg_path, config)
@@ -160,22 +210,65 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     **read(output / f"environment-g{slot[0]}.json"),
                     POLICY_EVAL_TOKEN=token,
                 )
-                log = (tx / (task["task"] + ".log")).open("x")
-                child = subprocess.Popen(
-                    [
-                        PYTHON,
-                        "-u",
-                        "-B",
-                        str(ROOT / "tools/pi05_policy_eval/run_batch.py"),
-                        str(cfg_path),
-                    ],
-                    cwd=ROOT,
-                    env=env,
-                    stdin=subprocess.DEVNULL,
-                    stdout=log,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
+                if resident:
+                    if slot not in workers:
+                        generation = generations.get(slot, 0) + 1
+                        generations[slot] = generation
+                        name = f"g{slot[0]}-lane{slot[1]}-worker{generation}"
+                        token = f"{deployment.name}-{label}-{name}"
+                        env["POLICY_EVAL_TOKEN"] = token
+                        status = tx / (name + "-status.json")
+                        log = (tx / (name + ".log")).open("x")
+                        child = subprocess.Popen(
+                            [
+                                PYTHON,
+                                "-u",
+                                "-B",
+                                str(ROOT / "tools/pi05_policy_eval/resident.py"),
+                                str(status),
+                            ],
+                            cwd=ROOT,
+                            env=env,
+                            stdin=subprocess.PIPE,
+                            text=True,
+                            stdout=log,
+                            stderr=subprocess.STDOUT,
+                            start_new_session=True,
+                        )
+                        workers[slot] = {
+                            "process": child,
+                            "log": log,
+                            "token": token,
+                            "status": status,
+                        }
+                    worker = workers[slot]
+                    child, log, token = (
+                        worker["process"],
+                        worker["log"],
+                        worker["token"],
+                    )
+                    try:
+                        child.stdin.write(json.dumps({"config": str(cfg_path)}) + "\n")
+                        child.stdin.flush()
+                    except (BrokenPipeError, OSError) as exc:
+                        save(dest / "error.json", {"error": repr(exc)})
+                else:
+                    log = (tx / (task["task"] + ".log")).open("x")
+                    child = subprocess.Popen(
+                        [
+                            PYTHON,
+                            "-u",
+                            "-B",
+                            str(ROOT / "tools/pi05_policy_eval/run_batch.py"),
+                            str(cfg_path),
+                        ],
+                        cwd=ROOT,
+                        env=env,
+                        stdin=subprocess.DEVNULL,
+                        stdout=log,
+                        stderr=subprocess.STDOUT,
+                        start_new_session=True,
+                    )
                 running[slot] = {
                     "process": child,
                     "log": log,
@@ -204,30 +297,39 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     10800, job["task"]["step_limit"] * 18
                 ):
                     error = "Finite task wall-clock budget exceeded"
-                if child.poll() is None and not error:
+                ready = False
+                if resident and workers[slot]["status"].exists():
+                    state = read(workers[slot]["status"])
+                    ready = state.get("state") == "idle" and state.get("output") == str(
+                        dest
+                    )
+                if child.poll() is None and not error and not ready:
                     continue
                 done = (
                     read(dest / "done.json") if (dest / "done.json").exists() else None
                 )
                 valid = (
                     not error
-                    and child.poll() == 0
+                    and (ready if resident else child.poll() == 0)
                     and done
-                    and done.get("episodes") == 16
+                    and done.get("episodes") == episodes
                 )
                 if not valid:
                     error = (
                         error
-                        or f"Evaluator exit {child.poll()} without complete 16-episode receipt"
+                        or f"Evaluator exit {child.poll()} without complete {episodes}-episode receipt"
                     )
                     cleanup(job["token"])
                     child.wait(timeout=30)
-                job["log"].close()
+                if not resident or not valid:
+                    job["log"].close()
+                if resident and not valid:
+                    workers.pop(slot)
                 row = {
                     "task": job["task"]["task"],
                     "gpu": slot[0],
                     "valid": bool(valid),
-                    "episodes": 16 if valid else 0,
+                    "episodes": episodes if valid else 0,
                     "successes": done["successes"] if valid else None,
                     "elapsed_seconds": time.time() - job["started"],
                     "error": error,
@@ -240,6 +342,17 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
         for job in running.values():
             cleanup(job["token"])
             job["log"].close()
+        for worker in workers.values():
+            child = worker["process"]
+            if child.poll() is None:
+                try:
+                    child.stdin.write('{"stop":true}\n')
+                    child.stdin.flush()
+                    child.wait(timeout=30)
+                except (BrokenPipeError, OSError, subprocess.TimeoutExpired):
+                    cleanup(worker["token"])
+                    child.wait(timeout=30)
+            worker["log"].close()
     good = [row for row in finished if row["valid"]]
     summary = {
         "time": time.time(),
@@ -247,10 +360,15 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
         "attempted_tasks": len(task_rows),
         "valid_tasks": len(good),
         "missing_tasks": len(task_rows) - len(good),
-        "episodes": 16 * len(good),
+        "episodes": episodes * len(good),
+        "episodes_per_task": episodes,
+        "evaluation_settings": options,
+        "elapsed_seconds": time.time() - sweep_started,
         "successes": sum(row["successes"] for row in good),
         "mean_success_rate": (
-            sum(row["successes"] / 16 for row in good) / len(good) if good else None
+            sum(row["successes"] / row["episodes"] for row in good) / len(good)
+            if good
+            else None
         ),
         "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
         "tasks": finished,
@@ -260,7 +378,9 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
     summaries = [
         read(p)
         for p in sorted(output.glob("summary-*.json"))
-        if p.name.startswith(("summary-cp-s", "summary-endpoint-s", "summary-raw-n"))
+        if p.name.startswith(
+            ("summary-cp-s", "summary-endpoint-s", "summary-onedp-s", "summary-raw-n")
+        )
     ]
     if summaries:
         common = set.intersection(
@@ -280,6 +400,7 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     "missing_tasks": s["missing_tasks"],
                     "all_valid_mean": s["mean_success_rate"],
                     "common_mean": sum(values) / len(values) if values else None,
+                    "episodes_per_task": s.get("episodes_per_task", 16),
                 }
             )
         save(

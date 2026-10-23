@@ -12,7 +12,7 @@ import time
 import traceback
 from pathlib import Path
 
-from multitask_eval import sweep
+from multitask_eval import completed_checkpoint, sweep
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location(
@@ -60,7 +60,51 @@ def main():
     while not (D / "registered.json").is_file():
         time.sleep(1)
     schedule = q.read(D / "schedule.json")
-    if schedule.get("predecessor"):
+    handoff = schedule.get("handoff_after_evaluation")
+    if handoff:
+        registered = q.read(D / "registered.json")
+        assert registered["gpus"] == list(q.CARDS) and registered["identity"] == me
+        summary_path = O / ("summary-" + handoff["condition"] + ".json")
+        q.event(
+            "WAIT_EVALUATION_BOUNDARY", predecessor=handoff, physical_gpus=list(q.CARDS)
+        )
+        while not summary_path.is_file():
+            assert q.same(handoff["identity"]), (
+                "Predecessor exited before complete evaluation"
+            )
+            time.sleep(5)
+        summary = q.read(summary_path)
+        assert summary["attempted_tasks"] == 50 and len(summary["tasks"]) == 50
+        if q.same(handoff["identity"]):
+            q.exact_signal(handoff["identity"], signal.SIGTERM)
+        deadline = time.time() + 180
+        while q.same(handoff["identity"]) or any(
+            q.gpus()[g]["processes"] for g in q.CARDS
+        ):
+            assert time.time() < deadline, "Predecessor cleanup incomplete"
+            time.sleep(2)
+        # Only now change the shared output's environment descriptors: the old
+        # evaluator has finished every task and its source remains available.
+        for g in q.CARDS:
+            env_path = O / f"environment-g{g}.json"
+            env = q.read(env_path)
+            q.save(D / f"previous-environment-g{g}.json", env)
+            env.update(
+                REPO_PATH=str(ROOT),
+                RLINF_CODE_WORKING_DIR=str(ROOT),
+                EMBODIED_PATH=str(ROOT / "examples/embodiment"),
+                PYTHONPATH=str(D / "bootstrap")
+                + ":"
+                + str(ROOT)
+                + ":"
+                + env["ROBOTWIN_PATH"],
+            )
+            q.save(env_path, env)
+        q.save(
+            D / "handoff-complete.json",
+            {"time": time.time(), "predecessor": handoff, "summary": str(summary_path)},
+        )
+    elif schedule.get("predecessor"):
         upstream = Path(schedule["predecessor"])
         q.event("WAIT_ONEDP", predecessor=str(upstream), physical_gpus=list(q.CARDS))
         while not (upstream / "released.json").is_file() or q.same(
@@ -111,12 +155,24 @@ def main():
             "microbatch_per_rank": config["microbatch_per_rank"],
             "steps_per_epoch": per_epoch,
             "tasks": 50,
-            "episodes_per_task": 16,
+            "episodes_per_task": q.read(D / "eval-settings.json").get(
+                "episodes_per_task", 16
+            )
+            if (D / "eval-settings.json").exists()
+            else 16,
             "baseline_source": str(baseline_source),
         },
     )
     resume = None
+    completed_step = 0
+    if schedule.get("resume_existing"):
+        previous = completed_checkpoint(O, method, stops)
+        completed_step = previous["step"]
+        resume = previous["path"]
+        q.event("RESUME_FULL_CHECKPOINT", step=completed_step, checkpoint=resume)
     for stop in stops:
+        if stop <= completed_step:
+            continue
         receipt = q.train(method, O / method, stop, resume)
         label = f"{method}-s{stop:06d}"
         copy_baselines(baseline_source)

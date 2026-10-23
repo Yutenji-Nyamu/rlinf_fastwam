@@ -1,0 +1,46 @@
+# Copyright 2026 The RLinf Authors.
+# Licensed under the Apache License, Version 2.0.
+"""Optional, process-local first-reset setup experiment for native RoboTwin."""
+
+import inspect
+import textwrap
+from contextlib import contextmanager
+
+
+@contextmanager
+def deferred_setup():
+    """Build each scene once on first reset; restore native classes afterwards."""
+    from robotwin.envs.vector_env import SubEnv
+
+    original_setup, original_reset = SubEnv.setup_task, SubEnv.reset
+    source = textwrap.dedent(inspect.getsource(original_reset))
+    anchor = "if self.task is not None:"
+    assert source.count(anchor) == 1
+    source = source.replace(
+        anchor,
+        'if self.task is not None and not getattr(self, "_distill_first_setup", False):',
+    )
+    anchor = next(
+        line for line in source.splitlines()
+        if line.strip() == "self.instruction = self.create_instruction()"
+    )
+    assert source.count(anchor) == 1
+    indent = anchor[:len(anchor) - len(anchor.lstrip())]
+    source = source.replace(
+        anchor, indent + "self._distill_first_setup = False\n" + anchor
+    )
+    namespace = {}
+    exec(
+        compile(source, "<distill-first-reset>", "exec"),
+        original_reset.__globals__,
+        namespace,
+    )
+
+    def defer(subenv):
+        subenv._distill_first_setup = True
+
+    SubEnv.setup_task, SubEnv.reset = defer, namespace[original_reset.__name__]
+    try:
+        yield
+    finally:
+        SubEnv.setup_task, SubEnv.reset = original_setup, original_reset

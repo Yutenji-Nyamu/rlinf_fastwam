@@ -15,6 +15,8 @@
 """Paired B32 native evaluation, reusing the accepted 20261003 signal path."""
 
 import argparse
+import gc
+import json
 import os
 import random
 import sys
@@ -26,11 +28,21 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-from protocol import choose, configure_recording_wait, execution_lengths, read, save, validate_config, variable_chunk_step
+from protocol import (
+    choose,
+    configure_recording_wait,
+    execution_lengths,
+    read,
+    recording_mode,
+    save,
+    validate_config,
+    variable_chunk_step,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
 from signal_math import ugrow_10_vs_5  # noqa: E402
+
 sys.path.insert(0, str(ROOT / "tools/pi05_u_video"))
 from recording import Recorder  # noqa: E402
 
@@ -60,7 +72,7 @@ def infer(model, obs, steps, signals=False):
         )
 
 
-def run(config):
+def run(config, model_cache=None):
     from omegaconf import OmegaConf
 
     from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
@@ -80,33 +92,70 @@ def run(config):
     torch.backends.cuda.enable_cudnn_sdp(False)
     policy, batch = c["policy"], c["num_envs"]
     takeover = c.get("takeover_mode", "weights")
-    full_video = c.get("record_full_video", False)
-    signals = policy in ("calibration", "high", "low", "random") or c.get("collect_weak_u", False)
-    need_strong = policy in ("strong", "high", "low", "random") and takeover == "weights"
+    mode = recording_mode(c)
+    full_video = mode == "full"
+    record_decisions = c.get("record_decisions", True)
+    signals = policy in ("calibration", "high", "low", "random") or c.get(
+        "collect_weak_u", False
+    )
+    need_strong = (
+        policy in ("strong", "high", "low", "random") and takeover == "weights"
+    )
+    cache_key = json.dumps(
+        [
+            c["model"],
+            c.get("distill_weights"),
+            c.get("weak_weights"),
+            batch,
+            c["num_steps"],
+        ],
+        sort_keys=True,
+    )
+    reused = model_cache is not None and model_cache.get("key") == cache_key
+    if model_cache is not None:
+        assert policy == "weak" and not signals and not need_strong
+    load_started = time.perf_counter()
     weak = (
-        None
-        if policy == "strong" and not c.get("collect_weak_u", False)
-        else get_model(OmegaConf.create(c["model"]))
+        model_cache["model"]
+        if reused
+        else (
+            None
+            if policy == "strong" and not c.get("collect_weak_u", False)
+            else get_model(OmegaConf.create(c["model"]))
+        )
     )
     strong = None
-    if weak is not None:
+    if weak is not None and not reused:
         if c.get("distill_weights"):
             from rlinf.algorithms.pi05_distillation.model import load_expert
-            state = torch.load(c["distill_weights"], map_location="cpu", weights_only=True)
+
+            state = torch.load(
+                c["distill_weights"], map_location="cpu", weights_only=True
+            )
             load_expert(weak, state["expert"])
-            save(out / "distill-loaded.json", {"path": c["distill_weights"], "method": state["method"]})
+            save(
+                out / "distill-loaded.json",
+                {"path": c["distill_weights"], "method": state["method"]},
+            )
             del state
         if c.get("weak_weights"):
             state = torch.load(c["weak_weights"], map_location="cpu", weights_only=True)
             loaded = weak.load_state_dict(state, strict=True)
             del state
-            save(out / "weak-loaded.json", {
-                "path": c["weak_weights"], "strict": True,
-                "missing_keys": list(loaded.missing_keys),
-                "unexpected_keys": list(loaded.unexpected_keys),
-            })
+            save(
+                out / "weak-loaded.json",
+                {
+                    "path": c["weak_weights"],
+                    "strict": True,
+                    "missing_keys": list(loaded.missing_keys),
+                    "unexpected_keys": list(loaded.unexpected_keys),
+                },
+            )
         weak = weak.cuda().eval()
         weak._signal_observer = EndpointOnly()
+    if model_cache is not None:
+        model_cache.update(key=cache_key, model=weak)
+    load_seconds = time.perf_counter() - load_started
     if need_strong:
         # Same base model/wrappers/normalization; use the rollout worker's
         # strict full-state overlay, never checkpoint-directory auto loading.
@@ -134,15 +183,19 @@ def run(config):
     decisions, costs, frames = [], [], [[] for _ in range(batch)]
     threshold = read(c["threshold_path"]) if policy in ("high", "low") else {}
     try:
+        warm_started = time.perf_counter()
         # Accepted order: warm the model before creating any SAPIEN scenes.
         dummy = {
             "main_images": torch.zeros((batch, 224, 224, 3), dtype=torch.uint8),
             "wrist_images": torch.zeros((batch, 2, 224, 224, 3), dtype=torch.uint8),
             "extra_view_images": None,
             "states": torch.zeros((batch, 14)),
-            "task_descriptions": [c.get("warmup_prompt", "move the pillbottle to the pad")] * batch,
+            "task_descriptions": [
+                c.get("warmup_prompt", "move the pillbottle to the pad")
+            ]
+            * batch,
         }
-        for model in (weak, strong):
+        for model in () if reused else (weak, strong):
             if model is not None:
                 action, result = infer(model, dummy, c["num_steps"])
                 assert tuple(action.shape) == (batch, 50, 14)
@@ -166,12 +219,18 @@ def run(config):
             )
             del a, b, trace
         del dummy
+        warm_seconds = time.perf_counter() - warm_started
         ec = OmegaConf.create(c["env"])
         assert not ec.auto_reset and ec.ignore_terminations
+        env_started = time.perf_counter()
         env = RoboTwinEnv(ec, batch, 0, 1, None)
-        if full_video:
-            configure_recording_wait(env, seconds=c.get("environment_step_timeout_seconds", 300))
+        built_at = time.perf_counter()
         obs, _ = env.reset()
+        initialized_at = time.perf_counter()
+        if full_video or "environment_step_timeout_seconds" in c:
+            configure_recording_wait(
+                env, seconds=c.get("environment_step_timeout_seconds", 300)
+            )
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]
         assert len(set(requested)) == batch
@@ -185,13 +244,30 @@ def run(config):
             for i in range(batch)
         ]
         save(out / "seeds.json", seeds)
+        save(
+            out / "initialization.json",
+            {
+                "model_reused": reused,
+                "load_seconds": load_seconds,
+                "warmup_seconds": warm_seconds,
+                "environment_total_seconds": initialized_at - env_started,
+                "build_seconds": built_at - env_started,
+                "reset_seconds": initialized_at - built_at,
+                "instructions": obs.get("task_descriptions"),
+                "states": arr(obs["states"]).tolist(),
+            },
+        )
         random.seed(c["noise_seed"])
         np.random.seed(c["noise_seed"])
         heads = arr(obs["main_images"]).astype(np.uint8)
         height, width = heads.shape[1:3]
         for slot in range(batch):
+            if mode == "none":
+                continue
             if full_video:
-                recorders.append(Recorder(env.venv.envs[slot].task, out, slot, actual[slot], fps=25))
+                recorders.append(
+                    Recorder(env.venv.envs[slot].task, out, slot, actual[slot], fps=25)
+                )
                 continue
             writer = cv2.VideoWriter(
                 str(out / f"episode_{slot:02d}.mp4"),
@@ -203,7 +279,7 @@ def run(config):
             videos.append(writer)
 
         def snapshot(images):
-            if full_video:
+            if mode != "sparse":
                 return
             for slot, image in enumerate(images):
                 videos[slot].write(
@@ -245,8 +321,14 @@ def run(config):
                     u = score.score.mean(axis=1)
                     save(out / f"u_{query:03d}.json", score.score.tolist())
                     if full_video:
-                        signal_data = {k: arr(trace[k]) for k in (
-                            "initial_noise_full", "final_model_action", "side_action_model")}
+                        signal_data = {
+                            k: arr(trace[k])
+                            for k in (
+                                "initial_noise_full",
+                                "final_model_action",
+                                "side_action_model",
+                            )
+                        }
                         signal_data.update(u=score.score, active=active, before=before)
                     del trace
                 del result
@@ -280,9 +362,13 @@ def run(config):
             assert action.shape == (batch, 50, 14) and np.isfinite(action).all()
             torch.cuda.synchronize()
             inference_seconds = time.perf_counter() - tic
-            lengths = execution_lengths(selected, active, counts, chunk, c["step_limit"], takeover)
+            lengths = execution_lengths(
+                selected, active, counts, chunk, c["step_limit"], takeover
+            )
             if signal_data is not None:
-                signal_data.update(env_action=action, selected=selected, offered=lengths)
+                signal_data.update(
+                    env_action=action, selected=selected, offered=lengths
+                )
                 np.savez_compressed(out / f"query_{query:03d}.npz", **signal_data)
             save(
                 out / "progress.json",
@@ -305,8 +391,9 @@ def run(config):
             if signal_data is not None:
                 signal_data.update(after=counts, success_after=after)
                 np.savez_compressed(out / f"query_{query:03d}.npz", **signal_data)
-            snapshot(arr(obs["main_images"]))
-            for slot in np.flatnonzero(active):
+            if mode == "sparse":
+                snapshot(arr(obs["main_images"]))
+            for slot in np.flatnonzero(active) if record_decisions else []:
                 decisions.append(
                     {
                         "slot": int(slot),
@@ -315,7 +402,8 @@ def run(config):
                         "u": float(u[slot]) if u is not None else None,
                         "strong": bool(selected[slot]),
                         "takeover_mode": takeover,
-                        "eligible": c.get("max_takeover_queries") is None or query < c["max_takeover_queries"],
+                        "eligible": c.get("max_takeover_queries") is None
+                        or query < c["max_takeover_queries"],
                         "start": int(before[slot]),
                         "end": int(counts[slot]),
                         "offered_actions": int(lengths[slot]),
@@ -334,7 +422,8 @@ def run(config):
                     "cuda_peak_bytes": torch.cuda.max_memory_allocated(),
                 }
             )
-            save(out / "decisions.json", decisions)
+            if record_decisions:
+                save(out / "decisions.json", decisions)
             save(out / "timing.json", costs)
             save(
                 out / "progress.json",
@@ -356,7 +445,7 @@ def run(config):
                 frames=len(recorders[i].frames) if full_video else len(frames[i]),
                 control_steps=recorders[i].ticks if full_video else None,
                 frame_map=f"episode_{i:02d}_frames.json" if full_video else None,
-                video=f"episode_{i:02d}.mp4",
+                video=f"episode_{i:02d}.mp4" if mode != "none" else None,
                 termination="success" if success[i] else "step_limit",
             )
             for i in range(batch)
@@ -369,9 +458,12 @@ def run(config):
             recorder.close()
         for writer in videos:
             writer.release()
-        save(out / "frame_times.json", frames)
+        if mode != "none":
+            save(out / "frame_times.json", frames)
         if env is not None:
             env.offload(clear_cache=True)
+        env = None
+        gc.collect()
     save(
         out / "done.json",
         {
@@ -382,6 +474,8 @@ def run(config):
             "condition": c["condition"],
             "takeover_mode": takeover,
             "record_full_video": full_video,
+            "recording_mode": mode,
+            "model_reused": reused,
             "unique_actual_seeds": len(set(actual)),
             "native_seed_retries": sum(s["native_retry"] for s in seeds),
             "strong_decisions": sum(d["strong"] for d in decisions),

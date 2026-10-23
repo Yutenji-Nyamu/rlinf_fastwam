@@ -15,6 +15,7 @@
 """Tests for task balance, resume order, instruction isolation, and finite waits."""
 
 import importlib.util
+import json
 from concurrent.futures import Future, TimeoutError
 from pathlib import Path
 from unittest.mock import patch
@@ -88,6 +89,72 @@ def test_evaluation_task_native_budget_and_template_isolation():
     )
     assert c["env"]["task_config"]["task_name"] == "open_microwave"
     assert template["env"]["task_config"] == {}
+
+
+def test_lean_evaluation_keeps_native_budget_and_disables_recording():
+    spec = importlib.util.spec_from_file_location(
+        "multitask_eval", ROOT / "tools/pi05_distillation/multitask_eval.py"
+    )
+    evaluator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(evaluator)
+    template = {
+        "model": {"openpi": {}},
+        "env": {"task_config": {}, "video_cfg": {}},
+        "record_full_video": True,
+        "environment_step_timeout_seconds": 1200,
+    }
+    c = evaluator.make_config(
+        template,
+        {"task": "open_microwave", "step_limit": 1500},
+        3,
+        Path("/tmp/lean-eval"),
+        Path("/tmp/seeds.json"),
+        "endpoint-test",
+        policy="/tmp/student.pt",
+        method="endpoint",
+        options={
+            "episodes_per_task": 8,
+            "recording_mode": "none",
+            "record_decisions": False,
+        },
+    )
+    assert c["num_envs"] == c["env"]["total_num_envs"] == 8
+    assert c["step_limit"] == c["official_step_limit"] == 1500
+    assert c["model"]["openpi"]["distill_target_time"] is False
+    assert c["environment_step_timeout_seconds"] == 1200
+    spec = importlib.util.spec_from_file_location(
+        "eval_protocol", ROOT / "tools/pi05_policy_eval/protocol.py"
+    )
+    protocol = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(protocol)
+    assert protocol.recording_mode(c) == "none"
+    assert protocol.recording_mode(template) == "full"
+    assert protocol.recording_mode({"record_full_video": False}) == "sparse"
+
+
+def test_continuation_requires_complete_old_evaluation(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "multitask_eval", ROOT / "tools/pi05_distillation/multitask_eval.py"
+    )
+    evaluator = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(evaluator)
+    (tmp_path / "onedp").mkdir()
+    checkpoint = tmp_path / "onedp/checkpoint-001113.pt"
+    checkpoint.touch()
+    receipt = {"step": 1113, "path": str(checkpoint)}
+    (tmp_path / "onedp/checkpoint.json").write_text(json.dumps(receipt))
+    for step in [556, 1113]:
+        (tmp_path / f"summary-onedp-s{step:06d}.json").write_text(
+            json.dumps({"attempted_tasks": 50, "tasks": [None] * 50})
+        )
+    assert (
+        evaluator.completed_checkpoint(tmp_path, "onedp", [556, 1113, 2226]) == receipt
+    )
+    (tmp_path / "summary-onedp-s001113.json").write_text(
+        json.dumps({"attempted_tasks": 50, "tasks": [None] * 49})
+    )
+    with pytest.raises(AssertionError):
+        evaluator.completed_checkpoint(tmp_path, "onedp", [556, 1113, 2226])
 
 
 class Pending:
