@@ -1,0 +1,228 @@
+{
+  "config": {
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+      "precision": null,
+      "num_action_chunks": 50,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 10,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi05_sidney_robotwin",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 50,
+        "num_steps": 10,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_ode",
+        "add_value_head": false,
+        "value_after_vlm": false,
+        "value_vlm_mode": "mean_token",
+        "detach_critic_input": true,
+        "use_dsrl": false,
+        "dsrl_state_dim": 8,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ],
+        "distill_target_time": false
+      }
+    },
+    "seed": 721042,
+    "batch_size": 256,
+    "microbatch_per_rank": 128,
+    "clip_grad": 1.0,
+    "log_every": 1,
+    "method": "onedp",
+    "epochs": 20,
+    "lr": 1e-06,
+    "betas": [
+      0.0,
+      0.999
+    ],
+    "weight_decay": 0.0,
+    "checkpoint_steps": 1900,
+    "data_manifest": "/data/chenyiteng/deployment-20261023/onedp-capacity-sz1-g67/data-manifest.json",
+    "checkpoint_keep_last": 2,
+    "checkpoint_keep_steps": [
+      1670,
+      3339,
+      6678,
+      10017,
+      16695,
+      26712,
+      40068,
+      53424,
+      66780
+    ],
+    "aux_lr": 2e-05
+  },
+  "windows": 129989,
+  "steps_per_epoch": 508,
+  "total_steps": 10160,
+  "stop_step": 6,
+  "resume": null,
+  "world_size": 2,
+  "frozen_base_dependency": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+  "mutable_parameters": 430098464,
+  "task_manifest": [
+    {
+      "task": "adjust_bottle",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1",
+      "episodes": 50,
+      "windows": 4738,
+      "instructions": 50
+    },
+    {
+      "task": "beat_block_hammer",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/beat-block-hammer-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 3232,
+      "instructions": 50
+    },
+    {
+      "task": "blocks_ranking_rgb",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-rgb-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 20591,
+      "instructions": 43
+    },
+    {
+      "task": "blocks_ranking_size",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-size-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 20720,
+      "instructions": 33
+    },
+    {
+      "task": "click_alarmclock",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-alarmclock-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 1802,
+      "instructions": 50
+    },
+    {
+      "task": "click_bell",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-bell-aloha-clean50-20261002",
+      "episodes": 50,
+      "windows": 1405,
+      "instructions": 49
+    },
+    {
+      "task": "dump_bin_bigbin",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/dump-bin-bigbin-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 9672,
+      "instructions": 49
+    },
+    {
+      "task": "grab_roller",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/grab-roller-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 2278,
+      "instructions": 48
+    },
+    {
+      "task": "handover_block",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-block-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 11634,
+      "instructions": 32
+    },
+    {
+      "task": "handover_mic",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-mic-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 8642,
+      "instructions": 45
+    },
+    {
+      "task": "lift_pot",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/lift-pot-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 3104,
+      "instructions": 49
+    },
+    {
+      "task": "move_can_pot",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-can-pot-aloha-clean50-20260923",
+      "episodes": 50,
+      "windows": 5118,
+      "instructions": 50
+    },
+    {
+      "task": "move_playingcard_away",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-playingcard-away-aloha-clean50-20261023",
+      "episodes": 50,
+      "windows": 3434,
+      "instructions": 49
+    },
+    {
+      "task": "move_stapler_pad",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-stapler-pad-aloha-clean50-20260919",
+      "episodes": 50,
+      "windows": 5299,
+      "instructions": 50
+    },
+    {
+      "task": "pick_dual_bottles",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-dual-bottles-aloha-clean50-20260928",
+      "episodes": 50,
+      "windows": 3679,
+      "instructions": 49
+    },
+    {
+      "task": "place_fan",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-fan-aloha-clean50-20261002",
+      "episodes": 50,
+      "windows": 4908,
+      "instructions": 50
+    },
+    {
+      "task": "place_mouse_pad",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-mouse-pad-aloha-clean50-20260927",
+      "episodes": 50,
+      "windows": 5081,
+      "instructions": 50
+    },
+    {
+      "task": "place_phone_stand",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-phone-stand-aloha-clean50-20260928",
+      "episodes": 50,
+      "windows": 3907,
+      "instructions": 50
+    },
+    {
+      "task": "press_stapler",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/press-stapler-aloha-clean50-20260927",
+      "episodes": 50,
+      "windows": 3503,
+      "instructions": 49
+    },
+    {
+      "task": "stamp_seal",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/stamp-seal-aloha-clean50-20260925",
+      "episodes": 50,
+      "windows": 4829,
+      "instructions": 50
+    },
+    {
+      "task": "turn_switch",
+      "path": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+      "episodes": 50,
+      "windows": 2413,
+      "instructions": 49
+    }
+  ]
+}

@@ -29,6 +29,7 @@ import torch.distributed as dist
 from omegaconf import OmegaConf
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+from rlinf.algorithms.pi05_distillation.checkpoint_retention import prune_checkpoints
 from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
     cp_loss,
@@ -392,6 +393,9 @@ def main():
                         "policy": str(policy_path),
                     },
                 )
+                prune_checkpoints(
+                    out, c.get("checkpoint_keep_last"), c.get("checkpoint_keep_steps", [])
+                )
             dist.barrier()
     if rank == 0:
         save_json(
@@ -414,9 +418,14 @@ def main():
         load_expert(policy, export["expert"])
         policy.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
         del export
-        # Endpoint training capacity is independent of simulator parallelism.
+        # Multitask training capacity is independent of simulator parallelism.
         # Exercise the actual multitask evaluation batch, 16 per task/lane.
-        inference_batch = 16 if method == "endpoint" else micro
+        inference_batch = (
+            16
+            if method == "endpoint"
+            or (method == "onedp" and isinstance(data, BalancedWindows))
+            else micro
+        )
         obs, _ = data.batch(list(range(inference_batch)))
         obs["extra_view_images"] = None
         calls = []

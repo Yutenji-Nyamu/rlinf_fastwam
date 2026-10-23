@@ -233,7 +233,7 @@ def accept_smoke(method):
         )
         assert check["teacher_frozen_during_training"]
         assert (
-            check["cuda_visible_devices"] == "2,3"
+            check["cuda_visible_devices"] == GPU_LIST
             and check["local_cuda_device"] == rank
         )
         rows = [

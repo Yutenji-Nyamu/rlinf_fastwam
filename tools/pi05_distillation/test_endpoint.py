@@ -4,6 +4,7 @@
 
 import importlib.machinery
 import importlib.util
+import json
 import runpy
 import sys
 import time
@@ -112,3 +113,90 @@ def test_cancelling_waiting_successor_never_releases_predecessor(tmp_path, monke
         )
     assert "identity.json" in saved
     assert "released.json" not in saved
+
+
+def test_onedp_multitask_keeps_method_budget_and_routes_evaluations(
+    tmp_path, monkeypatch
+):
+    directory, output, data = (tmp_path / n for n in ("queue", "output", "data"))
+    for p in (directory, output, data):
+        p.mkdir()
+
+    def save(path, value):
+        path.write_text(json.dumps(value))
+
+    save(
+        directory / "prepared.json", {"method": "onedp", "eval_budget_epochs": [1, 20]}
+    )
+    save(directory / "registered.json", {"gpus": [6, 7], "identity": {"pid": 123}})
+    save(
+        directory / "schedule.json",
+        {
+            "start_after_rlt_handoff": True,
+            "run_smoke_before_formal": True,
+            "data_source": str(data),
+            "baseline_source": str(output / "pending"),
+        },
+    )
+    save(
+        directory / "onedp.json",
+        {
+            "epochs": 20,
+            "batch_size": 128,
+            "microbatch_per_rank": 64,
+            "checkpoint_keep_last": 2,
+        },
+    )
+    save(data / "data-ready.json", {"tasks": 50, "episodes": 2500, "windows": 427287})
+    save(data / "data-manifest.json", {})
+    trains, evaluations = [], []
+
+    def train(method, out, stop, resume=None, label=None):
+        trains.append((method, stop, resume))
+        return {
+            "step": stop,
+            "path": str(out / f"cp{stop}"),
+            "policy": str(out / f"p{stop}"),
+        }
+
+    class Loader:
+        def create_module(self, spec):
+            return None
+
+        def exec_module(self, module):
+            module.D, module.O, module.CARDS = directory, output, [6, 7]
+            module.owned_children = []
+            module.proc = lambda pid: {"pid": 123}
+            module.save, module.read = save, lambda p: json.loads(p.read_text())
+            module.event = lambda *args, **kwargs: None
+            module.gpus = lambda: {g: {"processes": []} for g in [6, 7]}
+            module.train, module.accept_smoke = train, lambda method: None
+
+    real_spec = importlib.util.spec_from_file_location
+
+    def spec(name, path, *args, **kwargs):
+        if Path(path).name == "run_queue.py":
+            return importlib.machinery.ModuleSpec(name, Loader())
+        return real_spec(name, path, *args, **kwargs)
+
+    monkeypatch.setattr(importlib.util, "spec_from_file_location", spec)
+    monkeypatch.setitem(
+        sys.modules,
+        "multitask_eval",
+        types.SimpleNamespace(sweep=lambda *args, **kwargs: evaluations.append(kwargs)),
+    )
+    runpy.run_path(
+        str(Path(__file__).with_name("endpoint_queue.py")), run_name="__main__"
+    )
+    assert [(method, step) for method, step, _ in trains] == [
+        ("onedp", 12),
+        ("onedp", 14),
+        ("onedp", 3339),
+        ("onedp", 66780),
+    ]
+    assert trains[2][2] is None  # Formal training starts from the original base.
+    assert all(e["method"] == "onedp" for e in evaluations)
+    assert json.loads((directory / "formal-ready.json").read_text())["epochs"] == 20
+    assert json.loads((directory / "onedp.json").read_text())[
+        "checkpoint_keep_steps"
+    ] == [3339, 66780]
