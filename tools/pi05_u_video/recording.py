@@ -65,7 +65,7 @@ def project_targets(targets, path, vertices):
 
 
 class Recorder:
-    def __init__(self, task, output, slot, seed, fps=25):
+    def __init__(self, task, output, slot, seed, fps=25, observer=False):
         import cv2
         self.cv2 = cv2
         self.task, self.slot, self.seed = task, slot, seed
@@ -81,6 +81,19 @@ class Recorder:
                                       (rgb.shape[1], rgb.shape[0]))
         if not self.writer.isOpened():
             raise RuntimeError("Cannot create complete-timeline video")
+        self.observer_writer = None
+        if observer:
+            observer_rgb = task.cameras.get_observer_rgb()
+            self.observer_writer = cv2.VideoWriter(
+                str(self.output / f"episode_{slot:02d}_observer.mp4"),
+                cv2.VideoWriter_fourcc(*"mp4v"), self.fps,
+                (observer_rgb.shape[1], observer_rgb.shape[0]))
+            if not self.observer_writer.isOpened():
+                raise RuntimeError("Cannot create observer video")
+            cv2.imwrite(str(self.output / f"episode_{slot:02d}_observer_initial.png"),
+                        cv2.cvtColor(observer_rgb, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(str(self.output / f"episode_{slot:02d}_head_initial.png"),
+                        cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
         self.log = (self.output / f"episode_{slot:02d}_control.jsonl").open("x")
         self.frames = []
         self.query, self.ticks, self.query_start = -1, 0, 0
@@ -136,6 +149,10 @@ class Recorder:
     def capture(self, rgb, reason):
         tic = time.perf_counter()
         self.writer.write(self.cv2.cvtColor(rgb, self.cv2.COLOR_RGB2BGR))
+        if self.observer_writer is not None:
+            # Same physics tick as the head frame; this API takes a fresh picture.
+            observer_rgb = self.task.cameras.get_observer_rgb()
+            self.observer_writer.write(self.cv2.cvtColor(observer_rgb, self.cv2.COLOR_RGB2BGR))
         self.frames.append(dict(self.state, frame=len(self.frames), slot=self.slot,
                                 seed=self.seed, query=self.query, tick=self.ticks,
                                 sim_seconds=self.ticks * self.dt, reason=reason,
@@ -151,10 +168,18 @@ class Recorder:
 
     def close(self):
         self.writer.release()
+        if self.observer_writer is not None:
+            self.observer_writer.release()
         self.log.close()
         data = {"slot": self.slot, "seed": self.seed, "fps": self.fps,
                 "physics_dt": self.dt, "stride": self.stride,
                 "ticks": self.ticks, "frames": self.frames,
                 "h_mapping": "monotone geometric projection onto compressed arm path; approximate, per arm",
                 "coverage": "initial, every stride physics steps, each query end including success"}
+        if self.observer_writer is not None:
+            data["synchronized_videos"] = {
+                "head": f"episode_{self.slot:02d}.mp4",
+                "observer": f"episode_{self.slot:02d}_observer.mp4",
+                "source": "task.cameras.get_observer_rgb()",
+                "alignment": "shared frame index and physics tick"}
         (self.output / f"episode_{self.slot:02d}_frames.json").write_text(json.dumps(data))

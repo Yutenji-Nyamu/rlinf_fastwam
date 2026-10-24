@@ -34,6 +34,18 @@ def validate(config):
             n += 1
         cap.release()
         assert n == e["frames"] and n >= 2, (e["slot"], n, e["frames"])
+        if c.get("record_observer", False):
+            assert m["synchronized_videos"]["observer"] == e["observer_video"]
+            cap = cv2.VideoCapture(str(out / e["observer_video"]))
+            observer_frames = 0
+            while True:
+                ok, image = cap.read()
+                if not ok:
+                    break
+                assert image.shape[:2] == (480, 640)
+                observer_frames += 1
+            cap.release()
+            assert observer_frames == n, (e["slot"], observer_frames, n)
         control = [json.loads(line) for line in (out / f"episode_{e['slot']:02d}_control.jsonl").read_text().splitlines()]
         assert len(control) == e["control_steps"]
         assert [r["tick"] for r in control] == list(range(1, len(control) + 1))

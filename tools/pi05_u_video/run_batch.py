@@ -106,14 +106,26 @@ def run(path):
         ec = OmegaConf.create(c["env"])
         assert not ec.auto_reset and ec.ignore_terminations and not ec.video_cfg.save_video
         env = RoboTwinEnv(ec, 16, 0, 1, None)
+        if c.get("record_observer", False):
+            sys.path.insert(0, str(ROOT / "tools/pi05_policy_eval"))
+            from protocol import configure_recording_wait
+            configure_recording_wait(env, seconds=c.get("environment_step_timeout_seconds", 600))
         obs, _ = env.reset()
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]
         seeds = [dict(slot=i, requested=int(requested[i]), actual=actual[i],
                       native_retry=int(requested[i]) != actual[i]) for i in range(16)]
         save(out / "seeds.json", seeds)
+        if c.get("record_observer", False):
+            assert ec.task_config.data_type.third_view
+            save(out / "instances.json", [dict(
+                **seeds[i], assets=sub.task.get_info(),
+                observer_position=sub.task.cameras.observer_camera.entity.get_pose().p.tolist(),
+                observer_quaternion=sub.task.cameras.observer_camera.entity.get_pose().q.tolist(),
+            ) for i, sub in enumerate(env.venv.envs)])
         for i, sub in enumerate(env.venv.envs):
-            recorders.append(Recorder(sub.task, out, i, actual[i], fps=25))
+            recorders.append(Recorder(sub.task, out, i, actual[i], fps=25,
+                                      observer=c.get("record_observer", False)))
         random.seed(c["noise_seed"])
         np.random.seed(c["noise_seed"])
         torch.manual_seed(c["noise_seed"])
@@ -177,6 +189,12 @@ def run(path):
                          frames=len(recorders[i].frames), video=f"episode_{i:02d}.mp4",
                          frame_map=f"episode_{i:02d}_frames.json") for i in range(16)]
         save(out / "episodes.json", episodes)
+        if c.get("record_observer", False):
+            instances = read(out / "instances.json")
+            for i, episode in enumerate(episodes):
+                episode.update(observer_video=f"episode_{i:02d}_observer.mp4",
+                               assets=instances[i]["assets"])
+            save(out / "episodes.json", episodes)
     finally:
         if env is not None:
             env.venv.env_thread_pool.shutdown(wait=True)

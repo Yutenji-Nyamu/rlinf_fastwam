@@ -81,7 +81,7 @@ def configure_recording_wait(env, seconds=300):
     import textwrap
     import types
 
-    assert seconds == 300
+    assert seconds in (300, 600)
     original = env.venv.step.__func__
     source = textwrap.dedent(inspect.getsource(original))
     anchor = "future.result(timeout=120)"
