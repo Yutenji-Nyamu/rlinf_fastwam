@@ -2,7 +2,7 @@
 
 15处实验源码/图册/收束工作树的已提交内容已确认公开；G图包f9b27b3已在bkp主分支历史中，不因临时分支未推而误判缺失。VLABench、四噪声图册、Dojo精选、G接管图包、N39补采仍放各自对应仓库，没有重复搬库。无关dirty工作树保持原状。
 
-本次补深圳1相对10月20/21归档新增或变化的**25,553份文件**，85个压缩分片，共**1.51 GiB**；跳过23,070份未变化文件。原始日志、配置、事件、逐回合/动作记录在[Release](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/tag/completed-artifacts-20261024)。活动日志是有界前缀快照，不能把归档完成说成实验已结束。
+本次补深圳1相对10月20/21归档新增或变化的**25,553份文件**，85个压缩分片，共**1.51 GiB**；跳过23,070份未变化文件。原始日志、配置、事件、逐回合/动作记录分为[Release 1–50](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/tag/completed-artifacts-20261024)和[Release 51–85](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/tag/completed-artifacts-20261024-part2)；release-index.json逐项标明所属入口。活动日志是有界前缀快照，不能把归档完成说成实验已结束。
 
 |结果族|文件数|未压缩文本/事件|
 |---|---:|---:|
