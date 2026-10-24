@@ -120,6 +120,15 @@ def make_config(
     )
     if policy:
         c["distill_weights"] = policy
+    if options.get("chunk_sweep"):
+        assert policy is None and episodes == 8
+        batch = int(options["seed_batch"])
+        c.update(
+            suite="pi05_chunk_sweep",
+            execute_chunk=int(options["execute_chunk"]),
+            batch=batch,
+            noise_seed=int(template["noise_seed"]) + 1000003 * batch,
+        )
     ec = c["env"]
     ec.update(
         total_num_envs=episodes,
@@ -134,13 +143,16 @@ def make_config(
     return c
 
 
-def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
+def sweep(
+    deployment, label, *, policy=None, steps=1, tasks=None, method="cp", overrides=None
+):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
     prepared = read(deployment / "prepared.json")
     sweep_started = time.time()
     settings_path = deployment / "eval-settings.json"
     options = read(settings_path) if settings_path.exists() else {}
+    options.update(overrides or {})
     episodes = int(options.get("episodes_per_task", 16))
     lanes = int(options.get("tasks_per_gpu", 2))
     resident = bool(options.get("resident_model", False))
@@ -151,6 +163,11 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
     task_rows = tasks or read(deployment / "task-list.json")["tasks"]
     pending = list(task_rows)
     template = read(deployment / "eval-template.json")
+    seeds_dir = deployment / (
+        f"eval-seeds-b{int(options['seed_batch'])}"
+        if options.get("chunk_sweep")
+        else "eval-seeds"
+    )
     save(
         tx / "settings.json",
         dict(options, episodes_per_task=episodes, tasks_per_gpu=lanes),
@@ -196,7 +213,7 @@ def sweep(deployment, label, *, policy=None, steps=1, tasks=None, method="cp"):
                     task,
                     slot[0],
                     dest,
-                    deployment / "eval-seeds" / (task["task"] + ".json"),
+                    seeds_dir / (task["task"] + ".json"),
                     label,
                     policy,
                     steps,

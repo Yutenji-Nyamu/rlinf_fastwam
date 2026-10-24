@@ -33,6 +33,20 @@ def save(path, value):
 
 
 def validate_config(c):
+    if c.get("suite") == "pi05_chunk_sweep":
+        assert c["num_envs"] == 8 and c["num_steps"] in (1, 10)
+        assert c["execute_chunk"] in (10, 20, 30, 40)
+        assert c["model"]["openpi"]["action_chunk"] == 50
+        assert c["model"]["num_action_chunks"] == 50
+        assert c["step_limit"] == c["official_step_limit"] > 0
+        assert c["env"]["task_config"]["task_name"] == c["task"]
+        assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
+        assert not any(
+            c.get(k) for k in ("weak_weights", "strong_weights", "distill_weights")
+        )
+        assert c["recording_mode"] == "none" and not c["record_decisions"]
+        assert c["batch"] in range(4)
+        return
     if c.get("suite") in ("pi05_distillation", "pi05_distillation_multitask"):
         if c["suite"] == "pi05_distillation":
             assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
