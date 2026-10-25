@@ -65,6 +65,8 @@ def main(deployment):
     g = p["gpu"]
     source = Path(__file__).resolve().parent
     template = read(d / "template.json")
+    episodes = int(template["episodes"])
+    assert episodes == template["num_envs"] and episodes in (4, 8)
     output = Path(p["output"])
     me = o.proc(os.getpid())
     save(d / "identity.json", me)
@@ -169,7 +171,7 @@ def main(deployment):
             output=str(dest),
             decision_observations_only=decision_only,
             probe_queries=probe,
-            layout_plan=make_plan(p["layouts"], name, 8),
+            layout_plan=make_plan(p["layouts"], name, episodes),
         )
         cfg["policy"]["task_name"] = name
         path = d / "jobs" / (label + ".json")
@@ -217,32 +219,35 @@ def main(deployment):
         return row
 
     try:
-        # Two bounded A/B probes; inconclusive equality leaves the old observation path.
-        task("stack_bowls", 50, 10, "probe-obs-original", False, 2)
-        task("stack_bowls", 50, 10, "probe-obs-boundary", True, 2)
-        acceptance = compare_probes(
-            output / "tasks/probe-obs-original", output / "tasks/probe-obs-boundary"
-        )
-        save(d / "observation-acceptance.json", acceptance)
-        decision = acceptance["passed"]
-        task("stack_bowls", 10, 1, "probe-c10-n1", decision, 2)
-        for smoke_name in ("stack_bowls", "stack_blocks"):
-            row = task(smoke_name, 50, 10, f"{smoke_name}-c50-n10", decision)
-            if row["episodes"] > 0:
-                break
-        assert row["episodes"] > 0, (
-            "Two bounded native task smokes yielded no complete episodes"
-        )
-        save(
-            d / "smoke-accepted.json",
-            {
-                "time": time.time(),
-                "episodes": row["episodes"],
-                "successes": row["successes"],
-                "decision_observations_only": decision,
-                "policy_identity": server_id,
-            },
-        )
+        if (d / "smoke-accepted.json").exists():
+            decision = read(d / "smoke-accepted.json")["decision_observations_only"]
+        else:
+            # Two bounded A/B probes; inconclusive equality leaves the old observation path.
+            task("stack_bowls", 50, 10, "probe-obs-original", False, 2)
+            task("stack_bowls", 50, 10, "probe-obs-boundary", True, 2)
+            acceptance = compare_probes(
+                output / "tasks/probe-obs-original", output / "tasks/probe-obs-boundary"
+            )
+            save(d / "observation-acceptance.json", acceptance)
+            decision = acceptance["passed"]
+            task("stack_bowls", 10, 1, "probe-c10-n1", decision, 2)
+            for smoke_name in ("stack_bowls", "stack_blocks"):
+                row = task(smoke_name, 50, 10, f"{smoke_name}-c50-n10", decision)
+                if row["episodes"] > 0:
+                    break
+            assert row["episodes"] > 0, (
+                "Two bounded native task smokes yielded no complete episodes"
+            )
+            save(
+                d / "smoke-accepted.json",
+                {
+                    "time": time.time(),
+                    "episodes": row["episodes"],
+                    "successes": row["successes"],
+                    "decision_observations_only": decision,
+                    "policy_identity": server_id,
+                },
+            )
         tasks = read(d / "task-list.json")
         for name in tasks:
             for c, n in [(10, 1), (10, 10), (50, 1), (50, 10)]:
@@ -250,7 +255,7 @@ def main(deployment):
                 if (output / "tasks" / label / "result.json").exists():
                     continue
                 task(name, c, n, label, decision)
-        event("COMPLETE", planned_episodes=1728)
+        event("COMPLETE", planned_episodes=216 * episodes)
     except BaseException:
         event("FAILED", error=traceback.format_exc())
         raise

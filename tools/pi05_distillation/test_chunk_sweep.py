@@ -112,7 +112,7 @@ def test_randomized_conditions_preserve_native_budget_and_raw_weights():
         "random_table_height": 0.03,
         "clean_background_rate": 0.02,
     }
-    for count in (8, 32):
+    for count in (4, 8, 32):
         for n in (1, 10):
             c = make_config(
                 template,

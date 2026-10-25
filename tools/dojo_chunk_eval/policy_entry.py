@@ -85,12 +85,15 @@ def install(model):
             slice_stacked_obs(model.observation_window, i) for i in range(len(ids))
         ]
         noise = noise_for(meta)
-        # Pad active slots to the accepted eight-env shape to avoid recompilation.
+        # Keep the configured task batch shape as environments finish.
         count = len(ids)
-        assert 0 < count <= job["num_envs"] == 8
-        observations += [observations[-1]] * (8 - count)
-        noise = np.concatenate([noise, np.repeat(noise[-1:], 8 - count, axis=0)])
+        batch = job["num_envs"]
+        assert batch in (4, 8) and 0 < count <= batch
+        observations += [observations[-1]] * (batch - count)
+        noise = np.concatenate([noise, np.repeat(noise[-1:], batch - count, axis=0)])
         n = job["num_steps"]
+        if job.get("batch_mode") == "sequential":
+            modes[n] = "sequential"
         if n not in modes:
             t = time.monotonic()
             reference = sequential(observations, noise)
@@ -134,7 +137,7 @@ def install(model):
                     "sequential_cold_seconds": seq_seconds,
                     "attempts": attempts,
                     "horizon": 50,
-                    "batch": 8,
+                    "batch": batch,
                     "noise": "explicit paired per layout/query",
                 },
             )

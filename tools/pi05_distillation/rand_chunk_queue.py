@@ -73,7 +73,13 @@ def main(deployment):
                 continue
             event("EVALUATING", condition=label, completed_sweeps=index, total_sweeps=4)
             s = sweep(
-                d, label, steps=n, overrides={"randomized": True, "execute_chunk": c}
+                d,
+                label,
+                steps=n,
+                overrides={"randomized": True, "execute_chunk": c},
+                completed_rows=read(d / "reused-results.json").get(label, [])
+                if (d / "reused-results.json").exists()
+                else None,
             )
             event(
                 "POINT_COMPLETE",
@@ -83,7 +89,7 @@ def main(deployment):
                 elapsed_seconds=s["elapsed_seconds"],
             )
         code = 0
-        event("COMPLETE", planned_episodes=1600)
+        event("COMPLETE", planned_episodes=p["planned_episodes"])
     except BaseException:
         event("FAILED", error=traceback.format_exc())
         raise

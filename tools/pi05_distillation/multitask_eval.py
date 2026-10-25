@@ -91,7 +91,7 @@ def make_config(
 ):
     options = options or {}
     episodes = int(options.get("episodes_per_task", 16))
-    assert episodes in ((8, 32) if options.get("randomized") else (8, 16))
+    assert episodes in ((4, 8, 32) if options.get("randomized") else (8, 16))
     c = copy.deepcopy(template)
     limit = int(task["step_limit"])
     c.update(
@@ -149,7 +149,15 @@ def make_config(
 
 
 def sweep(
-    deployment, label, *, policy=None, steps=1, tasks=None, method="cp", overrides=None
+    deployment,
+    label,
+    *,
+    policy=None,
+    steps=1,
+    tasks=None,
+    method="cp",
+    overrides=None,
+    completed_rows=None,
 ):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
@@ -161,13 +169,18 @@ def sweep(
     episodes = int(options.get("episodes_per_task", 16))
     lanes = int(options.get("tasks_per_gpu", 2))
     resident = bool(options.get("resident_model", False))
-    assert episodes in ((8, 32) if options.get("randomized") else (8, 16))
+    assert episodes in ((4, 8, 32) if options.get("randomized") else (8, 16))
     assert 1 <= lanes <= 4
     output = Path(prepared["output"])
     tx = deployment / ("eval-" + label)
     tx.mkdir(exist_ok=False)
     task_rows = tasks or read(deployment / "task-list.json")["tasks"]
-    pending = list(task_rows)
+    finished = list(completed_rows or [])
+    reused = {row["task"] for row in finished}
+    assert len(reused) == len(finished)
+    assert reused <= {row["task"] for row in task_rows}
+    assert all(row["valid"] and row["episodes"] == episodes for row in finished)
+    pending = [row for row in task_rows if row["task"] not in reused]
     template = read(deployment / "eval-template.json")
     seeds_dir = deployment / (
         f"eval-seeds-b{int(options['seed_batch'])}"
@@ -179,7 +192,7 @@ def sweep(
         dict(options, episodes_per_task=episodes, tasks_per_gpu=lanes),
     )
     slots = [(g, lane) for g in prepared["physical_gpus"] for lane in range(lanes)]
-    running, finished = {}, []
+    running = {}
     workers, generations = {}, {}
 
     def publish():

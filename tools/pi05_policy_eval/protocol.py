@@ -34,7 +34,7 @@ def save(path, value):
 
 def validate_config(c):
     if c.get("suite") == "pi05_rand_chunk_sweep":
-        assert c["num_envs"] in (8, 32) and c["num_steps"] in (1, 10)
+        assert c["num_envs"] in (4, 8, 32) and c["num_steps"] in (1, 10)
         assert c["execute_chunk"] in (10, 50)
         assert c["model"]["openpi"]["action_chunk"] == 50
         assert c["step_limit"] == c["official_step_limit"] > 0
