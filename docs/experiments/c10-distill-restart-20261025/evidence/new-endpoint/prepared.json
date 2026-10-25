@@ -1,0 +1,35 @@
+{
+  "time": 1792900012.8775554,
+  "source": "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/source",
+  "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025",
+  "physical_gpus": [
+    4,
+    5
+  ],
+  "method": "endpoint",
+  "tasks": 50,
+  "training_global_batch": 384,
+  "per_gpu_microbatch": 192,
+  "eval_tasks_per_gpu": 3,
+  "eval_episodes_per_task": 8,
+  "eval_budget_epochs": [
+    0.125,
+    0.25,
+    0.5,
+    1,
+    2,
+    5,
+    10,
+    20,
+    35,
+    50
+  ],
+  "status": "PREPARED_C10",
+  "fresh_start": true,
+  "source_base": "1a979ce4689495e0a6b35ca7b3aa02a49374dae8",
+  "baseline_note": "Existing C10 batch0 paired raw N1/N10 reused; 8 episodes/task",
+  "lean_acceptance": "/data/chenyiteng/deployment-20261023/distill-lean-eval-g23/accepted.json",
+  "predecessor": "/data/chenyiteng/deployment-20261023/endpoint-multitask-sz1-g45-lean",
+  "execute_chunk": 10,
+  "smoke": "Prior training+resume+N1 export accepted unchanged; this run checks C10 checkpoint execution on two tasks"
+}

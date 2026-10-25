@@ -1,0 +1,29 @@
+{
+  "time": 1792900470.5380902,
+  "phase": "TRAINING",
+  "method": "onedp",
+  "stop_step": 139,
+  "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp",
+  "child": {
+    "pid": 3374695,
+    "uid": 1003,
+    "start": 578718958,
+    "state": "R"
+  },
+  "command": [
+    "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+    "-u",
+    "-B",
+    "-m",
+    "torch.distributed.run",
+    "--standalone",
+    "--nproc_per_node=2",
+    "/data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/source/tools/pi05_distillation/train.py",
+    "--config",
+    "/data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/onedp.json",
+    "--output",
+    "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp",
+    "--stop-step",
+    "139"
+  ]
+}

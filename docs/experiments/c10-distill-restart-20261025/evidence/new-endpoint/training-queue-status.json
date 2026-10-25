@@ -1,0 +1,29 @@
+{
+  "time": 1792900444.5140636,
+  "phase": "TRAINING",
+  "method": "endpoint",
+  "stop_step": 139,
+  "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint",
+  "child": {
+    "pid": 3374244,
+    "uid": 1003,
+    "start": 578716356,
+    "state": "R"
+  },
+  "command": [
+    "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+    "-u",
+    "-B",
+    "-m",
+    "torch.distributed.run",
+    "--standalone",
+    "--nproc_per_node=2",
+    "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/source/tools/pi05_distillation/train.py",
+    "--config",
+    "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/endpoint.json",
+    "--output",
+    "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint",
+    "--stop-step",
+    "139"
+  ]
+}

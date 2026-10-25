@@ -114,6 +114,8 @@ def make_config(
     ):
         if key in options:
             c[key] = options[key]
+    if "execute_chunk" in options and not options.get("chunk_sweep"):
+        c["execute_chunk"] = int(options["execute_chunk"])
     c.pop("distill_weights", None)
     c["model"]["openpi"].update(
         num_steps=steps, distill_target_time=bool(policy) and method == "cp"

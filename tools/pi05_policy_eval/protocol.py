@@ -56,7 +56,11 @@ def validate_config(c):
             assert c["official_step_limit"] == c["step_limit"]
             assert c["env"]["task_config"]["task_name"] == c["task"]
         assert c["num_steps"] in (1, 10)
-        assert c["execute_chunk"] == c["model"]["openpi"]["action_chunk"] == 50
+        assert c["model"]["openpi"]["action_chunk"] == 50
+        allowed_chunks = (
+            (10, 50) if c["suite"] == "pi05_distillation_multitask" else (50,)
+        )
+        assert c["execute_chunk"] in allowed_chunks
         assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
         assert not c.get("weak_weights") and not c.get("strong_weights")
         return

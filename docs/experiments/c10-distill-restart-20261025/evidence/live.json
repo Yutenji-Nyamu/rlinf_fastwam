@@ -1,0 +1,404 @@
+{
+  "time": 1792900764.7478075,
+  "queues": {
+    "endpoint": {
+      "training-queue-status": {
+        "time": 1792900444.5140636,
+        "phase": "TRAINING",
+        "method": "endpoint",
+        "stop_step": 139,
+        "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint",
+        "child": {
+          "pid": 3374244,
+          "uid": 1003,
+          "start": 578716356,
+          "state": "R"
+        },
+        "command": [
+          "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+          "-u",
+          "-B",
+          "-m",
+          "torch.distributed.run",
+          "--standalone",
+          "--nproc_per_node=2",
+          "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/source/tools/pi05_distillation/train.py",
+          "--config",
+          "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/endpoint.json",
+          "--output",
+          "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint",
+          "--stop-step",
+          "139"
+        ]
+      },
+      "formal-ready": {
+        "time": 1792900442.4196005,
+        "total_steps": 55650,
+        "eval_steps": [
+          139,
+          278,
+          556,
+          1113,
+          2226,
+          5565,
+          11130,
+          22260,
+          38955,
+          55650
+        ],
+        "epochs": 50,
+        "method": "endpoint",
+        "global_batch": 384,
+        "microbatch_per_rank": 192,
+        "steps_per_epoch": 1113,
+        "tasks": 50,
+        "episodes_per_task": 8,
+        "baseline_source": "/data/chenyiteng/deployment-20261025/c10-raw-baselines"
+      },
+      "evaluation-smoke-accepted": {
+        "time": 1792900442.4194124,
+        "result": {
+          "time": 1792900442.416954,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 336.66034722328186,
+          "successes": 10,
+          "mean_success_rate": 0.625,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "tasks": [
+            {
+              "task": "click_bell",
+              "gpu": 5,
+              "valid": true,
+              "episodes": 8,
+              "successes": 6,
+              "elapsed_seconds": 265.09110283851624,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/batches/smoke-c10/click_bell"
+            },
+            {
+              "task": "adjust_bottle",
+              "gpu": 4,
+              "valid": true,
+              "episodes": 8,
+              "successes": 4,
+              "elapsed_seconds": 330.1148021221161,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/batches/smoke-c10/adjust_bottle"
+            }
+          ]
+        }
+      },
+      "identity": {
+        "pid": 3363279,
+        "uid": 1003,
+        "start": 578677705,
+        "state": "R"
+      },
+      "progress": {
+        "endpoint_mse": 0.004093438386917114,
+        "joint_mse": 0.004085231572389603,
+        "gripper_mse": 0.0041426788084208965,
+        "loss": 0.004093438386917114,
+        "step": 10,
+        "epoch": 0.008984725965858042,
+        "grad_norm": 0.043653082102537155,
+        "lr": 1.4970059880239521e-06,
+        "seconds_per_update": 6.858610740769654,
+        "peak_gib": 64.54700565338135,
+        "peak_reserved_gib": 68.076171875,
+        "time": 1792900760.2593968,
+        "rank": 0
+      },
+      "alive": true,
+      "summaries": {
+        "summary-smoke-c10.json": {
+          "time": 1792900442.416954,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 336.66034722328186,
+          "successes": 10,
+          "mean_success_rate": 0.625,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "tasks": [
+            {
+              "task": "click_bell",
+              "gpu": 5,
+              "valid": true,
+              "episodes": 8,
+              "successes": 6,
+              "elapsed_seconds": 265.09110283851624,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/batches/smoke-c10/click_bell"
+            },
+            {
+              "task": "adjust_bottle",
+              "gpu": 4,
+              "valid": true,
+              "episodes": 8,
+              "successes": 4,
+              "elapsed_seconds": 330.1148021221161,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/batches/smoke-c10/adjust_bottle"
+            }
+          ]
+        }
+      }
+    },
+    "onedp": {
+      "training-queue-status": {
+        "time": 1792900470.5380902,
+        "phase": "TRAINING",
+        "method": "onedp",
+        "stop_step": 139,
+        "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp",
+        "child": {
+          "pid": 3374695,
+          "uid": 1003,
+          "start": 578718958,
+          "state": "R"
+        },
+        "command": [
+          "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+          "-u",
+          "-B",
+          "-m",
+          "torch.distributed.run",
+          "--standalone",
+          "--nproc_per_node=2",
+          "/data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/source/tools/pi05_distillation/train.py",
+          "--config",
+          "/data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/onedp.json",
+          "--output",
+          "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp",
+          "--stop-step",
+          "139"
+        ]
+      },
+      "formal-ready": {
+        "time": 1792900468.4931889,
+        "total_steps": 22260,
+        "eval_steps": [
+          139,
+          278,
+          556,
+          1113,
+          2226,
+          3339,
+          5565,
+          8904,
+          13356,
+          17808,
+          22260
+        ],
+        "epochs": 20,
+        "method": "onedp",
+        "global_batch": 384,
+        "microbatch_per_rank": 192,
+        "steps_per_epoch": 1113,
+        "tasks": 50,
+        "episodes_per_task": 8,
+        "baseline_source": "/data/chenyiteng/deployment-20261025/c10-raw-baselines"
+      },
+      "evaluation-smoke-accepted": {
+        "time": 1792900468.493048,
+        "result": {
+          "time": 1792900468.4908383,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 361.0237293243408,
+          "successes": 5,
+          "mean_success_rate": 0.3125,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "tasks": [
+            {
+              "task": "click_bell",
+              "gpu": 7,
+              "valid": true,
+              "episodes": 8,
+              "successes": 4,
+              "elapsed_seconds": 310.1116895675659,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/batches/smoke-c10/click_bell"
+            },
+            {
+              "task": "adjust_bottle",
+              "gpu": 6,
+              "valid": true,
+              "episodes": 8,
+              "successes": 1,
+              "elapsed_seconds": 355.12891125679016,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/batches/smoke-c10/adjust_bottle"
+            }
+          ]
+        }
+      },
+      "identity": {
+        "pid": 3363282,
+        "uid": 1003,
+        "start": 578677715,
+        "state": "R"
+      },
+      "progress": {
+        "fake": 0.17051735520362854,
+        "fake_grad_norm": 0.7030568718910217,
+        "score_gradient_rms": 0.003370371414348483,
+        "loss": 0.00011917855590581894,
+        "step": 1,
+        "epoch": 0.0008984725965858042,
+        "grad_norm": 0.0012641395442187786,
+        "lr": 1e-06,
+        "seconds_per_update": 6.983968825079501,
+        "peak_gib": 69.40559434890747,
+        "peak_reserved_gib": 70.541015625,
+        "time": 1792900733.0546925,
+        "rank": 0
+      },
+      "alive": true,
+      "summaries": {
+        "summary-smoke-c10.json": {
+          "time": 1792900468.4908383,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 361.0237293243408,
+          "successes": 5,
+          "mean_success_rate": 0.3125,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "tasks": [
+            {
+              "task": "click_bell",
+              "gpu": 7,
+              "valid": true,
+              "episodes": 8,
+              "successes": 4,
+              "elapsed_seconds": 310.1116895675659,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/batches/smoke-c10/click_bell"
+            },
+            {
+              "task": "adjust_bottle",
+              "gpu": 6,
+              "valid": true,
+              "episodes": 8,
+              "successes": 1,
+              "elapsed_seconds": 355.12891125679016,
+              "error": null,
+              "output": "/data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/batches/smoke-c10/adjust_bottle"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "our_gpu_binding": {
+    "3374327": {
+      "pid": 3374327,
+      "uid": 1003,
+      "start": 578716617,
+      "state": "R",
+      "gpu": 4,
+      "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/source/tools/pi05_distillation/train.py --config /data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/endpoint.json --output /data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint --stop-step 139 ",
+      "binding": {
+        "CUDA_VISIBLE_DEVICES": "4,5",
+        "DOJO_GPU_SCOPE": null,
+        "DISTILL_RUN_TOKEN": "endpoint-multitask-c10-sz1-g45"
+      }
+    },
+    "3374328": {
+      "pid": 3374328,
+      "uid": 1003,
+      "start": 578716617,
+      "state": "R",
+      "gpu": 5,
+      "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/source/tools/pi05_distillation/train.py --config /data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/endpoint.json --output /data/chenyiteng/results/pi05-distill/endpoint-multitask-c10-sz1-g45-20261025/endpoint --stop-step 139 ",
+      "binding": {
+        "CUDA_VISIBLE_DEVICES": "4,5",
+        "DOJO_GPU_SCOPE": null,
+        "DISTILL_RUN_TOKEN": "endpoint-multitask-c10-sz1-g45"
+      }
+    },
+    "3374736": {
+      "pid": 3374736,
+      "uid": 1003,
+      "start": 578719213,
+      "state": "R",
+      "gpu": 6,
+      "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/source/tools/pi05_distillation/train.py --config /data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/onedp.json --output /data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp --stop-step 139 ",
+      "binding": {
+        "CUDA_VISIBLE_DEVICES": "6,7",
+        "DOJO_GPU_SCOPE": null,
+        "DISTILL_RUN_TOKEN": "onedp-multitask-c10-sz1-g67"
+      }
+    },
+    "3374737": {
+      "pid": 3374737,
+      "uid": 1003,
+      "start": 578719213,
+      "state": "R",
+      "gpu": 7,
+      "command": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u /data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/source/tools/pi05_distillation/train.py --config /data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/onedp.json --output /data/chenyiteng/results/pi05-distill/onedp-multitask-c10-sz1-g67-20261025/onedp --stop-step 139 ",
+      "binding": {
+        "CUDA_VISIBLE_DEVICES": "6,7",
+        "DOJO_GPU_SCOPE": null,
+        "DISTILL_RUN_TOKEN": "onedp-multitask-c10-sz1-g67"
+      }
+    }
+  },
+  "rlt_owner_alive": true,
+  "rlt_phases": {
+    "4": "WAIT_EXTERNAL",
+    "5": "WAIT_EXTERNAL",
+    "6": "WAIT_EXTERNAL",
+    "7": "WAIT_EXTERNAL"
+  },
+  "data_free_gib": 305.999210357666
+}

@@ -76,3 +76,28 @@ def test_prefix_respects_native_remaining_budget_and_finished_slots():
         limit=1500,
     )
     assert lengths.tolist() == [20, 3, 0]
+
+
+def test_c10_student_keeps_h50_and_official_budget():
+    template = config(1, 10)
+    c = make_config(
+        template,
+        {"task": "open_microwave", "step_limit": 1500},
+        4,
+        Path("/tmp/student"),
+        Path("/tmp/seeds.json"),
+        "endpoint-s000139",
+        policy="/tmp/policy-000139.pt",
+        method="endpoint",
+        options={"episodes_per_task": 8, "execute_chunk": 10},
+    )
+    protocol.validate_config(c)
+    assert c["distill_weights"] == "/tmp/policy-000139.pt"
+    assert c["execute_chunk"] == 10
+    assert c["model"]["openpi"]["action_chunk"] == 50
+    assert c["noise_seed"] == template["noise_seed"]
+    assert c["step_limit"] == c["env"]["task_config"]["step_lim"] == 1500
+    lengths = protocol.execution_lengths(
+        np.zeros(2, bool), np.ones(2, bool), np.array([0, 1497]), chunk=10, limit=1500
+    )
+    assert lengths.tolist() == [10, 3]

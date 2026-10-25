@@ -143,6 +143,25 @@ def main():
     if schedule.get("run_smoke_before_formal"):
         smoke()
     assert q.read(D / "smoke-accepted.json")["passed"]
+    eval_smoke = schedule.get("evaluation_smoke")
+    if eval_smoke:
+        names = eval_smoke["tasks"]
+        tasks = [t for t in q.read(D / "task-list.json")["tasks"] if t["task"] in names]
+        assert len(tasks) == len(names) == 2
+        q.event("EVALUATION_SMOKE", method=method, tasks=names)
+        result = sweep(
+            D,
+            "smoke-c10",
+            policy=eval_smoke["policy"],
+            tasks=tasks,
+            method=method,
+            overrides={"tasks_per_gpu": 1},
+        )
+        assert result["missing_tasks"] == 0 and result["episodes"] == 16
+        q.save(
+            D / "evaluation-smoke-accepted.json",
+            {"time": time.time(), "result": result},
+        )
     q.save(
         D / "formal-ready.json",
         {
