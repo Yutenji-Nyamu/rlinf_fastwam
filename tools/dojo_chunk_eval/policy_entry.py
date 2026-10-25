@@ -11,7 +11,7 @@ import numpy as np
 from common import read, save
 
 
-def install(model):
+def install(model, pointer=None, deployment=None):
     import jax
     import jax.numpy as jnp
     from openpi.models import model as base
@@ -23,10 +23,12 @@ def install(model):
     modes = {}
     job = {}
     meta = []
+    pointer = pointer or os.environ["DOJO_EVAL_POINTER"]
+    deployment = deployment or os.environ["DOJO_EVAL_DEPLOYMENT"]
 
     def reset():
         nonlocal job
-        job = read(read(os.environ["DOJO_EVAL_POINTER"])["config"])
+        job = read(read(pointer)["config"])
         assert job["num_steps"] in (1, 10) and job["execute_chunk"] in (10, 50)
         policy._sample_kwargs["num_steps"] = job["num_steps"]
         native_reset()
@@ -130,7 +132,7 @@ def install(model):
                 except Exception as exc:
                     attempts.append({"mode": name, "passed": False, "error": repr(exc)})
             save(
-                Path(os.environ["DOJO_EVAL_DEPLOYMENT"])
+                Path(deployment)
                 / f"batch-n{n}-acceptance.json",
                 {
                     "mode": modes[n],

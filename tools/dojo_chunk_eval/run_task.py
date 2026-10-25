@@ -60,6 +60,17 @@ def ops():
     return module
 
 
+def shared_process(pid, root):
+    """Only siblings launched by this private queue may share its physical GPU."""
+    p = Path('/proc') / str(pid)
+    try:
+        return p.stat().st_uid == os.getuid() and (
+            f'DOJO_PARALLEL_ROOT={root}'.encode() in p.joinpath('environ').read_bytes().split(b'\0')
+        )
+    except OSError:
+        return False
+
+
 def run(config):
     c = read(config)
     out = Path(c["output"])
@@ -69,7 +80,10 @@ def run(config):
     g = c["gpu"]
     resident = c["resident_policy_identity"]
     assert os.getuid() == c["uid"] == resident["uid"] and o.same(resident)
-    assert all(row["pid"] == resident["pid"] for row in o.gpus()[g]["processes"])
+    shared = c.get("parallel_root")
+    assert all(row["pid"] == resident["pid"] or
+               (shared and shared_process(row["pid"], shared))
+               for row in o.gpus()[g]["processes"])
     token = out.name
     start = time.time()
     save(out / "started.json", {"time": start, "identity": o.proc(os.getpid())})
@@ -108,6 +122,8 @@ def run(config):
                 c["repo"] + "/XPolicyLab/policy/Pi_05/openpi/src",
             ]
         )
+        if shared:
+            e['DOJO_PARALLEL_ROOT'] = shared
         return e
 
     def launch(argv, role):
@@ -245,7 +261,11 @@ def run(config):
                 except subprocess.TimeoutExpired:
                     pass
             time.sleep(2)
-        clear = all(row["pid"] == resident["pid"] for row in o.gpus()[g]["processes"])
+        if shared:
+            # Other task lanes are expected to remain. Check only this exact task.
+            clear = all(not o.same(identity) for identity in targets.values())
+        else:
+            clear = all(row["pid"] == resident["pid"] for row in o.gpus()[g]["processes"])
         save(
             out / "clearance.json",
             {
