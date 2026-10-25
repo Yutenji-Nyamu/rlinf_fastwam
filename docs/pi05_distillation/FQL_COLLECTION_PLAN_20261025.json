@@ -1,0 +1,77 @@
+{
+  "schema": "fql_collection_plan_v1",
+  "status": "PROPOSED_NOT_IMPLEMENTED_NOT_QUEUED",
+  "environment": "RoboTwin2.0",
+  "domain": "clean",
+  "task_count": 50,
+  "policy": "original_sidney_pi05",
+  "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+  "horizon": 50,
+  "execute_chunk": 10,
+  "num_steps": 10,
+  "episodes_per_task": 96,
+  "episodes_per_batch": 8,
+  "batches_per_task": 12,
+  "worker_processes_per_gpu": 3,
+  "envs_per_gpu": 24,
+  "preferred_gpu_count": 2,
+  "assigned_physical_gpus": null,
+  "inherit": "resolved accepted C10 clean evaluator, native task action limits, native TOPP, resident models and finite error skip",
+  "recording": {
+    "collect_transitions": true,
+    "recording_mode": "none",
+    "record_full_video": false,
+    "record_signals": false,
+    "record_decisions": false,
+    "observer": false
+  },
+  "mandatory_fields": [
+    "task_id",
+    "instruction",
+    "requested_seed",
+    "actual_seed",
+    "obs",
+    "next_obs",
+    "action_prefix",
+    "normalized_action_prefix",
+    "prefix_mask",
+    "submitted_length",
+    "reward_raw",
+    "reward",
+    "terminated_native",
+    "truncated_native",
+    "termination_reason",
+    "bootstrap_mask",
+    "remaining_actions",
+    "model_config_version",
+    "episode_success",
+    "valid"
+  ],
+  "data_mix": "all valid success and failure rollouts; HF experts retained separately",
+  "reward_objective": "first success within native finite action budget",
+  "discount": 0.99,
+  "discount_unit": "decision_block",
+  "budget_end_bootstrap": false,
+  "critic_requires_remaining_budget": true,
+  "invalid_episodes": "quarantine; never relabel simulator failures as policy failures",
+  "eta_two_gpu_hours": [
+    20,
+    30
+  ],
+  "eta_single_gpu_hours": [
+    40,
+    60
+  ],
+  "rgb224_uncompressed_estimate_gib": 100,
+  "planned_working_storage_gib": [
+    100,
+    150
+  ],
+  "preconditions": [
+    "collector implementation and bounded smoke",
+    "resolved recording/transition settings accepted",
+    "new disjoint training seed manifest",
+    "storage decision",
+    "concrete GPU queue assignment"
+  ]
+}
