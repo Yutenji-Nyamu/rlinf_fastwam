@@ -25,7 +25,9 @@ def main(deployment):
             return
         failure = read(d / 'failure.json')
         reason = failure.get('error', '')
-        if not any(marker in reason for marker in ('GPU device fault', 'Shared policy exited')):
+        if not any(marker in reason for marker in (
+            'GPU device fault', 'Shared policy exited', 'Incomplete private cleanup'
+        )):
             return
         if o.gpus()[p['gpu']]['processes']:
             save(d / 'recovery-blocked.json', {'time':time.time(), 'reason':'private GPU did not clear'})
@@ -33,14 +35,17 @@ def main(deployment):
         # Preserve interruption evidence and retry only jobs interrupted by the
         # failed shared service. Normal failures remain recorded/skipped.
         moved = []
-        for result in output.glob('tasks/*/result.json'):
-            if 'SystemExit: 143' not in (read(result).get('error') or ''):
+        for task in output.glob('tasks/*'):
+            result = task / 'result.json'
+            if result.exists() and 'SystemExit: 143' not in (read(result).get('error') or ''):
                 continue
-            assert not result.parent.is_symlink()
-            dest = output / 'interrupted' / f'{result.parent.name}-recovery-{attempt}'
+            if not result.exists() and not (task / 'config.json').exists():
+                continue
+            assert task.is_dir() and not task.is_symlink()
+            dest = output / 'interrupted' / f'{task.name}-recovery-{int(time.time())}-{attempt}'
             dest.parent.mkdir(exist_ok=True)
-            result.parent.rename(dest)
-            driver_log = d / (result.parent.name + '-driver.log')
+            task.rename(dest)
+            driver_log = d / (task.name + '-driver.log')
             if driver_log.exists():
                 driver_log.rename(dest / 'driver.log')
             moved.append(str(dest))

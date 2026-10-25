@@ -71,6 +71,22 @@ def shared_process(pid, root):
         return False
 
 
+def unowned_gpu_processes(o, rows, resident, shared):
+    """Ignore exited snapshot PIDs, but retain live foreign owners as blockers."""
+    blocked = []
+    for row in rows:
+        identity = o.proc(row['pid'])
+        if not identity or not o.same(identity):
+            continue
+        if identity == resident or (
+            identity['pid'] == resident['pid'] and o.same(resident)
+        ) or (shared and shared_process(identity['pid'], shared)):
+            continue
+        if o.same(identity):
+            blocked.append(identity)
+    return blocked
+
+
 def run(config):
     c = read(config)
     out = Path(c["output"])
@@ -81,9 +97,6 @@ def run(config):
     resident = c["resident_policy_identity"]
     assert os.getuid() == c["uid"] == resident["uid"] and o.same(resident)
     shared = c.get("parallel_root")
-    assert all(row["pid"] == resident["pid"] or
-               (shared and shared_process(row["pid"], shared))
-               for row in o.gpus()[g]["processes"])
     token = out.name
     start = time.time()
     save(out / "started.json", {"time": start, "identity": o.proc(os.getpid())})
@@ -149,6 +162,9 @@ def run(config):
     signal.signal(signal.SIGTERM, stop)
     try:
         assert o.same(resident), "Resident policy exited before task"
+        blocked = unowned_gpu_processes(o, o.gpus()[g]['processes'], resident, shared)
+        if blocked:
+            raise RuntimeError(f'GPU admission blocked by live processes: {blocked}')
         main = [
             c["sim_python"],
             "-u",
