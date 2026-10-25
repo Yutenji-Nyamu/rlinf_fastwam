@@ -91,7 +91,7 @@ def make_config(
 ):
     options = options or {}
     episodes = int(options.get("episodes_per_task", 16))
-    assert episodes in (8, 16)
+    assert episodes in ((8, 32) if options.get("randomized") else (8, 16))
     c = copy.deepcopy(template)
     limit = int(task["step_limit"])
     c.update(
@@ -131,6 +131,9 @@ def make_config(
             batch=batch,
             noise_seed=int(template["noise_seed"]) + 1000003 * batch,
         )
+    if options.get("randomized"):
+        assert policy is None
+        c["suite"] = "pi05_rand_chunk_sweep"
     ec = c["env"]
     ec.update(
         total_num_envs=episodes,
@@ -158,7 +161,8 @@ def sweep(
     episodes = int(options.get("episodes_per_task", 16))
     lanes = int(options.get("tasks_per_gpu", 2))
     resident = bool(options.get("resident_model", False))
-    assert episodes in (8, 16) and 1 <= lanes <= 4
+    assert episodes in ((8, 32) if options.get("randomized") else (8, 16))
+    assert 1 <= lanes <= 4
     output = Path(prepared["output"])
     tx = deployment / ("eval-" + label)
     tx.mkdir(exist_ok=False)

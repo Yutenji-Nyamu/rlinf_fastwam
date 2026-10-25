@@ -101,3 +101,39 @@ def test_c10_student_keeps_h50_and_official_budget():
         np.zeros(2, bool), np.ones(2, bool), np.array([0, 1497]), chunk=10, limit=1500
     )
     assert lengths.tolist() == [10, 3]
+
+
+def test_randomized_conditions_preserve_native_budget_and_raw_weights():
+    template = config(10, 10)
+    template["env"]["task_config"]["domain_randomization"] = {
+        "random_background": True,
+        "cluttered_table": True,
+        "random_light": True,
+        "random_table_height": 0.03,
+        "clean_background_rate": 0.02,
+    }
+    for count in (8, 32):
+        for n in (1, 10):
+            c = make_config(
+                template,
+                {"task": "adjust_bottle", "step_limit": 400},
+                2,
+                Path("/tmp/rand"),
+                Path("/tmp/seeds.json"),
+                "rand",
+                steps=n,
+                options={
+                    "randomized": True,
+                    "episodes_per_task": count,
+                    "execute_chunk": 50,
+                },
+            )
+            protocol.validate_config(c)
+            assert c["num_envs"] == c["env"]["total_num_envs"] == count
+            assert (
+                c["env"]["task_config"]["domain_randomization"]
+                == template["env"]["task_config"]["domain_randomization"]
+            )
+            c["distill_weights"] = "student.pt"
+            with pytest.raises(AssertionError):
+                protocol.validate_config(c)
