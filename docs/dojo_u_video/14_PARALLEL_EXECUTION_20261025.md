@@ -25,3 +25,5 @@
 结果与后续条件切换以`summary.json`、`status.json`、`policy-progress.json`为准。六路共享一张卡，不会线性提速六倍；此轮未改模型动作数值、物理步数或成功标准。
 
 源码：`tools/dojo_chunk_eval/{parallel_queue,shared_policy,recover_queue}.py`；对原`policy_entry.py`只参数化配置指针，对`run_task.py`只增加同队列共享GPU的所有权与清场判断。
+
+19:50复查：六路持续推进；deposit_coin/C10/N1完成4回合后自动接N10，N10已到250动作，其他五路继续。累计31/216项结束、80有效回合。两种N值并行共用权重但保持各自采样参数。源码与轻量回执已公开推送。
