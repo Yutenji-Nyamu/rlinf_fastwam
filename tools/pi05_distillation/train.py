@@ -21,6 +21,7 @@ import math
 import os
 import random
 import time
+from contextlib import closing
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +45,7 @@ from rlinf.algorithms.pi05_distillation.model import (
     load_expert,
     prepare,
 )
+from rlinf.algorithms.pi05_distillation.prefetch import decoded_batches, training_indices
 from rlinf.models.embodiment.openpi import get_model
 
 
@@ -69,6 +71,8 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--stop-step", type=int)
     parser.add_argument("--resume")
+    parser.add_argument("--decode-workers", type=int, default=0)
+    parser.add_argument("--prefetch-batches", type=int, choices=(0, 1, 2), default=0)
     args = parser.parse_args()
     c = json.loads(Path(args.config).read_text())
     rank, world = int(os.environ["LOCAL_RANK"]), int(os.environ["WORLD_SIZE"])
@@ -197,206 +201,201 @@ def main():
                 "frozen_base_dependency": c["model"]["model_path"],
                 "mutable_parameters": sum(p.numel() for p in student_params),
                 "task_manifest": getattr(data, "manifest", None),
+                "cpu_loader": {
+                    "decode_workers": args.decode_workers,
+                    "prefetch_batches": args.prefetch_batches,
+                },
             },
         )
     begin = time.monotonic()
-    permutation, last_epoch = None, None
-    for step in range(start, stop):
-        epoch, offset = divmod(step, per_epoch)
-        if not isinstance(data, BalancedWindows) and last_epoch != epoch:
-            permutation = np.random.default_rng(c["seed"] + epoch).permutation(
-                len(data)
-            )
-            last_epoch = epoch
-        # Deterministic global shuffled batches, padding only the last batch;
-        # resume uses step+epoch, so no hidden data-loader state is omitted.
-        if isinstance(data, BalancedWindows):
-            indices = data.indices(step, global_batch, c["seed"])
-        else:
-            indices = np.resize(permutation, per_epoch * global_batch)[
-                offset * global_batch : (offset + 1) * global_batch
-            ]
-        local = indices[rank::world]
-        lr_mult = 1.0
-        if method in {"cp", "endpoint"}:
-            warm = c["warmup_steps"]
-            lr_mult = (
-                min(1.0, (step + 1) / max(1, warm))
-                * 0.5
-                * (1 + math.cos(math.pi * max(0, step - warm) / max(1, total - warm)))
-            )
-        for group in opt.param_groups:
-            group["lr"] = c["lr"] * lr_mult
-        opt.zero_grad(set_to_none=True)
-        if opt_aux:
-            opt_aux.zero_grad(set_to_none=True)
-        metrics = {}
-        # Cache each microbatch's frozen context for fake and generator updates.
-        prepared = []
-        for m in range(accum):
-            obs, actions = data.batch(local[m * micro : (m + 1) * micro])
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                actions, context = prepare(teacher.model, obs, actions)
-            prepared.append((actions, context))
-        if opt_aux:
-            for actions, context in prepared:
+    batches = decoded_batches(
+        data,
+        training_indices(data, start, stop, global_batch, micro, rank, world, c["seed"]),
+        decode_workers=args.decode_workers,
+        prefetch_batches=args.prefetch_batches,
+    )
+    with closing(batches):
+        for step in range(start, stop):
+            lr_mult = 1.0
+            if method in {"cp", "endpoint"}:
+                warm = c["warmup_steps"]
+                lr_mult = (
+                    min(1.0, (step + 1) / max(1, warm))
+                    * 0.5
+                    * (1 + math.cos(math.pi * max(0, step - warm) / max(1, total - warm)))
+                )
+            for group in opt.param_groups:
+                group["lr"] = c["lr"] * lr_mult
+            opt.zero_grad(set_to_none=True)
+            if opt_aux:
+                opt_aux.zero_grad(set_to_none=True)
+            metrics = {}
+            # Cache each microbatch's frozen context for fake and generator updates.
+            prepared = []
+            for m in range(accum):
+                obs, actions = next(batches)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
-                    z = torch.randn_like(actions)
-                    with torch.no_grad():
-                        generated = z - student(
-                            z, torch.ones(len(z), device=z.device), context
-                        )
-                    lf = fake_loss(aux_ddp, generated, context)
-                (lf / accum).backward()
-                metrics["fake"] = metrics.get("fake", 0.0) + lf.detach() / accum
-            aux_norm = torch.nn.utils.clip_grad_norm_(
-                auxiliary.parameters_to_train(), c["clip_grad"], error_if_nonfinite=True
-            )
-            opt_aux.step()
-            opt_aux.zero_grad(set_to_none=True)
-            metrics["fake_grad_norm"] = aux_norm
-        for actions, context in prepared:
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                if method == "cp":
-                    loss, parts = cp_loss(
-                        student_ddp,
-                        teacher,
-                        auxiliary,
-                        actions,
-                        context,
-                        bins=c["time_bins"],
-                    )
-                elif method == "endpoint":
-                    z = torch.randn_like(actions)
-                    if step == 0 and out.name.startswith("smoke-"):
-                        # Native N1 and the differentiable student expression
-                        # must agree before training. Only one smoke batch.
+                    actions, context = prepare(teacher.model, obs, actions)
+                prepared.append((actions, context))
+            if opt_aux:
+                for actions, context in prepared:
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        z = torch.randn_like(actions)
                         with torch.no_grad():
-                            native = teacher.endpoint(z, context, steps=1)
-                            direct = z - student(
+                            generated = z - student(
                                 z, torch.ones(len(z), device=z.device), context
                             )
-                            torch.testing.assert_close(
-                                direct, native, rtol=1e-5, atol=1e-6
-                            )
-                        save_json(
-                            out / f"native-parity-rank{rank}.json",
-                            {
-                                "max_abs": float((direct - native).abs().max()),
-                                "teacher_target": "native_eval_flow_ode_N10",
-                                "student_initial_N1_matches": True,
-                            },
+                        lf = fake_loss(aux_ddp, generated, context)
+                    (lf / accum).backward()
+                    metrics["fake"] = metrics.get("fake", 0.0) + lf.detach() / accum
+                aux_norm = torch.nn.utils.clip_grad_norm_(
+                    auxiliary.parameters_to_train(), c["clip_grad"], error_if_nonfinite=True
+                )
+                opt_aux.step()
+                opt_aux.zero_grad(set_to_none=True)
+                metrics["fake_grad_norm"] = aux_norm
+            for actions, context in prepared:
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    if method == "cp":
+                        loss, parts = cp_loss(
+                            student_ddp,
+                            teacher,
+                            auxiliary,
+                            actions,
+                            context,
+                            bins=c["time_bins"],
                         )
-                        del native, direct
-                    loss, parts = endpoint_loss(
-                        student_ddp,
-                        teacher,
-                        z,
-                        context,
-                        teacher_steps=c["teacher_steps"],
-                        action_dim=c["loss_action_dim"],
-                    )
-                elif method == "onedp":
-                    z = torch.randn_like(actions)
-                    generated = z - student_ddp(
-                        z, torch.ones(len(z), device=z.device), context
-                    )
-                    loss, score = onedp_loss(generated, teacher, auxiliary, context)
-                    parts = {"score_gradient_rms": score}
-            if not torch.isfinite(loss):
-                raise FloatingPointError("Nonfinite distillation loss")
-            (loss / accum).backward()
-            for k, v in dict(parts, loss=loss.detach()).items():
-                metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
-        grad_norm = torch.nn.utils.clip_grad_norm_(
-            student_params, c["clip_grad"], error_if_nonfinite=True
-        )
-        opt.step()
-        if method == "cp":
-            decay = ema_decay(step + 1)
-            with torch.no_grad():
-                src = dict(student.model.named_parameters())
-                for name, p in auxiliary.model.named_parameters():
-                    if src[name].requires_grad:
-                        p.lerp_(src[name], 1 - decay)
-        del prepared, actions, context, loss
-        if (step + 1) % c["log_every"] == 0 or step == start or step + 1 == stop:
-            row = {k: float(v) for k, v in metrics.items()}
-            row.update(
-                step=step + 1,
-                epoch=(step + 1) / per_epoch,
-                grad_norm=float(grad_norm),
-                lr=opt.param_groups[0]["lr"],
-                seconds_per_update=(time.monotonic() - begin) / (step + 1 - start),
-                peak_gib=torch.cuda.max_memory_allocated() / 2**30,
-                peak_reserved_gib=torch.cuda.max_memory_reserved() / 2**30,
-                time=time.time(),
-                rank=rank,
+                    elif method == "endpoint":
+                        z = torch.randn_like(actions)
+                        if step == 0 and out.name.startswith("smoke-"):
+                            # Native N1 and the differentiable student expression
+                            # must agree before training. Only one smoke batch.
+                            with torch.no_grad():
+                                native = teacher.endpoint(z, context, steps=1)
+                                direct = z - student(
+                                    z, torch.ones(len(z), device=z.device), context
+                                )
+                                torch.testing.assert_close(
+                                    direct, native, rtol=1e-5, atol=1e-6
+                                )
+                            save_json(
+                                out / f"native-parity-rank{rank}.json",
+                                {
+                                    "max_abs": float((direct - native).abs().max()),
+                                    "teacher_target": "native_eval_flow_ode_N10",
+                                    "student_initial_N1_matches": True,
+                                },
+                            )
+                            del native, direct
+                        loss, parts = endpoint_loss(
+                            student_ddp,
+                            teacher,
+                            z,
+                            context,
+                            teacher_steps=c["teacher_steps"],
+                            action_dim=c["loss_action_dim"],
+                        )
+                    elif method == "onedp":
+                        z = torch.randn_like(actions)
+                        generated = z - student_ddp(
+                            z, torch.ones(len(z), device=z.device), context
+                        )
+                        loss, score = onedp_loss(generated, teacher, auxiliary, context)
+                        parts = {"score_gradient_rms": score}
+                if not torch.isfinite(loss):
+                    raise FloatingPointError("Nonfinite distillation loss")
+                (loss / accum).backward()
+                for k, v in dict(parts, loss=loss.detach()).items():
+                    metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                student_params, c["clip_grad"], error_if_nonfinite=True
             )
-            with (out / f"metrics-rank{rank}.jsonl").open("a") as f:
-                f.write(json.dumps(row) + "\n")
-            if rank == 0:
-                print(json.dumps(row), flush=True)
-                save_json(out / "progress.json", row)
-        if (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop:
-            rng = {
-                "python": random.getstate(),
-                "numpy": np.random.get_state(),
-                "torch": torch.get_rng_state(),
-                "cuda": torch.cuda.get_rng_state(rank),
-            }
-            all_rng = [None] * world
-            dist.all_gather_object(all_rng, rng)
-            if rank == 0:
-                checkpoint = out / f"checkpoint-{step + 1:06d}.pt"
-                atomic_torch(
-                    checkpoint,
-                    {
-                        "version": 1,
-                        "config": c,
-                        "step": step + 1,
-                        "windows": len(data),
-                        "world_size": world,
-                        "student": expert_state(student.model),
-                        "auxiliary": expert_state(auxiliary.model)
-                        if auxiliary is not None
-                        else None,
-                        "optimizer": opt.state_dict(),
-                        "aux_optimizer": opt_aux.state_dict() if opt_aux else None,
-                        "rng": all_rng,
-                        "task_manifest": getattr(data, "manifest", None),
-                        "task_exposure": (
-                            data.exposure((step + 1) * global_batch, c["seed"])
-                            if isinstance(data, BalancedWindows)
-                            else None
-                        ),
-                    },
+            opt.step()
+            if method == "cp":
+                decay = ema_decay(step + 1)
+                with torch.no_grad():
+                    src = dict(student.model.named_parameters())
+                    for name, p in auxiliary.model.named_parameters():
+                        if src[name].requires_grad:
+                            p.lerp_(src[name], 1 - decay)
+            del prepared, actions, context, loss
+            if (step + 1) % c["log_every"] == 0 or step == start or step + 1 == stop:
+                row = {k: float(v) for k, v in metrics.items()}
+                row.update(
+                    step=step + 1,
+                    epoch=(step + 1) / per_epoch,
+                    grad_norm=float(grad_norm),
+                    lr=opt.param_groups[0]["lr"],
+                    seconds_per_update=(time.monotonic() - begin) / (step + 1 - start),
+                    peak_gib=torch.cuda.max_memory_allocated() / 2**30,
+                    peak_reserved_gib=torch.cuda.max_memory_reserved() / 2**30,
+                    time=time.time(),
+                    rank=rank,
                 )
-                # CP uses its EMA policy at evaluation, following the reference.
-                policy_path = out / f"policy-{step + 1:06d}.pt"
-                atomic_torch(
-                    policy_path,
-                    {
-                        "expert": expert_state(
-                            auxiliary.model if method == "cp" else student.model
-                        ),
-                        "method": method,
-                        "step": step + 1,
-                        "base": c["model"]["model_path"],
-                    },
-                )
-                save_json(
-                    out / "checkpoint.json",
-                    {
-                        "step": step + 1,
-                        "path": str(checkpoint),
-                        "policy": str(policy_path),
-                    },
-                )
-                prune_checkpoints(
-                    out, c.get("checkpoint_keep_last"), c.get("checkpoint_keep_steps", [])
-                )
-            dist.barrier()
+                with (out / f"metrics-rank{rank}.jsonl").open("a") as f:
+                    f.write(json.dumps(row) + "\n")
+                if rank == 0:
+                    print(json.dumps(row), flush=True)
+                    save_json(out / "progress.json", row)
+            if (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop:
+                rng = {
+                    "python": random.getstate(),
+                    "numpy": np.random.get_state(),
+                    "torch": torch.get_rng_state(),
+                    "cuda": torch.cuda.get_rng_state(rank),
+                }
+                all_rng = [None] * world
+                dist.all_gather_object(all_rng, rng)
+                if rank == 0:
+                    checkpoint = out / f"checkpoint-{step + 1:06d}.pt"
+                    atomic_torch(
+                        checkpoint,
+                        {
+                            "version": 1,
+                            "config": c,
+                            "step": step + 1,
+                            "windows": len(data),
+                            "world_size": world,
+                            "student": expert_state(student.model),
+                            "auxiliary": expert_state(auxiliary.model)
+                            if auxiliary is not None
+                            else None,
+                            "optimizer": opt.state_dict(),
+                            "aux_optimizer": opt_aux.state_dict() if opt_aux else None,
+                            "rng": all_rng,
+                            "task_manifest": getattr(data, "manifest", None),
+                            "task_exposure": (
+                                data.exposure((step + 1) * global_batch, c["seed"])
+                                if isinstance(data, BalancedWindows)
+                                else None
+                            ),
+                        },
+                    )
+                    # CP uses its EMA policy at evaluation, following the reference.
+                    policy_path = out / f"policy-{step + 1:06d}.pt"
+                    atomic_torch(
+                        policy_path,
+                        {
+                            "expert": expert_state(
+                                auxiliary.model if method == "cp" else student.model
+                            ),
+                            "method": method,
+                            "step": step + 1,
+                            "base": c["model"]["model_path"],
+                        },
+                    )
+                    save_json(
+                        out / "checkpoint.json",
+                        {
+                            "step": step + 1,
+                            "path": str(checkpoint),
+                            "policy": str(policy_path),
+                        },
+                    )
+                    prune_checkpoints(
+                        out, c.get("checkpoint_keep_last"), c.get("checkpoint_keep_steps", [])
+                    )
+                dist.barrier()
     if rank == 0:
         save_json(
             out / "segment-done.json",

@@ -75,21 +75,30 @@ class DemoWindows:
         row = self.episodes[ep]
         return row, start, self.prompts[int(row["task_index"][start])]
 
-    def batch(self, indices):
-        return decode_records((self.record(i) for i in indices), self.horizon)
+    def batch(self, indices, *, executor=None):
+        return decode_records((self.record(i) for i in indices), self.horizon, executor)
 
 
-def decode_records(records, horizon):
+def _decode_record(record):
+    row, start, prompt = record
+    imgs = []
+    for key in ("cam_high", "cam_left_wrist", "cam_right_wrist"):
+        item = row[f"observation.images.{key}"][start]
+        with Image.open(io.BytesIO(item["bytes"])) as image:
+            imgs.append(np.asarray(image.convert("RGB")))
+    return np.stack(imgs), row, start, prompt
+
+
+def decode_records(records, horizon, executor=None):
     """Accepted compressed RGB/state/absolute-action path, shared by both scopes."""
     states, actions, prompts, views = [], [], [], []
-    keys = ("cam_high", "cam_left_wrist", "cam_right_wrist")
-    for row, start, prompt in records:
-        imgs = []
-        for key in keys:
-            item = row[f"observation.images.{key}"][start]
-            with Image.open(io.BytesIO(item["bytes"])) as image:
-                imgs.append(np.asarray(image.convert("RGB")))
-        views.append(np.stack(imgs))
+    decoded = (
+        executor.map(_decode_record, records)
+        if executor is not None
+        else map(_decode_record, records)
+    )
+    for imgs, row, start, prompt in decoded:
+        views.append(imgs)
         states.append(row["states"][start])
         actions.append(row["actions"][start : start + horizon])
         prompts.append(prompt)
@@ -142,8 +151,8 @@ class BalancedWindows:
         task = int(np.searchsorted(self.offsets, index, side="right") - 1)
         return self.datasets[task].record(index - self.offsets[task])
 
-    def batch(self, indices):
-        return decode_records((self.record(i) for i in indices), self.horizon)
+    def batch(self, indices, *, executor=None):
+        return decode_records((self.record(i) for i in indices), self.horizon, executor)
 
     def exposure(self, samples, seed):
         n = len(self.datasets)
