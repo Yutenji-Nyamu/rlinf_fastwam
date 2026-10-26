@@ -1,3 +1,5 @@
+2026-10-26最新：[60 MFD规划索引](60_MFD_INDEX_20261026.md) · [61 来源与机制](61_MFD_SOURCES_AND_MECHANISM_20261026.md) · [62 π0.5适配计划](62_MFD_PI05_ADAPTATION_PLAN_20261026.md)。已核官方论文及源码，基于DMD new复用；本轮只规划，不启动MFD。
+
 2026-10-26最新：[59 新DMD双卡smoke与FQL接续](59_DMD_NEW_SMOKE_AND_FQL_HANDOFF_20261026.md)。旧OneDP已收束；新DMD采用1e-5/2e-4、辅助5:1、学生14维，12→14续训与N1导出通过，稳态约6秒、峰值72.6GiB/卡。1·67转FQL真实采集→正式训练→RLT，1·45直接蒸馏保持。首次采集的缺失模块已修复，失败启动记录保留且不算回合。
 
 此前讨论：[58 DMD修整收敛与CPU供数测试](58_DMD_DECISIONS_AND_CPU_PREFETCH_20261026.md)。8线程＋预取1批已在59号双卡smoke启用；58号“方法未切换/学习率暂保持”由本轮用户明确指令更新。
