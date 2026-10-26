@@ -1,6 +1,6 @@
-# FQL后续smoke执行入口（未启动）
+# FQL smoke执行入口（本轮已完成）
 
-2026-10-26。用户最新要求先不smoke；本文件只为下一次授权用卡提供现成入口。
+2026-10-26更新：用户后续授权“有两张空卡则smoke”。已在1机2/3完成并释放，见[57回执](57_FQL_GPU_SMOKE_20261026.md)。下文保留可复用入口；不代表授权正式长训。
 
 1. 刷新空卡、用户和计算/图形绑定，复用已跑通的每卡scope环境。不要把prepared-smoke-only的gpu=3理解为占卡或排队。
 2. `fql_prepare.py --reference <当前endpoint部署> --destination <新目录> --gpu <空卡> --tasks adjust_bottle click_bell --batches 1`准备两个8环境批次。省略tasks可覆盖50任务；默认12批，每任务96回合，按批轮转覆盖任务。仅准备，不启动。
@@ -10,6 +10,6 @@
 6. 容量先测已成功直接蒸馏的每卡192。新增加下一观察会改变峰值；必要时降低微批并累积维持全局384，不能未经测量声称192已通过FQL。
 7. 记录真实回合成功/失败/异常、转移数、GiB、耗时、MSE/Q及动作梯度规模；只推源码、小配置、日志和回执。原始RGB/权重不进Git。通过后也不自动长训。
 
-模型配置从现有1·45直接蒸馏继承。全任务评估继续可用multitask_eval.sweep，method=fql_fixed_teacher、steps=1、H50/C10、每任务8、无录像。新正式训练调度尚未挂入；本轮没有预占、改队列或启动GPU进程。
+模型配置从现有1·45直接蒸馏继承。全任务评估继续可用multitask_eval.sweep，method=fql_fixed_teacher、steps=1、H50/C10、每任务8、无录像。新正式训练调度尚未挂入；CPU准备阶段没有预占或启动GPU；后续已完成本轮独立smoke，未挂正式队列。
 
 CPU准备目录：`/data/chenyiteng/deployment-20261026/fql-cpu`；代码只落入新的source目录，未覆盖正在运行的两套源码。CPU回执见本仓库docs/experiments/fql-20261026。

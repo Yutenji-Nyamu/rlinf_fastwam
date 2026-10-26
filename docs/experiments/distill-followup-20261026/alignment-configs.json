@@ -1,0 +1,1305 @@
+{
+  "time": 1792989267.741452,
+  "training": {
+    "endpoint": {
+      "config": {
+        "model": {
+          "model_type": "openpi",
+          "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+          "precision": null,
+          "num_action_chunks": 50,
+          "action_dim": 14,
+          "is_lora": false,
+          "lora_rank": 32,
+          "use_proprio": true,
+          "num_steps": 10,
+          "add_value_head": false,
+          "openpi": {
+            "config_name": "pi05_sidney_robotwin",
+            "num_images_in_input": 3,
+            "noise_level": 0.5,
+            "action_chunk": 50,
+            "num_steps": 10,
+            "train_expert_only": true,
+            "action_env_dim": 14,
+            "noise_method": "flow_ode",
+            "add_value_head": false,
+            "value_after_vlm": false,
+            "value_vlm_mode": "mean_token",
+            "detach_critic_input": true,
+            "use_dsrl": false,
+            "dsrl_state_dim": 8,
+            "dsrl_action_noise_dim": 32,
+            "dsrl_num_q_heads": 10,
+            "dsrl_agg_q": "mean",
+            "dsrl_image_latent_dim": 64,
+            "dsrl_state_latent_dim": 64,
+            "dsrl_hidden_dims": [
+              128,
+              128,
+              128
+            ],
+            "distill_target_time": false
+          }
+        },
+        "seed": 721042,
+        "batch_size": 384,
+        "microbatch_per_rank": 192,
+        "clip_grad": 1.0,
+        "log_every": 10,
+        "method": "endpoint",
+        "epochs": 50,
+        "lr": 2.5e-05,
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "weight_decay": 1e-10,
+        "warmup_steps": 167,
+        "checkpoint_steps": 634,
+        "data_manifest": "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45/data-manifest.json",
+        "teacher_steps": 10,
+        "loss_action_dim": 14,
+        "checkpoint_keep_last": 2,
+        "checkpoint_keep_steps": [
+          139,
+          278,
+          556,
+          1113,
+          2226,
+          5565,
+          11130,
+          22260,
+          38955,
+          55650
+        ]
+      },
+      "last_metric": {
+        "endpoint_mse": 0.0004542626265902072,
+        "joint_mse": 0.00045483314897865057,
+        "gripper_mse": 0.00045083952136337757,
+        "loss": 0.0004542626265902072,
+        "step": 7160,
+        "epoch": 6.433063791554358,
+        "grad_norm": 0.02430775947868824,
+        "lr": 2.4033097561405754e-05,
+        "seconds_per_update": 7.089870060078776,
+        "peak_gib": 64.552978515625,
+        "peak_reserved_gib": 65.658203125,
+        "time": 1792989202.3833451,
+        "rank": 0
+      },
+      "summaries": {
+        "summary-raw-n10.json": {
+          "time": 1792867441.447067,
+          "condition": "raw-n10",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "chunk_sweep": true,
+            "execute_chunk": 10,
+            "seed_batch": 0
+          },
+          "elapsed_seconds": 5867.885076761246,
+          "successes": 153,
+          "mean_success_rate": 0.4157608695652174,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "source_summary": "/data/chenyiteng/results/pi05-distill/chunk-sweep-sz1-g67-20261024/summary-raw-c10-n10-b0.json",
+          "source_condition": "raw-c10-n10-b0"
+        },
+        "summary-endpoint-s000278.json": {
+          "time": 1792915052.6230278,
+          "condition": "endpoint-s000278",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 5958.182199239731,
+          "successes": 70,
+          "mean_success_rate": 0.19021739130434784,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-endpoint-s002226.json": {
+          "time": 1792948230.6591766,
+          "condition": "endpoint-s002226",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6284.795239686966,
+          "successes": 100,
+          "mean_success_rate": 0.2717391304347826,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-endpoint-s005565.json": {
+          "time": 1792977635.6567767,
+          "condition": "endpoint-s005565",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 5745.274661540985,
+          "successes": 116,
+          "mean_success_rate": 0.31521739130434784,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-endpoint-s000139.json": {
+          "time": 1792907847.2306864,
+          "condition": "endpoint-s000139",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6187.695178031921,
+          "successes": 63,
+          "mean_success_rate": 0.17119565217391305,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-endpoint-s001113.json": {
+          "time": 1792933903.745901,
+          "condition": "endpoint-s001113",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6452.911821126938,
+          "successes": 101,
+          "mean_success_rate": 0.27445652173913043,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-endpoint-s000556.json": {
+          "time": 1792923338.685069,
+          "condition": "endpoint-s000556",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6108.668597459793,
+          "successes": 82,
+          "mean_success_rate": 0.22282608695652173,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-smoke-c10.json": {
+          "time": 1792900442.416954,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 336.66034722328186,
+          "successes": 10,
+          "mean_success_rate": 0.625,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-raw-n1.json": {
+          "time": 1792861573.5589306,
+          "condition": "raw-n1",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "chunk_sweep": true,
+            "execute_chunk": 10,
+            "seed_batch": 0
+          },
+          "elapsed_seconds": 5793.24382853508,
+          "successes": 75,
+          "mean_success_rate": 0.20380434782608695,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "source_summary": "/data/chenyiteng/results/pi05-distill/chunk-sweep-sz1-g67-20261024/summary-raw-c10-n1-b0.json",
+          "source_condition": "raw-c10-n1-b0"
+        }
+      },
+      "task_manifest": [
+        {
+          "task": "adjust_bottle",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1",
+          "episodes": 50,
+          "windows": 4738,
+          "instructions": 50
+        },
+        {
+          "task": "beat_block_hammer",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/beat-block-hammer-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3232,
+          "instructions": 50
+        },
+        {
+          "task": "blocks_ranking_rgb",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-rgb-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 20591,
+          "instructions": 43
+        },
+        {
+          "task": "blocks_ranking_size",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-size-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 20720,
+          "instructions": 33
+        },
+        {
+          "task": "click_alarmclock",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-alarmclock-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 1802,
+          "instructions": 50
+        },
+        {
+          "task": "click_bell",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-bell-aloha-clean50-20261002",
+          "episodes": 50,
+          "windows": 1405,
+          "instructions": 49
+        },
+        {
+          "task": "dump_bin_bigbin",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/dump-bin-bigbin-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9672,
+          "instructions": 49
+        },
+        {
+          "task": "grab_roller",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/grab-roller-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 2278,
+          "instructions": 48
+        },
+        {
+          "task": "handover_block",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-block-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11634,
+          "instructions": 32
+        },
+        {
+          "task": "handover_mic",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-mic-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 8642,
+          "instructions": 45
+        },
+        {
+          "task": "hanging_mug",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/hanging-mug-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 14439,
+          "instructions": 50
+        },
+        {
+          "task": "lift_pot",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/lift-pot-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3104,
+          "instructions": 49
+        },
+        {
+          "task": "move_can_pot",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-can-pot-aloha-clean50-20260923",
+          "episodes": 50,
+          "windows": 5118,
+          "instructions": 50
+        },
+        {
+          "task": "move_pillbottle_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-pillbottle-pad-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4895,
+          "instructions": 50
+        },
+        {
+          "task": "move_playingcard_away",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-playingcard-away-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3434,
+          "instructions": 49
+        },
+        {
+          "task": "move_stapler_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-stapler-pad-aloha-clean50-20260919",
+          "episodes": 50,
+          "windows": 5299,
+          "instructions": 50
+        },
+        {
+          "task": "open_laptop",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/open-laptop-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 7962,
+          "instructions": 50
+        },
+        {
+          "task": "open_microwave",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/open-microwave-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21883,
+          "instructions": 48
+        },
+        {
+          "task": "pick_diverse_bottles",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-diverse-bottles-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3610,
+          "instructions": 50
+        },
+        {
+          "task": "pick_dual_bottles",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-dual-bottles-aloha-clean50-20260928",
+          "episodes": 50,
+          "windows": 3679,
+          "instructions": 49
+        },
+        {
+          "task": "place_a2b_left",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-a2b-left-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5001,
+          "instructions": 50
+        },
+        {
+          "task": "place_a2b_right",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-a2b-right-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4899,
+          "instructions": 50
+        },
+        {
+          "task": "place_bread_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-bread-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9506,
+          "instructions": 50
+        },
+        {
+          "task": "place_bread_skillet",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-bread-skillet-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5827,
+          "instructions": 50
+        },
+        {
+          "task": "place_burger_fries",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-burger-fries-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9596,
+          "instructions": 50
+        },
+        {
+          "task": "place_can_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-can-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 10168,
+          "instructions": 50
+        },
+        {
+          "task": "place_cans_plasticbox",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-cans-plasticbox-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11925,
+          "instructions": 50
+        },
+        {
+          "task": "place_container_plate",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-container-plate-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5484,
+          "instructions": 50
+        },
+        {
+          "task": "place_dual_shoes",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-dual-shoes-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9060,
+          "instructions": 50
+        },
+        {
+          "task": "place_empty_cup",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-empty-cup-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6167,
+          "instructions": 50
+        },
+        {
+          "task": "place_fan",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-fan-aloha-clean50-20261002",
+          "episodes": 50,
+          "windows": 4908,
+          "instructions": 50
+        },
+        {
+          "task": "place_mouse_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-mouse-pad-aloha-clean50-20260927",
+          "episodes": 50,
+          "windows": 5081,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9848,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_scale",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-scale-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4816,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_stand",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-stand-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4502,
+          "instructions": 50
+        },
+        {
+          "task": "place_phone_stand",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-phone-stand-aloha-clean50-20260928",
+          "episodes": 50,
+          "windows": 3907,
+          "instructions": 50
+        },
+        {
+          "task": "place_shoe",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-shoe-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6532,
+          "instructions": 50
+        },
+        {
+          "task": "press_stapler",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/press-stapler-aloha-clean50-20260927",
+          "episodes": 50,
+          "windows": 3503,
+          "instructions": 49
+        },
+        {
+          "task": "put_bottles_dustbin",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/put-bottles-dustbin-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 28781,
+          "instructions": 50
+        },
+        {
+          "task": "put_object_cabinet",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/put-object-cabinet-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11010,
+          "instructions": 50
+        },
+        {
+          "task": "rotate_qrcode",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/rotate-qrcode-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5274,
+          "instructions": 50
+        },
+        {
+          "task": "scan_object",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/scan-object-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6013,
+          "instructions": 50
+        },
+        {
+          "task": "shake_bottle",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/shake-bottle-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9986,
+          "instructions": 50
+        },
+        {
+          "task": "shake_bottle_horizontally",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/shake-bottle-horizontally-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11461,
+          "instructions": 49
+        },
+        {
+          "task": "stack_blocks_three",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-blocks-three-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21169,
+          "instructions": 41
+        },
+        {
+          "task": "stack_blocks_two",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-blocks-two-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 13197,
+          "instructions": 35
+        },
+        {
+          "task": "stack_bowls_three",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-bowls-three-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21100,
+          "instructions": 47
+        },
+        {
+          "task": "stack_bowls_two",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-bowls-two-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 13187,
+          "instructions": 50
+        },
+        {
+          "task": "stamp_seal",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stamp-seal-aloha-clean50-20260925",
+          "episodes": 50,
+          "windows": 4829,
+          "instructions": 50
+        },
+        {
+          "task": "turn_switch",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+          "episodes": 50,
+          "windows": 2413,
+          "instructions": 49
+        }
+      ]
+    },
+    "onedp": {
+      "config": {
+        "model": {
+          "model_type": "openpi",
+          "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+          "precision": null,
+          "num_action_chunks": 50,
+          "action_dim": 14,
+          "is_lora": false,
+          "lora_rank": 32,
+          "use_proprio": true,
+          "num_steps": 10,
+          "add_value_head": false,
+          "openpi": {
+            "config_name": "pi05_sidney_robotwin",
+            "num_images_in_input": 3,
+            "noise_level": 0.5,
+            "action_chunk": 50,
+            "num_steps": 10,
+            "train_expert_only": true,
+            "action_env_dim": 14,
+            "noise_method": "flow_ode",
+            "add_value_head": false,
+            "value_after_vlm": false,
+            "value_vlm_mode": "mean_token",
+            "detach_critic_input": true,
+            "use_dsrl": false,
+            "dsrl_state_dim": 8,
+            "dsrl_action_noise_dim": 32,
+            "dsrl_num_q_heads": 10,
+            "dsrl_agg_q": "mean",
+            "dsrl_image_latent_dim": 64,
+            "dsrl_state_latent_dim": 64,
+            "dsrl_hidden_dims": [
+              128,
+              128,
+              128
+            ],
+            "distill_target_time": false
+          }
+        },
+        "seed": 721042,
+        "batch_size": 384,
+        "microbatch_per_rank": 192,
+        "clip_grad": 1.0,
+        "log_every": 10,
+        "method": "onedp",
+        "epochs": 20,
+        "lr": 1e-06,
+        "betas": [
+          0.0,
+          0.999
+        ],
+        "weight_decay": 0.0,
+        "checkpoint_steps": 634,
+        "data_manifest": "/data/chenyiteng/deployment-20261025/onedp-multitask-c10-sz1-g67/data-manifest.json",
+        "checkpoint_keep_last": 2,
+        "checkpoint_keep_steps": [
+          139,
+          278,
+          556,
+          1113,
+          2226,
+          3339,
+          5565,
+          8904,
+          13356,
+          17808,
+          22260
+        ],
+        "aux_lr": 2e-05
+      },
+      "last_metric": {
+        "fake": 0.03992576524615288,
+        "fake_grad_norm": 0.02961992658674717,
+        "score_gradient_rms": 0.01937675103545189,
+        "loss": -0.005031147506088018,
+        "step": 6790,
+        "epoch": 6.10062893081761,
+        "grad_norm": 0.0016748353373259306,
+        "lr": 1e-06,
+        "seconds_per_update": 6.615320456912931,
+        "peak_gib": 72.60990333557129,
+        "peak_reserved_gib": 74.23828125,
+        "time": 1792989215.0575156,
+        "rank": 0
+      },
+      "summaries": {
+        "summary-raw-n10.json": {
+          "time": 1792867441.447067,
+          "condition": "raw-n10",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "chunk_sweep": true,
+            "execute_chunk": 10,
+            "seed_batch": 0
+          },
+          "elapsed_seconds": 5867.885076761246,
+          "successes": 153,
+          "mean_success_rate": 0.4157608695652174,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "source_summary": "/data/chenyiteng/results/pi05-distill/chunk-sweep-sz1-g67-20261024/summary-raw-c10-n10-b0.json",
+          "source_condition": "raw-c10-n10-b0"
+        },
+        "summary-onedp-s002226.json": {
+          "time": 1792947252.9028482,
+          "condition": "onedp-s002226",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6194.322663784027,
+          "successes": 78,
+          "mean_success_rate": 0.21195652173913043,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-onedp-s000139.json": {
+          "time": 1792907708.7884252,
+          "condition": "onedp-s000139",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6083.229616880417,
+          "successes": 74,
+          "mean_success_rate": 0.20108695652173914,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-onedp-s000278.json": {
+          "time": 1792915017.5249891,
+          "condition": "onedp-s000278",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6136.2670311927795,
+          "successes": 67,
+          "mean_success_rate": 0.18206521739130435,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-onedp-s003339.json": {
+          "time": 1792960742.708789,
+          "condition": "onedp-s003339",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6045.10683631897,
+          "successes": 79,
+          "mean_success_rate": 0.21467391304347827,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-onedp-s001113.json": {
+          "time": 1792933631.1927092,
+          "condition": "onedp-s001113",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6563.346347808838,
+          "successes": 85,
+          "mean_success_rate": 0.23097826086956522,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-smoke-c10.json": {
+          "time": 1792900468.4908383,
+          "condition": "smoke-c10",
+          "attempted_tasks": 2,
+          "valid_tasks": 2,
+          "missing_tasks": 0,
+          "episodes": 16,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 1,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 361.0237293243408,
+          "successes": 5,
+          "mean_success_rate": 0.3125,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-raw-n1.json": {
+          "time": 1792861573.5589306,
+          "condition": "raw-n1",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "chunk_sweep": true,
+            "execute_chunk": 10,
+            "seed_batch": 0
+          },
+          "elapsed_seconds": 5793.24382853508,
+          "successes": 75,
+          "mean_success_rate": 0.20380434782608695,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+          "source_summary": "/data/chenyiteng/results/pi05-distill/chunk-sweep-sz1-g67-20261024/summary-raw-c10-n1-b0.json",
+          "source_condition": "raw-c10-n1-b0"
+        },
+        "summary-onedp-s000556.json": {
+          "time": 1792923270.525403,
+          "condition": "onedp-s000556",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 6225.594380378723,
+          "successes": 81,
+          "mean_success_rate": 0.22010869565217392,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        },
+        "summary-onedp-s005565.json": {
+          "time": 1792980867.5320263,
+          "condition": "onedp-s005565",
+          "attempted_tasks": 50,
+          "valid_tasks": 46,
+          "missing_tasks": 4,
+          "episodes": 368,
+          "episodes_per_task": 8,
+          "evaluation_settings": {
+            "episodes_per_task": 8,
+            "tasks_per_gpu": 3,
+            "recording_mode": "none",
+            "record_decisions": false,
+            "resident_model": true,
+            "execute_chunk": 10
+          },
+          "elapsed_seconds": 5720.334090948105,
+          "successes": 82,
+          "mean_success_rate": 0.22282608695652173,
+          "aggregation": "equal task mean over valid tasks; missing tasks listed separately"
+        }
+      },
+      "task_manifest": [
+        {
+          "task": "adjust_bottle",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pi0-aloha-clean50-v1",
+          "episodes": 50,
+          "windows": 4738,
+          "instructions": 50
+        },
+        {
+          "task": "beat_block_hammer",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/beat-block-hammer-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3232,
+          "instructions": 50
+        },
+        {
+          "task": "blocks_ranking_rgb",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-rgb-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 20591,
+          "instructions": 43
+        },
+        {
+          "task": "blocks_ranking_size",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/blocks-ranking-size-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 20720,
+          "instructions": 33
+        },
+        {
+          "task": "click_alarmclock",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-alarmclock-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 1802,
+          "instructions": 50
+        },
+        {
+          "task": "click_bell",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/click-bell-aloha-clean50-20261002",
+          "episodes": 50,
+          "windows": 1405,
+          "instructions": 49
+        },
+        {
+          "task": "dump_bin_bigbin",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/dump-bin-bigbin-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9672,
+          "instructions": 49
+        },
+        {
+          "task": "grab_roller",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/grab-roller-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 2278,
+          "instructions": 48
+        },
+        {
+          "task": "handover_block",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-block-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11634,
+          "instructions": 32
+        },
+        {
+          "task": "handover_mic",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/handover-mic-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 8642,
+          "instructions": 45
+        },
+        {
+          "task": "hanging_mug",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/hanging-mug-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 14439,
+          "instructions": 50
+        },
+        {
+          "task": "lift_pot",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/lift-pot-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3104,
+          "instructions": 49
+        },
+        {
+          "task": "move_can_pot",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-can-pot-aloha-clean50-20260923",
+          "episodes": 50,
+          "windows": 5118,
+          "instructions": 50
+        },
+        {
+          "task": "move_pillbottle_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-pillbottle-pad-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4895,
+          "instructions": 50
+        },
+        {
+          "task": "move_playingcard_away",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-playingcard-away-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3434,
+          "instructions": 49
+        },
+        {
+          "task": "move_stapler_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/move-stapler-pad-aloha-clean50-20260919",
+          "episodes": 50,
+          "windows": 5299,
+          "instructions": 50
+        },
+        {
+          "task": "open_laptop",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/open-laptop-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 7962,
+          "instructions": 50
+        },
+        {
+          "task": "open_microwave",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/open-microwave-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21883,
+          "instructions": 48
+        },
+        {
+          "task": "pick_diverse_bottles",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-diverse-bottles-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 3610,
+          "instructions": 50
+        },
+        {
+          "task": "pick_dual_bottles",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/pick-dual-bottles-aloha-clean50-20260928",
+          "episodes": 50,
+          "windows": 3679,
+          "instructions": 49
+        },
+        {
+          "task": "place_a2b_left",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-a2b-left-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5001,
+          "instructions": 50
+        },
+        {
+          "task": "place_a2b_right",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-a2b-right-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4899,
+          "instructions": 50
+        },
+        {
+          "task": "place_bread_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-bread-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9506,
+          "instructions": 50
+        },
+        {
+          "task": "place_bread_skillet",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-bread-skillet-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5827,
+          "instructions": 50
+        },
+        {
+          "task": "place_burger_fries",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-burger-fries-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9596,
+          "instructions": 50
+        },
+        {
+          "task": "place_can_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-can-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 10168,
+          "instructions": 50
+        },
+        {
+          "task": "place_cans_plasticbox",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-cans-plasticbox-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11925,
+          "instructions": 50
+        },
+        {
+          "task": "place_container_plate",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-container-plate-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5484,
+          "instructions": 50
+        },
+        {
+          "task": "place_dual_shoes",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-dual-shoes-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9060,
+          "instructions": 50
+        },
+        {
+          "task": "place_empty_cup",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-empty-cup-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6167,
+          "instructions": 50
+        },
+        {
+          "task": "place_fan",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-fan-aloha-clean50-20261002",
+          "episodes": 50,
+          "windows": 4908,
+          "instructions": 50
+        },
+        {
+          "task": "place_mouse_pad",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-mouse-pad-aloha-clean50-20260927",
+          "episodes": 50,
+          "windows": 5081,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_basket",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-basket-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9848,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_scale",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-scale-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4816,
+          "instructions": 50
+        },
+        {
+          "task": "place_object_stand",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-object-stand-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 4502,
+          "instructions": 50
+        },
+        {
+          "task": "place_phone_stand",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-phone-stand-aloha-clean50-20260928",
+          "episodes": 50,
+          "windows": 3907,
+          "instructions": 50
+        },
+        {
+          "task": "place_shoe",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/place-shoe-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6532,
+          "instructions": 50
+        },
+        {
+          "task": "press_stapler",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/press-stapler-aloha-clean50-20260927",
+          "episodes": 50,
+          "windows": 3503,
+          "instructions": 49
+        },
+        {
+          "task": "put_bottles_dustbin",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/put-bottles-dustbin-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 28781,
+          "instructions": 50
+        },
+        {
+          "task": "put_object_cabinet",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/put-object-cabinet-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11010,
+          "instructions": 50
+        },
+        {
+          "task": "rotate_qrcode",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/rotate-qrcode-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 5274,
+          "instructions": 50
+        },
+        {
+          "task": "scan_object",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/scan-object-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 6013,
+          "instructions": 50
+        },
+        {
+          "task": "shake_bottle",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/shake-bottle-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 9986,
+          "instructions": 50
+        },
+        {
+          "task": "shake_bottle_horizontally",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/shake-bottle-horizontally-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 11461,
+          "instructions": 49
+        },
+        {
+          "task": "stack_blocks_three",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-blocks-three-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21169,
+          "instructions": 41
+        },
+        {
+          "task": "stack_blocks_two",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-blocks-two-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 13197,
+          "instructions": 35
+        },
+        {
+          "task": "stack_bowls_three",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-bowls-three-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 21100,
+          "instructions": 47
+        },
+        {
+          "task": "stack_bowls_two",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stack-bowls-two-aloha-clean50-20261023",
+          "episodes": 50,
+          "windows": 13187,
+          "instructions": 50
+        },
+        {
+          "task": "stamp_seal",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/stamp-seal-aloha-clean50-20260925",
+          "episodes": 50,
+          "windows": 4829,
+          "instructions": 50
+        },
+        {
+          "task": "turn_switch",
+          "path": "/data/chenyiteng/datasets/robotwin2/canonical/turn-switch-aloha-clean50-20260919",
+          "episodes": 50,
+          "windows": 2413,
+          "instructions": 49
+        }
+      ]
+    }
+  }
+}
