@@ -1,0 +1,55 @@
+[
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-m",
+      "ruff",
+      "format",
+      "rlinf/algorithms/pi05_distillation/model.py",
+      "rlinf/algorithms/pi05_distillation/fql.py",
+      "rlinf/algorithms/pi05_distillation/transitions.py",
+      "tools/pi05_distillation/train_fql.py",
+      "tools/pi05_distillation/fql_prepare.py",
+      "tools/pi05_distillation/fql_index.py",
+      "tools/pi05_distillation/test_fql.py",
+      "tools/pi05_policy_eval/run_batch.py"
+    ],
+    "rc": 0,
+    "out": "3 files reformatted, 5 files left unchanged\n",
+    "err": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+  },
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-m",
+      "ruff",
+      "check",
+      "rlinf/algorithms/pi05_distillation/model.py",
+      "rlinf/algorithms/pi05_distillation/fql.py",
+      "rlinf/algorithms/pi05_distillation/transitions.py",
+      "tools/pi05_distillation/train_fql.py",
+      "tools/pi05_distillation/fql_prepare.py",
+      "tools/pi05_distillation/fql_index.py",
+      "tools/pi05_distillation/test_fql.py",
+      "tools/pi05_policy_eval/run_batch.py"
+    ],
+    "rc": 0,
+    "out": "All checks passed!\n",
+    "err": "warning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+  },
+  {
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tools/pi05_distillation/test_fql.py",
+      "tools/pi05_distillation/test_endpoint.py::test_endpoint_same_noise_teacher_frozen_and_padding_excluded",
+      "tools/pi05_distillation/test_endpoint.py::test_endpoint_evaluation_does_not_create_cp_stop_projection",
+      "tools/pi05_distillation/test_losses.py"
+    ],
+    "rc": 0,
+    "out": "..............                                                           [100%]\n=============================== warnings summary ===============================\ntools/pi05_distillation/test_losses.py::DistillationTests::test_cp_distance_matches_reference_and_keeps_small_errors\n  /data/chenyiteng/deployment-20261026/fql-cpu/source/tools/pi05_distillation/test_losses.py:49: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.\n  Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)\n    self.assertGreater(float(loss), 0)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n14 passed, 1 warning in 2.49s\n",
+    "err": ""
+  }
+]

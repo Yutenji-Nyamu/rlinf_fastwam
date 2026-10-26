@@ -1,3 +1,5 @@
+> 2026-10-26：FQL固定老师适配已实现，CPU检查通过；用户最新要求暂不smoke。见[49 实现](49_FQL_IMPLEMENTATION_20261026.md)、[50 后续入口](50_FQL_SMOKE_RUNBOOK_20261026.md)。原多任务直接蒸馏/OneDP继续运行。
+
 # π0.5 × Consistency Policy / OneDP
 
 2026-10-25后续规划：[46 FQL固定老师的代码切口与参数](46_FQL_FIXED_TEACHER_PLAN_20261025.md) · [47 真实转移采集契约](47_FQL_TRANSITION_CONTRACT_20261025.md) · [48 每任务96回合、数据选择与时间/容量](48_FQL_COLLECTION_AND_DATA_MIX_20261025.md)。拟用新采成功＋失败训练Q，HF继续保留；现有评估会丢弃转移，需独立补采集接口。尚未启动采集/FQL或改现有队列。

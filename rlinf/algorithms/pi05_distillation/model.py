@@ -104,3 +104,22 @@ def prepare(model, obs, actions):
         images, masks, tokens, token_masks
     )
     return processed["actions"].float(), (state, prefix_masks, cache)
+
+
+@torch.no_grad()
+def prepare_fql(model, obs):
+    """Native observation processing, sharing one VLM pass with actor and Q."""
+    from openpi.models.model import Observation
+
+    packed = model.obs_processor(dict(obs, extra_view_images=None))
+    processed = model.precision_processor(
+        model.input_transform(packed, transpose=False)
+    )
+    images, masks, tokens, token_masks, state = model._preprocess_observation(
+        Observation.from_dict(processed), train=False
+    )
+    prefix, valid, cache = model._build_prefix_cache(images, masks, tokens, token_masks)
+    pooled = torch.bmm(valid[:, None].to(prefix.dtype), prefix).squeeze(1).float()
+    pooled = pooled / valid.sum(1, keepdim=True).clamp_min(1)
+    features = torch.cat((pooled, state[:, :14].float()), dim=-1)
+    return (state, valid, cache), features

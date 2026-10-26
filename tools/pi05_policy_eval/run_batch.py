@@ -58,14 +58,14 @@ def arr(x):
     return x.detach().float().cpu().numpy() if torch.is_tensor(x) else np.asarray(x)
 
 
-def infer(model, obs, steps, signals=False):
+def infer(model, obs, steps, signals=False, telemetry=True):
     with torch.inference_mode():
         return model.predict_action_batch(
             obs,
             mode="eval",
             compute_values=False,
             num_steps=steps,
-            return_dvac_telemetry=True,
+            return_dvac_telemetry=telemetry,
             record_signals=signals,
             consistency_steps=5,
             noise=None,
@@ -95,6 +95,15 @@ def run(config, model_cache=None):
     mode = recording_mode(c)
     full_video = mode == "full"
     record_decisions = c.get("record_decisions", True)
+    collect = c.get("collect_transitions", False)
+    writer = None
+    if collect:
+        assert c["execute_chunk"] == 10 and c["num_steps"] == 10
+        assert policy == "weak" and not any(
+            c.get(k) for k in ("distill_weights", "weak_weights", "strong_weights")
+        )
+        assert mode == "none" and not record_decisions
+        assert not c.get("collect_weak_u", False)
     signals = policy in ("calibration", "high", "low", "random") or c.get(
         "collect_weak_u", False
     )
@@ -244,6 +253,10 @@ def run(config, model_cache=None):
             for i in range(batch)
         ]
         save(out / "seeds.json", seeds)
+        if collect:
+            from rlinf.algorithms.pi05_distillation.transitions import TransitionWriter
+
+            writer = TransitionWriter(out, c, seeds, obs)
         save(
             out / "initialization.json",
             {
@@ -310,7 +323,11 @@ def run(config, model_cache=None):
             u = None
             signal_data = None
             if weak is not None:
-                actions, result = infer(weak, obs, c["num_steps"], signals)
+                actions, result = infer(
+                    weak, obs, c["num_steps"], signals, telemetry=not collect
+                )
+                if collect:
+                    normalized_actions = arr(result["model_actions"])
                 if signals:
                     trace = result["dvac_telemetry"]
                     score = ugrow_10_vs_5(
@@ -377,7 +394,16 @@ def run(config, model_cache=None):
             tic = time.perf_counter()
             for recorder in recorders:
                 recorder.begin(query)
-            if takeover == "c20":
+            if collect:
+                # Same whole C10 native call, capturing unmodified native returns.
+                # Do not split into single steps or infer terminal states from
+                # the wrapper, which intentionally ignores terminations in eval.
+                length = min(chunk, c["step_limit"] - query * chunk)
+                raw_obs, raw_reward, native_term, native_trunc, _ = env.venv.step(
+                    action[:, :length]
+                )
+                obs = env._extract_obs_image(raw_obs)
+            elif takeover == "c20":
                 obs = variable_chunk_step(env, action, lengths)
             else:
                 length = min(chunk, c["step_limit"] - query * chunk)
@@ -386,6 +412,20 @@ def run(config, model_cache=None):
             counts = np.array([int(e.task.take_action_cnt) for e in env.venv.envs])
             after = np.array([bool(e.task.eval_success) for e in env.venv.envs])
             assert np.all(counts <= c["step_limit"])
+            if collect:
+                writer.step(
+                    obs,
+                    action,
+                    normalized_actions,
+                    active,
+                    before,
+                    counts,
+                    success,
+                    after,
+                    (raw_reward, native_term, native_trunc),
+                    query,
+                    noise_seed,
+                )
             for slot, recorder in enumerate(recorders):
                 recorder.end(after[slot])
             if signal_data is not None:
@@ -452,6 +492,8 @@ def run(config, model_cache=None):
         ]
         save(out / "episodes.json", episodes)
     finally:
+        if writer is not None:
+            writer.close()
         if env is not None:
             env.venv.env_thread_pool.shutdown(wait=True)
         for recorder in recorders:
