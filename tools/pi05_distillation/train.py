@@ -30,6 +30,7 @@ import torch.distributed as dist
 from omegaconf import OmegaConf
 from torch.nn.parallel import DistributedDataParallel as DDP
 
+from rlinf.algorithms.pi05_distillation import mfd
 from rlinf.algorithms.pi05_distillation.checkpoint_retention import prune_checkpoints
 from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
@@ -45,7 +46,10 @@ from rlinf.algorithms.pi05_distillation.model import (
     load_expert,
     prepare,
 )
-from rlinf.algorithms.pi05_distillation.prefetch import decoded_batches, training_indices
+from rlinf.algorithms.pi05_distillation.prefetch import (
+    decoded_batches,
+    training_indices,
+)
 from rlinf.algorithms.pi05_distillation.timing import StepTiming
 from rlinf.models.embodiment.openpi import get_model
 
@@ -104,10 +108,18 @@ def main():
     stop = min(args.stop_step or total, total)
     method = c["method"]
     auxiliary_updates = int(c.get("auxiliary_updates_per_student", 1))
-    if auxiliary_updates < 1 or (method != "onedp" and auxiliary_updates != 1):
-        raise ValueError("Auxiliary update ratio applies only to OneDP")
-    if method not in {"cp", "onedp", "endpoint"}:
+    if auxiliary_updates < 1 or (
+        method not in {"onedp", "mfd"} and auxiliary_updates != 1
+    ):
+        raise ValueError("Auxiliary update ratio applies only to OneDP/MFD")
+    if method not in {"cp", "onedp", "endpoint", "mfd"}:
         raise ValueError(f"Unknown distillation method: {method}")
+    if method == "mfd":
+        mfd.interval_probabilities(c["mfd_step_size"])
+        if c["mfd_loss_action_dim"] != 14:
+            raise ValueError(
+                "MFD pi05 baseline scores the 14 physical action dimensions"
+            )
     cfg = copy.deepcopy(c["model"])
     cfg["openpi"].update(
         distill_target_time=method == "cp",
@@ -136,7 +148,7 @@ def main():
     teacher = Velocity(teacher_model, False).cuda(rank)
     student = Velocity(student_model, True).cuda(rank)
     auxiliary = (
-        Velocity(aux_model, method == "onedp").cuda(rank)
+        Velocity(aux_model, method in {"onedp", "mfd"}).cuda(rank)
         if aux_model is not None
         else None
     )
@@ -155,7 +167,7 @@ def main():
             betas=(0.0, 0.999),
             eps=1e-8,
         )
-        if method == "onedp"
+        if method in {"onedp", "mfd"}
         else None
     )
     start = 0
@@ -216,7 +228,9 @@ def main():
     begin = time.monotonic()
     batches = decoded_batches(
         data,
-        training_indices(data, start, stop, global_batch, micro, rank, world, c["seed"]),
+        training_indices(
+            data, start, stop, global_batch, micro, rank, world, c["seed"]
+        ),
         decode_workers=args.decode_workers,
         prefetch_batches=args.prefetch_batches,
     )
@@ -228,7 +242,10 @@ def main():
                 lr_mult = (
                     min(1.0, (step + 1) / max(1, warm))
                     * 0.5
-                    * (1 + math.cos(math.pi * max(0, step - warm) / max(1, total - warm)))
+                    * (
+                        1
+                        + math.cos(math.pi * max(0, step - warm) / max(1, total - warm))
+                    )
                 )
             for group in opt.param_groups:
                 group["lr"] = c["lr"] * lr_mult
@@ -256,24 +273,58 @@ def main():
                                     generated = z - student(
                                         z, torch.ones(len(z), device=z.device), context
                                     )
-                                lf, fake_parts = fake_loss(
-                                    aux_ddp, generated, context, return_parts=True
-                                )
+                                if method == "mfd":
+                                    lf, fake_parts = mfd.auxiliary_loss(
+                                        aux_ddp,
+                                        generated,
+                                        context,
+                                        action_dim=c["mfd_loss_action_dim"],
+                                    )
+                                else:
+                                    lf, fake_parts = fake_loss(
+                                        aux_ddp, generated, context, return_parts=True
+                                    )
                             (lf / accum).backward()
-                            for key, value in dict(fake_parts, fake=lf.detach()).items():
+                            for key, value in dict(
+                                fake_parts, fake=lf.detach()
+                            ).items():
                                 metrics[key] = metrics.get(key, 0.0) + value / (
                                     accum * auxiliary_updates
                                 )
                         aux_norm = torch.nn.utils.clip_grad_norm_(
-                            auxiliary.parameters_to_train(), c["clip_grad"],
+                            auxiliary.parameters_to_train(),
+                            c["clip_grad"],
                             error_if_nonfinite=True,
                         )
+                        aux_probe = (
+                            auxiliary.model.action_out_proj.weight.detach().clone()
+                            if method == "mfd" and args.profile_stages
+                            else None
+                        )
                         opt_aux.step()
+                        if aux_probe is not None:
+                            change = (
+                                auxiliary.model.action_out_proj.weight.detach()
+                                - aux_probe
+                            )
+                            metrics["fake_head_relative_update"] = (
+                                metrics.get("fake_head_relative_update", 0.0)
+                                + change.norm()
+                                / aux_probe.norm().clamp_min(1e-12)
+                                / auxiliary_updates
+                            )
+                            del aux_probe, change
                         opt_aux.zero_grad(set_to_none=True)
                         metrics["fake_grad_norm"] = (
                             metrics.get("fake_grad_norm", 0.0)
                             + aux_norm / auxiliary_updates
                         )
+                        if method == "mfd":
+                            metrics["fake_clip_fraction"] = (
+                                metrics.get("fake_clip_fraction", 0.0)
+                                + (aux_norm > c["clip_grad"]).float()
+                                / auxiliary_updates
+                            )
             with timing.phase("student_update"):
                 for actions, context in prepared:
                     with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -316,16 +367,30 @@ def main():
                                 teacher_steps=c["teacher_steps"],
                                 action_dim=c["loss_action_dim"],
                             )
-                        elif method == "onedp":
+                        elif method in {"onedp", "mfd"}:
                             z = torch.randn_like(actions)
                             generated = z - student_ddp(
                                 z, torch.ones(len(z), device=z.device), context
                             )
-                            loss, score = onedp_loss(
-                                generated, teacher, auxiliary, context,
-                                action_dim=c.get("onedp_loss_action_dim"),
-                            )
-                            parts = {"score_gradient_rms": score}
+                            if method == "mfd":
+                                with timing.phase("mfd_guidance"):
+                                    loss, parts = mfd.student_loss(
+                                        generated,
+                                        teacher,
+                                        auxiliary,
+                                        context,
+                                        step_size=c["mfd_step_size"],
+                                        action_dim=c["mfd_loss_action_dim"],
+                                    )
+                            else:
+                                loss, score = onedp_loss(
+                                    generated,
+                                    teacher,
+                                    auxiliary,
+                                    context,
+                                    action_dim=c.get("onedp_loss_action_dim"),
+                                )
+                                parts = {"score_gradient_rms": score}
                     if not torch.isfinite(loss):
                         raise FloatingPointError("Nonfinite distillation loss")
                     (loss / accum).backward()
@@ -334,7 +399,20 @@ def main():
                 grad_norm = torch.nn.utils.clip_grad_norm_(
                     student_params, c["clip_grad"], error_if_nonfinite=True
                 )
+                student_probe = (
+                    student.model.action_out_proj.weight.detach().clone()
+                    if method == "mfd" and args.profile_stages
+                    else None
+                )
                 opt.step()
+                if student_probe is not None:
+                    change = (
+                        student.model.action_out_proj.weight.detach() - student_probe
+                    )
+                    metrics["student_head_relative_update"] = (
+                        change.norm() / student_probe.norm().clamp_min(1e-12)
+                    )
+                    del student_probe, change
             if method == "cp":
                 decay = ema_decay(step + 1)
                 with torch.no_grad():
@@ -347,10 +425,12 @@ def main():
                 row = {k: float(v) for k, v in metrics.items()}
                 if args.profile_stages:
                     row["stage_seconds"] = timing.seconds
-                if method == "onedp":
+                if method in {"onedp", "mfd"}:
                     row["auxiliary_updates"] = (step + 1) * auxiliary_updates
                     row["student_updates"] = step + 1
                     row["aux_lr"] = opt_aux.param_groups[0]["lr"]
+                if method == "mfd":
+                    row["student_clipped"] = float(grad_norm > c["clip_grad"])
                 row.update(
                     step=step + 1,
                     epoch=(step + 1) / per_epoch,
@@ -423,7 +503,9 @@ def main():
                         },
                     )
                     prune_checkpoints(
-                        out, c.get("checkpoint_keep_last"), c.get("checkpoint_keep_steps", [])
+                        out,
+                        c.get("checkpoint_keep_last"),
+                        c.get("checkpoint_keep_steps", []),
                     )
                 dist.barrier()
     if rank == 0:
@@ -452,7 +534,7 @@ def main():
         inference_batch = (
             16
             if method == "endpoint"
-            or (method == "onedp" and isinstance(data, BalancedWindows))
+            or (method in {"onedp", "mfd"} and isinstance(data, BalancedWindows))
             else micro
         )
         obs, _ = data.batch(list(range(inference_batch)))
