@@ -158,6 +158,7 @@ def sweep(
     method="cp",
     overrides=None,
     completed_rows=None,
+    collection_configs=None,
 ):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
@@ -175,6 +176,16 @@ def sweep(
     tx = deployment / ("eval-" + label)
     tx.mkdir(exist_ok=False)
     task_rows = tasks or read(deployment / "task-list.json")["tasks"]
+    if collection_configs is not None:
+        assert not tasks and not completed_rows and policy is None and steps == 10
+        task_rows = []
+        for path in collection_configs:
+            c = read(path)
+            assert c["collect_transitions"] and c["num_envs"] == episodes
+            task_rows.append(
+                {"task": Path(path).stem, "step_limit": c["step_limit"],
+                 "collection_config": str(path)}
+            )
     finished = list(completed_rows or [])
     reused = {row["task"] for row in finished}
     assert len(reused) == len(finished)
@@ -239,6 +250,10 @@ def sweep(
                     method,
                     options=options,
                 )
+                if "collection_config" in task:
+                    config = read(task["collection_config"])
+                    config["gpu"] = slot[0]
+                    dest = Path(config["output"])
                 cfg_path = tx / (task["task"] + ".json")
                 save(cfg_path, config)
                 env = dict(
@@ -371,6 +386,8 @@ def sweep(
                     "error": error,
                     "output": str(dest),
                 }
+                if "collection_config" in job["task"]:
+                    row["source_config"] = job["task"]["collection_config"]
                 finished.append(row)
                 del running[slot]
             publish()

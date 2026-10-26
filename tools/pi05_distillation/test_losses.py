@@ -23,6 +23,7 @@ from rlinf.algorithms.pi05_distillation.losses import (
     cp_loss,
     flow_map,
     onedp_loss,
+    fake_loss,
 )
 from rlinf.algorithms.pi05_distillation.model import load_expert
 
@@ -93,6 +94,33 @@ class DistillationTests(unittest.TestCase):
         model.action_in_proj = torch.nn.Linear(2, 2)
         with self.assertRaises(ValueError):
             load_expert(model, {})
+
+    def test_onedp_physical_mask_gradient_and_full_auxiliary_fit(self):
+        generated = torch.zeros(2, 50, 32, requires_grad=True)
+
+        def teacher(x, t, context):
+            return torch.ones_like(x)
+
+        def fake(x, t, context):
+            return torch.zeros_like(x)
+
+        loss, _ = onedp_loss(
+            generated, teacher, fake, None,
+            time_min=0.5, time_max=0.5, action_dim=14,
+        )
+        loss.backward()
+        torch.testing.assert_close(
+            generated.grad[..., :14],
+            torch.full_like(generated.grad[..., :14], 0.125 / (2 * 50 * 14)),
+        )
+        self.assertEqual(torch.count_nonzero(generated.grad[..., 14:]), 0)
+        auxiliary = ScalarVelocity(0.3)
+        lf, parts = fake_loss(auxiliary, generated, None, return_parts=True)
+        torch.testing.assert_close(
+            lf.detach(), (parts['fake_physical_mse'] * 14 + parts['fake_padding_mse'] * 18) / 32,
+        )
+        lf.backward()
+        self.assertTrue(torch.isfinite(auxiliary.value.grad))
 
 
 if __name__ == "__main__":

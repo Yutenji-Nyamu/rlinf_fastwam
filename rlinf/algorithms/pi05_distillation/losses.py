@@ -69,7 +69,9 @@ def cp_loss(student, teacher, ema, actions, context, *, bins=80):
     return consistency + fm, {"consistency": consistency, "fm": fm}
 
 
-def fake_loss(fake, generated, context, *, time_min=0.02, time_max=0.95):
+def fake_loss(
+    fake, generated, context, *, time_min=0.02, time_max=0.95, return_parts=False
+):
     """Fit fake epsilon to the student's distribution; lambda(t)=1 as OneDP-S."""
     t = (
         torch.rand(len(generated), device=generated.device) * (time_max - time_min)
@@ -78,10 +80,20 @@ def fake_loss(fake, generated, context, *, time_min=0.02, time_max=0.95):
     noise = torch.randn_like(generated)
     x = (1 - expand(t)) * generated.detach() + expand(t) * noise
     eps_pred = x + (1 - expand(t)) * fake(x, t, context)
-    return F.mse_loss(eps_pred, noise)
+    loss = F.mse_loss(eps_pred, noise)
+    if not return_parts:
+        return loss
+    with torch.no_grad():
+        error = (eps_pred.float() - noise.float()).square()
+        parts = {"fake_physical_mse": error[..., :14].mean()}
+        if error.shape[-1] > 14:
+            parts["fake_padding_mse"] = error[..., 14:].mean()
+    return loss, parts
 
 
-def onedp_loss(generated, teacher, fake, context, *, time_min=0.02, time_max=0.95):
+def onedp_loss(
+    generated, teacher, fake, context, *, time_min=0.02, time_max=0.95, action_dim=None
+):
     """Reverse-KL score gradient with OneDP w=sigma^2 in flow coordinates.
 
     epsilon_hat=x+(1-t)*v, score=-epsilon_hat/t. The detached coefficient
@@ -99,6 +111,10 @@ def onedp_loss(generated, teacher, fake, context, *, time_min=0.02, time_max=0.9
             * (1 - expand(t))
             * (teacher(x.detach(), t, context) - fake(x.detach(), t, context))
         )
+    if action_dim is not None:
+        if not 0 < action_dim <= generated.shape[-1]:
+            raise ValueError("Invalid physical action dimension")
+        direction, x = direction[..., :action_dim], x[..., :action_dim]
     return (direction * x).flatten(1).mean(1).mean(), direction.square().mean().sqrt()
 
 

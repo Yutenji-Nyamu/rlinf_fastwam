@@ -36,12 +36,12 @@ def prepare(reference, destination, gpu, tasks=None, batches=12):
             forbidden.update(int(v["actual"]) for v in json.loads(path.read_text()))
         for batch in range(batches):
             seed_path = destination / f"{name}-b{batch}-seeds.json"
-            seeds = list(
-                range(
-                    2000000 + task_id * 10000 + batch * 100,
-                    2000000 + task_id * 10000 + batch * 100 + 8,
-                )
-            )
+            # Native reset may advance a rejected seed. Separate slots so those
+            # retries cannot immediately collide with the next environment.
+            seeds = [
+                10000000 + task_id * 100000 + batch * 1000 + slot * 100
+                for slot in range(8)
+            ]
             seed_path.write_text(
                 json.dumps(
                     {
@@ -68,6 +68,9 @@ def prepare(reference, destination, gpu, tasks=None, batches=12):
                 batch=batch,
                 output=str(destination / "batches" / f"{name}-b{batch}"),
                 collect_transitions=True,
+                collection_failure_log=str(
+                    destination.parent / "eval-fql-collection/progress.json"
+                ),
                 recording_mode="none",
                 record_full_video=False,
                 record_decisions=False,

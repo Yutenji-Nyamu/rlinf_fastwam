@@ -64,7 +64,7 @@ def event(phase, **fields):
     print(json.dumps(row), flush=True)
 
 
-def train(method, output, stop_step, resume=None, label=None):
+def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
     """Run one complete two-rank segment and require its checkpoint receipt."""
     global child
     assert all(not gpus()[g]["processes"] for g in CARDS), "GPU pair not clear"
@@ -72,6 +72,7 @@ def train(method, output, stop_step, resume=None, label=None):
     env.update(
         CUDA_VISIBLE_DEVICES=GPU_LIST,
         DISTILL_GPU_PAIR=GPU_LIST,
+        FQL_GPU_PAIR=GPU_LIST,
         DISTILL_RUN_TOKEN=D.name,
         PYTHONPATH=str(R) + ":" + env["ROBOTWIN_PATH"],
         TORCH_NCCL_ASYNC_ERROR_HANDLING="1",
@@ -85,7 +86,10 @@ def train(method, output, stop_step, resume=None, label=None):
         "torch.distributed.run",
         "--standalone",
         "--nproc_per_node=2",
-        str(R / "tools/pi05_distillation/train.py"),
+        str(
+            R / "tools/pi05_distillation"
+            / ("train_fql.py" if method == "fql_fixed_teacher" else "train.py")
+        ),
         "--config",
         str(D / f"{method}.json"),
         "--output",
@@ -95,6 +99,7 @@ def train(method, output, stop_step, resume=None, label=None):
     ]
     if resume:
         command += ["--resume", resume]
+    command += list(extra_args)
     label = label or f"{method}-{stop_step}"
     with (D / f"{label}.log").open("x") as log:
         child = subprocess.Popen(

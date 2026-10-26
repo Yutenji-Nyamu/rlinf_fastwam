@@ -1,4 +1,6 @@
-2026-10-26后续：[58 DMD修整收敛与CPU供数测试](58_DMD_DECISIONS_AND_CPU_PREFETCH_20261026.md)。用户已接受辅助5:1、学生14维损失；方法尚未切换。CPU供数候选8线程＋预取1批，192窗口准备中位2.59→0.56秒，5项检查通过；正式训练未启用。
+2026-10-26最新：[59 新DMD双卡smoke与FQL接续](59_DMD_NEW_SMOKE_AND_FQL_HANDOFF_20261026.md)。旧OneDP已收束；新DMD采用1e-5/2e-4、辅助5:1、学生14维，12→14续训与N1导出通过，稳态约6秒、峰值72.6GiB/卡。1·67转FQL真实采集→正式训练→RLT，1·45直接蒸馏保持。首次采集的缺失模块已修复，失败启动记录保留且不算回合。
+
+此前讨论：[58 DMD修整收敛与CPU供数测试](58_DMD_DECISIONS_AND_CPU_PREFETCH_20261026.md)。8线程＋预取1批已在59号双卡smoke启用；58号“方法未切换/学习率暂保持”由本轮用户明确指令更新。
 
 2026-10-26本轮：[54 OneDP与直接蒸馏逐项对齐](54_ONEDP_ENDPOINT_ALIGNMENT_20261026.md) · [55 DMD2/flow-DMD/PDMD稳定做法](55_DMD_STABILITY_RECIPES_20261026.md) · [56 训练时间与提速讨论](56_TRAINING_TIME_AND_SPEED_PLAN_20261026.md) · [57 FQL双卡smoke完成](57_FQL_GPU_SMOKE_20261026.md)。正式4–7训练未改；条件授权后1·23完成真实采集、6→8续训与N1导出并释放。
 

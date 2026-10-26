@@ -46,6 +46,7 @@ from rlinf.algorithms.pi05_distillation.model import (
     prepare,
 )
 from rlinf.algorithms.pi05_distillation.prefetch import decoded_batches, training_indices
+from rlinf.algorithms.pi05_distillation.timing import StepTiming
 from rlinf.models.embodiment.openpi import get_model
 
 
@@ -73,6 +74,7 @@ def main():
     parser.add_argument("--resume")
     parser.add_argument("--decode-workers", type=int, default=0)
     parser.add_argument("--prefetch-batches", type=int, choices=(0, 1, 2), default=0)
+    parser.add_argument("--profile-stages", action="store_true")
     args = parser.parse_args()
     c = json.loads(Path(args.config).read_text())
     rank, world = int(os.environ["LOCAL_RANK"]), int(os.environ["WORLD_SIZE"])
@@ -101,6 +103,9 @@ def main():
     total = c["epochs"] * per_epoch
     stop = min(args.stop_step or total, total)
     method = c["method"]
+    auxiliary_updates = int(c.get("auxiliary_updates_per_student", 1))
+    if auxiliary_updates < 1 or (method != "onedp" and auxiliary_updates != 1):
+        raise ValueError("Auxiliary update ratio applies only to OneDP")
     if method not in {"cp", "onedp", "endpoint"}:
         raise ValueError(f"Unknown distillation method: {method}")
     cfg = copy.deepcopy(c["model"])
@@ -205,6 +210,7 @@ def main():
                     "decode_workers": args.decode_workers,
                     "prefetch_batches": args.prefetch_batches,
                 },
+                "profile_stages": args.profile_stages,
             },
         )
     begin = time.monotonic()
@@ -230,87 +236,105 @@ def main():
             if opt_aux:
                 opt_aux.zero_grad(set_to_none=True)
             metrics = {}
+            timing = StepTiming(args.profile_stages)
             # Cache each microbatch's frozen context for fake and generator updates.
             prepared = []
             for m in range(accum):
-                obs, actions = next(batches)
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    actions, context = prepare(teacher.model, obs, actions)
+                with timing.phase("data_wait"):
+                    obs, actions = next(batches)
+                with timing.phase("observation_prefix"):
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        actions, context = prepare(teacher.model, obs, actions)
                 prepared.append((actions, context))
             if opt_aux:
+                with timing.phase("auxiliary_updates"):
+                    for _ in range(auxiliary_updates):
+                        for actions, context in prepared:
+                            with torch.autocast("cuda", dtype=torch.bfloat16):
+                                z = torch.randn_like(actions)
+                                with torch.no_grad():
+                                    generated = z - student(
+                                        z, torch.ones(len(z), device=z.device), context
+                                    )
+                                lf, fake_parts = fake_loss(
+                                    aux_ddp, generated, context, return_parts=True
+                                )
+                            (lf / accum).backward()
+                            for key, value in dict(fake_parts, fake=lf.detach()).items():
+                                metrics[key] = metrics.get(key, 0.0) + value / (
+                                    accum * auxiliary_updates
+                                )
+                        aux_norm = torch.nn.utils.clip_grad_norm_(
+                            auxiliary.parameters_to_train(), c["clip_grad"],
+                            error_if_nonfinite=True,
+                        )
+                        opt_aux.step()
+                        opt_aux.zero_grad(set_to_none=True)
+                        metrics["fake_grad_norm"] = (
+                            metrics.get("fake_grad_norm", 0.0)
+                            + aux_norm / auxiliary_updates
+                        )
+            with timing.phase("student_update"):
                 for actions, context in prepared:
                     with torch.autocast("cuda", dtype=torch.bfloat16):
-                        z = torch.randn_like(actions)
-                        with torch.no_grad():
-                            generated = z - student(
+                        if method == "cp":
+                            loss, parts = cp_loss(
+                                student_ddp,
+                                teacher,
+                                auxiliary,
+                                actions,
+                                context,
+                                bins=c["time_bins"],
+                            )
+                        elif method == "endpoint":
+                            z = torch.randn_like(actions)
+                            if step == 0 and out.name.startswith("smoke-"):
+                                # Native N1 and the differentiable student expression
+                                # must agree before training. Only one smoke batch.
+                                with torch.no_grad():
+                                    native = teacher.endpoint(z, context, steps=1)
+                                    direct = z - student(
+                                        z, torch.ones(len(z), device=z.device), context
+                                    )
+                                    torch.testing.assert_close(
+                                        direct, native, rtol=1e-5, atol=1e-6
+                                    )
+                                save_json(
+                                    out / f"native-parity-rank{rank}.json",
+                                    {
+                                        "max_abs": float((direct - native).abs().max()),
+                                        "teacher_target": "native_eval_flow_ode_N10",
+                                        "student_initial_N1_matches": True,
+                                    },
+                                )
+                                del native, direct
+                            loss, parts = endpoint_loss(
+                                student_ddp,
+                                teacher,
+                                z,
+                                context,
+                                teacher_steps=c["teacher_steps"],
+                                action_dim=c["loss_action_dim"],
+                            )
+                        elif method == "onedp":
+                            z = torch.randn_like(actions)
+                            generated = z - student_ddp(
                                 z, torch.ones(len(z), device=z.device), context
                             )
-                        lf = fake_loss(aux_ddp, generated, context)
-                    (lf / accum).backward()
-                    metrics["fake"] = metrics.get("fake", 0.0) + lf.detach() / accum
-                aux_norm = torch.nn.utils.clip_grad_norm_(
-                    auxiliary.parameters_to_train(), c["clip_grad"], error_if_nonfinite=True
-                )
-                opt_aux.step()
-                opt_aux.zero_grad(set_to_none=True)
-                metrics["fake_grad_norm"] = aux_norm
-            for actions, context in prepared:
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    if method == "cp":
-                        loss, parts = cp_loss(
-                            student_ddp,
-                            teacher,
-                            auxiliary,
-                            actions,
-                            context,
-                            bins=c["time_bins"],
-                        )
-                    elif method == "endpoint":
-                        z = torch.randn_like(actions)
-                        if step == 0 and out.name.startswith("smoke-"):
-                            # Native N1 and the differentiable student expression
-                            # must agree before training. Only one smoke batch.
-                            with torch.no_grad():
-                                native = teacher.endpoint(z, context, steps=1)
-                                direct = z - student(
-                                    z, torch.ones(len(z), device=z.device), context
-                                )
-                                torch.testing.assert_close(
-                                    direct, native, rtol=1e-5, atol=1e-6
-                                )
-                            save_json(
-                                out / f"native-parity-rank{rank}.json",
-                                {
-                                    "max_abs": float((direct - native).abs().max()),
-                                    "teacher_target": "native_eval_flow_ode_N10",
-                                    "student_initial_N1_matches": True,
-                                },
+                            loss, score = onedp_loss(
+                                generated, teacher, auxiliary, context,
+                                action_dim=c.get("onedp_loss_action_dim"),
                             )
-                            del native, direct
-                        loss, parts = endpoint_loss(
-                            student_ddp,
-                            teacher,
-                            z,
-                            context,
-                            teacher_steps=c["teacher_steps"],
-                            action_dim=c["loss_action_dim"],
-                        )
-                    elif method == "onedp":
-                        z = torch.randn_like(actions)
-                        generated = z - student_ddp(
-                            z, torch.ones(len(z), device=z.device), context
-                        )
-                        loss, score = onedp_loss(generated, teacher, auxiliary, context)
-                        parts = {"score_gradient_rms": score}
-                if not torch.isfinite(loss):
-                    raise FloatingPointError("Nonfinite distillation loss")
-                (loss / accum).backward()
-                for k, v in dict(parts, loss=loss.detach()).items():
-                    metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
-            grad_norm = torch.nn.utils.clip_grad_norm_(
-                student_params, c["clip_grad"], error_if_nonfinite=True
-            )
-            opt.step()
+                            parts = {"score_gradient_rms": score}
+                    if not torch.isfinite(loss):
+                        raise FloatingPointError("Nonfinite distillation loss")
+                    (loss / accum).backward()
+                    for k, v in dict(parts, loss=loss.detach()).items():
+                        metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
+                grad_norm = torch.nn.utils.clip_grad_norm_(
+                    student_params, c["clip_grad"], error_if_nonfinite=True
+                )
+                opt.step()
             if method == "cp":
                 decay = ema_decay(step + 1)
                 with torch.no_grad():
@@ -321,6 +345,12 @@ def main():
             del prepared, actions, context, loss
             if (step + 1) % c["log_every"] == 0 or step == start or step + 1 == stop:
                 row = {k: float(v) for k, v in metrics.items()}
+                if args.profile_stages:
+                    row["stage_seconds"] = timing.seconds
+                if method == "onedp":
+                    row["auxiliary_updates"] = (step + 1) * auxiliary_updates
+                    row["student_updates"] = step + 1
+                    row["aux_lr"] = opt_aux.param_groups[0]["lr"]
                 row.update(
                     step=step + 1,
                     epoch=(step + 1) / per_epoch,
