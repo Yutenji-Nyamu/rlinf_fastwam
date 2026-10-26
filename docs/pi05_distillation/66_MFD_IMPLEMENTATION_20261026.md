@@ -65,4 +65,4 @@ OOM、非有限损失/梯度、配置或恢复不匹配均失败退出，不自�
 - [官方固定源码](https://github.com/happyw1nd/MFD/blob/bd882924fe24ce59fac0e225f7c82db10db29cb8/t2i_SANA/scripts/train_sana_mfd.py)：辅助速度MSE、平均速度积分、学生内积指导、步长与时间调用。
 - [既有DMD new验收](59_DMD_NEW_SMOKE_AND_FQL_HANDOFF_20261026.md)：模型、batch、供数、5:1与恢复链依据。
 
-本轮结果另记于轻量验收回执；短smoke不提供成功率提升结论。
+本轮[短验收已通过](../experiments/mfd-smoke-20261026/README.md)：19项CPU检查、双卡12→14、原生N1导出；约9.80秒/更新，峰值分配72.656GiB/卡。完成后退出，未启动正式训练；短smoke不提供成功率提升结论。
