@@ -1,3 +1,5 @@
+> 2026-10-26本轮：[51 训练H50还是前C10及相关工作](51_TRAINING_HORIZON_SOURCES_20261026.md) · [52 OneDP/DMD源码与动态审计](52_ONEDP_DMD_AUDIT_20261026.md) · [53 近期产物推送覆盖](53_RECENT_PUBLICATION_AUDIT_20261026.md)。正式训练未改；FQL仍暂不smoke。
+
 > 2026-10-26：FQL固定老师适配已实现，CPU检查通过；用户最新要求暂不smoke。见[49 实现](49_FQL_IMPLEMENTATION_20261026.md)、[50 后续入口](50_FQL_SMOKE_RUNBOOK_20261026.md)。原多任务直接蒸馏/OneDP继续运行。
 
 # π0.5 × Consistency Policy / OneDP
