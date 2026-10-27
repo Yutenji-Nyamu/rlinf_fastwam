@@ -21,17 +21,24 @@ from tools.pi05_policy_eval.protocol import validate_config
 
 
 def test_single_smoke_retention_cannot_relax_formal_retention(tmp_path):
-    from rlinf.algorithms.pi05_distillation.checkpoint_retention import prune_checkpoints
+    from rlinf.algorithms.pi05_distillation.checkpoint_retention import (
+        prune_checkpoints,
+    )
 
     out = tmp_path / "smoke-endpoint"
     out.mkdir()
     for step in (12, 14):
         for prefix in ("checkpoint", "policy"):
             (out / f"{prefix}-{step:06d}.pt").write_bytes(b"test")
-    (out / "checkpoint.json").write_text(json.dumps({
-        "step": 14, "path": str(out / "checkpoint-000014.pt"),
-        "policy": str(out / "policy-000014.pt"),
-    }))
+    (out / "checkpoint.json").write_text(
+        json.dumps(
+            {
+                "step": 14,
+                "path": str(out / "checkpoint-000014.pt"),
+                "policy": str(out / "policy-000014.pt"),
+            }
+        )
+    )
     with pytest.raises(ValueError):
         prune_checkpoints(out, 1, [])
     deleted = prune_checkpoints(out, 1, [], single_task_smoke=True)

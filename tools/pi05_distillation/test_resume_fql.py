@@ -7,6 +7,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 
 def test_resume_uses_original_and_continued_task_results(tmp_path, monkeypatch):
     directory, output = tmp_path / "queue", tmp_path / "output"
@@ -56,3 +58,38 @@ def test_resume_uses_original_and_continued_task_results(tmp_path, monkeypatch):
     assert result["episodes"] == 24 and result["successes"] == 9
     module.resume_evaluation({"step": 1130, "policy": "existing-policy.pt"})
     assert len(calls) == 1
+
+
+def test_completed_smoke_requires_both_cards_and_closed_loop(tmp_path, monkeypatch):
+    def save(name, value):
+        (tmp_path / name).write_text(json.dumps(value))
+
+    save("single-plan.json", {"eval_batch": 32})
+    save("smoke-endpoint-accepted.json", {"passed": True})
+    save("export-endpoint-results.json", {"6": {"episodes": 32}, "7": {"episodes": 32}})
+    events = []
+    monkeypatch.setitem(
+        sys.modules,
+        "run_queue",
+        types.SimpleNamespace(
+            D=tmp_path,
+            O=tmp_path / "output",
+            CARDS=(6, 7),
+            read=lambda path: json.loads(path.read_text()),
+            event=lambda *args, **kwargs: events.append((args, kwargs)),
+        ),
+    )
+    monkeypatch.setitem(
+        sys.modules, "multitask_eval", types.SimpleNamespace(sweep=None)
+    )
+    path = Path(__file__).with_name("single_task_suite.py")
+    spec = importlib.util.spec_from_file_location("single_suite_under_test", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.run_method("endpoint")
+    assert events[0][0] == ("REUSE_COMPLETED_SINGLE_SMOKE",)
+    # A training-only acceptance or just one completed GPU must not skip work.
+    save("export-endpoint-results.json", {"6": {"episodes": 32}})
+    with pytest.raises(FileNotFoundError):
+        module.run_method("endpoint")
+    assert len(events) == 1

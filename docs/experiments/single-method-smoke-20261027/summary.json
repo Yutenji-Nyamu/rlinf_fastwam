@@ -1,0 +1,349 @@
+{
+  "methods": [
+    {
+      "method": "endpoint",
+      "microbatch_per_rank": 224,
+      "global_batch": 448,
+      "peak_allocated_gib": 72.81034994125366,
+      "peak_reserved_gib": 74.23046875,
+      "seconds_per_update": 4.87066933080288,
+      "episodes": 64,
+      "successes": 47,
+      "success_rate": 0.734375,
+      "resume_step": 14,
+      "student_lr": 2.5e-05,
+      "auxiliary_lr": null,
+      "auxiliary_updates_per_student": null,
+      "last_rank0": {
+        "endpoint_mse": 0.00010698960977606475,
+        "joint_mse": 9.76621886366047e-05,
+        "gripper_mse": 0.00016295407840516418,
+        "loss": 0.00010698960977606475,
+        "stage_seconds": {
+          "data_wait": 0.0012204404920339584,
+          "observation_prefix": 3.1413830257952213,
+          "student_update": 1.1285599246621132
+        },
+        "step": 14,
+        "epoch": 1.2727272727272727,
+        "grad_norm": 0.009805010631680489,
+        "lr": 1.09375e-05,
+        "seconds_per_update": 5.023504855576903,
+        "peak_gib": 72.80812788009644,
+        "peak_reserved_gib": 73.9296875,
+        "time": 1793101563.1559823,
+        "rank": 0
+      }
+    },
+    {
+      "method": "cp",
+      "microbatch_per_rank": 80,
+      "global_batch": 160,
+      "peak_allocated_gib": 74.31205892562866,
+      "peak_reserved_gib": 75.62109375,
+      "seconds_per_update": 1.9516604502818415,
+      "episodes": 64,
+      "successes": 47,
+      "success_rate": 0.734375,
+      "resume_step": 14,
+      "student_lr": 2.5e-05,
+      "auxiliary_lr": null,
+      "auxiliary_updates_per_student": null,
+      "last_rank0": {
+        "consistency": 1.8091790288110587e-09,
+        "fm": 0.0037043699994683266,
+        "loss": 0.003704371862113476,
+        "stage_seconds": {
+          "data_wait": 0.0007279524579644203,
+          "observation_prefix": 1.1198053527623415,
+          "student_update": 0.5978801678866148
+        },
+        "step": 14,
+        "epoch": 0.4666666666666667,
+        "grad_norm": 0.11676696687936783,
+        "lr": 7.000000000000001e-07,
+        "seconds_per_update": 2.168715671170503,
+        "peak_gib": 74.31205892562866,
+        "peak_reserved_gib": 75.62109375,
+        "time": 1793102290.4668229,
+        "rank": 0
+      }
+    },
+    {
+      "method": "onedp",
+      "microbatch_per_rank": 192,
+      "global_batch": 384,
+      "peak_allocated_gib": 72.61498022079468,
+      "peak_reserved_gib": 76.814453125,
+      "seconds_per_update": 6.030910970842732,
+      "episodes": 64,
+      "successes": 45,
+      "success_rate": 0.703125,
+      "resume_step": 14,
+      "student_lr": 1e-05,
+      "auxiliary_lr": 0.0002,
+      "auxiliary_updates_per_student": 5,
+      "last_rank0": {
+        "fake_physical_mse": 0.009920377284288406,
+        "fake_padding_mse": 0.004463125020265579,
+        "fake": 0.006850672885775566,
+        "fake_grad_norm": 0.06694524735212326,
+        "score_gradient_rms": 0.021765729412436485,
+        "loss": 0.0008091986528597772,
+        "stage_seconds": {
+          "data_wait": 0.0010856008157134056,
+          "observation_prefix": 2.6811214787885547,
+          "auxiliary_updates": 2.243922515772283,
+          "student_update": 0.5741863893344998
+        },
+        "auxiliary_updates": 70,
+        "student_updates": 14,
+        "aux_lr": 0.0002,
+        "step": 14,
+        "epoch": 1.0769230769230769,
+        "grad_norm": 0.01026507280766964,
+        "lr": 1e-05,
+        "seconds_per_update": 6.253279135096818,
+        "peak_gib": 72.59996557235718,
+        "peak_reserved_gib": 74.154296875,
+        "time": 1793103029.321038,
+        "rank": 0
+      }
+    },
+    {
+      "method": "mfd",
+      "microbatch_per_rank": 192,
+      "global_batch": 384,
+      "peak_allocated_gib": 72.58686780929565,
+      "peak_reserved_gib": 73.517578125,
+      "seconds_per_update": 10.421607803925871,
+      "episodes": 64,
+      "successes": 37,
+      "success_rate": 0.578125,
+      "resume_step": 14,
+      "student_lr": 1e-05,
+      "auxiliary_lr": 0.0002,
+      "auxiliary_updates_per_student": 5,
+      "last_rank0": {
+        "fake_physical_mse": 0.0371830016374588,
+        "fake_padding_mse": 0.02638336457312107,
+        "fake": 0.031108206138014793,
+        "fake_head_relative_update": 0.003944513387978077,
+        "fake_grad_norm": 0.08396699279546738,
+        "fake_clip_fraction": 0.0,
+        "mfd_direction_rms": 0.08458909392356873,
+        "mfd_interval_mean": 0.290377140045166,
+        "mfd_start_mean": 0.6285146474838257,
+        "mfd_steps_per_path": 15.0,
+        "mfd_guidance_nfe": 30.0,
+        "loss": 0.011143390089273453,
+        "student_head_relative_update": 0.00023831025464460254,
+        "stage_seconds": {
+          "data_wait": 0.001136026345193386,
+          "observation_prefix": 2.7021774435415864,
+          "auxiliary_updates": 2.242031025700271,
+          "mfd_guidance": 3.771186559461057,
+          "student_update": 4.099833270534873
+        },
+        "auxiliary_updates": 70,
+        "student_updates": 14,
+        "aux_lr": 0.0002,
+        "student_clipped": 0.0,
+        "step": 14,
+        "epoch": 1.0769230769230769,
+        "grad_norm": 0.02796280011534691,
+        "lr": 1e-05,
+        "seconds_per_update": 11.893121243920177,
+        "peak_gib": 72.58686780929565,
+        "peak_reserved_gib": 73.517578125,
+        "time": 1793104305.0565326,
+        "rank": 0
+      }
+    },
+    {
+      "method": "fql_fixed_teacher",
+      "microbatch_per_rank": 224,
+      "global_batch": 448,
+      "peak_allocated_gib": 72.9218544960022,
+      "peak_reserved_gib": 77.380859375,
+      "seconds_per_update": 8.656165674794465,
+      "episodes": 64,
+      "successes": 38,
+      "success_rate": 0.59375,
+      "resume_step": 14,
+      "student_lr": 2.5e-05,
+      "auxiliary_lr": null,
+      "auxiliary_updates_per_student": null,
+      "last_rank0": {
+        "endpoint_mse": 0.005696505308151245,
+        "q_actor_loss": 0.37463802099227905,
+        "actor_loss": 0.4316030740737915,
+        "critic_loss": 1.3741976022720337,
+        "q_mean": -0.4708295166492462,
+        "q_abs_max": 2.0152459144592285,
+        "target_mean": -0.6677650809288025,
+        "reward_mean": 0.2633928656578064,
+        "step": 14,
+        "epoch": 14.0,
+        "grad_norm": 0.7941253781318665,
+        "q_grad_norm": 51.679473876953125,
+        "seconds_per_update": 8.810214152559638,
+        "peak_gib": 72.9218544960022,
+        "peak_reserved_gib": 74.0078125,
+        "lr": 7.478807191837883e-06,
+        "time": 1793105171.2095416,
+        "rank": 0
+      }
+    }
+  ],
+  "scope": "14-step functional smoke, not trained performance comparison",
+  "original_baselines": {
+    "1": {
+      "time": 1793094728.5348635,
+      "condition": "rlinf-c50-n1",
+      "attempted_tasks": 4,
+      "valid_tasks": 4,
+      "missing_tasks": 0,
+      "episodes": 128,
+      "episodes_per_task": 32,
+      "evaluation_settings": {
+        "episodes_per_task": 32,
+        "tasks_per_gpu": 1,
+        "resident_model": true,
+        "recording_mode": "none",
+        "record_decisions": false,
+        "single_teacher": true,
+        "execute_chunk": 50
+      },
+      "elapsed_seconds": 1228.9487986564636,
+      "successes": 98,
+      "mean_success_rate": 0.765625,
+      "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+      "tasks": [
+        {
+          "task": "adjust_bottle-b0",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 19,
+          "elapsed_seconds": 350.1010847091675,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n1/adjust_bottle-b0"
+        },
+        {
+          "task": "adjust_bottle-b1",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 25,
+          "elapsed_seconds": 290.0858561992645,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n1/adjust_bottle-b1"
+        },
+        {
+          "task": "adjust_bottle-b2",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 26,
+          "elapsed_seconds": 295.0913186073303,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n1/adjust_bottle-b2"
+        },
+        {
+          "task": "adjust_bottle-b3",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 28,
+          "elapsed_seconds": 290.0914821624756,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n1/adjust_bottle-b3"
+        }
+      ]
+    },
+    "5": {
+      "time": 1793093499.584077,
+      "condition": "rlinf-c50-n5",
+      "attempted_tasks": 4,
+      "valid_tasks": 4,
+      "missing_tasks": 0,
+      "episodes": 128,
+      "episodes_per_task": 32,
+      "evaluation_settings": {
+        "episodes_per_task": 32,
+        "tasks_per_gpu": 1,
+        "resident_model": true,
+        "recording_mode": "none",
+        "record_decisions": false,
+        "single_teacher": true,
+        "execute_chunk": 50
+      },
+      "elapsed_seconds": 1228.4462823867798,
+      "successes": 111,
+      "mean_success_rate": 0.8671875,
+      "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+      "tasks": [
+        {
+          "task": "adjust_bottle-b0",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 27,
+          "elapsed_seconds": 355.10419178009033,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n5/adjust_bottle-b0"
+        },
+        {
+          "task": "adjust_bottle-b1",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 27,
+          "elapsed_seconds": 290.08534121513367,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n5/adjust_bottle-b1"
+        },
+        {
+          "task": "adjust_bottle-b2",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 29,
+          "elapsed_seconds": 290.09136748313904,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n5/adjust_bottle-b2"
+        },
+        {
+          "task": "adjust_bottle-b3",
+          "gpu": 3,
+          "valid": true,
+          "episodes": 32,
+          "successes": 28,
+          "elapsed_seconds": 290.09058952331543,
+          "error": null,
+          "output": "/data/chenyiteng/results/pi05-single-teacher/adjust-20261027-g3/batches/rlinf-c50-n5/adjust_bottle-b3"
+        }
+      ]
+    }
+  },
+  "all_smokes_complete": {
+    "time": 1793105604.7901144,
+    "methods": [
+      "endpoint",
+      "cp",
+      "onedp",
+      "mfd",
+      "fql_fixed_teacher"
+    ]
+  },
+  "returned_to_fql": {
+    "time": 1793105609.3540006,
+    "identity": {
+      "pid": 3453374,
+      "uid": 1003,
+      "start": 599232840,
+      "state": "R"
+    }
+  }
+}

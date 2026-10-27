@@ -168,6 +168,17 @@ def train(method, output, stop, resume=None, label=None, capacity=False):
 
 
 def run_method(method):
+    accepted = D / f"smoke-{method}-accepted.json"
+    evaluated = D / f"export-{method}-results.json"
+    if accepted.exists() and evaluated.exists():
+        results = q.read(evaluated)
+        if (
+            q.read(accepted)["passed"]
+            and set(results) == {str(g) for g in q.CARDS}
+            and all(r["episodes"] == plan["eval_batch"] for r in results.values())
+        ):
+            q.event("REUSE_COMPLETED_SINGLE_SMOKE", method=method)
+            return
     config_path = D / f"{method}.json"
     c = q.read(config_path)
     base = c["microbatch_per_rank"]

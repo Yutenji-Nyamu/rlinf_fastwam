@@ -78,6 +78,9 @@ def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
         TORCH_NCCL_ASYNC_ERROR_HANDLING="1",
     )
     env.pop("DOJO_GPU_SCOPE", None)
+    allocator = read(D / f"{method}.json").get("cuda_allocator_conf")
+    if allocator:
+        env["PYTORCH_CUDA_ALLOC_CONF"] = allocator
     command = [
         PYTHON,
         "-u",

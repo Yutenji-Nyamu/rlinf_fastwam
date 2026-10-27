@@ -1,0 +1,85 @@
+{
+  "6": {
+    "time": 1793100637.4891696,
+    "condition": "native-collection-capacity",
+    "attempted_tasks": 2,
+    "valid_tasks": 1,
+    "missing_tasks": 1,
+    "episodes": 32,
+    "episodes_per_task": 32,
+    "evaluation_settings": {
+      "single_distill": true,
+      "episodes_per_task": 32,
+      "tasks_per_gpu": 1,
+      "resident_model": true,
+      "poll_seconds": 0.5,
+      "recording_mode": "none",
+      "record_decisions": false,
+      "execute_chunk": 50
+    },
+    "elapsed_seconds": 664.2480905056,
+    "successes": 27,
+    "mean_success_rate": 0.84375,
+    "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+    "tasks": [
+      {
+        "task": "config-b0",
+        "gpu": 6,
+        "valid": true,
+        "episodes": 32,
+        "successes": 27,
+        "elapsed_seconds": 397.39397382736206,
+        "error": null,
+        "output": "/data/chenyiteng/results/pi05-distill/single-methods-sz1-g67-20261027/native-collection-capacity/g6/batches/adjust_bottle-b0",
+        "source_config": "/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/native-collection-capacity/g6/config-b0.json"
+      },
+      {
+        "task": "config-b1",
+        "gpu": 6,
+        "valid": false,
+        "episodes": 0,
+        "successes": null,
+        "elapsed_seconds": 266.84746742248535,
+        "error": "Evaluator exit -15 without complete 32-episode receipt",
+        "output": "/data/chenyiteng/results/pi05-distill/single-methods-sz1-g67-20261027/native-collection-capacity/g6/batches/adjust_bottle-b1",
+        "source_config": "/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/native-collection-capacity/g6/config-b1.json"
+      }
+    ]
+  },
+  "7": {
+    "time": 1793100516.3899467,
+    "condition": "native-collection-capacity",
+    "attempted_tasks": 1,
+    "valid_tasks": 0,
+    "missing_tasks": 1,
+    "episodes": 0,
+    "episodes_per_task": 64,
+    "evaluation_settings": {
+      "single_distill": true,
+      "episodes_per_task": 64,
+      "tasks_per_gpu": 1,
+      "resident_model": true,
+      "poll_seconds": 0.5,
+      "recording_mode": "none",
+      "record_decisions": false,
+      "execute_chunk": 50
+    },
+    "elapsed_seconds": 543.1481621265411,
+    "successes": 0,
+    "mean_success_rate": null,
+    "aggregation": "equal task mean over valid tasks; missing tasks listed separately",
+    "tasks": [
+      {
+        "task": "config-b0",
+        "gpu": 7,
+        "valid": false,
+        "episodes": 0,
+        "successes": null,
+        "elapsed_seconds": 543.1427001953125,
+        "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/source/tools/pi05_policy_eval/resident.py\", line 49, in main\n    run(config, model_cache=cache)\n  File \"/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/source/tools/pi05_policy_eval/run_batch.py\", line 240, in run\n    obs, _ = env.reset()\n             ^^^^^^^^^^^\n  File \"/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/source/rlinf/envs/robotwin/robotwin_env.py\", line 252, in reset\n    raw_obs = self.venv.get_obs()\n              ^^^^^^^^^^^^^^^^^^^\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py\", line 415, in get_obs\n    obs_venv.append(env.get_obs())\n                    ^^^^^^^^^^^^^\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/robotwin/envs/vector_env.py\", line 183, in get_obs\n    obs = self.task.get_obs()\n          ^^^^^^^^^^^^^^^^^^^\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/_base_task.py\", line 464, in get_obs\n    self.cameras.update_picture()\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support/envs/camera/camera.py\", line 276, in update_picture\n    self.left_camera.take_picture()\nRuntimeError: cannot create buffer\n",
+        "output": "/data/chenyiteng/results/pi05-distill/single-methods-sz1-g67-20261027/native-collection-capacity/g7/batches/adjust_bottle-b0",
+        "source_config": "/data/chenyiteng/deployment-20261027/single-methods-sz1-g67/native-collection-capacity/g7/config-b0.json"
+      }
+    ]
+  }
+}
