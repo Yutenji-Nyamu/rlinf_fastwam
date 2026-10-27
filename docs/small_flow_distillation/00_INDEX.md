@@ -1,6 +1,6 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
-更新：2026-10-27 20:54。状态：单任务RLinf π0.5原始N5/C50为111/128，N1/C50为98/128；差10.16点，未追加C10。五方法单任务smoke均已完成12→14完整续训、N1导出及各64回合真实执行；原多任务FQL已恢复1机6/7，4/5现有直接蒸馏继续，4–7逐卡RLT低优先级候补。本轮不启动单任务长训。
+更新：2026-10-27。旧多任务FQL已按用户要求收束（CP1130为2/368）；五方法单任务正式队列已部署并启动，依次直接→CP→DMD new→MFD→单任务FQL，再接RLT。各自双卡训练、每点128回合评估，大产物优先Home。见[12 正式队列](12_SINGLE_FORMAL_QUEUE_20261027.md)与[FQL分析](../pi05_distillation/70_FQL_FAILURE_ANALYSIS_20261027.md)。
 
 ## 用户目标
 
@@ -15,7 +15,7 @@
 3. **更纯粹的小网络备选是FMP/Flow-DP**：新增核到PointFlowMatch的原生FM、U-Net及RGB版本，默认N10，是比泛用演示更具体的参考。它研究切口干净，但需自己接RoboTwin/Dojo适配并获得合格教师，不能称已验证现成基线。
 4. **ManiFlow值得保留参考，但暂不直接定为多步老师**：官方有RoboTwin2 RGB/点云训练；方法已含一致性目标，主打1–2步。未在本轮所查XPolicyLab固定树中发现其Dojo插件。改成纯FM还要处理零一致性批次和target-time接口，不能只改一个比例后声称完成。
 5. **最快复用的桥梁是旧RLinf π0.5单任务**：1机权重分片和norm齐全；当前协议下默认N5为86.72%、N1为76.56%，见08。单任务π0.5优先省工程和评估，小模型仍用于降低每步计算；它仍是完整π0.5，模型大小不会随任务数缩小。
-6. **五种短测已通过，正式训练尚未启动**。原生模型接口、方法实现和实际并行见10/11；14步结果不作为收敛比较。小型平台中，双基准接入看SmolVLA，纯FM小网络看PointFlowMatch RGB/FMP。ManiFlow、FlowPolicy已有少步训练，并不代表所有FM都是一步；3D FlowMatch Actor有明确N5/N1性能差。
+6. **五种短测已通过，正式队列已启动**。原生模型接口、方法实现和实际并行见10/11；14步结果不作为收敛比较。小型平台中，双基准接入看SmolVLA，纯FM小网络看PointFlowMatch RGB/FMP。ManiFlow、FlowPolicy已有少步训练，并不代表所有FM都是一步；3D FlowMatch Actor有明确N5/N1性能差。
 
 ## 阅读顺序
 
@@ -31,7 +31,7 @@
 
 现有π0.5背景：[索引](../pi05_distillation/00_INDEX.md)、[直接蒸馏审计](../pi05_distillation/67_ENDPOINT_CONVERGENCE_AUDIT_20261027.md)、[DMD对齐](../pi05_distillation/54_ONEDP_ENDPOINT_ALIGNMENT_20261026.md)、[MFD实现](../pi05_distillation/66_MFD_IMPLEMENTATION_20261026.md)。
 
-候选的公开成绩是文献/榜单参考，原始模型实测见08，五方法短测见11。论文、源码阅读快照在E盘`dp_plan1027/`、`fm_followup1027/`，原始评估证据在`single_teacher_eval1027/`，本轮短测在`single_methods1027/`。1机3卡原始评估已结束；6/7短测完成并恢复原多任务FQL。2/3机本轮未刷新内部状态。
+候选的公开成绩是文献/榜单参考，原始模型实测见08，五方法短测见11。论文、源码阅读快照在E盘`dp_plan1027/`、`fm_followup1027/`，原始评估证据在`single_teacher_eval1027/`，本轮短测在`single_methods1027/`。1机3卡原始评估已结束；6/7短测后曾恢复原多任务FQL；最新已切换单任务正式队列。2/3机本轮未刷新内部状态。
 
 - [10 单任务五方法实施与参数依据](10_SINGLE_METHOD_IMPLEMENTATION_20261027.md)
 - [11 单任务短测与FQL返回回执](11_SINGLE_METHOD_SMOKE_RESULTS_20261027.md)

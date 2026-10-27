@@ -1,3 +1,5 @@
+2026-10-27最新：[70 FQL退化与数据核对](70_FQL_FAILURE_ANALYSIS_20261027.md) · [单任务五方法正式队列](../small_flow_distillation/12_SINGLE_FORMAL_QUEUE_20261027.md)。多任务FQL已收束，最新完整成功率0.54%；新队列沿用已通过的原生接口，Home存大产物。
+
 2026-10-27：[单任务流策略工作台](../small_flow_distillation/00_INDEX.md)。含H/C监督、轻量FM候选、ManiFlow/FlowPolicy机制和FM/扩散迁移；只读确认旧RLinf π0/π0.5调瓶子SFT仍在1机。最快复用选单任务π0.5，纯小网络新增PointFlowMatch RGB参考；模型变换、N4/N5历史协议与N1/N10新对照分开。八份专题，仍仅规划，未占卡或改变队列。
 
 2026-10-27：[67 直接蒸馏平台与实现审计](67_ENDPOINT_CONVERGENCE_AUDIT_20261027.md) · [68 直接蒸馏文献判断](68_ENDPOINT_LITERATURE_20261027.md)。截至17760步损失仍下降，最新11130评估31.25%；发现完整H50窗口排除末49个输入观察的覆盖限制。只读审计，正式训练与队列未改。
