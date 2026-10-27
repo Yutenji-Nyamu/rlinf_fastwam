@@ -273,7 +273,13 @@ def main():
         time.sleep(0.25)
     q.save(D / "handoff-complete.json", {"time": time.time(), "identity": me})
     try:
-        collect()
+        if not (D / "single-transition-receipt.json").exists():
+            collect()
+        else:
+            q.event(
+                "REUSE_COMPLETE_SINGLE_TRANSITIONS",
+                receipt=q.read(D / "single-transition-receipt.json"),
+            )
         for method in METHODS:
             run_method(method)
         q.save(

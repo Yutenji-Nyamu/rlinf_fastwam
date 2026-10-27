@@ -18,8 +18,13 @@ def resume_evaluation(receipt):
     target = q.O / f"summary-{label}.json"
     if target.exists():
         return q.read(target)
-    old_progress = q.D / ("eval-" + label) / "progress.json"
-    finished = q.read(old_progress)["results"] if old_progress.exists() else []
+    progress_files = [q.D / ("eval-" + label) / "progress.json"]
+    progress_files += sorted(q.D.glob(f"eval-{label}-continued-*/progress.json"))
+    by_task = {}
+    for path in progress_files:
+        if path.exists():
+            by_task.update({r["task"]: r for r in q.read(path)["results"]})
+    finished = list(by_task.values())
     done = {r["task"] for r in finished}
     tasks = q.read(q.D / "task-list.json")["tasks"]
     pending = [r for r in tasks if r["task"] not in done]
