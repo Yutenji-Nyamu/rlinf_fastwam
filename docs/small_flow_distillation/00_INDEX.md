@@ -1,6 +1,6 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
-更新：2026-10-27。状态：检索、源码审计和规划；本轮没有部署、占卡、训练或改动现有队列。
+更新：2026-10-27。状态：单任务RLinf π0.5原始评估已获授权并启动，先默认N5/C50与N1/C50各128回合；完整差距小于10个百分点才追加C10。五方法的新训练仍处于规划。
 
 ## 用户目标
 
@@ -26,7 +26,9 @@
 - [05 FM、扩散与少步策略](05_FM_DIFFUSION_AND_FAST_POLICIES.md)：ManiFlow/FlowPolicy机制、非一步FM例子、五方法迁移条件。
 - [06 已存RLinf单任务老师](06_RLINF_SINGLE_TASK_TEACHERS.md)：现场文件、官方成绩/历史训练采样区别、动作/状态/归一化差异。
 - [07 单任务适配方案](07_SINGLE_TASK_ADAPTATION_PLAN.md)：已有大模型桥梁、小模型平台、实际代码切口和参数来源。
+- [08 已启动的单任务评估](08_SINGLE_TEACHER_EVALUATION_20261027.md)：默认N5与N1、32并行、条件追加C10，以及实际绑定检查。
+- [09 五方法FM坐标审计](09_METHOD_COORDINATE_AUDIT_20261027.md)：原方法来源、速度/噪声/分数换算、梯度符号与适配边界。
 
 现有π0.5背景：[索引](../pi05_distillation/00_INDEX.md)、[直接蒸馏审计](../pi05_distillation/67_ENDPOINT_CONVERGENCE_AUDIT_20261027.md)、[DMD对齐](../pi05_distillation/54_ONEDP_ENDPOINT_ALIGNMENT_20261026.md)、[MFD实现](../pi05_distillation/66_MFD_IMPLEMENTATION_20261026.md)。
 
-所有候选的公开成绩均为文献/榜单参考，不是我们本轮实测。下载源码只作阅读，没有执行外部安装脚本。论文、原始源码和API快照在本线程E盘`dp_plan1027/`、`fm_followup1027/`；本目录只保留轻量分析和引用。现场只检查1机我方模型文件，未占GPU或改训练；没有把2/3机旧状态当成本轮新现场。
+候选的公开成绩是文献/榜单参考，本轮实测单列于08号和维护记录。论文、源码阅读快照在E盘`dp_plan1027/`、`fm_followup1027/`，新评估证据在`single_teacher_eval1027/`。只新增1机3卡评估；4–7现有训练/候补保持，2/3机状态仍不能刷新。

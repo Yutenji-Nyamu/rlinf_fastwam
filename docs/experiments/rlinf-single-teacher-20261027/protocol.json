@@ -1,0 +1,37 @@
+{
+  "checkpoint": "RLinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle",
+  "revision": "fa8df6ed103db0f5549c122f3a17c00ba6426c98",
+  "model_config": "pi05_aloha_robotwin",
+  "task": "adjust_bottle",
+  "horizon": 50,
+  "step_limit": 200,
+  "randomized": false,
+  "episodes_per_condition": 128,
+  "parallel_environments": 32,
+  "batches": 4,
+  "first_conditions": [
+    [
+      5,
+      50
+    ],
+    [
+      1,
+      50
+    ]
+  ],
+  "conditional_conditions": [
+    [
+      5,
+      10
+    ],
+    [
+      1,
+      10
+    ]
+  ],
+  "conditional_rule": "both 128 complete and absolute success-rate difference < 10 percentage points",
+  "recording_mode": "none",
+  "record_decisions": false,
+  "compute_weak_u": false,
+  "seed_source": "first 128 fixed official eval seeds for adjust_bottle; same groups in every condition"
+}

@@ -33,6 +33,30 @@ def save(path, value):
 
 
 def validate_config(c):
+    if c.get("suite") == "pi05_rlinf_single_teacher":
+        assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
+        assert c["num_steps"] in (1, 5) and c["execute_chunk"] in (10, 50)
+        assert c["step_limit"] == 200
+        assert c["model"]["openpi"]["config_name"] == "pi05_aloha_robotwin"
+        assert c["model"]["openpi"]["action_chunk"] == 50
+        assert c["model"]["num_action_chunks"] == 50
+        assert (
+            c["model"]["num_steps"]
+            == c["model"]["openpi"]["num_steps"]
+            == c["num_steps"]
+        )
+        assert c["env"]["task_config"]["task_name"] == c["task"]
+        assert c["env"]["task_config"]["step_lim"] == 200
+        assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
+        assert not any(
+            c.get(k) for k in ("weak_weights", "strong_weights", "distill_weights")
+        )
+        assert c["recording_mode"] == "none" and not c["record_decisions"]
+        assert (
+            c["env"]["task_config"]["domain_randomization"]["random_background"]
+            is False
+        )
+        return
     if c.get("suite") == "pi05_rand_chunk_sweep":
         assert c["num_envs"] in (4, 8, 32) and c["num_steps"] in (1, 10)
         assert c["execute_chunk"] in (10, 50)

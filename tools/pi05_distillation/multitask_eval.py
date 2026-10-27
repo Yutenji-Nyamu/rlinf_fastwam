@@ -30,6 +30,12 @@ ROOT = Path(__file__).resolve().parents[2]
 PYTHON = "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python"
 
 
+def allowed_episodes(options):
+    if options.get("single_teacher"):
+        return (32,)
+    return (4, 8, 32) if options.get("randomized") else (8, 16)
+
+
 def completed_checkpoint(output, method, stops):
     """Continue only from a saved evaluation boundary, preserving prior points."""
     output = Path(output)
@@ -91,7 +97,7 @@ def make_config(
 ):
     options = options or {}
     episodes = int(options.get("episodes_per_task", 16))
-    assert episodes in ((4, 8, 32) if options.get("randomized") else (8, 16))
+    assert episodes in allowed_episodes(options)
     c = copy.deepcopy(template)
     limit = int(task["step_limit"])
     c.update(
@@ -134,6 +140,14 @@ def make_config(
     if options.get("randomized"):
         assert policy is None
         c["suite"] = "pi05_rand_chunk_sweep"
+    if options.get("single_teacher"):
+        assert policy is None and steps in (1, 5)
+        c.update(
+            suite="pi05_rlinf_single_teacher", task="adjust_bottle", batch=task["batch"]
+        )
+        c["noise_seed"] = int(template["noise_seed"]) + 1000003 * task["batch"]
+        c["warmup_prompt"] = template["warmup_prompt"]
+        c["model"]["num_steps"] = steps
     ec = c["env"]
     ec.update(
         total_num_envs=episodes,
@@ -142,7 +156,7 @@ def make_config(
         max_episode_steps=limit,
     )
     ec["task_config"].update(
-        task_name=task["task"], step_lim=limit, save_path=str(output / "env")
+        task_name=c["task"], step_lim=limit, save_path=str(output / "env")
     )
     ec["video_cfg"]["video_base_dir"] = str(output / "unused")
     return c
@@ -170,7 +184,7 @@ def sweep(
     episodes = int(options.get("episodes_per_task", 16))
     lanes = int(options.get("tasks_per_gpu", 2))
     resident = bool(options.get("resident_model", False))
-    assert episodes in ((4, 8, 32) if options.get("randomized") else (8, 16))
+    assert episodes in allowed_episodes(options)
     assert 1 <= lanes <= 4
     output = Path(prepared["output"])
     tx = deployment / ("eval-" + label)
@@ -183,8 +197,11 @@ def sweep(
             c = read(path)
             assert c["collect_transitions"] and c["num_envs"] == episodes
             task_rows.append(
-                {"task": Path(path).stem, "step_limit": c["step_limit"],
-                 "collection_config": str(path)}
+                {
+                    "task": Path(path).stem,
+                    "step_limit": c["step_limit"],
+                    "collection_config": str(path),
+                }
             )
     finished = list(completed_rows or [])
     reused = {row["task"] for row in finished}
