@@ -32,3 +32,7 @@
 数据盘现场余32.0 GiB。本轮每方法只保留完整CP14和导出；CP12仅在CP14保存完成后淘汰，容量探测不写大权重。旧FQL完整点不改。
 
 轻量证据位于[结果目录](../experiments/single-method-smoke-20261027/README.md)，包含配置、训练指标、容量测试、实际执行和恢复回执；权重、原始转移图像及环境凭据不入Git。参数与方法依据见[实施说明](10_SINGLE_METHOD_IMPLEMENTATION_20261027.md)。
+
+
+## 2026-10-27 清理回执
+用户授权后已删除本轮CP14与policy大文件；12→14续训、导出及执行验证记录仍有效，日志和曲线保留。原多任务FQL已恢复。见 `docs/maintenance/sz1_cleanup_four_tiers_receipt_20261027.json`。

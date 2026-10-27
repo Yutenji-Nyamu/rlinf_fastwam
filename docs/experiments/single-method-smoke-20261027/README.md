@@ -21,3 +21,7 @@ This is a functional smoke, not a converged-method comparison. Protocol: native 
 FQL smoke uses only 32 complete episodes / 102 native C50 transitions; this is not the formal training dataset. Evaluation batch 64 failed in renderer initialization; 32 is the measured working setting. MFD B192 initially OOMed with large unused reserved memory; the same batch passed with expandable segments. The failed trial is retained. All 26 targeted CPU tests passed.
 
 Full Chinese explanation: [result notes](../../small_flow_distillation/11_SINGLE_METHOD_SMOKE_RESULTS_20261027.md).
+
+
+## 2026-10-27 清理回执
+用户授权后已删除本轮CP14与policy大文件；12→14续训、导出及执行验证记录仍有效，日志和曲线保留。原多任务FQL已恢复。见 `docs/maintenance/sz1_cleanup_four_tiers_receipt_20261027.json`。
