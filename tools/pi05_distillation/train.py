@@ -79,6 +79,7 @@ def main():
     parser.add_argument("--decode-workers", type=int, default=0)
     parser.add_argument("--prefetch-batches", type=int, choices=(0, 1, 2), default=0)
     parser.add_argument("--profile-stages", action="store_true")
+    parser.add_argument("--capacity-only", action="store_true")
     args = parser.parse_args()
     c = json.loads(Path(args.config).read_text())
     rank, world = int(os.environ["LOCAL_RANK"]), int(os.environ["WORLD_SIZE"])
@@ -354,7 +355,7 @@ def main():
                                     out / f"native-parity-rank{rank}.json",
                                     {
                                         "max_abs": float((direct - native).abs().max()),
-                                        "teacher_target": "native_eval_flow_ode_N10",
+                                        "teacher_target": f"native_eval_flow_ode_N{c['teacher_steps']}",
                                         "student_initial_N1_matches": True,
                                     },
                                 )
@@ -447,7 +448,9 @@ def main():
                 if rank == 0:
                     print(json.dumps(row), flush=True)
                     save_json(out / "progress.json", row)
-            if (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop:
+            if not args.capacity_only and (
+                (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop
+            ):
                 rng = {
                     "python": random.getstate(),
                     "numpy": np.random.get_state(),
@@ -506,6 +509,7 @@ def main():
                         out,
                         c.get("checkpoint_keep_last"),
                         c.get("checkpoint_keep_steps", []),
+                        single_task_smoke=bool(c.get("single_task")),
                     )
                 dist.barrier()
     if rank == 0:
@@ -518,7 +522,7 @@ def main():
                 "elapsed_seconds": time.monotonic() - begin,
             },
         )
-    if out.name.startswith("smoke-") and stop == 14:
+    if not args.capacity_only and out.name.startswith("smoke-") and stop == 14:
         assert all(p.grad is None for p in teacher.parameters())
         # Exercise the actual exported overlay in the factory's inference dtype,
         # after the resumable training state has already been saved.
@@ -537,6 +541,7 @@ def main():
             or (method in {"onedp", "mfd"} and isinstance(data, BalancedWindows))
             else micro
         )
+        inference_batch = int(c.get("smoke_inference_batch", inference_batch))
         obs, _ = data.batch(list(range(inference_batch)))
         obs["extra_view_images"] = None
         calls = []

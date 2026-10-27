@@ -124,14 +124,16 @@ def ema_decay(step: int) -> float:
 
 
 def endpoint_loss(student, teacher, noise, context, *, teacher_steps=10, action_dim=14):
-    """Pair native N10 teacher and N1 student endpoints using the SAME noise.
+    """Pair native multistep teacher and N1 student endpoints using the SAME noise.
 
     Compare normalized physical action coordinates over the whole H50 block.
     The teacher integrates all internal coordinates, including padding, but
     padding is not a regression target. No expert-action FM or EMA is added.
     """
-    if teacher_steps != 10 or action_dim != 14 or noise.shape[-1] < action_dim:
-        raise ValueError("Endpoint baseline requires N10 teacher and 14D Aloha actions")
+    if teacher_steps not in (5, 10) or action_dim != 14 or noise.shape[-1] < action_dim:
+        raise ValueError(
+            "Endpoint baseline requires native N5/N10 and 14D Aloha actions"
+        )
     with torch.no_grad():
         target = teacher.endpoint(noise, context, steps=teacher_steps)
     one = torch.ones(len(noise), device=noise.device)

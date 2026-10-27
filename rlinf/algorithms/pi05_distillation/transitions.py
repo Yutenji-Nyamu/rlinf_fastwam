@@ -41,6 +41,8 @@ class TransitionWriter:
         self.directory.mkdir()
         self.config, self.files, self.paths = config, [], []
         self.limit = config["step_limit"]
+        self.chunk = int(config.get("execute_chunk", 10))
+        assert self.chunk in (10, 50)
         actual = [seed["actual"] for seed in seeds]
         if len(set(actual)) != len(actual):
             raise ValueError("Duplicate native actual seed")
@@ -88,8 +90,8 @@ class TransitionWriter:
             if h is None:
                 raise ValueError("Completed slot submitted again")
             length = int(after[i] - before[i])
-            offered = min(10, self.limit - int(before[i]))
-            if length != offered or not 0 < length <= 10:
+            offered = min(self.chunk, self.limit - int(before[i]))
+            if length != offered or not 0 < length <= self.chunk:
                 raise ValueError(
                     f"Native submitted count mismatch {length} != {offered}"
                 )
@@ -98,10 +100,10 @@ class TransitionWriter:
                 raise ValueError("Unexpected native end before success/official budget")
             reward = float(success_after[i] and not success_before[i])
             row = {
-                "command": actions[i, :10],
+                "command": actions[i, : self.chunk],
                 "predicted_h50": normalized[i, :50, :14],
-                "action": normalized[i, :10, :14],
-                "mask": (np.arange(10) < length).astype(np.float32),
+                "action": normalized[i, : self.chunk, :14],
+                "mask": (np.arange(self.chunk) < length).astype(np.float32),
                 "submitted_length": length,
                 "reward": reward,
                 "reward_raw": float(np.asarray(raw_reward[i]).reshape(-1)[0]),
@@ -186,7 +188,8 @@ def build_manifest(roots, output):
                 )
                 assert np.array_equal(
                     h["mask"][:],
-                    np.arange(10)[None] < h["submitted_length"][:][:, None],
+                    np.arange(meta["config"].get("execute_chunk", 10))[None]
+                    < h["submitted_length"][:][:, None],
                 )
                 records.append(
                     {
@@ -222,6 +225,20 @@ class Transitions:
             sizes.append(len(self.rows) - before)
         self.sizes = np.asarray(sizes)
         self.cache = {}
+
+    def validate_coordinates(self, model_path, chunk, limit):
+        """Prevent reuse of another teacher's normalized actions or macro horizon."""
+        for path in {p for p, _ in self.rows}:
+            with h5py.File(path, "r") as h:
+                c = json.loads(h.attrs["metadata"])["config"]
+                if (
+                    c["model"]["model_path"] != model_path
+                    or c["execute_chunk"] != chunk
+                    or c["step_limit"] != limit
+                ):
+                    raise ValueError("FQL transition coordinates/protocol mismatch")
+                if h["action"].shape[1:] != (chunk, 14):
+                    raise ValueError("FQL transition action shape mismatch")
 
     def __len__(self):
         return len(self.rows)

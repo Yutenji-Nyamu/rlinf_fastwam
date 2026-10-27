@@ -33,8 +33,10 @@ def save(path, value):
 
 
 def validate_config(c):
-    if c.get("suite") == "pi05_rlinf_single_teacher":
-        assert c["task"] == "adjust_bottle" and c["num_envs"] == 32
+    if c.get("suite") in ("pi05_rlinf_single_teacher", "pi05_rlinf_single_distill"):
+        distill = c["suite"] == "pi05_rlinf_single_distill"
+        assert c["task"] == "adjust_bottle"
+        assert c["num_envs"] in ((32, 64) if distill else (32,))
         assert c["num_steps"] in (1, 5) and c["execute_chunk"] in (10, 50)
         assert c["step_limit"] == 200
         assert c["model"]["openpi"]["config_name"] == "pi05_aloha_robotwin"
@@ -48,9 +50,11 @@ def validate_config(c):
         assert c["env"]["task_config"]["task_name"] == c["task"]
         assert c["env"]["task_config"]["step_lim"] == 200
         assert c["policy"] == "weak" and not c.get("collect_weak_u", False)
-        assert not any(
-            c.get(k) for k in ("weak_weights", "strong_weights", "distill_weights")
-        )
+        assert not c.get("weak_weights") and not c.get("strong_weights")
+        if c.get("distill_weights"):
+            assert distill and c["num_steps"] == 1 and not c.get("collect_transitions")
+        if distill:
+            assert c["execute_chunk"] == 50
         assert c["recording_mode"] == "none" and not c["record_decisions"]
         assert (
             c["env"]["task_config"]["domain_randomization"]["random_background"]

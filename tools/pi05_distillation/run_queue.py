@@ -87,7 +87,8 @@ def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
         "--standalone",
         "--nproc_per_node=2",
         str(
-            R / "tools/pi05_distillation"
+            R
+            / "tools/pi05_distillation"
             / ("train_fql.py" if method == "fql_fixed_teacher" else "train.py")
         ),
         "--config",
@@ -123,7 +124,7 @@ def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
         )
         launched = time.time()
         while child.poll() is None:
-            time.sleep(15)
+            time.sleep(float(read(D / "prepared.json").get("poll_seconds", 15)))
             progress = output / "progress.json"
             # Allow model load/checkpoint I/O, but stop a stalled owned segment.
             last = (
@@ -136,7 +137,10 @@ def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
                 raise TimeoutError("No training update for an hour")
     if child.returncode:
         raise RuntimeError(f"{label}: training exited {child.returncode}; see its log")
-    receipt = read(output / "checkpoint.json")
+    receipt = read(
+        output
+        / ("progress.json" if "--capacity-only" in extra_args else "checkpoint.json")
+    )
     assert receipt["step"] == stop_step
     return receipt
 

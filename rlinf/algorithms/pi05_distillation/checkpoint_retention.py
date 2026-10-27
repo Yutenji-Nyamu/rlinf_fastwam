@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 
-def prune_checkpoints(output, keep_last, keep_steps):
+def prune_checkpoints(output, keep_last, keep_steps, *, single_task_smoke=False):
     """Keep recent full resume points and every designated evaluation point.
 
     Only exact, regular checkpoint/policy pairs in this run are eligible.
@@ -17,9 +17,10 @@ def prune_checkpoints(output, keep_last, keep_steps):
     """
     if keep_last is None:
         return []
-    if not isinstance(keep_last, int) or keep_last < 2:
-        raise ValueError("Retention requires at least two complete resume points")
     output = Path(output).resolve()
+    smoke = single_task_smoke and output.name.startswith("smoke-")
+    if not isinstance(keep_last, int) or keep_last < (1 if smoke else 2):
+        raise ValueError("Retention requires at least two complete resume points")
     receipt = json.loads((output / "checkpoint.json").read_text())
     pairs = {}
     for checkpoint in output.glob("checkpoint-*.pt"):

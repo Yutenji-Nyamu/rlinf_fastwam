@@ -98,7 +98,10 @@ def run(config, model_cache=None):
     collect = c.get("collect_transitions", False)
     writer = None
     if collect:
-        assert c["execute_chunk"] == 10 and c["num_steps"] == 10
+        if c.get("suite") == "pi05_rlinf_single_distill":
+            assert c["execute_chunk"] == 50 and c["num_steps"] == 5
+        else:
+            assert c["execute_chunk"] == 10 and c["num_steps"] == 10
         assert policy == "weak" and not any(
             c.get(k) for k in ("distill_weights", "weak_weights", "strong_weights")
         )

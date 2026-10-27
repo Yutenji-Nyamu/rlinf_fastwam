@@ -1,6 +1,6 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
-更新：2026-10-27。状态：单任务RLinf π0.5原始评估已获授权并启动，先默认N5/C50与N1/C50各128回合；完整差距小于10个百分点才追加C10。五方法的新训练仍处于规划。
+更新：2026-10-27。状态：单任务RLinf π0.5原始评估已获授权并启动，先默认N5/C50与N1/C50各128回合；完整差距小于10个百分点才追加C10。五方法单任务smoke已获授权：准备→暂借1机6/7→测试→恢复原多任务FQL→RLT，4/5现有训练不动。
 
 ## 用户目标
 
@@ -32,3 +32,6 @@
 现有π0.5背景：[索引](../pi05_distillation/00_INDEX.md)、[直接蒸馏审计](../pi05_distillation/67_ENDPOINT_CONVERGENCE_AUDIT_20261027.md)、[DMD对齐](../pi05_distillation/54_ONEDP_ENDPOINT_ALIGNMENT_20261026.md)、[MFD实现](../pi05_distillation/66_MFD_IMPLEMENTATION_20261026.md)。
 
 候选的公开成绩是文献/榜单参考，本轮实测单列于08号和维护记录。论文、源码阅读快照在E盘`dp_plan1027/`、`fm_followup1027/`，新评估证据在`single_teacher_eval1027/`。只新增1机3卡评估；4–7现有训练/候补保持，2/3机状态仍不能刷新。
+
+- [10 单任务五方法实施与参数依据](10_SINGLE_METHOD_IMPLEMENTATION_20261027.md)
+- [11 单任务短测与FQL返回回执](11_SINGLE_METHOD_SMOKE_RESULTS_20261027.md)

@@ -105,7 +105,9 @@ def test_cancelling_waiting_successor_never_releases_predecessor(tmp_path, monke
     monkeypatch.setattr(importlib.util, "spec_from_file_location", spec)
     monkeypatch.setattr(time, "sleep", cancel)
     monkeypatch.setitem(
-        sys.modules, "multitask_eval", types.SimpleNamespace(sweep=None)
+        sys.modules,
+        "multitask_eval",
+        types.SimpleNamespace(sweep=None, completed_checkpoint=None),
     )
     with pytest.raises(SystemExit, match="143"):
         runpy.run_path(
@@ -183,7 +185,10 @@ def test_onedp_multitask_keeps_method_budget_and_routes_evaluations(
     monkeypatch.setitem(
         sys.modules,
         "multitask_eval",
-        types.SimpleNamespace(sweep=lambda *args, **kwargs: evaluations.append(kwargs)),
+        types.SimpleNamespace(
+            sweep=lambda *args, **kwargs: evaluations.append(kwargs),
+            completed_checkpoint=None,
+        ),
     )
     runpy.run_path(
         str(Path(__file__).with_name("endpoint_queue.py")), run_name="__main__"

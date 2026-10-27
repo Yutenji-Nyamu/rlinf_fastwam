@@ -31,6 +31,8 @@ PYTHON = "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python"
 
 
 def allowed_episodes(options):
+    if options.get("single_distill"):
+        return (32, 64)
     if options.get("single_teacher"):
         return (32,)
     return (4, 8, 32) if options.get("randomized") else (8, 16)
@@ -148,6 +150,16 @@ def make_config(
         c["noise_seed"] = int(template["noise_seed"]) + 1000003 * task["batch"]
         c["warmup_prompt"] = template["warmup_prompt"]
         c["model"]["num_steps"] = steps
+    if options.get("single_distill"):
+        assert steps in (1, 5)
+        c.update(
+            suite="pi05_rlinf_single_distill",
+            task="adjust_bottle",
+            batch=task.get("batch", 0),
+        )
+        c["noise_seed"] = int(template["noise_seed"]) + 1000003 * c["batch"]
+        c["warmup_prompt"] = template["warmup_prompt"]
+        c["model"]["num_steps"] = steps
     ec = c["env"]
     ec.update(
         total_num_envs=episodes,
@@ -191,7 +203,8 @@ def sweep(
     tx.mkdir(exist_ok=False)
     task_rows = tasks or read(deployment / "task-list.json")["tasks"]
     if collection_configs is not None:
-        assert not tasks and not completed_rows and policy is None and steps == 10
+        assert not tasks and not completed_rows and policy is None
+        assert steps == (5 if options.get("single_distill") else 10)
         task_rows = []
         for path in collection_configs:
             c = read(path)
@@ -347,7 +360,7 @@ def sweep(
                     "started": time.time(),
                 }
             publish()
-            time.sleep(5)
+            time.sleep(float(options.get("poll_seconds", 5)))
             for slot, job in list(running.items()):
                 child, dest = job["process"], job["output"]
                 heartbeat = dest / "progress.json"

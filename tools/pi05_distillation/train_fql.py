@@ -46,10 +46,11 @@ def main():
     parser.add_argument("--stop-step", type=int)
     parser.add_argument("--resume")
     parser.add_argument("--check-export", action="store_true")
+    parser.add_argument("--capacity-only", action="store_true")
     args = parser.parse_args()
     c = json.loads(Path(args.config).read_text())
-    assert c["method"] == "fql_fixed_teacher" and c["teacher_steps"] == 10
-    assert c["execute_chunk"] == 10 and c["horizon"] == 50
+    assert c["method"] == "fql_fixed_teacher" and c["teacher_steps"] in (5, 10)
+    assert c["execute_chunk"] in (10, 50) and c["horizon"] == 50
     assert c["budget_resolved"], (
         "Run fql_index --config after real collection before training"
     )
@@ -71,6 +72,8 @@ def main():
     np.random.seed(c["seed"] + rank)
     torch.manual_seed(c["seed"] + rank)
     data = Transitions(c["transition_manifest"])
+    if c.get("single_task"):
+        data.validate_coordinates(c["model"]["model_path"], c["execute_chunk"], 200)
     batch, micro = c["batch_size"], c["microbatch_per_rank"]
     assert batch % (world * micro) == 0
     accum = batch // (world * micro)
@@ -100,7 +103,12 @@ def main():
     sample_obs = sample["obs"]
     with torch.autocast("cuda", dtype=torch.bfloat16):
         context, features = prepare_fql(teacher.model, sample_obs)
-    q = TwinQ(features.shape[-1], width=c["q_width"], depth=c["q_depth"]).cuda(rank)
+    q = TwinQ(
+        features.shape[-1],
+        chunk=c["execute_chunk"],
+        width=c["q_width"],
+        depth=c["q_depth"],
+    ).cuda(rank)
     del context, features
     params = student.parameters_to_train()
     opt = torch.optim.AdamW(
@@ -187,7 +195,7 @@ def main():
                 nq = target_q(
                     next_features,
                     next_action,
-                    prefix_mask(tensor["remaining_after"]),
+                    prefix_mask(tensor["remaining_after"], c["execute_chunk"]),
                     tensor["remaining_after"] / tensor["limit"],
                 )
                 target = bellman_target(
@@ -212,7 +220,9 @@ def main():
                 noise = torch.randn(
                     (micro, 50, teacher.model.config.action_dim), device=rank
                 )
-                teacher_action = teacher.endpoint(noise, context, steps=10)
+                teacher_action = teacher.endpoint(
+                    noise, context, steps=c["teacher_steps"]
+                )
                 prediction = noise - student_run(
                     noise, torch.ones(micro, device=rank), context
                 )
@@ -297,7 +307,9 @@ def main():
             if rank == 0:
                 save_json(out / "progress.json", metrics)
                 print(json.dumps(metrics), flush=True)
-        if (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop:
+        if not args.capacity_only and (
+            (step + 1) % c["checkpoint_steps"] == 0 or step + 1 == stop
+        ):
             rng = {
                 "python": random.getstate(),
                 "numpy": np.random.get_state(),
@@ -343,10 +355,11 @@ def main():
                     out,
                     c.get("checkpoint_keep_last", 2),
                     c.get("checkpoint_keep_steps", []),
+                    single_task_smoke=bool(c.get("single_task")),
                 )
             if world > 1:
                 dist.barrier()
-    if args.check_export:
+    if args.check_export and not args.capacity_only:
         # Run on the exact deployment factory/transform path after saving state.
         policy = teacher.model
         export = torch.load(
