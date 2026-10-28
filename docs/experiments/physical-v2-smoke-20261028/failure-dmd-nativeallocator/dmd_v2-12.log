@@ -1,0 +1,102 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793184295.424496 1479954 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793184295.520279 1479953 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793184296.583588 1479954 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793184296.645129 1479953 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed/physical-intelligence/robotwin
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed/physical-intelligence/robotwin
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed/physical-intelligence/robotwin
+INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed/physical-intelligence/robotwin
+{"fake_physical_mse": 0.12160827964544296, "fake_padding_mse": 0.009052039124071598, "fake": 0.12160827219486237, "fake_grad_norm": 1.1978553533554077, "fake_clip_fraction": 0.4000000059604645, "score_gradient_rms": 0.02714751660823822, "loss": 0.005087767727673054, "stage_seconds": {"data_wait": 0.6337987668812275, "observation_prefix": 3.226892006583512, "auxiliary_updates": 2.429887971840799, "student_update": 0.5814456148073077}, "auxiliary_updates": 5, "student_updates": 1, "aux_lr": 0.0002, "student_clipped": 0.0, "step": 1, "epoch": 0.07692307692307693, "grad_norm": 0.009975998662412167, "lr": 1e-05, "seconds_per_update": 6.892040464095771, "peak_gib": 69.39794206619263, "peak_reserved_gib": 70.3984375, "time": 1793184361.9003942, "rank": 0}
+{"fake_physical_mse": 0.02669212967157364, "fake_padding_mse": 0.006559658795595169, "fake": 0.02669212967157364, "fake_grad_norm": 0.3862825632095337, "fake_clip_fraction": 0.0, "score_gradient_rms": 0.02699729986488819, "loss": 0.0007416782318614423, "stage_seconds": {"data_wait": 0.00997252482920885, "observation_prefix": 3.20963117480278, "auxiliary_updates": 2.2327201580628753, "student_update": 0.5748295113444328}, "auxiliary_updates": 10, "student_updates": 2, "aux_lr": 0.0002, "student_clipped": 0.0, "step": 2, "epoch": 0.15384615384615385, "grad_norm": 0.01322881132364273, "lr": 1e-05, "seconds_per_update": 6.460617295466363, "peak_gib": 72.60991907119751, "peak_reserved_gib": 75.76171875, "time": 1793184367.9295993, "rank": 0}
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/chenyiteng/deployment-20261028/physical-v2-sz1-g23/source/tools/pi05_distillation/train.py", line 617, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/chenyiteng/deployment-20261028/physical-v2-sz1-g23/source/tools/pi05_distillation/train.py", line 284, in main
+[rank0]:     actions, context = prepare(teacher.model, obs, actions)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/deployment-20261028/physical-v2-sz1-g23/source/rlinf/algorithms/pi05_distillation/model.py", line 103, in prepare
+[rank0]:     _, prefix_masks, cache = model._build_prefix_cache(
+[rank0]:                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/deployment-20261028/physical-v2-sz1-g23/source/rlinf/models/embodiment/openpi/openpi_action_model.py", line 1412, in _build_prefix_cache
+[rank0]:     (prefix_output, _), past_key_values = self.paligemma_with_expert.forward(
+[rank0]:                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/openpi/models_pytorch/gemma_pytorch.py", line 103, in forward
+[rank0]:     prefix_output = self.paligemma.language_model.forward(
+[rank0]:                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/transformers/utils/generic.py", line 943, in wrapper
+[rank0]:     output = func(self, *args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/transformers/models/gemma/modeling_gemma.py", line 526, in forward
+[rank0]:     layer_outputs = decoder_layer(
+[rank0]:                     ^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/transformers/modeling_layers.py", line 83, in __call__
+[rank0]:     return super().__call__(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/transformers/models/gemma/modeling_gemma.py", line 377, in forward
+[rank0]:     hidden_states = self.mlp(hidden_states)
+[rank0]:                     ^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/transformers/models/gemma/modeling_gemma.py", line 125, in forward
+[rank0]:     down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
+[rank0]:                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 5.67 GiB. GPU 0 has a total capacity of 79.18 GiB of which 2.69 GiB is free. Including non-PyTorch memory, this process has 76.48 GiB memory in use. Of the allocated memory 38.11 GiB is allocated by PyTorch, and 36.77 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+[rank0]:[W1028 10:46:10.255924573 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W1028 10:46:12.791000 1479920 torch/distributed/elastic/multiprocessing/api.py:1012] Sending process 1479954 closing signal SIGTERM
+E1028 10:46:13.509000 1479920 torch/distributed/elastic/multiprocessing/api.py:986] failed (exitcode: 1) local_rank: 0 (pid: 1479953) of binary: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/run.py", line 994, in <module>
+    main()
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/run.py", line 990, in main
+    run(args)
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/run.py", line 981, in run
+    elastic_launch(
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/home/chenyiteng/deployment-20261028/physical-v2-sz1-g23/source/tools/pi05_distillation/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-10-28_10:46:13
+  host      : admin
+  rank      : 1 (local_rank: 1)
+  exitcode  : -15 (pid: 1479954)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 1479954
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-10-28_10:46:12
+  host      : admin
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1479953)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

@@ -1,4 +1,4 @@
-2026-10-28最新研究（仅规划）：[五方法统一14维源码审计](../small_flow_distillation/19_UNIFIED_PHYSICAL_LOSS_CODE_AUDIT_20261028.md) · [最小实施计划](../small_flow_distillation/20_UNIFIED_PHYSICAL_LOSS_PLAN_20261028.md)。保持H50×32模型，统一新版本动作损失评分真实14维；主要改CP两项、DMD辅助、MFD辅助，后者内部积分影响需检查。dropout独立讨论，本轮未改训练/队列或刷新现场。
+2026-10-28 18:59：[CP v2 / DMD v2 / MFD v2独立实施](../small_flow_distillation/21_PHYSICAL_V2_IMPLEMENTATION_20261028.md) · [短测回执](../small_flow_distillation/22_PHYSICAL_V2_SMOKE_RESULTS_20261028.md)。三方法真实14维评分、12→14完整续训、B32原生N1均通过，1机2/3卡已释放；旧4–7训练未改。CP每卡80、DMD/MFD每卡192，峰值74.3/72.5/72.6GiB；DMD首试分配碎片OOM，独立配置expandable_segments后原batch通过。smoke后停止，未开正式实验，dropout另议。[实施前审计](../small_flow_distillation/19_UNIFIED_PHYSICAL_LOSS_CODE_AUDIT_20261028.md)与[计划](../small_flow_distillation/20_UNIFIED_PHYSICAL_LOSS_PLAN_20261028.md)保留。
 
 2026-10-28此前：[各方法填充维、CP dropout核对](../small_flow_distillation/14_CP_PADDING_DROPOUT_AUDIT_20261028.md) · [CP new仅规划](../small_flow_distillation/15_CP_NEW_PLAN_20261028.md) · [DMD new续到200轮已排队](../small_flow_distillation/16_DMD_EXTEND200_RECEIPT_20261028.md)。旧CP续训保留原方法；DMD延长保持1e-5/2e-4固定学习率及5:1。
 

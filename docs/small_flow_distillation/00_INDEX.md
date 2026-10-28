@@ -2,7 +2,7 @@
 
 现场快照：2026-10-28 16:54。原生直接/CP/DMD已完成100预算轮，末评103/108/103成功（各128回合）；MFD到1260/1300，最近100/128，随后单任务FQL。Direct、旧CP、DMD new续到200轮均已依次接在原队列后、RLT前，完整状态恢复、每20轮补评。DMD保持固定学习率及5:1。大产物优先Home。
 
-同日研究补充：本次仅讨论，未刷新现场、未改训练。17/18补充跨模型填充损失分类与dropout计算路线；19/20进一步审计五方法统一真实坐标评分。建议新版本学生及辅助动作损失都取14维、保留H50×32模型；实质改动为CP两项、DMD辅助、MFD辅助。MFD参数14目前只分组日志，不能误认已mask。内部积分影响需短测，dropout另议，未实施或新增队列。
+同日18:59实施更新：**CP v2、DMD v2、MFD v2已独立实现并短测通过**，见21/22。统一学生及辅助动作损失评分14维，内部H50×32保持；实质改CP两项、DMD辅助、MFD辅助。1机2/3卡各12→14完整续训、B32原生N1通过后释放；未接正式队列，4–7旧训练原样。DMD默认分配器首试OOM，以expandable_segments保持batch192重测通过。dropout仍另议。17–20保留研究与实施前计划。
 
 ## 用户目标
 
@@ -45,4 +45,6 @@
 - [17 填充评分的跨模型分类与选择](17_PADDING_OBJECTIVES_SURVEY_20261028.md)
 - [18 CP dropout计算路线与适配位置](18_CP_DROPOUT_WALKTHROUGH_20261028.md)
 - [19 五方法统一真实动作评分：源码审计](19_UNIFIED_PHYSICAL_LOSS_CODE_AUDIT_20261028.md)
-- [20 统一评分最小实施计划：未下发](20_UNIFIED_PHYSICAL_LOSS_PLAN_20261028.md)
+- [20 统一评分实施前计划](20_UNIFIED_PHYSICAL_LOSS_PLAN_20261028.md)
+- [21 CP v2 / DMD v2 / MFD v2独立实施](21_PHYSICAL_V2_IMPLEMENTATION_20261028.md)
+- [22 三方法短测完成与GPU释放](22_PHYSICAL_V2_SMOKE_RESULTS_20261028.md)

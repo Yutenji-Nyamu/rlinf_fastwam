@@ -1,0 +1,84 @@
+{
+  "time": 1793185155.3490005,
+  "smoke_only": true,
+  "physical_gpus": [
+    2,
+    3
+  ],
+  "methods": {
+    "cp_v2": {
+      "peak_gib": 74.31045293807983,
+      "steady_seconds_median": 1.8325265846215189,
+      "stage_medians": {
+        "data_wait": 0.0057928855530917645,
+        "observation_prefix": 1.2416171454824507,
+        "auxiliary_updates": 0.0,
+        "student_update": 0.5843452969565988
+      },
+      "student_grad_norm_range": [
+        0.1403495967388153,
+        3.199727773666382
+      ],
+      "student_clip_fraction": 0.07142857142857142,
+      "all_finite": true,
+      "final_updates": 14,
+      "microbatch_per_rank": 80,
+      "batch_size": 160
+    },
+    "dmd_v2": {
+      "peak_gib": 72.54422283172607,
+      "steady_seconds_median": 5.829128336161375,
+      "stage_medians": {
+        "data_wait": 0.01179693266749382,
+        "observation_prefix": 3.008957615122199,
+        "auxiliary_updates": 2.225613309070468,
+        "student_update": 0.5727342474274337
+      },
+      "student_grad_norm_range": [
+        0.0062377615831792355,
+        0.01322881132364273
+      ],
+      "student_clip_fraction": 0.0,
+      "all_finite": true,
+      "final_updates": 14,
+      "aux_clip_fraction": 0.028571428997176036,
+      "aux_updates": 70,
+      "microbatch_per_rank": 192,
+      "batch_size": 384
+    },
+    "mfd_v2": {
+      "peak_gib": 72.5868787765503,
+      "steady_seconds_median": 10.480905441567302,
+      "stage_medians": {
+        "data_wait": 0.011822483502328396,
+        "observation_prefix": 3.0166657511144876,
+        "auxiliary_updates": 2.2191671594046056,
+        "student_update": 5.239540918730199
+      },
+      "student_grad_norm_range": [
+        0.01256294921040535,
+        0.07999931275844574
+      ],
+      "student_clip_fraction": 0.0,
+      "all_finite": true,
+      "final_updates": 14,
+      "aux_clip_fraction": 0.04285714349576405,
+      "aux_updates": 70,
+      "guidance_nfe_range": [
+        4.0,
+        64.0
+      ],
+      "padding_position_max": 4.575676441192627,
+      "padding_velocity_max": 5.28125,
+      "microbatch_per_rank": 192,
+      "batch_size": 384
+    }
+  },
+  "gpu": "0, 0 MiB, 0 %\n1, 0 MiB, 0 %\n2, 0 MiB, 0 %\n3, 0 MiB, 0 %\n4, 68879 MiB, 99 %\n5, 68880 MiB, 99 %\n6, 77427 MiB, 0 %\n7, 77427 MiB, 0 %\n",
+  "processes": "# gpu         pid   type     sm    mem    enc    dec    jpg    ofa    command \n# Idx           #    C/G      %      %      %      %      %      %    name \n    0          -     -      -      -      -      -      -      -    -              \n    1          -     -      -      -      -      -      -      -    -              \n    2          -     -      -      -      -      -      -      -    -              \n    3          -     -      -      -      -      -      -      -    -              \n    4    3454810     C     99     54      -      -      -      -    python         \n    5    3454811     C     99     54      -      -      -      -    python         \n    6    1503943     C     50     25      -      -      -      -    python         \n    7    1503944     C     52     26      -      -      -      -    python         \n",
+  "disk_free_gib": {
+    "/home": 245.5111846923828,
+    "/data": 155.80517578125
+  },
+  "all_owned_drivers_exited": true
+}
