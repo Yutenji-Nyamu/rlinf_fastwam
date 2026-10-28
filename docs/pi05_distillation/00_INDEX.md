@@ -1,4 +1,6 @@
-2026-10-27最新：[71 Q预热与多任务难度](71_FQL_Q_WARMUP_MULTITASK_20261027.md)。原FQL和本版均无Q独立预热，学习率warmup不能代替；RAPolicy有相关先例，先校准再指导是待讨论方案，正式配置未改。
+2026-10-28最新：[各方法填充维、CP dropout核对](../small_flow_distillation/14_CP_PADDING_DROPOUT_AUDIT_20261028.md) · [CP new仅规划](../small_flow_distillation/15_CP_NEW_PLAN_20261028.md) · [DMD new续到200轮已排队](../small_flow_distillation/16_DMD_EXTEND200_RECEIPT_20261028.md)。旧CP续训保留原方法；DMD延长保持1e-5/2e-4固定学习率及5:1。
+
+2026-10-27：[71 Q预热与多任务难度](71_FQL_Q_WARMUP_MULTITASK_20261027.md)。原FQL和本版均无Q独立预热，学习率warmup不能代替；RAPolicy有相关先例，先校准再指导是待讨论方案，正式配置未改。
 
 2026-10-27：[70 FQL退化与数据核对](70_FQL_FAILURE_ANALYSIS_20261027.md) · [单任务五方法正式队列](../small_flow_distillation/12_SINGLE_FORMAL_QUEUE_20261027.md)。多任务FQL已收束，最新完整成功率0.54%；新队列沿用已通过的原生接口，Home存大产物。
 

@@ -53,3 +53,34 @@ def test_rejects_incomplete_checkpoint_bad_points_and_data_change():
     ]:
         with pytest.raises(ValueError):
             validate_resume(checkpoint, config, windows, world, extend_completed=True)
+
+
+def dmd_configs():
+    old = dict(method="onedp", epochs=100, batch_size=384, lr=1e-5,
+               aux_lr=2e-4, auxiliary_updates_per_student=5,
+               onedp_loss_action_dim=14, checkpoint_steps=1301,
+               checkpoint_keep_steps=[1300])
+    new = dict(old, epochs=200, checkpoint_steps=2601,
+               checkpoint_keep_steps=[1560, 1820, 2080, 2340, 2600])
+    return dict(config=old, windows=4738, world_size=2, step=1300), new
+
+
+def test_dmd_extension_keeps_fixed_rates_and_auxiliary_ratio():
+    ck, new = dmd_configs()
+    audit = validate_resume(ck, new, 4738, 2, extend_completed=True)
+    assert (audit["from_step"], audit["to_step"]) == (1300, 2600)
+    assert audit["first_extension_lr"] == 1e-5
+    assert audit["aux_lr"] == 2e-4
+    assert audit["auxiliary_updates_per_student"] == 5
+    assert validate_resume(dict(ck, config=new), new, 4738, 2) is None
+
+
+@pytest.mark.parametrize("key,value", [
+    ("aux_lr", 1e-3), ("auxiliary_updates_per_student", 1),
+    ("onedp_loss_action_dim", 32),
+])
+def test_dmd_extension_rejects_method_changes(key, value):
+    ck, new = dmd_configs()
+    new[key] = value
+    with pytest.raises(ValueError):
+        validate_resume(ck, new, 4738, 2, extend_completed=True)

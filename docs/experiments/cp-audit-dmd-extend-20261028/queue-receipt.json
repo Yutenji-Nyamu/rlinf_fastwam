@@ -1,0 +1,39 @@
+{
+  "time_cst": "2026-10-28 16:54",
+  "methods": [
+    "endpoint",
+    "cp",
+    "onedp"
+  ],
+  "queued_order": [
+    "mfd",
+    "fql_fixed_teacher",
+    "endpoint_extend200",
+    "cp_extend200",
+    "onedp_extend200",
+    "rlt"
+  ],
+  "dmd_extension": {
+    "from_step": 1300,
+    "to_step": 2600,
+    "from_epochs": 100,
+    "to_epochs": 200,
+    "schedule": "keep fixed student and auxiliary learning rates",
+    "first_extension_lr": 1e-05,
+    "aux_lr": 0.0002,
+    "auxiliary_updates_per_student": 5,
+    "restored": "student, auxiliary, both optimizers, per-rank RNG"
+  },
+  "resume_state_checks": {
+    "step": 1300,
+    "student_tensors": 208,
+    "optimizer_states": 208,
+    "rng_ranks": 2,
+    "auxiliary_tensors": 208,
+    "aux_optimizer_states": 208,
+    "checkpoint_gib": 9.613975373096764
+  },
+  "gpu_training_of_extension_started": false,
+  "cpu_tests": 16,
+  "cp_new": "planning only"
+}
