@@ -1,0 +1,77 @@
+{
+  "time": 1793161349.572892,
+  "status": "registered_waiting_for_existing_queue",
+  "predecessor_method": "mfd",
+  "predecessor_phase": "TRAINING",
+  "prior_queue_uninterrupted": true,
+  "gpu_pair": [
+    6,
+    7
+  ],
+  "rlt_fallback_preserved": true,
+  "gpu45_route_unchanged": true,
+  "tests": {
+    "tests_passed": true,
+    "entry_help_passed": true,
+    "queue_compiled": true,
+    "gpu_contexts_used": false
+  },
+  "resumed_checkpoint_metadata": {
+    "endpoint": {
+      "step": 1100,
+      "student_tensors": 208,
+      "optimizer_states": 208,
+      "rng_ranks": 2,
+      "ema_tensors": 0,
+      "checkpoint_gib": 4.8069967003539205
+    },
+    "cp": {
+      "step": 3000,
+      "student_tensors": 209,
+      "optimizer_states": 209,
+      "rng_ranks": 2,
+      "ema_tensors": 209,
+      "checkpoint_gib": 6.424939271993935
+    }
+  },
+  "plan": {
+    "methods": [
+      "endpoint",
+      "cp"
+    ],
+    "extension_audits": {
+      "endpoint": {
+        "from_step": 1100,
+        "to_step": 2200,
+        "from_epochs": 100,
+        "to_epochs": 200,
+        "schedule": "stretch cosine to new total; keep original absolute warmup and global step",
+        "first_extension_lr": 1.300332425136769e-05,
+        "restored": "student, EMA if CP, optimizer, per-rank RNG"
+      },
+      "cp": {
+        "from_step": 3000,
+        "to_step": 6000,
+        "from_epochs": 100,
+        "to_epochs": 200,
+        "schedule": "stretch cosine to new total; keep original absolute warmup and global step",
+        "first_extension_lr": 1.300332425136769e-05,
+        "restored": "student, EMA if CP, optimizer, per-rank RNG"
+      }
+    },
+    "extension_eval_epochs": [
+      120,
+      140,
+      160,
+      180,
+      200
+    ],
+    "budget_epochs": 200,
+    "eval_episodes": 128,
+    "eval_parallel": 64,
+    "eval_waves": 2,
+    "horizon": 50,
+    "execute_chunk": 50,
+    "step_limit": 200
+  }
+}

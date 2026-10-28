@@ -1,6 +1,6 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
-更新：2026-10-27。旧多任务FQL已按用户要求收束（CP1130为2/368）；五方法单任务正式队列已部署并启动，依次直接→CP→DMD new→MFD→单任务FQL，再接RLT。各自双卡训练、每点128回合评估，大产物优先Home。见[12 正式队列](12_SINGLE_FORMAL_QUEUE_20261027.md)与[FQL分析](../pi05_distillation/70_FQL_FAILURE_ANALYSIS_20261027.md)。
+更新：2026-10-28。原生单任务直接/CP/DMD已完成100预算轮，末评分别103/108/103成功（各128回合）；MFD继续，随后单任务FQL。用户新授权直接与CP续到200轮，已接在原队列之后、RLT之前，完整状态续训、每20轮补评。见[13 曲线审计与续训回执](13_DIRECT_CP_EXTEND200_AUDIT_20261028.md)。大产物优先Home。
 
 ## 用户目标
 
@@ -35,3 +35,5 @@
 
 - [10 单任务五方法实施与参数依据](10_SINGLE_METHOD_IMPLEMENTATION_20261027.md)
 - [11 单任务短测与FQL返回回执](11_SINGLE_METHOD_SMOKE_RESULTS_20261027.md)
+- [12 单任务正式队列](12_SINGLE_FORMAL_QUEUE_20261027.md)
+- [13 直接/CP收敛审计与200轮续训](13_DIRECT_CP_EXTEND200_AUDIT_20261028.md)

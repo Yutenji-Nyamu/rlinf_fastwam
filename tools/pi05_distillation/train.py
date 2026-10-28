@@ -50,6 +50,7 @@ from rlinf.algorithms.pi05_distillation.prefetch import (
     decoded_batches,
     training_indices,
 )
+from rlinf.algorithms.pi05_distillation.resume_extension import validate_resume
 from rlinf.algorithms.pi05_distillation.timing import StepTiming
 from rlinf.models.embodiment.openpi import get_model
 
@@ -76,6 +77,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--stop-step", type=int)
     parser.add_argument("--resume")
+    parser.add_argument("--extend-completed-run", action="store_true")
     parser.add_argument("--decode-workers", type=int, default=0)
     parser.add_argument("--prefetch-batches", type=int, choices=(0, 1, 2), default=0)
     parser.add_argument("--profile-stages", action="store_true")
@@ -171,12 +173,15 @@ def main():
         if method in {"onedp", "mfd"}
         else None
     )
-    start = 0
+    start, resume_extension = 0, None
+    if args.extend_completed_run and not args.resume:
+        raise ValueError("A budget extension requires a complete resume checkpoint")
     if args.resume:
         # Trusted local training state contains Python/NumPy RNG, not public data.
         ck = torch.load(args.resume, map_location="cpu", weights_only=False)
-        if ck["config"] != c or ck["windows"] != len(data) or ck["world_size"] != world:
-            raise ValueError("Resume configuration/data/world-size mismatch")
+        resume_extension = validate_resume(
+            ck, c, len(data), world, extend_completed=args.extend_completed_run
+        )
         if (
             isinstance(data, BalancedWindows)
             and ck.get("task_manifest") != data.manifest
@@ -215,6 +220,7 @@ def main():
                 "total_steps": total,
                 "stop_step": stop,
                 "resume": args.resume,
+                "resume_extension": resume_extension,
                 "world_size": world,
                 "frozen_base_dependency": c["model"]["model_path"],
                 "mutable_parameters": sum(p.numel() for p in student_params),

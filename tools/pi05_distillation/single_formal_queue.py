@@ -182,7 +182,8 @@ def run_method(method):
     if method == "fql_fixed_teacher":
         collect_fql()
     c = q.read(D / f"{method}.json")
-    receipt, rows = None, []
+    receipt = plan.get("initial_receipts", {}).get(method)
+    rows = []
     for stop in c["checkpoint_keep_steps"]:
         extra = (
             []
@@ -195,6 +196,8 @@ def run_method(method):
                 "--profile-stages",
             ]
         )
+        if receipt and not rows:
+            extra += ["--extend-completed-run"]
         receipt = q.train(
             method,
             O / method,
