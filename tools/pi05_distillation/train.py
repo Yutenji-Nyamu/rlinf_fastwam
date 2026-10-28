@@ -52,6 +52,7 @@ from rlinf.algorithms.pi05_distillation.prefetch import (
 )
 from rlinf.algorithms.pi05_distillation.resume_extension import validate_resume
 from rlinf.algorithms.pi05_distillation.timing import StepTiming
+from rlinf.algorithms.pi05_distillation.variants import resolve_method
 from rlinf.models.embodiment.openpi import get_model
 
 
@@ -109,7 +110,7 @@ def main():
     per_epoch = math.ceil(len(data) / global_batch)
     total = c["epochs"] * per_epoch
     stop = min(args.stop_step or total, total)
-    method = c["method"]
+    method, physical_loss_dim = resolve_method(c)
     auxiliary_updates = int(c.get("auxiliary_updates_per_student", 1))
     if auxiliary_updates < 1 or (
         method not in {"onedp", "mfd"} and auxiliary_updates != 1
@@ -230,6 +231,18 @@ def main():
                     "prefetch_batches": args.prefetch_batches,
                 },
                 "profile_stages": args.profile_stages,
+                **(
+                    {
+                        "variant": c["method"],
+                        "loss_coordinate_scope": "physical",
+                        "student_loss_action_dim": physical_loss_dim,
+                        "auxiliary_loss_action_dim": physical_loss_dim
+                        if opt_aux
+                        else None,
+                    }
+                    if physical_loss_dim is not None
+                    else {}
+                ),
             },
         )
     begin = time.monotonic()
@@ -286,10 +299,15 @@ def main():
                                         generated,
                                         context,
                                         action_dim=c["mfd_loss_action_dim"],
+                                        loss_action_dim=physical_loss_dim,
                                     )
                                 else:
                                     lf, fake_parts = fake_loss(
-                                        aux_ddp, generated, context, return_parts=True
+                                        aux_ddp,
+                                        generated,
+                                        context,
+                                        return_parts=True,
+                                        loss_action_dim=physical_loss_dim,
                                     )
                             (lf / accum).backward()
                             for key, value in dict(
@@ -326,7 +344,7 @@ def main():
                             metrics.get("fake_grad_norm", 0.0)
                             + aux_norm / auxiliary_updates
                         )
-                        if method == "mfd":
+                        if method == "mfd" or physical_loss_dim is not None:
                             metrics["fake_clip_fraction"] = (
                                 metrics.get("fake_clip_fraction", 0.0)
                                 + (aux_norm > c["clip_grad"]).float()
@@ -343,6 +361,7 @@ def main():
                                 actions,
                                 context,
                                 bins=c["time_bins"],
+                                action_dim=physical_loss_dim,
                             )
                         elif method == "endpoint":
                             z = torch.randn_like(actions)
@@ -388,6 +407,8 @@ def main():
                                         context,
                                         step_size=c["mfd_step_size"],
                                         action_dim=c["mfd_loss_action_dim"],
+                                        diagnostics=physical_loss_dim is not None
+                                        and args.profile_stages,
                                     )
                             else:
                                 loss, score = onedp_loss(
@@ -395,7 +416,8 @@ def main():
                                     teacher,
                                     auxiliary,
                                     context,
-                                    action_dim=c.get("onedp_loss_action_dim"),
+                                    action_dim=physical_loss_dim
+                                    or c.get("onedp_loss_action_dim"),
                                 )
                                 parts = {"score_gradient_rms": score}
                     if not torch.isfinite(loss):
@@ -436,7 +458,7 @@ def main():
                     row["auxiliary_updates"] = (step + 1) * auxiliary_updates
                     row["student_updates"] = step + 1
                     row["aux_lr"] = opt_aux.param_groups[0]["lr"]
-                if method == "mfd":
+                if method == "mfd" or physical_loss_dim is not None:
                     row["student_clipped"] = float(grad_norm > c["clip_grad"])
                 row.update(
                     step=step + 1,
@@ -501,6 +523,14 @@ def main():
                             "method": method,
                             "step": step + 1,
                             "base": c["model"]["model_path"],
+                            **(
+                                {
+                                    "variant": c["method"],
+                                    "loss_coordinate_scope": "physical",
+                                }
+                                if physical_loss_dim is not None
+                                else {}
+                            ),
                         },
                     )
                     save_json(

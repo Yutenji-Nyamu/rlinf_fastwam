@@ -32,19 +32,34 @@ def flow_map(velocity, x, t, s, context):
     return x - expand(t - s) * velocity(x, t, context, s)
 
 
-def cp_distance(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def action_coordinates(value: torch.Tensor, action_dim: int | None) -> torch.Tensor:
+    """Select valid coordinates before averaging; None preserves legacy losses."""
+    if action_dim is None:
+        return value
+    if not 0 < action_dim <= value.shape[-1]:
+        raise ValueError("Invalid physical action dimension")
+    return value[..., :action_dim]
+
+
+def cp_distance(
+    pred: torch.Tensor, target: torch.Tensor, *, action_dim: int | None = None
+) -> torch.Tensor:
     """Match official Huber_Loss(delta=-1), using a stable equivalent formula.
 
     The reference applies sqrt(mse**2 + delta**2) - delta, where mse is
     elementwise squared error. Preserve that exact choice, rather than
     substituting PyTorch smooth_l1_loss or a differently defined Huber norm.
     """
+    pred, target = (
+        action_coordinates(pred, action_dim),
+        action_coordinates(target, action_dim),
+    )
     delta = (pred.shape[1] * pred.shape[2]) ** 0.5 * 0.00054
     fourth = (pred.float() - target.float()).square().square()
     return (fourth / ((fourth + delta**2).sqrt() + delta)).mean()
 
 
-def cp_loss(student, teacher, ema, actions, context, *, bins=80):
+def cp_loss(student, teacher, ema, actions, context, *, bins=80, action_dim=None):
     """Teacher one-step bridge, EMA composition consistency, and native FM anchor."""
     b, device = len(actions), actions.device
     index = torch.randint(1, bins + 1, (b,), device=device)
@@ -60,17 +75,53 @@ def cp_loss(student, teacher, ema, actions, context, *, bins=80):
     middle = flow_map(student, x, t, s, context)
     # EMA parameters are frozen, but this input derivative MUST reach student.
     pred = flow_map(ema, middle, s, zero, context)
-    consistency = cp_distance(pred, target)
+    consistency = cp_distance(pred, target, action_dim=action_dim)
     # Native pi05 flow-matching time distribution and velocity target.
     tm = torch.distributions.Beta(1.5, 1.0).sample((b,)).to(device) * 0.999 + 0.001
     epsilon = torch.randn_like(actions)
     xm = (1 - expand(tm)) * actions + expand(tm) * epsilon
-    fm = F.mse_loss(student(xm, tm, context, zero), epsilon - actions)
-    return consistency + fm, {"consistency": consistency, "fm": fm}
+    velocity = student(xm, tm, context, zero)
+    fm = F.mse_loss(
+        action_coordinates(velocity, action_dim),
+        action_coordinates(epsilon - actions, action_dim),
+    )
+    parts = {"consistency": consistency, "fm": fm}
+    if action_dim is not None:
+        with torch.no_grad():
+            parts["consistency_physical_mse"] = (
+                (pred[..., :action_dim] - target[..., :action_dim])
+                .float()
+                .square()
+                .mean()
+            )
+            parts["cp_distance_delta"] = pred.new_tensor(
+                (pred.shape[1] * action_dim) ** 0.5 * 0.00054
+            )
+            if action_dim < pred.shape[-1]:
+                parts["consistency_padding_mse"] = (
+                    (pred[..., action_dim:] - target[..., action_dim:])
+                    .float()
+                    .square()
+                    .mean()
+                )
+                parts["fm_padding_mse"] = (
+                    (velocity[..., action_dim:] - (epsilon - actions)[..., action_dim:])
+                    .float()
+                    .square()
+                    .mean()
+                )
+    return consistency + fm, parts
 
 
 def fake_loss(
-    fake, generated, context, *, time_min=0.02, time_max=0.95, return_parts=False
+    fake,
+    generated,
+    context,
+    *,
+    time_min=0.02,
+    time_max=0.95,
+    return_parts=False,
+    loss_action_dim=None,
 ):
     """Fit fake epsilon to the student's distribution; lambda(t)=1 as OneDP-S."""
     t = (
@@ -80,7 +131,10 @@ def fake_loss(
     noise = torch.randn_like(generated)
     x = (1 - expand(t)) * generated.detach() + expand(t) * noise
     eps_pred = x + (1 - expand(t)) * fake(x, t, context)
-    loss = F.mse_loss(eps_pred, noise)
+    loss = F.mse_loss(
+        action_coordinates(eps_pred, loss_action_dim),
+        action_coordinates(noise, loss_action_dim),
+    )
     if not return_parts:
         return loss
     with torch.no_grad():
