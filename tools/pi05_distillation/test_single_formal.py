@@ -2,7 +2,14 @@
 """Failure continuation and exposure/seed boundaries for the formal queue."""
 
 import pytest
-from single_formal_plan import METHODS, batch_indices, formal_config, run_stages
+from single_formal_plan import (
+    METHODS,
+    batch_indices,
+    formal_config,
+    inference_method,
+    run_stages,
+    v2_formal_config,
+)
 
 
 def test_balanced_exposure_and_preserved_method_parameters():
@@ -63,3 +70,36 @@ def test_method_failure_advances_but_cancellation_does_not():
 
     with pytest.raises(KeyboardInterrupt):
         run_stages(["endpoint", "mfd"], cancelled, lambda *_: None)
+
+
+@pytest.mark.parametrize(
+    "variant,method,total,micro",
+    [
+        ("cp_v2", "cp", 6000, 80),
+        ("dmd_v2", "onedp", 2600, 192),
+        ("mfd_v2", "mfd", 2600, 192),
+    ],
+)
+def test_v2_keeps_all_evaluations_separate_from_retention(
+    variant, method, total, micro
+):
+    reference = {
+        "method": variant,
+        "loss_coordinate_scope": "physical",
+        "lr": 1e-5,
+        "aux_lr": 2e-4,
+        "warmup_steps": 1,
+        "auxiliary_updates_per_student": 5,
+    }
+    c = v2_formal_config(reference)
+    old = formal_config(dict(reference, method=method))
+    assert c["evaluation_steps"][:12] == old["checkpoint_keep_steps"]
+    assert c["evaluation_steps"][12:] == [
+        total * e // 200 for e in (120, 140, 160, 180, 200)
+    ]
+    assert len(c["evaluation_steps"]) == 17 and c["epochs"] == 200
+    assert c["batch_size"] == micro * 2 and c["microbatch_per_rank"] == micro
+    assert c["checkpoint_keep_last"] is None and c["checkpoint_keep_steps"] == []
+    assert c["warmup_steps"] == old["warmup_steps"]
+    assert inference_method(variant) == method
+    assert (c["lr"], c["aux_lr"], c["auxiliary_updates_per_student"]) == (1e-5, 2e-4, 5)

@@ -48,3 +48,16 @@ def prune_checkpoints(output, keep_last, keep_steps, *, single_task_smoke=False)
         with (output / "retention.jsonl").open("a") as log:
             log.write(json.dumps({"time": time.time(), "deleted": deleted}) + "\n")
     return deleted
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Retain latest two and best complete pairs"
+    )
+    parser.add_argument("output")
+    parser.add_argument("--best-step", type=int, required=True)
+    args = parser.parse_args()
+    removed = prune_checkpoints(args.output, 2, [args.best_step])
+    print(json.dumps({"deleted_files": len(removed), "best_step": args.best_step}))

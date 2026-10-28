@@ -7,6 +7,12 @@ import math
 METHODS = ("endpoint", "cp", "onedp", "mfd", "fql_fixed_teacher")
 MICRO = {"endpoint": 224, "cp": 80, "onedp": 192, "mfd": 192, "fql_fixed_teacher": 224}
 FRACTIONS = (0.0125, 0.025, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.65, 0.8, 1.0)
+V2_METHODS = {"cp_v2": "cp", "dmd_v2": "onedp", "mfd_v2": "mfd"}
+
+
+def inference_method(method):
+    """Preserve CP's target-time model when a physical-loss variant is evaluated."""
+    return V2_METHODS.get(method, method)
 
 
 def evaluation_steps(total):
@@ -45,6 +51,37 @@ def formal_config(reference, windows=4738, budget_epochs=100, transitions=None):
     )
     if "warmup_steps" in c:
         c["warmup_steps"] = min(500 if method == "cp" else 167, max(1, total // 20))
+    return c
+
+
+def v2_formal_config(reference, windows=4738):
+    """Keep the twelve 0-100 epoch points and five 120-200 extension points.
+
+    Training starts from the original base; the accepted absolute warmup stays
+    fixed. Evaluation cadence is independent of post-evaluation disk retention.
+    """
+    variant = reference["method"]
+    if (
+        variant not in V2_METHODS
+        or reference.get("loss_coordinate_scope") != "physical"
+    ):
+        raise ValueError("Formal v2 requires an accepted physical-coordinate variant")
+    base = dict(reference, method=inference_method(variant))
+    c = formal_config(base, windows=windows, budget_epochs=100)
+    per_epoch = math.ceil(windows / c["batch_size"])
+    points = c["checkpoint_keep_steps"] + [
+        per_epoch * e for e in (120, 140, 160, 180, 200)
+    ]
+    c.pop("smoke_inference_batch", None)
+    c.update(
+        method=variant,
+        epochs=200,
+        checkpoint_steps=200 * per_epoch + 1,
+        evaluation_steps=points,
+        checkpoint_keep_steps=[],
+        checkpoint_keep_last=None,
+        retention_mode="latest2_best",
+    )
     return c
 
 

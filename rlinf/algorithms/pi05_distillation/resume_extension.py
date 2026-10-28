@@ -5,22 +5,26 @@ import math
 
 
 def validate_resume(checkpoint, config, windows, world_size, *, extend_completed=False):
-    """Keep strict resume by default; extend completed direct/CP/OneDP budgets."""
+    """Keep strict resume by default; extend completed distillation budgets."""
     if checkpoint["windows"] != windows or checkpoint["world_size"] != world_size:
         raise ValueError("Resume data/world-size mismatch")
     old = checkpoint["config"]
     if old == config:
         return None
-    if not extend_completed or old["method"] not in {"endpoint", "cp", "onedp"}:
+    if not extend_completed or old["method"] not in {"endpoint", "cp", "onedp", "mfd"}:
         raise ValueError("Resume configuration mismatch")
-    changed = {key for key in old.keys() | config.keys() if old.get(key) != config.get(key)}
+    changed = {
+        key for key in old.keys() | config.keys() if old.get(key) != config.get(key)
+    }
     allowed = {"epochs", "checkpoint_steps", "checkpoint_keep_steps"}
     if not changed <= allowed or "epochs" not in changed:
         raise ValueError(f"Extension changed scientific settings: {sorted(changed)}")
     per_epoch = math.ceil(windows / old["batch_size"])
     old_total, new_total = old["epochs"] * per_epoch, config["epochs"] * per_epoch
     if checkpoint["step"] != old_total or new_total <= old_total:
-        raise ValueError("Extension requires the final complete checkpoint and a larger budget")
+        raise ValueError(
+            "Extension requires the final complete checkpoint and a larger budget"
+        )
     points = config["checkpoint_keep_steps"]
     if (
         not points
@@ -29,7 +33,7 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
         or config["checkpoint_steps"] != new_total + 1
     ):
         raise ValueError("Invalid extension evaluation/checkpoint schedule")
-    if old["method"] == "onedp":
+    if old["method"] in {"onedp", "mfd"}:
         return {
             "from_step": old_total,
             "to_step": new_total,
@@ -38,12 +42,16 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
             "schedule": "keep fixed student and auxiliary learning rates",
             "first_extension_lr": config["lr"],
             "aux_lr": config["aux_lr"],
-            "auxiliary_updates_per_student": config.get("auxiliary_updates_per_student", 1),
+            "auxiliary_updates_per_student": config.get(
+                "auxiliary_updates_per_student", 1
+            ),
             "restored": "student, auxiliary, both optimizers, per-rank RNG",
         }
     warm = config["warmup_steps"]
-    first_lr = config["lr"] * 0.5 * (
-        1 + math.cos(math.pi * max(0, old_total - warm) / max(1, new_total - warm))
+    first_lr = (
+        config["lr"]
+        * 0.5
+        * (1 + math.cos(math.pi * max(0, old_total - warm) / max(1, new_total - warm)))
     )
     return {
         "from_step": old_total,

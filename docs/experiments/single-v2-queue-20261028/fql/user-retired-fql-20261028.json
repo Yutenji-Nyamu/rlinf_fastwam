@@ -1,0 +1,120 @@
+{
+  "time": 1793194588.0237777,
+  "reason": "user requested stop of failed FQL; preserve complete checkpoints and advance prepared successor",
+  "last_progress": {
+    "endpoint_mse": 0.05250135064125061,
+    "q_actor_loss": -3.9678072929382324,
+    "actor_loss": -3.442793846130371,
+    "critic_loss": 0.0313216969370842,
+    "q_mean": 2.2634201049804688,
+    "q_abs_max": 3.062831401824951,
+    "target_mean": 2.242513418197632,
+    "reward_mean": 0.299107164144516,
+    "step": 740,
+    "epoch": 740.0,
+    "grad_norm": 0.332263320684433,
+    "q_grad_norm": 3.215280771255493,
+    "seconds_per_update": 8.634062910452485,
+    "peak_gib": 72.9218544960022,
+    "peak_reserved_gib": 74.009765625,
+    "lr": 6.666658459679078e-06,
+    "time": 1793194562.0747812,
+    "rank": 0
+  },
+  "last_complete_checkpoint": {
+    "step": 715,
+    "path": "/home/chenyiteng/results/pi05-distill/single-formal-sz1-g67-20261027/fql_fixed_teacher/checkpoint-000715.pt",
+    "policy": "/home/chenyiteng/results/pi05-distill/single-formal-sz1-g67-20261027/fql_fixed_teacher/policy-000715.pt"
+  },
+  "best_complete_evaluation": {
+    "condition": "fql_fixed_teacher-s000028",
+    "successes": 82,
+    "episodes": 128,
+    "rate": 0.640625,
+    "checkpoint": {
+      "step": 28,
+      "path": "/home/chenyiteng/results/pi05-distill/single-formal-sz1-g67-20261027/fql_fixed_teacher/checkpoint-000028.pt",
+      "policy": "/home/chenyiteng/results/pi05-distill/single-formal-sz1-g67-20261027/fql_fixed_teacher/policy-000028.pt"
+    }
+  },
+  "targets": [
+    {
+      "pid": 3583666,
+      "uid": 1003,
+      "start": 599658946,
+      "state": "S"
+    },
+    {
+      "pid": 1777155,
+      "uid": 1003,
+      "start": 608099955,
+      "state": "S"
+    },
+    {
+      "pid": 1777235,
+      "uid": 1003,
+      "start": 608100223,
+      "state": "R"
+    },
+    {
+      "pid": 1777234,
+      "uid": 1003,
+      "start": 608100223,
+      "state": "R"
+    }
+  ],
+  "successor": {
+    "pid": 859335,
+    "uid": 1003,
+    "start": 604749887,
+    "state": "R"
+  },
+  "completed_time": 1793194606.328469,
+  "old_alive": false,
+  "successor_state": {
+    "time": 1793194606.1588006,
+    "phase": "TRAINING",
+    "method": "endpoint",
+    "stop_step": 1320,
+    "output": "/home/chenyiteng/results/pi05-distill/single-extend200-sz1-g67-20261028/endpoint",
+    "child": {
+      "pid": 1794184,
+      "uid": 1003,
+      "start": 608132520,
+      "state": "R"
+    },
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-u",
+      "-B",
+      "-m",
+      "torch.distributed.run",
+      "--standalone",
+      "--nproc_per_node=2",
+      "/home/chenyiteng/deployment-20261028/single-extend200-sz1-g67/source/tools/pi05_distillation/train.py",
+      "--config",
+      "/home/chenyiteng/deployment-20261028/single-extend200-sz1-g67/endpoint.json",
+      "--output",
+      "/home/chenyiteng/results/pi05-distill/single-extend200-sz1-g67-20261028/endpoint",
+      "--stop-step",
+      "1320",
+      "--resume",
+      "/home/chenyiteng/results/pi05-distill/single-formal-sz1-g67-20261027/endpoint/checkpoint-001100.pt",
+      "--decode-workers",
+      "8",
+      "--prefetch-batches",
+      "1",
+      "--profile-stages",
+      "--extend-completed-run"
+    ]
+  },
+  "handoff": {
+    "time": 1793194601.6335506,
+    "identity": {
+      "pid": 859335,
+      "uid": 1003,
+      "start": 604749887,
+      "state": "R"
+    }
+  }
+}

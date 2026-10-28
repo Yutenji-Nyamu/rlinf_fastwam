@@ -16,7 +16,13 @@ from pathlib import Path
 
 import run_queue as q
 from multitask_eval import sweep
-from single_formal_plan import batch_indices, formal_config, run_stages
+from single_formal_plan import (
+    V2_METHODS,
+    batch_indices,
+    formal_config,
+    inference_method,
+    run_stages,
+)
 from single_task_prepare import evaluation_config
 
 D, O = q.D, q.O
@@ -74,7 +80,7 @@ def pair_evaluation(label, policy=None, method="endpoint", collection=False):
             else {
                 "tasks": tasks,
                 "policy": policy,
-                "method": method,
+                "method": inference_method(method),
                 "steps": 1,
             }
         )
@@ -184,7 +190,7 @@ def run_method(method):
     c = q.read(D / f"{method}.json")
     receipt = plan.get("initial_receipts", {}).get(method)
     rows = []
-    for stop in c["checkpoint_keep_steps"]:
+    for stop in c.get("evaluation_steps", c["checkpoint_keep_steps"]):
         extra = (
             []
             if method == "fql_fixed_teacher"
@@ -216,6 +222,25 @@ def run_method(method):
                 complete, key=lambda r: (r["successes"], -r["checkpoint"]["step"])
             )
             q.save(O / f"best-{method}.json", best)
+        if c.get("retention_mode") == "latest2_best":
+            if method not in V2_METHODS or c["checkpoint_keep_last"] is not None:
+                raise ValueError(
+                    "Post-evaluation retention is restricted to new v2 runs"
+                )
+            subprocess.run(
+                [
+                    "/usr/bin/python3",
+                    "-B",
+                    str(
+                        q.R
+                        / "rlinf/algorithms/pi05_distillation/checkpoint_retention.py"
+                    ),
+                    str(O / method),
+                    "--best-step",
+                    str(best["checkpoint"]["step"] if complete else receipt["step"]),
+                ],
+                check=True,
+            )
         if len(rows) >= 2 and not rows[-1]["complete"] and not rows[-2]["complete"]:
             raise RuntimeError("Two incomplete evaluation points; skip this method")
     return {"final": receipt, "complete_evaluations": sum(r["complete"] for r in rows)}
