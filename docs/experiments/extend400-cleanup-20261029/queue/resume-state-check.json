@@ -1,0 +1,42 @@
+{
+  "endpoint": {
+    "from_step": 2200,
+    "to_step": 4400,
+    "from_epochs": 200,
+    "to_epochs": 400,
+    "schedule": "stretch cosine to new total; keep original absolute warmup and global step",
+    "first_extension_lr": 1.2748527345813377e-05,
+    "restored": "student, EMA if CP, optimizer, per-rank RNG"
+  },
+  "cp": {
+    "from_step": 6000,
+    "to_step": 12000,
+    "from_epochs": 200,
+    "to_epochs": 400,
+    "schedule": "stretch cosine to new total; keep original absolute warmup and global step",
+    "first_extension_lr": 1.2748527345813377e-05,
+    "restored": "student, EMA if CP, optimizer, per-rank RNG"
+  },
+  "onedp": {
+    "from_step": 2600,
+    "to_step": 5200,
+    "from_epochs": 200,
+    "to_epochs": 400,
+    "schedule": "keep fixed student and auxiliary learning rates",
+    "first_extension_lr": 1e-05,
+    "aux_lr": 0.0002,
+    "auxiliary_updates_per_student": 5,
+    "restored": "student, auxiliary, both optimizers, per-rank RNG"
+  },
+  "mfd": {
+    "from_step": 2600,
+    "to_step": 5200,
+    "from_epochs": 200,
+    "to_epochs": 400,
+    "schedule": "keep fixed student and auxiliary learning rates",
+    "first_extension_lr": 1e-05,
+    "aux_lr": 0.0002,
+    "auxiliary_updates_per_student": 5,
+    "restored": "student, auxiliary, both optimizers, per-rank RNG"
+  }
+}

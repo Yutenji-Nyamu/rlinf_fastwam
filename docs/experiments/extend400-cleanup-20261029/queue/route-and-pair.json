@@ -1,0 +1,80 @@
+{
+  "time": 1793250526.5236888,
+  "waiting_owner": {
+    "pid": 3339220,
+    "uid": 1003,
+    "start": 613645913,
+    "state": "R"
+  },
+  "predecessor": {
+    "time": 1793250200.4654334,
+    "phase": "TRAINING",
+    "method": "cp_v2",
+    "stop_step": 1500,
+    "output": "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/cp_v2",
+    "child": {
+      "pid": 3354020,
+      "uid": 1003,
+      "start": 613691951,
+      "state": "R"
+    },
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-u",
+      "-B",
+      "-m",
+      "torch.distributed.run",
+      "--standalone",
+      "--nproc_per_node=2",
+      "/home/chenyiteng/deployment-20261028/physical-v2-formal-sz1-g67/source/tools/pi05_distillation/train.py",
+      "--config",
+      "/home/chenyiteng/deployment-20261028/physical-v2-formal-sz1-g67/cp_v2.json",
+      "--output",
+      "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/cp_v2",
+      "--stop-step",
+      "1500",
+      "--resume",
+      "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/cp_v2/checkpoint-001200.pt",
+      "--decode-workers",
+      "8",
+      "--prefetch-batches",
+      "1",
+      "--profile-stages"
+    ]
+  },
+  "rlt": {
+    "4": {
+      "step": 225,
+      "checkpoint_exists": true
+    },
+    "5": {
+      "step": 225,
+      "checkpoint_exists": true
+    },
+    "6": {
+      "step": 25,
+      "checkpoint_exists": true
+    },
+    "7": {
+      "step": 300,
+      "checkpoint_exists": true
+    }
+  },
+  "signal_pair": {
+    "clean_c17_cp140": {
+      "path": "/data/chenyiteng/models/protected-eval/pillbottle/clean_c17_cp140/full_weights.pt",
+      "size": 8526574644,
+      "exists": true
+    },
+    "grpo_u_tau3_cp70": {
+      "path": "/data/chenyiteng/models/protected-eval/pillbottle/grpo_u_tau3_cp70/full_weights.pt",
+      "size": 8526574644,
+      "exists": true
+    }
+  },
+  "free_gib": {
+    "/home": 602.1227798461914,
+    "/data": 197.0100975036621
+  },
+  "gpu_started_for_signal": false
+}

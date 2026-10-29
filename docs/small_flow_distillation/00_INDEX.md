@@ -1,5 +1,7 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
+**2026-10-29 12:57执行更新：** [28 旧四方法续到400预算轮](28_EXTEND400_EXECUTION_20261029.md)已排在三v2之后、RLT之前，每20轮补评128回合；[29 Q高估的具体例子](29_FQL_WHY_Q_INFLATES_20261029.md)区分真实结果与自举训练答案；[信号绘图规划](../student_teacher_signal/00_INDEX.md)已按用户答复固定为旧接管G族Clean CP140/Uτ3 CP70、pillbottle N10/H50/C20，未采集。[本轮清理及轻量补归档](../experiments/extend400-cleanup-20261029/README.md)：释放86.1GiB，Home约602、Data约181GiB；以下此前快照留作历史。
+
 **FQL讨论续篇：** [25 原FQL对照与Q可信度](25_FQL_COMPARISON_AND_Q_MEASUREMENT_20261028.md)：随机Q启动也是原方法做法；首批19倍不代表全程，原基准奖励与当前0–1回报不同；讨论Q持续训练、真实回报校准与动作排序。本次只更新讨论资料。
 
 **2026-10-29收敛：** [27 FQL修复方案](27_FQL_REPAIR_CONVERGED_PLAN_20261029.md)：建议先alpha=30＋既定评估记录Q与真实回报；解释离线高估反馈，Q预热/双Q取小/CQL作为分开的后续候选。本轮仍只讨论，不改训练队列。
