@@ -1,0 +1,21 @@
+--- ops/owner.py.before
++++ ops/owner.py
+@@ -34,6 +34,9 @@
+  for g,slot in p['slots'].items():state['slots'].setdefault(g,{'phase':'WAIT_EXTERNAL' if 'external_release' in slot else 'PENDING_PRIORITY'})
+  stop=[False];signal.signal(signal.SIGTERM,lambda *_:stop.__setitem__(0,True));children={}
+  while not stop[0]:
++  fresh=read(a.plan)
++  assert fresh["uid"]==p["uid"] and fresh["boot_id"]==p["boot_id"] and set(fresh["slots"])==set(p["slots"])
++  p=fresh
+   try:
+    snapshot=gpus();state.pop('gpu_query_error',None)
+   except Exception:
+@@ -45,7 +48,7 @@
+     card=snapshot[int(g)]
+     assert card['uuid']==slot['gpu_uuid']
+     if row['phase']=='WAIT_EXTERNAL':
+-     if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not card['processes']:row['phase']='WAITING_RLT'
++     if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not any(same(x) for x in slot.get('external_blockers', [])) and not card['processes']:row['phase']='WAITING_RLT'
+     elif row['phase']=='PENDING_PRIORITY':
+      if card['processes']:row['waiting']='GPU_OCCUPIED';continue
+      row['identity'],children[g]=launch(p,slot['priority']);row.update(phase='PRIORITY_RUNNING',request=slot['priority'],started_at=time.time());row.pop('waiting',None)

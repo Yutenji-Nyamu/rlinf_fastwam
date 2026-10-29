@@ -25,6 +25,7 @@ from single_formal_plan import (
     validate_reused_fql_replay,
 )
 from single_task_prepare import evaluation_config
+from queue_storage import record_stage_failure, require_save_space
 
 D, O = q.D, q.O
 plan = q.read(D / "formal-plan.json")
@@ -201,6 +202,9 @@ def run_method(method):
     receipt = plan.get("initial_receipts", {}).get(method)
     rows = []
     for stop in c.get("evaluation_steps", c["checkpoint_keep_steps"]):
+        reserve = plan.get("checkpoint_reserve_gib", {}).get(method)
+        if reserve is not None:
+            require_save_space(O / method, reserve)
         extra = (
             []
             if method == "fql_fixed_teacher"
@@ -257,12 +261,14 @@ def run_method(method):
 
 
 def failed(method, exc):
-    q.save(
+    record_stage_failure(
         D / f"failed-{method}.json",
         {"time": time.time(), "error": repr(exc), "traceback": traceback.format_exc()},
+        q.save,
+        lambda: q.event("METHOD_FAILED_ADVANCE", method=method, error=repr(exc)),
+        clear_owned,
+        Path("/tmp") / f"chenyiteng-queue-{D.name}",
     )
-    q.event("METHOD_FAILED_ADVANCE", method=method, error=repr(exc))
-    clear_owned()
 
 
 def main():
