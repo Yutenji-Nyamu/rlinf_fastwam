@@ -17,6 +17,13 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
         key for key in old.keys() | config.keys() if old.get(key) != config.get(key)
     }
     allowed = {"epochs", "checkpoint_steps", "checkpoint_keep_steps"}
+    if config.get("retention_mode") == "latest2_best":
+        if (
+            config.get("checkpoint_keep_last") is not None
+            or config.get("checkpoint_keep_steps") != []
+        ):
+            raise ValueError("Invalid post-evaluation retention configuration")
+        allowed |= {"evaluation_steps", "checkpoint_keep_last", "retention_mode"}
     if not changed <= allowed or "epochs" not in changed:
         raise ValueError(f"Extension changed scientific settings: {sorted(changed)}")
     per_epoch = math.ceil(windows / old["batch_size"])
@@ -25,7 +32,7 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
         raise ValueError(
             "Extension requires the final complete checkpoint and a larger budget"
         )
-    points = config["checkpoint_keep_steps"]
+    points = config.get("evaluation_steps", config["checkpoint_keep_steps"])
     if (
         not points
         or points != sorted(set(points))

@@ -8,6 +8,7 @@ from single_formal_plan import (
     formal_config,
     inference_method,
     run_stages,
+    validate_post_eval_retention,
     v2_formal_config,
 )
 
@@ -103,3 +104,24 @@ def test_v2_keeps_all_evaluations_separate_from_retention(
     assert c["warmup_steps"] == old["warmup_steps"]
     assert inference_method(variant) == method
     assert (c["lr"], c["aux_lr"], c["auxiliary_updates_per_student"]) == (1e-5, 2e-4, 5)
+
+
+def test_extension_retention_preserves_prior_complete_run(tmp_path):
+    output = tmp_path / "new" / "endpoint"
+    c = dict(
+        retention_mode="latest2_best",
+        checkpoint_keep_last=None,
+        checkpoint_keep_steps=[],
+    )
+    plan = dict(
+        retention_scope="new_extension_only",
+        initial_receipts={
+            "endpoint": {"path": str(tmp_path / "old" / "checkpoint-002200.pt")}
+        },
+    )
+    validate_post_eval_retention("endpoint", c, plan, output)
+    with pytest.raises(ValueError):
+        validate_post_eval_retention("endpoint", c, {}, output)
+    plan["initial_receipts"]["endpoint"]["path"] = str(output / "checkpoint-002200.pt")
+    with pytest.raises(ValueError):
+        validate_post_eval_retention("endpoint", c, plan, output)

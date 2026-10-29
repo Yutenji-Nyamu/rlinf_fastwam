@@ -26,7 +26,7 @@ def repeated_observation(obs, copies):
     return result
 
 
-def collect_noise_samples(model, obs, main_trace, main_actions, seed):
+def collect_noise_samples(model, obs, main_trace, main_actions, seed, max_extra_batch=None):
     """K=4: retain native B16 main output; evaluate extra three as one B48 batch.
 
     Batching the executed main pass itself would change its numerical path.
@@ -35,14 +35,23 @@ def collect_noise_samples(model, obs, main_trace, main_actions, seed):
     initial = main_trace["initial_noise_full"]
     batch, horizon, dim = initial.shape
     generator = torch.Generator(device=initial.device).manual_seed(int(seed))
-    with torch.random.fork_rng(devices=[initial.device.index]), torch.inference_mode():
+    devices = [initial.device.index] if initial.device.type == 'cuda' else []
+    with torch.random.fork_rng(devices=devices), torch.inference_mode():
         noise = torch.randn((3 * batch, horizon, dim), device=initial.device,
                             dtype=initial.dtype, generator=generator)
-        actions, result = model.predict_action_batch(
-            repeated_observation(obs, 3), mode="eval", compute_values=False,
-            num_steps=10, return_dvac_telemetry=True, record_signals=False,
-            noise=noise)
-        final = result["dvac_telemetry"]["final_model_action"]
+        repeated = repeated_observation(obs, 3)
+        size = max_extra_batch or 3 * batch
+        assert size > 0
+        action_parts, final_parts = [], []
+        for start in range(0, 3 * batch, size):
+            sliced = {k: None if v is None else v[start:start+size] for k, v in repeated.items()}
+            actions, result = model.predict_action_batch(
+                sliced, mode="eval", compute_values=False,
+                num_steps=10, return_dvac_telemetry=True, record_signals=False,
+                noise=noise[start:start+size])
+            action_parts.append(actions)
+            final_parts.append(result["dvac_telemetry"]["final_model_action"])
+        actions, final = torch.cat(action_parts), torch.cat(final_parts)
         def stack(main, extra):
             extra = extra.reshape(3, batch, *extra.shape[1:]).transpose(0, 1)
             return numpy_exact(torch.cat([main[:, None], extra], dim=1))

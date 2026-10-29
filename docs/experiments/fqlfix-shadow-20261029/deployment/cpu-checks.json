@@ -1,0 +1,26 @@
+{
+  "time": 1793265815.9538713,
+  "passed": true,
+  "checks": [
+    {
+      "command": [
+        "-m",
+        "pytest",
+        "-q",
+        "tools/pi05_distillation/test_q_evaluation.py",
+        "tools/pi05_distillation/test_fql.py",
+        "tools/pi05_policy_eval/test_teacher_shadow.py"
+      ],
+      "rc": 0,
+      "output": ".............                                                            [100%]\n13 passed in 2.64s\n"
+    },
+    {
+      "command": [
+        "-c",
+        "import ast; from pathlib import Path; [ast.parse(p.read_text()) for p in Path('tools/pi05_policy_eval').glob('*.py')]; ast.parse(Path('rlinf/models/embodiment/openpi/openpi_action_model.py').read_text()); print('parse passed')"
+      ],
+      "rc": 0,
+      "output": "parse passed\n"
+    }
+  ]
+}

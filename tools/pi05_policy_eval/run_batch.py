@@ -58,7 +58,7 @@ def arr(x):
     return x.detach().float().cpu().numpy() if torch.is_tensor(x) else np.asarray(x)
 
 
-def infer(model, obs, steps, signals=False, telemetry=True):
+def infer(model, obs, steps, signals=False, telemetry=True, fql_features=False):
     with torch.inference_mode():
         return model.predict_action_batch(
             obs,
@@ -69,6 +69,7 @@ def infer(model, obs, steps, signals=False, telemetry=True):
             record_signals=signals,
             consistency_steps=5,
             noise=None,
+            return_fql_features=fql_features,
         )
 
 
@@ -96,6 +97,15 @@ def run(config, model_cache=None):
     full_video = mode == "full"
     record_decisions = c.get("record_decisions", True)
     collect = c.get("collect_transitions", False)
+    shadow = c.get("teacher_shadow", False)
+    diagnose_q = bool(c.get("fql_q_path"))
+    if shadow:
+        assert policy == "weak" and full_video and c["num_steps"] == 10
+        assert c["execute_chunk"] == 20 and c["weak_weights"] and c["strong_weights"]
+        assert not collect and not diagnose_q and model_cache is None
+        from teacher_shadow import observe as observe_teacher, save_observation
+    q_evaluation = None
+    policy_metadata = None
     writer = None
     if collect:
         if c.get("suite") == "pi05_rlinf_single_distill":
@@ -109,9 +119,9 @@ def run(config, model_cache=None):
         assert not c.get("collect_weak_u", False)
     signals = policy in ("calibration", "high", "low", "random") or c.get(
         "collect_weak_u", False
-    )
+    ) or shadow
     need_strong = (
-        policy in ("strong", "high", "low", "random") and takeover == "weights"
+        (policy in ("strong", "high", "low", "random") and takeover == "weights") or shadow
     )
     cache_key = json.dumps(
         [
@@ -145,6 +155,7 @@ def run(config, model_cache=None):
                 c["distill_weights"], map_location="cpu", weights_only=True
             )
             load_expert(weak, state["expert"])
+            policy_metadata = {k: state[k] for k in ("step", "base")}
             save(
                 out / "distill-loaded.json",
                 {"path": c["distill_weights"], "method": state["method"]},
@@ -165,8 +176,15 @@ def run(config, model_cache=None):
             )
         weak = weak.cuda().eval()
         weak._signal_observer = EndpointOnly()
+    if reused:
+        policy_metadata = model_cache.get("policy_metadata")
     if model_cache is not None:
-        model_cache.update(key=cache_key, model=weak)
+        model_cache.update(key=cache_key, model=weak, policy_metadata=policy_metadata)
+    if diagnose_q:
+        from rlinf.algorithms.pi05_distillation.q_evaluation import QEvaluation
+
+        assert policy == "weak" and not collect and policy_metadata is not None
+        q_evaluation = QEvaluation(c["fql_q_path"], c, torch.device("cuda:0"), policy_metadata)
     load_seconds = time.perf_counter() - load_started
     if need_strong:
         # Same base model/wrappers/normalization; use the rollout worker's
@@ -212,7 +230,7 @@ def run(config, model_cache=None):
                 action, result = infer(model, dummy, c["num_steps"])
                 assert tuple(action.shape) == (batch, 50, 14)
                 del action, result
-        if policy == "calibration":
+        if policy == "calibration" or shadow:
             # Once per card calibration verifies this lightweight observer preserves
             # the native main action and RNG. No simulator action is submitted.
             cpu, cuda = torch.get_rng_state(), torch.cuda.get_rng_state()
@@ -229,7 +247,51 @@ def run(config, model_cache=None):
                 out / "u-parity.json",
                 {"action_exact": True, "rng_exact": True, "side_final_time": 0},
             )
+            if shadow:
+                trials = []
+                for extra_batch in c.get("benchmark_noise_batches", [c.get("noise_extra_batch") or 3*batch]):
+                    torch.cuda.synchronize()
+                    torch.cuda.reset_peak_memory_stats()
+                    benchmark_start = time.perf_counter()
+                    try:
+                        data = observe_teacher(weak, strong, dummy, trace["dvac_telemetry"], b,
+                                               c["noise_seed"] + 7000003, extra_batch)
+                        torch.cuda.synchronize()
+                        trials.append({"extra_batch": extra_batch,
+                                       "seconds": time.perf_counter()-benchmark_start,
+                                       "peak_gib": torch.cuda.max_memory_allocated()/2**30})
+                    except torch.cuda.OutOfMemoryError:
+                        torch.cuda.empty_cache()
+                        trials.append({"extra_batch": extra_batch, "oom": True})
+                accepted = [t for t in trials if not t.get("oom") and t["peak_gib"] < 77]
+                assert accepted, "No accepted extra-noise batch size"
+                selected_trial = min(accepted, key=lambda t: t["seconds"])
+                c["noise_extra_batch"] = selected_trial["extra_batch"]
+                save(out / "noise-capacity.json", {"environment_batch": batch, "trials": trials,
+                                                   "selected_extra_batch": c["noise_extra_batch"]})
+                save(out / "config.json", c)
+                assert np.array_equal(data["noise4_env_actions"][:, 0].astype(np.float32), arr(b))
+                assert torch.equal(cpu_after, torch.get_rng_state())
+                assert torch.equal(cuda_after, torch.cuda.get_rng_state())
+                save(out / "shadow-parity.json", {
+                    "main_action_exact": True, "rng_exact": True, "same_teacher_noise": True,
+                    "batch": batch, "extra_batch": c.get("noise_extra_batch") or 3*batch,
+                    "peak_gib": selected_trial["peak_gib"],
+                })
+                del data
             del a, b, trace
+        if diagnose_q:
+            cpu, cuda = torch.get_rng_state(), torch.cuda.get_rng_state()
+            a, _ = infer(weak, dummy, c["num_steps"], telemetry=False)
+            cpu_after, cuda_after = torch.get_rng_state(), torch.cuda.get_rng_state()
+            torch.set_rng_state(cpu); torch.cuda.set_rng_state(cuda)
+            b, result = infer(weak, dummy, c["num_steps"], telemetry=False, fql_features=True)
+            assert np.array_equal(arr(a), arr(b))
+            values = q_evaluation.predict(result["fql_features"], result["model_actions"], np.zeros(batch, int), c["step_limit"])
+            assert np.isfinite(values).all()
+            assert torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state())
+            save(out / "q-parity.json", {"action_exact": True, "rng_exact": True, "finite_q": True})
+            del a, b, result, values
         del dummy
         warm_seconds = time.perf_counter() - warm_started
         ec = OmegaConf.create(c["env"])
@@ -327,8 +389,10 @@ def run(config, model_cache=None):
             signal_data = None
             if weak is not None:
                 actions, result = infer(
-                    weak, obs, c["num_steps"], signals, telemetry=not collect
+                    weak, obs, c["num_steps"], signals, telemetry=not collect, fql_features=diagnose_q
                 )
+                if diagnose_q:
+                    q_values = q_evaluation.predict(result["fql_features"], result["model_actions"], counts, c["step_limit"])
                 if collect:
                     normalized_actions = arr(result["model_actions"])
                 if signals:
@@ -350,6 +414,10 @@ def run(config, model_cache=None):
                             )
                         }
                         signal_data.update(u=score.score, active=active, before=before)
+                    if shadow:
+                        signal_data.update(observe_teacher(weak, strong, obs, trace, actions,
+                                                           noise_seed + 7000003, c.get("noise_extra_batch")))
+                        save_observation(out / f"observation_{query:03d}.npz", obs)
                     del trace
                 del result
             selected = choose(
@@ -415,6 +483,8 @@ def run(config, model_cache=None):
             counts = np.array([int(e.task.take_action_cnt) for e in env.venv.envs])
             after = np.array([bool(e.task.eval_success) for e in env.venv.envs])
             assert np.all(counts <= c["step_limit"])
+            if diagnose_q:
+                q_evaluation.record(q_values, actual, query, active, before, counts, success, after, c["step_limit"])
             if collect:
                 writer.step(
                     obs,
@@ -494,6 +564,8 @@ def run(config, model_cache=None):
             for i in range(batch)
         ]
         save(out / "episodes.json", episodes)
+        if diagnose_q:
+            q_evaluation.save(out)
     finally:
         if writer is not None:
             writer.close()
@@ -525,6 +597,9 @@ def run(config, model_cache=None):
             "native_seed_retries": sum(s["native_retry"] for s in seeds),
             "strong_decisions": sum(d["strong"] for d in decisions),
             "decisions": len(decisions),
+            "queries": len(costs),
+            "teacher_shadow": shadow,
+            "q_diagnostics": diagnose_q,
         },
     )
 

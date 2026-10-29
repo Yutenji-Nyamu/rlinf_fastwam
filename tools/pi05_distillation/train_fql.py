@@ -109,6 +109,7 @@ def main():
         width=c["q_width"],
         depth=c["q_depth"],
     ).cuda(rank)
+    feature_dim = features.shape[-1]
     del context, features
     params = student.parameters_to_train()
     opt = torch.optim.AdamW(
@@ -238,7 +239,7 @@ def main():
             if not torch.isfinite(actor_loss):
                 raise FloatingPointError("Nonfinite actor loss")
             # One output-gradient diagnostic, not a second full model backward.
-            if step == start and part == 0:
+            if part == 0 and (step == start or (c.get("q_diagnostics") and (step + 1) % c["log_every"] == 0)):
                 gm = torch.autograd.grad(
                     c["alpha"] * parts["endpoint_mse"], prediction, retain_graph=True
                 )[0]
@@ -347,9 +348,20 @@ def main():
                         "base": c["model"]["model_path"],
                     },
                 )
+                q_export = out / f"q-{step + 1:06d}.pt"
+                if c.get("q_diagnostics"):
+                    atomic_torch(q_export, {
+                        "q": {k: v.detach().cpu() for k, v in q.state_dict().items()},
+                        "feature_dim": feature_dim, "chunk": c["execute_chunk"],
+                        "width": c["q_width"], "depth": c["q_depth"],
+                        "discount": c["discount"], "base": c["model"]["model_path"],
+                        "step": step + 1, "alpha": c["alpha"],
+                        "experiment_name": c.get("experiment_name", c["method"]),
+                    })
                 save_json(
                     out / "checkpoint.json",
-                    {"step": step + 1, "path": str(checkpoint), "policy": str(policy)},
+                    {"step": step + 1, "path": str(checkpoint), "policy": str(policy),
+                     **({"q": str(q_export)} if c.get("q_diagnostics") else {})},
                 )
                 prune_checkpoints(
                     out,

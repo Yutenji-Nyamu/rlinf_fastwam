@@ -131,3 +131,21 @@ def test_mfd_extension_keeps_full_fixed_rate_method():
             validate_resume(
                 ck, dict(new, **{key: value}), 4738, 2, extend_completed=True
             )
+
+
+def test_extension_retention_does_not_change_evaluation_points():
+    ck, new = configs()
+    original_points = new["checkpoint_keep_steps"]
+    new.update(
+        evaluation_steps=original_points,
+        checkpoint_keep_steps=[],
+        checkpoint_keep_last=None,
+        retention_mode="latest2_best",
+    )
+    assert validate_resume(ck, new, 4738, 2, extend_completed=True)["to_step"] == 2200
+    with pytest.raises(ValueError):
+        validate_resume(ck, dict(new, lr=1e-3), 4738, 2, extend_completed=True)
+    with pytest.raises(ValueError):
+        validate_resume(
+            ck, dict(new, evaluation_steps=[1100, 2200]), 4738, 2, extend_completed=True
+        )

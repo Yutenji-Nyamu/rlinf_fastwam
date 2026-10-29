@@ -119,7 +119,7 @@ def prepare_fql(model, obs):
         Observation.from_dict(processed), train=False
     )
     prefix, valid, cache = model._build_prefix_cache(images, masks, tokens, token_masks)
-    pooled = torch.bmm(valid[:, None].to(prefix.dtype), prefix).squeeze(1).float()
-    pooled = pooled / valid.sum(1, keepdim=True).clamp_min(1)
-    features = torch.cat((pooled, state[:, :14].float()), dim=-1)
+    from .q_evaluation import pooled_features
+
+    features = pooled_features(prefix, valid, state)
     return (state, valid, cache), features

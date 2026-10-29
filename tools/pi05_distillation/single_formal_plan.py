@@ -3,11 +3,35 @@
 
 import copy
 import math
+from pathlib import Path
 
 METHODS = ("endpoint", "cp", "onedp", "mfd", "fql_fixed_teacher")
 MICRO = {"endpoint": 224, "cp": 80, "onedp": 192, "mfd": 192, "fql_fixed_teacher": 224}
 FRACTIONS = (0.0125, 0.025, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.65, 0.8, 1.0)
 V2_METHODS = {"cp_v2": "cp", "dmd_v2": "onedp", "mfd_v2": "mfd"}
+
+
+def validate_post_eval_retention(method, config, plan, output):
+    """Authorize pruning only within new v2 or separately rooted extension runs."""
+    if config.get("retention_mode") != "latest2_best":
+        return
+    if (
+        config.get("checkpoint_keep_last") is not None
+        or config.get("checkpoint_keep_steps") != []
+    ):
+        raise ValueError("Post-evaluation retention requires separate evaluation steps")
+    if method in V2_METHODS:
+        return
+    initial = plan.get("initial_receipts", {}).get(method, {})
+    if (
+        method not in {"endpoint", "cp", "onedp", "mfd"}
+        or plan.get("retention_scope") != "new_extension_only"
+        or not initial.get("path")
+        or Path(initial["path"]).resolve().is_relative_to(Path(output).resolve())
+    ):
+        raise ValueError(
+            "Extension retention must exclude its prior complete checkpoint"
+        )
 
 
 def inference_method(method):

@@ -860,12 +860,15 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         consistency_steps: int = 5,
         noise=None,
         num_steps: int | None = None,
+        return_fql_features: bool = False,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         if mode != "eval" and (noise is not None or num_steps is not None or record_signals):
             raise ValueError("Per-call inference overrides and signal collection require mode='eval'")
         if record_signals and not return_dvac_telemetry:
             raise ValueError("record_signals requires return_dvac_telemetry=True")
+        if return_fql_features and (mode != "eval" or self.config.use_dsrl or rtc_context is not None):
+            raise ValueError("Q diagnostics require native non-DSRL eval")
         if self.config.use_dsrl and (noise is not None or record_signals):
             raise ValueError("External noise/signal collection is not supported on the DSRL path")
         to_process_obs = self.obs_processor(env_obs)  # env obs -> policy input obs
@@ -938,6 +941,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     num_steps=num_steps,
                     record_signals=record_signals,
                     consistency_steps=consistency_steps,
+                    return_fql_features=return_fql_features,
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -982,6 +986,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         }
         if return_dvac_telemetry:
             result["dvac_telemetry"] = outputs["dvac_telemetry"]
+        if return_fql_features:
+            result["fql_features"] = outputs["fql_features"]
         return actions, result
 
     @torch.no_grad()
@@ -1018,6 +1024,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         num_steps: int | None = None,
         record_signals: bool = False,
         consistency_steps: int = 5,
+        return_fql_features: bool = False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         if num_steps is not None:
@@ -1090,6 +1097,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             side_grid = self._get_timesteps(consistency_steps, initial_noise.device)
             telemetry["side_timesteps"] = side_grid[:-1].detach()
             telemetry["side_final_time"] = side_grid[-1].detach()
+        if return_fql_features:
+            from rlinf.algorithms.pi05_distillation.q_evaluation import pooled_features
+
+            result["fql_features"] = pooled_features(prefix_output, prefix_pad_masks, state)
         return result
 
     def _sample_actions_with_prefix_cache(
@@ -1132,7 +1143,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             expected_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             if tuple(noise.shape) != expected_shape or noise.device != device:
                 raise ValueError("Signal collection requires full model-space initial noise on the state device")
-        initial_noise_full = noise.detach().clone() if record_signals else None
+        initial_noise_full = noise.detach().clone() if return_dvac_telemetry else None
         velocity_trace = [] if record_signals else None
         x_t = noise
         # add sde sample and traj collect
@@ -1245,10 +1256,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 "z_endpoint": torch.stack(endpoint_trace, dim=1),
                 "timesteps": telemetry_timesteps[:-1].detach(),
                 "final_model_action": x_0[..., : self.config.action_env_dim].detach(),
+                "initial_noise_full": initial_noise_full,
             }
         if record_signals:
             result["dvac_telemetry"]["velocity"] = torch.stack(velocity_trace, dim=1)
-            result["dvac_telemetry"]["initial_noise_full"] = initial_noise_full
         return result
 
     def _get_timesteps(self, denoise_steps, device):

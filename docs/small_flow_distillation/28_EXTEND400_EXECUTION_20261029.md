@@ -6,7 +6,7 @@
 
 1机6/7：当前CP v2 → DMD v2 → MFD v2 → 旧Direct400 → 旧CP400 → 旧DMD new400 → 旧MFD400 → 原逐卡RLT。
 
-新owner `3339220/UID1003/start613645913`已在CPU等待；RLT6/7的前驱原子改为该owner，4/5槽位保持。没有停止当前v2或多任务Direct。轮询/清场沿用已跑通实现，按前驱确切身份及计算、图形进程释放接续，不承诺模型加载在几秒内完成。
+新owner `3846643/UID1003/start615321466`已在CPU等待；10月29日17:34按用户确认的保存方案替换了原等待owner，RLT6/7前驱原子更新，4/5槽位保持。当前v2和多任务Direct持续运行。轮询/清场沿用已跑通实现，按前驱确切身份及计算、图形进程释放接续。
 
 | 方法 | 从200轮完整点 | 400轮总更新数 | 每卡训练batch | 新增评估 |
 |---|---:|---:|---:|---|
@@ -23,7 +23,9 @@
 
 Direct/CP沿用100→200时的续训规则：将余弦学习率的终点伸到400轮，保持原绝对warmup和全局step，因此200轮接续时学习率会重新升到约`1.275e-5`。这是有恢复状态的延长训练，不等价于一开始就按400轮训练。DMD/MFD保持固定`1e-5/2e-4`及辅助5:1。
 
-新权重优先进Home，保留10个新评估点的完整恢复文件，四组约369GiB；登记时Home可用约602GiB。旧200轮点不改，v2继续原latest2＋best保留规则。以后容量变化再按授权清理，不提前拆掉恢复分片。
+新权重优先进Home。用户已确认：仅对200→400轮新生成的点保留最近2个完整点＋本段最佳完整点；原200轮完整点和全部评估、曲线、日志保留。四组稳态最多约111GiB，单次新保存另需约12GiB暂存余量。每20轮评128回合不变，自动清理只处理本次新输出目录内成对的大权重，不跨到原200轮目录。
+
+配置分开记录`evaluation_steps`和保存保留策略；训练完成后先评估，再确定本段最佳并清理。24项队列、续训和精准保留测试通过。第一段仍严格核对科学设置，只额外接受不影响训练目标的评估/保留字段。
 
 上一段100→200完整墙钟时间：Direct＋CP合计5.17小时，DMD3.23小时，MFD4.67小时。按同样密度延长200轮，新增队列约26–30小时；这是排到它们之后的运行量，不含前面的v2等待时间。
 
@@ -34,7 +36,8 @@ Direct/CP沿用100→200时的续训规则：将余弦学习率的终点伸到40
 - 方法异常：记录、只清本队列精确身份子进程，接下一方法；连续两次缺测评估同样按既有规则退出该方法。识别不到占用来源时不杀其他进程。
 - 全部结束：唯一RLT owner依既有6/7候补恢复；4/5候补保持225/225，6/7保持25/300。
 
-部署：`/home/chenyiteng/deployment-20261029/single-extend400-sz1-g67`。
+部署：`/home/chenyiteng/deployment-20261029/single-extend400-sz1-g67-retention`；源码复用原`single-extend400-sz1-g67/source`并更新保留接口。
 产物：`/home/chenyiteng/results/pi05-distill/single-extend400-sz1-g67-20261029`。
-命令：`/usr/bin/python3 -u -B <部署>/source/tools/pi05_distillation/single_formal_queue.py <部署>`。
+命令：`/usr/bin/python3 -u -B /home/chenyiteng/deployment-20261029/single-extend400-sz1-g67/source/tools/pi05_distillation/single_formal_queue.py /home/chenyiteng/deployment-20261029/single-extend400-sz1-g67-retention`。
 配置、恢复审计、登记与轻量产物见[本轮归档](../experiments/extend400-cleanup-20261029/README.md)。
+保存方案变更及新登记回执见[本次归档](../experiments/fqlfix-shadow-20261029/extend400-retention/retention-activation.json)。

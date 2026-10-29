@@ -17,11 +17,11 @@ from pathlib import Path
 import run_queue as q
 from multitask_eval import sweep
 from single_formal_plan import (
-    V2_METHODS,
     batch_indices,
     formal_config,
     inference_method,
     run_stages,
+    validate_post_eval_retention,
 )
 from single_task_prepare import evaluation_config
 
@@ -188,6 +188,7 @@ def run_method(method):
     if method == "fql_fixed_teacher":
         collect_fql()
     c = q.read(D / f"{method}.json")
+    validate_post_eval_retention(method, c, plan, O / method)
     receipt = plan.get("initial_receipts", {}).get(method)
     rows = []
     for stop in c.get("evaluation_steps", c["checkpoint_keep_steps"]):
@@ -223,10 +224,6 @@ def run_method(method):
             )
             q.save(O / f"best-{method}.json", best)
         if c.get("retention_mode") == "latest2_best":
-            if method not in V2_METHODS or c["checkpoint_keep_last"] is not None:
-                raise ValueError(
-                    "Post-evaluation retention is restricted to new v2 runs"
-                )
             subprocess.run(
                 [
                     "/usr/bin/python3",
