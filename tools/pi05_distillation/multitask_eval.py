@@ -185,6 +185,7 @@ def sweep(
     overrides=None,
     completed_rows=None,
     collection_configs=None,
+    q_path=None,
 ):
     """One batch per task; missing simulator batches are not policy failures."""
     deployment = Path(deployment)
@@ -284,6 +285,9 @@ def sweep(
                     config = read(task["collection_config"])
                     config["gpu"] = slot[0]
                     dest = Path(config["output"])
+                if q_path is not None:
+                    assert policy is not None and collection_configs is None
+                    config["fql_q_path"] = str(q_path)
                 cfg_path = tx / (task["task"] + ".json")
                 save(cfg_path, config)
                 env = dict(

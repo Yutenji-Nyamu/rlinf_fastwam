@@ -32,7 +32,7 @@ def configs(method="endpoint"):
     return ck, new
 
 
-@pytest.mark.parametrize("method", ["endpoint", "cp"])
+@pytest.mark.parametrize("method", ["endpoint", "cp", "cp_v2"])
 def test_opt_in_completed_extension_then_strict_resume(method):
     ck, new = configs(method)
     with pytest.raises(ValueError):

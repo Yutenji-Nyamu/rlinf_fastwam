@@ -11,7 +11,7 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
     old = checkpoint["config"]
     if old == config:
         return None
-    if not extend_completed or old["method"] not in {"endpoint", "cp", "onedp", "mfd"}:
+    if not extend_completed or old["method"] not in {"endpoint", "cp", "cp_v2", "onedp", "mfd"}:
         raise ValueError("Resume configuration mismatch")
     changed = {
         key for key in old.keys() | config.keys() if old.get(key) != config.get(key)

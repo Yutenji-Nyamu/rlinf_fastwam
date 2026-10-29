@@ -6,10 +6,12 @@ from single_formal_plan import (
     METHODS,
     batch_indices,
     formal_config,
+    fql_fix_formal_config,
     inference_method,
     run_stages,
     validate_post_eval_retention,
     v2_formal_config,
+    validate_reused_fql_replay,
 )
 
 
@@ -125,3 +127,21 @@ def test_extension_retention_preserves_prior_complete_run(tmp_path):
     plan["initial_receipts"]["endpoint"]["path"] = str(output / "checkpoint-002200.pt")
     with pytest.raises(ValueError):
         validate_post_eval_retention("endpoint", c, plan, output)
+
+
+def test_fql_fix_200_reuses_formal_replay_and_keeps_dense_early_curve():
+    reference = dict(method="fql_fixed_teacher", q_diagnostics=True, alpha=30,
+                     warmup_steps=55, lr=2.5e-5, q_lr=3e-4,
+                     experiment_name="fql-fix")
+    c = fql_fix_formal_config(reference, 405)
+    assert c["epochs"] == 2200 and c["evaluation_steps"][-1] == 2200
+    assert c["evaluation_steps"][:4] == [14, 28, 55, 110]
+    assert len(c["evaluation_steps"]) == 17 and c["warmup_steps"] == 55
+    assert (c["alpha"], c["lr"], c["q_lr"]) == (30, 2.5e-5, 3e-4)
+    validate_post_eval_retention("fql_fixed_teacher", c, {"fresh_fql_fix": True}, "/new/fix")
+    with pytest.raises(ValueError):
+        validate_post_eval_retention("fql_fixed_teacher", c, {}, "/new/fix")
+    manifest = {"episodes": [dict(actual_seed=i, success=bool(i % 2), task="adjust_bottle", transitions=3) for i in range(128)]}
+    assert validate_reused_fql_replay(manifest, [1000])["transitions"] == 384
+    with pytest.raises(ValueError):
+        validate_reused_fql_replay(manifest, [1000, 5])

@@ -22,6 +22,14 @@ def validate_post_eval_retention(method, config, plan, output):
         raise ValueError("Post-evaluation retention requires separate evaluation steps")
     if method in V2_METHODS:
         return
+    if (
+        method == "fql_fixed_teacher"
+        and plan.get("fresh_fql_fix")
+        and not plan.get("initial_receipts", {}).get(method)
+        and config.get("experiment_name") == "fql-fix"
+        and config.get("q_diagnostics")
+    ):
+        return
     initial = plan.get("initial_receipts", {}).get(method, {})
     if (
         method not in {"endpoint", "cp", "onedp", "mfd"}
@@ -107,6 +115,43 @@ def v2_formal_config(reference, windows=4738):
         retention_mode="latest2_best",
     )
     return c
+
+
+def fql_fix_formal_config(reference, transitions, windows=4738):
+    """200 budget epochs, preserving accepted alpha/Q and early evaluation points."""
+    if reference["method"] != "fql_fixed_teacher" or not reference.get("q_diagnostics"):
+        raise ValueError("Use the accepted FQL-fix reference with Q evaluation")
+    c = formal_config(reference, windows, budget_epochs=100, transitions=transitions)
+    per_epoch = math.ceil(transitions / c["batch_size"])
+    updates_per_budget_epoch = math.ceil(windows / (2 * MICRO["endpoint"]))
+    total = 200 * updates_per_budget_epoch
+    if total % per_epoch:
+        raise ValueError("Replay size requires an explicit serial budget review")
+    points = c["checkpoint_keep_steps"] + [
+        updates_per_budget_epoch * e for e in (120, 140, 160, 180, 200)
+    ]
+    c.update(
+        epochs=total // per_epoch,
+        checkpoint_steps=total + 1,
+        evaluation_steps=points,
+        checkpoint_keep_steps=[],
+        checkpoint_keep_last=None,
+        retention_mode="latest2_best",
+    )
+    return c
+
+
+def validate_reused_fql_replay(manifest, heldout_seeds):
+    """Check the existing formal episode index once, without decoding replay images."""
+    episodes = manifest["episodes"]
+    if len(episodes) < 96 or not 0 < sum(e["success"] for e in episodes) < len(episodes):
+        raise ValueError("Reuse needs a formal success/failure replay")
+    if set(heldout_seeds) & {e["actual_seed"] for e in episodes}:
+        raise ValueError("Training replay overlaps held-out evaluation seeds")
+    if any(e["task"] != "adjust_bottle" or e["transitions"] <= 0 for e in episodes):
+        raise ValueError("Unexpected native single-task replay")
+    return {"episodes": len(episodes), "successes": sum(e["success"] for e in episodes),
+            "transitions": sum(e["transitions"] for e in episodes)}
 
 
 def batch_indices(card_index):

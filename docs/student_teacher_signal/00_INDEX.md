@@ -14,3 +14,6 @@
 用户指定1机3卡；若他人使用则等待其释放。此前暂拟N1/N10的10任务候选保留为另一个实验的备选，不进入本次协议。
 
 已参考其他窗口“1013 u paper”的`research/u_ca/exploratory_studies_20261028/04_SIGNAL_CHARACTERIZATION.md`。UA-OPD Fig.2比较的是教师不确定性与经验奖励误差；本轮师生动作距离是另一个量，不能标成原图的Reward Gap复现。[原文](https://openreview.net/forum?id=hHUZi8oHfo)
+
+- [05 全部12条成功轨迹与关联分析](05_ALL_TRAJECTORIES_CORRELATION_20261029.md)
+- [06 六篇可视化参考与采用方式](06_VISUALIZATION_REFERENCES_20261029.md)

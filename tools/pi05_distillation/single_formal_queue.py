@@ -22,6 +22,7 @@ from single_formal_plan import (
     inference_method,
     run_stages,
     validate_post_eval_retention,
+    validate_reused_fql_replay,
 )
 from single_task_prepare import evaluation_config
 
@@ -29,7 +30,7 @@ D, O = q.D, q.O
 plan = q.read(D / "formal-plan.json")
 
 
-def pair_evaluation(label, policy=None, method="endpoint", collection=False):
+def pair_evaluation(label, policy=None, method="endpoint", collection=False, q_path=None):
     """32 environments/card, two waves each, no video or extra signal work."""
     jobs = []
     for index, gpu in enumerate(q.CARDS):
@@ -82,6 +83,7 @@ def pair_evaluation(label, policy=None, method="endpoint", collection=False):
                 "policy": policy,
                 "method": inference_method(method),
                 "steps": 1,
+                "q_path": q_path,
             }
         )
         jobs.append((gpu, ed, kwargs))
@@ -108,6 +110,13 @@ def pair_evaluation(label, policy=None, method="endpoint", collection=False):
 
 def collect_fql():
     """Collect the formal native N5 replay; never train on smoke-only records."""
+    if plan.get("reuse_fql_manifest"):
+        c = q.read(D / "fql_fixed_teacher.json")
+        manifest = plan["reuse_fql_manifest"]
+        assert c["transition_manifest"] == manifest and c["budget_resolved"]
+        counts = validate_reused_fql_replay(q.read(manifest), plan["heldout_seeds"])
+        q.save(D / "fql-data-receipt.json", dict(counts, reused_manifest=manifest))
+        return
     result = pair_evaluation("fql-native-collection", collection=True)
     if result["episodes"] < 96:
         raise RuntimeError("Fewer than three valid 32-episode collection batches")
@@ -213,7 +222,11 @@ def run_method(method):
             label=f"{method}-train-{stop}",
             extra_args=extra,
         )
-        summary = pair_evaluation(f"{method}-s{stop:06d}", receipt["policy"], method)
+        q_path = receipt.get("q") if c.get("q_diagnostics") else None
+        if c.get("q_diagnostics") and not q_path:
+            raise RuntimeError("Missing Q export for diagnostic evaluation")
+        summary = pair_evaluation(f"{method}-s{stop:06d}", receipt["policy"], method,
+                                  q_path=q_path)
         summary["checkpoint"] = receipt
         q.save(O / f"summary-{method}-s{stop:06d}.json", summary)
         rows.append(summary)
