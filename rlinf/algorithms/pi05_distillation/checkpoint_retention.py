@@ -18,8 +18,13 @@ def prune_checkpoints(output, keep_last, keep_steps, *, single_task_smoke=False)
     if keep_last is None:
         return []
     output = Path(output).resolve()
+    # Explicit per-run authorization, read on every post-evaluation invocation.
+    policy_file = output / "retention-policy.json"
+    latest_only = policy_file.is_file() and json.loads(policy_file.read_text()).get("mode") == "latest_complete_only"
+    if latest_only:
+        keep_last, keep_steps = 1, []
     smoke = single_task_smoke and output.name.startswith("smoke-")
-    if not isinstance(keep_last, int) or keep_last < (1 if smoke else 2):
+    if not isinstance(keep_last, int) or keep_last < (1 if smoke or latest_only else 2):
         raise ValueError("Retention requires at least two complete resume points")
     receipt = json.loads((output / "checkpoint.json").read_text())
     pairs = {}

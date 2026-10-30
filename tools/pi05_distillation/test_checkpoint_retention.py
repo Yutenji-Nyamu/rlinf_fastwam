@@ -37,3 +37,21 @@ def test_no_deletion_without_complete_current_receipt(tmp_path):
     with pytest.raises(ValueError, match="complete local pair"):
         prune_checkpoints(tmp_path, 2, [])
     assert (tmp_path / "checkpoint-000050.pt").exists()
+
+
+def test_explicit_latest_only_overrides_historical_best(tmp_path):
+    for step in (10, 20, 30):
+        for kind in ("checkpoint", "policy"):
+            (tmp_path / f"{kind}-{step:06d}.pt").write_bytes(b"fixture")
+    (tmp_path / "checkpoint.json").write_text(json.dumps({
+        "step": 30, "path": str(tmp_path / "checkpoint-000030.pt"),
+        "policy": str(tmp_path / "policy-000030.pt"),
+    }))
+    (tmp_path / "retention-policy.json").write_text(
+        json.dumps({"mode": "latest_complete_only"})
+    )
+    (tmp_path / "checkpoint-000040.pt").write_bytes(b"unfinished")
+    deleted = prune_checkpoints(tmp_path, 2, [10])
+    assert {row["step"] for row in deleted} == {10, 20}
+    assert (tmp_path / "checkpoint-000030.pt").exists()
+    assert (tmp_path / "checkpoint-000040.pt").exists()
