@@ -20,6 +20,7 @@ from single_formal_plan import (
     batch_indices,
     formal_config,
     inference_method,
+    planned_methods,
     run_stages,
     validate_post_eval_retention,
     validate_reused_fql_replay,
@@ -195,6 +196,9 @@ def clear_owned():
 
 
 def run_method(method):
+    # Queue edits take effect only between methods, never within a live segment.
+    global plan
+    plan = q.read(D / "formal-plan.json")
     if method == "fql_fixed_teacher":
         collect_fql()
     c = q.read(D / f"{method}.json")
@@ -284,7 +288,9 @@ def main():
         time.sleep(0.25)
     q.save(D / "handoff-complete.json", {"time": time.time(), "identity": me})
     try:
-        outcomes = run_stages(plan["methods"], run_method, failed)
+        outcomes = run_stages(
+            planned_methods(lambda: q.read(D / "formal-plan.json")), run_method, failed
+        )
         q.save(D / "queue-complete.json", {"time": time.time(), "outcomes": outcomes})
         q.event("COMPLETE_RLT_NEXT", outcomes=outcomes)
     finally:

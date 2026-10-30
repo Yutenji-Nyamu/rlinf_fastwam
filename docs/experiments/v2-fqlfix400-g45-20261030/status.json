@@ -1,0 +1,724 @@
+{
+  "time": 1793347144.6239324,
+  "g45": {
+    "owner_alive": true,
+    "state": {
+      "time": 1793347112.6585395,
+      "phase": "TRAINING",
+      "method": "dmd_v2",
+      "stop_step": 2860,
+      "output": "/data/chenyiteng/results/pi05-distill/v2-fqlfix400-sz1-g45-20261030/dmd_v2",
+      "child": {
+        "pid": 1796438,
+        "uid": 1003,
+        "start": 623383170,
+        "state": "R"
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "-m",
+        "torch.distributed.run",
+        "--standalone",
+        "--nproc_per_node=2",
+        "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/source/tools/pi05_distillation/train.py",
+        "--config",
+        "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/dmd_v2.json",
+        "--output",
+        "/data/chenyiteng/results/pi05-distill/v2-fqlfix400-sz1-g45-20261030/dmd_v2",
+        "--stop-step",
+        "2860",
+        "--resume",
+        "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/dmd_v2/checkpoint-002600.pt",
+        "--decode-workers",
+        "8",
+        "--prefetch-batches",
+        "1",
+        "--profile-stages",
+        "--extend-completed-run"
+      ]
+    },
+    "plan": {
+      "methods": [
+        "dmd_v2",
+        "mfd_v2",
+        "fql_fixed_teacher"
+      ],
+      "predecessor_identity": {
+        "pid": 3363279,
+        "uid": 1003,
+        "start": 578677705,
+        "state": "R"
+      },
+      "predecessor_deployment": "/data/chenyiteng/deployment-20261025/endpoint-multitask-c10-sz1-g45",
+      "heldout_seeds": [
+        100100000,
+        100100002,
+        100100003,
+        100100004,
+        100100005,
+        100100006,
+        100100007,
+        100100008,
+        100100009,
+        100100011,
+        100100012,
+        100100013,
+        100100015,
+        100100016,
+        100100017,
+        100100019,
+        100100020,
+        100100021,
+        100100023,
+        100100024,
+        100100025,
+        100100026,
+        100100028,
+        100100031,
+        100100032,
+        100100033,
+        100100034,
+        100100035,
+        100100036,
+        100100037,
+        100100038,
+        100100039,
+        100100040,
+        100100041,
+        100100042,
+        100100043,
+        100100044,
+        100100045,
+        100100046,
+        100100047,
+        100100048,
+        100100049,
+        100100050,
+        100100051,
+        100100052,
+        100100054,
+        100100055,
+        100100056,
+        100100057,
+        100100058,
+        100100060,
+        100100062,
+        100100064,
+        100100065,
+        100100066,
+        100100067,
+        100100068,
+        100100069,
+        100100070,
+        100100071,
+        100100072,
+        100100073,
+        100100074,
+        100100075,
+        100100076,
+        100100077,
+        100100078,
+        100100079,
+        100100080,
+        100100081,
+        100100082,
+        100100083,
+        100100084,
+        100100085,
+        100100087,
+        100100088,
+        100100089,
+        100100090,
+        100100091,
+        100100092,
+        100100093,
+        100100094,
+        100100095,
+        100100096,
+        100100098,
+        100100099,
+        100100101,
+        100100102,
+        100100103,
+        100100107,
+        100100108,
+        100100109,
+        100100110,
+        100100111,
+        100100112,
+        100100113,
+        100100117,
+        100100118,
+        100100119,
+        100100120,
+        100100121,
+        100100122,
+        100100123,
+        100100124,
+        100100125,
+        100100126,
+        100100127,
+        100100129,
+        100100130,
+        100100131,
+        100100132,
+        100100133,
+        100100134,
+        100100135,
+        100100136,
+        100100137,
+        100100138,
+        100100139,
+        100100140,
+        100100141,
+        100100142,
+        100100144,
+        100100145,
+        100100146,
+        100100148,
+        100100149,
+        100100150,
+        100100151
+      ],
+      "budget_epochs": 400,
+      "eval_episodes": 128,
+      "eval_parallel": 64,
+      "eval_waves": 2,
+      "teacher_N": 5,
+      "student_N": 1,
+      "horizon": 50,
+      "execute_chunk": 50,
+      "step_limit": 200,
+      "storage": "Data for new g45 stages; existing g67 remains Home. New points latest2 plus stage best; prior full200 untouched.",
+      "failure": "exact own process cleanup, record error, advance to next method; RLT follows all methods",
+      "initial_receipts": {
+        "dmd_v2": {
+          "step": 2600,
+          "path": "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/dmd_v2/checkpoint-002600.pt",
+          "policy": "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/dmd_v2/policy-002600.pt"
+        },
+        "mfd_v2": {
+          "step": 2600,
+          "path": "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/mfd_v2/checkpoint-002600.pt",
+          "policy": "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/mfd_v2/policy-002600.pt"
+        }
+      },
+      "extension_audits": {
+        "dmd_v2": {
+          "from_step": 2600,
+          "to_step": 5200,
+          "from_epochs": 200,
+          "to_epochs": 400,
+          "schedule": "keep fixed student and auxiliary learning rates",
+          "first_extension_lr": 1e-05,
+          "aux_lr": 0.0002,
+          "auxiliary_updates_per_student": 5,
+          "restored": "student, auxiliary, both optimizers, per-rank RNG"
+        },
+        "mfd_v2": {
+          "from_step": 2600,
+          "to_step": 5200,
+          "from_epochs": 200,
+          "to_epochs": 400,
+          "schedule": "keep fixed student and auxiliary learning rates",
+          "first_extension_lr": 1e-05,
+          "aux_lr": 0.0002,
+          "auxiliary_updates_per_student": 5,
+          "restored": "student, auxiliary, both optimizers, per-rank RNG"
+        }
+      },
+      "evaluation_budget_epochs": [
+        220,
+        240,
+        260,
+        280,
+        300,
+        320,
+        340,
+        360,
+        380,
+        400
+      ],
+      "retention_scope": "new_extension_only",
+      "fresh_fql_fix": true,
+      "method_budget_epochs": {
+        "dmd_v2": 400,
+        "mfd_v2": 400,
+        "fql_fixed_teacher": 400
+      },
+      "reuse_fql_manifest": "/home/chenyiteng/deployment-20261027/single-formal-sz1-g67/transitions.json",
+      "checkpoint_reserve_gib": {
+        "dmd_v2": 14,
+        "mfd_v2": 14,
+        "fql_fixed_teacher": 8
+      },
+      "fql_budget_receipt": {
+        "budget_epochs": 400,
+        "updates": 4400,
+        "evaluation_points": 27,
+        "data": {
+          "episodes": 128,
+          "successes": 115,
+          "transitions": 405
+        }
+      },
+      "cp_decision": "User cancelled added original CP400; existing g67 CPv2 remains"
+    },
+    "progress": null
+  },
+  "g67": {
+    "owner_alive": true,
+    "state": {
+      "time": 1793347050.6367984,
+      "phase": "EVALUATING",
+      "method": "endpoint",
+      "label": "endpoint-s003960"
+    },
+    "methods": [
+      "endpoint",
+      "cp_v2",
+      "onedp",
+      "mfd"
+    ],
+    "fql_legacy_steps": [],
+    "moved": {
+      "time": 1793347082.7393095,
+      "status": "MOVED_NOT_RUN",
+      "destination": "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45",
+      "budget_epochs": 400,
+      "legacy_entry_zero_updates": true
+    }
+  },
+  "rlt": {
+    "owner_alive": true,
+    "status": {
+      "slots": {
+        "4": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "5": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "6": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "7": {
+          "phase": "WAIT_EXTERNAL"
+        }
+      },
+      "time": 1793347139.8352768,
+      "owner": {
+        "pid": 1796259,
+        "uid": 1003,
+        "start": 623382422,
+        "state": "R"
+      }
+    },
+    "fallback_checks": {
+      "4": {
+        "step": 225,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "5": {
+        "step": 225,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "6": {
+        "step": 25,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "7": {
+        "step": 300,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      }
+    }
+  },
+  "gpus": {
+    "0": {
+      "uuid": "GPU-a8b81587-9a8b-7c62-1d5c-ed33e9638070",
+      "processes": []
+    },
+    "1": {
+      "uuid": "GPU-a5db195a-ea49-b641-5355-ea060827f70c",
+      "processes": []
+    },
+    "2": {
+      "uuid": "GPU-4ec384bf-4828-063b-a26e-6812eca09f75",
+      "processes": []
+    },
+    "3": {
+      "uuid": "GPU-2f0e1a8f-d784-6388-4e12-d211c97e9174",
+      "processes": []
+    },
+    "4": {
+      "uuid": "GPU-9200fbe8-fdd0-93ae-c221-5f0e9d318bf5",
+      "processes": [
+        {
+          "pid": 1794756,
+          "type": "G"
+        },
+        {
+          "pid": 1794757,
+          "type": "G"
+        },
+        {
+          "pid": 1796482,
+          "type": "C"
+        }
+      ]
+    },
+    "5": {
+      "uuid": "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e",
+      "processes": [
+        {
+          "pid": 1796483,
+          "type": "C"
+        }
+      ]
+    },
+    "6": {
+      "uuid": "GPU-daa75ed0-9080-a1fc-cb5c-f779251d88d2",
+      "processes": [
+        {
+          "pid": 1794756,
+          "type": "C+G"
+        }
+      ]
+    },
+    "7": {
+      "uuid": "GPU-00171f89-03fd-5703-b1aa-f5a29f6067ba",
+      "processes": [
+        {
+          "pid": 1794757,
+          "type": "C+G"
+        }
+      ]
+    }
+  },
+  "validation": {
+    "time": 1793346872.8923357,
+    "passed": true,
+    "extension_audits": {
+      "dmd_v2": {
+        "from_step": 2600,
+        "to_step": 5200,
+        "from_epochs": 200,
+        "to_epochs": 400,
+        "schedule": "keep fixed student and auxiliary learning rates",
+        "first_extension_lr": 1e-05,
+        "aux_lr": 0.0002,
+        "auxiliary_updates_per_student": 5,
+        "restored": "student, auxiliary, both optimizers, per-rank RNG"
+      },
+      "mfd_v2": {
+        "from_step": 2600,
+        "to_step": 5200,
+        "from_epochs": 200,
+        "to_epochs": 400,
+        "schedule": "keep fixed student and auxiliary learning rates",
+        "first_extension_lr": 1e-05,
+        "aux_lr": 0.0002,
+        "auxiliary_updates_per_student": 5,
+        "restored": "student, auxiliary, both optimizers, per-rank RNG"
+      }
+    },
+    "fql": {
+      "budget_epochs": 400,
+      "updates": 4400,
+      "evaluation_points": 27,
+      "data": {
+        "episodes": 128,
+        "successes": 115,
+        "transitions": 405
+      }
+    },
+    "gpu_used": false,
+    "tests": "...............................                                          [100%]\n31 passed in 1.96s"
+  },
+  "configs": {
+    "dmd_v2": {
+      "model": {
+        "model_type": "openpi",
+        "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed",
+        "precision": null,
+        "num_action_chunks": 50,
+        "action_dim": 14,
+        "is_lora": false,
+        "lora_rank": 32,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "config_name": "pi05_aloha_robotwin",
+          "num_images_in_input": 3,
+          "noise_level": 0.3,
+          "action_chunk": 50,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 14,
+          "noise_method": "flow_ode",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": true,
+          "use_dsrl": false,
+          "dsrl_state_dim": 8,
+          "dsrl_action_noise_dim": 32,
+          "dsrl_num_q_heads": 10,
+          "dsrl_agg_q": "mean",
+          "dsrl_image_latent_dim": 64,
+          "dsrl_state_latent_dim": 64,
+          "dsrl_hidden_dims": [
+            128,
+            128,
+            128
+          ],
+          "distill_target_time": false
+        }
+      },
+      "seed": 721042,
+      "batch_size": 384,
+      "microbatch_per_rank": 192,
+      "clip_grad": 1.0,
+      "log_every": 10,
+      "method": "dmd_v2",
+      "epochs": 400,
+      "lr": 1e-05,
+      "betas": [
+        0.0,
+        0.999
+      ],
+      "weight_decay": 0.0,
+      "checkpoint_steps": 5201,
+      "data_manifest": "/home/chenyiteng/deployment-20261027/single-formal-sz1-g67/data-manifest.json",
+      "checkpoint_keep_last": null,
+      "checkpoint_keep_steps": [],
+      "aux_lr": 0.0002,
+      "auxiliary_updates_per_student": 5,
+      "onedp_loss_action_dim": 14,
+      "single_task": "adjust_bottle",
+      "loss_coordinate_scope": "physical",
+      "cuda_allocator_conf": "expandable_segments:True",
+      "evaluation_steps": [
+        2860,
+        3120,
+        3380,
+        3640,
+        3900,
+        4160,
+        4420,
+        4680,
+        4940,
+        5200
+      ],
+      "retention_mode": "latest2_best"
+    },
+    "mfd_v2": {
+      "model": {
+        "model_type": "openpi",
+        "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed",
+        "precision": null,
+        "num_action_chunks": 50,
+        "action_dim": 14,
+        "is_lora": false,
+        "lora_rank": 32,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "config_name": "pi05_aloha_robotwin",
+          "num_images_in_input": 3,
+          "noise_level": 0.3,
+          "action_chunk": 50,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 14,
+          "noise_method": "flow_ode",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": true,
+          "use_dsrl": false,
+          "dsrl_state_dim": 8,
+          "dsrl_action_noise_dim": 32,
+          "dsrl_num_q_heads": 10,
+          "dsrl_agg_q": "mean",
+          "dsrl_image_latent_dim": 64,
+          "dsrl_state_latent_dim": 64,
+          "dsrl_hidden_dims": [
+            128,
+            128,
+            128
+          ],
+          "distill_target_time": false
+        }
+      },
+      "seed": 721042,
+      "batch_size": 384,
+      "microbatch_per_rank": 192,
+      "clip_grad": 1.0,
+      "log_every": 10,
+      "method": "mfd_v2",
+      "epochs": 400,
+      "lr": 1e-05,
+      "betas": [
+        0.0,
+        0.999
+      ],
+      "weight_decay": 0.0,
+      "checkpoint_steps": 5201,
+      "data_manifest": "/home/chenyiteng/deployment-20261027/single-formal-sz1-g67/data-manifest.json",
+      "checkpoint_keep_last": null,
+      "checkpoint_keep_steps": [],
+      "aux_lr": 0.0002,
+      "auxiliary_updates_per_student": 5,
+      "mfd_step_size": 0.02,
+      "mfd_loss_action_dim": 14,
+      "single_task": "adjust_bottle",
+      "cuda_allocator_conf": "expandable_segments:True",
+      "loss_coordinate_scope": "physical",
+      "evaluation_steps": [
+        2860,
+        3120,
+        3380,
+        3640,
+        3900,
+        4160,
+        4420,
+        4680,
+        4940,
+        5200
+      ],
+      "retention_mode": "latest2_best"
+    },
+    "fql_fixed_teacher": {
+      "model": {
+        "model_type": "openpi",
+        "model_path": "/data/chenyiteng/models/rlinf/RLinf-Pi05-RoboTwin-SFT-adjust_bottle@fa8df6ed",
+        "precision": null,
+        "num_action_chunks": 50,
+        "action_dim": 14,
+        "is_lora": false,
+        "lora_rank": 32,
+        "use_proprio": true,
+        "num_steps": 5,
+        "add_value_head": false,
+        "openpi": {
+          "config_name": "pi05_aloha_robotwin",
+          "num_images_in_input": 3,
+          "noise_level": 0.3,
+          "action_chunk": 50,
+          "num_steps": 5,
+          "train_expert_only": true,
+          "action_env_dim": 14,
+          "noise_method": "flow_ode",
+          "add_value_head": false,
+          "value_after_vlm": false,
+          "value_vlm_mode": "mean_token",
+          "detach_critic_input": true,
+          "use_dsrl": false,
+          "dsrl_state_dim": 8,
+          "dsrl_action_noise_dim": 32,
+          "dsrl_num_q_heads": 10,
+          "dsrl_agg_q": "mean",
+          "dsrl_image_latent_dim": 64,
+          "dsrl_state_latent_dim": 64,
+          "dsrl_hidden_dims": [
+            128,
+            128,
+            128
+          ],
+          "distill_target_time": false
+        }
+      },
+      "seed": 721042,
+      "batch_size": 448,
+      "microbatch_per_rank": 224,
+      "clip_grad": 1.0,
+      "log_every": 10,
+      "method": "fql_fixed_teacher",
+      "epochs": 4400,
+      "lr": 2.5e-05,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "weight_decay": 1e-10,
+      "warmup_steps": 55,
+      "checkpoint_steps": 4401,
+      "teacher_steps": 5,
+      "loss_action_dim": 14,
+      "checkpoint_keep_last": null,
+      "checkpoint_keep_steps": [],
+      "horizon": 50,
+      "execute_chunk": 50,
+      "transition_manifest": "/home/chenyiteng/deployment-20261027/single-formal-sz1-g67/transitions.json",
+      "q_width": 512,
+      "q_depth": 4,
+      "q_lr": 0.0003,
+      "discount": 0.99,
+      "target_tau": 0.005,
+      "alpha": 30.0,
+      "budget_resolved": true,
+      "single_task": "adjust_bottle",
+      "q_diagnostics": true,
+      "experiment_name": "fql-fix",
+      "evaluation_steps": [
+        14,
+        28,
+        55,
+        110,
+        165,
+        220,
+        330,
+        440,
+        550,
+        715,
+        880,
+        1100,
+        1320,
+        1540,
+        1760,
+        1980,
+        2200,
+        2420,
+        2640,
+        2860,
+        3080,
+        3300,
+        3520,
+        3740,
+        3960,
+        4180,
+        4400
+      ],
+      "retention_mode": "latest2_best"
+    }
+  },
+  "storage_free_gib": {
+    "/home": 142.36455154418945,
+    "/data": 127.74173736572266
+  },
+  "train_log_tail": "WARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nI0000 00:00:1793347122.869441 1796483 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\nWARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nI0000 00:00:1793347123.611341 1796482 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\nWARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nI0000 00:00:1793347124.007203 1796483 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\nWARNING: All log messages before absl::InitializeLog() is called are written to STDERR\nI0000 00:00:1793347124.776479 1796482 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.\n",
+  "multitask_direct_final": {
+    "time": 1793346863.3978434,
+    "episodes": 368,
+    "successes": 141,
+    "complete": null,
+    "rate": null
+  }
+}

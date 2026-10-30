@@ -149,3 +149,26 @@ def test_extension_retention_does_not_change_evaluation_points():
         validate_resume(
             ck, dict(new, evaluation_steps=[1100, 2200]), 4738, 2, extend_completed=True
         )
+
+
+@pytest.mark.parametrize("method", ["dmd_v2", "mfd_v2"])
+def test_physical_v2_200_to_400_preserves_method_and_resume(method):
+    ck, _ = dmd_configs()
+    old = ck["config"]
+    old.update(method=method, epochs=200, loss_coordinate_scope="physical",
+               checkpoint_steps=2601, checkpoint_keep_steps=[],
+               checkpoint_keep_last=None, retention_mode="latest2_best",
+               evaluation_steps=[2600])
+    if method == "mfd_v2":
+        old.update(mfd_step_size=0.02, mfd_loss_action_dim=14)
+    ck["step"] = 2600
+    new = dict(old, epochs=400, checkpoint_steps=5201,
+               evaluation_steps=list(range(2860, 5201, 260)))
+    audit = validate_resume(ck, new, 4738, 2, extend_completed=True)
+    assert (audit["from_step"], audit["to_step"]) == (2600, 5200)
+    assert (audit["first_extension_lr"], audit["aux_lr"]) == (1e-5, 2e-4)
+    assert validate_resume(dict(ck, config=new), new, 4738, 2) is None
+    for changed in [dict(loss_coordinate_scope="all"), dict(aux_lr=1e-3),
+                    dict(auxiliary_updates_per_student=1), dict(method="onedp")]:
+        with pytest.raises(ValueError):
+            validate_resume(ck, dict(new, **changed), 4738, 2, extend_completed=True)

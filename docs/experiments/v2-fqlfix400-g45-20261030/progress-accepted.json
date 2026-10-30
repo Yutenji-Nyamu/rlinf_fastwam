@@ -1,0 +1,164 @@
+{
+  "time": 1793347783.8946166,
+  "g45_progress": {
+    "fake_physical_mse": 0.0042106215842068195,
+    "fake_padding_mse": 0.19867950677871704,
+    "fake": 0.0042106215842068195,
+    "fake_grad_norm": 0.03927367553114891,
+    "fake_clip_fraction": 0.0,
+    "score_gradient_rms": 0.0091940239071846,
+    "loss": -0.001788049703463912,
+    "stage_seconds": {
+      "data_wait": 0.012413318268954754,
+      "observation_prefix": 3.007167126983404,
+      "auxiliary_updates": 2.2168144825845957,
+      "student_update": 0.5727671692147851
+    },
+    "auxiliary_updates": 13500,
+    "student_updates": 2700,
+    "aux_lr": 0.0002,
+    "student_clipped": 0.0,
+    "step": 2700,
+    "epoch": 207.69230769230768,
+    "grad_norm": 0.003182802116498351,
+    "lr": 1e-05,
+    "seconds_per_update": 5.8552267971262335,
+    "peak_gib": 72.54422283172607,
+    "peak_reserved_gib": 73.66015625,
+    "time": 1793347770.5966382,
+    "rank": 0
+  },
+  "g45_state": {
+    "time": 1793347112.6585395,
+    "phase": "TRAINING",
+    "method": "dmd_v2",
+    "stop_step": 2860,
+    "output": "/data/chenyiteng/results/pi05-distill/v2-fqlfix400-sz1-g45-20261030/dmd_v2",
+    "child": {
+      "pid": 1796438,
+      "uid": 1003,
+      "start": 623383170,
+      "state": "R"
+    },
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-u",
+      "-B",
+      "-m",
+      "torch.distributed.run",
+      "--standalone",
+      "--nproc_per_node=2",
+      "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/source/tools/pi05_distillation/train.py",
+      "--config",
+      "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/dmd_v2.json",
+      "--output",
+      "/data/chenyiteng/results/pi05-distill/v2-fqlfix400-sz1-g45-20261030/dmd_v2",
+      "--stop-step",
+      "2860",
+      "--resume",
+      "/data/chenyiteng/results/pi05-distill/physical-v2-formal-sz1-g67-20261028/dmd_v2/checkpoint-002600.pt",
+      "--decode-workers",
+      "8",
+      "--prefetch-batches",
+      "1",
+      "--profile-stages",
+      "--extend-completed-run"
+    ]
+  },
+  "g67_state": {
+    "time": 1793347739.4869196,
+    "phase": "TRAINING",
+    "method": "endpoint",
+    "stop_step": 4180,
+    "output": "/home/chenyiteng/results/pi05-distill/single-extend400-fqlfix-sz1-g67-20261029/endpoint",
+    "child": {
+      "pid": 1817508,
+      "uid": 1003,
+      "start": 623445853,
+      "state": "R"
+    },
+    "command": [
+      "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+      "-u",
+      "-B",
+      "-m",
+      "torch.distributed.run",
+      "--standalone",
+      "--nproc_per_node=2",
+      "/home/chenyiteng/deployment-20261029/single-extend400-fqlfix-sz1-g67/source/tools/pi05_distillation/train.py",
+      "--config",
+      "/home/chenyiteng/deployment-20261029/single-extend400-fqlfix-sz1-g67/endpoint.json",
+      "--output",
+      "/home/chenyiteng/results/pi05-distill/single-extend400-fqlfix-sz1-g67-20261029/endpoint",
+      "--stop-step",
+      "4180",
+      "--resume",
+      "/home/chenyiteng/results/pi05-distill/single-extend400-fqlfix-sz1-g67-20261029/endpoint/checkpoint-003960.pt",
+      "--decode-workers",
+      "8",
+      "--prefetch-batches",
+      "1",
+      "--profile-stages"
+    ]
+  },
+  "rlt": {
+    "owner_alive": true,
+    "status": {
+      "slots": {
+        "4": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "5": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "6": {
+          "phase": "WAIT_EXTERNAL"
+        },
+        "7": {
+          "phase": "WAIT_EXTERNAL"
+        }
+      },
+      "time": 1793347771.718882,
+      "owner": {
+        "pid": 1796259,
+        "uid": 1003,
+        "start": 623382422,
+        "state": "R"
+      }
+    },
+    "fallback_checks": {
+      "4": {
+        "step": 225,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "5": {
+        "step": 225,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "6": {
+        "step": 25,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      },
+      "7": {
+        "step": 300,
+        "checkpoint_exists": true,
+        "config_exists": true,
+        "environment_exists": true,
+        "external_alive": true
+      }
+    }
+  },
+  "storage_free_gib": {
+    "/home": 148.77468872070312,
+    "/data": 127.73290252685547
+  }
+}

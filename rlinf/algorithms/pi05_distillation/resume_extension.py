@@ -11,7 +11,9 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
     old = checkpoint["config"]
     if old == config:
         return None
-    if not extend_completed or old["method"] not in {"endpoint", "cp", "cp_v2", "onedp", "mfd"}:
+    if not extend_completed or old["method"] not in {
+        "endpoint", "cp", "cp_v2", "onedp", "mfd", "dmd_v2", "mfd_v2"
+    }:
         raise ValueError("Resume configuration mismatch")
     changed = {
         key for key in old.keys() | config.keys() if old.get(key) != config.get(key)
@@ -40,7 +42,7 @@ def validate_resume(checkpoint, config, windows, world_size, *, extend_completed
         or config["checkpoint_steps"] != new_total + 1
     ):
         raise ValueError("Invalid extension evaluation/checkpoint schedule")
-    if old["method"] in {"onedp", "mfd"}:
+    if old["method"] in {"onedp", "mfd", "dmd_v2", "mfd_v2"}:
         return {
             "from_step": old_total,
             "to_step": new_total,

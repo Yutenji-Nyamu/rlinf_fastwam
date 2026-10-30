@@ -8,6 +8,7 @@ from single_formal_plan import (
     formal_config,
     fql_fix_formal_config,
     inference_method,
+    planned_methods,
     run_stages,
     validate_post_eval_retention,
     v2_formal_config,
@@ -73,6 +74,15 @@ def test_method_failure_advances_but_cancellation_does_not():
 
     with pytest.raises(KeyboardInterrupt):
         run_stages(["endpoint", "mfd"], cancelled, lambda *_: None)
+
+
+def test_pending_queue_edit_does_not_restart_current_or_repeat_stages():
+    plan = {"methods": ["endpoint", "fql_fixed_teacher"]}
+    stages = planned_methods(lambda: plan)
+    assert next(stages) == "endpoint"
+    # Move pending FQL elsewhere and append CP; the current method is untouched.
+    plan["methods"] = ["endpoint", "cp", "cp"]
+    assert list(stages) == ["cp"]
 
 
 @pytest.mark.parametrize(

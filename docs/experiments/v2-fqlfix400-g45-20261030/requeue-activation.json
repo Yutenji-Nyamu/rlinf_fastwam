@@ -1,0 +1,87 @@
+{
+  "time": 1793347105.2746634,
+  "new_owner": {
+    "pid": 1795784,
+    "uid": 1003,
+    "start": 623380168,
+    "state": "R"
+  },
+  "unchanged_g45_predecessor": {
+    "pid": 3363279,
+    "uid": 1003,
+    "start": 578677705,
+    "state": "R"
+  },
+  "unchanged_g67_owner": {
+    "pid": 305527,
+    "uid": 1003,
+    "start": 617679417,
+    "state": "R"
+  },
+  "rlt_handoff": {
+    "time": 1793347105.2709935,
+    "identity": {
+      "pid": 1795784,
+      "uid": 1003,
+      "start": 623380168,
+      "state": "R"
+    },
+    "owner": {
+      "pid": 1796259,
+      "uid": 1003,
+      "start": 623382422,
+      "state": "S"
+    },
+    "gpus": [
+      4,
+      5
+    ],
+    "rlt_restores": [
+      {
+        "gpu": 4,
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g4-after-noise-early-c20-1019-v2/rlt-sz1-g4-after-noise-early-c20-1019-v2/checkpoints/global_step_225",
+        "request": "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/fallback-g4.json"
+      },
+      {
+        "gpu": 5,
+        "checkpoint": "/data/chenyiteng/results/rlinf-rlt/rlt-sz1-g5-after-noise-early-c20-1019-v2/rlt-sz1-g5-after-noise-early-c20-1019-v2/checkpoints/global_step_225",
+        "request": "/home/chenyiteng/deployment-20261030/v2-fqlfix400-sz1-g45/fallback-g5.json"
+      }
+    ],
+    "stopped": [
+      {
+        "pid": 1788291,
+        "uid": 1003,
+        "start": 623360758,
+        "state": "R"
+      },
+      {
+        "pid": 1788292,
+        "uid": 1003,
+        "start": 623360758,
+        "state": "R"
+      }
+    ]
+  },
+  "g45": [
+    "dmd_v2",
+    "mfd_v2",
+    "fql_fixed_teacher"
+  ],
+  "g67": [
+    "endpoint",
+    "cp_v2",
+    "onedp",
+    "mfd"
+  ],
+  "budget_epochs": 400,
+  "output": "/data/chenyiteng/results/pi05-distill/v2-fqlfix400-sz1-g45-20261030",
+  "retention": "latest2 plus stage best, preserve previous200",
+  "cp_added": false,
+  "free_gib": {
+    "/home": 142.36466217041016,
+    "/data": 127.74181747436523
+  },
+  "g67_training_unchanged": true,
+  "only_low_priority_g45_rlt_preempted": true
+}

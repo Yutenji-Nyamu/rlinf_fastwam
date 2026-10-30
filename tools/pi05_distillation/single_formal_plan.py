@@ -171,3 +171,15 @@ def run_stages(methods, run, failed):
             failed(method, exc)
             outcomes[method] = {"status": "failed", "error": repr(exc)}
     return outcomes
+
+
+def planned_methods(read_plan):
+    """Read pending stages at method boundaries without restarting a live stage."""
+    visited = set()
+    while True:
+        pending = [m for m in read_plan()["methods"] if m not in visited]
+        if not pending:
+            return
+        method = pending[0]
+        visited.add(method)
+        yield method
