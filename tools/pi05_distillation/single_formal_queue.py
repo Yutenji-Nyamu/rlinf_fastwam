@@ -190,9 +190,7 @@ def clear_owned():
     ):
         time.sleep(0.25)
     if any(q.gpus()[g]["processes"] for g in q.CARDS):
-        raise RuntimeError(
-            "GPU pair still occupied; not killing unidentified processes"
-        )
+        q.wait_for_cards()
 
 
 def run_method(method):
@@ -205,7 +203,23 @@ def run_method(method):
     validate_post_eval_retention(method, c, plan, O / method)
     receipt = plan.get("initial_receipts", {}).get(method)
     rows = []
+    if method in plan.get("resume_in_progress", []):
+        if not receipt:
+            raise ValueError("In-progress resume needs a complete checkpoint receipt")
+        for step in c.get("evaluation_steps", c["checkpoint_keep_steps"]):
+            if step > receipt["step"]:
+                break
+            path = O / f"summary-{method}-s{step:06d}.json"
+            if path.exists():
+                row = q.read(path)
+                if row.get("method") != method or row.get("checkpoint", {}).get("step") != step:
+                    raise ValueError("Resume evaluation receipt mismatch")
+                rows.append(row)
+        if not rows or not rows[-1]["complete"] or rows[-1]["checkpoint"] != receipt:
+            raise ValueError("In-progress recovery requires its completed evaluation")
     for stop in c.get("evaluation_steps", c["checkpoint_keep_steps"]):
+        if receipt and stop <= receipt["step"]:
+            continue
         reserve = plan.get("checkpoint_reserve_gib", {}).get(method)
         if reserve is not None:
             require_save_space(O / method, reserve)

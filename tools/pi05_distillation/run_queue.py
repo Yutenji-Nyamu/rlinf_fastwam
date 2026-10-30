@@ -67,7 +67,7 @@ def event(phase, **fields):
 def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
     """Run one complete two-rank segment and require its checkpoint receipt."""
     global child
-    assert all(not gpus()[g]["processes"] for g in CARDS), "GPU pair not clear"
+    wait_for_cards()
     env = dict(os.environ, **read(O / f"environment-g{CARDS[0]}.json"))
     env.update(
         CUDA_VISIBLE_DEVICES=GPU_LIST,
@@ -146,6 +146,24 @@ def train(method, output, stop_step, resume=None, label=None, *, extra_args=()):
     )
     assert receipt["step"] == stop_step
     return receipt
+
+
+def wait_for_cards(timeout_seconds=1800):
+    """Wait for transient foreign contexts; never terminate another job."""
+    deadline = time.monotonic() + timeout_seconds
+    announced = False
+    while True:
+        snapshot = gpus()
+        busy = {g: snapshot[g]["processes"] for g in CARDS
+                if snapshot[g]["processes"]}
+        if not busy:
+            return
+        if not announced:
+            event("WAITING_GPU_CLEAR", processes=busy)
+            announced = True
+        if time.monotonic() >= deadline:
+            raise TimeoutError("GPU pair occupied for 30 minutes; no foreign processes killed")
+        time.sleep(2)
 
 
 def evaluate(method, receipt, label):
