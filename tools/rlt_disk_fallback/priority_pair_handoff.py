@@ -4,8 +4,11 @@ from pathlib import Path
 from omegaconf import OmegaConf
 S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'));from common import read,save,proc,same,exact_signal,gpus
 
-def handoff(D,cards,identity):
+def handoff(D,cards,identity,reservations=None):
  assert same(identity)and identity['uid']==os.getuid()
+ if reservations:
+  assert set(map(str,cards))==set(reservations)
+  assert all(same(r['identity'])and r['identity']['uid']==os.getuid() for r in reservations.values())
  serial=(S/'priority-handoff.lock').open('a');fcntl.flock(serial,fcntl.LOCK_EX)
  lock=None
  try:
@@ -45,7 +48,8 @@ def handoff(D,cards,identity):
    c['runner']['resume_dir']=str(latest)
    if 'dvac_gradient_weighting'in c.get('algorithm',{}):c['algorithm']['dvac_gradient_weighting']['output_dir']=str(cp_root/('dvac-after-'+D.name))
    save(newrt/'resolved.yaml',c);save(newrt/'environment.json',read(rt/'environment.json'));old.update(runtime=str(newrt),checkpoint=str(latest),step=int(latest.name.split('_')[-1]));req=D/f'fallback-g{g}.json';save(req,old)
-   p['slots'][g].update(fallback=str(req),external_identity=identity,external_release=str(D/'released.json'));p['slots'][g].pop('priority_after_external',None);state['slots'][g]={'phase':'WAIT_EXTERNAL'};restores.append(dict(gpu=int(g),checkpoint=str(latest),request=str(req)))
+   reservation=reservations[g] if reservations else dict(identity=identity,release=str(D/'released.json'))
+   p['slots'][g].update(fallback=str(req),external_identity=reservation['identity'],external_release=reservation['release']);p['slots'][g].pop('priority_after_external',None);state['slots'][g]={'phase':'WAIT_EXTERNAL'};restores.append(dict(gpu=int(g),checkpoint=str(latest),request=str(req)))
   save(S/'plan.json',p);save(S/'status.json',state)
  finally:
   if lock is not None:lock.close()

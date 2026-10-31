@@ -54,9 +54,15 @@ def run(path):
     from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
 
     c = read(path)
+    nstep = c.get("nstep_signals", False)
+    batch = c["num_envs"]
     noise4 = c.get("noise_samples", 0) == 4
     assert c.get("noise_samples", 0) in (0, 4)
-    assert c["num_envs"] == 16 and c["model"]["num_action_chunks"] == 50
+    assert batch in ((16, 32) if nstep else (16,)) and c["model"]["num_action_chunks"] == 50
+    if nstep:
+        assert noise4 and not c.get("attention_objects")
+        sys.path.insert(0, str(ROOT / "tools/pi05_nstep_signal"))
+        from observe import observe as observe_nsteps
     assert os.environ["CUDA_VISIBLE_DEVICES"] == os.environ["DOJO_GPU_SCOPE"] == str(c["gpu"])
     out = Path(c["output"])
     out.mkdir(parents=True, exist_ok=False)
@@ -74,10 +80,10 @@ def run(path):
         from observer import ObjectAttentionObserver
         from analysis import reconstruct
         attention = ObjectAttentionObserver(model)
-    dummy = {"main_images": torch.zeros((16, 224, 224, 3), dtype=torch.uint8),
-             "wrist_images": torch.zeros((16, 2, 224, 224, 3), dtype=torch.uint8),
-             "extra_view_images": None, "states": torch.zeros((16, 14)),
-             "task_descriptions": [c["task"]] * 16}
+    dummy = {"main_images": torch.zeros((batch, 224, 224, 3), dtype=torch.uint8),
+             "wrist_images": torch.zeros((batch, 2, 224, 224, 3), dtype=torch.uint8),
+             "extra_view_images": None, "states": torch.zeros((batch, 14)),
+             "task_descriptions": [c["task"]] * batch}
     # Accepted model-before-SAPIEN initialization. Verify U once on each lane.
     cpu, cuda = torch.get_rng_state(), torch.cuda.get_rng_state()
     a, result = infer(model, dummy, False)
@@ -91,7 +97,36 @@ def run(path):
         assert torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state())
         assert float(result["dvac_telemetry"]["side_final_time"]) == 0
         save(out / "u-parity.json", {"action_exact": True, "rng_exact": True, "side_final_time": 0})
-        if noise4:
+        if nstep:
+            trials = []
+            for extra in c.get("benchmark_noise_batches", [3 * batch, 3 * batch // 2]):
+                try:
+                    for repeat in range(2):
+                        torch.cuda.synchronize()
+                        torch.cuda.reset_peak_memory_stats()
+                        tic = time.perf_counter()
+                        observed = observe_nsteps(model, dummy, result["dvac_telemetry"], b,
+                                                 c["noise_seed"] + 440000003, extra)
+                        torch.cuda.synchronize()
+                        elapsed = time.perf_counter() - tic
+                    trials.append(dict(extra_batch=extra, seconds=elapsed,
+                                       peak_gib=torch.cuda.max_memory_allocated() / 2**30))
+                except torch.cuda.OutOfMemoryError:
+                    torch.cuda.empty_cache()
+                    trials.append(dict(extra_batch=extra, oom=True))
+            good = [t for t in trials if not t.get("oom") and t["peak_gib"] < 77]
+            assert good, "No accepted nstep extra-noise batch"
+            chosen = min(good, key=lambda t: t["seconds"])
+            c["noise_extra_batch"] = chosen["extra_batch"]
+            assert np.array_equal(observed["actions_env_n10"][:, 0], array(b))
+            assert torch.equal(cpu_after, torch.get_rng_state()) and torch.equal(cuda_after, torch.cuda.get_rng_state())
+            save(out / "nstep-parity.json", dict(main_action_exact=True, rng_exact=True,
+                 budgets=[1, 5, 10], shared_initial_noise=True, final_time=0,
+                 n1_dv_missing=True, environment_batch=batch))
+            save(out / "noise-capacity.json", dict(trials=trials, selected=chosen, environment_batch=batch))
+            save(out / "config.json", c)
+            del observed
+        elif noise4:
             observed = collect_noise_samples(model, dummy, result["dvac_telemetry"], b,
                                              c["noise_seed"] + 440000003)
             assert np.array_equal(observed["noise4_env_actions"][:, 0], array(b))
@@ -105,14 +140,18 @@ def run(path):
         del b, result
     del dummy, a
     env, recorders = None, []
-    success, counts = np.zeros(16, bool), np.zeros(16, int)
+    success, counts = np.zeros(batch, bool), np.zeros(batch, int)
     queries, timings = [], []
     try:
         save(out / "progress.json", {"time": time.time(), "phase": "environment_init"})
         ec = OmegaConf.create(c["env"])
         assert not ec.auto_reset and ec.ignore_terminations and not ec.video_cfg.save_video
-        env = RoboTwinEnv(ec, 16, 0, 1, None)
+        env = RoboTwinEnv(ec, batch, 0, 1, None)
         obs, _ = env.reset()
+        if nstep:
+            sys.path.insert(0, str(ROOT / "tools/pi05_policy_eval"))
+            from protocol import configure_recording_wait
+            configure_recording_wait(env, seconds=c.get("environment_step_timeout_seconds", 300))
         if attention and c["task"] in ("open_laptop", "place_object_scale", "put_object_cabinet"):
             # Accepted native metadata repair from the 20261012 attention run.
             for sub in env.venv.envs:
@@ -120,7 +159,7 @@ def run(path):
         requested = env.reset_state_ids.cpu().tolist()
         actual = [int(e.task.ep_num) for e in env.venv.envs]
         seeds = [dict(slot=i, requested=int(requested[i]), actual=actual[i],
-                      native_retry=int(requested[i]) != actual[i]) for i in range(16)]
+                      native_retry=int(requested[i]) != actual[i]) for i in range(batch)]
         save(out / "seeds.json", seeds)
         for i, sub in enumerate(env.venv.envs):
             recorders.append(Recorder(sub.task, out, i, actual[i], fps=25))
@@ -147,7 +186,7 @@ def run(path):
                 torch.cuda.set_rng_state(cuda)
             if attention:
                 attention.begin(reference=reference)
-            actions, result = infer(model, obs, True)
+            actions, result = infer(model, obs, not nstep)
             trace = result["dvac_telemetry"]
             if attention:
                 raw, metadata = attention.finish(result, actions)
@@ -181,16 +220,21 @@ def run(path):
                                 cuda_peak_bytes=torch.cuda.max_memory_allocated())
                 save(out / f"query_{q:03d}_attention.json", metadata)
                 del raw, attention_data
-            data = {k: array(trace[k]) for k in ("initial_noise_full", "final_model_action",
-                    "side_action_model", "side_timesteps", "side_final_time", "x_chain")}
-            score = ugrow_10_vs_5(data["final_model_action"], data["side_action_model"])
-            assert score.valid.all()
+            if nstep:
+                data = observe_nsteps(model, obs, trace, actions,
+                    c["noise_seed"] + 440000003 + 1009 * q, c.get("noise_extra_batch"))
+            else:
+                data = {k: array(trace[k]) for k in ("initial_noise_full", "final_model_action",
+                        "side_action_model", "side_timesteps", "side_final_time", "x_chain")}
+                score = ugrow_10_vs_5(data["final_model_action"], data["side_action_model"])
+                assert score.valid.all()
+                data.update(u=score.score, u_valid=score.valid)
             action = array(actions)
-            assert action.shape == (16, 50, 14) and np.isfinite(action).all()
-            data.update(env_action=action, u=score.score, u_valid=score.valid, active=active, before=before)
+            assert action.shape == (batch, 50, 14) and np.isfinite(action).all()
+            data.update(env_action=action, active=active, before=before)
             if attention:
                 data["dv"] = array(trace["z_endpoint"]).astype(np.float64)[:, -5:].var(axis=1).sum(-1)
-            if noise4:
+            if noise4 and not nstep:
                 data.update(collect_noise_samples(model, obs, trace, actions,
                             c["noise_seed"] + 440000003 + 1009 * q))
                 dispersion = noise_disagreement(data["noise4_model_actions"])
@@ -228,7 +272,7 @@ def run(path):
         episodes = [dict(**seeds[i], task=c["task"], batch=c["batch"], success=bool(success[i]),
                          submitted=int(counts[i]), control_steps=recorders[i].ticks,
                          frames=len(recorders[i].frames), video=f"episode_{i:02d}.mp4",
-                         frame_map=f"episode_{i:02d}_frames.json") for i in range(16)]
+                         frame_map=f"episode_{i:02d}_frames.json") for i in range(batch)]
         save(out / "episodes.json", episodes)
     finally:
         if attention:
@@ -240,11 +284,12 @@ def run(path):
         if env is not None:
             env.offload(clear_cache=True)
     save(out / "done.json", dict(time=time.time(), elapsed_seconds=time.time() - start,
-                                  episodes=16, successes=int(success.sum()), queries=len(queries),
+                                  episodes=batch, successes=int(success.sum()), queries=len(queries),
                                   video="25Hz simulated timeline plus query endpoints; every control step mapped",
                                   u="same observation/full noise M10 vs M5, H50 D14",
-                                  noise_samples=4 if noise4 else 0,
-                                  noise_signal="population std / RMS across four N10 samples; mean D14" if noise4 else None))
+                                  noise_samples=4 if noise4 else 0, nstep_signals=nstep,
+                                  noise_signal=("shared four noises for N1/N5/N10; population std/RMS, mean D14" if nstep else
+                                      "population std / RMS across four N10 samples; mean D14" if noise4 else None)))
 
 
 if __name__ == "__main__":
@@ -257,4 +302,6 @@ if __name__ == "__main__":
             save(out / "error.json", {"time": time.time(), "error": error})
             if "pi05_attn_objects" in error:
                 save(out / "attention_error.json", {"time": time.time(), "error": error})
+            if "pi05_nstep_signal" in error or "nstep-parity" in error:
+                save(out / "nstep_error.json", {"time": time.time(), "error": error})
         raise
