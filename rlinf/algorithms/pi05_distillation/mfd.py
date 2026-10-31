@@ -11,6 +11,7 @@ import math
 import torch
 import torch.distributed as dist
 
+from rlinf.algorithms.pi05_distillation.gad import weighted_mean
 from rlinf.algorithms.pi05_distillation.losses import action_coordinates, expand
 
 
@@ -109,7 +110,13 @@ def average_velocity(
 
 
 def auxiliary_loss(
-    fake, generated, context, *, action_dim: int = 14, loss_action_dim=None
+    fake,
+    generated,
+    context,
+    *,
+    action_dim: int = 14,
+    loss_action_dim=None,
+    weights=None,
 ):
     """Fit student velocity; v2 optionally scores only physical coordinates.
 
@@ -124,7 +131,7 @@ def auxiliary_loss(
     parts = {"fake_physical_mse": error[..., :action_dim].detach().mean()}
     if error.shape[-1] > action_dim:
         parts["fake_padding_mse"] = error[..., action_dim:].detach().mean()
-    return action_coordinates(error, loss_action_dim).mean(), parts
+    return weighted_mean(action_coordinates(error, loss_action_dim), weights), parts
 
 
 def student_loss(
@@ -137,6 +144,7 @@ def student_loss(
     action_dim=14,
     intervals=None,
     diagnostics=False,
+    weights=None,
 ):
     """Reference <stopgrad(u_teacher-u_fake), x_t>, over physical coordinates.
 
@@ -177,7 +185,7 @@ def student_loss(
         action_dim=action_dim,
     )
     direction = (teacher_mean - fake_mean)[..., :action_dim]
-    loss = (direction * noised[..., :action_dim]).mean()
+    loss = weighted_mean(direction * noised[..., :action_dim], weights)
     parts = {
         "mfd_direction_rms": direction.square().mean().sqrt(),
         "mfd_interval_mean": (start - end).mean(),

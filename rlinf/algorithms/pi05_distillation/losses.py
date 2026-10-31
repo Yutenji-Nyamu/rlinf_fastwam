@@ -21,6 +21,8 @@ adaptations, not the papers' EDM/DDPM parameterizations. See the method note.
 import torch
 import torch.nn.functional as F
 
+from .gad import weighted_mean
+
 
 def expand(t: torch.Tensor) -> torch.Tensor:
     """Broadcast a batch of scalar times across a complete action block."""
@@ -42,7 +44,11 @@ def action_coordinates(value: torch.Tensor, action_dim: int | None) -> torch.Ten
 
 
 def cp_distance(
-    pred: torch.Tensor, target: torch.Tensor, *, action_dim: int | None = None
+    pred: torch.Tensor,
+    target: torch.Tensor,
+    *,
+    action_dim: int | None = None,
+    weights=None,
 ) -> torch.Tensor:
     """Match official Huber_Loss(delta=-1), using a stable equivalent formula.
 
@@ -56,10 +62,12 @@ def cp_distance(
     )
     delta = (pred.shape[1] * pred.shape[2]) ** 0.5 * 0.00054
     fourth = (pred.float() - target.float()).square().square()
-    return (fourth / ((fourth + delta**2).sqrt() + delta)).mean()
+    return weighted_mean(fourth / ((fourth + delta**2).sqrt() + delta), weights)
 
 
-def cp_loss(student, teacher, ema, actions, context, *, bins=80, action_dim=None):
+def cp_loss(
+    student, teacher, ema, actions, context, *, bins=80, action_dim=None, weights=None
+):
     """Teacher one-step bridge, EMA composition consistency, and native FM anchor."""
     b, device = len(actions), actions.device
     index = torch.randint(1, bins + 1, (b,), device=device)
@@ -75,7 +83,7 @@ def cp_loss(student, teacher, ema, actions, context, *, bins=80, action_dim=None
     middle = flow_map(student, x, t, s, context)
     # EMA parameters are frozen, but this input derivative MUST reach student.
     pred = flow_map(ema, middle, s, zero, context)
-    consistency = cp_distance(pred, target, action_dim=action_dim)
+    consistency = cp_distance(pred, target, action_dim=action_dim, weights=weights)
     # Native pi05 flow-matching time distribution and velocity target.
     tm = torch.distributions.Beta(1.5, 1.0).sample((b,)).to(device) * 0.999 + 0.001
     epsilon = torch.randn_like(actions)
@@ -84,7 +92,10 @@ def cp_loss(student, teacher, ema, actions, context, *, bins=80, action_dim=None
     fm = F.mse_loss(
         action_coordinates(velocity, action_dim),
         action_coordinates(epsilon - actions, action_dim),
+        reduction="none" if weights is not None else "mean",
     )
+    if weights is not None:
+        fm = weighted_mean(fm, weights)
     parts = {"consistency": consistency, "fm": fm}
     if action_dim is not None:
         with torch.no_grad():
@@ -122,6 +133,7 @@ def fake_loss(
     time_max=0.95,
     return_parts=False,
     loss_action_dim=None,
+    weights=None,
 ):
     """Fit fake epsilon to the student's distribution; lambda(t)=1 as OneDP-S."""
     t = (
@@ -134,7 +146,10 @@ def fake_loss(
     loss = F.mse_loss(
         action_coordinates(eps_pred, loss_action_dim),
         action_coordinates(noise, loss_action_dim),
+        reduction="none" if weights is not None else "mean",
     )
+    if weights is not None:
+        loss = weighted_mean(loss, weights)
     if not return_parts:
         return loss
     with torch.no_grad():
@@ -146,7 +161,15 @@ def fake_loss(
 
 
 def onedp_loss(
-    generated, teacher, fake, context, *, time_min=0.02, time_max=0.95, action_dim=None
+    generated,
+    teacher,
+    fake,
+    context,
+    *,
+    time_min=0.02,
+    time_max=0.95,
+    action_dim=None,
+    weights=None,
 ):
     """Reverse-KL score gradient with OneDP w=sigma^2 in flow coordinates.
 
@@ -169,7 +192,12 @@ def onedp_loss(
         if not 0 < action_dim <= generated.shape[-1]:
             raise ValueError("Invalid physical action dimension")
         direction, x = direction[..., :action_dim], x[..., :action_dim]
-    return (direction * x).flatten(1).mean(1).mean(), direction.square().mean().sqrt()
+    loss = (
+        (direction * x).flatten(1).mean(1).mean()
+        if weights is None
+        else weighted_mean(direction * x, weights)
+    )
+    return loss, direction.square().mean().sqrt()
 
 
 def ema_decay(step: int) -> float:
@@ -177,7 +205,9 @@ def ema_decay(step: int) -> float:
     return min(0.9999, 1 - (1 + max(step - 1, 0)) ** -0.75)
 
 
-def endpoint_loss(student, teacher, noise, context, *, teacher_steps=10, action_dim=14):
+def endpoint_loss(
+    student, teacher, noise, context, *, teacher_steps=10, action_dim=14, weights=None
+):
     """Pair native multistep teacher and N1 student endpoints using the SAME noise.
 
     Compare normalized physical action coordinates over the whole H50 block.
@@ -195,7 +225,7 @@ def endpoint_loss(student, teacher, noise, context, *, teacher_steps=10, action_
     error = (
         prediction[..., :action_dim].float() - target[..., :action_dim].float()
     ).square()
-    loss = error.mean()
+    loss = weighted_mean(error, weights)
     return loss, {
         "endpoint_mse": loss,
         "joint_mse": error[..., [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12]].mean(),

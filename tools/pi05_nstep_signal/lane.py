@@ -19,7 +19,7 @@ def main():
     D,gpu=Path(sys.argv[1]),int(sys.argv[2])
     plan=read(D/f'lane-g{gpu}-plan.json');O=Path(plan['output'])
     save(D/f'lane-g{gpu}-identity.json',proc(os.getpid()))
-    results=[]; token=None; status={}; accepted=False; extra=None
+    results=[]; token=None; status={}; accepted=plan.get('previously_accepted',False); extra=plan.get('noise_extra_batch')
     def stopped(*_):
         raise KeyboardInterrupt('lane stopped')
     signal.signal(signal.SIGTERM,stopped)
@@ -69,12 +69,15 @@ def main():
                 reason='complete' if valid else 'validation_failed'
                 if valid:
                     accepted=True
-                    cap=read(out/'noise-capacity.json')
+                    # Only the first accepted batch writes the capacity probe.
+                    cap=read(out/'noise-capacity.json') if (out/'noise-capacity.json').exists() else None
                     if cap:extra=cap['selected']['extra_batch']
             else:
                 text=logpath.read_text(errors='replace')[-16000:]
                 oom='out of memory' in text.lower()
-                fatal=((out/'nstep_error.json').exists() or not (out/'progress.json').exists()) and not oom
+                # A task failing before its first progress file is still a task
+                # failure, not proof that all subsequent tasks cannot run.
+                fatal=child.returncode==78 or ((out/'nstep_error.json').exists() and not oom)
                 reason=reason or ('oom' if oom else 'task_error')
                 if oom and c['num_envs']==32:
                     # Exactly the same 32 seeds, retried once in two B16 batches.

@@ -30,7 +30,7 @@ import torch.distributed as dist
 from omegaconf import OmegaConf
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from rlinf.algorithms.pi05_distillation import mfd
+from rlinf.algorithms.pi05_distillation import gad, mfd
 from rlinf.algorithms.pi05_distillation.checkpoint_retention import prune_checkpoints
 from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
@@ -174,7 +174,18 @@ def main():
         if method in {"onedp", "mfd"}
         else None
     )
-    start, resume_extension = 0, None
+    start, resume_extension, gad_state = 0, None, None
+    gad_enabled = bool(c.get("gad"))
+    if gad_enabled and c["gad"] != {
+        "version": 1,
+        "samples": 4,
+        "weight_range": [0.5, 1.5],
+        "uniform_mix": 0.5,
+        "priority_alpha": 0.6,
+        "importance_beta": 1.0,
+        "auxiliary_weighting": True,
+    }:
+        raise ValueError("Unrecognized GAD contract; no silently ignored knobs")
     if args.extend_completed_run and not args.resume:
         raise ValueError("A budget extension requires a complete resume checkpoint")
     if args.resume:
@@ -199,6 +210,8 @@ def main():
         if opt_aux:
             opt_aux.load_state_dict(ck["aux_optimizer"])
         start = ck["step"]
+        if gad_enabled:
+            gad_state = ck["gad_state"]
         rng = ck["rng"][rank]
         random.setstate(rng["python"])
         np.random.set_state(rng["numpy"])
@@ -246,25 +259,48 @@ def main():
             },
         )
     begin = time.monotonic()
-    batches = decoded_batches(
-        data,
-        training_indices(
-            data, start, stop, global_batch, micro, rank, world, c["seed"]
-        ),
-        decode_workers=args.decode_workers,
-        prefetch_batches=args.prefetch_batches,
+    batches = (
+        gad.PriorityBatches(
+            data,
+            rank=rank,
+            world=world,
+            batch=global_batch,
+            seed=c["seed"],
+            start=start,
+            workers=max(1, args.decode_workers),
+            state=gad_state,
+        )
+        if gad_enabled
+        else decoded_batches(
+            data,
+            training_indices(
+                data, start, stop, global_batch, micro, rank, world, c["seed"]
+            ),
+            decode_workers=args.decode_workers,
+            prefetch_batches=args.prefetch_batches,
+        )
     )
     with closing(batches):
         for step in range(start, stop):
             lr_mult = 1.0
             if method in {"cp", "endpoint"}:
                 warm = c["warmup_steps"]
+                # Reproduce the control's original 100->200->400 (Direct),
+                # or 200->400 (CP v2) schedule without changing optimizer state.
+                schedule_total = next(
+                    (s for s in c.get("cosine_budget_boundaries", [total]) if step < s),
+                    total,
+                )
                 lr_mult = (
                     min(1.0, (step + 1) / max(1, warm))
                     * 0.5
                     * (
                         1
-                        + math.cos(math.pi * max(0, step - warm) / max(1, total - warm))
+                        + math.cos(
+                            math.pi
+                            * max(0, step - warm)
+                            / max(1, schedule_total - warm)
+                        )
                     )
                 )
             for group in opt.param_groups:
@@ -276,17 +312,56 @@ def main():
             timing = StepTiming(args.profile_stages)
             # Cache each microbatch's frozen context for fake and generator updates.
             prepared = []
+            if gad_enabled:
+                with timing.phase("data_wait"):
+                    (gad_obs, gad_actions), draw = batches.next(step)
+                block_scores = []
             for m in range(accum):
                 with timing.phase("data_wait"):
-                    obs, actions = next(batches)
+                    if gad_enabled:
+                        section = slice(m * micro, (m + 1) * micro)
+                        obs = {k: v[section] for k, v in gad_obs.items()}
+                        actions = gad_actions[section]
+                    else:
+                        obs, actions = next(batches)
                 with timing.phase("observation_prefix"):
                     with torch.autocast("cuda", dtype=torch.bfloat16):
                         actions, context = prepare(teacher.model, obs, actions)
-                prepared.append((actions, context))
+                weights = None
+                if gad_enabled:
+                    with (
+                        timing.phase("gad_signals"),
+                        torch.autocast("cuda", dtype=torch.bfloat16),
+                    ):
+                        weights, score, signal_parts = gad.observe(
+                            student,
+                            teacher,
+                            actions,
+                            context,
+                            teacher_steps=c.get(
+                                "teacher_steps", c["model"]["num_steps"]
+                            ),
+                            seed=c["seed"] + 1000003 * (step + 1) + 1009 * rank + m,
+                        )
+                    block_scores.append(score)
+                    importance = torch.tensor(
+                        draw["importance"][rank::world][section],
+                        device=actions.device,
+                        dtype=torch.float32,
+                    )
+                    weights = weights * importance[:, None]
+                    for k, v in dict(
+                        signal_parts,
+                        gad_importance_mean=importance.mean(),
+                        gad_effective_weight_min=weights.min(),
+                        gad_effective_weight_max=weights.max(),
+                    ).items():
+                        metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
+                prepared.append((actions, context, weights))
             if opt_aux:
                 with timing.phase("auxiliary_updates"):
                     for _ in range(auxiliary_updates):
-                        for actions, context in prepared:
+                        for actions, context, weights in prepared:
                             with torch.autocast("cuda", dtype=torch.bfloat16):
                                 z = torch.randn_like(actions)
                                 with torch.no_grad():
@@ -300,6 +375,7 @@ def main():
                                         context,
                                         action_dim=c["mfd_loss_action_dim"],
                                         loss_action_dim=physical_loss_dim,
+                                        weights=weights,
                                     )
                                 else:
                                     lf, fake_parts = fake_loss(
@@ -308,6 +384,7 @@ def main():
                                         context,
                                         return_parts=True,
                                         loss_action_dim=physical_loss_dim,
+                                        weights=weights,
                                     )
                             (lf / accum).backward()
                             for key, value in dict(
@@ -351,7 +428,7 @@ def main():
                                 / auxiliary_updates
                             )
             with timing.phase("student_update"):
-                for actions, context in prepared:
+                for actions, context, weights in prepared:
                     with torch.autocast("cuda", dtype=torch.bfloat16):
                         if method == "cp":
                             loss, parts = cp_loss(
@@ -362,6 +439,7 @@ def main():
                                 context,
                                 bins=c["time_bins"],
                                 action_dim=physical_loss_dim,
+                                weights=weights,
                             )
                         elif method == "endpoint":
                             z = torch.randn_like(actions)
@@ -392,6 +470,7 @@ def main():
                                 context,
                                 teacher_steps=c["teacher_steps"],
                                 action_dim=c["loss_action_dim"],
+                                weights=weights,
                             )
                         elif method in {"onedp", "mfd"}:
                             z = torch.randn_like(actions)
@@ -409,6 +488,7 @@ def main():
                                         action_dim=c["mfd_loss_action_dim"],
                                         diagnostics=physical_loss_dim is not None
                                         and args.profile_stages,
+                                        weights=weights,
                                     )
                             else:
                                 loss, score = onedp_loss(
@@ -418,6 +498,7 @@ def main():
                                     context,
                                     action_dim=physical_loss_dim
                                     or c.get("onedp_loss_action_dim"),
+                                    weights=weights,
                                 )
                                 parts = {"score_gradient_rms": score}
                     if not torch.isfinite(loss):
@@ -449,6 +530,13 @@ def main():
                     for name, p in auxiliary.model.named_parameters():
                         if src[name].requires_grad:
                             p.lerp_(src[name], 1 - decay)
+            if gad_enabled:
+                with timing.phase("gad_priority_update"):
+                    batches.update(draw["ids"][rank::world], torch.cat(block_scores))
+                metrics["gad_window_coverage"] = actions.new_tensor(
+                    float((batches.seen > 0).mean())
+                )
+                del gad_obs, gad_actions, block_scores
             del prepared, actions, context, loss
             if (step + 1) % c["log_every"] == 0 or step == start or step + 1 == stop:
                 row = {k: float(v) for k, v in metrics.items()}
@@ -504,9 +592,30 @@ def main():
                             "optimizer": opt.state_dict(),
                             "aux_optimizer": opt_aux.state_dict() if opt_aux else None,
                             "rng": all_rng,
+                            **(
+                                {"gad_state": batches.state_dict()}
+                                if gad_enabled
+                                else {}
+                            ),
                             "task_manifest": getattr(data, "manifest", None),
                             "task_exposure": (
-                                data.exposure((step + 1) * global_batch, c["seed"])
+                                (
+                                    [
+                                        {
+                                            "task": v["task"],
+                                            "sampled": int(batches.seen[lo:hi].sum()),
+                                        }
+                                        for v, lo, hi in zip(
+                                            data.manifest,
+                                            batches.offsets[:-1],
+                                            batches.offsets[1:],
+                                        )
+                                    ]
+                                    if gad_enabled
+                                    else data.exposure(
+                                        (step + 1) * global_batch, c["seed"]
+                                    )
+                                )
                                 if isinstance(data, BalancedWindows)
                                 else None
                             ),
