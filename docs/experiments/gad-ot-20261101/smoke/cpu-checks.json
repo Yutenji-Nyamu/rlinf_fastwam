@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "cmd": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "--fix",
+        "rlinf/algorithms/pi05_distillation/gad.py",
+        "rlinf/algorithms/pi05_distillation/ot.py",
+        "tools/pi05_distillation/train.py",
+        "tools/pi05_distillation/test_gad_ot.py",
+        "tools/pi05_distillation/gad_ot_smoke.py"
+      ],
+      "rc": 0,
+      "output": "Found 1 error (1 fixed, 0 remaining).\nwarning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "cmd": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "ruff",
+        "format",
+        "rlinf/algorithms/pi05_distillation/gad.py",
+        "rlinf/algorithms/pi05_distillation/ot.py",
+        "tools/pi05_distillation/train.py",
+        "tools/pi05_distillation/test_gad_ot.py",
+        "tools/pi05_distillation/gad_ot_smoke.py"
+      ],
+      "rc": 0,
+      "output": "4 files reformatted, 1 file left unchanged\nwarning: Selection `DOC102` has no effect because preview is not enabled.\nwarning: Selection `DOC202` has no effect because preview is not enabled.\nwarning: Selection `DOC403` has no effect because preview is not enabled.\nwarning: Selection `DOC502` has no effect because preview is not enabled.\n"
+    },
+    {
+      "cmd": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tools/pi05_distillation/test_gad.py",
+        "tools/pi05_distillation/test_gad_ot.py"
+      ],
+      "rc": 0,
+      "output": ".............                                                            [100%]\n13 passed in 2.45s\n"
+    }
+  ]
+}

@@ -30,7 +30,7 @@ import torch.distributed as dist
 from omegaconf import OmegaConf
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from rlinf.algorithms.pi05_distillation import gad, mfd
+from rlinf.algorithms.pi05_distillation import gad, mfd, ot
 from rlinf.algorithms.pi05_distillation.checkpoint_retention import prune_checkpoints
 from rlinf.algorithms.pi05_distillation.data import BalancedWindows, DemoWindows
 from rlinf.algorithms.pi05_distillation.losses import (
@@ -111,6 +111,7 @@ def main():
     total = c["epochs"] * per_epoch
     stop = min(args.stop_step or total, total)
     method, physical_loss_dim = resolve_method(c)
+    ot_enabled = ot.validate_config(c)
     auxiliary_updates = int(c.get("auxiliary_updates_per_student", 1))
     if auxiliary_updates < 1 or (
         method not in {"onedp", "mfd"} and auxiliary_updates != 1
@@ -327,13 +328,13 @@ def main():
                 with timing.phase("observation_prefix"):
                     with torch.autocast("cuda", dtype=torch.bfloat16):
                         actions, context = prepare(teacher.model, obs, actions)
-                weights = None
+                weights, candidates = None, None
                 if gad_enabled:
                     with (
                         timing.phase("gad_signals"),
                         torch.autocast("cuda", dtype=torch.bfloat16),
                     ):
-                        weights, score, signal_parts = gad.observe(
+                        signals = gad.observe(
                             student,
                             teacher,
                             actions,
@@ -342,7 +343,11 @@ def main():
                                 "teacher_steps", c["model"]["num_steps"]
                             ),
                             seed=c["seed"] + 1000003 * (step + 1) + 1009 * rank + m,
+                            retain_candidates=ot_enabled,
                         )
+                        weights, score, signal_parts = signals[:3]
+                        if ot_enabled:
+                            candidates = signals[3]
                     block_scores.append(score)
                     importance = torch.tensor(
                         draw["importance"][rank::world][section],
@@ -357,11 +362,11 @@ def main():
                         gad_effective_weight_max=weights.max(),
                     ).items():
                         metrics[k] = metrics.get(k, 0.0) + v.detach() / accum
-                prepared.append((actions, context, weights))
+                prepared.append((actions, context, weights, candidates))
             if opt_aux:
                 with timing.phase("auxiliary_updates"):
                     for _ in range(auxiliary_updates):
-                        for actions, context, weights in prepared:
+                        for actions, context, weights, _ in prepared:
                             with torch.autocast("cuda", dtype=torch.bfloat16):
                                 z = torch.randn_like(actions)
                                 with torch.no_grad():
@@ -428,7 +433,7 @@ def main():
                                 / auxiliary_updates
                             )
             with timing.phase("student_update"):
-                for actions, context, weights in prepared:
+                for m, (actions, context, weights, candidates) in enumerate(prepared):
                     with torch.autocast("cuda", dtype=torch.bfloat16):
                         if method == "cp":
                             loss, parts = cp_loss(
@@ -442,7 +447,11 @@ def main():
                                 weights=weights,
                             )
                         elif method == "endpoint":
-                            z = torch.randn_like(actions)
+                            z = (
+                                candidates["noise"][:, 0]
+                                if ot_enabled
+                                else torch.randn_like(actions)
+                            )
                             if step == 0 and out.name.startswith("smoke-"):
                                 # Native N1 and the differentiable student expression
                                 # must agree before training. Only one smoke batch.
@@ -463,15 +472,28 @@ def main():
                                     },
                                 )
                                 del native, direct
-                            loss, parts = endpoint_loss(
-                                student_ddp,
-                                teacher,
-                                z,
-                                context,
-                                teacher_steps=c["teacher_steps"],
-                                action_dim=c["loss_action_dim"],
-                                weights=weights,
-                            )
+                            if ot_enabled:
+                                loss, parts = ot.endpoint_loss(
+                                    student_ddp,
+                                    candidates,
+                                    context,
+                                    weights,
+                                    seed=c["seed"]
+                                    + 170101
+                                    + 1000003 * (step + 1)
+                                    + 1009 * rank
+                                    + m,
+                                )
+                            else:
+                                loss, parts = endpoint_loss(
+                                    student_ddp,
+                                    teacher,
+                                    z,
+                                    context,
+                                    teacher_steps=c["teacher_steps"],
+                                    action_dim=c["loss_action_dim"],
+                                    weights=weights,
+                                )
                         elif method in {"onedp", "mfd"}:
                             z = torch.randn_like(actions)
                             generated = z - student_ddp(

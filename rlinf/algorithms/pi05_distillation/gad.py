@@ -58,22 +58,31 @@ def action_weights(student, teacher):
 
 
 @torch.no_grad()
-def observe(student, teacher, actions, context, *, teacher_steps, seed):
+def observe(
+    student, teacher, actions, context, *, teacher_steps, seed, retain_candidates=False
+):
     """Reuse one frozen prefix, four matched noises, no gradient or RNG side effect.
 
     Four B-sized passes avoid replicating the large KV prefix K times. Main
     baseline noise/target remains independent and is NEVER replaced by a mean.
+    The separate OT variant may retain these samples to select a complete target.
     """
     rng = torch.Generator(device=actions.device).manual_seed(int(seed))
-    s, t = [], []
+    s, t, noises = [], [], []
     for _ in range(4):
         z = torch.randn(
             actions.shape, device=actions.device, dtype=actions.dtype, generator=rng
         )
+        if retain_candidates:
+            noises.append(z)
         one = torch.ones(len(z), device=z.device)
         s.append((z - student(z, one, context))[..., :14].float())
         t.append(teacher.endpoint(z, context, steps=teacher_steps)[..., :14].float())
-    return action_weights(torch.stack(s, 1), torch.stack(t, 1))
+    s, t = torch.stack(s, 1), torch.stack(t, 1)
+    result = action_weights(s, t)
+    if retain_candidates:
+        return (*result, {"noise": torch.stack(noises, 1), "student": s, "teacher": t})
+    return result
 
 
 def weighted_mean(elements, weights=None):
