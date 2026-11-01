@@ -28,6 +28,8 @@
 
 来源清单与8个公开仓库固定版本在 `sources.json`。上游源码只读缓存位于 E:/Codex/home/visualizations/2026/10/13/01a1354d-42a1-74a3-adc8-6e9c3421e45a/gad1031/；没有运行下载的上游源码。
 
+2026-11-01 OT后续讨论：用户要求“先规划”，方向仍为老师确定、学生不确定。[GAD-OT专题](../gad_ot/00_INDEX.md)已核OptiFlow官方配对源码，并加入sDMD、COT Policy等近邻；只整理方案，当前四版GAD训练与队列未改。
+
 跨领域新增来源与11个仓库固定版本另见 `cross_domain_sources.json`，只读缓存位于同级 `gad_cross_domain1031/`。关键函数已读的范围逐项标注，下载过README不等于验收算法。
 
 ## 与其他窗口一致
