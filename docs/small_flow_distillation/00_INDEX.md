@@ -1,6 +1,6 @@
 # 单任务小型流策略蒸馏：讨论工作台
 
-**FQL v2实施：** [42 方法、参数与复用路径](42_FQL_V2_IMPLEMENTATION_20261101.md)。本轮用户授权200预算轮；双Q取小＋Q项归一化已实现，CPU15项通过，1机2/3卡每卡224短测中；正式准备接45卡现有GAD MFD之后、RLT之前。[40 原规划](40_FQL_V2_PLAN_20261101.md)及[41 数据解释](41_FQL_DATA_COMPARISON_FROM_ONE_RECORD_20261101.md)保留作依据。
+**FQL v2已短测通过并排队：** [42 方法、参数与复用路径](42_FQL_V2_IMPLEMENTATION_20261101.md)，[运行证据](../experiments/fql-v2-20261101/README.md)。200预算轮；CPU15项、每卡224的12→14续训及64回合评估通过。已接1机45卡GAD MFD之后、RLT之前；新训练尚在等待，2/3短测卡已释放。[40 原规划](40_FQL_V2_PLAN_20261101.md)及[41 数据解释](41_FQL_DATA_COMPARISON_FROM_ONE_RECORD_20261101.md)保留作依据。
 
 **2026-11-01监督续问：** [39 Q答案来源与官方保护措施](39_FQL_SUPERVISION_AND_OFFICIAL_SAFEGUARDS_20261101.md)：末批训练答案8.599、预测8.601；核对已用/未用措施，补充官方建议新任务启用Q项归一化及动作范围适配问题。本轮仅讨论，不改训练。
 
