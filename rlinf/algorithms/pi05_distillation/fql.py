@@ -6,6 +6,7 @@ multitask prior; H50 endpoint anchor, C10 macro-action Q, finite-budget state.
 """
 
 import torch
+import torch.distributed as dist
 from torch import nn
 
 
@@ -53,14 +54,51 @@ def prefix_mask(remaining, chunk=10):
     ).float()
 
 
-def bellman_target(reward, bootstrap, next_q, discount=0.99):
-    return reward + discount * bootstrap * next_q.mean(-1)
+def bellman_target(reward, bootstrap, next_q, discount=0.99, q_agg="mean"):
+    if q_agg not in ("mean", "min"):
+        raise ValueError(f"Unknown target Q aggregation: {q_agg}")
+    future = next_q.min(-1).values if q_agg == "min" else next_q.mean(-1)
+    return reward + discount * bootstrap * future
 
 
-def actor_objective(prediction, target, q_values, alpha=10.0):
+@torch.no_grad()
+def q_normalization(q_values, eps=1e-6):
+    """Official mean(abs(mean_heads(Q))), pooled over this global microbatch.
+
+    Detaching the scale preserves the action gradient. The numerical floor only
+    guards an exactly zero/near-zero critic; it is not a reward or Q clipping.
+    """
+    if eps <= 0:
+        raise ValueError("Q normalization epsilon must be positive")
+    per_sample = q_values.detach().float().mean(-1)
+    stats = torch.stack(
+        (per_sample.abs().sum(), per_sample.new_tensor(per_sample.numel()))
+    )
+    if dist.is_available() and dist.is_initialized():
+        dist.all_reduce(stats)
+    mean_abs = stats[0] / stats[1]
+    return mean_abs.clamp_min(eps).reciprocal(), mean_abs
+
+
+def actor_objective(
+    prediction, target, q_values, alpha=10.0, *, normalize_q_loss=False, q_norm_eps=1e-6
+):
     mse = (prediction[..., :14].float() - target[..., :14].float()).square().mean()
-    q_loss = -q_values.float().mean()
-    return alpha * mse + q_loss, {"endpoint_mse": mse, "q_actor_loss": q_loss}
+    raw_q_loss = -q_values.float().mean()
+    parts = {"endpoint_mse": mse}
+    if normalize_q_loss:
+        scale, mean_abs = q_normalization(q_values, q_norm_eps)
+        q_loss = scale * raw_q_loss
+        parts.update(
+            q_actor_loss_raw=raw_q_loss,
+            q_normalization_scale=scale,
+            q_global_mean_abs=mean_abs,
+            q_normalization_floor_hit=(mean_abs < q_norm_eps).float(),
+        )
+    else:
+        q_loss = raw_q_loss
+    parts["q_actor_loss"] = q_loss
+    return alpha * mse + q_loss, parts
 
 
 @torch.no_grad()

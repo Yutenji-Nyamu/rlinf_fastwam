@@ -1,3 +1,4 @@
+# Copyright 2026 The RLinf Authors. Licensed under the Apache License, Version 2.0.
 """Accepted FQL pair launcher: twelve updates, resume to fourteen, evaluate, stop."""
 
 import json
@@ -12,15 +13,19 @@ from single_task_prepare import evaluation_config
 
 def main():
     assert q.read(q.D / "cpu-checks.json")["passed"]
-    q.save(q.D / "fql-fix-identity.json", q.proc(os.getpid()))
     config = q.read(q.D / "fql_fixed_teacher.json")
     assert config["alpha"] == 30 and config["q_diagnostics"]
-    output = q.O / "fql-fix-smoke"
+    name = config.get("experiment_name", "fql-fix")
+    assert name in ("fql-fix", "fql-v2")
+    if name == "fql-v2":
+        assert config["q_agg"] == "min" and config["normalize_q_loss"]
+    q.save(q.D / f"{name}-identity.json", q.proc(os.getpid()))
+    output = q.O / f"{name}-smoke"
     first = q.train(
         "fql_fixed_teacher",
         output,
         12,
-        label="fql-fix-12",
+        label=f"{name}-12",
         extra_args=["--check-export"],
     )
     final = q.train(
@@ -28,7 +33,7 @@ def main():
         output,
         14,
         first["path"],
-        label="fql-fix-resume14",
+        label=f"{name}-resume14",
         extra_args=["--check-export"],
     )
     jobs = []
@@ -36,7 +41,7 @@ def main():
     try:
         for index, gpu in enumerate(q.CARDS):
             assert not q.gpus()[gpu]["processes"]
-            destination = q.O / f"fql-fix-eval/g{gpu}"
+            destination = q.O / f"{name}-eval/g{gpu}"
             c = evaluation_config(
                 q.read(q.D / "eval-template.json"),
                 destination,
@@ -51,7 +56,7 @@ def main():
                 batch=index,
                 noise_seed=c["noise_seed"] + 1000003 * index,
             )
-            path = q.D / f"fql-fix-eval-g{gpu}.json"
+            path = q.D / f"{name}-eval-g{gpu}.json"
             q.save(path, c)
             token = q.D.name + f"-fql-eval-g{gpu}"
             env = dict(
@@ -59,7 +64,7 @@ def main():
                 **q.read(q.O / f"environment-g{gpu}.json"),
                 POLICY_EVAL_TOKEN=token,
             )
-            log = (q.D / f"fql-fix-eval-g{gpu}.log").open("x")
+            log = (q.D / f"{name}-eval-g{gpu}.log").open("x")
             p = subprocess.Popen(
                 [
                     q.PYTHON,
@@ -78,17 +83,21 @@ def main():
             identity = q.proc(p.pid)
             q.owned_children.append(identity)
             jobs.append(
-                dict(
-                    process=p,
-                    identity=identity,
-                    log=log,
-                    token=token,
-                    output=destination,
-                    gpu=gpu,
-                    started=time.time(),
-                )
+                {
+                    "process": p,
+                    "identity": identity,
+                    "log": log,
+                    "token": token,
+                    "output": destination,
+                    "gpu": gpu,
+                    "started": time.time(),
+                }
             )
-        q.event("FQL_FIX_EVALUATING", children=[j["identity"] for j in jobs])
+        q.event(
+            "FQL_SMOKE_EVALUATING",
+            experiment=name,
+            children=[j["identity"] for j in jobs],
+        )
         while jobs:
             for job in list(jobs):
                 p = job["process"]
@@ -123,21 +132,26 @@ def main():
             for s in (output / f"metrics-rank{rank}.jsonl").read_text().splitlines()
         ]
         q.save(
-            q.D / "fql-fix-smoke-summary.json",
+            q.D / f"{name}-smoke-summary.json",
             {
                 "passed": passed,
                 "checkpoint": final,
                 "evaluations": results,
                 "updates": 14,
                 "alpha": 30,
-                "microbatch_per_rank": 224,
-                "global_batch": 448,
+                "experiment_name": name,
+                "q_agg": config.get("q_agg", "mean"),
+                "normalize_q_loss": config.get("normalize_q_loss", False),
+                "microbatch_per_rank": config["microbatch_per_rank"],
+                "global_batch": config["batch_size"],
                 "peak_gib": max(m["peak_gib"] for m in metrics),
                 "metrics": metrics,
                 "formal_started": False,
             },
         )
-        q.event("FQL_FIX_SMOKE_COMPLETE", passed=passed, formal_started=False)
+        q.event(
+            "FQL_SMOKE_COMPLETE", experiment=name, passed=passed, formal_started=False
+        )
         if not passed:
             raise RuntimeError("FQL-fix evaluation failed; see exact receipts")
     finally:

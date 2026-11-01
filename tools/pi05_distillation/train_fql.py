@@ -77,6 +77,12 @@ def main():
     batch, micro = c["batch_size"], c["microbatch_per_rank"]
     assert batch % (world * micro) == 0
     accum = batch // (world * micro)
+    if c.get("normalize_q_loss") and accum != 1:
+        raise ValueError(
+            "Normalized FQL currently requires one global batch per update"
+        )
+    if c.get("q_agg", "mean") not in ("mean", "min"):
+        raise ValueError("FQL target q_agg must be mean or min")
     per_epoch = math.ceil(len(data) / batch)
     total = c["epochs"] * per_epoch
     stop = min(args.stop_step or total, total)
@@ -200,7 +206,11 @@ def main():
                     tensor["remaining_after"] / tensor["limit"],
                 )
                 target = bellman_target(
-                    tensor["reward"], tensor["bootstrap_mask"], nq, c["discount"]
+                    tensor["reward"],
+                    tensor["bootstrap_mask"],
+                    nq,
+                    c["discount"],
+                    q_agg=c.get("q_agg", "mean"),
                 )
             del next_context, next_features, next_action, nq, z
             with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -234,12 +244,20 @@ def main():
                 tensor["remaining_before"] / tensor["limit"],
             )
             actor_loss, parts = actor_objective(
-                prediction, teacher_action, values, c["alpha"]
+                prediction,
+                teacher_action,
+                values,
+                c["alpha"],
+                normalize_q_loss=c.get("normalize_q_loss", False),
+                q_norm_eps=c.get("q_norm_eps", 1e-6),
             )
             if not torch.isfinite(actor_loss):
                 raise FloatingPointError("Nonfinite actor loss")
             # One output-gradient diagnostic, not a second full model backward.
-            if part == 0 and (step == start or (c.get("q_diagnostics") and (step + 1) % c["log_every"] == 0)):
+            if part == 0 and (
+                step == start
+                or (c.get("q_diagnostics") and (step + 1) % c["log_every"] == 0)
+            ):
                 gm = torch.autograd.grad(
                     c["alpha"] * parts["endpoint_mse"], prediction, retain_graph=True
                 )[0]
@@ -350,18 +368,34 @@ def main():
                 )
                 q_export = out / f"q-{step + 1:06d}.pt"
                 if c.get("q_diagnostics"):
-                    atomic_torch(q_export, {
-                        "q": {k: v.detach().cpu() for k, v in q.state_dict().items()},
-                        "feature_dim": feature_dim, "chunk": c["execute_chunk"],
-                        "width": c["q_width"], "depth": c["q_depth"],
-                        "discount": c["discount"], "base": c["model"]["model_path"],
-                        "step": step + 1, "alpha": c["alpha"],
-                        "experiment_name": c.get("experiment_name", c["method"]),
-                    })
+                    atomic_torch(
+                        q_export,
+                        {
+                            "q": {
+                                k: v.detach().cpu() for k, v in q.state_dict().items()
+                            },
+                            "feature_dim": feature_dim,
+                            "chunk": c["execute_chunk"],
+                            "width": c["q_width"],
+                            "depth": c["q_depth"],
+                            "discount": c["discount"],
+                            "base": c["model"]["model_path"],
+                            "step": step + 1,
+                            "alpha": c["alpha"],
+                            "experiment_name": c.get("experiment_name", c["method"]),
+                            "q_agg": c.get("q_agg", "mean"),
+                            "normalize_q_loss": c.get("normalize_q_loss", False),
+                            "q_norm_eps": c.get("q_norm_eps", 1e-6),
+                        },
+                    )
                 save_json(
                     out / "checkpoint.json",
-                    {"step": step + 1, "path": str(checkpoint), "policy": str(policy),
-                     **({"q": str(q_export)} if c.get("q_diagnostics") else {})},
+                    {
+                        "step": step + 1,
+                        "path": str(checkpoint),
+                        "policy": str(policy),
+                        **({"q": str(q_export)} if c.get("q_diagnostics") else {}),
+                    },
                 )
                 prune_checkpoints(
                     out,
