@@ -1,0 +1,88 @@
+{
+  "route": {
+    "time": 1793531947.8918245,
+    "source": "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint",
+    "physical": "/data/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint",
+    "mfd_physical": "/data/chenyiteng/results/pi05-distill/gad-single-g45-20261101/mfd",
+    "old_backup": "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint-before-data-route-1101",
+    "files": 10,
+    "bytes": 6882997255,
+    "size_manifest": {
+      "progress.json": 1152,
+      "retention-policy.json": 36,
+      "segment-done.json": 104,
+      "checkpoint.json": 227,
+      "metrics-rank0.jsonl": 487216,
+      "policy-004180.pt": 1720469861,
+      "resolved.json": 3258,
+      "metrics-rank1.jsonl": 487071,
+      "retention.jsonl": 7917,
+      "checkpoint-004180.pt": 5161540413
+    },
+    "queue_identity": {
+      "pid": 1395872,
+      "uid": 1003,
+      "start": 635029805,
+      "state": "R"
+    },
+    "boundary": {
+      "time": 1793531939.6959603,
+      "phase": "EVALUATING",
+      "method": "endpoint",
+      "label": "endpoint-s004180"
+    },
+    "verification": "same exact relative files and byte sizes; no model reload/checksum"
+  },
+  "finish": {
+    "time": 1793532793.620912,
+    "resumed_step": 4181,
+    "queue": {
+      "time": 1793532700.7473605,
+      "phase": "TRAINING",
+      "method": "endpoint",
+      "stop_step": 4400,
+      "output": "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint",
+      "child": {
+        "pid": 3487675,
+        "uid": 1003,
+        "start": 641941979,
+        "state": "R"
+      },
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "-m",
+        "torch.distributed.run",
+        "--standalone",
+        "--nproc_per_node=2",
+        "/home/chenyiteng/deployment-20261101/gad-k4-v1/source/tools/pi05_distillation/train.py",
+        "--config",
+        "/home/chenyiteng/deployment-20261101/gad-k4-v1/pair45/endpoint.json",
+        "--output",
+        "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint",
+        "--stop-step",
+        "4400",
+        "--resume",
+        "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint/checkpoint-004180.pt",
+        "--decode-workers",
+        "8",
+        "--prefetch-batches",
+        "1",
+        "--profile-stages"
+      ]
+    },
+    "removed_duplicate_files": [
+      {
+        "path": "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint-before-data-route-1101/policy-004180.pt",
+        "bytes": 1720469861
+      },
+      {
+        "path": "/home/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint-before-data-route-1101/checkpoint-004180.pt",
+        "bytes": 5161540413
+      }
+    ],
+    "bytes": 6882010274,
+    "physical_output": "/data/chenyiteng/results/pi05-distill/gad-single-g45-20261101/endpoint"
+  }
+}
