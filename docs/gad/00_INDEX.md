@@ -21,6 +21,9 @@
 6. [跨领域信号综述](06_CROSS_DOMAIN_SIGNAL_REVIEW.md)：五类信号在LLM、医学、工业质检和视频中的依据与使用方式。
 7. [跨领域源码核对](07_CROSS_DOMAIN_CODE_AUDIT.md)：固定版本、实际函数、不可直接照抄的细节。
 8. [选择与增量计划](08_SELECTION_AND_INCREMENTAL_PLAN.md)：推荐顺序、师生共用定义、成本与最小分析。
+9. [实际实现、参数与依据](09_IMPLEMENTATION_CONTRACT_20261101.md)：四版采用的逐项合同。
+10. [GPU短测与初始队列](10_SMOKE_AND_QUEUE_20261101.md)：12→14续训、并行、显存与正式登记。
+11. [通俗实现说明](11_IMPLEMENTATION_EXPLAINED_20261101.md)：一次训练怎么走、哪些参考文献、哪些是适配选择。
 
 来源清单与8个公开仓库固定版本在 `sources.json`。上游源码只读缓存位于 E:/Codex/home/visualizations/2026/10/13/01a1354d-42a1-74a3-adc8-6e9c3421e45a/gad1031/；没有运行下载的上游源码。
 
@@ -31,3 +34,5 @@
 已读“1031 d abs”聊天及 conference/research/distillation_abstract_20261031/ 中的摘要与参考映射。原摘要的“学生去噪速度变化”与一步学生不兼容，需随本轮信号选择修订；GAD名称暂留。仿真/实机提升、OpenWAM/CD/DMD通用性仍是待验证目标，不写成已完成结果。Overleaf：新增0、修改0、删除0。
 
 2026-11-01四方法短测全部通过、正式队列已注册，45原FQL保持，67已恢复原采集；过程记录见[实验目录](../experiments/gad-20261101/README.md)。动态状态以本次部署的pair45/67状态文件及根HANDOFF更新为准，不能继续用10月31日20:17快照推断。
+
+11月1日11:16更新：FQL-fix已完成，Direct＋GAD至156轮、140轮成绩81.25%；67采集1248有效，7卡先完成后已接临时RLT，待6卡结束自动交回GAD双卡队列。[最新点表与交接记录](../experiments/review-20261101a/README.md)。
