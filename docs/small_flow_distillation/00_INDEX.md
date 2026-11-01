@@ -71,3 +71,6 @@
 
 - [32 · 写满跳过、RLT动态登记与容量](32_STORAGE_FAILURE_HANDOFF_20261030.md)
 - [34 · 45卡交接恢复、完整队列与近期产物归档](34_G45_RECOVERY_AND_ARTIFACT_AUDIT_20261030.md)
+- [36 · FQL-fix谷底、梯度与Q真实回报审阅](36_FQL_FIX_VALLEY_AUDIT_20261101.md)
+- [37 · Q预热与可信度验证规划](37_Q_WARMUP_AND_CORRECTNESS_20261101.md)
+- [38 · Q用什么数据、每次如何更新、最小修复](38_Q_DATA_AND_ONE_UPDATE_20261101.md)

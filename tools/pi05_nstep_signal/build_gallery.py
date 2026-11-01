@@ -1,0 +1,34 @@
+"""Build the accepted curve/frame/video gallery from exported N-step records."""
+import csv,html,json,sys,tarfile
+from pathlib import Path
+
+O=Path(sys.argv[1]);m=json.loads((O/'manifest.json').read_text());items=m['selected']
+groups=[('budget','步数差异（相对）'),('rmse','步数差异（绝对RMSE）'),('noise_abs','四噪声分散度（绝对）'),('noise_rel','四噪声分散度（相对）'),('dv','内部DV')]
+cards=[]
+for c in items:
+ ident=c['id'];note='成功' if c['success'] else '失败：该任务没有成功样本'
+ if c['query'][c['peak_index']]==0:note+='；最高差异在第一块，不能仅凭峰值解释为接触或失误'
+ panels=''.join(f'<div class="signal" data-group="{g}"><h3>{label}</h3><img class="curve" loading="lazy" src="{ident}/{g}.svg" alt="{ident} {label}"></div>'for g,label in groups)
+ frames=''.join(f'<button class="frame" onclick="seek(this,{p["frame"]/c["fps"]:.5f})"><img loading="lazy" src="{ident}/{p["image"]}" alt="阶段{letter}，动作{p["action"]}"><span>{letter} · 动作 {p["action"]} · 帧 {p["frame"]}</span></button>'for letter,p in zip('ABCDEF',c['options']))
+ cards.append(f'''<article id="{ident}" data-task="{c['task']}" data-success="{str(c['success']).lower()}"><h2>{ident} · {c['task']}</h2><p>{note} · seed {c['actual']} · slot {c['slot']} · {len(c['action'])}个实际执行位置</p>{panels}<div class="frames">{frames}</div><details ontoggle="loadVideo(this)"><summary>完整视频与原始映射</summary><video controls preload="none" src="{ident}/episode-h264.mp4"></video><p>画面来自完整真实录像。动作与帧通过控制器路径投影对应；每块取运动较多的手臂，不假设一动作恰等于一帧。提前成功后未执行的尾段不画。</p><a href="{ident}/frame_map.json">帧映射</a></details><p><a href="{ident}/curve.svg">五路总图SVG</a> · <a href="{ident}/curve.png">PNG</a> · <a href="{ident}/curve.pdf">PDF</a> · <a href="{ident}/contact.jpg">六帧联系表</a> · <a href="{ident}/series.json">全信号JSON</a> · <a href="all_tasks/{c['batch_name']}/slot-{c['slot']:02d}-executed.csv">逐动作CSV</a></p></article>''')
+check=''.join(f'<label><input type="checkbox" data-group="{g}" {"checked"if g in ["budget","noise_abs"]else""} onchange="signals()">{label}</label>'for g,label in groups)
+coverage=''.join(f'<tr><td><a href="?q={task}">{task}</a></td><td>{v["successes"]}/{v["episodes"]}</td><td>{sum(c["task"]==task for c in items)}</td></tr>'for task,v in sorted(m['coverage'].items()))
+page='''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N1/N5/N10 · 同轨迹信号图册</title><style>
+body{font:16px/1.65 system-ui,"Microsoft YaHei";margin:0;background:#f3f5f8;color:#223c50}main{max-width:1260px;margin:auto;padding:22px}header,article{background:#fff;border-radius:12px;padding:24px;margin:18px 0}h1{font-size:27px}h2{font-size:21px}h3{font-size:15px;margin:6px 0;color:#536577}p{color:#526171}a{color:#17659b}.curve{width:100%;display:block}.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.frame{border:0;padding:0;background:#eef3f7;cursor:pointer}.frame img{width:100%;display:block}.frame span{display:block;padding:7px;font-size:14px}video{width:800px;max-width:100%}summary{cursor:pointer}input[type=search],select{font:inherit;padding:9px;border:1px solid #abb8c1;border-radius:6px}.choices{display:flex;flex-wrap:wrap;gap:15px;margin:14px 0}article[hidden],.signal[hidden]{display:none}table{border-collapse:collapse}td,th{padding:6px 20px 6px 0;text-align:left;border-bottom:1px solid #eee}.callout{background:#edf5fc;padding:12px;border-radius:8px}@media(max-width:650px){main{padding:6px}header,article{padding:14px}.frames{grid-template-columns:repeat(2,1fr)}}
+</style><main><header><h1>同一轨迹：N1／N5／N10、四噪声与DV</h1><p class="callout"><b>N10控制机器人；N1与N5只旁算。</b>每次观察下，三种步数使用相同四份噪声，均预测50动作；曲线只画实际执行的前缀。虚线A–F对应下方六张真实帧，细点线表示换动作块；未做平滑。</p>'''
+page+=f'<p><b>41任务，1312有效回合，728成功；精选{len(items)}条、每任务1–2条。</b>按成功优先及N1/N10变化清晰度选择，不按“几路信号必须相关”选例。它们用于挑图；统计关系应使用全部1312局。9任务报错/超时缺测。</p>'
+page+='''<p><b>怎么读：</b>第一路看同一噪声下多算几步，动作改了多少；四噪声分散度看同一个模型换随机起点后，输出有多不同；DV看内部多步生成过程的终点估计变化。它们不是概率熵，也不是成功率。N1只有一步，DV缺测；N5用5步、N10用最后5步，覆盖的内部时间不同，不能直接把绝对高低当能力排名。</p><p><a href="../single1101c/">训练同族</a> · <a href="https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/tag/nstep-signal-20261101">公开绘图数据包</a> · <a href="selection.csv">精选清单</a> · <a href="coverage.csv">逐任务成绩</a></p>'''
+page+=f'<input type="search" id="q" placeholder="搜索任务或S编号" oninput="filter()"><select id="s" onchange="filter()"><option value="">全部</option><option value="true">成功</option><option value="false">失败</option></select><span id="count"></span><div class="choices">{check}</div><details><summary>41任务成绩与9项缺测</summary><table><tr><th>任务</th><th>成功/有效</th><th>精选</th></tr>{coverage}</table><p>缺测：{html.escape("、".join(m["missing_tasks"]))}</p></details></header>'+''.join(cards)
+page+='''</main><script>function filter(){let q=document.querySelector('#q').value.trim().toLowerCase(),s=document.querySelector('#s').value,n=0;document.querySelectorAll('article').forEach(a=>{let ok=(a.dataset.task+' '+a.id).toLowerCase().includes(q)&&(!s||a.dataset.success===s);a.hidden=!ok;n+=ok});document.querySelector('#count').textContent=` 显示 ${n} 条`}function signals(){let yes=new Set([...document.querySelectorAll('.choices input:checked')].map(e=>e.dataset.group));document.querySelectorAll('.signal').forEach(e=>e.hidden=!yes.has(e.dataset.group))}function loadVideo(d){let v=d.querySelector('video');if(d.open&&v.preload==='none'){v.preload='metadata';v.load()}}function seek(b,t){let d=b.closest('article').querySelector('details'),v=d.querySelector('video');if(v.readyState>=1)v.currentTime=t;else v.addEventListener('loadedmetadata',()=>{v.currentTime=t},{once:true});d.open=true;loadVideo(d);v.scrollIntoView({block:'nearest',behavior:'smooth'})}document.querySelector('#q').value=new URLSearchParams(location.search).get('q')||'';filter();signals();</script></html>'''
+(O/'index.html').write_bytes(page.encode('utf8'))
+with (O/'coverage.csv').open('w',encoding='utf-8-sig',newline='')as f:
+ w=csv.writer(f);w.writerow(['task','episodes','successes','selected']);w.writerows([task,v['episodes'],v['successes'],sum(c['task']==task for c in items)]for task,v in sorted(m['coverage'].items()))
+with (O/'selection.csv').open('w',encoding='utf-8-sig',newline='')as f:
+ w=csv.writer(f);w.writerow(['id','task','slot','seed','success','actions','peak_action','mapping_error']);w.writerows([c['id'],c['task'],c['slot'],c['actual'],c['success'],len(c['action']),c['peak_action'],c['peak_h_error']]for c in items)
+# Separate publication excludes complete video; original files stay untouched.
+out=O.parent/'nstep-1101-figures.tar.gz'
+with tarfile.open(out,'w:gz',compresslevel=4)as t:
+ for p in O.rglob('*'):
+  rel=p.relative_to(O)
+  if p.is_file() and 'raw'not in rel.parts and 'all_tasks'not in rel.parts and p.suffix!='.mp4':t.add(p,arcname=str(rel))
+print(json.dumps({'trajectories':len(items),'tasks':len(m['coverage']),'public_figures_bytes':out.stat().st_size,'page':str(O/'index.html')}))
