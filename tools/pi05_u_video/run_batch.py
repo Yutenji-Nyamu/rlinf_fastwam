@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get("PI05_SIGNAL_SOURCE_ROOT", Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools/pi05_signals"))
 from signal_math import noise_disagreement, ugrow_10_vs_5
 from recording import Recorder
@@ -72,7 +73,11 @@ def run(path):
     torch.set_num_threads(1)
     torch.cuda.set_device(0)
     torch.backends.cuda.enable_cudnn_sdp(False)
-    model = get_model(OmegaConf.create(c["model"])).cuda().eval()
+    model = get_model(OmegaConf.create(c["model"]))
+    if c.get("policy_weights"):
+        # Same strict full-state overlay as the accepted teacher-shadow loader.
+        model.load_state_dict(torch.load(c["policy_weights"], map_location="cpu", weights_only=True), strict=True)
+    model = model.cuda().eval()
     model._signal_observer = Endpoints()
     attention = None
     if c.get("attention_objects"):
@@ -175,6 +180,9 @@ def run(path):
             obs.setdefault("extra_view_images", None)
             input_obs = {k: array(obs[k]) for k in ("main_images", "wrist_images", "states")}
             descriptions = list(obs["task_descriptions"])
+            if c.get("save_replay_observations", False):
+                # Preserve the instruction alongside already saved camera/state arrays.
+                input_obs["task_descriptions"] = np.asarray(descriptions)
             save(out / "progress.json", {"time": time.time(), "phase": "inference", "query": q})
             tic = time.perf_counter()
             reference = bool(attention and q == 0 and c["acceptance"])
