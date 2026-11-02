@@ -17,16 +17,21 @@ import numpy as np
 def load_observation(path):
     import torch
 
-    result = {}
+    # The accepted save_observation omits None entries; the model processor
+    # still expects this disabled camera key to be present at inference.
+    result = {"extra_view_images": None}
     with np.load(path, allow_pickle=False) as z:
         for key in z.files:
-            # The accepted writer serializes this known unused None as object.
+            # Older archives can also contain an explicit disabled camera.
             if key == "extra_view_images":
                 result[key] = None
             elif key == "task_descriptions":
                 result[key] = z[key].tolist()
             else:
                 result[key] = torch.from_numpy(z[key].copy())
+    required = {"main_images", "wrist_images", "states", "task_descriptions"}
+    if not required <= result.keys():
+        raise ValueError(f"Incomplete saved observation: {required - result.keys()}")
     return result
 
 

@@ -16,6 +16,7 @@
 ## 增量实现
 
 - `tools/pi05_policy_eval/teacher_replay.py`：读取原 `observation_NNN.npz` 和 `noise4_initial_noise`，加载10/29已验收部署源码、原实配和教师严格full-state权重。先B32复现已有教师第0份，逐元素一致才补K3；额外合批B96继承当时已通过的96/48试验。不新建模拟器，不改旧数组。
+- 旧保存器省略None字段，读取须恢复`extra_view_images=None`；已用全部10份真实观察做CPU读取检查。首测因此失败的原日志保留，修复后GPU验收仍待执行。
 - `entropy_analysis.py`：复用写作侧执行前缀，保存逐位置CSV；K4高斯熵、K3排除主噪声敏感性、Top20%、初始分组十柱。
 - `entropy_queue.py`：复用现有身份/GPU准入/精确token清理组件，两卡按query奇偶分工；失败记录后释放给既有后继队列。
 - CPU三项测试覆盖K1不可估熵、真实14维、同策略重合100%、反序0%、固定分组、尾部截断。实际旧批CPU重算5725位置。

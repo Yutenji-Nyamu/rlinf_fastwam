@@ -8,6 +8,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from entropy_analysis import comparison, entropy, executed_count
 
 
+def test_saved_observation_omits_disabled_camera(tmp_path):
+    from teacher_replay import load_observation
+
+    p = tmp_path / "obs.npz"
+    np.savez(
+        p,
+        main_images=np.zeros((2, 3, 3, 3), dtype=np.uint8),
+        wrist_images=np.zeros((2, 2, 3, 3, 3), dtype=np.uint8),
+        states=np.zeros((2, 14), dtype=np.float32),
+        task_descriptions=np.array(["a", "b"]),
+    )
+    obs = load_observation(p)
+    assert obs["extra_view_images"] is None
+    assert obs["task_descriptions"] == ["a", "b"]
+
+
 def test_one_prediction_cannot_measure_policy_entropy():
     with pytest.raises(ValueError):
         entropy(np.zeros((2, 1, 50, 14)))
