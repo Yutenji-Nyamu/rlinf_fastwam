@@ -11,7 +11,7 @@ import numpy as np
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--mode", choices=["torch", "jax"], required=True)
+    p.add_argument("--mode", choices=["torch", "jax", "capture"], required=True)
     p.add_argument("--deployment", required=True)
     args = p.parse_args()
     d = Path(args.deployment)
@@ -19,6 +19,8 @@ def main():
     data = np.load(
         plan.get("probe_observation", d / "native-g6/initial-observation.npz")
     )
+    if args.mode == "capture":
+        data = np.load(d / "capture-action.npz")
     noise = np.random.RandomState(1103).normal(size=(1, 50, 32)).astype(np.float32)
     start = time.monotonic()
     if args.mode == "jax":
@@ -74,11 +76,22 @@ def main():
         torch.nn.Module.load_state_dict = original
 
         def obs(n):
+            def batch(value):
+                return (
+                    value[:n]
+                    if args.mode == "capture"
+                    else np.repeat(value[:1], n, axis=0)
+                )
+
             return {
-                k: torch.from_numpy(np.repeat(data[k][:1], n, axis=0))
+                k: torch.from_numpy(batch(data[k]))
                 for k in ["states", "main_images", "wrist_images"]
             } | {
-                "task_descriptions": [str(data["task_descriptions"][0])] * n,
+                "task_descriptions": (
+                    [str(x) for x in data["task_descriptions"][:n]]
+                    if args.mode == "capture"
+                    else [str(data["task_descriptions"][0])] * n
+                ),
                 "extra_view_images": None,
             }
 
@@ -99,6 +112,26 @@ def main():
                 )["actions"]
             return output.detach().float().cpu().numpy(), processed
 
+        if args.mode == "capture":
+            n = len(data["states"])
+            reference, _ = forward(n)
+            data = np.load(d / "capture-boundary.npz")
+            candidate, _ = forward(n)
+            delta = np.abs(reference - candidate)
+            result = {
+                "environments": n,
+                "same_noise": True,
+                "action_rmse": float(np.sqrt((delta**2).mean())),
+                "action_max_abs": float(delta.max()),
+            }
+            (d / "capture-policy-comparison.json").write_text(
+                json.dumps(result, indent=2)
+            )
+            print(json.dumps(result), flush=True)
+            assert result["action_rmse"] < 0.02 and result["action_max_abs"] < 0.15, (
+                result
+            )
+            return
         single, processed = forward(1)
         torch.cuda.reset_peak_memory_stats()
         t = time.monotonic()

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 import traceback
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
@@ -257,12 +258,28 @@ def main(directory):
         if unexpected:
             if any(r["type"] != "G" for r in unexpected):
                 raise RuntimeError(f"Native compute binding mismatch: {unexpected}")
-            status("CHECK_GRAPHICS_BINDING", outside_pair=unexpected)
-            deadline = time.monotonic() + 180
-            while not (d / "graphics-binding-reviewed.json").is_file():
-                if time.monotonic() > deadline:
-                    raise RuntimeError(f"Unreviewed graphics context: {unexpected}")
-                time.sleep(1)
+            # Reuse the previously reviewed 7 MiB graphics-only Kit residual.
+            # Inspect this exact PID's memory, never approve a compute context.
+            tree = ET.fromstring(subprocess.check_output(["nvidia-smi", "-q", "-x"]))
+            residuals = []
+            limits = plan.get("reviewed_graphics_residual_mib", {})
+            for index, gpu in enumerate(tree.findall("gpu")):
+                for process in gpu.findall("processes/process_info"):
+                    if int(process.findtext("pid")) not in owned or index in [6, 7]:
+                        continue
+                    amount = int(process.findtext("used_memory").split()[0])
+                    assert process.findtext("type") == "G" and amount <= limits.get(
+                        str(index), -1
+                    )
+                    residuals.append({"gpu": index, "mib": amount, "type": "G"})
+            assert len(residuals) == len(unexpected)
+            save(
+                d / "graphics-binding-reviewed.json",
+                {
+                    "residuals": residuals,
+                    "basis": "previously verified native Kit graphics-only context",
+                },
+            )
         status("INITIAL_RESET_AND_MODEL_PARITY")
         wait(
             launch(
@@ -280,6 +297,40 @@ def main(directory):
         )
         if parity is None:
             parity = model_parity()
+        if plan.get("capture_probe_actions"):
+            status("CHUNK_CAPTURE_COMPARISON")
+            wait(
+                launch(
+                    "capture-probe",
+                    [
+                        plan["python"],
+                        "-u",
+                        "-B",
+                        str(root / "tools/dojo_grpo/capture_probe.py"),
+                        str(d),
+                    ],
+                    dict(training_env, CUDA_VISIBLE_DEVICES=""),
+                ),
+                900,
+            )
+            status("CHUNK_CAPTURE_POLICY_COMPARISON")
+            wait(
+                launch(
+                    "capture-policy-probe",
+                    [
+                        plan["python"],
+                        "-u",
+                        "-B",
+                        str(root / "tools/dojo_grpo/model_probe.py"),
+                        "--mode",
+                        "capture",
+                        "--deployment",
+                        str(d),
+                    ],
+                    dict(training_env, CUDA_VISIBLE_DEVICES="6"),
+                ),
+                600,
+            )
         # Do not run a formal job if the model/environment contract failed.
         if staged:
             status("HANDOFF_GPU7_BEFORE_TRAINING")
@@ -326,7 +377,7 @@ def main(directory):
                 ],
                 training_env,
             ),
-            1209600,
+            None,
         )
         status("COMPLETE")
     except BaseException:

@@ -47,8 +47,11 @@ def image_hwc(obs, names):
 def invalid_reset_slots(env, n):
     """Native layout stability marks success/end_flag without unstable_envs."""
     return {
-        i for i in range(n)
-        if i in env.unstable_envs or not env.success[i] or env.end_flag[i]
+        i
+        for i in range(n)
+        if i in env.unstable_envs
+        or not env.success[i]
+        or env.end_flag[i]
         or not env.scene_manager.layout_manager.layout_valid[i]
     }
 
@@ -251,6 +254,7 @@ class NativeLoop:
         if not np.isfinite(actions).all():
             raise ValueError("Nonfinite physical actions")
         horizon = actions.shape[1]
+        capture_every_action = bool(request.get("capture_every_action", False))
         before = np.asarray(self.env.end_flag[: self.n], dtype=bool).copy()
         dones = np.zeros((self.n, horizon), bool)
         success = np.zeros_like(dones)
@@ -273,10 +277,14 @@ class NativeLoop:
                         "Physics-invalid rollout: do not score it as policy failure"
                     )
                 self.totals["action_seconds"] += time.monotonic() - start
-                # Preserve accepted native per-action camera/reward cadence.
-                self.last_obs = self.observations()
+                # The policy consumes only the next chunk-boundary image.
+                # Original physics, controls and reward checks run every action.
+                if capture_every_action:
+                    self.last_obs = self.observations()
             dones[:, t] = self.env.end_flag[: self.n]
             success[:, t] = np.asarray(self.env.success[: self.n]) & dones[:, t]
+        if not capture_every_action:
+            self.last_obs = self.observations()
         rewards, terms, truncs = terminal_arrays(before, dones, success)
         self.progress("chunk_complete", successes=int(success[:, -1].sum()))
         return {
