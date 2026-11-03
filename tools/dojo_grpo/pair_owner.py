@@ -281,21 +281,22 @@ def main(directory):
                     "basis": "previously verified native Kit graphics-only context",
                 },
             )
-        status("INITIAL_RESET_AND_MODEL_PARITY")
-        wait(
-            launch(
-                "initial-reset",
-                [
-                    plan["python"],
-                    "-u",
-                    "-B",
-                    str(root / "tools/dojo_grpo/prepare_observation.py"),
-                    str(d),
-                ],
-                dict(training_env, CUDA_VISIBLE_DEVICES=""),
-            ),
-            1250,
-        )
+        if not plan.get("reuse_native_contract", False):
+            status("INITIAL_RESET_AND_MODEL_PARITY")
+            wait(
+                launch(
+                    "initial-reset",
+                    [
+                        plan["python"],
+                        "-u",
+                        "-B",
+                        str(root / "tools/dojo_grpo/prepare_observation.py"),
+                        str(d),
+                    ],
+                    dict(training_env, CUDA_VISIBLE_DEVICES=""),
+                ),
+                1250,
+            )
         if parity is None:
             parity = model_parity()
         if plan.get("capture_probe_actions"):

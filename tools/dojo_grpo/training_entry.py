@@ -73,7 +73,7 @@ def main():
                 )
             )
             return self._finish_run()
-        if self.global_step == 0:
+        if self.global_step == 0 and phase == "formal":
             self.update_rollout_weights()
             metrics = self.evaluate()
             self.metric_logger.log(
@@ -93,6 +93,11 @@ def main():
     original_evaluate = EmbodiedRunner._maybe_eval_and_checkpoint
 
     def evaluate_checkpoint(self, step):
+        if phase in ("smoke", "smoke_resume"):
+            # Smoke verifies real rollout/update/full recovery. Do not repeat
+            # entire evaluation waves; the formal run keeps its own baseline.
+            self._save_checkpoint()
+            return {}
         metrics = original_evaluate(self, step)
         if self.global_step == 2 and self.cfg.runner.val_check_interval > 2:
             self.update_rollout_weights()

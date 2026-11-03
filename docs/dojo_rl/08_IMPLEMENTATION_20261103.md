@@ -66,3 +66,6 @@
 - [XPolicyLab原模型](https://github.com/XPolicyLab/XPolicyLab/blob/10ab2651a0b7cd5b8a948cb13f18ccdf818c6de4/policy/Pi_05/model.py)：数据变换和原默认生成。
 - [FluxVLA PR93](https://github.com/FluxVLA/FluxVLA/pull/93)：交叉核对Dojo SFT的归一化/相机/相对关节动作，未搬其训练参数。
 - [RPent PR319](https://github.com/RLinf/RPent/pull/319)：规划器工具接口，不作为π0.5 GRPO已成功的证据。
+
+- R16精简smoke：实测环境执行较慢，移除smoke起点评估及每次更新后的重复评估；保留32回合完整采样、实际参数更新、完整保存及1→2恢复。正式起点/第2/每5轮/末代评估不变。已通过的模型、初态、渲染对照按同一源码/模型复用，不重复跑。
+
