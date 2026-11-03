@@ -71,7 +71,7 @@ def main(directory):
 
     def take_cards(cards):
         nonlocal registered
-        directory = d / ("handoff-" + "".join(map(str, cards)))
+        directory = d / (d.name + "-handoff-" + "".join(map(str, cards)))
         directory.mkdir()
         reservations = {
             str(g): dict(identity=me, release=str(d / "released.json")) for g in cards
