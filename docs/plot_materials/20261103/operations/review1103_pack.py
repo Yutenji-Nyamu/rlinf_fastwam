@@ -21,7 +21,7 @@ for name,base in roots.items():
   for n in fn:
    f=Path(dp)/n;rel=f.relative_to(base)
    if f.suffix.lower()not in ['.json','.jsonl','.csv','.yaml','.yml','.txt','.log'] and not n.startswith('events.out.tfevents'):continue
-   if any(word in n.lower()for word in ['environment','credential','secret']):continue
+   if any(word in n.lower()for word in ['environment','credential','secret','identity']):continue
    size=f.stat().st_size
    if size>32*2**20:skip.append({'run':name,'path':str(rel),'bytes':size});continue
    dest=out/'runs'/name/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,dest)

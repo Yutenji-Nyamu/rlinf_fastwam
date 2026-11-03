@@ -4,7 +4,7 @@
 
 | 材料 | 用途与内容 | 入口／状态 |
 |---|---|---|
-| 最新蒸馏与GRPO | GAD四方法、OT、FQL v2全已有评估、逐回合成绩、训练指标、配置和TensorBoard；GRPO到58轮 | 本轮plot-backup-20261103.tar.gz，5043个文件 |
+| 最新蒸馏与GRPO | GAD四方法、OT、FQL v2全已有评估、逐回合成绩、训练指标、配置和TensorBoard；GRPO到58轮 | 本轮plot-backup-20261103.tar.gz，5000余个文件 |
 | 完整同族曲线与图稿 | 可勾选HTML、全点JSON、PNG/SVG/PDF；保留0–400轮和0–100%纵轴 | 本轮plot-galleries-20261103.tar.gz |
 | 药瓶师生双熵 | Clean140与Uτ3CP70，32局12成功，5725到达位置；十query教师K4、逐位置CSV、十组及Top20统计 | [已推e9622c461](../../experiments/entropy-replay-20261102/)；本轮补原学生K4、原噪声、教师原预测与帧映射，shadow-pair-raw-20261103.tar.gz |
 | Slot25与九类统计图 | 12阶段帧、双曲线、可编辑Draw.io、九统计图、所有轨迹CSV/JSON | 本轮图册包；[既有slot25说明](../../experiments/shadow-slot25-20261029g/)；bkp历史be6fc45b5 |
