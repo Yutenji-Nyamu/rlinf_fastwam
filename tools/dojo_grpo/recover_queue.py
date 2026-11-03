@@ -33,13 +33,13 @@ def latest_checkpoint(plan):
     return max(candidates, key=lambda p: int(p.name.rsplit("_", 1)[1]), default=None)
 
 
-def simulation_failure(directory):
+def simulation_failure(directory, log_names=("formal-driver.log",)):
     error = read(directory / "status.json").get("error", "")
     if "SystemExit: 143" in error:
         return False  # An explicit operator stop must stay stopped.
     # Only the failing driver contains the exception that ended this attempt.
     # Native logs can include older reset failures already recovered in-process.
-    for name in ("formal-driver.log",):
+    for name in log_names:
         path = directory / name
         if path.is_file():
             with path.open("rb") as stream:

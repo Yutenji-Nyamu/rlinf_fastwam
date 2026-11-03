@@ -1,0 +1,184 @@
+th": null,
+    "weight_sync_interval": 1,
+    "overlap_env_bootstrap": false,
+    "per_worker_log": false,
+    "per_worker_log_path": null
+  },
+  "algorithm": {
+    "normalize_advantages": false,
+    "kl_penalty": "kl",
+    "group_size": 1,
+    "reward_coef": 1.0,
+    "reward_type": "chunk_level",
+    "logprob_type": "chunk_level",
+    "entropy_type": "token_level",
+    "update_epoch": 1,
+    "utd_ratio": 20,
+    "adv_type": "embodied_sac",
+    "loss_type": "embodied_sac",
+    "loss_agg_func": "token-mean",
+    "agg_q": "mean",
+    "actor_agg_q": "mean",
+    "backup_entropy": false,
+    "critic_subsample_size": 0,
+    "critic_actor_ratio": 1,
+    "bootstrap_type": "standard",
+    "gamma": 0.999,
+    "tau": 0.005,
+    "entropy_tuning": {
+      "alpha_type": "softplus",
+      "initial_alpha": 1.0,
+      "target_entropy": -16,
+      "optim": {
+        "lr": 0.0003,
+        "lr_scheduler": "torch_constant",
+        "clip_grad": 10.0
+      }
+    },
+    "replay_buffer": {
+      "type": "dsrl_transition",
+      "schema_version": 1,
+      "capacity": 25000,
+      "warmup_size": 500,
+      "min_buffer_size": 1,
+      "enable_preload": false
+    },
+    "target_update_freq": 1,
+    "target_update_type": "all",
+    "filter_rewards": false,
+    "rewards_lower_bound": 0.1,
+    "rewards_upper_bound": 0.9
+  },
+  "rollout": {
+    "group_name": "RolloutGroup",
+    "backend": "huggingface",
+    "recompute_logprobs": false,
+    "enable_offload": false,
+    "pipeline_stage_num": 1,
+    "collect_transitions": true,
+    "collect_prev_infos": false,
+    "model": {
+      "model_type": "openpi",
+      "model_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch",
+      "precision": null,
+      "num_action_chunks": 50,
+      "action_dim": 14,
+      "is_lora": false,
+      "lora_rank": 32,
+      "use_proprio": true,
+      "num_steps": 10,
+      "add_value_head": false,
+      "openpi": {
+        "config_name": "pi05_robodojo",
+        "num_images_in_input": 3,
+        "noise_level": 0.5,
+        "action_chunk": 50,
+        "num_steps": 10,
+        "train_expert_only": true,
+        "action_env_dim": 14,
+        "noise_method": "flow_ode",
+        "add_value_head": false,
+        "detach_critic_input": true,
+        "use_dsrl": true,
+        "dsrl_state_dim": 14,
+        "dsrl_action_noise_dim": 32,
+        "dsrl_num_q_heads": 10,
+        "dsrl_agg_q": "mean",
+        "dsrl_image_latent_dim": 64,
+        "dsrl_state_latent_dim": 64,
+        "dsrl_hidden_dims": [
+          128,
+          128,
+          128
+        ],
+        "action_horizon": 50,
+        "rtc_enabled": false,
+        "dsrl_gaussian_warmup": true,
+        "dsrl_eval_deterministic": false
+      },
+      "add_q_head": true,
+      "q_head_type": "default",
+      "openpi_data": {
+        "norm_stats_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim/norm_stats.json"
+      }
+    }
+  },
+  "reward": {
+    "use_reward_model": false
+  },
+  "critic": {
+    "use_critic_model": false
+  }
+}
+[INFO 14:49:51 FlexiblePlacementStrategy]
+[INFO 14:49:51 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+[INFO 14:49:51 FlexiblePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster')].
+[INFO 14:50:02 FlexiblePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster')].
+[INFO 14:50:03 FlexiblePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank=6, accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['6'], isolate_accelerator=True, local_hardware_ranks=[6], node_group_label='cluster')].
+[INFO 14:50:03 NodePlacementStrategy]
+[INFO 14:50:03 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 14:50:03 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 14:50:03 NodePlacementStrategy]
+[INFO 14:50:03 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 14:50:03 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+[INFO 14:50:03 NodePlacementStrategy]
+[INFO 14:50:03 NodePlacementStrategy] Using node placement with node ranks: [0], node groups: ['node'].
+[INFO 14:50:03 NodePlacementStrategy] Generated 1 placements: [Placement(rank=0, cluster_node_rank=0, placement_node_rank=0, local_accelerator_rank='0', accelerator_type='NV_GPU', local_rank=0, local_world_size=1, visible_accelerators=['0', '1', '2', '3', '4', '5', '6', '7'], isolate_accelerator=True, local_hardware_ranks=[], node_group_label='cluster')].
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793717403.644493 1852733 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1793717403.726828 1852733 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793717405.976726 1852733 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(EnvWorker pid=1855195) [INFO 14:50:18 FlexiblePlacementStrategy]
+(EnvWorker pid=1855195) [INFO 14:50:18 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(MultiStepRolloutWorker pid=1855192) [INFO 14:50:20 FlexiblePlacementStrategy]
+(MultiStepRolloutWorker pid=1855192) [INFO 14:50:20 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(EmbodiedSACFSDPPolicy pid=1855190) [WARNING 14:50:21 ActorGroup-Rank-0][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+(RolloutGroup(rank=0) pid=1855192) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(RolloutGroup(rank=0) pid=1855192) I0000 00:00:1793717423.231871 1856057 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(EmbodiedSACFSDPPolicy pid=1855190) [INFO 14:50:24 ActorGroup-Rank-0][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+(EmbodiedSACFSDPPolicy pid=1855190) [INFO 14:50:24 FlexiblePlacementStrategy]
+(EmbodiedSACFSDPPolicy pid=1855190) [INFO 14:50:24 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(RolloutGroup(rank=0) pid=1855192) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(RolloutGroup(rank=0) pid=1855192) I0000 00:00:1793717425.177362 1856057 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(RolloutGroup(rank=0) pid=1855192) [INFO 14:51:15 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(RolloutGroup(rank=0) pid=1855192) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1855190) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(ActorGroup(rank=0) pid=1855190) I0000 00:00:1793717497.007205 1856229 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(ActorGroup(rank=0) pid=1855190) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(ActorGroup(rank=0) pid=1855190) I0000 00:00:1793717498.681389 1856229 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:52:19 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(ActorGroup(rank=0) pid=1855190) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:22 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(ActorGroup(rank=0) pid=1855190) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1855190) [INFO 14:53:35 ActorGroup-Rank-0][fsdp_sac_policy_worker.py:98] [FSDP] Gradient checkpointing is disabled
+(RolloutGroup(rank=0) pid=1855192)
+Evaluating Rollout Epochs:   0%|          | 0/4 [00:00<?, ?it/s]

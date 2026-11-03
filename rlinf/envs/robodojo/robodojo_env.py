@@ -1,3 +1,5 @@
+# Copyright 2026 The RLinf Authors.
+# Licensed under the Apache License, Version 2.0.
 """RLinf adapter over one native multi-environment Isaac process per GPU.
 
 Interface follows RLinf RoboTwin and PR1754. Transport/layout batching replace
@@ -39,6 +41,7 @@ class RoboDojoEnv(gym.Env):
         self._returns = torch.zeros(num_envs)
         self._success = torch.zeros(num_envs, dtype=torch.bool)
         self._fixed_offset = seed_offset * num_envs
+        self._fixed_cycle = int(cfg.get("fixed_layout_cycle", 0))
         self.pool_size = self._rpc("describe")["pools"][self.mode]
         self.update_reset_state_ids()
 
@@ -93,6 +96,10 @@ class RoboDojoEnv(gym.Env):
             fixed=bool(self.cfg.use_fixed_reset_state_ids),
         )
         self.reset_state_ids = torch.tensor(ids, dtype=torch.long)
+        if self.cfg.use_fixed_reset_state_ids and self._fixed_cycle:
+            self._fixed_offset = (
+                self._fixed_offset + self.num_envs
+            ) % self._fixed_cycle
 
     def reset(self, env_idx=None, env_seeds=None, **kwargs):
         assert env_idx is None, "Partial resets would change GRPO group membership"

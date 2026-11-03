@@ -1,0 +1,107 @@
+d.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 AVX512_FP16 AVX_VNNI AMX_TILE AMX_INT8 AMX_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793716830.371057 1820723 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(EnvWorker pid=1821875) [INFO 14:40:34 FlexiblePlacementStrategy]
+(EnvWorker pid=1821875) [INFO 14:40:34 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(MultiStepRolloutWorker pid=1821863) [INFO 14:40:34 FlexiblePlacementStrategy]
+(MultiStepRolloutWorker pid=1821863) [INFO 14:40:34 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(EmbodiedSACFSDPPolicy pid=1821855) [WARNING 14:40:35 ActorGroup-Rank-0][fsdp_model_manager.py:79] Provided there is sufficient GPU memory, set the actor.model.precision parameter to fp32 to allow the optimizer to run in fp32 for better convergence. Meanwhile, setting mixed_precision.param_dtype to 16-bit dtype can help maximize speed, as it will automatically convert fp32 to fp16 during operator execution.
+(EmbodiedSACFSDPPolicy pid=1821855) [INFO 14:40:36 FlexiblePlacementStrategy]
+(EmbodiedSACFSDPPolicy pid=1821855) [INFO 14:40:36 FlexiblePlacementStrategy] Using flexible placement with hardware ranks: [[6]], node groups: ['cluster'].
+(EmbodiedSACFSDPPolicy pid=1821855) [INFO 14:40:36 ActorGroup-Rank-0][fsdp_model_manager.py:133] [FSDP] AMP is disabled.
+(RolloutGroup(rank=0) pid=1821863) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(RolloutGroup(rank=0) pid=1821863) I0000 00:00:1793716836.259505 1822557 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(RolloutGroup(rank=0) pid=1821863) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(RolloutGroup(rank=0) pid=1821863) I0000 00:00:1793716837.646720 1822557 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(RolloutGroup(rank=0) pid=1821863) [INFO 14:41:19 RolloutGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(RolloutGroup(rank=0) pid=1821863) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1821855) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(ActorGroup(rank=0) pid=1821855) I0000 00:00:1793716893.896533 1822678 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(ActorGroup(rank=0) pid=1821855) WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+(ActorGroup(rank=0) pid=1821855) I0000 00:00:1793716895.474853 1822678 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:42:16 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(ActorGroup(rank=0) pid=1821855) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1601] [FREEZE_VLM] DSRL mode: freezing gemma_expert parameters
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1611] [FREEZE_VLM] DSRL mode: freezing projection layers (used in rollout/eval but not optimized)
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_in_proj.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: action_out_proj.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_in.bias
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.weight
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:03 ActorGroup-Rank-0][openpi_action_model.py:1634]   Froze: time_mlp_out.bias
+(ActorGroup(rank=0) pid=1821855) INFO:root:Loaded norm stats from /data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim
+(ActorGroup(rank=0) pid=1821855) [INFO 14:43:11 ActorGroup-Rank-0][fsdp_sac_policy_worker.py:98] [FSDP] Gradient checkpointing is disabled
+[INFO 14:43:14 RLinf] Resuming training from checkpoint directory /data/chenyiteng/results/dojo-offpolicy/dojo-offpolicy-g6-r1/smoke/smoke/checkpoints/global_step_2.
+(ActorGroup(rank=0) pid=1821855) /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+(ActorGroup(rank=0) pid=1821855)   return func(*args, **kwargs)
+(RolloutGroup(rank=0) pid=1821863)
+Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+(RolloutGroup(rank=0) pid=1821863)
+Generating Rollout Epochs: 100%|██████████| 1/1 [04:43<00:00, 283.01s/it]
+Generating Rollout Epochs: 100%|██████████| 1/1 [04:43<00:00, 283.01s/it]
+(ActorGroup(rank=0) pid=1821855) /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/lib/python3.11/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+(ActorGroup(rank=0) pid=1821855)   return func(*args, **kwargs)
+[INFO 14:48:38 RLinf] Saving checkpoint at step 3.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    3/3 │ Progress: ████████████████████████████████████████ │ 100.0%                                    │
+│ Elapsed: 05:50 │ ETA: 00:00 │ Step Time: 350.180s                                                                    │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.99e-05       │actor/actor/recv_traj=295.2            │actor/actor/sync_model_to_rollout=9.9…│
+│actor/forward_actor=0.781              │actor/forward_alpha=0.384              │actor/forward_critic=1.835            │
+│actor/run_training=6.313               │actor/sample=0.067                     │actor/update_one_epoch=5.787          │
+│actor_training=6.316                   │cal_adv_and_returns=0.0042             │env/compute_bootstrap_rewards=2.86e-04│
+│env/env/bootstrap_step=192.1           │env/env/send_rollout_trajectories=0.426│env/env_interact_step=80.102          │
+│env/interact=283.2                     │env/run_interact_once=283.2            │generate_rollouts=295.2               │
+│rollout/generate_one_epoch=283.0       │rollout/predict=2.698                  │rollout/rollout/generate=283.0        │
+│rollout/sync_model_from_actor=10.484   │step=350.1                             │sync_weights=10.488                   │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=100.0                      │num_trajectories=8                     │return=0.0                            │
+│reward=0.0                             │success_at_end=0.0                     │success_once=0.0                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│local_capacity=2.50e+04                │resident_transitions=144.0             │total_inserted=144.0                  │
+│write_cursor=144.0                     │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Actor ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/entropy=21.836                   │actor/grad_norm=4.797                  │actor/lr=1.00e-04                     │
+│actor/q_pi=-1.537                      │actor/q_value_0=-1.528                 │actor/q_value_1=-1.533                │
+│                                                                                                                      │
+├────────────────────────────────────────────────── Training/Critic ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│critic/grad_norm=0.145                 │critic/lr=3.00e-04                     │critic/q_data=-1.522                  │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│alpha/grad_norm=23.621                 │sac/actor_loss=-19.766                 │sac/alpha=0.974                       │
+│sac/alpha_loss=36.970                  │sac/critic_loss=0.0019                 │sac/global_new_transitions=16.000     │
+│sac/global_resident_transitions=144.0  │sac/planned_optimizer_updates=16.000   │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
