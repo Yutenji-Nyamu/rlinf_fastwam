@@ -376,8 +376,8 @@ def main(directory):
             7200,
         )
         status("SMOKE_COMPLETE_READY_FORMAL", parity=parity)
-        # The formal launch flag is written by the same authorized execution
-        # after checking the complete save + first update receipt; no user gate.
+        # The operator may pre-authorize this already approved sequence. The
+        # smoke driver must still complete update/save/resume before this point.
         deadline = time.monotonic() + 300
         while not (d / "launch-formal.json").is_file():
             if time.monotonic() > deadline:
