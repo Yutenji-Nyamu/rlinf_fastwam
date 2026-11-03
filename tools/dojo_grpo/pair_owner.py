@@ -11,6 +11,7 @@ import sys
 import time
 import traceback
 import xml.etree.ElementTree as ET
+from multiprocessing.connection import Client
 from pathlib import Path
 
 sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
@@ -314,23 +315,44 @@ def main(directory):
                 900,
             )
             status("CHUNK_CAPTURE_POLICY_COMPARISON")
-            wait(
-                launch(
-                    "capture-policy-probe",
-                    [
-                        plan["python"],
-                        "-u",
-                        "-B",
-                        str(root / "tools/dojo_grpo/model_probe.py"),
-                        "--mode",
-                        "capture",
-                        "--deployment",
-                        str(d),
-                    ],
-                    dict(training_env, CUDA_VISIBLE_DEVICES="6"),
-                ),
-                600,
+            comparison = launch(
+                "capture-policy-probe",
+                [
+                    plan["python"],
+                    "-u",
+                    "-B",
+                    str(root / "tools/dojo_grpo/model_probe.py"),
+                    "--mode",
+                    "capture",
+                    "--deployment",
+                    str(d),
+                ],
+                dict(training_env, CUDA_VISIBLE_DEVICES="6"),
             )
+            try:
+                wait(comparison, 600)
+                for g in [6, 7]:
+                    with Client(
+                        str(d / f"rpc/gpu{g}.sock"),
+                        family="AF_UNIX",
+                        authkey=(d / "rpc/authkey").read_bytes(),
+                    ) as connection:
+                        connection.send(
+                            {"op": "set_capture_mode", "capture_every_action": False}
+                        )
+                        assert connection.poll(30)
+                        assert connection.recv()["ok"]
+                save(
+                    d / "capture-mode.json",
+                    {"mode": "render_each_action_read_at_boundary"},
+                )
+            except (RuntimeError, TimeoutError) as error:
+                # Optimization is optional. Keep the accepted native observation
+                # path and proceed with training, without another restart cycle.
+                save(
+                    d / "capture-mode.json",
+                    {"mode": "native_per_action", "probe_error": str(error)},
+                )
         # Do not run a formal job if the model/environment contract failed.
         if staged:
             status("HANDOFF_GPU7_BEFORE_TRAINING")

@@ -254,7 +254,11 @@ class NativeLoop:
         if not np.isfinite(actions).all():
             raise ValueError("Nonfinite physical actions")
         horizon = actions.shape[1]
-        capture_every_action = bool(request.get("capture_every_action", False))
+        capture_every_action = bool(
+            request.get(
+                "capture_every_action", self.cfg.get("capture_every_action", True)
+            )
+        )
         before = np.asarray(self.env.end_flag[: self.n], dtype=bool).copy()
         dones = np.zeros((self.n, horizon), bool)
         success = np.zeros_like(dones)
@@ -277,10 +281,17 @@ class NativeLoop:
                         "Physics-invalid rollout: do not score it as policy failure"
                     )
                 self.totals["action_seconds"] += time.monotonic() - start
-                # The policy consumes only the next chunk-boundary image.
-                # Original physics, controls and reward checks run every action.
+                # Keep native renderer history and failure checks at every action.
+                # Only omit CPU readback/deepcopy of images the policy never uses.
                 if capture_every_action:
                     self.last_obs = self.observations()
+                elif t < horizon - 1:
+                    start = time.monotonic()
+                    if self.env.physx_monitor_enabled:
+                        self.env._check_physx_broken_envs()
+                        self.env._check_endpose_finite(list(range(self.n)))
+                    self.env.obs_manager.render_for_capture()
+                    self.totals["observation_seconds"] += time.monotonic() - start
             dones[:, t] = self.env.end_flag[: self.n]
             success[:, t] = np.asarray(self.env.success[: self.n]) & dones[:, t]
         if not capture_every_action:
@@ -317,6 +328,13 @@ class NativeLoop:
                             value = self.reset(request)
                         elif op == "step":
                             value = self.step(request)
+                        elif op == "set_capture_mode":
+                            self.cfg["capture_every_action"] = bool(
+                                request["capture_every_action"]
+                            )
+                            value = {
+                                "capture_every_action": self.cfg["capture_every_action"]
+                            }
                         elif op == "close":
                             connection.send({"ok": True, "value": None})
                             break
