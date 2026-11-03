@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def audit_objects(env, n, group):
+def audit_objects(env, n, group, *, raise_on_mismatch=True):
     manager = env.scene_manager.layout_manager
     poses = []
 
@@ -28,28 +28,35 @@ def audit_objects(env, n, group):
         poses.append(row)
     position_error = 0.0
     rotation_error = 0.0
+    bad_slots = []
     for start in range(0, n, group):
         reference = poses[start]
+        group_position = group_rotation = 0.0
         for row in poses[start : start + group]:
             if set(row) != set(reference):
                 raise RuntimeError("GRPO group has different object instances")
             for name, (p, q) in row.items():
                 p0, q0 = reference[name]
-                position_error = max(position_error, float(np.abs(p - p0).max()))
+                group_position = max(group_position, float(np.abs(p - p0).max()))
                 # q and -q encode the same rotation.
                 cosine = min(
                     1.0, float(abs(q @ q0) / (np.linalg.norm(q) * np.linalg.norm(q0)))
                 )
-                rotation_error = max(
-                    rotation_error, float(2 * np.arccos(cosine) * 180 / np.pi)
+                group_rotation = max(
+                    group_rotation, float(2 * np.arccos(cosine) * 180 / np.pi)
                 )
+        position_error = max(position_error, group_position)
+        rotation_error = max(rotation_error, group_rotation)
+        if group_position > 0.005 or group_rotation > 2:
+            bad_slots.extend(range(start, start + group))
     result = {
         "object_count": len(poses[0]),
         "position_max_m": position_error,
         "rotation_max_deg": rotation_error,
+        "bad_slots": bad_slots,
     }
     # Numerical settling tolerance, much tighter than native instability checks
     # (4 cm / 30 degrees). Refuse substantially different group initial states.
-    if position_error > 0.005 or rotation_error > 2:
+    if bad_slots and raise_on_mismatch:
         raise RuntimeError(f"GRPO group object state mismatch: {result}")
     return result

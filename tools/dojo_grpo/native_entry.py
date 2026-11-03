@@ -170,6 +170,7 @@ class NativeLoop:
         self.progress("reset_started", mode=self.mode, layout_ids=ids)
         start = time.monotonic()
         from utils.cluttered_generator import UnStableError
+        from initial_state import audit_objects
 
         for attempt in range(3):
             try:
@@ -178,6 +179,12 @@ class NativeLoop:
                 if not invalid_reset_slots(self.env, self.n):
                     raise
             bad = invalid_reset_slots(self.env, self.n)
+            object_audit = None
+            if not bad:
+                object_audit = audit_objects(
+                    self.env, self.n, group, raise_on_mismatch=False
+                )
+                bad.update(object_audit["bad_slots"])
             if not bad:
                 break
             failed = {ids[i] for i in bad}
@@ -191,6 +198,7 @@ class NativeLoop:
                             "layout_ids": ids,
                             "bad_slots": sorted(bad),
                             "invalid_layouts": sorted(failed),
+                            "object_audit": object_audit,
                         }
                     )
                     + "\n"
@@ -233,9 +241,7 @@ class NativeLoop:
             "group_state_max_abs": gap,
             "layouts": [pool[i]["digest"] for i in ids],
         }
-        from initial_state import audit_objects
-
-        audit["objects"] = audit_objects(self.env, self.n, group)
+        audit["objects"] = object_audit
         if gap > 0.01:
             raise RuntimeError(f"Group initial robot state mismatch: {gap}")
         save(self.output / "reset-audit.json", audit)

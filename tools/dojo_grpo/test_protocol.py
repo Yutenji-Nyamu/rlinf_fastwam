@@ -22,11 +22,15 @@ class Contract(unittest.TestCase):
     def test_native_reset_failure_flags(self):
         from types import SimpleNamespace
         from native_entry import invalid_reset_slots
+
         env = SimpleNamespace(
-            unstable_envs={0}, success=[True, False, True, True],
+            unstable_envs={0},
+            success=[True, False, True, True],
             end_flag=[False, True, False, False],
-            scene_manager=SimpleNamespace(layout_manager=SimpleNamespace(
-                layout_valid=[True, True, False, True])))
+            scene_manager=SimpleNamespace(
+                layout_manager=SimpleNamespace(layout_valid=[True, True, False, True])
+            ),
+        )
         self.assertEqual(invalid_reset_slots(env, 4), {0, 1, 2})
 
     def test_physics_skip_preserves_groups(self):
@@ -43,14 +47,16 @@ class Contract(unittest.TestCase):
         class Manager:
             instance_type_by_env = [{"bottle_3_18": "rigid"}, {"bottle_3_29": "rigid"}]
             gap = 0.0
+            rotation_gap = 0.0
 
             def decode_inst_name(self, name):
                 model, variant, _ = name.rsplit("_", 2)
                 return model, int(variant)
 
             def get_instance_pose(self, env_idx, **kwargs):
+                angle = self.rotation_gap if env_idx == 3 else 0.0
                 return np.array([self.gap * env_idx, 0.0, 0.0]), np.array(
-                    [1.0, 0.0, 0.0, 0.0]
+                    [np.cos(angle / 2), 0.0, 0.0, np.sin(angle / 2)]
                 )
 
         manager = Manager()
@@ -59,6 +65,15 @@ class Contract(unittest.TestCase):
         manager.gap = 0.02
         with self.assertRaises(RuntimeError):
             audit_objects(env, 2, 2)
+        manager.gap = 0.0
+        manager.rotation_gap = np.deg2rad(10)
+        manager.instance_type_by_env += [
+            {"bottle_3_30": "rigid"},
+            {"bottle_3_31": "rigid"},
+        ]
+        drift = audit_objects(env, 4, 2, raise_on_mismatch=False)
+        self.assertEqual(drift["bad_slots"], [2, 3])
+        self.assertAlmostEqual(drift["rotation_max_deg"], 10)
 
     def test_groups(self):
         ids = grouped_indices(55, 32, 8, np.random.RandomState(42))
