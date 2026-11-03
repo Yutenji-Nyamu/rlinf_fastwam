@@ -37,7 +37,9 @@ def simulation_failure(directory):
     error = read(directory / "status.json").get("error", "")
     if "SystemExit: 143" in error:
         return False  # An explicit operator stop must stay stopped.
-    for name in ("formal-driver.log", "native-g6.log", "native-g7.log"):
+    # Only the failing driver contains the exception that ended this attempt.
+    # Native logs can include older reset failures already recovered in-process.
+    for name in ("formal-driver.log",):
         path = directory / name
         if path.is_file():
             with path.open("rb") as stream:

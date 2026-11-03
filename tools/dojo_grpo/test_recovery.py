@@ -18,6 +18,7 @@ class RecoveryTests(unittest.TestCase):
             (d / "status.json").write_text(json.dumps({"error": "child exited 1"}))
             log = d / "formal-driver.log"
             log.write_text("RuntimeError: CUDA out of memory")
+            (d / "native-g6.log").write_text("Older recovered Physics-invalid rollout")
             self.assertFalse(simulation_failure(d))
             log.write_text("TimeoutError: Dojo step timed out on GPU 7")
             self.assertTrue(simulation_failure(d))
