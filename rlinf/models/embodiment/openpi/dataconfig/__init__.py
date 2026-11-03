@@ -452,6 +452,22 @@ _CONFIGS = [
         num_train_steps=20_000,
     ),
     TrainConfig(
+        name="pi05_robodojo",
+        model=pi0_config.Pi0Config(
+            pi05=True, action_horizon=50, discrete_state_input=True
+        ),
+        data=LeRobotAlohaDataConfig(
+            repo_id="arx_x5_sim",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(asset_id="arx_x5_sim"),
+            adapt_to_pi=False,
+            extra_delta_transform=True,
+            use_quantile_norm=True,
+        ),
+        pytorch_weight_path="checkpoints/torch/pi05_base",
+        num_train_steps=20_000,
+    ),
+    TrainConfig(
         name="pi05_sidney_robotwin",
         model=pi0_config.Pi0Config(
             pi05=True, action_horizon=50, discrete_state_input=True

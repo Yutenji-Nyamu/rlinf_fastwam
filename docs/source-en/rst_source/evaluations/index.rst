@@ -5,6 +5,9 @@ RLinf provides a unified embodied evaluation entry point. It runs parallel rollo
 
 **Supported Benchmarks**
 
+For the native Dojo adapter and its acceptance status, see
+:doc:`RoboDojo GRPO <../examples/embodied/robodojo_grpo>`.
+
 The table below lists benchmarks that have example configs under ``evaluations/`` and can be launched directly with ``run_eval.sh``.
 
 .. list-table::

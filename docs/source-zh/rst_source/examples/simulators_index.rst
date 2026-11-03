@@ -195,6 +195,7 @@
    RoboCasa <embodied/robocasa>
    RoboCasa365 <embodied/robocasa365>
    RoboTwin <embodied/robotwin>
+   RoboDojo GRPO（实验接入） <embodied/robodojo_grpo>
    RoboVerse <embodied/roboverse>
    Franka-Sim <embodied/frankasim>
    EmbodiChain <embodied/embodichain>

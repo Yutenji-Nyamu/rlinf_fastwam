@@ -5,6 +5,9 @@ RLinf 提供统一的具身智能评测入口，支持在仿真或真机环境�
 
 **支持的 Benchmark**
 
+原生Dojo接口及实际验收状态见
+:doc:`RoboDojo GRPO <../examples/embodied/robodojo_grpo>`。
+
 下表列出 ``evaluations/`` 目录中已提供示例配置、且可通过 ``run_eval.sh`` 直接启动的 benchmark。
 
 .. list-table::
