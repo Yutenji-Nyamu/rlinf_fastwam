@@ -5,13 +5,13 @@ action chunk, and native take_action_batch advances active environments together
 AF_UNIX lives in a mode-0700 directory with a private authentication key.
 """
 
+import faulthandler
 import json
 import os
+import signal
 import sys
 import time
 import traceback
-import faulthandler
-import signal
 from multiprocessing.connection import Listener
 from pathlib import Path
 
@@ -19,7 +19,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "rlinf/envs/robodojo"))
-from protocol import layout_pools, terminal_arrays, replace_invalid_layouts
+from protocol import layout_pools, replace_invalid_layouts, terminal_arrays
 
 
 def save(path, data):
@@ -80,6 +80,10 @@ class NativeLoop:
             mode: set(cfg.get("invalid_layouts", {}).get(mode, []))
             for mode in self.pools
         }
+        previous = self.output / "invalid-resets.jsonl"
+        if previous.is_file():
+            for row in map(json.loads, previous.read_text().splitlines()):
+                self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
 
     def progress(self, phase, **extra):
         save(
@@ -169,8 +173,8 @@ class NativeLoop:
         self.env.seed_manager._current_batch_seeds = None
         self.progress("reset_started", mode=self.mode, layout_ids=ids)
         start = time.monotonic()
-        from utils.cluttered_generator import UnStableError
         from initial_state import audit_objects
+        from utils.cluttered_generator import UnStableError
 
         max_attempts = int(self.cfg.get("max_reset_attempts", 3))
         for attempt in range(max_attempts):
@@ -317,6 +321,7 @@ class NativeLoop:
         }
 
     def serve(self):
+        recycle = False
         socket = Path(self.cfg["socket"])
         socket.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         key = Path(self.cfg["authkey"]).read_bytes()
@@ -325,6 +330,7 @@ class NativeLoop:
             self.progress("ready", pools={k: len(v) for k, v in self.pools.items()})
             while True:
                 with listener.accept() as connection:
+                    op = None
                     try:
                         request = connection.recv()
                         op = request["op"]
@@ -334,6 +340,12 @@ class NativeLoop:
                                 "num_envs": self.env.num_envs,
                             }
                         elif op == "reset":
+                            if self.mode is not None and self.cfg.get(
+                                "fresh_process_per_wave"
+                            ):
+                                connection.send({"ok": False, "restart_native": True})
+                                recycle = True
+                                break
                             value = self.reset(request)
                         elif op == "step":
                             value = self.step(request)
@@ -350,11 +362,20 @@ class NativeLoop:
                         else:
                             raise ValueError(f"Unknown op {op}")
                         connection.send({"ok": True, "value": value})
-                    except Exception:
+                    except Exception as exception:
                         error = traceback.format_exc()
                         print(error, flush=True)
+                        if (
+                            op == "reset"
+                            and self.cfg.get("fresh_process_per_wave")
+                            and type(exception).__name__ == "UnStableError"
+                        ):
+                            connection.send({"ok": False, "restart_native": True})
+                            recycle = True
+                            break
                         connection.send({"ok": False, "error": error})
         socket.unlink(missing_ok=True)
+        return recycle
 
 
 def main():
@@ -364,8 +385,8 @@ def main():
     sys.path[:0] = [str(root), str(root / "XPolicyLab")]
     # Native main performs AppLauncher before simulator imports, GPU binding,
     # zero-delay rendering, config processing and PhysX monitoring unchanged.
-    import src.eval_client.main as native
     import src.eval_client.eval_env as environment
+    import src.eval_client.main as native
 
     class NoPolicyClient:
         def __init__(self, **kwargs):
@@ -384,7 +405,11 @@ def main():
         print("[dojo-grpo] constructing native environments", flush=True)
         env = factory(config, app, **kwargs)
         try:
-            NativeLoop(env, cfg).serve()
+            if NativeLoop(env, cfg).serve():
+                # Match upstream shell-level recovery: exit the native process
+                # instead of retaining corrupted physics/renderer state.
+                sys.stdout.flush()
+                os._exit(75)
         finally:
             env.close()
             app.close()

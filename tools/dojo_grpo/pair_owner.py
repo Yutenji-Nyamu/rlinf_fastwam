@@ -225,6 +225,15 @@ def main(directory):
                     str(render_gpu),
                     "--",
                 ] + command
+            if plan.get("fresh_process_per_wave"):
+                command = [
+                    plan["python"],
+                    "-u",
+                    "-B",
+                    str(root / "tools/dojo_grpo/native_supervisor.py"),
+                    str(d),
+                    str(g),
+                ] + command
             native.append(launch(f"native-g{g}", command, e, plan["native_repo"]))
         status("NATIVE_STARTING", envs_per_card=plan["native_envs_per_card"])
         deadline = time.monotonic() + 900
@@ -248,7 +257,11 @@ def main(directory):
                 raise TimeoutError("Native server startup")
             time.sleep(1)
         # Verify computing AND graphics contexts before continuing.
-        owned = {p.pid for p in native}
+        owned = (
+            {read(d / f"native-g{g}-child.json")["pid"] for g in (6, 7)}
+            if plan.get("fresh_process_per_wave")
+            else {p.pid for p in native}
+        )
         unexpected = [
             {"gpu": g, **r}
             for g, card in gpus().items()
@@ -366,7 +379,9 @@ def main(directory):
             receipt = read(accepted / "smoke-resume-complete.json")
             assert receipt["restored"] == 1 and receipt["completed"] == 2
         else:
-            status("CLEAN_SMOKE_FULL_WAVE", parity=parity)
+            smoke_phase = plan.get("smoke_phase", "smoke")
+            assert smoke_phase in ("smoke", "smoke_resume")
+            status("CLEAN_SMOKE_FULL_WAVE", parity=parity, smoke_phase=smoke_phase)
             wait(
                 launch(
                     "smoke-driver",
@@ -378,12 +393,17 @@ def main(directory):
                         "--config-path",
                         str(d / "config"),
                         "--config-name",
-                        "smoke",
+                        smoke_phase,
                     ],
                     training_env,
                 ),
                 7200,
             )
+            if smoke_phase == "smoke_resume":
+                save(
+                    d / "smoke-resume-complete.json",
+                    {"restored": 1, "completed": 2, "time": time.time()},
+                )
         status("SMOKE_COMPLETE_READY_FORMAL", parity=parity)
         # The operator may pre-authorize this already approved sequence. The
         # smoke driver must still complete update/save/resume before this point.
@@ -422,7 +442,7 @@ def main(directory):
                 exact_signal(who, signal.SIGTERM)
         for p, who in reversed(children):
             try:
-                p.wait(timeout=5 if p in native else 30)
+                p.wait(timeout=8 if p in native else 30)
             except subprocess.TimeoutExpired:
                 if same(who):
                     exact_signal(who, signal.SIGKILL)

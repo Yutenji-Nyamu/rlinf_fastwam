@@ -5,6 +5,7 @@ PR1754's process-per-environment runtime. No simulator or model weights import
 in this process, and train/eval share the same persistent native server.
 """
 
+import time
 from multiprocessing.connection import Client
 
 import gymnasium as gym
@@ -46,15 +47,33 @@ class RoboDojoEnv(gym.Env):
         return self._elapsed_steps
 
     def _rpc(self, op, **args):
-        with Client(self.socket, family="AF_UNIX", authkey=self._key) as connection:
-            connection.send(dict(op=op, mode=self.mode, **args))
-            timeout_key = "reset_timeout" if op == "reset" else "rpc_timeout"
-            if not connection.poll(float(self.cfg.get(timeout_key, 900))):
+        timeout_key = "reset_timeout" if op == "reset" else "rpc_timeout"
+        deadline = time.monotonic() + float(self.cfg.get(timeout_key, 900))
+        restarts = 0
+        while True:
+            if time.monotonic() >= deadline:
                 raise TimeoutError(f"Dojo {op} timed out on GPU {self.gpu}")
-            result = connection.recv()
-        if not result["ok"]:
-            raise RuntimeError("Dojo native error: " + result["error"])
-        return result["value"]
+            try:
+                connection = Client(self.socket, family="AF_UNIX", authkey=self._key)
+            except (FileNotFoundError, ConnectionRefusedError):
+                if not restarts:
+                    raise
+                time.sleep(0.5)
+                continue
+            with connection:
+                connection.send(dict(op=op, mode=self.mode, **args))
+                if not connection.poll(max(0, deadline - time.monotonic())):
+                    raise TimeoutError(f"Dojo {op} timed out on GPU {self.gpu}")
+                result = connection.recv()
+            if result.get("restart_native"):
+                restarts += 1
+                if op != "reset" or restarts > 3:
+                    raise RuntimeError("Dojo reset native restart limit exceeded")
+                time.sleep(0.5)
+                continue
+            if not result["ok"]:
+                raise RuntimeError("Dojo native error: " + result["error"])
+            return result["value"]
 
     @staticmethod
     def _obs(value):

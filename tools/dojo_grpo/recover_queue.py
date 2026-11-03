@@ -54,6 +54,7 @@ def simulation_failure(directory):
             "ERROR_DEVICE_LOST",
             "Dojo step timed out",
             "Dojo reset timed out",
+            "Dojo reset native restart limit exceeded",
         )
     )
 
