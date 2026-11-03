@@ -19,6 +19,16 @@ from initial_state import audit_objects
 
 
 class Contract(unittest.TestCase):
+    def test_native_reset_failure_flags(self):
+        from types import SimpleNamespace
+        from native_entry import invalid_reset_slots
+        env = SimpleNamespace(
+            unstable_envs={0}, success=[True, False, True, True],
+            end_flag=[False, True, False, False],
+            scene_manager=SimpleNamespace(layout_manager=SimpleNamespace(
+                layout_valid=[True, True, False, True])))
+        self.assertEqual(invalid_reset_slots(env, 4), {0, 1, 2})
+
     def test_physics_skip_preserves_groups(self):
         ids = [1] * 8 + [3] * 8
         result, changes = replace_invalid_layouts(ids, {1}, 55, 8)

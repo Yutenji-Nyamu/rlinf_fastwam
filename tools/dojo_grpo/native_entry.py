@@ -44,6 +44,15 @@ def image_hwc(obs, names):
     raise KeyError(f"Native camera missing: {names}")
 
 
+def invalid_reset_slots(env, n):
+    """Native layout stability marks success/end_flag without unstable_envs."""
+    return {
+        i for i in range(n)
+        if i in env.unstable_envs or not env.success[i] or env.end_flag[i]
+        or not env.scene_manager.layout_manager.layout_valid[i]
+    }
+
+
 class NativeLoop:
     def __init__(self, env, cfg):
         from XPolicyLab.utils.process_data import pack_robot_state, unpack_robot_state
@@ -163,14 +172,9 @@ class NativeLoop:
             try:
                 self.env.reset(ids)
             except UnStableError:
-                if not self.env.unstable_envs:
+                if not invalid_reset_slots(self.env, self.n):
                     raise
-            bad = {i for i in self.env.unstable_envs if i < self.n}
-            bad.update(
-                i
-                for i in range(self.n)
-                if not self.env.scene_manager.layout_manager.layout_valid[i]
-            )
+            bad = invalid_reset_slots(self.env, self.n)
             if not bad:
                 break
             failed = {ids[i] for i in bad}
