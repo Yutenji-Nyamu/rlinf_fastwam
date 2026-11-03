@@ -44,6 +44,8 @@ Dojo提供完整成功判据和部分完成Score。首版建议仅完整成功�
 
 对PPO还要区分成功终止和步数耗尽，并正确保存final observation，避免重置后的新场景参与上一回合价值目标。GRPO虽不训练价值网络，同样需要正确成败和组归属。
 
+继续追到当前正在跑的Control后补充：其采用chunk-level概率，actor将终止mask合成有效块；旧EnvWorker未消费新PR的`valid_action_mask`。不能只加这个info字段就说已经处理。首版保留整块策略定义，确保真实终止位置的一次奖励不丢、后续块不参与学习，并记录末块实际执行数；不把只计算执行前缀概率作为未声明算法改动。原Dojo `success` 初始为True，也不能直接把这个变量当每步成功奖励。详见[07](07_ADAPTER_AND_ACCEPTANCE.md)。
+
 ## 原则
 
 首次接入只做：原生Dojo环境 → 同权重PyTorch π0.5 → 稀疏奖励Clean GRPO。保留已有原生物理和恢复代码；不附带引入planner、SAM3、VLM奖励、U加权、自动选成功种子或新的控制时限。无需修改正在运行的其他实验。

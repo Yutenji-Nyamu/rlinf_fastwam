@@ -11,6 +11,8 @@
 | 新wrapper | [robodojo_env.py](https://github.com/qurakchin/RLinf/blob/4ea60c4e800ac47f67fd838e6f08b7239e2e275f/rlinf/envs/sim/robodojo/robodojo_env.py) | `state_action_permutations`、reset、step、chunk_step、组seed |
 | runtime | [bridge.py](https://github.com/RLinf/RoboDojo/blob/6d76a0c4a49a7a47bf5ee3924de2ccd7ecb8a8b7/robodojo_runtime/bridge.py) | 实际多进程/顺序step、随机reset不使用传入seed、terminal latch；明确迁移边界 |
 | RPent | [PR96](https://github.com/RLinf/RPent/pull/96)、[文档](https://rpent.readthedocs.io/en/latest/rst_source/simulators/robodojo.html) | 已合并agent集成和转换线索；不作为RL学习成功证据 |
+| RPent探索记忆 | [PR319](https://github.com/RLinf/RPent/pull/319)，依赖307/310 | VPP2/动作原语与记忆评估，不是π0.5参数RL；已读其补丁 |
+| FluxVLA | [已合并PR93](https://github.com/FluxVLA/FluxVLA/pull/93)、[π0.5配置](https://github.com/FluxVLA/FluxVLA/blob/b7042d2/configs/pi05/pi05_paligemma_robodojo_full_finetune.py) | Dojo SFT变换和并行评估；核delta关节/absolute夹爪，不代替官方模型norm |
 | πRL | [论文](https://arxiv.org/abs/2510.25889)、[RLinf模型页](https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/pi0.html) | π0.5 Flow-SDE、PPO/GRPO可训练概率、其他benchmark效果 |
 | EXPO | [官方代码](https://github.com/pd-perry/expo-ft) | 回放、Q、Editor和策略学习的后续方案；不作为首个环境接入的必需项 |
 
