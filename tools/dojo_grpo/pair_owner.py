@@ -1,3 +1,5 @@
+# Copyright 2026 The RLinf Authors.
+# Licensed under the Apache License, Version 2.0.
 """Prepared pair handoff -> bounded Dojo smoke -> formal Clean -> existing RLT.
 
 Reuse the accepted identity-based RLT handoff and namespace-cleaning GRPO driver.
@@ -15,7 +17,7 @@ from multiprocessing.connection import Client
 from pathlib import Path
 
 sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
-from common import read, save, proc, same, exact_signal, gpus
+from common import exact_signal, gpus, proc, read, same, save
 
 
 def main(directory):
@@ -76,7 +78,7 @@ def main(directory):
         directory = d / (d.name + "-handoff-" + "".join(map(str, cards)))
         directory.mkdir()
         reservations = {
-            str(g): dict(identity=me, release=str(d / "released.json")) for g in cards
+            str(g): {"identity": me, "release": str(d / "released.json")} for g in cards
         }
         handoff(directory, cards, me, reservations=reservations)
         registered = True
@@ -358,24 +360,30 @@ def main(directory):
         if staged:
             status("HANDOFF_GPU7_BEFORE_TRAINING")
             take_cards([7])
-        status("CLEAN_SMOKE_FULL_WAVE", parity=parity)
-        wait(
-            launch(
-                "smoke-driver",
-                [
-                    plan["python"],
-                    "-u",
-                    "-B",
-                    str(root / "tools/dojo_grpo/training_entry.py"),
-                    "--config-path",
-                    str(d / "config"),
-                    "--config-name",
-                    "smoke",
-                ],
-                training_env,
-            ),
-            7200,
-        )
+        if plan.get("accepted_smoke"):
+            accepted = Path(plan["accepted_smoke"])
+            assert read(accepted / "plan.json")["model"] == plan["model"]
+            receipt = read(accepted / "smoke-resume-complete.json")
+            assert receipt["restored"] == 1 and receipt["completed"] == 2
+        else:
+            status("CLEAN_SMOKE_FULL_WAVE", parity=parity)
+            wait(
+                launch(
+                    "smoke-driver",
+                    [
+                        plan["python"],
+                        "-u",
+                        "-B",
+                        str(root / "tools/dojo_grpo/training_entry.py"),
+                        "--config-path",
+                        str(d / "config"),
+                        "--config-name",
+                        "smoke",
+                    ],
+                    training_env,
+                ),
+                7200,
+            )
         status("SMOKE_COMPLETE_READY_FORMAL", parity=parity)
         # The operator may pre-authorize this already approved sequence. The
         # smoke driver must still complete update/save/resume before this point.

@@ -48,7 +48,8 @@ class RoboDojoEnv(gym.Env):
     def _rpc(self, op, **args):
         with Client(self.socket, family="AF_UNIX", authkey=self._key) as connection:
             connection.send(dict(op=op, mode=self.mode, **args))
-            if not connection.poll(float(self.cfg.get("rpc_timeout", 900))):
+            timeout_key = "reset_timeout" if op == "reset" else "rpc_timeout"
+            if not connection.poll(float(self.cfg.get(timeout_key, 900))):
                 raise TimeoutError(f"Dojo {op} timed out on GPU {self.gpu}")
             result = connection.recv()
         if not result["ok"]:

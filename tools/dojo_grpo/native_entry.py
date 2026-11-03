@@ -172,7 +172,8 @@ class NativeLoop:
         from utils.cluttered_generator import UnStableError
         from initial_state import audit_objects
 
-        for attempt in range(3):
+        max_attempts = int(self.cfg.get("max_reset_attempts", 3))
+        for attempt in range(max_attempts):
             try:
                 self.env.reset(ids)
             except UnStableError:
@@ -203,8 +204,10 @@ class NativeLoop:
                     )
                     + "\n"
                 )
-            if attempt == 2:
-                raise UnStableError("Three invalid reset waves; return to fallback")
+            if attempt == max_attempts - 1:
+                raise UnStableError(
+                    f"{max_attempts} invalid reset waves; return to fallback"
+                )
             ids, changes = replace_invalid_layouts(
                 ids,
                 self.invalid_layouts[self.mode],
