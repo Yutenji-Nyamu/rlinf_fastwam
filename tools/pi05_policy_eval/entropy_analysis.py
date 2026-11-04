@@ -39,8 +39,8 @@ def executed_count(reached, slot, query, before, after, active):
     return min(offered, max(0, int(np.ceil(reached.get((slot, query), -1))) + 1))
 
 
-def comparison(base, final):
-    """Equal-count global top20, stable positional ties; base-defined ten bins."""
+def comparison(base, final, n_bins=10):
+    """Equal-count global top20, stable ties; groups fixed by base entropy."""
     base, final = np.asarray(base), np.asarray(final)
     if base.shape != final.shape or base.ndim != 1 or len(base) < 10:
         raise ValueError("Expected matching fixed-pool positions")
@@ -50,7 +50,9 @@ def comparison(base, final):
     ib = np.argsort(-base, kind="stable")[:k]
     it = np.argsort(-final, kind="stable")[:k]
     bins = []
-    for i, ids in enumerate(np.array_split(np.argsort(base, kind="stable"), 10)):
+    if not 1 <= n_bins <= len(base):
+        raise ValueError("Invalid entropy group count")
+    for i, ids in enumerate(np.array_split(np.argsort(base, kind="stable"), n_bins)):
         bins.append(
             dict(
                 group=i + 1,

@@ -1,0 +1,272 @@
+{
+  "actor.fsdp_config.checkpoint_format": {
+    "old": null,
+    "new": "local_shard"
+  },
+  "actor.model.openpi.dsrl_action_noise_dim": {
+    "old": 32,
+    "new": 1600
+  },
+  "actor.model.openpi.dsrl_full_noise": {
+    "old": null,
+    "new": true
+  },
+  "actor.model.openpi_data.default_prompt": {
+    "old": "adjust the bottle",
+    "new": "turn on the switch"
+  },
+  "algorithm.entropy_tuning.initial_alpha": {
+    "old": 1.0,
+    "new": 0.02
+  },
+  "algorithm.entropy_tuning.target_entropy": {
+    "old": -16,
+    "new": -800
+  },
+  "algorithm.replay_buffer.schema_version": {
+    "old": 2,
+    "new": 4
+  },
+  "cluster.component_placement.actor,env,rollout.node_group": {
+    "old": "dsrl_gpu7",
+    "new": "dsrl_gpu6"
+  },
+  "cluster.component_placement.actor,env,rollout.placement": {
+    "old": "7",
+    "new": "6"
+  },
+  "cluster.node_groups": {
+    "old": [
+      {
+        "label": "dsrl_gpu7",
+        "node_ranks": "0",
+        "env_configs": [
+          {
+            "node_ranks": "0",
+            "python_interpreter_path": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+            "env_vars": [
+              {
+                "EMBODIED_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/examples/embodiment"
+              },
+              {
+                "HOME": "/home/chenyiteng"
+              },
+              {
+                "HYDRA_FULL_ERROR": "1"
+              },
+              {
+                "JAX_PLATFORMS": "cpu"
+              },
+              {
+                "LD_PRELOAD": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/libdsrl_u_g7_20261006.so"
+              },
+              {
+                "MUJOCO_GL": "egl"
+              },
+              {
+                "OMP_NUM_THREADS": "1"
+              },
+              {
+                "OPENPI_DATA_HOME": "/home/chenyiteng/.cache/openpi"
+              },
+              {
+                "PATH": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+              },
+              {
+                "PYOPENGL_PLATFORM": "egl"
+              },
+              {
+                "PYTHONDONTWRITEBYTECODE": "1"
+              },
+              {
+                "PYTHONPATH": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/bootstrap:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix"
+              },
+              {
+                "PYTHONUNBUFFERED": "1"
+              },
+              {
+                "RAY_ADDRESS": "172.17.0.1:6389"
+              },
+              {
+                "REPO_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006"
+              },
+              {
+                "RLINF_CODE_WORKING_DIR": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006"
+              },
+              {
+                "RLINF_OPENDW_GPU_SCOPE_MANIFEST": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/scope.json"
+              },
+              {
+                "ROBOTWIN_ASSETS_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+              },
+              {
+                "ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix"
+              },
+              {
+                "ROBOTWIN_PI0_BASE_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+              },
+              {
+                "ROBOTWIN_PI0_NORM_STATS_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+              },
+              {
+                "ROBOT_PLATFORM": "ALOHA"
+              },
+              {
+                "TOKENIZERS_PARALLELISM": "false"
+              },
+              {
+                "__GL_APPLICATION_PROFILE": "1"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "new": [
+      {
+        "label": "dsrl_gpu6",
+        "node_ranks": "0",
+        "env_configs": [
+          {
+            "node_ranks": "0",
+            "python_interpreter_path": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+            "env_vars": [
+              {
+                "EMBODIED_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104/examples/embodiment"
+              },
+              {
+                "HOME": "/home/chenyiteng"
+              },
+              {
+                "HYDRA_FULL_ERROR": "1"
+              },
+              {
+                "JAX_PLATFORMS": "cpu"
+              },
+              {
+                "LD_PRELOAD": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g6/libdsrl_u_g6_20261006.so"
+              },
+              {
+                "MUJOCO_GL": "egl"
+              },
+              {
+                "OMP_NUM_THREADS": "1"
+              },
+              {
+                "OPENPI_DATA_HOME": "/home/chenyiteng/.cache/openpi"
+              },
+              {
+                "PATH": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+              },
+              {
+                "PYOPENGL_PLATFORM": "egl"
+              },
+              {
+                "PYTHONDONTWRITEBYTECODE": "1"
+              },
+              {
+                "PYTHONPATH": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g6/bootstrap:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix"
+              },
+              {
+                "PYTHONUNBUFFERED": "1"
+              },
+              {
+                "RAY_ADDRESS": "172.17.0.1:6389"
+              },
+              {
+                "REPO_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104"
+              },
+              {
+                "RLINF_CODE_WORKING_DIR": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104"
+              },
+              {
+                "RLINF_OPENDW_GPU_SCOPE_MANIFEST": "/data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g6/scope.json"
+              },
+              {
+                "ROBOTWIN_ASSETS_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support"
+              },
+              {
+                "ROBOTWIN_PATH": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix"
+              },
+              {
+                "ROBOTWIN_PI0_BASE_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab"
+              },
+              {
+                "ROBOTWIN_PI0_NORM_STATS_PATH": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json"
+              },
+              {
+                "ROBOT_PLATFORM": "ALOHA"
+              },
+              {
+                "TOKENIZERS_PARALLELISM": "false"
+              },
+              {
+                "__GL_APPLICATION_PROFILE": "1"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "env.eval.seeds_path": {
+    "old": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/rlinf/envs/robotwin/seeds/eval_seeds.json",
+    "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104/rlinf/envs/robotwin/seeds/turn_switch_eval_20260914.json"
+  },
+  "env.eval.task_config.eval_video_log": {
+    "old": true,
+    "new": false
+  },
+  "env.eval.task_config.save_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-n8-w2000-fixed-formal200-1007-v1/robotwin_data/eval",
+    "new": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u/robotwin_data/eval"
+  },
+  "env.eval.task_config.task_name": {
+    "old": "adjust_bottle",
+    "new": "turn_switch"
+  },
+  "env.eval.video_cfg.video_base_dir": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-n8-w2000-fixed-formal200-1007-v1/video/eval",
+    "new": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u/video/eval"
+  },
+  "env.train.seeds_path": {
+    "old": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-pi05-u-sz1-20261006/rlinf/envs/robotwin/seeds/train_seeds.json",
+    "new": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104/rlinf/envs/robotwin/seeds/turn_switch_train_20260914.json"
+  },
+  "env.train.task_config.eval_video_log": {
+    "old": true,
+    "new": false
+  },
+  "env.train.task_config.save_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-n8-w2000-fixed-formal200-1007-v1/robotwin_data/train",
+    "new": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u/robotwin_data/train"
+  },
+  "env.train.task_config.task_name": {
+    "old": "adjust_bottle",
+    "new": "turn_switch"
+  },
+  "env.train.video_cfg.video_base_dir": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-n8-w2000-fixed-formal200-1007-v1/video/train",
+    "new": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u/video/train"
+  },
+  "runner.logger.experiment_name": {
+    "old": "u-n8-w2000-fixed-formal200-1007-v1",
+    "new": "formal"
+  },
+  "runner.logger.log_path": {
+    "old": "/data/chenyiteng/results/rlinf-dsrl-pi05-u-20261006/u-n8-w2000-fixed-formal200-1007-v1",
+    "new": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u/formal"
+  },
+  "runner.overlap_env_bootstrap": {
+    "old": null,
+    "new": false
+  },
+  "runner.per_worker_log": {
+    "old": null,
+    "new": false
+  },
+  "runner.weight_sync_interval": {
+    "old": null,
+    "new": 1
+  }
+}

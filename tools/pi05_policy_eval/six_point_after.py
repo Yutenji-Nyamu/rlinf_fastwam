@@ -6,6 +6,9 @@ from entropy_analysis import comparison
 
 def main(directory):
  d=Path(directory);p=json.loads((d/'plan.json').read_text());o=Path(p['output']);cards=p.get('gpus',[4,5])
+ o.mkdir(parents=True,exist_ok=True)
+ final_step=p['milestones'][-1];n_bins=p.get('entropy_bins',10);prefix=p.get('artifact_prefix','six-checkpoint')
+ assert p['milestones'][0]==0 and len(set(p['milestones']))==len(p['milestones'])
  protected=Path('/data/chenyiteng/models/protected-eval/pillbottle')/Path(p['run']).name
  linked=[]
  for step in p['milestones'][1:]:
@@ -47,7 +50,7 @@ def main(directory):
    out=o/f'checkpoint-{step:03d}'/f'g{gpu}'
    weights=None if step==0 else str(Path(p['checkpoint_root'])/f'global_step_{step}/actor/model_state_dict/full_weights.pt')
    if weights and not Path(weights).is_file():raise FileNotFoundError(weights)
-   cfg={'gpu':gpu,'model_source':str(source),'input_batch':str(batch),'output':str(out),'weights':weights,'checkpoint_step':step,'pool_batch':cards.index(gpu)}
+   cfg={'gpu':gpu,'model_source':str(source),'input_batch':str(batch),'output':str(out),'weights':weights,'checkpoint_step':step,'pool_checkpoint_step':final_step,'pool_batch':cards.index(gpu)}
    f=d/f'replay-cp{step:03d}-g{gpu}.json';f.write_text(json.dumps(cfg))
    run([p['python'],'-u','-B',str(d/'tools/checkpoint_replay.py'),str(f)],gpu,f'{d.name}-cp{step}-g{gpu}',d/f'replay-cp{step:03d}-g{gpu}.log',1200)
  with concurrent.futures.ThreadPoolExecutor(2) as ex:list(ex.map(replay_lane,zip(cards,batches)))
@@ -61,14 +64,14 @@ def main(directory):
   assert keys==key and len(keys)>0,'Checkpoint positions differ'
   vectors[step]=np.array([r['entropy']for r in data])
   rows += [dict(checkpoint_step=step,**r)for r in data]
- with (o/'six-checkpoint-positions.csv').open('w',newline='')as f:
+ with (o/f'{prefix}-positions.csv').open('w',newline='')as f:
   w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
  comparisons=[]
  for step in p['milestones']:
-  base=comparison(vectors[0],vectors[step]);final=comparison(vectors[200],vectors[step])
+  base=comparison(vectors[0],vectors[step]);final=comparison(vectors[final_step],vectors[step])
   comparisons.append({'step':step,'top20_overlap_base':base['overlap'],'top20_overlap_final':final['overlap'],'mean_entropy':float(vectors[step].mean()),'entropy_q50_q80_q95':base['final_quantiles']})
- summary={'complete':True,'same_run':p['run'],'milestones':p['milestones'],'pool_policy':'CP200','pool_episodes':32,'positions':len(keys),'checkpoint_comparison':comparisons,'initial_entropy_deciles':comparison(vectors[0],vectors[200])['bins'],'time':time.time(),'definition':'K4 diagonal Gaussian; D14; ddof1; eps1e-6; fixed final-policy reached positions'}
- (o/'six-checkpoint-summary.json').write_text(json.dumps(summary,indent=2))
+ summary={'complete':True,'same_run':p['run'],'milestones':p['milestones'],'pool_policy':f'CP{final_step}','pool_episodes':p.get('pool_episodes',32),'positions':len(keys),'checkpoint_comparison':comparisons,'initial_entropy_groups':comparison(vectors[0],vectors[final_step],n_bins=n_bins)['bins'],'entropy_bins':n_bins,'time':time.time(),'definition':'K4 diagonal Gaussian; D14; ddof1; eps1e-6; fixed analysis-endpoint policy reached positions'}
+ (o/f'{prefix}-summary.json').write_text(json.dumps(summary,indent=2))
  import matplotlib
  matplotlib.use('Agg')
  import matplotlib.pyplot as plt
@@ -76,18 +79,18 @@ def main(directory):
  fig,ax=plt.subplots(1,3,figsize=(16,4.4),layout='constrained')
  matrix=np.array([[r['top20_overlap_base'],r['top20_overlap_final']]for r in comparisons])*100
  im=ax[0].imshow(matrix.T,vmin=0,vmax=100,aspect='auto',cmap='Blues')
- ax[0].set(xticks=range(6),xticklabels=p['milestones'],yticks=[0,1],yticklabels=['vs initial','vs final'],xlabel='GRPO training round',title='Top 20% entropy position overlap (%)')
- for i in range(6):
+ ax[0].set(xticks=range(len(comparisons)),xticklabels=p['milestones'],yticks=[0,1],yticklabels=['vs initial',f'vs CP{final_step}'],xlabel='GRPO training round',title='Top 20% entropy position overlap (%)')
+ for i in range(len(comparisons)):
   for j in range(2):ax[0].text(i,j,f'{matrix[i,j]:.1f}',ha='center',va='center',color='white'if matrix[i,j]>65 else 'black')
  fig.colorbar(im,ax=ax[0])
- delta=[r['delta']for r in summary['initial_entropy_deciles']]
- ax[1].bar(range(1,11),delta,color=['#087f8c'if x>=0 else '#d97736'for x in delta]);ax[1].axhline(0,color='#777',lw=.8)
- ax[1].set(xticks=range(1,11),xlabel='Groups defined by initial entropy',ylabel='Mean final minus initial entropy',title='Same positions throughout training')
+ delta=[r['delta']for r in summary['initial_entropy_groups']]
+ ax[1].bar(range(1,n_bins+1),delta,color=['#087f8c'if x>=0 else '#d97736'for x in delta]);ax[1].axhline(0,color='#777',lw=.8)
+ ax[1].set(xticks=range(1,n_bins+1),xlabel='Groups defined by initial entropy',ylabel=f'Mean CP{final_step} minus initial entropy',title='Same positions throughout training')
  ax[2].plot(p['milestones'],[r['mean_entropy']for r in comparisons],'--s',label='Mean',color='#222222')
  for j,(label,color) in enumerate([('Median','#0072B2'),('80th percentile','#D55E00'),('95th percentile','#7B2CBF')]):
   ax[2].plot(p['milestones'],[r['entropy_q50_q80_q95'][j]for r in comparisons],'-o',label=label,color=color)
  ax[2].set(xlabel='GRPO training round',ylabel='Action entropy estimate',title='Fixed final-policy observation pool');ax[2].legend()
- for ext in ['png','svg','pdf']:fig.savefig(o/f'six-checkpoint-entropy.{ext}',dpi=180)
+ for ext in ['png','svg','pdf']:fig.savefig(o/f'{prefix}-entropy.{ext}',dpi=180)
  plt.close(fig)
  print(json.dumps(summary))
 

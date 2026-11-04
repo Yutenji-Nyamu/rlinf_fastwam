@@ -21,7 +21,7 @@ def main():
             json.dumps({"time": time.time(), "next": plan["defer_formal_to"]})
         )
         return
-    if phase == "smoke" and not (d / "model-contract.json").exists():
+    if phase == "smoke" and plan.get("model_contract_required", True) and not (d / "model-contract.json").exists():
         subprocess.run(
             [
                 plan["python"],
@@ -170,7 +170,7 @@ def main():
                     "success": scores[0],
                     "base_model": plan["model"],
                     "protected": str(output),
-                    "task": "put_bottles_into_dustbin",
+                    "task": plan.get("task", "put_bottles_into_dustbin"),
                     "usage": "get_model(formal.actor.model), then load_state_dict(noise_policy, strict=False); frozen base and its assets required",
                 }
                 (output / "manifest.json").write_text(json.dumps(receipt, indent=2))

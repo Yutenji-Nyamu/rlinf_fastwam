@@ -1,0 +1,49 @@
+{
+  "gpu": 6,
+  "gpus": [
+    6
+  ],
+  "training_source": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/rt2-pi05-dsrl-full-20261104",
+  "phases": [
+    {
+      "role": "clean",
+      "phase": "smoke",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/clean",
+      "timeout": 1800
+    },
+    {
+      "role": "clean",
+      "phase": "smoke_resume",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/clean",
+      "timeout": 1800
+    },
+    {
+      "role": "u",
+      "phase": "smoke",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/u",
+      "timeout": 1800
+    },
+    {
+      "role": "u",
+      "phase": "smoke_resume",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/u",
+      "timeout": 1800
+    },
+    {
+      "role": "clean",
+      "phase": "formal",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/clean",
+      "timeout": 604800
+    },
+    {
+      "role": "u",
+      "phase": "formal",
+      "deployment": "/data/chenyiteng/deployment-20261104/rt2-dsrl-full-g6-r3/u",
+      "timeout": 604800
+    }
+  ],
+  "predecessors": [],
+  "budget": "8 episodes x 200 rounds each; 200 actions; B256; UTD20; warmup2000; N10/H50/C20",
+  "failure": "advance remaining method, then existing per-card RLT",
+  "from_rlt": true
+}

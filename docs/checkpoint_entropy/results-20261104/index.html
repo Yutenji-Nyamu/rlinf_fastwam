@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>GRPO四点 · 高熵位置是否保留</title>
+<style>body{font:17px/1.7 system-ui;max-width:1350px;margin:28px auto;padding:0 22px;color:#25374b}h1{font-size:28px}table{border-collapse:collapse;width:100%;max-width:900px}th,td{padding:10px 20px;border-bottom:1px solid #d8e2eb;text-align:center}th{background:#edf3f8}img{width:100%}a{color:#087b94}.facts{padding:16px;background:#eef7f6;border-radius:10px}small{color:#637082}</style>
+<h1>同一条GRPO训练：高熵动作位置是否保留？</h1>
+<p class="facts">药瓶 · 原始π0.5 → Clean GRPO CP120 · 同一批32局（22成功），5578个实际执行位置。<br>各检查点读取同一观察、使用同四份噪声；没有把不同轨迹的同一时间强行配对。</p>
+<table><tr><th>与谁比较</th><th>原始0轮</th><th>40轮</th><th>80轮</th><th>120轮</th></tr><tr><th>原始模型</th><td>100.0%</td><td>90.9%</td><td>86.9%</td><td>87.5%</td></tr><tr><th>CP120</th><td>87.5%</td><td>91.8%</td><td>91.0%</td><td>100.0%</td></tr></table>
+<p><b>初始与CP120重合87.5%。</b>意思是：各自挑出最不一致的20%动作位置，有87.5%是共同位置。它不是成功率。独立随机挑选的参照约20%，自身比较为100%。</p>
+<img src="four-checkpoint-entropy.png" alt="四检查点高熵位置重合率、分组变化、熵训练曲线">
+<ol><li><b>左图／上表：</b>位置排序大体稳定；原始到CP120仍保留大量高熵位置。</li><li><b>中图：</b>按原始模型的熵，从低到高分20组；柱高为CP120减原始模型。此次各组均上升，不能讲成“训练统一降低不确定性”。</li><li><b>右图：</b>固定同一位置，观察熵的平均值及分位数如何随训练变化；40→80下降、80→120回升，整体不单调。</li></ol>
+<p>这里“熵”是同一模型四噪声动作的对角高斯估计，使用归一化真实14维、样本方差及ε=10⁻⁶。数值为负正常。结论先限定于这批药瓶观测；CP120是本次分析终点，训练已按授权提前停止。</p>
+<p><a href="four-checkpoint-entropy.svg">SVG</a> · <a href="four-checkpoint-entropy.pdf">PDF</a> · <a href="four-checkpoint-positions.csv">逐位置CSV</a> · <a href="four-checkpoint-summary.json">完整统计</a> · <a href="figure-materials.zip">绘图原始预测与图稿打包</a> · <a href="../review1104b/">此前全服务器同族页</a></p>
+<small>输出时刻：2026-11-04。视频、完整观测与大权重保留服务器；打包文件含动作预测、噪声、逐位置统计与图稿。Overleaf未修改。</small>

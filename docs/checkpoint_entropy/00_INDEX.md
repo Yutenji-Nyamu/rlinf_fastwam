@@ -1,6 +1,6 @@
 # 论文熵分析：师生配对与同run检查点
 
-2026-11-04用户希望提前结束、先定性：现有完整40/80/120＋基座可做四点表，无需凑六点。见[06 提前表1规划](06_EARLY_TABLE1_PLAN_20261104.md)；本轮未改运行队列、未动Overleaf。
+2026-11-04已按授权停止GRPO，4/7接四点固定池采集：0/40/80/120；之后原单任务FQL→RLT。见[07 四点执行](07_FOUR_POINT_EXECUTION_20261104.md)。[06](06_EARLY_TABLE1_PLAN_20261104.md)保留规划依据；Overleaf未动。
 
 2026-11-02。对齐写作侧 `uaca/research/exploratory_planning_20261102/revision_04/03_COLLECTION_PLAN.md`。
 

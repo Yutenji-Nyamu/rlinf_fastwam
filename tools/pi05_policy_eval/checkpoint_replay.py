@@ -30,7 +30,7 @@ def main(path):
   with np.load(f,allow_pickle=False) as z:
    noise=z['noise4_initial_noise'].copy();b=len(noise)
    main=infer(obs,noise[:,0])
-   if c['checkpoint_step']==200:
+   if c['checkpoint_step']==c.get('pool_checkpoint_step',200):
     np.testing.assert_array_equal(main,z['noise4_model_actions'][:,0])
    extra=infer(repeated_observation(obs,3),np.concatenate([noise[:,i]for i in [1,2,3]]))
    actions=np.stack([main,*extra.reshape(3,b,50,14)],axis=1)
@@ -40,6 +40,6 @@ def main(path):
     for j in range(n):rows.append({'pool_batch':c['pool_batch'],'slot':s,'seed':e['actual'],'query':query,'h':j,'success':e['success'],'entropy':float(h[s,j])})
   np.savez_compressed(out/f.name,model_actions=actions,initial_noise=noise)
  (out/'positions.json').write_text(json.dumps(rows))
- (out/'receipt.json').write_text(json.dumps({'checkpoint_step':c['checkpoint_step'],'positions':len(rows),'queries':len(list(out.glob('query_*.npz'))),'gpu':c['gpu'],'peak_gib':torch.cuda.max_memory_allocated()/2**30,'exact_final_main':c['checkpoint_step']==200,'completed':time.time()}))
+ (out/'receipt.json').write_text(json.dumps({'checkpoint_step':c['checkpoint_step'],'positions':len(rows),'queries':len(list(out.glob('query_*.npz'))),'gpu':c['gpu'],'peak_gib':torch.cuda.max_memory_allocated()/2**30,'exact_final_main':c['checkpoint_step']==c.get('pool_checkpoint_step',200),'completed':time.time()}))
 
 if __name__=='__main__':main(sys.argv[1])
