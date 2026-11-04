@@ -21,7 +21,7 @@ def main():
         ast.parse(content);(d/'tools'/name).write_text(content)
     p=read(old/'plan.json')
     predecessors=[read(old/'identity.json'),read(old/'status.json')['child']]
-    p.update(output='/data/chenyiteng/results/pi05-entropy/20261104-clean-fourpoint',milestones=[0,40,80,120],entropy_bins=20,artifact_prefix='four-checkpoint',predecessors=predecessors)
+    p.update(output='/data/chenyiteng/results/pi05-entropy/20261104-clean-fourpoint',milestones=[0,40,80,120],entropy_bins=20,artifact_prefix='four-checkpoint',predecessors=predecessors,retention='retain actual complete CP40/80/120 plus existing base; paper analysis protection',expected_checkpoint_gib=80.55)
     for step in p['milestones'][1:]:
         assert (Path(p['checkpoint_root'])/f'global_step_{step}/actor/model_state_dict/full_weights.pt').is_file()
     save(d/'plan.json',p)
