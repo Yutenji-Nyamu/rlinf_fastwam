@@ -118,7 +118,7 @@ def main(directory):
             "-B",
             str(root / "tools/dojo_grpo/native_entry.py"),
             "--task_name",
-            "put_bottles_into_dustbin",
+            plan.get("task", "put_bottles_into_dustbin"),
             "--num_envs",
             str(plan["num_envs"]),
             "--env_cfg_type",
