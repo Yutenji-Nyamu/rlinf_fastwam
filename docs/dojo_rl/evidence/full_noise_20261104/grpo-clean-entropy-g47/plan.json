@@ -1,0 +1,82 @@
+{
+  "run": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-clean-entropy-g45-20261102",
+  "output": "/data/chenyiteng/results/pi05-entropy/20261102-clean-sixpoint",
+  "training_source": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/pi05-grpo-clean-half-seed42-20260911",
+  "legacy_ops": "/data/chenyiteng/results/server-maintenance-20260911/grpo-seed42-half/ops.py",
+  "python": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+  "namespace": "RLinf_grpo_clean_entropy_g47_20261104",
+  "checkpoint_root": "/data/chenyiteng/results/rlinf-shenzhen/pi05-sidney/runs/grpo-clean-entropy-g45-20261102/grpo-clean-entropy-g45-20261102/checkpoints",
+  "predecessor_identity": {
+    "pid": 4051464,
+    "uid": 1003,
+    "start": 664849522,
+    "state": "R"
+  },
+  "gpus": [
+    4,
+    7
+  ],
+  "total_rounds": 200,
+  "milestones": [
+    0,
+    40,
+    80,
+    120,
+    160,
+    200
+  ],
+  "pool_episodes": 32,
+  "pool_num_envs_per_card": 16,
+  "base_model": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+  "inference_source": "/home/chenyiteng/deployment-20261029/fqlfix-shadow-sz1/source",
+  "retention": "retain five complete milestone checkpoints plus existing base; exempt from distillation rolling cleanup",
+  "expected_checkpoint_gib": 134.3,
+  "failure": "exact namespace cleanup; preserve partial outputs; advance to single-task FQL then RLT",
+  "driver_output": "/data/chenyiteng/deployment-20261104/grpo-clean-entropy-g47/driver",
+  "gpu_admission": {
+    "4": {
+      "admission_graphics_sources": [
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-full-g5",
+          "gpu": 5,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-full-g5-recovery-1",
+          "gpu": 5,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-full-g5-recovery-2",
+          "gpu": 5,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-full-g5-recovery-3",
+          "gpu": 5,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-repeat-g6-formal",
+          "gpu": 6,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-repeat-g6-formal-recovery-1",
+          "gpu": 6,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-repeat-g6-formal-recovery-2",
+          "gpu": 6,
+          "max_mib": 8
+        },
+        {
+          "deployment": "/data/chenyiteng/deployment-20261104/dojo-dsrl-repeat-g6-formal-recovery-3",
+          "gpu": 6,
+          "max_mib": 8
+        }
+      ]
+    }
+  }
+}

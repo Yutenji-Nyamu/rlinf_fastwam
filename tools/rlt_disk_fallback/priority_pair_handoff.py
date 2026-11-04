@@ -2,7 +2,7 @@
 import os,sys,time,signal,subprocess,fcntl,zipfile
 from pathlib import Path
 from omegaconf import OmegaConf
-S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'));from common import read,save,proc,same,exact_signal,gpus
+S=Path('/data/chenyiteng/deployment-20261008/bc-signal-tau-v1');sys.path.insert(0,str(S/'ops'));from common import read,save,proc,same,exact_signal,gpus,admission_card
 
 def handoff(D,cards,identity,reservations=None):
  assert same(identity)and identity['uid']==os.getuid()
@@ -29,7 +29,7 @@ def handoff(D,cards,identity,reservations=None):
     targets.append(st['identity'])
   for who in targets:exact_signal(who,signal.SIGTERM)
   deadline=time.time()+150
-  while any(same(who)for who in targets)or any(gpus()[g]['processes']for g in cards):
+  while any(same(who)for who in targets)or any(admission_card(gpus()[g],p['slots'][str(g)])['processes']for g in cards):
    assert time.time()<deadline,'RLT cleanup incomplete';time.sleep(2)
   restores=[]
   for g in map(str,cards):

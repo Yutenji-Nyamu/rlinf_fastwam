@@ -127,6 +127,9 @@ def prepare_retry(old, accepted, attempt):
     (new / "rpc/authkey").write_bytes((old / "rpc/authkey").read_bytes())
     (new / "rpc/authkey").chmod(0o600)
     plan = read(new / "plan.json")
+    # A one-time prepared swap is complete; retry through the normal RLT handoff.
+    plan.pop("pre_registered", None)
+    plan.pop("predecessors", None)
     plan["phases"] = [p for p in plan["phases"] if p["name"] == "formal"]
     (new / "plan.json").write_text(json.dumps(plan, indent=2))
     invalid = {"train": set(), "eval": set()}

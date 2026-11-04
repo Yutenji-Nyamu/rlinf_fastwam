@@ -73,6 +73,18 @@ def main():
     batch = forward(p["num_envs"])
     elapsed = time.monotonic() - start
     delta = batch - one
+    latent_check = None
+    if getattr(model.config, "dsrl_full_noise", False):
+        obs = {k: torch.from_numpy(raw[k][:1]) for k in ("states", "main_images")}
+        latent, logp, _ = model.sac_forward(obs=obs)
+        assert latent.shape == (1, 50, 32) and logp.dtype == torch.float32
+        assert not torch.equal(latent[:, 0], latent[:, 1])
+        q = model.sac_q_forward(obs=obs, actions=latent)
+        gradient = torch.autograd.grad(q.sum(), latent)[0]
+        assert torch.isfinite(q).all() and torch.isfinite(gradient).all()
+        assert gradient[:, 1:].abs().sum() > 0, "Q discarded later noise positions"
+        latent_check = dict(shape=list(latent.shape), logprob=float(logp.detach()),
+                            later_position_q_gradient=float(gradient[:, 1:].abs().sum()))
     result = {
         "accepted_reference": str(reference),
         "same_observation_noise_rmse": float(np.sqrt((error**2).mean())),
@@ -82,6 +94,7 @@ def main():
         "seconds": elapsed,
         "peak_gib": torch.cuda.max_memory_allocated() / 1024**3,
         "frozen_vla": True,
+        "full_noise_boundary": latent_check,
         "trainable_names": trainable,
         "strict_load": model.dsrl_checkpoint_load_report,
     }

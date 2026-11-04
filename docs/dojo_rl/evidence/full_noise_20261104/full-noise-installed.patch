@@ -1,0 +1,152 @@
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -132,6 +132,7 @@
+     use_dsrl: bool = False  # Enable DSRL algorithm
+     dsrl_state_dim: int = 8  # Raw state dimension for DSRL encoders
+     dsrl_action_noise_dim: int = 32  # Noise dimension output by GaussianPolicy
++    dsrl_full_noise: bool = False
+     dsrl_num_q_heads: int = 10  # Number of Q-networks
+     dsrl_agg_q: str = "mean"  # Q aggregation method: 'mean' | 'min'
+     dsrl_image_latent_dim: int = 64  # Latent dim for lightweight image encoder
+@@ -318,8 +319,12 @@
+                 hidden_dims=self.config.dsrl_hidden_dims,
+                 low=None,
+                 high=None,
+-                action_horizon=self.config.action_horizon,
++                action_horizon=1 if self.config.dsrl_full_noise else self.config.action_horizon,
+             ).to(dtype=_dsrl_dtype)
++            self.dsrl_action_noise_net.probability_float32 = self.config.dsrl_full_noise
++            if self.config.dsrl_full_noise:
++                assert self.config.dsrl_action_noise_dim == self.config.action_horizon * self.config.action_dim
++
+
+             self.actor_image_encoder = LightweightImageEncoder64(
+                 num_images=1,
+@@ -947,9 +952,12 @@
+                 noise_actions = latent.to(
+                     dtype=next(self.dsrl_action_noise_net.parameters()).dtype
+                 )
+-                noise_actions = noise_actions.unsqueeze(1).repeat(
+-                    1, self.config.action_horizon, 1
+-                )
++                if self.config.dsrl_full_noise:
++                    noise_actions = noise_actions.reshape(-1, self.config.action_horizon, self.config.action_dim)
++                else:
++                    noise_actions = noise_actions.unsqueeze(1).repeat(
++                        1, self.config.action_horizon, 1
++                    )
+             else:
+                 noise_actions, noise_logprob, _ = self.sac_forward(
+                     dsrl_obs, train=False, mode=mode
+@@ -1720,6 +1728,8 @@
+             dist = self.dsrl_action_noise_net.forward(features)
+             dist_params = (dist.mean, dist.stddev)
+
++        if self.config.dsrl_full_noise:
++            action_noise = action_noise.reshape(-1, self.config.action_horizon, self.config.action_dim)
+         return action_noise, logprobs, dist_params
+
+     def sac_q_forward(
+@@ -1789,7 +1799,8 @@
+
+         # Process actions (DSRL: should be noise, already flattened)
+         if actions.dim() == 3:
+-            actions = actions[:, 0, :]  # [B, action_horizon, dim] -> [B, dim]
++            actions = actions.flatten(1) if self.config.dsrl_full_noise else actions[:, 0, :]
++        assert actions.shape[-1] == self.config.dsrl_action_noise_dim
+
+         # Compute Q values
+         q_values = self.q_head(state_features, image_features, actions)
+--- a/rlinf/models/embodiment/modules/gaussian_policy.py
++++ b/rlinf/models/embodiment/modules/gaussian_policy.py
+@@ -238,6 +238,9 @@
+         mean = self.mean_layer(h)
+         log_std = self.log_std_layer(h)
+         log_std = torch.clamp(log_std, -20, 2)
++        if getattr(self, 'probability_float32', False):
++            # Sum 1600 log densities in FP32, while FSDP parameters stay bf16.
++            mean, log_std = mean.float(), log_std.float()
+         std = torch.exp(log_std)
+
+         if deterministic:
+--- a/rlinf/data/storage/replay/dsrl_transition.py
++++ b/rlinf/data/storage/replay/dsrl_transition.py
+@@ -54,6 +54,7 @@
+     num_action_chunks: int,
+     gamma: float,
+     u_spec: dict[str, Any] | None = None,
++    full_noise: bool = False,
+ ) -> dict[str, Any]:
+     """Project a rollout trajectory into compact DSRL macro transitions."""
+     if trajectory.rewards is None or trajectory.actions is None:
+@@ -110,31 +111,35 @@
+     num_valid = int(keep.sum().item())
+
+     selected_actions = trajectory.actions[keep]
+-    if selected_actions.ndim == 2:
+-        if selected_actions.shape[-1] != action_horizon * latent_dim:
+-            raise ValueError(
+-                f"Flattened DSRL latent has wrong size: {tuple(selected_actions.shape)}"
+-            )
+-        selected_actions = selected_actions.reshape(-1, action_horizon, latent_dim)
+-    elif selected_actions.ndim != 3 or selected_actions.shape[1:] != (
+-        action_horizon,
+-        latent_dim,
+-    ):
+-        raise ValueError(
+-            "DSRL latent must be [N,H,L] or [N,H*L], "
+-            f"got {tuple(selected_actions.shape)}"
+-        )
+-    repeated_latent = selected_actions[:, :1].expand_as(selected_actions)
+-    if not torch.equal(selected_actions, repeated_latent):
+-        max_error = (
+-            (selected_actions.float() - repeated_latent.float()).abs().max().item()
+-        )
+-        raise ValueError(
+-            "DSRL latent is not exactly repeated across action_horizon; "
+-            f"max_error={max_error}"
+-        )
+-    latent = selected_actions[:, 0].to(torch.bfloat16).cpu().contiguous()
+-
++    if full_noise:
++        if selected_actions[0].numel() != latent_dim:
++            raise ValueError('Full DSRL replay must retain all noise coordinates')
++        latent = selected_actions.reshape(num_valid, latent_dim).to(torch.bfloat16).cpu().contiguous()
++    else:
++        if selected_actions.ndim == 2:
++            if selected_actions.shape[-1] != action_horizon * latent_dim:
++                raise ValueError(
++                    f"Flattened DSRL latent has wrong size: {tuple(selected_actions.shape)}"
++                )
++            selected_actions = selected_actions.reshape(-1, action_horizon, latent_dim)
++        elif selected_actions.ndim != 3 or selected_actions.shape[1:] != (
++            action_horizon,
++            latent_dim,
++        ):
++            raise ValueError(
++                "DSRL latent must be [N,H,L] or [N,H*L], "
++                f"got {tuple(selected_actions.shape)}"
++            )
++        repeated_latent = selected_actions[:, :1].expand_as(selected_actions)
++        if not torch.equal(selected_actions, repeated_latent):
++            max_error = (
++                (selected_actions.float() - repeated_latent.float()).abs().max().item()
++            )
++            raise ValueError(
++                "DSRL latent is not exactly repeated across action_horizon; "
++                f"max_error={max_error}"
++            )
++        latent = selected_actions[:, 0].to(torch.bfloat16).cpu().contiguous()
+     curr_states = trajectory.curr_obs["states"][keep].reshape(num_valid, -1)
+     next_states = trajectory.next_obs["states"][keep].reshape(num_valid, -1)
+     if curr_states.shape[-1] != state_dim or next_states.shape[-1] != state_dim:
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -499,6 +499,7 @@
+                     trajectory,
+                     action_horizon=openpi_cfg.get("action_horizon", 50),
+                     latent_dim=openpi_cfg.dsrl_action_noise_dim,
++                    full_noise=openpi_cfg.get('dsrl_full_noise', False),
+                     state_dim=openpi_cfg.dsrl_state_dim,
+                     num_action_chunks=self.cfg.actor.model.num_action_chunks,
+                     gamma=self.cfg.algorithm.gamma,

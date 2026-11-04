@@ -15,6 +15,20 @@ import owner
 
 
 class FallbackTest(unittest.TestCase):
+    def test_only_exact_tiny_owned_graphics_can_coexist(self):
+        with tempfile.TemporaryDirectory() as td:
+            who={'pid':123,'uid':os.getuid(),'start':45}
+            common.save(Path(td)/'native-g5-child.json',who)
+            slot={'admission_graphics_sources':[{'deployment':td,'gpu':5,'max_mib':8}]}
+            processes=[{'pid':123,'type':'G','mib':7},{'pid':123,'type':'C','mib':7},
+                       {'pid':123,'type':'G','mib':100},{'pid':124,'type':'G','mib':7}]
+            with patch.object(common,'same',return_value=True):
+                card=common.admission_card({'processes':processes},slot)
+                self.assertEqual(card['ignored_graphics'],processes[:1])
+                self.assertEqual(card['processes'],processes[1:])
+            with patch.object(common,'same',return_value=False):
+                self.assertEqual(common.admission_card({'processes':processes},slot)['processes'],processes)
+
     def test_full_disk_control_receipt(self):
         with tempfile.TemporaryDirectory() as td, patch.dict(os.environ, {'RLT_EMERGENCY_ROOT': td+'/root'}):
             target=Path(td)/'data'/'status.json'

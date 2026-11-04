@@ -6,14 +6,14 @@ handoff; this owner always releases on a bounded failure.
 import json,os,signal,subprocess,sys,time,traceback
 from pathlib import Path
 sys.path.insert(0,'/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops')
-from common import read,save,proc,same,exact_signal,gpus
+from common import read,save,proc,same,exact_signal,gpus,admission_card
 
 def main(directory):
  d=Path(directory);p=read(d/'plan.json');me=proc(os.getpid())
  save(d/'identity.json',me);save(d/'status.json',{'phase':'WAIT_PAPER_REPLAY','time':time.time()})
  while not (d/'registered.json').exists():time.sleep(.1)
  assert read(d/'registered.json')['identity']['pid']==me['pid']
- while same(p['predecessor_identity']) or any(gpus()[g]['processes'] for g in [4,5]):time.sleep(.25)
+ while same(p['predecessor_identity']) or any(admission_card(gpus()[g],p.get('gpu_admission',{}).get(str(g),{}))['processes'] for g in p.get('gpus',[4,5])):time.sleep(.25)
  result={};child=None
  try:
   env=dict(os.environ,**read(d/'training-environment.json'))

@@ -1,7 +1,7 @@
 """One CPU owner per host: independent priority -> original RLT per card."""
 import argparse,fcntl,importlib.util,os,signal,subprocess,sys,time,traceback,zipfile
 from pathlib import Path
-from common import read,save,proc,same,exact_signal,actors,gpus,releasable
+from common import read,save,proc,same,exact_signal,actors,gpus,releasable,admission_card
 from nosave import prepare as prepare_nosave, drain_log
 
 def launch(plan,request):
@@ -51,7 +51,8 @@ def main():
   for g,slot in p['slots'].items():
    row=state['slots'][g]
    try:
-    card=snapshot[int(g)]
+    card=admission_card(snapshot[int(g)],slot)
+    row['coexisting_graphics']=card['ignored_graphics']
     assert card['uuid']==slot['gpu_uuid']
     if row['phase']=='WAIT_EXTERNAL':
      if Path(slot['external_release']).is_file() and not same(slot['external_identity']) and not any(same(x) for x in slot.get('external_blockers', [])) and not card['processes']:row['phase']='WAITING_RLT'

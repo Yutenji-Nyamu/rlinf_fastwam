@@ -38,7 +38,19 @@ def actors(p,ns):
  return [a for a in r['result'] if a.get('ray_namespace')==ns and a.get('state')!='DEAD']
 def gpus():
  x=ET.fromstring(subprocess.check_output(['nvidia-smi','-q','-x'],timeout=25))
- return {i:dict(uuid=g.findtext('uuid'),processes=[dict(pid=int(p.findtext('pid')),type=p.findtext('type')) for p in g.findall('processes/process_info')]) for i,g in enumerate(x.findall('gpu'))}
+ return {i:dict(uuid=g.findtext('uuid'),processes=[dict(pid=int(p.findtext('pid')),type=p.findtext('type'),mib=int(p.findtext('used_memory').split()[0]) if p.findtext('used_memory','').endswith('MiB') else -1) for p in g.findall('processes/process_info')]) for i,g in enumerate(x.findall('gpu'))}
+
+def admission_card(card,slot):
+ # Isaac can leave a known 7 MiB Vulkan discovery context on a sibling card.
+ # Admit work alongside only that exact live, owned G-only process; never C/C+G.
+ allowed=[]
+ for source in slot.get('admission_graphics_sources',[]):
+  path=Path(source['deployment'])/f"native-g{source['gpu']}-child.json"
+  if not path.is_file():continue
+  who=read(path)
+  if who['uid']==os.getuid() and same(who):allowed.append((who,source.get('max_mib',8)))
+ ignored=[q for q in card['processes'] if q['type']=='G' and any(q['pid']==who['pid'] and 0<=q.get('mib',-1)<=limit for who,limit in allowed)]
+ return dict(card,processes=[q for q in card['processes'] if q not in ignored],ignored_graphics=ignored)
 def releasable(identity,rows,card):return not same(identity) and not rows and not card['processes']
 
 if __name__=="__main__":

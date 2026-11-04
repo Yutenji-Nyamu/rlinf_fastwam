@@ -5,7 +5,7 @@ import numpy as np
 from entropy_analysis import comparison
 
 def main(directory):
- d=Path(directory);p=json.loads((d/'plan.json').read_text());o=Path(p['output'])
+ d=Path(directory);p=json.loads((d/'plan.json').read_text());o=Path(p['output']);cards=p.get('gpus',[4,5])
  protected=Path('/data/chenyiteng/models/protected-eval/pillbottle')/Path(p['run']).name
  linked=[]
  for step in p['milestones'][1:]:
@@ -40,21 +40,21 @@ def main(directory):
   b=Path(json.loads(cfg.read_text())['output']);done=json.loads((b/'done.json').read_text())
   if done['episodes']!=16:raise RuntimeError('Incomplete final-policy pool; stop six-point analysis')
   return b
- with concurrent.futures.ThreadPoolExecutor(2) as ex:batches=list(ex.map(collect,[4,5]))
+ with concurrent.futures.ThreadPoolExecutor(2) as ex:batches=list(ex.map(collect,cards))
  def replay_lane(item):
   gpu,batch=item
   for step in p['milestones']:
    out=o/f'checkpoint-{step:03d}'/f'g{gpu}'
    weights=None if step==0 else str(Path(p['checkpoint_root'])/f'global_step_{step}/actor/model_state_dict/full_weights.pt')
    if weights and not Path(weights).is_file():raise FileNotFoundError(weights)
-   cfg={'gpu':gpu,'model_source':str(source),'input_batch':str(batch),'output':str(out),'weights':weights,'checkpoint_step':step,'pool_batch':gpu-4}
+   cfg={'gpu':gpu,'model_source':str(source),'input_batch':str(batch),'output':str(out),'weights':weights,'checkpoint_step':step,'pool_batch':cards.index(gpu)}
    f=d/f'replay-cp{step:03d}-g{gpu}.json';f.write_text(json.dumps(cfg))
    run([p['python'],'-u','-B',str(d/'tools/checkpoint_replay.py'),str(f)],gpu,f'{d.name}-cp{step}-g{gpu}',d/f'replay-cp{step:03d}-g{gpu}.log',1200)
- with concurrent.futures.ThreadPoolExecutor(2) as ex:list(ex.map(replay_lane,zip([4,5],batches)))
+ with concurrent.futures.ThreadPoolExecutor(2) as ex:list(ex.map(replay_lane,zip(cards,batches)))
  vectors={};rows=[];keys=None
  for step in p['milestones']:
   data=[]
-  for g in [4,5]:data+=json.loads((o/f'checkpoint-{step:03d}'/f'g{g}/positions.json').read_text())
+  for g in cards:data+=json.loads((o/f'checkpoint-{step:03d}'/f'g{g}/positions.json').read_text())
   data.sort(key=lambda r:(r['pool_batch'],r['slot'],r['query'],r['h']))
   key=[(r['pool_batch'],r['slot'],r['query'],r['h'])for r in data]
   if keys is None:keys=key

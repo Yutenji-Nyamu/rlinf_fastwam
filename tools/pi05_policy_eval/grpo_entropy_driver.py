@@ -7,7 +7,8 @@ soft,hard=resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE,(min(4096,hard),hard))
 spec=importlib.util.spec_from_file_location('accepted_clean_ops',p['legacy_ops'])
 ops=importlib.util.module_from_spec(spec);spec.loader.exec_module(ops)
-ops.RUN=Path(p['run']);ops.ROOT=Path(p['training_source']);ops.NAMESPACE=p['namespace']
+ops.RUN=Path(p.get('driver_output',p['run']));ops.ROOT=Path(p['training_source']);ops.NAMESPACE=p['namespace']
+(ops.RUN/'runtime').mkdir(parents=True,exist_ok=True)
 # The accepted entry expects argv[1] == formal_driver; preserve its argument contract.
 sys.argv=[sys.argv[0],'formal_driver',*sys.argv[1:]]
 ops.formal_driver()

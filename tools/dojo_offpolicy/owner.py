@@ -50,7 +50,7 @@ def main(directory):
     d = Path(directory)
     plan = read(d / "plan.json")
     root, gpu = Path(plan["training_source"]), int(plan["gpu"])
-    assert os.getuid() == 1003 and gpu in (6, 7)
+    assert os.getuid() == 1003 and gpu in (4, 5, 6, 7)
     sys.path.insert(0, str(root / "tools/rlt_disk_fallback"))
     from priority_pair_handoff import handoff
 
@@ -82,17 +82,25 @@ def main(directory):
 
     signal.signal(signal.SIGTERM, stop)
     try:
-        status("HANDOFF_FROM_RLT")
-        h = d / (d.name + "-handoff")
-        h.mkdir()
-        handoff(
-            h,
-            [gpu],
-            me,
-            reservations={
-                str(gpu): {"identity": me, "release": str(d / "released.json")}
-            },
-        )
+        if plan.get("pre_registered"):
+            status("WAIT_PREPARED_SWAP")
+            while not (d / "registered.json").exists():
+                time.sleep(0.1)
+            assert read(d / "registered.json")["identity"] == me
+            while any(same(who) for who in plan.get("predecessors", [])) or gpus()[gpu]["processes"]:
+                time.sleep(0.25)
+        else:
+            status("HANDOFF_FROM_RLT")
+            h = d / (d.name + "-handoff")
+            h.mkdir()
+            handoff(
+                h,
+                [gpu],
+                me,
+                reservations={
+                    str(gpu): {"identity": me, "release": str(d / "released.json")}
+                },
+            )
         registered = True
         cache = d / f"native-g{gpu}/cache"
         cache.mkdir(parents=True, exist_ok=True)

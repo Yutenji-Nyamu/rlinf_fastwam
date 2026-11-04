@@ -188,6 +188,21 @@ def main():
     (ops.RUN / "runtime").mkdir(parents=True, exist_ok=True)
     ops.ROOT = Path(plan["training_source"])
     ops.NAMESPACE = plan["namespace"] + "_" + phase + "_" + str(os.getpid())
+    cleanup = ops.cleanup_namespace
+
+    def cleanup_with_retry(*args, **kwargs):
+        # The local Ray dashboard briefly returned HTTP502 after a completed
+        # CP2. Retry only its state-query exception, never a training failure.
+        from ray.util.state.exception import RayStateApiException
+        for attempt in range(3):
+            try:
+                return cleanup(*args, **kwargs)
+            except RayStateApiException:
+                if attempt == 2:
+                    raise
+                time.sleep(1)
+
+    ops.cleanup_namespace = cleanup_with_retry
     sys.argv = [sys.argv[0], "formal_driver", *sys.argv[1:]]
     ops.formal_driver()
     (d / f"{phase}-complete.json").write_text(
