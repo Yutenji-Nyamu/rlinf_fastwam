@@ -1,0 +1,90 @@
+{
+  "training_source": "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104",
+  "run": "/data/chenyiteng/results/dojo-offpolicy/dojo-dsrl-u-g6-20261104",
+  "python": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+  "namespace": "RLinf_dojo_dsrl_u_g6",
+  "legacy_ops": "/data/chenyiteng/results/server-maintenance-20260911/grpo-seed42-half/ops.py",
+  "native_repo": "/data/chenyiteng/projects/robodojo-openwam-sz1/RoboDojo",
+  "native_python": "/data/chenyiteng/projects/robodojo-openwam-sz1/envs/RoboDojo/bin/python",
+  "jax_python": "/data/chenyiteng/projects/robodojo-openwam-sz1/RoboDojo/XPolicyLab/policy/Pi_05/openpi/.venv/bin/python",
+  "model": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch",
+  "gpus": [
+    6
+  ],
+  "native_envs_per_card": 8,
+  "vulkan_compat": "/data/chenyiteng/projects/robodojo-openwam-sz1/third_party/RoboDawn/scripts/robodojo/compat/vulkan_driver_compat.py",
+  "render_gpus": {
+    "6": 6
+  },
+  "native_extension_folders": [
+    "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r3/native-g6/cache/kit/data/Kit/Isaac-Sim/5.1/exts/3"
+  ],
+  "protected_output": "/data/chenyiteng/models/protected-eval/dojo-dsrl-u-g6-20261104",
+  "probe_observation": "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r8/native-g6/initial-observation.npz",
+  "parity_source": "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r10",
+  "capture_probe_actions": null,
+  "reviewed_graphics_residual_mib": {
+    "4": 8
+  },
+  "reuse_native_contract": true,
+  "fresh_process_per_wave": true,
+  "smoke_phase": "smoke_resume",
+  "gpu": 6,
+  "num_envs": 8,
+  "phases": [
+    {
+      "name": "smoke",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/dojo_offpolicy/training_entry.py",
+        "--config-path",
+        "/data/chenyiteng/deployment-20261104/dojo-dsrl-u-g6/config",
+        "--config-name",
+        "smoke"
+      ],
+      "timeout": 1800
+    },
+    {
+      "name": "smoke_resume",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/dojo_offpolicy/training_entry.py",
+        "--config-path",
+        "/data/chenyiteng/deployment-20261104/dojo-dsrl-u-g6/config",
+        "--config-name",
+        "smoke_resume"
+      ],
+      "timeout": 1800
+    },
+    {
+      "name": "formal",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/dojo_offpolicy/training_entry.py",
+        "--config-path",
+        "/data/chenyiteng/deployment-20261104/dojo-dsrl-u-g6/config",
+        "--config-name",
+        "formal"
+      ],
+      "timeout": null
+    }
+  ],
+  "task": "put_bottles_into_dustbin",
+  "pre_registered": true,
+  "predecessors": [
+    {
+      "pid": 587619,
+      "uid": 1003,
+      "start": 666495417,
+      "state": "R"
+    }
+  ],
+  "model_contract_required": false,
+  "gpu_admission": {}
+}

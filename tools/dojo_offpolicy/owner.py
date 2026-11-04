@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
-from common import exact_signal, gpus, proc, read, same, save
+from common import exact_signal, gpus, proc, read, same, save, admission_card
 
 
 def cleanup_owned(directory, grace_seconds=15):
@@ -87,7 +87,7 @@ def main(directory):
             while not (d / "registered.json").exists():
                 time.sleep(0.1)
             assert read(d / "registered.json")["identity"] == me
-            while any(same(who) for who in plan.get("predecessors", [])) or gpus()[gpu]["processes"]:
+            while any(same(who) for who in plan.get("predecessors", [])) or admission_card(gpus()[gpu], plan.get("gpu_admission", {}))["processes"]:
                 time.sleep(0.25)
         else:
             status("HANDOFF_FROM_RLT")

@@ -6,7 +6,7 @@ Failed methods leave an explicit receipt and advance, never block the queue.
 import os,signal,subprocess,sys,time,traceback
 from pathlib import Path
 sys.path.insert(0,'/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops')
-from common import read,save,proc,same,exact_signal,gpus
+from common import read,save,proc,same,exact_signal,gpus,admission_card
 
 def main(directory):
     d=Path(directory);p=read(d/'plan.json');me=proc(os.getpid());child=None;active=None
@@ -24,7 +24,7 @@ def main(directory):
         while not (d/'registered.json').exists():time.sleep(.1)
         assert read(d/'registered.json')['identity']==me
         deadline=time.monotonic()+300
-        while any(same(w) for w in p['predecessors']) or gpus()[p['gpu']]['processes']:
+        while any(same(w) for w in p['predecessors']) or admission_card(gpus()[p['gpu']],p.get('gpu_admission',{}))['processes']:
             assert time.monotonic()<deadline,'Previous task not fully cleaned'
             time.sleep(.25)
         failed=set()
