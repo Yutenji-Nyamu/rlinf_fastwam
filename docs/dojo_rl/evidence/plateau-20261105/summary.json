@@ -1,0 +1,74 @@
+{
+  "snapshot": "2026-11-05 15:21 CST",
+  "read_only": true,
+  "gpu_test": false,
+  "runs": {
+    "rt_clean": {
+      "card": 4,
+      "round": 214,
+      "eval_n": 12,
+      "initial_eval_percent": 41.66666567325592,
+      "last_eval_round": 208,
+      "last_eval_percent": 33.33333432674408,
+      "best_eval_percent": 66.66666865348816,
+      "first20_train_percent": 46.875,
+      "last20_train_percent": 33.75,
+      "checkpoint": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/clean/formal/formal/checkpoints/global_step_208",
+      "replay_transitions": 13199,
+      "sac_update_batches": 224060
+    },
+    "rt_u": {
+      "card": 7,
+      "round": 185,
+      "eval_n": 12,
+      "initial_eval_percent": 33.33333432674408,
+      "last_eval_round": 182,
+      "last_eval_percent": 33.33333432674408,
+      "best_eval_percent": 58.33333134651184,
+      "first20_train_percent": 41.875,
+      "last20_train_percent": 38.125,
+      "checkpoint": "/data/chenyiteng/results/robotwin-dsrl-full-20261104/u-g7/formal/formal/checkpoints/global_step_182",
+      "replay_transitions": 11448,
+      "sac_update_batches": 189860
+    },
+    "dojo_clean": {
+      "card": 5,
+      "round": 81,
+      "eval_n": 32,
+      "initial_eval_percent": 62.5,
+      "last_eval_round": 72,
+      "last_eval_percent": 65.625,
+      "best_eval_percent": 78.125,
+      "first20_train_percent": 61.25000000000001,
+      "last20_train_percent": 57.49999999999999,
+      "checkpoint": "/data/chenyiteng/results/dojo-offpolicy/dojo-dsrl-full-g5-20261104/formal/formal/checkpoints/global_step_80",
+      "replay_transitions": 7444,
+      "sac_update_batches": 140180
+    },
+    "dojo_u": {
+      "card": 6,
+      "round": 54,
+      "eval_n": 32,
+      "initial_eval_percent": 62.5,
+      "last_eval_round": 48,
+      "last_eval_percent": 62.5,
+      "best_eval_percent": 71.875,
+      "first20_train_percent": 58.12500000000001,
+      "last20_train_percent": 58.75,
+      "checkpoint": "/data/chenyiteng/results/dojo-offpolicy/dojo-dsrl-u-g6-20261104/formal/formal/checkpoints/global_step_52",
+      "replay_transitions": 4885,
+      "sac_update_batches": 88280
+    }
+  },
+  "limits": [
+    "CPU tests use disposable checkpoint copies; no training mutation",
+    "Q probes use saved BF16 weights in FP32 forward without DrQ augmentation",
+    "Small evaluation counts do not establish significant improvement"
+  ],
+  "system": {
+    "gpu": "0, 42255, 100, 56\n1, 34778, 100, 43\n2, 29874, 99, 44\n3, 35102, 100, 55\n4, 38401, 21, 45\n5, 42831, 100, 42\n6, 39549, 37, 38\n7, 38353, 13, 46",
+    "disk": "Filesystem                      1G-blocks  Used Available Use% Mounted on\n/dev/mapper/ubuntu--vg-home--lv     2730G 2372G      357G  87% /home\n/dev/nvme1n1                        3520G 2743G      598G  83% /data",
+    "memory": "               total        used        free      shared  buff/cache   available\nMem:           2.0Ti       230Gi       410Gi       3.0Gi       1.3Ti       1.7Ti\nSwap:          6.0Gi       3.8Gi       2.2Gi",
+    "owners": "    PID USER     STAT     ELAPSED COMMAND\n3583941 chenyit+ Ss      05:16:06 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/robotwin_dsrl_full/continue_owner.py /data/chenyiteng/deployment-20261105/dsrl400/rt2-dsrl-clean-g4/owner\n3583943 chenyit+ Ss      05:16:06 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/robotwin_dsrl_full/continue_owner.py /data/chenyiteng/deployment-20261105/dsrl400/dojo-dsrl-full-g5\n3583954 chenyit+ Ss      05:16:06 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/robotwin_dsrl_full/continue_owner.py /data/chenyiteng/deployment-20261105/dsrl400/dojo-dsrl-u-g6\n3583955 chenyit+ Ss      05:16:06 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/robotwin_dsrl_full/continue_owner.py /data/chenyiteng/deployment-20261105/dsrl400/rt2-dsrl-u-g7/owner\n3583990 chenyit+ Ss      05:16:05 /usr/bin/python3 -u -B /data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops/owner.py --plan /data/chenyiteng/deployment-20261008/bc-signal-tau-v1/plan.json\n3583991 chenyit+ Ss      05:16:05 /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python -u -B /data/chenyiteng/projects/rlinf-shenzhen/worktrees/parallel-dsrl-u-20261104/tools/robotwin_dsrl_full/join_fql.py /data/chenyiteng/deployment-20261104/parallel-u47"
+  }
+}
