@@ -1,0 +1,121 @@
+  | 0/3 [00:00<?, ?it/s]
+(RolloutGroup(rank=0) pid=3810919)
+Evaluating Rollout Epochs:  33%|███▎      | 1/3 [00:53<01:47, 53.63s/it]
+(RolloutGroup(rank=0) pid=3810919)
+Evaluating Rollout Epochs:  67%|██████▋   | 2/3 [01:42<00:50, 50.92s/it]
+(RolloutGroup(rank=0) pid=3810919)
+Evaluating Rollout Epochs: 100%|██████████| 3/3 [02:34<00:00, 51.52s/it]
+Evaluating Rollout Epochs: 100%|██████████| 3/3 [02:34<00:00, 51.63s/it]
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:47<00:00, 107.24s/it]
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:47<00:00, 107.24s/it]
+(ActorGroup(rank=0) pid=3810795) [INFO 10:53:22 ActorGroup-Rank-0][fsdp_sac_policy_worker.py:1048] DSRL replay warm-up: 67 < 2000 global transitions
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    1/400 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.2%                                  │
+│ Elapsed: 01:50 │ ETA: 12:11:46 │ Step Time: 110.043s                                                                 │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=3.49e-05       │actor/actor/recv_traj=109.4            │actor/actor/sync_model_to_rollout=7.8…│
+│actor/run_training=0.019               │actor_training=0.021                   │cal_adv_and_returns=0.0028            │
+│env/compute_bootstrap_rewards=5.26e-04 │env/env/bootstrap_step=57.014          │env/env/send_rollout_trajectories=0.4…│
+│env/env_interact_step=45.054           │env/evaluate=185.4                     │env/interact=108.5                    │
+│env/run_interact_once=107.7            │generate_rollouts=109.4                │rollout/evaluate=154.9                │
+│rollout/generate_one_epoch=107.2       │rollout/predict=12.700                 │rollout/rollout/generate=107.2        │
+│rollout/sync_model_from_actor=8.875    │step=110.0                             │sync_weights=0.602                    │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=2.0                            │
+│reward=0.01                            │success_once=0.375                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│local_capacity=2.50e+04                │resident_transitions=67.000            │total_inserted=67.000                 │
+│write_cursor=67.000                    │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│sac/global_new_transitions=67.000      │sac/global_resident_transitions=67.000 │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:41<00:00, 101.29s/it]
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:41<00:00, 101.29s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    2/400 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.5%                                  │
+│ Elapsed: 03:33 │ ETA: 11:48:08 │ Step Time: 106.754s                                                                 │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.31e-05       │actor/actor/recv_traj=102.7            │actor/actor/sync_model_to_rollout=0.2…│
+│actor/run_training=0.0017              │actor_training=0.0037                  │cal_adv_and_returns=0.0034            │
+│env/compute_bootstrap_rewards=4.94e-04 │env/env/bootstrap_step=55.865          │env/env/send_rollout_trajectories=0.4…│
+│env/env_interact_step=40.535           │env/interact=102.5                     │env/run_interact_once=101.7           │
+│generate_rollouts=102.8                │rollout/generate_one_epoch=101.3       │rollout/predict=4.325                 │
+│rollout/rollout/generate=101.3         │rollout/sync_model_from_actor=0.685    │step=103.4                            │
+│sync_weights=0.688                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=3.25                           │
+│reward=0.01625                         │success_once=0.5                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│local_capacity=2.50e+04                │resident_transitions=125.0             │total_inserted=125.0                  │
+│write_cursor=125.0                     │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│sac/global_new_transitions=58.000      │sac/global_resident_transitions=125.0  │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+(ActorGroup(rank=0) pid=3810795) [INFO 10:55:06 ActorGroup-Rank-0][fsdp_sac_policy_worker.py:1048] DSRL replay warm-up: 125 < 2000 global transitions
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:34<00:00, 94.69s/it]
+Generating Rollout Epochs: 100%|██████████| 1/1 [01:34<00:00, 94.69s/it]
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+├──────────────────────────────────────────────────── Metric Table ────────────────────────────────────────────────────┤
+│ Global Step:    3/400 │ Progress: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   0.8%                                  │
+│ Elapsed: 05:10 │ ETA: 11:23:54 │ Step Time: 103.362s                                                                 │
+├──────────────────────────────────────────────────────── Time ────────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│actor/actor/compute_adv=1.25e-05       │actor/actor/recv_traj=95.854           │actor/actor/sync_model_to_rollout=0.1…│
+│actor/run_training=0.0016              │actor_training=0.0030                  │cal_adv_and_returns=0.0024            │
+│env/compute_bootstrap_rewards=6.48e-04 │env/env/bootstrap_step=55.733          │env/env/send_rollout_trajectories=0.4…│
+│env/env_interact_step=34.073           │env/interact=95.636                    │env/run_interact_once=95.120          │
+│generate_rollouts=95.885               │rollout/generate_one_epoch=94.688      │rollout/predict=4.300                 │
+│rollout/rollout/generate=94.689        │rollout/sync_model_from_actor=0.670    │step=96.563                           │
+│sync_weights=0.672                     │                                       │                                      │
+│                                                                                                                      │
+├──────────────────────────────────────────────────── Environment ─────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│episode_len=200.0                      │num_trajectories=8                     │return=6.125                          │
+│reward=0.030625                        │success_once=0.875                     │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Replay Buffer ────────────────────────────────────────────────────┤
+│                                                                                                                      │
+│local_capacity=2.50e+04                │resident_transitions=163.0             │total_inserted=163.0                  │
+│write_cursor=163.0                     │                                       │                                      │
+│                                                                                                                      │
+├─────────────────────────────────────────────────── Training/Other ───────────────────────────────────────────────────┤
+│                                                                                                                      │
+│sac/global_new_transitions=38.000      │sac/global_resident_transitions=163.0  │                                      │
+│                                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+(ActorGroup(rank=0) pid=3810795) [INFO 10:56:42 ActorGroup-Rank-0][fsdp_sac_policy_worker.py:1048] DSRL replay warm-up: 163 < 2000 global transitions
+(RolloutGroup(rank=0) pid=3810919)
+Generating Rollout Epochs:   0%|          | 0/1 [00:00<?, ?it/s]

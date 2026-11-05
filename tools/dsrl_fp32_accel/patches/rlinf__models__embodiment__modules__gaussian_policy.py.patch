@@ -1,0 +1,88 @@
+--- a/rlinf/models/embodiment/modules/gaussian_policy.py
++++ b/rlinf/models/embodiment/modules/gaussian_policy.py
+@@ -15,6 +15,8 @@
+ # Gaussian policy for SAC (inspired by dsrl_pi0).
+ # Reference: dsrl_pi0/jaxrl2/networks/learned_std_normal_policy.py
+ 
++import math
++
+ import torch
+ import torch.nn as nn
+ 
+@@ -47,10 +49,8 @@
+ 
+     def log_abs_det_jacobian(self, x, y):
+         # log|det J| = sum(log(1 - tanh^2(x_i))) = sum(log(1 - y_i^2))
+-        return torch.sum(
+-            torch.log(1 - y.pow(2) + 1e-7),  # Small epsilon to prevent log(0)
+-            dim=-1,
+-        )
++        # Transform event_dim=0: TransformedDistribution reduces coordinates.
++        return torch.log(1 - y.pow(2) + 1e-7)
+ 
+ 
+ class SquashedNormal(torch.distributions.TransformedDistribution):
+@@ -76,7 +76,7 @@
+         )  # Last dim becomes event_dim
+ 
+         # Transform chain (applied inner to outer)
+-        transforms = []
++        transforms = [TanhTransform()]
+ 
+         # Optional rescaling to [low, high]
+         if low is not None and high is not None:
+@@ -104,15 +104,10 @@
+ 
+                 def log_abs_det_jacobian(self, x, y):
+                     # Constant scaling: log det = log(scale), summed over event dims
+-                    return torch.sum(
+-                        torch.log(torch.abs(self.scale) * torch.ones_like(x)),
+-                        dim=-1,
+-                    )
++                    return torch.log(abs(self.scale) * torch.ones_like(x))
+ 
+             transforms.append(RescaleTransform(scale_factor, shift))
+ 
+-        # Tanh transform (applied last)
+-        transforms.append(TanhTransform())
+ 
+         super().__init__(
+             base_dist,
+@@ -195,7 +190,7 @@
+         # Bias initialized to 0 so log_std starts at 0 (std = exp(0) = 1.0)
+         nn.init.zeros_(self.log_std_layer.bias)
+ 
+-    def forward(self, features):
++    def forward(self, features, sample=False, deterministic=False):
+         """Forward pass returning a SquashedNormal distribution.
+ 
+         Args:
+@@ -204,6 +199,8 @@
+         Returns:
+             distribution: SquashedNormal distribution.
+         """
++        if sample:
++            return self.sample(features, deterministic=deterministic)
+         # Shared feature extraction
+         h = self.shared_net(features)
+ 
+@@ -246,6 +243,8 @@
+         if deterministic:
+             # Deterministic policy: use tanh(mean)
+             action = torch.tanh(mean)
++            if self.low is not None and self.high is not None:
++                action = action * ((self.high - self.low) / 2.0) + ((self.high + self.low) / 2.0)
+             # No log_prob needed for deterministic policy (no gradient update)
+             log_prob = torch.zeros(features.shape[0], device=features.device)
+         else:
+@@ -279,9 +278,7 @@
+                 shift = (self.high + self.low) / 2.0
+                 action = y_t * scale_factor + shift
+                 # Subtract log(scale_factor) from log_prob
+-                log_prob -= torch.sum(
+-                    torch.log(torch.abs(scale_factor) * torch.ones_like(y_t)), dim=-1
+-                )
++                log_prob -= self.output_dim * math.log(abs(scale_factor))
+             else:
+                 action = y_t
+ 

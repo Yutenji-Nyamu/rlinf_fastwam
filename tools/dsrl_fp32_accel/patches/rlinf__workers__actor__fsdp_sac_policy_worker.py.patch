@@ -1,0 +1,177 @@
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -117,6 +117,8 @@
+ 
+         self.use_dsrl = self.cfg.actor.model.get("openpi", {}).get("use_dsrl", False)
+         use_dsrl = self.use_dsrl
++        if use_dsrl and self.cfg.actor.model.openpi.get("dsrl_fp32_small", False):
++            self.torch_dtype = torch.float32
+         if use_dsrl:
+             # DSRL: separate actor/critic encoders into different optimizer groups
+             param_filters = {
+@@ -143,7 +145,7 @@
+             initial_alpha=self.cfg.algorithm.entropy_tuning.get("initial_alpha", 0.01),
+             alpha_type=alpha_type,
+             device=self.device,
+-            dtype=self.torch_dtype,
++            dtype=(torch.float32 if use_dsrl and self.cfg.actor.model.openpi.get("dsrl_fp32_small", False) else self.torch_dtype),
+         )
+         if alpha_type != "fixed_alpha":
+             self.target_entropy = self.cfg.algorithm.entropy_tuning.get(
+@@ -154,6 +156,7 @@
+             self.alpha_optimizer = torch.optim.Adam(
+                 self.entropy_temp.parameters(),
+                 lr=self.cfg.algorithm.entropy_tuning.optim.lr,
++                fused=bool(self.cfg.algorithm.entropy_tuning.optim.get("fused", False)),
+             )
+ 
+         self.build_lr_schedulers()
+@@ -426,6 +429,19 @@
+                 ) != set(target_parameters):
+                     raise RuntimeError("DSRL FP32 target shadow names differ")
+ 
++                if self.cfg.actor.get("foreach_target_update", False) and hasattr(self, "_target_shadow_f32"):
++                    if not self.cfg.actor.model.openpi.get("dsrl_fp32_small", False):
++                        raise ValueError("Batched target update requires FP32 DSRL")
++                    ema_names = [n for n in target_parameters if self.target_update_type == "all" or "q_head" in n.split(".")]
++                    copy_names = [n for n in target_parameters if n not in ema_names]
++                    shadows = self._target_shadow_f32
++                    if ema_names:
++                        torch._foreach_mul_([shadows[n] for n in ema_names], 1.0 - tau)
++                        torch._foreach_add_([shadows[n] for n in ema_names], [online_parameters[n].data for n in ema_names], alpha=tau)
++                    if copy_names:
++                        torch._foreach_copy_([shadows[n] for n in copy_names], [online_parameters[n].data for n in copy_names])
++                    torch._foreach_copy_([p.data for p in target_parameters.values()], [shadows[n] for n in target_parameters])
++                    return
+                 for name, target_param in target_parameters.items():
+                     online_param = online_parameters[name]
+                     use_ema = (
+@@ -667,7 +683,7 @@
+         critic_loss = F.mse_loss(
+             all_data_q_values, target_q_values.expand_as(all_data_q_values)
+         )
+-        return critic_loss, {"q_data": all_data_q_values.mean().item()}
++        return critic_loss, {"q_data": self._metric(all_data_q_values.mean())}
+ 
+     @Worker.timer("forward_actor")
+     def forward_actor(self, batch):
+@@ -710,14 +726,14 @@
+                 detach_encoder=True,
+             )
+         metrics = {
+-            f"q_value_{q_id}": all_qf_pi[..., q_id].mean().item()
++            f"q_value_{q_id}": self._metric(all_qf_pi[..., q_id].mean())
+             for q_id in range(self.cfg.actor.model.get("num_q_heads", 2))
+         }
+         if agg_q == "min":
+             qf_pi, _ = torch.min(all_qf_pi, dim=1, keepdim=True)
+         elif agg_q == "mean":
+             qf_pi = torch.mean(all_qf_pi, dim=1, keepdim=True)
+-        metrics["q_pi"] = qf_pi.mean().item()
++        metrics["q_pi"] = self._metric(qf_pi.mean())
+         if getattr(self, "use_dsrl_u", False):
+             weights = batch.get("dsrl_u_weight")
+             if (
+@@ -732,7 +748,7 @@
+                 )
+             per_chunk_loss = self.entropy_temp.alpha * log_pi - qf_pi
+             actor_loss = (weights * per_chunk_loss).mean()
+-            metrics["u_unweighted_loss"] = per_chunk_loss.detach().mean().item()
++            metrics["u_unweighted_loss"] = self._metric(per_chunk_loss.detach().mean())
+         else:
+             actor_loss = ((self.entropy_temp.alpha * log_pi) - qf_pi).mean()
+ 
+@@ -819,10 +835,10 @@
+             critic_loss, critic_metrics = self.forward_critic(batch)
+             critic_loss = critic_loss / self.gradient_accumulation
+             critic_loss.backward()
+-            gbs_critic_loss.append(critic_loss.item() * self.gradient_accumulation)
++            gbs_critic_loss.append(self._metric(critic_loss) * self.gradient_accumulation)
+             append_to_dict(all_critic_metrics, critic_metrics)
+         all_critic_metrics = {
+-            f"critic/{key}": np.mean(value) for key, value in all_critic_metrics.items()
++            f"critic/{key}": self._metric_mean(value) for key, value in all_critic_metrics.items()
+         }
+         qf_grad_norm = self.model.clip_grad_norm_(
+             max_norm=self.cfg.actor.critic_optim.clip_grad
+@@ -832,7 +848,7 @@
+         self.qf_lr_scheduler.step()
+ 
+         metrics_data = {
+-            "sac/critic_loss": np.mean(gbs_critic_loss),
++            "sac/critic_loss": self._metric_mean(gbs_critic_loss),
+             "critic/lr": self.qf_optimizer.param_groups[0]["lr"],
+             "critic/grad_norm": qf_grad_norm,
+             **all_critic_metrics,
+@@ -848,14 +864,14 @@
+                 actor_loss, entropy, q_metrics = self.forward_actor(batch)
+                 actor_loss = actor_loss / self.gradient_accumulation
+                 actor_loss.backward()
+-                gbs_actor_loss.append(actor_loss.item() * self.gradient_accumulation)
+-                gbs_entropy.append(entropy.item())
++                gbs_actor_loss.append(self._metric(actor_loss) * self.gradient_accumulation)
++                gbs_entropy.append(self._metric(entropy))
+                 append_to_dict(all_actor_metrics, q_metrics)
+             # The actor needs dQ/da through the critic, but critic parameters
+             # belong to qf_optimizer and must not enter the actor-wide clip.
+             self._clear_dsrl_critic_grads_before_actor_clip()
+             all_actor_metrics = {
+-                f"actor/{key}": np.mean(value)
++                f"actor/{key}": self._metric_mean(value)
+                 for key, value in all_actor_metrics.items()
+             }
+             actor_grad_norm = self.model.clip_grad_norm_(
+@@ -874,7 +890,7 @@
+                     alpha_loss = self.forward_alpha(batch) / self.gradient_accumulation
+                     alpha_loss.backward()
+                     gbs_alpha_loss.append(
+-                        alpha_loss.item() * self.gradient_accumulation
++                        self._metric(alpha_loss) * self.gradient_accumulation
+                     )
+                 torch.distributed.all_reduce(
+                     self.entropy_temp.base_alpha.grad, op=torch.distributed.ReduceOp.AVG
+@@ -889,12 +905,12 @@
+             # Collect metrics
+             metrics_data.update(
+                 {
+-                    "sac/actor_loss": np.mean(gbs_actor_loss),
+-                    "sac/alpha_loss": np.mean(gbs_alpha_loss),
++                    "sac/actor_loss": self._metric_mean(gbs_actor_loss),
++                    "sac/alpha_loss": self._metric_mean(gbs_alpha_loss),
+                     "sac/alpha": self.entropy_temp.alpha,
+                     "actor/lr": self.optimizer.param_groups[0]["lr"],
+                     "actor/grad_norm": actor_grad_norm,
+-                    "actor/entropy": np.mean(gbs_entropy),
++                    "actor/entropy": self._metric_mean(gbs_entropy),
+                     "alpha/grad_norm": alpha_grad_norm,
+                     **all_actor_metrics,
+                 }
+@@ -908,6 +924,14 @@
+ 
+         return metrics_data
+ 
++    def _metric(self, value):
++        return value.detach() if self.cfg.actor.get("defer_metrics", False) else value.item()
++
++    def _metric_mean(self, values):
++        if not self.cfg.actor.get("defer_metrics", False):
++            return np.mean(values)
++        return torch.stack([torch.as_tensor(v, device=self.device).detach().double() for v in values]).mean()
++
+     def process_train_metrics(self, metrics):
+         replay_buffer_stats = self.replay_buffer.get_stats()
+         replay_buffer_stats = {
+@@ -921,6 +945,13 @@
+                 f"demo_buffer/{key}": value for key, value in demo_buffer_stats.items()
+             }
+             append_to_dict(metrics, demo_buffer_stats)
++        if self.cfg.actor.get("defer_metrics", False):
++            # One device-to-host transfer per round, rather than per head/update.
++            keys = list(metrics)
++            values = [self._metric_mean(v if isinstance(v, list) else [v]) for v in metrics.values()]
++            packed = torch.stack([torch.as_tensor(v, device=self.device).detach().double() for v in values])
++            torch.distributed.all_reduce(packed, op=torch.distributed.ReduceOp.AVG)
++            return dict(zip(keys, packed.cpu().tolist()))
+         # Average metrics across updates
+         mean_metric_dict = {}
+         for key, value in metrics.items():

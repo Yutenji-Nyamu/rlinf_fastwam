@@ -1,0 +1,52 @@
+--- a/rlinf/models/embodiment/modules/compact_encoders.py
++++ b/rlinf/models/embodiment/modules/compact_encoders.py
+@@ -104,6 +104,9 @@
+         if x.dtype != weight_dtype:
+             x = x.to(dtype=weight_dtype)
+ 
++        # Input layout only: leave FSDP parameter views and checkpoint keys intact.
++        if getattr(self, "channels_last", False):
++            x = x.contiguous(memory_format=torch.channels_last)
+         # CNN encoder
+         x = self.encoder(x)  # [B, 32, 32, 32]
+ 
+@@ -349,8 +352,39 @@
+         Returns:
+             q_values: [B, num_q_heads]
+         """
++        if getattr(self, "vectorized", False):
++            if getattr(self, "compile_vectorized", False):
++                mode = getattr(self, "compile_mode", "default")
++                if not hasattr(self, "_compiled_vectorized") or getattr(self, "_compiled_vectorized_mode", None) != mode:
++                    self._compiled_vectorized = torch.compile(self._vectorized_forward, fullgraph=True, mode=mode)
++                    self._compiled_vectorized_mode = mode
++                return self._compiled_vectorized(state_features, image_features, actions)
++            return self._vectorized_forward(state_features, image_features, actions)
+         q_values = []
+         for q_head in self.q_heads:
+             q_values.append(q_head(state_features, image_features, actions))
+ 
+         return torch.cat(q_values, dim=-1)
++
++
++    def _vectorized_forward(self, state_features, image_features, actions):
++        # Stack views of existing parameters: checkpoint keys and optimizer state
++        # remain unchanged, and autograd distributes gradients to each Q head.
++        x = torch.cat([state_features, image_features, actions], dim=-1)
++        x = x.to(self.q_heads[0].net[0].weight.dtype)
++        x = x.unsqueeze(0).expand(self.num_q_heads, -1, -1)
++        for index, layer in enumerate(self.q_heads[0].net):
++            peers = [q.net[index] for q in self.q_heads]
++            if isinstance(layer, nn.Linear):
++                weight = torch.stack([m.weight for m in peers])
++                bias = torch.stack([m.bias for m in peers])
++                x = torch.bmm(x, weight.transpose(1, 2)) + bias[:, None, :]
++            elif isinstance(layer, nn.LayerNorm):
++                x = torch.nn.functional.layer_norm(x, layer.normalized_shape, eps=layer.eps)
++                x = x * torch.stack([m.weight for m in peers])[:, None, :]
++                x = x + torch.stack([m.bias for m in peers])[:, None, :]
++            elif isinstance(layer, nn.ReLU):
++                x = torch.relu(x)
++            else:
++                raise TypeError(type(layer))
++        return x.permute(1, 0, 2).flatten(1)

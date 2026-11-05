@@ -1,0 +1,134 @@
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -133,6 +133,12 @@
+     dsrl_state_dim: int = 8  # Raw state dimension for DSRL encoders
+     dsrl_action_noise_dim: int = 32  # Noise dimension output by GaussianPolicy
+     dsrl_full_noise: bool = False
++    dsrl_fp32_small: bool = False
++    dsrl_noise_bound: float = 1.0
++    dsrl_vectorized_q: bool = False
++    dsrl_compile_q: bool = False
++    dsrl_compile_q_mode: str = "default"
++    dsrl_channels_last: bool = False
+     dsrl_num_q_heads: int = 10  # Number of Q-networks
+     dsrl_agg_q: str = "mean"  # Q aggregation method: 'mean' | 'min'
+     dsrl_image_latent_dim: int = 64  # Latent dim for lightweight image encoder
+@@ -204,7 +210,11 @@
+             # --pi05 only--
+             "time_mlp_in",
+             "time_mlp_out",
+-        ]
++        ] + ([
++            "paligemma_with_expert",
++            "dsrl_action_noise_net", "actor_image_encoder", "actor_state_encoder",
++            "critic_image_encoder", "critic_state_encoder", "q_head",
++        ] if self.config.use_dsrl and self.config.dsrl_fp32_small else [])
+ 
+     def __init__(
+         self,
+@@ -301,14 +311,10 @@
+             )
+             from rlinf.models.embodiment.modules.gaussian_policy import GaussianPolicy
+ 
+-            # Use explicit bfloat16 to match the backbone dtype that will be
+-            # loaded from the checkpoint later.  At __init__ time the backbone
+-            # parameters are still float32 (weights are loaded afterwards by
+-            # safetensors.torch.load_model), so next(self.parameters()).dtype
+-            # would incorrectly return float32.  Hardcoding bfloat16 here
+-            # ensures all parameters share a single dtype when FSDP creates
+-            # its FlatParameter, avoiding the writeback shape-mismatch error.
+-            _dsrl_dtype = torch.bfloat16
++            # FP32 SAC parameters are separate FSDP units; frozen VLA stays BF16.
++            _dsrl_dtype = torch.float32 if self.config.dsrl_fp32_small else torch.bfloat16
++            if self.config.dsrl_noise_bound <= 0:
++                raise ValueError("DSRL noise bound must be positive")
+ 
+             dsrl_input_dim = (
+                 self.config.dsrl_state_latent_dim + self.config.dsrl_image_latent_dim
+@@ -318,8 +324,8 @@
+                 input_dim=dsrl_input_dim,
+                 output_dim=self.config.dsrl_action_noise_dim,
+                 hidden_dims=self.config.dsrl_hidden_dims,
+-                low=None,
+-                high=None,
++                low=-self.config.dsrl_noise_bound,
++                high=self.config.dsrl_noise_bound,
+                 action_horizon=1 if self.config.dsrl_full_noise else self.config.action_horizon,
+             ).to(dtype=_dsrl_dtype)
+             self.dsrl_action_noise_net.probability_float32 = self.config.dsrl_full_noise
+@@ -353,6 +359,11 @@
+                 num_q_heads=self.config.dsrl_num_q_heads,
+                 output_dim=1,
+             ).to(dtype=_dsrl_dtype)
++            self.actor_image_encoder.channels_last = self.config.dsrl_channels_last
++            self.critic_image_encoder.channels_last = self.config.dsrl_channels_last
++            self.q_head.vectorized = self.config.dsrl_vectorized_q
++            self.q_head.compile_vectorized = self.config.dsrl_compile_q
++            self.q_head.compile_mode = self.config.dsrl_compile_q_mode
+             initial_phase = 0 if self.config.dsrl_gaussian_warmup else 1
+             self.register_buffer(
+                 "dsrl_policy_phase",
+@@ -1705,10 +1716,10 @@
+         images = self._preprocess_dsrl_images(obs["images"], train=train)
+         states = self._preprocess_states(obs["states"])
+ 
+-        # Move to the same device as actor encoders, convert to bfloat16
+-        device = next(self.actor_image_encoder.parameters()).device
+-        images = images.to(device=device, dtype=torch.bfloat16)
+-        states = states.to(device=device, dtype=torch.bfloat16)
++        encoder_param = next(self.actor_image_encoder.parameters())
++        device, dtype = encoder_param.device, encoder_param.dtype
++        images = images.to(device=device, dtype=dtype)
++        states = states.to(device=device, dtype=dtype)
+ 
+         # Extract features (using actor's independent encoder)
+         image_features = self.actor_image_encoder(images)  # [B, 64]
+@@ -1719,14 +1730,15 @@
+         mode = kwargs.get("mode", "train")
+         deterministic = mode == "eval" and self.config.dsrl_eval_deterministic
+ 
+-        action_noise, logprobs = self.dsrl_action_noise_net.sample(
+-            features, deterministic=deterministic
++        # Call forward so a nested FSDP unit runs its parameter/gradient hooks.
++        action_noise, logprobs = self.dsrl_action_noise_net(
++            features, sample=True, deterministic=deterministic
+         )
+ 
+         # Optional: return distribution parameters for logging
+         dist_params = None
+         if return_dist_params:
+-            dist = self.dsrl_action_noise_net.forward(features)
++            dist = self.dsrl_action_noise_net(features)
+             dist_params = (dist.mean, dist.stddev)
+ 
+         if self.config.dsrl_full_noise:
+@@ -1783,11 +1795,11 @@
+         images = self._preprocess_dsrl_images(obs["images"], train=train)
+         states = self._preprocess_states(obs["states"])
+ 
+-        # Move to the same device as critic encoders, convert to bfloat16
+-        device = next(self.critic_image_encoder.parameters()).device
+-        images = images.to(device=device, dtype=torch.bfloat16)
+-        states = states.to(device=device, dtype=torch.bfloat16)
+-        actions = actions.to(device=device, dtype=torch.bfloat16)
++        encoder_param = next(self.critic_image_encoder.parameters())
++        device, dtype = encoder_param.device, encoder_param.dtype
++        images = images.to(device=device, dtype=dtype)
++        states = states.to(device=device, dtype=dtype)
++        actions = actions.to(device=device, dtype=dtype)
+ 
+         # Extract features (using critic's independent encoder)
+         image_features = self.critic_image_encoder(images)
+@@ -1898,9 +1910,9 @@
+         """
+         if states.dim() > 2:
+             states = states.reshape(states.shape[0], -1)
+-        # Convert to bfloat16 to match encoder's dtype
+-        if states.dtype != torch.bfloat16:
+-            states = states.to(torch.bfloat16)
++        dtype = torch.float32 if self.config.dsrl_fp32_small else torch.bfloat16
++        if states.dtype != dtype:
++            states = states.to(dtype)
+         return states
+ 
+     def enable_torch_compile(

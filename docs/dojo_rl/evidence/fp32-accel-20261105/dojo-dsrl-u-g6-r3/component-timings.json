@@ -1,0 +1,76 @@
+{
+  "torch": "2.11.0+cu129",
+  "device": "cuda",
+  "benchmarks": {
+    "rt2": {
+      "q_max_abs": 2.980232238769531e-07,
+      "q_input_and_parameter_gradients": "pass",
+      "checkpoint_keys": "unchanged",
+      "bound_and_logprob": "pass",
+      "unchanged_nonzero_gradient_fraction": 0.0,
+      "channels_last_output_gradient_contract": "rejected",
+      "channels_last_error": "Tensor-likes are not close!\n\nMismatched elements: 102 / 512 (19.9%)\nGreatest absolute difference: 0.0012337565422058105 at index (6, 15) (up to 0.0003 allowed)\nGreatest relative difference: 1.9714584350585938 at index (4, 12) (up to 0.0003 allowed)",
+      "q_update_timings": {
+        "vec0_fused0_compile0": {
+          "median_seconds": 0.016488409088924526,
+          "startup_seconds": 0.1478784680366516
+        },
+        "vec0_fused1_compile0": {
+          "median_seconds": 0.007474343758076429,
+          "startup_seconds": 0.05015723593533039,
+          "max_param_delta_after_105_updates": 5.766749382019043e-05
+        },
+        "vec1_fused0_compile0": {
+          "median_seconds": 0.010264694364741445,
+          "startup_seconds": 0.057509513571858406,
+          "max_param_delta_after_105_updates": 0.0003314688801765442
+        },
+        "vec1_fused1_compile0": {
+          "median_seconds": 0.004113016091287136,
+          "startup_seconds": 0.024545571766793728,
+          "max_param_delta_after_105_updates": 0.0003314707428216934
+        },
+        "vec1_fused1_compile1": {
+          "median_seconds": 0.00422901907004416,
+          "startup_seconds": 2.3945176918059587,
+          "max_param_delta_after_105_updates": 0.0003314707428216934
+        }
+      }
+    },
+    "dojo": {
+      "q_max_abs": 2.384185791015625e-07,
+      "q_input_and_parameter_gradients": "pass",
+      "checkpoint_keys": "unchanged",
+      "bound_and_logprob": "pass",
+      "unchanged_nonzero_gradient_fraction": 0.0,
+      "channels_last_output_gradient_contract": "rejected",
+      "channels_last_error": "Tensor-likes are not close!\n\nMismatched elements: 102 / 512 (19.9%)\nGreatest absolute difference: 0.0012337565422058105 at index (6, 15) (up to 0.0003 allowed)\nGreatest relative difference: 1.9714584350585938 at index (4, 12) (up to 0.0003 allowed)",
+      "q_update_timings": {
+        "vec0_fused0_compile0": {
+          "median_seconds": 0.015665149269625544,
+          "startup_seconds": 0.08567535690963268
+        },
+        "vec0_fused1_compile0": {
+          "median_seconds": 0.007668362557888031,
+          "startup_seconds": 0.043135964311659336,
+          "max_param_delta_after_105_updates": 0.00012858957052230835
+        },
+        "vec1_fused0_compile0": {
+          "median_seconds": 0.011577435908839107,
+          "startup_seconds": 0.06613836623728275,
+          "max_param_delta_after_105_updates": 0.0006800740957260132
+        },
+        "vec1_fused1_compile0": {
+          "median_seconds": 0.004502776870504021,
+          "startup_seconds": 0.02812146209180355,
+          "max_param_delta_after_105_updates": 0.0006800778210163116
+        },
+        "vec1_fused1_compile1": {
+          "median_seconds": 0.00427357261069119,
+          "startup_seconds": 0.029978294856846333,
+          "max_param_delta_after_105_updates": 0.0006800852715969086
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+--- a/tools/dojo_offpolicy/training_entry.py
++++ b/tools/dojo_offpolicy/training_entry.py
+@@ -16,6 +16,36 @@
+     d = Path(os.environ["DOJO_GRPO_DEPLOYMENT"])
+     plan = json.loads((d / "plan.json").read_text())
+     phase = sys.argv[sys.argv.index("--config-name") + 1]
++    benchmark_complete = False
++    if phase == "formal" and plan.get("acceleration_trial"):
++        try:
++            measured = json.loads((d / "sac-timings.json").read_text())
++            applied = json.loads((d / "selected-acceleration.json").read_text())
++            benchmark_complete = (
++                "selected" in measured
++                and measured["selected"] == applied.get("selected")
++                and applied.get("scope", "").startswith("production SAC update")
++            )
++        except (OSError, ValueError):
++            pass
++    if phase == "formal" and plan.get("acceleration_trial") and not benchmark_complete:
++        # A separate driver keeps the benchmark's Cluster singleton and namespace
++        # out of the subsequent formal driver; terminate only this exact child.
++        import signal
++        def stop_benchmark(signum, frame):
++            raise SystemExit(128 + signum)
++        previous_handler = signal.signal(signal.SIGTERM, stop_benchmark)
++        child = subprocess.Popen([plan["python"], "-u", "-B", str(Path(plan["training_source"]) / "tools/dsrl_fp32_accel/bench_driver.py"), str(d)])
++        try:
++            assert child.wait(timeout=1800) == 0, "SAC benchmark failed"
++        finally:
++            if child.poll() is None:
++                child.terminate()
++                try:
++                    child.wait(timeout=120)
++                except subprocess.TimeoutExpired:
++                    child.kill()
++            signal.signal(signal.SIGTERM, previous_handler)
+     if phase == "formal" and plan.get("defer_formal_to"):
+         (d / "formal-deferred.json").write_text(
+             json.dumps({"time": time.time(), "next": plan["defer_formal_to"]})
