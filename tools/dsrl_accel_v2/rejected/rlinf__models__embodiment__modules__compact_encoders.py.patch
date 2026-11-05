@@ -1,0 +1,85 @@
+--- a/rlinf/models/embodiment/modules/compact_encoders.py
++++ b/rlinf/models/embodiment/modules/compact_encoders.py
+@@ -297,7 +297,7 @@
+                     if m.bias is not None:
+                         nn.init.zeros_(m.bias)
+ 
+-    def forward(self, state_features, image_features, actions):
++    def forward(self, state_features, image_features, actions, detach_parameters=False):
+         """
+         Args:
+             state_features: [B, state_dim]
+@@ -312,7 +312,24 @@
+         weight_dtype = self.net[0].weight.dtype
+         if x.dtype != weight_dtype:
+             x = x.to(dtype=weight_dtype)
+-        q_values = self.net(x)
++        if detach_parameters:
++            # Spinning Up SAC freezes Q weights during the policy update.
++            # Detached functional views preserve dQ/da and FSDP parameter flags.
++            for layer in self.net:
++                if isinstance(layer, nn.Linear):
++                    x = torch.nn.functional.linear(
++                        x, layer.weight.detach(), layer.bias.detach()
++                    )
++                elif isinstance(layer, nn.LayerNorm):
++                    x = torch.nn.functional.layer_norm(
++                        x, layer.normalized_shape, layer.weight.detach(),
++                        layer.bias.detach(), layer.eps,
++                    )
++                else:
++                    x = layer(x)
++            q_values = x
++        else:
++            q_values = self.net(x)
+         return q_values
+ 
+ 
+@@ -342,7 +359,7 @@
+             ]
+         )
+ 
+-    def forward(self, state_features, image_features, actions):
++    def forward(self, state_features, image_features, actions, detach_parameters=False):
+         """
+         Args:
+             state_features: [B, state_dim]
+@@ -358,16 +375,16 @@
+                 if not hasattr(self, "_compiled_vectorized") or getattr(self, "_compiled_vectorized_mode", None) != mode:
+                     self._compiled_vectorized = torch.compile(self._vectorized_forward, fullgraph=True, mode=mode)
+                     self._compiled_vectorized_mode = mode
+-                return self._compiled_vectorized(state_features, image_features, actions)
+-            return self._vectorized_forward(state_features, image_features, actions)
++                return self._compiled_vectorized(state_features, image_features, actions, detach_parameters)
++            return self._vectorized_forward(state_features, image_features, actions, detach_parameters)
+         q_values = []
+         for q_head in self.q_heads:
+-            q_values.append(q_head(state_features, image_features, actions))
++            q_values.append(q_head(state_features, image_features, actions, detach_parameters))
+ 
+         return torch.cat(q_values, dim=-1)
+ 
+ 
+-    def _vectorized_forward(self, state_features, image_features, actions):
++    def _vectorized_forward(self, state_features, image_features, actions, detach_parameters=False):
+         # Stack views of existing parameters: checkpoint keys and optimizer state
+         # remain unchanged, and autograd distributes gradients to each Q head.
+         x = torch.cat([state_features, image_features, actions], dim=-1)
+@@ -376,13 +393,13 @@
+         for index, layer in enumerate(self.q_heads[0].net):
+             peers = [q.net[index] for q in self.q_heads]
+             if isinstance(layer, nn.Linear):
+-                weight = torch.stack([m.weight for m in peers])
+-                bias = torch.stack([m.bias for m in peers])
++                weight = torch.stack([m.weight.detach() if detach_parameters else m.weight for m in peers])
++                bias = torch.stack([m.bias.detach() if detach_parameters else m.bias for m in peers])
+                 x = torch.bmm(x, weight.transpose(1, 2)) + bias[:, None, :]
+             elif isinstance(layer, nn.LayerNorm):
+                 x = torch.nn.functional.layer_norm(x, layer.normalized_shape, eps=layer.eps)
+-                x = x * torch.stack([m.weight for m in peers])[:, None, :]
+-                x = x + torch.stack([m.bias for m in peers])[:, None, :]
++                x = x * torch.stack([m.weight.detach() if detach_parameters else m.weight for m in peers])[:, None, :]
++                x = x + torch.stack([m.bias.detach() if detach_parameters else m.bias for m in peers])[:, None, :]
+             elif isinstance(layer, nn.ReLU):
+                 x = torch.relu(x)
+             else:

@@ -1,0 +1,36 @@
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -1751,6 +1751,7 @@
+         data=None,
+         actions=None,
+         detach_encoder=False,
++        detach_q_parameters=False,
+         train=False,
+         **kwargs,
+     ):
+@@ -1802,8 +1803,11 @@
+         actions = actions.to(device=device, dtype=dtype)
+ 
+         # Extract features (using critic's independent encoder)
+-        image_features = self.critic_image_encoder(images)
+-        state_features = self.critic_state_encoder(states)
++        with torch.set_grad_enabled(
++            torch.is_grad_enabled() and not (detach_encoder and detach_q_parameters)
++        ):
++            image_features = self.critic_image_encoder(images)
++            state_features = self.critic_state_encoder(states)
+ 
+         # Optionally detach encoder
+         if detach_encoder:
+@@ -1816,7 +1820,10 @@
+         assert actions.shape[-1] == self.config.dsrl_action_noise_dim
+ 
+         # Compute Q values
+-        q_values = self.q_head(state_features, image_features, actions)
++        q_values = self.q_head(
++            state_features, image_features, actions,
++            detach_parameters=detach_q_parameters,
++        )
+ 
+         return q_values
+ 

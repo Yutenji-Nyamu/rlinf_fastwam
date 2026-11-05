@@ -1,0 +1,65 @@
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -67,6 +67,10 @@
+         self._local_new_transitions = 0
+ 
+     def init_worker(self):
++        if self.cfg.actor.get("dsrl_cpu_threads", 0):
++            torch.set_num_threads(int(self.cfg.actor.dsrl_cpu_threads))
++        if self.cfg.actor.get("dsrl_cpu_affinity", None):
++            os.sched_setaffinity(0, set(self.cfg.actor.dsrl_cpu_affinity))
+         self.setup_model_and_optimizer(initialize_target=True)
+         self.setup_sac_components()
+         self.soft_update_target_model(tau=1.0)
+@@ -686,7 +690,7 @@
+         return critic_loss, {"q_data": self._metric(all_data_q_values.mean())}
+ 
+     @Worker.timer("forward_actor")
+-    def forward_actor(self, batch):
++    def forward_actor(self, batch, weights_validated=False):
+         use_crossq = self.cfg.algorithm.get("q_head_type", "default") == "crossq"
+         if "actor_agg_q" in self.cfg.algorithm:
+             agg_q = self.cfg.algorithm["actor_agg_q"]
+@@ -740,8 +744,8 @@
+                 not isinstance(weights, torch.Tensor)
+                 or weights.shape != qf_pi.shape
+                 or weights.requires_grad
+-                or not torch.isfinite(weights).all()
+-                or (weights <= 0).any()
++                or (not weights_validated and not torch.isfinite(weights).all())
++                or (not weights_validated and (weights <= 0).any())
+             ):
+                 raise ValueError(
+                     "DSRL U actor requires detached positive weights [B,1]"
+@@ -795,6 +799,7 @@
+             global_batch = next(self.buffer_dataloader_iter)
+ 
+         u_metrics = {}
++        weights_validated = False
+         if getattr(self, "use_dsrl_u", False):
+             from rlinf.algorithms.dsrl_ugrow import build_dsrl_u_weights
+ 
+@@ -813,6 +818,12 @@
+                 update_step=self.update_step,
+             )
+             global_batch["dsrl_u_weight"] = weights
++            if self.cfg.actor.get("dsrl_validate_u_on_cpu", False):
++                # Same checks before transfer; no CUDA-to-Python boolean waits.
++                from tools.dsrl_accel_v2.contracts import validate_cpu_weights
++
++                validate_cpu_weights(weights, global_batch_size_per_rank)
++                weights_validated = True
+ 
+         train_micro_batch_list = split_dict_to_chunk(
+             global_batch,
+@@ -861,7 +872,9 @@
+             gbs_entropy = []
+             all_actor_metrics = {}
+             for batch in train_micro_batch_list:
+-                actor_loss, entropy, q_metrics = self.forward_actor(batch)
++                actor_loss, entropy, q_metrics = self.forward_actor(
++                    batch, weights_validated=weights_validated
++                )
+                 actor_loss = actor_loss / self.gradient_accumulation
+                 actor_loss.backward()
+                 gbs_actor_loss.append(self._metric(actor_loss) * self.gradient_accumulation)

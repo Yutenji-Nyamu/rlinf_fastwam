@@ -1,0 +1,76 @@
+{
+  "retrieved": "2026-11-05",
+  "runtime_torch": "2.11.0",
+  "items": [
+    {
+      "switch": "actor.dsrl_detach_actor_q",
+      "source": "https://github.com/openai/spinningup/blob/038665d62d569055401d91856abb287263096178/spinup/algos/pytorch/sac/sac.py",
+      "mechanism": "Do not compute critic parameter gradients during actor optimization; preserve dQ/da.",
+      "adaptation": "Detached functional parameter views inside existing FSDP forwards; no dynamic requires_grad changes. Critic observation encoders avoid graphs that are immediately discarded.",
+      "checks": "Real FSDP Q output and action-gradient comparison; critic gradients absent; full SAC state and RNG comparison.",
+      "status": "rejected-and-removed",
+      "reason": "Real FSDP Q/action gradients matched, but the subsequent target-Q parameter allowlist lost q_head. No valid speed measurement. Original Q implementation restored."
+    },
+    {
+      "switch": "actor.dsrl_validate_u_on_cpu",
+      "source": "https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html#avoid-unnecessary-cpu-gpu-synchronization",
+      "mechanism": "Validate already CPU-resident U weights before transfer, avoiding CUDA-to-Python boolean waits.",
+      "adaptation": "Identical finite/positive/shape/no-grad checks; validation flag is local to a single update and is never replay data.",
+      "checks": "Reject NaN, infinity, zero, negative, wrong shape and gradient-bearing weights; verify same training outputs and replay order.",
+      "status": "not-adopted",
+      "reason": "No stable additional improvement over the faster repeated baseline; retained previous accepted production configuration."
+    },
+    {
+      "switch": "actor.dsrl_cpu_threads, actor.dsrl_cpu_affinity; RT2 env.dsrl_acceleration",
+      "source": "https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html#cpu-specific-optimizations",
+      "mechanism": "Tune per-process CPU thread count and locality to avoid thread overhead and remote-socket traffic.",
+      "adaptation": "Test two/four Torch threads and CPU affinity matching GPU NUMA topology; no host-global affinity or exclusive CPU reservation.",
+      "checks": "Both forward/reverse timing repeats; same random/replay state; same-layout physical replay and fixed-noise action/U parity for environment worker.",
+      "status": "not-adopted",
+      "reason": "No stable additional improvement over the faster repeated baseline; retained previous accepted production configuration."
+    },
+    {
+      "switch": "native.acceleration.control_state_reuse",
+      "source": "https://github.com/MINT-SJTU/RoboScope-Kit/blob/30158a77ae222701f5c31c327ebdc5085281b6fa/benchmarks/robodojo/patches/control-state.patch",
+      "mechanism": "Copy only requested CPU joint states and expand an exact MetaControl once per control call.",
+      "adaptation": "Opt-in process-local adapter; source SHA256 guard; GPU state getter and subclasses retain original behavior.",
+      "checks": "Identical requested/effective layout IDs, replayed actions, reward/done signals, states and fixed-noise model actions/U.",
+      "status": "not-adopted",
+      "reason": "Same-layout Dojo baseline repetition itself exceeded the fixed action threshold; candidate equivalence and speed benefit remain unproven. All new native switches disabled."
+    },
+    {
+      "switch": "native.acceleration.unpaced_render",
+      "source": "https://github.com/MINT-SJTU/RoboScope-Kit/blob/30158a77ae222701f5c31c327ebdc5085281b6fa/benchmarks/robodojo/patches/unpaced-render.patch",
+      "mechanism": "Temporarily remove real-time rate limiting while rendering at the same manual timestep.",
+      "adaptation": "Only eligible if rate limiter is enabled and manual mode is active; assert unchanged render dt and physics step index; preserve current-frame fences and rendering count.",
+      "checks": "Same-layout replay, model action/U parity and both timing repeats; rejected on guard failure.",
+      "status": "not-adopted",
+      "reason": "Same-layout Dojo baseline repetition itself exceeded the fixed action threshold; candidate equivalence and speed benefit remain unproven. All new native switches disabled."
+    },
+    {
+      "switch": "native.acceleration.physics_threads",
+      "source": "https://github.com/MINT-SJTU/RoboScope-Kit/blob/30158a77ae222701f5c31c327ebdc5085281b6fa/benchmarks/robodojo/patches/physics-threads.patch",
+      "mechanism": "Compare four physics worker threads with the current default.",
+      "adaptation": "Per-launch Kit argument, persistent settings disabled, read back effective setting; no timestep/solver changes.",
+      "checks": "Strict state, action, U and terminal comparisons; reject physical trajectory drift even if faster.",
+      "status": "not-adopted",
+      "reason": "Same-layout Dojo baseline repetition itself exceeded the fixed action threshold; candidate equivalence and speed benefit remain unproven. All new native switches disabled."
+    },
+    {
+      "switch": "native.acceleration.disable_viewport",
+      "source": "https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/sim_performance_optimization_handbook.html",
+      "mechanism": "Disable a still-active UI viewport during headless execution.",
+      "adaptation": "Only eligible when an active viewport exists and updates are enabled; sensor cameras remain enabled.",
+      "checks": "Actual camera images, fixed-noise action/U comparison, physical state and terminal parity.",
+      "status": "not-adopted",
+      "reason": "Readback showed viewport updates already disabled; no redundant speed claim."
+    }
+  ],
+  "scope": "These are source-backed candidates, not promised gains. Adopt only measured candidates passing the same-state tests; keep the previous accepted acceleration configuration otherwise.",
+  "harness_references": [
+    {
+      "source": "https://docs.pytorch.org/docs/2.11/generated/torch.compiler.reset.html",
+      "purpose": "Clear in-process compiler specialization caches between benchmark variants, outside timed updates. Five warmups compile the new variant. Formal training does not call reset per update."
+    }
+  ]
+}

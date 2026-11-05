@@ -1,0 +1,14 @@
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -58,6 +58,11 @@
+         self.video_cfg = cfg.video_cfg
+ 
+         self.cfg = cfg
++        acceleration = cfg.get("dsrl_acceleration", {})
++        if acceleration.get("torch_threads"):
++            torch.set_num_threads(int(acceleration["torch_threads"]))
++        if acceleration.get("cpu_affinity"):
++            os.sched_setaffinity(0, set(acceleration["cpu_affinity"]))
+         self.record_metrics = record_metrics
+         self._is_start = True
+ 

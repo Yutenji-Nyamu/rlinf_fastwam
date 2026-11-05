@@ -1,0 +1,91 @@
+{
+  "bench": "dojo",
+  "num_envs": 8,
+  "physical_gpu": 6,
+  "action_chunks": 2,
+  "actions_per_env": 100,
+  "variants": {
+    "baseline": {},
+    "small_bundle": {
+      "control_state_reuse": true,
+      "unpaced_render": true
+    },
+    "physics4": {
+      "control_state_reuse": true,
+      "unpaced_render": true,
+      "physics_threads": 4
+    }
+  },
+  "cases": {
+    "baseline_a": {
+      "reset_seconds": 88.55202118493617,
+      "step_seconds": [
+        36.37300847750157,
+        37.80665828473866
+      ],
+      "interaction_seconds": 74.17966676224023,
+      "reset_plus_interaction_seconds": 162.7316879471764,
+      "errors": {
+        "state_max_abs": 0.0,
+        "image_rmse": 0.0,
+        "action_rmse": 0.0,
+        "action_max_abs": 0.0,
+        "u_max_abs": 0.0
+      },
+      "contract": "pass",
+      "layout_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "native": {
+        "options": {},
+        "rate_limit_enabled": true,
+        "manual_mode": true,
+        "manual_step": 0.04,
+        "rendering_dt": 0.04,
+        "physics_threads": 8,
+        "viewport_present": true,
+        "viewport_was_enabled": false,
+        "device": "cpu"
+      }
+    },
+    "small_bundle_a": {
+      "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-accel-v2-20261105/tools/dsrl_accel_v2/env_bench.py\", line 274, in main\n    assert errors[name] <= limit, (name, errors[name], limit)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('action_rmse', 0.005851149278985536, 0.002)\n"
+    },
+    "physics4_a": {
+      "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-accel-v2-20261105/tools/dsrl_accel_v2/env_bench.py\", line 274, in main\n    assert errors[name] <= limit, (name, errors[name], limit)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('action_rmse', 0.01291772332733639, 0.002)\n"
+    },
+    "physics4_b": {
+      "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-accel-v2-20261105/tools/dsrl_accel_v2/env_bench.py\", line 274, in main\n    )\n      \nAssertionError: ('action_rmse', 0.004442030142800356, 0.002)\n"
+    },
+    "small_bundle_b": {
+      "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-accel-v2-20261105/tools/dsrl_accel_v2/env_bench.py\", line 274, in main\n    )\n      \nAssertionError: ('action_rmse', 0.005809339751160135, 0.002)\n"
+    },
+    "baseline_b": {
+      "error": "Traceback (most recent call last):\n  File \"/data/chenyiteng/projects/rlinf-shenzhen/worktrees/dsrl-accel-v2-20261105/tools/dsrl_accel_v2/env_bench.py\", line 274, in main\n    baseline_rows[-1][\"final_actions\"]\n       ^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('action_rmse', 0.004652049652424767, 0.002)\n"
+    }
+  },
+  "limits": {
+    "state_max_abs": 0.0001,
+    "action_rmse": 0.002,
+    "action_max_abs": 0.02,
+    "u_max_abs": 0.001
+  },
+  "native_baseline": {
+    "options": {},
+    "rate_limit_enabled": true,
+    "manual_mode": true,
+    "manual_step": 0.04,
+    "rendering_dt": 0.04,
+    "physics_threads": 8,
+    "viewport_present": true,
+    "viewport_was_enabled": false,
+    "device": "cpu"
+  }
+}
