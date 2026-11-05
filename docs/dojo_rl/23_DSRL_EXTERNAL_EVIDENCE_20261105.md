@@ -38,6 +38,8 @@
 
 本地沿用的小网络BF16和目标Q的FP32影子需分别判断。目标影子解决EMA缓慢更新被舍入，不自动解决在线Adam权重精度。我们本轮直接读了四组检查点与优化器状态，并做一次CPU对照，证据强于仅依据上游注释猜测。
 
+追问已追溯：强制BF16位于[最初合并提交第169–176行](https://github.com/RLinf/RLinf/blob/42530b7225e7e8a91ad206a9e909490158d85594/rlinf/models/embodiment/openpi/openpi_action_model.py#L169)，代码注释明确为FSDP dtype兼容处理。当前本地`build_optimizers`直接构造`torch.optim.Adam`；[PyTorch Adam源码](https://github.com/pytorch/pytorch/blob/v2.10.0/torch/optim/adam.py#L168)的历史量用`zeros_like(parameter)`初始化。结合实际保存点，可定位这条BF16状态链；不能把来源误说成我们新加的独立噪声改动，也不能由此断言所有RLinf使用方式都会同样失败。
+
 ## 5. 近期其他论文的边界证据
 
 [MiDAS](https://arxiv.org/html/2608.11363v1)附录H.2列出π0.5 DSRL对照，采用冻结VLM特征、小MLP及UTD20；作者报告DSRL的改善不总稳定，较弱基础策略尤其受限。可借鉴其特征输入和对照设置，但不同任务、不同模型与预算不能证明我们的主因。
