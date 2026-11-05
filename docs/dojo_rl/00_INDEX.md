@@ -1,5 +1,7 @@
 # RoboDojo 单任务 RL 规划
 
+11月5日最新：[21 四组DSRL续400](21_DSRL_400_20261105.md)。4/7 RT2与5/6 Dojo的Clean/U总预算均400轮；当前段不中断，原终点完整保存后自动同卡接续。4/7汇合FQL仍在400轮之后，RLT兜底保持。
+
 11月4日晚最终路由：[20 并行U与FQL汇合](20_PARALLEL_U_AND_FQL_JOIN_20261104.md)：5/6 Dojo Clean/U，4/7 RT2 Clean/U。4/7单卡先完成接RLT，双卡完成后恢复FQL880→2200更新。4卡Isaac再次失败已退，不再重复深修。
 
 11月4日最新执行：[19 RoboTwin正式交接](19_RT2_FORMAL_HANDOFF_20261104.md)：6卡turn_switch π0.5独立噪声，短测后Clean200→U200→RLT；训练仍200动作、N8/warmup2000。5卡Dojo独立噪声继续，4/7改论文四点采集。依据见[18](18_REUSE_PI05_DSRL_U_200_20261104.md)，17已被纠正。
