@@ -6,15 +6,15 @@
 转为 DSRL Q 预热；6/7 从旧 +U 转为 Clean RLT。准备期间保留原任务，切换前
 登记真实 RLT 回退及精确 UID/PID/start 身份，保留完整旧检查点，不触碰其他用户。
 
-两环境 DSRL 均已通过训练和完整恢复 smoke；RT2 RLT 也已通过并进入正式运行。
-Dojo RLT 已完成专属 token 与参考动作验收，短 rollout 回放边界问题修复后继续
-smoke/恢复/计时。最新阶段以 `evidence/warmstart-rlt-20261106/status.json` 的时间为准。
+四路均已通过训练和完整恢复 smoke，进入各自400轮正式流程。两环境 RLT 已完成
+专属 token、参考动作验收及更新加速计时；本轮加速组合均无收益，正式关闭。
+最新阶段以 `evidence/warmstart-rlt-20261106/status.json` 的时间为准；正式效果仍待评估。
 
 | GPU | 任务 | 部署根下目录 | 当前工作 |
 |---|---|---|---|
 | 4 | RT2 turn_switch / DSRL Clean | rt2-dsrl-clean-g4-r2 | 正式高斯采集，目标 400 轮 |
 | 5 | Dojo put_bottles_into_dustbin / DSRL Clean | dojo-dsrl-clean-g5-r2 | 已过训练/恢复，正式启动 |
-| 6 | Dojo 同任务 / RLT Clean | dojo-rlt-clean-g6-r2 | 已过token/参考动作，修复短回放后继续验证 |
+| 6 | Dojo 同任务 / RLT Clean | dojo-rlt-clean-g6-r2 | 正式运行；加速组合不采用 |
 | 7 | RT2 同任务 / RLT Clean | rt2-rlt-clean-g7-r2 | 正式运行；加速组合不采用 |
 
 部署根 `/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart`。
@@ -113,9 +113,9 @@ Stage1 配置。只保存 token 权重及其独立优化器恢复状态，避免
   每案重置模型、目标模型、优化器、调度器和随机状态。参数最大差异阈值1e-5，
   replay/RNG一致且相对更快的基线至少快3%才保留。不能用该计时冒充整轮加速。
 
-已完成：DSRL CPU预热计数/恢复余量/分组梯度检查；RT2训练与恢复smoke；RLT
-两环境配置、模型维度、规范化、梯度、worker导入及foreach EMA CPU逐位检查。
-RLT真实动作解码、训练恢复和计时由已登记流水线继续验证，失败自动回真实RLT。
+已完成：DSRL CPU预热计数/恢复余量/分组梯度检查；两环境训练与恢复smoke；RLT
+两环境配置、模型维度、规范化、梯度、worker导入及foreach EMA CPU逐位检查；
+RLT真实动作解码、训练恢复和生产更新计时。各阶段保留失败回真实RLT的原调度。
 
 ## 实测与修复记录
 
@@ -125,10 +125,13 @@ RLT真实动作解码、训练恢复和计时由已登记流水线继续验证�
   推理的最大差异均为0。成功率来自小规模参考策略检查，不是训练后的RLT成绩。
 - DSRL恢复：RT2 update_step 48→80，Dojo32→48，两者critic预热计数始终16，
   证明恢复未重复已完成的smoke预热。正式仍是2000，不沿用smoke参数或状态。
-- RT2 RLT恢复：update_step 16→32，回放总转换16→32，完整恢复通过。
+- 两环境 RLT恢复：update_step均16→32，回放总转换均16→32，完整恢复通过。
 - RT2 RLT加速：baseline 17.992 ms、combined18.401 ms、baseline-repeat17.518 ms。
   最大在线/目标参数差异均1.1921e-7，随机与采样顺序一致；组合比更快基线慢约5%，
   正式关闭defer_metrics、fused Adam、foreach EMA。只是SAC更新计时。
+- Dojo RLT加速：baseline10.346 ms、combined11.893 ms、baseline-repeat10.212 ms；
+  组合慢约16.5%。最大在线/目标参数差异均1.1921e-7，随机与采样顺序一致，正式同样关闭。
+  小型RLT更新已仅10–18ms，本次组合没有净收益；本轮没有逐项扩展搜索。
 - RT2 RLT首个smoke因复制actor配置漏了 `rollout.model.model_path=null` 退出。
   修复准备器及CPU断言，6卡预先同步；7卡真实RLT回退后用-r2继续，没有重训token。
 - Dojo RLT首个smoke发现旧回放按actions的T+1长度迭代，而奖励和curr/next_obs仅T条；
@@ -137,6 +140,8 @@ RLT真实动作解码、训练恢复和计时由已登记流水线继续验证�
   RT2完整200步回合因first-done截断不触发该边界；已运行的7卡不为此无效重启，
   当前完整回合和修复后行为一致，新源树及后续重启统一带修复。
 - Ruff lint/format通过；源码补丁逐文件before/after SHA256及轻量结果随提交保留。
+- 实现提交 `29baca378987c1c52f3a493bed1339d8031f3e2e` 已推送至
+  `codex/dsrl-rlt-warmstart-20261106`；最终状态与证据在后续记录提交中补齐。
 
 ## 代码与来源
 

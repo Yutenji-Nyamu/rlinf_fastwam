@@ -1,5 +1,5 @@
 {
-  "time": 1793946443.8793006,
+  "time": 1793947014.5537052,
   "slots": {
     "4": {
       "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-dsrl-clean-g4-r2",
@@ -508,10 +508,10 @@
       "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-rlt-clean-g6-r2",
       "run": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6",
       "status": {
-        "phase": "smoke",
-        "time": 1793946252.0228984,
+        "phase": "formal",
+        "time": 1793946908.1235123,
         "gpu": 6,
-        "started": 1793946252.02289
+        "started": 1793946908.1234596
       },
       "files": {
         "reference-eval.json": {
@@ -540,6 +540,73 @@
             14
           ],
           "scope": "frozen VLA reference; not the trained RLT student"
+        },
+        "selected-acceleration.json": {
+          "selected": "baseline",
+          "speedup": 0.8586767677937633,
+          "scope": "actual RLT SAC update; not end-to-end training throughput",
+          "time": 1793946907.7175944
+        },
+        "rlt-timings.json": {
+          "cases": {
+            "baseline": {
+              "median_seconds": 0.010346185095841065,
+              "samples_seconds": [
+                0.01015510392608121,
+                0.010793947440106422,
+                0.01053726626560092,
+                0.009563163795974106
+              ],
+              "max_param_delta": 0.0,
+              "max_target_param_delta": 0.0,
+              "same_rng_and_replay_order": true,
+              "last_critic_loss": 6.903416942805052e-05,
+              "last_actor_loss": 0.14874909818172455
+            },
+            "combined": {
+              "median_seconds": 0.011892737908056006,
+              "samples_seconds": [
+                0.01104997715447098,
+                0.01186570239951834,
+                0.01191977341659367,
+                0.013113866734784096
+              ],
+              "max_param_delta": 1.1920928955078125e-07,
+              "max_target_param_delta": 1.1920928955078125e-07,
+              "same_rng_and_replay_order": true,
+              "last_critic_loss": 6.903455710016715e-05,
+              "last_actor_loss": 0.1487492909654975
+            },
+            "baseline_repeat": {
+              "median_seconds": 0.010212017747107893,
+              "samples_seconds": [
+                0.010174488241318613,
+                0.010678264719899744,
+                0.010249547252897173,
+                0.01010470575420186
+              ],
+              "max_param_delta": 0.0,
+              "max_target_param_delta": 0.0,
+              "same_rng_and_replay_order": true,
+              "last_critic_loss": 6.903416942805052e-05,
+              "last_actor_loss": 0.14874909818172455
+            }
+          },
+          "measured_updates": 64,
+          "warmup_updates": 4,
+          "batch": 256,
+          "selected": "baseline",
+          "speedup": 0.8586767677937633,
+          "parameter_tolerance": 1e-05,
+          "scope": "actual RLT SAC update; not end-to-end training throughput"
+        },
+        "smoke-complete.json": {
+          "time": 1793946575.9907598,
+          "phase": "smoke"
+        },
+        "smoke_resume-complete.json": {
+          "time": 1793946874.115513,
+          "phase": "smoke_resume"
         },
         "stage1/complete.json": {
           "contract": {
@@ -585,7 +652,10 @@
           "seconds": 8.873019218444824
         }
       },
-      "checkpoints": []
+      "checkpoints": [
+        "smoke_resume/smoke_resume/checkpoints/global_step_2",
+        "smoke/smoke/checkpoints/global_step_1"
+      ]
     },
     "7": {
       "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-rlt-clean-g7-r2",
@@ -721,6 +791,6 @@
       ]
     }
   },
-  "disk_free_gib": 310.05,
-  "gpu": "4, 0 %, 33257 MiB\n5, 0 %, 34847 MiB\n6, 0 %, 19789 MiB\n7, 0 %, 11487 MiB\n"
+  "disk_free_gib": 309.9,
+  "gpu": "4, 38 %, 37783 MiB\n5, 57 %, 49822 MiB\n6, 0 %, 10599 MiB\n7, 0 %, 18565 MiB\n"
 }

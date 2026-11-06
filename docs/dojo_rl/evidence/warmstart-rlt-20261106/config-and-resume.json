@@ -1,1 +1,645 @@
-{"time": 1793946386.7933052, "slots": {"4": {"deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-dsrl-clean-g4-r2", "method": "dsrl", "config": {"algorithm": {"normalize_advantages": false, "kl_penalty": "kl", "group_size": 1, "reward_coef": 1.0, "reward_type": "chunk_level", "logprob_type": "chunk_level", "entropy_type": "token_level", "update_epoch": 1, "utd_ratio": 20, "adv_type": "embodied_sac", "loss_type": "embodied_sac", "loss_agg_func": "token-mean", "agg_q": "mean", "actor_agg_q": "mean", "backup_entropy": false, "critic_subsample_size": 0, "critic_actor_ratio": 2, "bootstrap_type": "standard", "gamma": 0.999, "tau": 0.005, "entropy_tuning": {"alpha_type": "softplus", "initial_alpha": 0.02, "target_entropy": -800.0, "optim": {"lr": 0.0003, "lr_scheduler": "torch_constant", "clip_grad": 10.0, "fused": true}}, "replay_buffer": {"type": "dsrl_transition", "schema_version": 3, "capacity": 25000, "warmup_size": 2000, "min_buffer_size": 1, "enable_preload": false}, "target_update_freq": 1, "target_update_type": "all", "filter_rewards": false, "rewards_lower_bound": 0.1, "rewards_upper_bound": 0.9, "dsrl_u": {"enabled": false, "spec": null, "temperature": 2.5, "log_eps": 1e-12, "minmax_eps": 1e-06}, "dsrl_critic_warmup_updates": 2000}, "actor_model": {"model_type": "openpi", "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab", "precision": null, "num_action_chunks": 20, "action_dim": 14, "is_lora": false, "lora_rank": 32, "use_proprio": true, "num_steps": 10, "add_value_head": false, "openpi": {"config_name": "pi05_sidney_robotwin", "num_images_in_input": 3, "noise_level": 0.5, "action_chunk": 20, "num_steps": 10, "train_expert_only": true, "action_env_dim": 14, "noise_method": "flow_ode", "add_value_head": false, "detach_critic_input": true, "use_dsrl": true, "dsrl_state_dim": 14, "dsrl_action_noise_dim": 1600, "dsrl_num_q_heads": 10, "dsrl_agg_q": "mean", "dsrl_image_latent_dim": 64, "dsrl_state_latent_dim": 64, "dsrl_hidden_dims": [128, 128, 128], "action_horizon": 50, "rtc_enabled": false, "dsrl_gaussian_warmup": true, "dsrl_eval_deterministic": false, "dsrl_u_enabled": false, "dsrl_u_spec": null, "dsrl_full_noise": true, "dsrl_fp32_small": true, "dsrl_noise_bound": 2.0, "dsrl_vectorized_q": true, "dsrl_compile_q": true, "dsrl_noise_groups": 50, "dsrl_compile_q_mode": "reduce-overhead"}, "add_q_head": true, "q_head_type": "default", "openpi_data": {"repo_id": "SidneyXie/pi05_robotwin", "norm_stats_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json", "default_prompt": "turn on the switch"}}, "actor_optim": {"lr": 0.0001, "adam_beta1": 0.9, "adam_beta2": 0.96, "adam_eps": 1e-08, "clip_grad": 3.5, "fused": true}, "batch": 256, "acceleration": {"defer_metrics": true, "foreach_target_update": false}, "eval_episodes": 12, "max_steps": 400}, "checkpoints": [{"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-dsrl-clean-g4/smoke/smoke/checkpoints/global_step_1", "state": {"schema_version": 1, "rank": 0, "world_size": 1, "update_step": 48, "policy_phase": 1, "pending_local_new_transitions": 0, "flat_replay": true, "dsrl_critic_warmup_done": 16}}, {"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-dsrl-clean-g4/smoke_resume/smoke_resume/checkpoints/global_step_2", "state": {"schema_version": 1, "rank": 0, "world_size": 1, "update_step": 80, "policy_phase": 1, "pending_local_new_transitions": 0, "flat_replay": true, "dsrl_critic_warmup_done": 16}}]}, "5": {"deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-dsrl-clean-g5-r2", "method": "dsrl", "config": {"algorithm": {"normalize_advantages": false, "kl_penalty": "kl", "group_size": 1, "reward_coef": 1.0, "reward_type": "chunk_level", "logprob_type": "chunk_level", "entropy_type": "token_level", "update_epoch": 1, "utd_ratio": 20, "adv_type": "embodied_sac", "loss_type": "embodied_sac", "loss_agg_func": "token-mean", "agg_q": "mean", "actor_agg_q": "mean", "backup_entropy": false, "critic_subsample_size": 0, "critic_actor_ratio": 2, "bootstrap_type": "standard", "gamma": 0.999, "tau": 0.005, "entropy_tuning": {"alpha_type": "softplus", "initial_alpha": 0.02, "target_entropy": -800.0, "optim": {"lr": 0.0003, "lr_scheduler": "torch_constant", "clip_grad": 10.0, "fused": true}}, "replay_buffer": {"type": "dsrl_transition", "schema_version": 3, "capacity": 25000, "warmup_size": 2000, "min_buffer_size": 1, "enable_preload": false}, "target_update_freq": 1, "target_update_type": "all", "filter_rewards": false, "rewards_lower_bound": 0.1, "rewards_upper_bound": 0.9, "dsrl_critic_warmup_updates": 2000}, "actor_model": {"model_type": "openpi", "model_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch", "precision": null, "num_action_chunks": 50, "action_dim": 14, "is_lora": false, "lora_rank": 32, "use_proprio": true, "num_steps": 10, "add_value_head": false, "openpi": {"config_name": "pi05_robodojo", "num_images_in_input": 3, "noise_level": 0.5, "action_chunk": 50, "num_steps": 10, "train_expert_only": true, "action_env_dim": 14, "noise_method": "flow_ode", "add_value_head": false, "detach_critic_input": true, "use_dsrl": true, "dsrl_state_dim": 14, "dsrl_action_noise_dim": 1600, "dsrl_num_q_heads": 10, "dsrl_agg_q": "mean", "dsrl_image_latent_dim": 64, "dsrl_state_latent_dim": 64, "dsrl_hidden_dims": [128, 128, 128], "action_horizon": 50, "rtc_enabled": false, "dsrl_gaussian_warmup": true, "dsrl_eval_deterministic": false, "dsrl_full_noise": true, "dsrl_fp32_small": true, "dsrl_noise_bound": 2.0, "dsrl_vectorized_q": true, "dsrl_compile_q": false, "dsrl_noise_groups": 50, "dsrl_compile_q_mode": "reduce-overhead", "dsrl_u_enabled": false}, "add_q_head": true, "q_head_type": "default", "openpi_data": {"norm_stats_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim/norm_stats.json"}}, "actor_optim": {"lr": 0.0001, "adam_beta1": 0.9, "adam_beta2": 0.96, "adam_eps": 1e-08, "clip_grad": 3.5, "fused": true}, "batch": 256, "acceleration": {"defer_metrics": true, "foreach_target_update": true}, "eval_episodes": 32, "max_steps": 400}, "checkpoints": [{"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-dsrl-clean-g5/smoke/smoke/checkpoints/global_step_1", "state": {"schema_version": 1, "rank": 0, "world_size": 1, "update_step": 32, "policy_phase": 1, "pending_local_new_transitions": 0, "flat_replay": true, "dsrl_critic_warmup_done": 16}}, {"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-dsrl-clean-g5/smoke_resume/smoke_resume/checkpoints/global_step_2", "state": {"schema_version": 1, "rank": 0, "world_size": 1, "update_step": 48, "policy_phase": 1, "pending_local_new_transitions": 0, "flat_replay": true, "dsrl_critic_warmup_done": 16}}]}, "6": {"deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-rlt-clean-g6-r2", "method": "rlt", "config": {"algorithm": {"update_epoch": 5, "group_size": 1, "adv_type": "embodied_sac", "loss_type": "rlt_ac", "loss_agg_func": "token-mean", "agg_q": "min", "actor_agg_q": "q1", "enable_drq": false, "q_head_type": "default", "bootstrap_type": "standard", "gamma": 0.999, "tau": 0.005, "rlt_route": {"type": "full_task"}, "rlt_transition_replay": {"enable": true, "compact": true, "bootstrap_on_truncation": true}, "rlt_schedule": {"enable": true, "max_updates_per_train_step": 1600, "warmup_min_size": 2000, "warmup_post_collect_updates": 5000, "train_every_episodes": 0, "train_every_transitions": 1}, "q_weight": 1.0, "bc_weight": 1.0, "reference_dropout_prob": 0.5, "actor_weight_schedule": {"enable": true, "warmup_updates": 5000, "ramp_updates": 10000, "warmup_bc_weight": 7.0, "warmup_q_weight": 0.05, "online_bc_weight": 2.5, "online_q_weight": 0.45}, "entropy_tuning": {"alpha_type": "fixed_alpha", "initial_alpha": 0.0, "optim": {"lr": 0.0003, "lr_scheduler": "torch_constant", "clip_grad": 10.0}}, "replay_buffer": {"enable_cache": true, "cache_size": 80000, "sample_window_size": 80000, "min_buffer_size": 1, "auto_save": false}, "target_update_freq": 1, "target_update_type": "all", "critic_actor_ratio": 2, "critic_subsample_size": 0, "backup_entropy": false, "rlt_resume": {"enable": true, "schema_version": 1, "contract": {"base_source": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc", "model_identity": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch", "config_name": "pi05_robodojo", "reconstruction": "current_causal_ar", "stage1_token_path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt", "stage1_token_sha256": "pending_stage1", "norm_stats_sha256": "ad7dea3e3d2bcdb348945fe03422ab1adccd03baf67318b1a1d153dfe8694db5", "train_vla": false, "prefix_seq_len": 768, "image_only": true, "use_mask": true, "z_dim": 2048, "action_horizon": 50, "action_chunk": 50, "action_dim": 14, "canonical_adapter_version": "robodojo_aloha_delta_v1", "route": "full_task", "replay": "compact_transition", "bootstrap": "pure_truncation_only", "gamma_per_physics_step": 0.999, "warmup_transitions": 2000, "warmup_updates": 5000}}, "rlt_dvac": {"mode": "off"}, "dv_observe": false}, "actor_model": {"model_type": "rlt_mlp_policy", "precision": "fp32", "z_dim": 2048, "proprio_dim": 14, "action_dim": 14, "num_action_chunks": 50, "ref_num_action_chunks": 50, "add_value_head": false, "add_q_head": true, "q_head_type": "default", "fixed_std": 0.002, "is_lora": false, "lora_rank": 32, "output_activation": "identity"}, "actor_optim": {"clip_grad": 10.0, "lr": 0.0001, "lr_scheduler": "torch_constant", "fused": true}, "batch": 256, "acceleration": {"defer_metrics": true, "foreach_target_update": true}, "eval_episodes": 32, "max_steps": 400}, "checkpoints": []}, "7": {"deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-rlt-clean-g7-r2", "method": "rlt", "config": {"algorithm": {"update_epoch": 5, "group_size": 1, "adv_type": "embodied_sac", "loss_type": "rlt_ac", "loss_agg_func": "token-mean", "agg_q": "min", "actor_agg_q": "q1", "enable_drq": false, "q_head_type": "default", "bootstrap_type": "standard", "gamma": 0.999, "tau": 0.005, "rlt_route": {"type": "full_task"}, "rlt_transition_replay": {"enable": true, "compact": true, "bootstrap_on_truncation": true}, "rlt_schedule": {"enable": true, "max_updates_per_train_step": 1600, "warmup_min_size": 2000, "warmup_post_collect_updates": 5000, "train_every_episodes": 0, "train_every_transitions": 1}, "q_weight": 1.0, "bc_weight": 1.0, "reference_dropout_prob": 0.5, "actor_weight_schedule": {"enable": true, "warmup_updates": 5000, "ramp_updates": 10000, "warmup_bc_weight": 7.0, "warmup_q_weight": 0.05, "online_bc_weight": 2.5, "online_q_weight": 0.45}, "entropy_tuning": {"alpha_type": "fixed_alpha", "initial_alpha": 0.0, "optim": {"lr": 0.0003, "lr_scheduler": "torch_constant", "clip_grad": 10.0}}, "replay_buffer": {"enable_cache": true, "cache_size": 80000, "sample_window_size": 80000, "min_buffer_size": 1, "auto_save": false}, "target_update_freq": 1, "target_update_type": "all", "critic_actor_ratio": 2, "critic_subsample_size": 0, "backup_entropy": false, "rlt_resume": {"enable": true, "schema_version": 1, "contract": {"base_source": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc", "model_identity": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab", "config_name": "pi05_sidney_robotwin", "reconstruction": "current_causal_ar", "stage1_token_path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt", "stage1_token_sha256": "b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58", "norm_stats_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf", "train_vla": false, "prefix_seq_len": 768, "image_only": true, "use_mask": true, "z_dim": 2048, "action_horizon": 50, "action_chunk": 20, "action_dim": 14, "canonical_adapter_version": "robotwin_aloha_canonical_v1", "route": "full_task", "replay": "compact_transition", "bootstrap": "pure_truncation_only", "gamma_per_physics_step": 0.999, "warmup_transitions": 2000, "warmup_updates": 5000}}, "rlt_dvac": {"mode": "off"}, "dv_observe": false}, "actor_model": {"model_type": "rlt_mlp_policy", "precision": "fp32", "z_dim": 2048, "proprio_dim": 14, "action_dim": 14, "num_action_chunks": 20, "ref_num_action_chunks": 20, "add_value_head": false, "add_q_head": true, "q_head_type": "default", "fixed_std": 0.002, "is_lora": false, "lora_rank": 32, "output_activation": "identity"}, "actor_optim": {"clip_grad": 10.0, "lr": 0.0001, "lr_scheduler": "torch_constant", "fused": false}, "batch": 256, "acceleration": {"defer_metrics": false, "foreach_target_update": false}, "eval_episodes": 12, "max_steps": 400}, "checkpoints": [{"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/smoke/smoke/checkpoints/global_step_1", "state": {"schema_version": 1, "rank": 0, "actor_world_size": 1, "saved_runner_step": 1, "rlt_resume_contract": "{\"action_chunk\":20,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robotwin_aloha_canonical_v1\",\"config_name\":\"pi05_sidney_robotwin\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\",\"norm_stats_sha256\":\"dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt\",\"stage1_token_sha256\":\"b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}", "rlt_resume_contract_sha256": "5bcdc18695dcb4fb2f3e2db87674bee59ca11d66ab3c7a80e9e4864bc3c4ddd9", "update_step": 16, "local_total_transitions_added": 16, "local_total_episodes_added": 8, "global_warmup_ready_total_transitions": 16, "global_warmup_ready_total_episodes": 8, "rlt_dvac_baseline": null}}, {"path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/smoke_resume/smoke_resume/checkpoints/global_step_2", "state": {"schema_version": 1, "rank": 0, "actor_world_size": 1, "saved_runner_step": 2, "rlt_resume_contract": "{\"action_chunk\":20,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robotwin_aloha_canonical_v1\",\"config_name\":\"pi05_sidney_robotwin\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\",\"norm_stats_sha256\":\"dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt\",\"stage1_token_sha256\":\"b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}", "rlt_resume_contract_sha256": "5bcdc18695dcb4fb2f3e2db87674bee59ca11d66ab3c7a80e9e4864bc3c4ddd9", "update_step": 32, "local_total_transitions_added": 32, "local_total_episodes_added": 16, "global_warmup_ready_total_transitions": 16, "global_warmup_ready_total_episodes": 8, "rlt_dvac_baseline": null}}]}}}
+{
+  "time": 1793947253.7500665,
+  "slots": {
+    "4": {
+      "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-dsrl-clean-g4-r2",
+      "method": "dsrl",
+      "config": {
+        "algorithm": {
+          "normalize_advantages": false,
+          "kl_penalty": "kl",
+          "group_size": 1,
+          "reward_coef": 1.0,
+          "reward_type": "chunk_level",
+          "logprob_type": "chunk_level",
+          "entropy_type": "token_level",
+          "update_epoch": 1,
+          "utd_ratio": 20,
+          "adv_type": "embodied_sac",
+          "loss_type": "embodied_sac",
+          "loss_agg_func": "token-mean",
+          "agg_q": "mean",
+          "actor_agg_q": "mean",
+          "backup_entropy": false,
+          "critic_subsample_size": 0,
+          "critic_actor_ratio": 2,
+          "bootstrap_type": "standard",
+          "gamma": 0.999,
+          "tau": 0.005,
+          "entropy_tuning": {
+            "alpha_type": "softplus",
+            "initial_alpha": 0.02,
+            "target_entropy": -800.0,
+            "optim": {
+              "lr": 0.0003,
+              "lr_scheduler": "torch_constant",
+              "clip_grad": 10.0,
+              "fused": true
+            }
+          },
+          "replay_buffer": {
+            "type": "dsrl_transition",
+            "schema_version": 3,
+            "capacity": 25000,
+            "warmup_size": 2000,
+            "min_buffer_size": 1,
+            "enable_preload": false
+          },
+          "target_update_freq": 1,
+          "target_update_type": "all",
+          "filter_rewards": false,
+          "rewards_lower_bound": 0.1,
+          "rewards_upper_bound": 0.9,
+          "dsrl_u": {
+            "enabled": false,
+            "spec": null,
+            "temperature": 2.5,
+            "log_eps": 1e-12,
+            "minmax_eps": 1e-06
+          },
+          "dsrl_critic_warmup_updates": 2000
+        },
+        "actor_model": {
+          "model_type": "openpi",
+          "model_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+          "precision": null,
+          "num_action_chunks": 20,
+          "action_dim": 14,
+          "is_lora": false,
+          "lora_rank": 32,
+          "use_proprio": true,
+          "num_steps": 10,
+          "add_value_head": false,
+          "openpi": {
+            "config_name": "pi05_sidney_robotwin",
+            "num_images_in_input": 3,
+            "noise_level": 0.5,
+            "action_chunk": 20,
+            "num_steps": 10,
+            "train_expert_only": true,
+            "action_env_dim": 14,
+            "noise_method": "flow_ode",
+            "add_value_head": false,
+            "detach_critic_input": true,
+            "use_dsrl": true,
+            "dsrl_state_dim": 14,
+            "dsrl_action_noise_dim": 1600,
+            "dsrl_num_q_heads": 10,
+            "dsrl_agg_q": "mean",
+            "dsrl_image_latent_dim": 64,
+            "dsrl_state_latent_dim": 64,
+            "dsrl_hidden_dims": [
+              128,
+              128,
+              128
+            ],
+            "action_horizon": 50,
+            "rtc_enabled": false,
+            "dsrl_gaussian_warmup": true,
+            "dsrl_eval_deterministic": false,
+            "dsrl_u_enabled": false,
+            "dsrl_u_spec": null,
+            "dsrl_full_noise": true,
+            "dsrl_fp32_small": true,
+            "dsrl_noise_bound": 2.0,
+            "dsrl_vectorized_q": true,
+            "dsrl_compile_q": true,
+            "dsrl_noise_groups": 50,
+            "dsrl_compile_q_mode": "reduce-overhead"
+          },
+          "add_q_head": true,
+          "q_head_type": "default",
+          "openpi_data": {
+            "repo_id": "SidneyXie/pi05_robotwin",
+            "norm_stats_path": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json",
+            "default_prompt": "turn on the switch"
+          }
+        },
+        "actor_optim": {
+          "lr": 0.0001,
+          "adam_beta1": 0.9,
+          "adam_beta2": 0.96,
+          "adam_eps": 1e-08,
+          "clip_grad": 3.5,
+          "fused": true
+        },
+        "batch": 256,
+        "acceleration": {
+          "defer_metrics": true,
+          "foreach_target_update": false
+        },
+        "eval_episodes": 12,
+        "max_steps": 400
+      },
+      "checkpoints": [
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-dsrl-clean-g4/smoke/smoke/checkpoints/global_step_1",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "world_size": 1,
+            "update_step": 48,
+            "policy_phase": 1,
+            "pending_local_new_transitions": 0,
+            "flat_replay": true,
+            "dsrl_critic_warmup_done": 16
+          }
+        },
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-dsrl-clean-g4/smoke_resume/smoke_resume/checkpoints/global_step_2",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "world_size": 1,
+            "update_step": 80,
+            "policy_phase": 1,
+            "pending_local_new_transitions": 0,
+            "flat_replay": true,
+            "dsrl_critic_warmup_done": 16
+          }
+        }
+      ]
+    },
+    "5": {
+      "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-dsrl-clean-g5-r2",
+      "method": "dsrl",
+      "config": {
+        "algorithm": {
+          "normalize_advantages": false,
+          "kl_penalty": "kl",
+          "group_size": 1,
+          "reward_coef": 1.0,
+          "reward_type": "chunk_level",
+          "logprob_type": "chunk_level",
+          "entropy_type": "token_level",
+          "update_epoch": 1,
+          "utd_ratio": 20,
+          "adv_type": "embodied_sac",
+          "loss_type": "embodied_sac",
+          "loss_agg_func": "token-mean",
+          "agg_q": "mean",
+          "actor_agg_q": "mean",
+          "backup_entropy": false,
+          "critic_subsample_size": 0,
+          "critic_actor_ratio": 2,
+          "bootstrap_type": "standard",
+          "gamma": 0.999,
+          "tau": 0.005,
+          "entropy_tuning": {
+            "alpha_type": "softplus",
+            "initial_alpha": 0.02,
+            "target_entropy": -800.0,
+            "optim": {
+              "lr": 0.0003,
+              "lr_scheduler": "torch_constant",
+              "clip_grad": 10.0,
+              "fused": true
+            }
+          },
+          "replay_buffer": {
+            "type": "dsrl_transition",
+            "schema_version": 3,
+            "capacity": 25000,
+            "warmup_size": 2000,
+            "min_buffer_size": 1,
+            "enable_preload": false
+          },
+          "target_update_freq": 1,
+          "target_update_type": "all",
+          "filter_rewards": false,
+          "rewards_lower_bound": 0.1,
+          "rewards_upper_bound": 0.9,
+          "dsrl_critic_warmup_updates": 2000
+        },
+        "actor_model": {
+          "model_type": "openpi",
+          "model_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch",
+          "precision": null,
+          "num_action_chunks": 50,
+          "action_dim": 14,
+          "is_lora": false,
+          "lora_rank": 32,
+          "use_proprio": true,
+          "num_steps": 10,
+          "add_value_head": false,
+          "openpi": {
+            "config_name": "pi05_robodojo",
+            "num_images_in_input": 3,
+            "noise_level": 0.5,
+            "action_chunk": 50,
+            "num_steps": 10,
+            "train_expert_only": true,
+            "action_env_dim": 14,
+            "noise_method": "flow_ode",
+            "add_value_head": false,
+            "detach_critic_input": true,
+            "use_dsrl": true,
+            "dsrl_state_dim": 14,
+            "dsrl_action_noise_dim": 1600,
+            "dsrl_num_q_heads": 10,
+            "dsrl_agg_q": "mean",
+            "dsrl_image_latent_dim": 64,
+            "dsrl_state_latent_dim": 64,
+            "dsrl_hidden_dims": [
+              128,
+              128,
+              128
+            ],
+            "action_horizon": 50,
+            "rtc_enabled": false,
+            "dsrl_gaussian_warmup": true,
+            "dsrl_eval_deterministic": false,
+            "dsrl_full_noise": true,
+            "dsrl_fp32_small": true,
+            "dsrl_noise_bound": 2.0,
+            "dsrl_vectorized_q": true,
+            "dsrl_compile_q": false,
+            "dsrl_noise_groups": 50,
+            "dsrl_compile_q_mode": "reduce-overhead",
+            "dsrl_u_enabled": false
+          },
+          "add_q_head": true,
+          "q_head_type": "default",
+          "openpi_data": {
+            "norm_stats_path": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch/assets/arx_x5_sim/norm_stats.json"
+          }
+        },
+        "actor_optim": {
+          "lr": 0.0001,
+          "adam_beta1": 0.9,
+          "adam_beta2": 0.96,
+          "adam_eps": 1e-08,
+          "clip_grad": 3.5,
+          "fused": true
+        },
+        "batch": 256,
+        "acceleration": {
+          "defer_metrics": true,
+          "foreach_target_update": true
+        },
+        "eval_episodes": 32,
+        "max_steps": 400
+      },
+      "checkpoints": [
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-dsrl-clean-g5/smoke/smoke/checkpoints/global_step_1",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "world_size": 1,
+            "update_step": 32,
+            "policy_phase": 1,
+            "pending_local_new_transitions": 0,
+            "flat_replay": true,
+            "dsrl_critic_warmup_done": 16
+          }
+        },
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-dsrl-clean-g5/smoke_resume/smoke_resume/checkpoints/global_step_2",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "world_size": 1,
+            "update_step": 48,
+            "policy_phase": 1,
+            "pending_local_new_transitions": 0,
+            "flat_replay": true,
+            "dsrl_critic_warmup_done": 16
+          }
+        }
+      ]
+    },
+    "6": {
+      "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-rlt-clean-g6-r2",
+      "method": "rlt",
+      "config": {
+        "algorithm": {
+          "update_epoch": 5,
+          "group_size": 1,
+          "adv_type": "embodied_sac",
+          "loss_type": "rlt_ac",
+          "loss_agg_func": "token-mean",
+          "agg_q": "min",
+          "actor_agg_q": "q1",
+          "enable_drq": false,
+          "q_head_type": "default",
+          "bootstrap_type": "standard",
+          "gamma": 0.999,
+          "tau": 0.005,
+          "rlt_route": {
+            "type": "full_task"
+          },
+          "rlt_transition_replay": {
+            "enable": true,
+            "compact": true,
+            "bootstrap_on_truncation": true
+          },
+          "rlt_schedule": {
+            "enable": true,
+            "max_updates_per_train_step": 1600,
+            "warmup_min_size": 2000,
+            "warmup_post_collect_updates": 5000,
+            "train_every_episodes": 0,
+            "train_every_transitions": 1
+          },
+          "q_weight": 1.0,
+          "bc_weight": 1.0,
+          "reference_dropout_prob": 0.5,
+          "actor_weight_schedule": {
+            "enable": true,
+            "warmup_updates": 5000,
+            "ramp_updates": 10000,
+            "warmup_bc_weight": 7.0,
+            "warmup_q_weight": 0.05,
+            "online_bc_weight": 2.5,
+            "online_q_weight": 0.45
+          },
+          "entropy_tuning": {
+            "alpha_type": "fixed_alpha",
+            "initial_alpha": 0.0,
+            "optim": {
+              "lr": 0.0003,
+              "lr_scheduler": "torch_constant",
+              "clip_grad": 10.0
+            }
+          },
+          "replay_buffer": {
+            "enable_cache": true,
+            "cache_size": 80000,
+            "sample_window_size": 80000,
+            "min_buffer_size": 1,
+            "auto_save": false
+          },
+          "target_update_freq": 1,
+          "target_update_type": "all",
+          "critic_actor_ratio": 2,
+          "critic_subsample_size": 0,
+          "backup_entropy": false,
+          "rlt_resume": {
+            "enable": true,
+            "schema_version": 1,
+            "contract": {
+              "base_source": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc",
+              "model_identity": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch",
+              "config_name": "pi05_robodojo",
+              "reconstruction": "current_causal_ar",
+              "stage1_token_path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt",
+              "stage1_token_sha256": "22e8db6b73e14f5d79f4772159af4d2574dbb272971ab4844a60108fbff6ff95",
+              "norm_stats_sha256": "ad7dea3e3d2bcdb348945fe03422ab1adccd03baf67318b1a1d153dfe8694db5",
+              "train_vla": false,
+              "prefix_seq_len": 768,
+              "image_only": true,
+              "use_mask": true,
+              "z_dim": 2048,
+              "action_horizon": 50,
+              "action_chunk": 50,
+              "action_dim": 14,
+              "canonical_adapter_version": "robodojo_aloha_delta_v1",
+              "route": "full_task",
+              "replay": "compact_transition",
+              "bootstrap": "pure_truncation_only",
+              "gamma_per_physics_step": 0.999,
+              "warmup_transitions": 2000,
+              "warmup_updates": 5000
+            }
+          },
+          "rlt_dvac": {
+            "mode": "off"
+          },
+          "dv_observe": false
+        },
+        "actor_model": {
+          "model_type": "rlt_mlp_policy",
+          "precision": "fp32",
+          "z_dim": 2048,
+          "proprio_dim": 14,
+          "action_dim": 14,
+          "num_action_chunks": 50,
+          "ref_num_action_chunks": 50,
+          "add_value_head": false,
+          "add_q_head": true,
+          "q_head_type": "default",
+          "fixed_std": 0.002,
+          "is_lora": false,
+          "lora_rank": 32,
+          "output_activation": "identity"
+        },
+        "actor_optim": {
+          "clip_grad": 10.0,
+          "lr": 0.0001,
+          "lr_scheduler": "torch_constant",
+          "fused": false
+        },
+        "batch": 256,
+        "acceleration": {
+          "defer_metrics": false,
+          "foreach_target_update": false
+        },
+        "eval_episodes": 32,
+        "max_steps": 400
+      },
+      "checkpoints": [
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/smoke/smoke/checkpoints/global_step_1",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "actor_world_size": 1,
+            "saved_runner_step": 1,
+            "rlt_resume_contract": "{\"action_chunk\":50,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robodojo_aloha_delta_v1\",\"config_name\":\"pi05_robodojo\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch\",\"norm_stats_sha256\":\"ad7dea3e3d2bcdb348945fe03422ab1adccd03baf67318b1a1d153dfe8694db5\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt\",\"stage1_token_sha256\":\"22e8db6b73e14f5d79f4772159af4d2574dbb272971ab4844a60108fbff6ff95\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}",
+            "rlt_resume_contract_sha256": "7c6de0e5121f16ed2f9c97bc05780414d178fe6995a09749119f89361f985cb6",
+            "update_step": 16,
+            "local_total_transitions_added": 16,
+            "local_total_episodes_added": 0,
+            "global_warmup_ready_total_transitions": 16,
+            "global_warmup_ready_total_episodes": 0,
+            "rlt_dvac_baseline": null
+          }
+        },
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/smoke_resume/smoke_resume/checkpoints/global_step_2",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "actor_world_size": 1,
+            "saved_runner_step": 2,
+            "rlt_resume_contract": "{\"action_chunk\":50,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robodojo_aloha_delta_v1\",\"config_name\":\"pi05_robodojo\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch\",\"norm_stats_sha256\":\"ad7dea3e3d2bcdb348945fe03422ab1adccd03baf67318b1a1d153dfe8694db5\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt\",\"stage1_token_sha256\":\"22e8db6b73e14f5d79f4772159af4d2574dbb272971ab4844a60108fbff6ff95\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}",
+            "rlt_resume_contract_sha256": "7c6de0e5121f16ed2f9c97bc05780414d178fe6995a09749119f89361f985cb6",
+            "update_step": 32,
+            "local_total_transitions_added": 32,
+            "local_total_episodes_added": 0,
+            "global_warmup_ready_total_transitions": 16,
+            "global_warmup_ready_total_episodes": 0,
+            "rlt_dvac_baseline": null
+          }
+        }
+      ]
+    },
+    "7": {
+      "deployment": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/rt2-rlt-clean-g7-r2",
+      "method": "rlt",
+      "config": {
+        "algorithm": {
+          "update_epoch": 5,
+          "group_size": 1,
+          "adv_type": "embodied_sac",
+          "loss_type": "rlt_ac",
+          "loss_agg_func": "token-mean",
+          "agg_q": "min",
+          "actor_agg_q": "q1",
+          "enable_drq": false,
+          "q_head_type": "default",
+          "bootstrap_type": "standard",
+          "gamma": 0.999,
+          "tau": 0.005,
+          "rlt_route": {
+            "type": "full_task"
+          },
+          "rlt_transition_replay": {
+            "enable": true,
+            "compact": true,
+            "bootstrap_on_truncation": true
+          },
+          "rlt_schedule": {
+            "enable": true,
+            "max_updates_per_train_step": 1600,
+            "warmup_min_size": 2000,
+            "warmup_post_collect_updates": 5000,
+            "train_every_episodes": 0,
+            "train_every_transitions": 1
+          },
+          "q_weight": 1.0,
+          "bc_weight": 1.0,
+          "reference_dropout_prob": 0.5,
+          "actor_weight_schedule": {
+            "enable": true,
+            "warmup_updates": 5000,
+            "ramp_updates": 10000,
+            "warmup_bc_weight": 7.0,
+            "warmup_q_weight": 0.05,
+            "online_bc_weight": 2.5,
+            "online_q_weight": 0.45
+          },
+          "entropy_tuning": {
+            "alpha_type": "fixed_alpha",
+            "initial_alpha": 0.0,
+            "optim": {
+              "lr": 0.0003,
+              "lr_scheduler": "torch_constant",
+              "clip_grad": 10.0
+            }
+          },
+          "replay_buffer": {
+            "enable_cache": true,
+            "cache_size": 80000,
+            "sample_window_size": 80000,
+            "min_buffer_size": 1,
+            "auto_save": false
+          },
+          "target_update_freq": 1,
+          "target_update_type": "all",
+          "critic_actor_ratio": 2,
+          "critic_subsample_size": 0,
+          "backup_entropy": false,
+          "rlt_resume": {
+            "enable": true,
+            "schema_version": 1,
+            "contract": {
+              "base_source": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc",
+              "model_identity": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+              "config_name": "pi05_sidney_robotwin",
+              "reconstruction": "current_causal_ar",
+              "stage1_token_path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt",
+              "stage1_token_sha256": "b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58",
+              "norm_stats_sha256": "dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf",
+              "train_vla": false,
+              "prefix_seq_len": 768,
+              "image_only": true,
+              "use_mask": true,
+              "z_dim": 2048,
+              "action_horizon": 50,
+              "action_chunk": 20,
+              "action_dim": 14,
+              "canonical_adapter_version": "robotwin_aloha_canonical_v1",
+              "route": "full_task",
+              "replay": "compact_transition",
+              "bootstrap": "pure_truncation_only",
+              "gamma_per_physics_step": 0.999,
+              "warmup_transitions": 2000,
+              "warmup_updates": 5000
+            }
+          },
+          "rlt_dvac": {
+            "mode": "off"
+          },
+          "dv_observe": false
+        },
+        "actor_model": {
+          "model_type": "rlt_mlp_policy",
+          "precision": "fp32",
+          "z_dim": 2048,
+          "proprio_dim": 14,
+          "action_dim": 14,
+          "num_action_chunks": 20,
+          "ref_num_action_chunks": 20,
+          "add_value_head": false,
+          "add_q_head": true,
+          "q_head_type": "default",
+          "fixed_std": 0.002,
+          "is_lora": false,
+          "lora_rank": 32,
+          "output_activation": "identity"
+        },
+        "actor_optim": {
+          "clip_grad": 10.0,
+          "lr": 0.0001,
+          "lr_scheduler": "torch_constant",
+          "fused": false
+        },
+        "batch": 256,
+        "acceleration": {
+          "defer_metrics": false,
+          "foreach_target_update": false
+        },
+        "eval_episodes": 12,
+        "max_steps": 400
+      },
+      "checkpoints": [
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/smoke/smoke/checkpoints/global_step_1",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "actor_world_size": 1,
+            "saved_runner_step": 1,
+            "rlt_resume_contract": "{\"action_chunk\":20,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robotwin_aloha_canonical_v1\",\"config_name\":\"pi05_sidney_robotwin\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\",\"norm_stats_sha256\":\"dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt\",\"stage1_token_sha256\":\"b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}",
+            "rlt_resume_contract_sha256": "5bcdc18695dcb4fb2f3e2db87674bee59ca11d66ab3c7a80e9e4864bc3c4ddd9",
+            "update_step": 16,
+            "local_total_transitions_added": 16,
+            "local_total_episodes_added": 8,
+            "global_warmup_ready_total_transitions": 16,
+            "global_warmup_ready_total_episodes": 8,
+            "rlt_dvac_baseline": null
+          }
+        },
+        {
+          "path": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/smoke_resume/smoke_resume/checkpoints/global_step_2",
+          "state": {
+            "schema_version": 1,
+            "rank": 0,
+            "actor_world_size": 1,
+            "saved_runner_step": 2,
+            "rlt_resume_contract": "{\"action_chunk\":20,\"action_dim\":14,\"action_horizon\":50,\"base_source\":\"3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc\",\"bootstrap\":\"pure_truncation_only\",\"canonical_adapter_version\":\"robotwin_aloha_canonical_v1\",\"config_name\":\"pi05_sidney_robotwin\",\"gamma_per_physics_step\":0.999,\"image_only\":true,\"model_identity\":\"/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab\",\"norm_stats_sha256\":\"dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf\",\"prefix_seq_len\":768,\"reconstruction\":\"current_causal_ar\",\"replay\":\"compact_transition\",\"route\":\"full_task\",\"stage1_token_path\":\"/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt\",\"stage1_token_sha256\":\"b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58\",\"train_vla\":false,\"use_mask\":true,\"warmup_transitions\":8,\"warmup_updates\":16,\"z_dim\":2048}",
+            "rlt_resume_contract_sha256": "5bcdc18695dcb4fb2f3e2db87674bee59ca11d66ab3c7a80e9e4864bc3c4ddd9",
+            "update_step": 32,
+            "local_total_transitions_added": 32,
+            "local_total_episodes_added": 16,
+            "global_warmup_ready_total_transitions": 16,
+            "global_warmup_ready_total_episodes": 8,
+            "rlt_dvac_baseline": null
+          }
+        }
+      ]
+    }
+  }
+}
