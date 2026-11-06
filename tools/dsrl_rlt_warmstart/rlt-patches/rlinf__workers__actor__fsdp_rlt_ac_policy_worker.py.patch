@@ -1,0 +1,53 @@
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -605,7 +605,7 @@
+         critic_loss = F.mse_loss(
+             all_data_q_values, target_q_values.expand_as(all_data_q_values)
+         )
+-        return critic_loss, {"q_data": all_data_q_values.mean().item()}
++        return critic_loss, {"q_data": self._metric(all_data_q_values.mean())}
+ 
+     @Worker.timer("forward_actor")
+     def forward_actor(self, batch):
+@@ -657,11 +657,11 @@
+ 
+         num_q_values = all_qf_pi.shape[-1]
+         metrics = {
+-            f"q_value_{q_id}": all_qf_pi[..., q_id].mean().item()
++            f"q_value_{q_id}": self._metric(all_qf_pi[..., q_id].mean())
+             for q_id in range(num_q_values)
+         }
+         qf_pi = self._q1(all_qf_pi)
+-        metrics["q_pi"] = qf_pi.mean().item()
++        metrics["q_pi"] = self._metric(qf_pi.mean())
+ 
+         ref_chunk = self._ref_chunk(curr_obs)
+         bc_loss, rlt_metrics = self._bc_metrics(
+@@ -687,8 +687,8 @@
+             .detach()
+             .item()
+         )
+-        metrics["weighted_q"] = (q_weight * qf_pi.mean()).detach().item()
+-        metrics["weighted_bc"] = (bc_weight * bc_loss).detach().item()
++        metrics["weighted_q"] = self._metric(q_weight * qf_pi.mean())
++        metrics["weighted_bc"] = self._metric(bc_weight * bc_loss)
+         metrics["reference_dropout_prob"] = reference_dropout_prob
+ 
+         return actor_loss, entropy, metrics
+@@ -829,9 +829,13 @@
+             dict_fields = ("forward_inputs",)
+         replay_trajectories = []
+         completed_episodes = 0
+-        traj_len = int(trajectory.actions.shape[0])
+-        bsz = int(trajectory.actions.shape[1])
+-        num_rows = int(actions.shape[0])
++        # The final policy query supplies bootstrap features but is not executed.
++        # Rewards and transition observations contain only the executed chunks.
++        traj_len = int(trajectory.rewards.shape[0])
++        bsz = int(trajectory.rewards.shape[1])
++        if trajectory.actions.shape[0] < traj_len or trajectory.actions.shape[1] != bsz:
++            raise ValueError("RLT action/reward trajectory dimensions do not align")
++        num_rows = int(rewards.shape[0])
+         auto_reset = bool(self.cfg.env.train.get("auto_reset", False))
+         episode_success = None
+         if getattr(self, "rlt_dvac_mode", "off") != "off" or self.cfg.algorithm.get("dv_observe", False):

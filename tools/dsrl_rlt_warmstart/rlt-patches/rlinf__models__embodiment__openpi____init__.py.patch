@@ -1,0 +1,40 @@
+--- a/rlinf/models/embodiment/openpi/__init__.py
++++ b/rlinf/models/embodiment/openpi/__init__.py
+@@ -71,11 +71,11 @@
+     if os.path.exists(full_weights_path):
+         # Direct checkpoint directory
+         model_state_dict = torch.load(full_weights_path, map_location="cpu")
+-        model.load_state_dict(model_state_dict, strict=False)
++        load_report = model.load_state_dict(model_state_dict, strict=False)
+     elif os.path.exists(actor_full_weights_path):
+         # Checkpoint directory from runner
+         model_state_dict = torch.load(actor_full_weights_path, map_location="cpu")
+-        model.load_state_dict(model_state_dict, strict=False)
++        load_report = model.load_state_dict(model_state_dict, strict=False)
+     else:
+         # Original model directory with safetensors files
+         weight_paths = sorted(glob.glob(os.path.join(checkpoint_dir, "*.safetensors")))
+@@ -85,7 +85,22 @@
+         for weight_path in weight_paths:
+             state_dict = safetensors.torch.load_file(weight_path, device="cpu")
+             all_state_dict.update(state_dict)
+-        model.load_state_dict(all_state_dict, strict=False)
++        load_report = model.load_state_dict(all_state_dict, strict=False)
++
++    token_path = getattr(actor_model_config, "rlt_token_path", None)
++    if token_path:
++        if not actor_model_config.use_rlt:
++            raise ValueError("A token checkpoint requires use_rlt=True")
++        missing_base = [k for k in load_report.missing_keys if not k.startswith("rlt_module.")]
++        if missing_base or load_report.unexpected_keys:
++            raise ValueError(f"RLT frozen VLA mismatch: {missing_base}, {load_report.unexpected_keys}")
++        token = torch.load(token_path, map_location="cpu", weights_only=False)
++        expected = {"base_model": str(cfg.model_path), "config_name": config_name,
++                    "prefix_seq_len": actor_model_config.rlt_prefix_seq_len,
++                    "embed_dim": actor_model_config.rlt_embed_dim}
++        if token["contract"] != expected:
++            raise ValueError(f"RLT token contract mismatch: {token['contract']} != {expected}")
++        model.rlt_module.load_state_dict(token["model"], strict=True)
+ 
+     model.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+     if actor_model_config.use_rlt and not actor_model_config.rlt_train_vla:

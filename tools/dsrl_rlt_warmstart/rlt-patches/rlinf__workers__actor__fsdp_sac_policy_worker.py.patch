@@ -1,0 +1,114 @@
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -275,6 +275,20 @@
+         assert self.target_model_initialized
+ 
+         with torch.no_grad():
++            if self.cfg.actor.get("foreach_target_update", False) and not hasattr(self, "_target_shadow_f32"):
++                online, target, copy_online, copy_target = [], [], [], []
++                for (name1, a), (name2, b) in zip(self.model.named_parameters(), self.target_model.named_parameters()):
++                    assert name1 == name2
++                    if "q_head" in name1 or self.target_update_type == "all":
++                        online.append(a.data); target.append(b.data)
++                    else:
++                        copy_online.append(a.data); copy_target.append(b.data)
++                if target:
++                    torch._foreach_mul_(target, 1.0 - tau)
++                    torch._foreach_add_(target, torch._foreach_mul(online, tau))
++                if copy_target:
++                    torch._foreach_copy_(copy_target, copy_online)
++                return
+             if not hasattr(self, "_target_shadow_f32"):
+                 # Non-DSRL path (or before shadow init): direct EMA update
+                 for (name1, online_param), (name2, target_param) in zip(
+@@ -587,10 +601,10 @@
+             critic_loss, critic_metrics = self.forward_critic(batch)
+             critic_loss = critic_loss / self.gradient_accumulation
+             critic_loss.backward()
+-            gbs_critic_loss.append(critic_loss.item() * self.gradient_accumulation)
++            gbs_critic_loss.append(self._metric(critic_loss) * self.gradient_accumulation)
+             append_to_dict(all_critic_metrics, critic_metrics)
+         all_critic_metrics = {
+-            f"critic/{key}": np.mean(value) for key, value in all_critic_metrics.items()
++            f"critic/{key}": self._metric_mean(value) for key, value in all_critic_metrics.items()
+         }
+         qf_grad_norm = self.model.clip_grad_norm_(
+             max_norm=self.cfg.actor.critic_optim.clip_grad
+@@ -600,7 +614,7 @@
+         self.qf_lr_scheduler.step()
+ 
+         metrics_data = {
+-            "sac/critic_loss": np.mean(gbs_critic_loss),
++            "sac/critic_loss": self._metric_mean(gbs_critic_loss),
+             "critic/lr": self.qf_optimizer.param_groups[0]["lr"],
+             "critic/grad_norm": qf_grad_norm,
+             **all_critic_metrics,
+@@ -615,11 +629,11 @@
+                 actor_loss, entropy, q_metrics = self.forward_actor(batch)
+                 actor_loss = actor_loss / self.gradient_accumulation
+                 actor_loss.backward()
+-                gbs_actor_loss.append(actor_loss.item() * self.gradient_accumulation)
+-                gbs_entropy.append(entropy.item())
++                gbs_actor_loss.append(self._metric(actor_loss) * self.gradient_accumulation)
++                gbs_entropy.append(self._metric(entropy))
+                 append_to_dict(all_actor_metrics, q_metrics)
+             all_actor_metrics = {
+-                f"actor/{key}": np.mean(value)
++                f"actor/{key}": self._metric_mean(value)
+                 for key, value in all_actor_metrics.items()
+             }
+             all_actor_metrics.update(
+@@ -641,7 +655,7 @@
+                     alpha_loss = self.forward_alpha(batch) / self.gradient_accumulation
+                     alpha_loss.backward()
+                     gbs_alpha_loss.append(
+-                        alpha_loss.item() * self.gradient_accumulation
++                        self._metric(alpha_loss) * self.gradient_accumulation
+                     )
+                 torch.distributed.all_reduce(
+                     self.entropy_temp.base_alpha.grad, op=torch.distributed.ReduceOp.AVG
+@@ -656,12 +670,12 @@
+             # Collect metrics
+             metrics_data.update(
+                 {
+-                    "sac/actor_loss": np.mean(gbs_actor_loss),
+-                    "sac/alpha_loss": np.mean(gbs_alpha_loss),
++                    "sac/actor_loss": self._metric_mean(gbs_actor_loss),
++                    "sac/alpha_loss": self._metric_mean(gbs_alpha_loss),
+                     "sac/alpha": self.entropy_temp.alpha,
+                     "actor/lr": self.optimizer.param_groups[0]["lr"],
+                     "actor/grad_norm": actor_grad_norm,
+-                    "actor/entropy": np.mean(gbs_entropy),
++                    "actor/entropy": self._metric_mean(gbs_entropy),
+                     "alpha/grad_norm": alpha_grad_norm,
+                     **all_actor_metrics,
+                 }
+@@ -675,6 +689,14 @@
+ 
+         return metrics_data
+ 
++    def _metric(self, value):
++        return value.detach() if self.cfg.actor.get("defer_metrics", False) else value.item()
++
++    def _metric_mean(self, values):
++        if not self.cfg.actor.get("defer_metrics", False):
++            return np.mean(values)
++        return torch.stack([torch.as_tensor(v, device=self.device).detach().double() for v in values]).mean()
++
+     def process_train_metrics(self, metrics):
+         replay_buffer_stats = self.replay_buffer.get_stats()
+         replay_buffer_stats = {
+@@ -688,6 +710,13 @@
+                 f"demo_buffer/{key}": value for key, value in demo_buffer_stats.items()
+             }
+             append_to_dict(metrics, demo_buffer_stats)
++        if self.cfg.actor.get("defer_metrics", False):
++            # One device-to-host transfer per round, rather than per head/update.
++            keys = list(metrics)
++            values = [self._metric_mean(v if isinstance(v, list) else [v]) for v in metrics.values()]
++            packed = torch.stack([torch.as_tensor(v, device=self.device).detach().double() for v in values])
++            torch.distributed.all_reduce(packed, op=torch.distributed.ReduceOp.AVG)
++            return dict(zip(keys, packed.cpu().tolist()))
+         # Average metrics across updates
+         mean_metric_dict = {}
+         for key, value in metrics.items():

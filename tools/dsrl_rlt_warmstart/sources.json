@@ -1,0 +1,37 @@
+{
+  "ResFiT_critic_warmup": {
+    "paper": "https://arxiv.org/abs/2509.19301",
+    "code": "https://github.com/amazon-far/residual-offpolicy-rl/blob/main/resfit/rl_finetuning/scripts/train_residual_td3.py",
+    "symbol": "critic warmup loop with update_actor=False",
+    "use": "Reference for a distinct critic-only phase. Our Gaussian-policy target and 2000 updates are adaptation choices, not a copied paper optimum."
+  },
+  "TD3_delayed_actor": {
+    "paper": "https://proceedings.mlr.press/v80/fujimoto18a.html",
+    "code": "https://github.com/sfujim/TD3/blob/master/TD3.py",
+    "symbol": "policy_freq=2",
+    "use": "Two critic updates per actor update; we preserve the existing SAC target-EMA frequency."
+  },
+  "DSRL_noise_dimension": {
+    "paper": "https://arxiv.org/abs/2506.15799",
+    "code": "https://github.com/nakamotoo/dsrl_pi0",
+    "issue": "https://github.com/nakamotoo/dsrl_pi0/issues/9",
+    "use": "Official repeated temporal noise motivates a grouped interpolation, but does not establish that grouped noise preserves pi0.5 performance."
+  },
+  "RLT": {
+    "paper": "https://arxiv.org/abs/2604.23073",
+    "documentation": "https://rlinf.readthedocs.io/en/latest/rst_source/examples/embodied/rlt.html",
+    "accepted_runtime_commit": "3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc",
+    "symbols": ["OpenPi0ForRLActionPrediction.sft_forward", "OpenPi0ForRLActionPrediction._extract_rlt_prefix_embeddings", "RLTTokenDecoder.forward", "RLTACFSDPPolicy", "FullTaskRoute"],
+    "use": "Reuse token-only frozen-prefix training, causally shifted decoder, reference BC, delayed takeover, compact replay, and complete resume sidecar."
+  },
+  "RoboDojo": {
+    "dataset": "https://huggingface.co/datasets/RoboDojo-Benchmark/RoboDojo",
+    "normalization_reference": "https://github.com/FluxVLA/FluxVLA/blob/b7042d2/configs/pi05/pi05_paligemma_robodojo_full_finetune.py",
+    "use": "Official dustbin training demonstrations; inherited accepted 3-camera/delta-arm/absolute-gripper/quantile-normalization and native simulation adapter."
+  },
+  "PyTorch_batch_operations": {
+    "code": "https://github.com/pytorch/pytorch/blob/v2.11.0/torch/optim/adam.py",
+    "docs": "https://docs.pytorch.org/docs/stable/generated/torch.optim.Adam.html",
+    "use": "Fused Adam and batched target EMA; deferred scalar metrics reused from the previously accepted DSRL acceleration package. Retain only after production-update timing and numerical comparison."
+  }
+}

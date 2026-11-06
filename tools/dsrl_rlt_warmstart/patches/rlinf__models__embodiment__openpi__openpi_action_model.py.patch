@@ -1,0 +1,67 @@
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -133,6 +133,7 @@
+     dsrl_state_dim: int = 8  # Raw state dimension for DSRL encoders
+     dsrl_action_noise_dim: int = 32  # Noise dimension output by GaussianPolicy
+     dsrl_full_noise: bool = False
++    dsrl_noise_groups: int = 0  # 0 keeps the legacy full/repeated mapping.
+     dsrl_fp32_small: bool = False
+     dsrl_noise_bound: float = 1.0
+     dsrl_vectorized_q: bool = False
+@@ -329,8 +330,16 @@
+                 action_horizon=1 if self.config.dsrl_full_noise else self.config.action_horizon,
+             ).to(dtype=_dsrl_dtype)
+             self.dsrl_action_noise_net.probability_float32 = self.config.dsrl_full_noise
++            if self.config.dsrl_noise_groups:
++                if not self.config.dsrl_full_noise:
++                    raise ValueError("Grouped noise requires compact full-noise replay")
++                groups = self.config.dsrl_noise_groups
++                if groups < 1 or self.config.action_horizon % groups:
++                    raise ValueError("Noise groups must divide the action horizon")
+             if self.config.dsrl_full_noise:
+-                assert self.config.dsrl_action_noise_dim == self.config.action_horizon * self.config.action_dim
++                groups = self.config.dsrl_noise_groups or self.config.action_horizon
++                if self.config.dsrl_action_noise_dim != groups * self.config.action_dim:
++                    raise ValueError("DSRL latent dimension must equal groups * action_dim")
+ 
+ 
+             self.actor_image_encoder = LightweightImageEncoder64(
+@@ -965,7 +974,8 @@
+                     dtype=next(self.dsrl_action_noise_net.parameters()).dtype
+                 )
+                 if self.config.dsrl_full_noise:
+-                    noise_actions = noise_actions.reshape(-1, self.config.action_horizon, self.config.action_dim)
++                    groups = self.config.dsrl_noise_groups or self.config.action_horizon
++                    noise_actions = noise_actions.reshape(-1, groups, self.config.action_dim)
+                 else:
+                     noise_actions = noise_actions.unsqueeze(1).repeat(
+                         1, self.config.action_horizon, 1
+@@ -975,10 +985,16 @@
+                     dsrl_obs, train=False, mode=mode
+                 )
+ 
+-            # Step 2: Use noise to sample actual actions from diffusion model
++            # Expand only for the VLA; replay and log-prob retain compact coordinates.
++            generation_noise = noise_actions
++            if self.config.dsrl_noise_groups:
++                generation_noise = noise_actions.repeat_interleave(
++                    self.config.action_horizon // self.config.dsrl_noise_groups, dim=1
++                )
++            # Step 2: Use the same expanded noise for the main VLA and optional U.
+             outputs = self.sample_actions(
+                 observation,
+-                noise=noise_actions,
++                noise=generation_noise,
+                 mode="eval",
+                 compute_values=compute_values,
+                 collect_dsrl_u=self.config.dsrl_u_enabled and mode == "train",
+@@ -1742,7 +1758,8 @@
+             dist_params = (dist.mean, dist.stddev)
+ 
+         if self.config.dsrl_full_noise:
+-            action_noise = action_noise.reshape(-1, self.config.action_horizon, self.config.action_dim)
++            groups = self.config.dsrl_noise_groups or self.config.action_horizon
++            action_noise = action_noise.reshape(-1, groups, self.config.action_dim)
+         return action_noise, logprobs, dist_params
+ 
+     def sac_q_forward(

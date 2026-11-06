@@ -1,0 +1,155 @@
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -60,6 +60,8 @@
+         self.demo_buffer = None
+         self.alpha_optimizer = None
+         self.update_step = 0
++        self.dsrl_critic_warmup_done = 0
++        self._dsrl_critic_warmup_active = False
+         self.enable_drq = bool(getattr(self.cfg.actor, "enable_drq", False))
+         self.use_dsrl_flat_replay = False
+         self.use_dsrl_u = False
+@@ -193,6 +195,14 @@
+         if replay_type == "dsrl_transition" and not self.use_dsrl:
+             raise ValueError("dsrl_transition replay requires openpi.use_dsrl=True")
+         self._setup_dsrl_u_contract(replay_cfg)
++        warmstart = self._dsrl_warmstart_contract()
++        if warmstart is not None:
++            if not self.use_dsrl_flat_replay:
++                raise ValueError("DSRL warmstart requires flat transition replay")
++            if warmstart["critic_updates"] and self.cfg.algorithm.get("backup_entropy", True):
++                raise ValueError("Gaussian-policy critic pretraining requires reward-only Q targets")
++            if warmstart["critic_updates"] and not self.cfg.actor.model.openpi.get("dsrl_gaussian_warmup", False):
++                raise ValueError("Critic pretraining must retain Gaussian collection")
+ 
+         if self.use_dsrl_flat_replay:
+             self.replay_buffer = DSRLTransitionReplayBuffer(
+@@ -583,9 +593,17 @@
+                 )
+             if use_dsrl:
+                 kwargs["train"] = True
+-            next_state_actions, next_state_log_pi, shared_feature = self.model(
+-                forward_type=ForwardType.SAC, obs=next_obs, **kwargs
+-            )
++            if self._dsrl_critic_warmup_active:
++                # Evaluate the frozen VLA's Gaussian-noise policy, not the untrained actor.
++                next_state_actions = torch.randn_like(actions, dtype=torch.float32)
++                next_state_log_pi = torch.zeros(
++                    actions.shape[0], 1, device=actions.device, dtype=torch.float32
++                )
++                shared_feature = None
++            else:
++                next_state_actions, next_state_log_pi, shared_feature = self.model(
++                    forward_type=ForwardType.SAC, obs=next_obs, **kwargs
++                )
+             if next_state_log_pi.ndim == 1:
+                 next_state_log_pi = next_state_log_pi.unsqueeze(-1)
+             next_state_log_pi = next_state_log_pi.sum(dim=-1, keepdim=True)
+@@ -1067,7 +1085,7 @@
+                 raise RuntimeError(
+                     "Global DSRL replay is warm but at least one actor rank is empty"
+                 )
+-            self._set_dsrl_policy_phase(1)
++            # The phase is released only after critic-only initialization below.
+             update_epoch = int(self.cfg.algorithm.utd_ratio) * global_new
+             dsrl_counts["sac/planned_optimizer_updates"] = [update_epoch]
+             if update_epoch <= 0:
+@@ -1102,6 +1120,11 @@
+ 
+         self.model.train()
+         metrics = dsrl_counts or {}
++        if self.use_dsrl_flat_replay:
++            warmup_metrics = self._run_dsrl_critic_warmup()
++            for key, value in warmup_metrics.items():
++                metrics[key] = [value]
++            self._set_dsrl_policy_phase(1)
+ 
+         for _ in range(update_epoch):
+             metrics_data = self.update_one_epoch(train_actor=train_actor)
+@@ -1122,6 +1145,50 @@
+         This method is kept for compatibility but returns empty metrics.
+         """
+         return {}
++
++    def _dsrl_warmstart_contract(self):
++        if not self.use_dsrl:
++            return None
++        config = self.cfg.actor.model.openpi
++        updates = int(self.cfg.algorithm.get("dsrl_critic_warmup_updates", 0))
++        groups = int(config.get("dsrl_noise_groups", 0))
++        if updates < 0 or groups < 0:
++            raise ValueError("DSRL warmup updates and noise groups must be nonnegative")
++        if not updates and not groups:
++            return None
++        return {
++            "version": 1, "critic_updates": updates,
++            "bootstrap_policy": "standard_gaussian",
++            "noise_groups": groups,
++            "horizon": int(config.action_horizon),
++            "latent_dim": int(config.dsrl_action_noise_dim),
++        }
++
++    def _run_dsrl_critic_warmup(self):
++        contract = self._dsrl_warmstart_contract()
++        required = contract["critic_updates"] if contract is not None else 0
++        remaining = required - self.dsrl_critic_warmup_done
++        if remaining <= 0:
++            return {"warmup/critic_updates_done": self.dsrl_critic_warmup_done}
++        self._set_dsrl_policy_phase(0)
++        self._dsrl_critic_warmup_active = True
++        last = {}
++        try:
++            for _ in range(remaining):
++                last = self.update_one_epoch(train_actor=False)
++                self.update_step += 1
++                self.dsrl_critic_warmup_done += 1
++                if self.dsrl_critic_warmup_done % 500 == 0:
++                    self.log_on_first_rank(
++                        f"DSRL Gaussian-policy critic warmup: {self.dsrl_critic_warmup_done}/{required}"
++                    )
++        finally:
++            self._dsrl_critic_warmup_active = False
++        return {
++            "warmup/critic_updates_done": self.dsrl_critic_warmup_done,
++            "warmup/critic_updates_this_call": remaining,
++            **{f"warmup/last/{key}": value for key, value in last.items()},
++        }
+ 
+     def _dsrl_trainer_state_path(self, base_path: str) -> str:
+         return os.path.join(
+@@ -1163,6 +1230,9 @@
+             "flat_replay": self.use_dsrl_flat_replay,
+             "target_shadow_f32": shadow_cpu,
+         }
++        if self._dsrl_warmstart_contract() is not None:
++            state["dsrl_warmstart_contract"] = self._dsrl_warmstart_contract()
++            state["dsrl_critic_warmup_done"] = self.dsrl_critic_warmup_done
+         if getattr(self, "use_dsrl_u", False):
+             state["dsrl_u_contract"] = self.dsrl_u_contract
+         target_path = self._dsrl_trainer_state_path(save_base_path)
+@@ -1190,6 +1260,17 @@
+             for key, expected in expected_layout.items()
+             if state.get(key) != expected
+         }
++        expected_warmstart = self._dsrl_warmstart_contract()
++        if state.get("dsrl_warmstart_contract") != expected_warmstart:
++            mismatches["dsrl_warmstart_contract"] = (
++                state.get("dsrl_warmstart_contract"), expected_warmstart
++            )
++        warmup_done = int(state.get("dsrl_critic_warmup_done", 0))
++        warmup_required = expected_warmstart["critic_updates"] if expected_warmstart else 0
++        if not 0 <= warmup_done <= warmup_required:
++            raise ValueError("Invalid DSRL critic warmup counter")
++        if int(state["policy_phase"]) == 1 and warmup_done < warmup_required:
++            raise ValueError("Learned DSRL policy cannot precede critic pretraining")
+         expected_u = getattr(self, "dsrl_u_contract", None)
+         if state.get("dsrl_u_contract") != expected_u:
+             mismatches["dsrl_u_contract"] = (
+@@ -1243,6 +1324,7 @@
+                 f"Invalid DSRL trainer counters: {update_step=}, {pending_new=}"
+             )
+         self.update_step = update_step
++        self.dsrl_critic_warmup_done = warmup_done
+         self._local_new_transitions = pending_new
+         self._set_dsrl_policy_phase(phase)
+ 

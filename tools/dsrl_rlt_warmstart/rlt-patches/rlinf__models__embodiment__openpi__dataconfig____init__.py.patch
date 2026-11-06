@@ -1,0 +1,25 @@
+--- a/rlinf/models/embodiment/openpi/dataconfig/__init__.py
++++ b/rlinf/models/embodiment/openpi/dataconfig/__init__.py
+@@ -75,6 +75,22 @@
+ )
+ 
+ _CONFIGS = [
++    TrainConfig(
++        name="pi05_robodojo",
++        model=pi0_config.Pi0Config(
++            pi05=True, action_horizon=50, discrete_state_input=True
++        ),
++        data=LeRobotAlohaDataConfig(
++            repo_id="arx_x5_sim",
++            base_config=DataConfig(prompt_from_task=True),
++            assets=AssetsConfig(asset_id="arx_x5_sim"),
++            adapt_to_pi=False,
++            extra_delta_transform=True,
++            use_quantile_norm=True,
++        ),
++        pytorch_weight_path="checkpoints/torch/pi05_base",
++        num_train_steps=20_000,
++    ),
+     TrainConfig(
+         name="pi0_libero",
+         model=pi0_config.Pi0Config(),

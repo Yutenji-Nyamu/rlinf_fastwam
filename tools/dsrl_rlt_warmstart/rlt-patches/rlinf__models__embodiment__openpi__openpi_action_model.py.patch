@@ -1,0 +1,37 @@
+--- a/rlinf/models/embodiment/openpi/openpi_action_model.py
++++ b/rlinf/models/embodiment/openpi/openpi_action_model.py
+@@ -113,6 +113,7 @@
+     rlt_image_only: bool = True
+     rlt_use_mask: bool = False
+     rlt_action_adapter: str = "identity"
++    rlt_token_path: str | None = None
+     rlt_dvac_mode: Literal["off", "observe", "apply"] = "off"
+     state_indices: list[int] | None = None
+ 
+@@ -614,7 +615,7 @@
+             ref_chunk = self.output_transform(
+                 {"actions": outputs["actions"], "state": observation.state}
+             )["actions"]
+-        elif self.config.rlt_action_adapter == "robotwin_aloha_canonical_v1":
++        elif self.config.rlt_action_adapter in ("robotwin_aloha_canonical_v1", "robodojo_aloha_delta_v1"):
+             raw_actions = outputs["actions"]
+             chunk_len = int(self.config.action_chunk)
+             action_dim = int(self.config.action_env_dim)
+@@ -673,7 +674,7 @@
+         decode_context: dict[str, torch.Tensor],
+     ) -> torch.Tensor:
+         """Decode one routed canonical RoboTwin action through OpenPI transforms."""
+-        if self.config.rlt_action_adapter != "robotwin_aloha_canonical_v1":
++        if self.config.rlt_action_adapter not in ("robotwin_aloha_canonical_v1", "robodojo_aloha_delta_v1"):
+             raise ValueError(
+                 "decode_rlt_action requires "
+                 "rlt_action_adapter=robotwin_aloha_canonical_v1."
+@@ -940,7 +941,7 @@
+             processed_obs["observation/state"] = env_states
+         if env_obs["wrist_images"] is not None:
+             processed_obs["observation/wrist_image"] = env_obs["wrist_images"]
+-        if env_obs["extra_view_images"] is not None:
++        if env_obs.get("extra_view_images") is not None:
+             processed_obs["observation/extra_view_image"] = env_obs["extra_view_images"]
+         return processed_obs
+ 

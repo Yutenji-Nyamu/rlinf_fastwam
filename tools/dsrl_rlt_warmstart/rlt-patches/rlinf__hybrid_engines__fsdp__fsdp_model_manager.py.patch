@@ -1,0 +1,22 @@
+--- a/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
++++ b/rlinf/hybrid_engines/fsdp/fsdp_model_manager.py
+@@ -649,7 +649,8 @@
+                     "betas": main_betas,
+                     "eps": main_adam_eps,
+                 },
+-            ]
++            ],
++            fused=main_optim_config.get("fused", None)
+         )
+         optimizers = [main_optimizer]
+ 
+@@ -667,7 +668,8 @@
+                             "betas": filtered_optim_batas_map[key],
+                             "eps": filtered_optim_adam_eps_map[key],
+                         },
+-                    ]
++                    ],
++                    fused=filtered_optim_config[key].get("fused", None)
+                 )
+             )
+         for optimizer in optimizers:

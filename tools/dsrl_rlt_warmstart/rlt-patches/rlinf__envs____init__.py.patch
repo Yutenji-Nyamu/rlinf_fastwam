@@ -1,0 +1,21 @@
+--- a/rlinf/envs/__init__.py
++++ b/rlinf/envs/__init__.py
+@@ -26,6 +26,7 @@
+     MANISKILL_RLT = "maniskill_rlt"
+     LIBERO = "libero"
+     ROBOTWIN = "robotwin"
++    ROBODOJO = "robodojo"
+     ISAACLAB = "isaaclab"
+     METAWORLD = "metaworld"
+     BEHAVIOR = "behavior"
+@@ -76,6 +77,10 @@
+         from rlinf.envs.libero.libero_env import LiberoEnv
+ 
+         return LiberoEnv
++    elif env_type == SupportedEnvType.ROBODOJO:
++        from rlinf.envs.robodojo.robodojo_env import RoboDojoEnv
++
++        return RoboDojoEnv
+     elif env_type == SupportedEnvType.ROBOTWIN:
+         from rlinf.envs.robotwin.robotwin_env import RoboTwinEnv
+ 
