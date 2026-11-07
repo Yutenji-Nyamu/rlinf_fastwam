@@ -1,0 +1,415 @@
+env:
+  train:
+    env_type: robotwin
+    total_num_envs: 16
+    auto_reset: false
+    ignore_terminations: false
+    reward_coef: 1.0
+    use_custom_reward: true
+    use_rel_reward: false
+    center_crop: false
+    seed: 0
+    group_size: 1
+    use_fixed_reset_state_ids: false
+    max_steps_per_rollout_epoch: 200
+    max_episode_steps: 200
+    is_eval: false
+    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt/rlinf/envs/robotwin/seeds/turn_switch_train_20260914.json
+    video_cfg:
+      save_video: false
+      info_on_video: true
+      video_base_dir: /data/chenyiteng/results/dsrl-rlt-retry-20261108/rt2-rlt-clean-g7/video/train
+    enable_offload: true
+    task_config:
+      task_name: turn_switch
+      step_lim: 200
+      planner_backend: mplib
+      render_freq: 0
+      episode_num: 100
+      use_seed: false
+      save_freq: 15
+      embodiment:
+      - aloha-agilex
+      language_num: 100
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+      camera:
+        head_camera_type: D435
+        wrist_camera_type: D435
+        collect_head_camera: true
+        collect_wrist_camera: true
+      data_type:
+        rgb: true
+        third_view: false
+        depth: false
+        pointcloud: false
+        observer: false
+        endpose: false
+        qpos: true
+        mesh_segmentation: false
+        actor_segmentation: false
+      pcd_down_sample_num: 1024
+      pcd_crop: true
+      save_path: /data/chenyiteng/results/dsrl-rlt-retry-20261108/rt2-rlt-clean-g7/robotwin_data/train
+      clear_cache_freq: 1
+      collect_data: true
+      eval_video_log: false
+    rollout_epoch: 1
+    dsrl_acceleration: {}
+  eval:
+    env_type: robotwin
+    total_num_envs: 4
+    auto_reset: true
+    ignore_terminations: true
+    reward_coef: 1.0
+    use_custom_reward: true
+    use_rel_reward: false
+    center_crop: false
+    seed: 0
+    group_size: 1
+    use_fixed_reset_state_ids: false
+    max_steps_per_rollout_epoch: 200
+    max_episode_steps: 200
+    is_eval: true
+    assets_path: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+    seeds_path: /data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt/rlinf/envs/robotwin/seeds/turn_switch_eval_20260914.json
+    video_cfg:
+      save_video: false
+      info_on_video: true
+      video_base_dir: /data/chenyiteng/results/dsrl-rlt-retry-20261108/rt2-rlt-clean-g7/video/eval
+    enable_offload: false
+    task_config:
+      task_name: turn_switch
+      step_lim: 200
+      planner_backend: mplib
+      render_freq: 0
+      episode_num: 100
+      use_seed: false
+      save_freq: 15
+      embodiment:
+      - aloha-agilex
+      language_num: 100
+      domain_randomization:
+        random_background: false
+        cluttered_table: false
+        clean_background_rate: 1
+        random_head_camera_dis: 0
+        random_table_height: 0
+        random_light: false
+        crazy_random_light_rate: 0
+      camera:
+        head_camera_type: D435
+        wrist_camera_type: D435
+        collect_head_camera: true
+        collect_wrist_camera: true
+      data_type:
+        rgb: true
+        third_view: false
+        depth: false
+        pointcloud: false
+        observer: false
+        endpose: false
+        qpos: true
+        mesh_segmentation: false
+        actor_segmentation: false
+      pcd_down_sample_num: 1024
+      pcd_crop: true
+      save_path: /data/chenyiteng/results/dsrl-rlt-retry-20261108/rt2-rlt-clean-g7/robotwin_data/eval
+      clear_cache_freq: 1
+      collect_data: true
+      eval_video_log: false
+    rollout_epoch: 3
+    dsrl_acceleration: {}
+  group_name: EnvGroup
+  enable_offload: true
+actor:
+  fsdp_config:
+    strategy: fsdp
+    sharding_strategy: no_shard
+    gradient_checkpointing: false
+    cpu_offload: false
+    offload_pin_memory: false
+    reshard_after_forward: true
+    enable_gradient_accumulation: true
+    forward_prefetch: false
+    limit_all_gathers: false
+    backward_prefetch: null
+    use_orig_params: false
+    use_liger_kernel: false
+    mixed_precision:
+      param_dtype: fp32
+      reduce_dtype: fp32
+      buffer_dtype: fp32
+    amp_autocast:
+      enabled: false
+      precision: bf16
+    grad_scaler:
+      enabled: false
+      init_scale: null
+      growth_interval: null
+  group_name: ActorGroup
+  training_backend: fsdp
+  micro_batch_size: 256
+  global_batch_size: 512
+  seed: 1234
+  enable_offload: false
+  model:
+    model_type: rlt_mlp_policy
+    precision: fp32
+    z_dim: 2048
+    proprio_dim: 14
+    action_dim: 14
+    num_action_chunks: 10
+    ref_num_action_chunks: 10
+    add_value_head: false
+    add_q_head: true
+    q_head_type: default
+    fixed_std: 0.002
+    is_lora: false
+    lora_rank: 32
+    output_activation: identity
+  optim:
+    clip_grad: 10.0
+    lr: 0.0001
+    lr_scheduler: torch_constant
+    fused: false
+  critic_optim:
+    clip_grad: 10.0
+    lr: 0.0001
+    lr_scheduler: torch_constant
+    fused: false
+  defer_metrics: false
+  foreach_target_update: false
+weight_syncer:
+  type: patch
+  patch:
+    snapshot_device: cpu
+    delta_encoding: true
+    compression: none
+    init_sync:
+      enabled: true
+      prefixes: null
+      bucket_size: 134217728
+cluster:
+  num_nodes: 1
+  component_placement:
+    actor,env,rollout:
+      node_group: dsrl_gpu7
+      placement: '7'
+  node_groups:
+  - label: dsrl_gpu7
+    node_ranks: '0'
+    env_configs:
+    - node_ranks: '0'
+      python_interpreter_path: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python
+      env_vars:
+      - EMBODIED_PATH: /data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt/examples/embodiment
+      - HOME: /home/chenyiteng
+      - HYDRA_FULL_ERROR: '1'
+      - JAX_PLATFORMS: cpu
+      - LD_PRELOAD: /data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/libdsrl_u_g7_20261006.so
+      - MUJOCO_GL: egl
+      - OMP_NUM_THREADS: '1'
+      - OPENPI_DATA_HOME: /home/chenyiteng/.cache/openpi
+      - PATH: /home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+      - PYOPENGL_PLATFORM: egl
+      - PYTHONDONTWRITEBYTECODE: '1'
+      - PYTHONPATH: /data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/bootstrap:/data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt:/data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix
+      - PYTHONUNBUFFERED: '1'
+      - RAY_ADDRESS: 172.17.0.1:6389
+      - REPO_PATH: /data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt
+      - RLINF_CODE_WORKING_DIR: /data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/rlt
+      - RLINF_OPENDW_GPU_SCOPE_MANIFEST: /data/chenyiteng/deployment-20261006/dsrl-u-lease-v1/scope-g7/scope.json
+      - ROBOTWIN_ASSETS_PATH: /data/chenyiteng/projects/rlinf-shenzhen/RoboTwin-RLinf-support
+      - ROBOTWIN_PATH: /data/chenyiteng/projects/rlinf-shenzhen/worktrees/robotwin-instruction-reset-fix
+      - ROBOTWIN_PI0_BASE_PATH: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab
+      - ROBOTWIN_PI0_NORM_STATS_PATH: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json
+      - ROBOT_PLATFORM: ALOHA
+      - TOKENIZERS_PARALLELISM: 'false'
+      - __GL_APPLICATION_PROFILE: '1'
+  tracer:
+    enable: false
+runner:
+  task_type: embodied
+  logger:
+    log_path: /data/chenyiteng/results/dsrl-rlt-retry-20261108/rt2-rlt-clean-g7/formal
+    project_name: rlinf-rlt
+    experiment_name: formal
+    logger_backends:
+    - tensorboard
+  max_epochs: 1000
+  max_steps: 313
+  only_eval: false
+  weight_sync_interval: 1
+  val_check_interval: 10
+  save_interval: 10
+  resume_dir: null
+  ckpt_path: null
+  per_worker_log: false
+  per_worker_log_path: null
+  overlap_env_bootstrap: false
+algorithm:
+  update_epoch: 5
+  group_size: 1
+  adv_type: embodied_sac
+  loss_type: rlt_ac
+  loss_agg_func: token-mean
+  agg_q: min
+  actor_agg_q: q1
+  enable_drq: false
+  q_head_type: default
+  bootstrap_type: standard
+  gamma: 0.99
+  tau: 0.005
+  rlt_route:
+    type: full_task
+  rlt_transition_replay:
+    enable: true
+    compact: true
+    bootstrap_on_truncation: true
+  rlt_schedule:
+    enable: true
+    max_updates_per_train_step: 3200
+    warmup_min_size: 20000
+    warmup_post_collect_updates: 30000
+    train_every_episodes: 0
+    train_every_transitions: 1
+  q_weight: 1.0
+  bc_weight: 1.0
+  reference_dropout_prob: 0.5
+  actor_weight_schedule:
+    enable: true
+    warmup_updates: 20000
+    ramp_updates: 50000
+    warmup_bc_weight: 7.0
+    warmup_q_weight: 0.05
+    online_bc_weight: 2.5
+    online_q_weight: 0.45
+  entropy_tuning:
+    alpha_type: fixed_alpha
+    initial_alpha: 0.0
+    optim:
+      lr: 0.0003
+      lr_scheduler: torch_constant
+      clip_grad: 10.0
+  replay_buffer:
+    enable_cache: true
+    cache_size: 80000
+    sample_window_size: 80000
+    min_buffer_size: 1
+    auto_save: false
+  target_update_freq: 1
+  target_update_type: all
+  critic_actor_ratio: 2
+  critic_subsample_size: 0
+  backup_entropy: false
+  rlt_resume:
+    enable: true
+    schema_version: 1
+    contract:
+      base_source: 3f35e89b9a9aa61d66aba2dfead41aebc2ee19cc
+      model_identity: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab
+      config_name: pi05_sidney_robotwin
+      reconstruction: current_causal_ar
+      stage1_token_path: /data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt
+      stage1_token_sha256: b4f1840e3d7e5e6ae2ba32dbd882bf5a7b618fdc0f6ab987218d15592fedcb58
+      norm_stats_sha256: dce9aa230699df9ba9e6a8cc88c2bdb2b838e564000305df06b1845b811320cf
+      train_vla: false
+      prefix_seq_len: 768
+      image_only: true
+      use_mask: true
+      z_dim: 2048
+      action_horizon: 50
+      action_chunk: 10
+      action_dim: 14
+      canonical_adapter_version: robotwin_aloha_canonical_v1
+      route: full_task
+      replay: compact_transition
+      bootstrap: pure_truncation_only
+      gamma_per_physics_step: 0.99
+      warmup_transitions: 20000
+      warmup_updates: 30000
+  rlt_dvac:
+    mode: 'off'
+  dv_observe: false
+rollout:
+  group_name: RolloutGroup
+  backend: huggingface
+  enable_offload: false
+  pipeline_stage_num: 1
+  collect_transitions: true
+  collect_prev_infos: false
+  model:
+    model_type: rlt_mlp_policy
+    precision: fp32
+    z_dim: 2048
+    proprio_dim: 14
+    action_dim: 14
+    num_action_chunks: 10
+    ref_num_action_chunks: 10
+    add_value_head: false
+    add_q_head: true
+    q_head_type: default
+    fixed_std: 0.002
+    is_lora: false
+    lora_rank: 32
+    output_activation: identity
+    model_path: null
+  rlt_feature_model:
+    model_type: openpi
+    model_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab
+    precision: null
+    num_action_chunks: 10
+    action_dim: 14
+    is_lora: false
+    lora_rank: 32
+    use_proprio: true
+    num_steps: 10
+    add_value_head: false
+    openpi:
+      config_name: pi05_sidney_robotwin
+      num_images_in_input: 3
+      noise_level: 0.5
+      action_chunk: 10
+      num_steps: 10
+      train_expert_only: false
+      action_env_dim: 14
+      noise_method: flow_ode
+      add_value_head: false
+      detach_critic_input: true
+      use_dsrl: false
+      action_horizon: 50
+      rtc_enabled: false
+      use_rlt: true
+      rlt_train_vla: false
+      rlt_alpha: 0.0
+      rlt_input_dim: 2048
+      rlt_embed_dim: 2048
+      rlt_prefix_seq_len: 768
+      rlt_num_layers: 2
+      rlt_num_heads: 8
+      rlt_mlp_ratio: 4.0
+      rlt_image_only: true
+      rlt_use_mask: true
+      rlt_dvac_mode: 'off'
+      rlt_action_adapter: robotwin_aloha_canonical_v1
+      rlt_token_path: /data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt
+    add_q_head: true
+    q_head_type: default
+    openpi_data:
+      repo_id: SidneyXie/pi05_robotwin
+      norm_stats_path: /data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab/physical-intelligence/robotwin/norm_stats.json
+      default_prompt: turn on the switch
+  enable_torch_compile: false
+  enable_cuda_graph: false
+reward:
+  use_reward_model: false
+critic:
+  use_critic_model: false

@@ -1,0 +1,86 @@
+{
+  "training_source": "/data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/dsrl",
+  "run": "/data/chenyiteng/results/dsrl-rlt-retry-20261108/dojo-dsrl-clean-g5",
+  "python": "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+  "namespace": "RLinf_retry_dsrl_dojo_g5_20261108",
+  "legacy_ops": "/data/chenyiteng/results/server-maintenance-20260911/grpo-seed42-half/ops.py",
+  "native_repo": "/data/chenyiteng/projects/robodojo-openwam-sz1/RoboDojo",
+  "native_python": "/data/chenyiteng/projects/robodojo-openwam-sz1/envs/RoboDojo/bin/python",
+  "jax_python": "/data/chenyiteng/projects/robodojo-openwam-sz1/RoboDojo/XPolicyLab/policy/Pi_05/openpi/.venv/bin/python",
+  "model": "/data/chenyiteng/models/rlinf-native/dojo-pi05-arx-x5-seed1-59999-pytorch",
+  "gpus": [
+    5
+  ],
+  "native_envs_per_card": 16,
+  "vulkan_compat": "/data/chenyiteng/projects/robodojo-openwam-sz1/third_party/RoboDawn/scripts/robodojo/compat/vulkan_driver_compat.py",
+  "render_gpus": {
+    "5": 5
+  },
+  "native_extension_folders": [
+    "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r3/native-g6/cache/kit/data/Kit/Isaac-Sim/5.1/exts/3"
+  ],
+  "protected_output": "/data/chenyiteng/models/protected-eval/dsrl-rlt-retry-20261108/dojo-dsrl-clean-g5",
+  "probe_observation": "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r8/native-g6/initial-observation.npz",
+  "parity_source": "/data/chenyiteng/deployment-20261103/dojo-grpo-g67-r10",
+  "capture_probe_actions": null,
+  "reviewed_graphics_residual_mib": {
+    "4": 8
+  },
+  "reuse_native_contract": true,
+  "fresh_process_per_wave": true,
+  "smoke_phase": "smoke_resume",
+  "gpu": 5,
+  "num_envs": 16,
+  "phases": [
+    {
+      "name": "formal",
+      "command": [
+        "/home/chenyiteng/venvs/rlinf-7d07-openpi-robotwin/bin/python",
+        "-u",
+        "-B",
+        "/data/chenyiteng/projects/rlinf-shenzhen/exports/dsrl-rlt-retry-20261108/dsrl/tools/dojo_offpolicy/training_entry.py",
+        "--config-path",
+        "/data/chenyiteng/deployment-20261108/dsrl-rlt-retry/dojo-dsrl-clean-g5/config",
+        "--config-name",
+        "formal"
+      ],
+      "timeout": null
+    }
+  ],
+  "task": "put_bottles_into_dustbin",
+  "pre_registered": true,
+  "predecessors": [
+    {
+      "pid": 1084270,
+      "uid": 1003,
+      "start": 691284208,
+      "state": "R"
+    }
+  ],
+  "bench": "dojo",
+  "model_contract_required": false,
+  "acceleration_trial": false,
+  "from_rlt": false,
+  "gpu_admission": {
+    "gpu_uuid": "GPU-3bbde6c0-3ddc-ec10-1d69-c3bc7855704e",
+    "fallback": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-dsrl-clean-g5-r2/dojo-dsrl-clean-g5-r2-handoff/fallback-g5.json",
+    "external_release": "/data/chenyiteng/deployment-20261106/dsrl-rlt-warmstart/dojo-dsrl-clean-g5-r3-par16/released.json",
+    "external_identity": {
+      "pid": 1084270,
+      "uid": 1003,
+      "start": 691284208,
+      "state": "R"
+    },
+    "external_blockers": [
+      {
+        "pid": 3289747,
+        "uid": 1003,
+        "start": 682825105,
+        "state": "R"
+      }
+    ],
+    "no_checkpoint_fallback": true
+  },
+  "pre_native_phases": [],
+  "method": "dsrl"
+}
