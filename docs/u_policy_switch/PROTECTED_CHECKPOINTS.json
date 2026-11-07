@@ -612,5 +612,31 @@
     "state": "reserved_for_evaluated_noise_policy_peaks",
     "base_model": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
     "note": "Complete latest checkpoint and replay retained in run; protected noise adapter requires exact frozen base and config."
+  },
+  {
+    "id": "dsrl_rlt_warmstart_20261106_protected_dir",
+    "host": "sz1",
+    "protected": "/data/chenyiteng/models/protected-eval/dsrl-rlt-warmstart-20261106",
+    "kind": "directory",
+    "do_not_delete": true,
+    "state": "evaluated_compact_policy_candidates",
+    "verified_at": "2026-11-07",
+    "verified_candidate": {
+      "path": "/data/chenyiteng/models/protected-eval/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/global_step_30/rlt-policy.pt",
+      "bytes": 9379125,
+      "sha256": "fc6e7f8e9c94364eb008718ddafd2b0bbacb95531ef56c7bcaae4b48b8b4efa9",
+      "exact_match_to_checkpoint": true,
+      "token": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt",
+      "token_bytes": 1491451577,
+      "feature": "/data/chenyiteng/models/rlinf-native/sidney-pi05-robotwin-e49e2ab",
+      "round": 30,
+      "successes": 4,
+      "episodes": 12
+    },
+    "required_stage1_tokens": [
+      "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt",
+      "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt"
+    ],
+    "note": "Protect all best-policy subdirectories and their manifest-referenced feature models/configs. RLT compact policies require the matching Stage1 token; they are not standalone VLA checkpoints. Keep latest complete DCP/trainer/replay separately for continuation. CP30 4/12 is a functioning candidate, not evidence of improvement over the base policy."
   }
 ]
