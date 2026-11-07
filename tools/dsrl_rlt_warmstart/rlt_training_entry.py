@@ -94,7 +94,7 @@ def main():
             check=True,
             timeout=600,
         )
-    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    _, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (min(4096, hard), hard))
     sys.path.insert(0, plan["training_source"])
     from rlinf.runners.embodied_runner import EmbodiedRunner
@@ -199,12 +199,14 @@ def main():
                     / "checkpoints"
                     / f"global_step_{self.global_step}"
                 )
+                # RLT saves DCP training state plus a compact inference state dict.
+                # The DSRL local-shard filename is not part of this contract.
                 state = torch.load(
-                    current / "actor/local_shard_checkpoint/checkpoint_rank_0.pt",
+                    current / "actor/model_state_dict/full_weights.pt",
                     map_location="cpu",
-                    weights_only=False,
+                    weights_only=True,
                     mmap=True,
-                )["model"]
+                )
                 output = (
                     Path(plan["protected_output"]) / f"global_step_{self.global_step}"
                 )
