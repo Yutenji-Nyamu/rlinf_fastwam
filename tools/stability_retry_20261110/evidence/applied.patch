@@ -1,0 +1,64 @@
+--- a/dsrl/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/dsrl/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -776,0 +777,11 @@
++        prior_weight = float(self.cfg.algorithm.get("noise_prior_kl_weight", 0.0))
++        if prior_weight:
++            if not self.use_dsrl or getattr(self, "use_dsrl_u", False):
++                raise ValueError("Noise prior regularization requires clean DSRL")
++            from rlinf.algorithms.noise_prior import gaussian_prior_kl
++
++            prior_kl = gaussian_prior_kl(pi, log_pi)
++            actor_loss = actor_loss + prior_weight * prior_kl.mean()
++            metrics["noise_prior_kl_per_dim"] = self._metric(prior_kl.mean())
++            metrics["noise_prior_penalty"] = self._metric(prior_weight * prior_kl.mean())
++
+--- a/rlt/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlt/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -533,0 +534,3 @@
++        if self.cfg.algorithm.get("rlt_reference_bootstrap", False):
++            ref = self._ref_chunk(next_obs)
++            return ref, torch.zeros((ref.shape[0], 1), device=ref.device), None
+@@ -1004 +1007,12 @@
+-            if self.demo_buffer is not None:
++            reference_limit = int(self.cfg.algorithm.get("rlt_reference_replay_size", 0))
++            if reference_limit:
++                # Initial precollection is produced by the frozen reference policy.
++                # Fill once, then keep this buffer immutable during online learning.
++                assert self.demo_buffer is not None
++                remaining = max(0, reference_limit - self.demo_buffer.total_samples)
++                if remaining:
++                    self.demo_buffer.add_trajectories(replay_list[:remaining])
++                self._last_replay_metrics["replay/reference_retained"] = float(
++                    self.demo_buffer.total_samples
++                )
++            elif self.demo_buffer is not None:
+@@ -1430,0 +1445,4 @@
++        if self.cfg.algorithm.get("rlt_reference_replay_size", 0):
++            self.demo_buffer.save_checkpoint(os.path.join(
++                save_base_path, f"sac_components/reference_replay/rank_{self._rank}"
++            ))
+@@ -1438,0 +1457,4 @@
++        if self.cfg.algorithm.get("rlt_reference_replay_size", 0):
++            self.demo_buffer.load_checkpoint(os.path.join(
++                load_base_path, f"sac_components/reference_replay/rank_{self._rank}"
++            ))
+--- a/dsrl/rlinf/algorithms/noise_prior.py
++++ b/dsrl/rlinf/algorithms/noise_prior.py
+@@ -0,0 +1,17 @@
++# Copyright 2026 The RLinf Authors.
++# Licensed under the Apache License, Version 2.0.
++"""Gaussian behavior prior in the physical DSRL noise coordinates.
++
++Inspired by BRAC policy regularization. This is an online noise-space adaptation,
++not a claim that BRAC evaluated this policy or benchmark. log_prob must include
++all tanh and scale Jacobians. Average over dimensions to keep the coefficient
++independent of the latent dimension; do not regress to random Gaussian samples.
++"""
++import math
++
++
++def gaussian_prior_kl(noise, log_prob):
++    z = noise.float().reshape(noise.shape[0], -1)
++    lp = log_prob.float().reshape(z.shape[0], -1).sum(-1, keepdim=True)
++    log_prior = -0.5 * (z.square() + math.log(2.0 * math.pi)).sum(-1, keepdim=True)
++    return (lp - log_prior) / z.shape[-1]
