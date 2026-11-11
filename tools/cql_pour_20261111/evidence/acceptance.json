@@ -1,8 +1,8 @@
 {
-  "observed_at": "2026-11-11 19:37:31 CST",
+  "observed_at": "2026-11-11 19:54:00 CST",
   "gpu4": {
     "cpu_check": "passed",
-    "verified_full_checkpoint": 160,
+    "verified_full_checkpoint": 164,
     "smoke_updates_discarded": true,
     "production_gpu_smoke_updates": 8,
     "initial_resume_checkpoint": 156,
@@ -42,7 +42,7 @@
     "phase": "formal"
   },
   "gpu6": {
-    "smoke_resume56": "running",
+    "smoke_resume56": "passed",
     "deployment": "/data/chenyiteng/deployment-20261111/cql-pour-56/g6",
     "estimated_memory_gib": [
       69,
@@ -110,10 +110,132 @@
       "checkpoint": 1,
       "updates": 16
     },
-    "formal": "pending",
+    "formal": "running",
     "stage1_updates": 2000,
     "formal_episode_slots": 5040,
-    "phase": "smoke_resume"
+    "phase": "formal",
+    "native_progress": {
+      "time": 1794398031.400617,
+      "phase": "chunk_complete",
+      "reset_seconds": 492.4860319783911,
+      "action_seconds": 89.83315705414861,
+      "observation_seconds": 52.74495154712349,
+      "successes": 0,
+      "max_steps": 20,
+      "heartbeat_age": 9.079667329788208
+    },
+    "measured56_resume_peak_gib": 69.302734375,
+    "measured56_formal": {
+      "samples": 118,
+      "from": "2026/11/11 19:41:20.592",
+      "to": "2026/11/11 19:51:05.973",
+      "peak_gib": 58.28125,
+      "peak_at": "2026/11/11 19:48:35.905",
+      "median_gib": 31.552734375,
+      "latest_gib": 58.28125,
+      "latest_util": 100.0
+    },
+    "instantaneous_device_memory": {
+      "source": "nvidia-smi current snapshot; sampler file may be buffered",
+      "at": "2026-11-11 19:54:00 CST",
+      "gib": 70.4521484375
+    },
+    "full_horizon_peak_verified": false,
+    "formal_smoke_weights_reused": false,
+    "formal_smoke_replay_reused": false,
+    "evaluations": [
+      null
+    ]
   },
-  "conclusion": "GPU4 is in formal continuation. GPU6 has a complete reference evaluation and64-env update/save;56-env restore acceptance remains in progress. No success-rate improvement or RL gain is claimed."
+  "conclusion": "Both formal jobs are running; GPU6 real save/resume passed. Memory receipts distinguish short-test peaks from incomplete full-horizon observation. No success-rate improvement or RL gain is claimed.",
+  "bindings": {
+    "records": [
+      {
+        "gpu": 4,
+        "pid": 268374,
+        "type": "G",
+        "memory": "7 MiB"
+      },
+      {
+        "gpu": 4,
+        "pid": 308016,
+        "type": "G",
+        "memory": "7 MiB"
+      },
+      {
+        "gpu": 4,
+        "pid": 3777596,
+        "type": "C",
+        "memory": "19000 MiB"
+      },
+      {
+        "gpu": 4,
+        "pid": 3777869,
+        "type": "C",
+        "memory": "14884 MiB"
+      },
+      {
+        "gpu": 4,
+        "pid": 3778103,
+        "type": "C+G",
+        "memory": "7309 MiB"
+      },
+      {
+        "gpu": 5,
+        "pid": 268374,
+        "type": "C+G",
+        "memory": "26845 MiB"
+      },
+      {
+        "gpu": 5,
+        "pid": 626617,
+        "type": "C",
+        "memory": "18292 MiB"
+      },
+      {
+        "gpu": 5,
+        "pid": 626672,
+        "type": "C",
+        "memory": "14882 MiB"
+      },
+      {
+        "gpu": 6,
+        "pid": 305330,
+        "type": "C",
+        "memory": "1360 MiB"
+      },
+      {
+        "gpu": 6,
+        "pid": 305335,
+        "type": "C",
+        "memory": "21650 MiB"
+      },
+      {
+        "gpu": 6,
+        "pid": 308016,
+        "type": "C+G",
+        "memory": "49075 MiB"
+      },
+      {
+        "gpu": 7,
+        "pid": 2963754,
+        "type": "C",
+        "memory": "1576 MiB"
+      },
+      {
+        "gpu": 7,
+        "pid": 2963758,
+        "type": "C",
+        "memory": "9390 MiB"
+      },
+      {
+        "gpu": 7,
+        "pid": 2963763,
+        "type": "C+G",
+        "memory": "15018 MiB"
+      }
+    ],
+    "observed_at": 1794398082.5639231,
+    "own_contexts_outside_4_to_7": []
+  }
 }

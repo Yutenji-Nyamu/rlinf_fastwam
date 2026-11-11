@@ -14,6 +14,7 @@ from tensorboard.backend.event_processing.event_accumulator import EventAccumula
 b = Path("/data/chenyiteng/deployment-20261111/cql-pour-56/g6")
 r = Path("/home/chenyiteng/results/cql-pour-20261111/g6-56")
 result = {}
+phase_weights = {}
 for phase, step in [("smoke", 1), ("smoke_resume", 2)]:
     phase_deploy = (
         Path("/data/chenyiteng/deployment-20261111/cql-pour/g6")
@@ -37,6 +38,7 @@ for phase, step in [("smoke", 1), ("smoke_resume", 2)]:
     )
     weights = torch.load(model, map_location="cpu", weights_only=True)
     assert all(torch.isfinite(t).all() for t in weights.values())
+    phase_weights[phase] = weights
     scalars = {}
     for path in (phase_run / phase).rglob("events.out.tfevents.*"):
         acc = EventAccumulator(str(path), size_guidance={"scalars": 0})
@@ -72,6 +74,19 @@ assert c["total_transitions"] > a["total_transitions"] > 0
 assert c["warmup_ready_at"] == a["warmup_ready_at"]
 assert c["contract"] == a["contract"]
 assert c["policy_sha256"] != a["policy_sha256"]
+before, after = phase_weights["smoke"], phase_weights["smoke_resume"]
+assert before.keys() == after.keys()
+deltas = {
+    key: float((after[key].float() - before[key].float()).abs().max())
+    for key in before
+    if before[key].numel()
+}
+assert any(value > 0 for value in deltas.values())
+result["policy_parameter_delta"] = {
+    "tensors_changed": sum(value > 0 for value in deltas.values()),
+    "tensors_compared": len(deltas),
+    "max_abs": max(deltas.values()),
+}
 result["passed"] = True
 result["scope"] = (
     "real native64 collection and updates, then native56 DCP resume and further updates; disposable smokes are not formal training data"
