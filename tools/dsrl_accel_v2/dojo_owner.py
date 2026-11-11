@@ -109,6 +109,10 @@ def main(directory: Any) -> Any:
                 },
             )
         registered = True
+        if plan.get("pre_native_phases"):
+            from tools.appendix_signals.pre_native import run as run_pre_native
+
+            run_pre_native(d, plan, launch, status, read)
         cache = d / f"native-g{gpu}/cache"
         cache.mkdir(parents=True, exist_ok=True)
         e = dict(os.environ, **read(d / "sim-environment.json"))
