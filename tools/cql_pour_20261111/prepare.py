@@ -165,7 +165,7 @@ for g, method in [("4", "dsrl"), ("6", "rlt")]:
                     str(root / "tools/dsrl_rlt_warmstart/reference_eval.py"),
                     str(d),
                 ],
-                "timeout": 3600,
+                "timeout": 7200,
             }
         ]
         for phase in ["smoke", "smoke_resume", "formal"]:
@@ -175,7 +175,7 @@ for g, method in [("4", "dsrl"), ("6", "rlt")]:
                     "command": command(
                         phase, Path("tools/dsrl_rlt_warmstart/rlt_training_entry.py")
                     ),
-                    "timeout": 2400 if phase != "formal" else None,
+                    "timeout": 7200 if phase != "formal" else None,
                 }
             )
         c["runner"].update(resume_dir=None, max_steps=79)
@@ -215,7 +215,7 @@ for g, method in [("4", "dsrl"), ("6", "rlt")]:
                 warmup_transitions=8, warmup_updates=16
             )
             sc["env"]["train"].update(
-                max_steps_per_rollout_epoch=100, max_episode_steps=100
+                max_steps_per_rollout_epoch=20, max_episode_steps=20
             )
             OmegaConf.save(OmegaConf.create(sc), d / f"config/{phase}.yaml")
         native = relocate(read(old / "native-g6.json"))

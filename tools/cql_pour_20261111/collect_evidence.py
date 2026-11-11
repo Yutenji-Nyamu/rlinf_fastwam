@@ -6,6 +6,11 @@ from pathlib import Path
 
 B = Path("/data/chenyiteng/deployment-20261111/cql-pour")
 R = Path("/data/chenyiteng/projects/rlinf-shenzhen/exports/cql-pour-20261111")
+active = json.loads(
+    Path(
+        "/data/chenyiteng/deployment-20261105/dsrl-fp32-accel/active-runs.json"
+    ).read_text()
+)
 out = B / "evidence"
 out.mkdir(exist_ok=True)
 old = Path(
@@ -48,7 +53,10 @@ for g, old_d in [("4", "parallel32/g4"), ("6", "parallel64/g6")]:
     )
     b = leaves(
         OmegaConf.to_container(
-            OmegaConf.load(B / ("g" + g) / "config/formal.yaml"), resolve=True
+            OmegaConf.load(
+                Path(active["slots"][g]["deployment"]) / "config/formal.yaml"
+            ),
+            resolve=True,
         )
     )
     diffs[g] = {
@@ -57,7 +65,7 @@ for g, old_d in [("4", "parallel32/g4"), ("6", "parallel64/g6")]:
         if a.get(k) != b.get(k)
     }
     (out / ("formal-g" + g + ".yaml")).write_text(
-        (B / ("g" + g) / "config/formal.yaml").read_text()
+        (Path(active["slots"][g]["deployment"]) / "config/formal.yaml").read_text()
     )
 (out / "config-diff.json").write_text(json.dumps(diffs, indent=2))
 # Verified once against upstream on 2026-11-11; keep the reviewed source fixed.

@@ -1,103 +1,119 @@
 {
-  "snapshot_time": 1794392223.8132422,
+  "observed_at": "2026-11-11 19:37:31 CST",
   "gpu4": {
     "cpu_check": "passed",
-    "gpu_smoke": "8 real production updates passed; discarded before original CP156 resume",
-    "fixed_eval": "not yet available after CQL addition",
-    "phase": "formal",
-    "latest_completed_round": 158,
-    "latest_collection_success": 0.46875
+    "verified_full_checkpoint": 160,
+    "smoke_updates_discarded": true,
+    "production_gpu_smoke_updates": 8,
+    "initial_resume_checkpoint": 156,
+    "evaluations": [
+      {
+        "phase": "formal",
+        "round": 160,
+        "time": 1794393427.7055235,
+        "metrics": {
+          "reward": 0.011666666716337204,
+          "success_at_end": 0.4166666567325592,
+          "return": 2.3333332538604736,
+          "episode_len": 200.0,
+          "success_once": 0.4166666567325592,
+          "num_trajectories": 12
+        }
+      },
+      {
+        "phase": "formal",
+        "round": 164,
+        "time": 1794395860.3659496,
+        "metrics": {
+          "reward": 0.0037499999161809683,
+          "success_at_end": 0.1666666716337204,
+          "return": 0.75,
+          "episode_len": 200.0,
+          "success_once": 0.1666666716337204,
+          "num_trajectories": 12
+        }
+      }
+    ],
+    "prior_eval": {
+      "successes": 4,
+      "episodes": 12,
+      "round": 156
+    },
+    "phase": "formal"
   },
   "gpu6": {
-    "baseline": "32 full-horizon episodes running",
-    "training_smoke": "pending",
-    "stage1_updates": 2000,
-    "phase": "reference_eval",
+    "smoke_resume56": "running",
+    "deployment": "/data/chenyiteng/deployment-20261111/cql-pour-56/g6",
+    "estimated_memory_gib": [
+      69,
+      72
+    ],
+    "q_weight": 0.0,
+    "bc_weight": 1.0,
+    "reference": {
+      "time": 1794395110.558072,
+      "successes": 5,
+      "episodes": 32,
+      "layout_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "seconds": 3063.9406790733337,
+      "canonical_decode_max_abs": 0.0,
+      "z_shape": [
+        32,
+        2048
+      ],
+      "reference_shape": [
+        32,
+        10,
+        14
+      ],
+      "scope": "frozen VLA reference; not the trained RLT student"
+    },
+    "parallel": 56,
+    "measured64_memory_gib": 77.23828125,
+    "eval_unique_layouts": 55,
+    "eval_episodes": 56,
+    "smoke64": {
+      "complete": true,
+      "checkpoint": 1,
+      "updates": 16
+    },
     "formal": "pending",
-    "resume_smoke": "pending",
-    "physical_reset_replacements": 0,
-    "initial_layouts_valid": 32,
-    "token_sha256": "50ddcebc555a3a56d8356cd86884cb44bb615aa4152a19d45e05a7a268011635"
+    "stage1_updates": 2000,
+    "formal_episode_slots": 5040,
+    "phase": "smoke_resume"
   },
-  "own_gpu_bindings": [
-    {
-      "gpu": 4,
-      "pid": 51659,
-      "type": "G",
-      "memory": "7 MiB"
-    },
-    {
-      "gpu": 4,
-      "pid": 84739,
-      "type": "G",
-      "memory": "7 MiB"
-    },
-    {
-      "gpu": 4,
-      "pid": 3777596,
-      "type": "C",
-      "memory": "18432 MiB"
-    },
-    {
-      "gpu": 4,
-      "pid": 3777869,
-      "type": "C",
-      "memory": "14882 MiB"
-    },
-    {
-      "gpu": 4,
-      "pid": 3778103,
-      "type": "C+G",
-      "memory": "33617 MiB"
-    },
-    {
-      "gpu": 5,
-      "pid": 84739,
-      "type": "C+G",
-      "memory": "26397 MiB"
-    },
-    {
-      "gpu": 5,
-      "pid": 626617,
-      "type": "C",
-      "memory": "18312 MiB"
-    },
-    {
-      "gpu": 5,
-      "pid": 626672,
-      "type": "C",
-      "memory": "14882 MiB"
-    },
-    {
-      "gpu": 6,
-      "pid": 51659,
-      "type": "C+G",
-      "memory": "52766 MiB"
-    },
-    {
-      "gpu": 6,
-      "pid": 53841,
-      "type": "C",
-      "memory": "16270 MiB"
-    },
-    {
-      "gpu": 7,
-      "pid": 2963754,
-      "type": "C",
-      "memory": "1576 MiB"
-    },
-    {
-      "gpu": 7,
-      "pid": 2963758,
-      "type": "C",
-      "memory": "9390 MiB"
-    },
-    {
-      "gpu": 7,
-      "pid": 2963763,
-      "type": "C+G",
-      "memory": "10002 MiB"
-    }
-  ],
-  "conclusion": "Implementation checks passed for GPU4; GPU6 acceptance remains in progress. No success improvement claim."
+  "conclusion": "GPU4 is in formal continuation. GPU6 has a complete reference evaluation and64-env update/save;56-env restore acceptance remains in progress. No success-rate improvement or RL gain is claimed."
 }

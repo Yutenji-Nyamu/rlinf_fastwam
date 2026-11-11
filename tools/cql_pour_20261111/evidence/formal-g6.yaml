@@ -1,7 +1,7 @@
 env:
   train:
     env_type: robodojo
-    total_num_envs: 64
+    total_num_envs: 56
     auto_reset: false
     ignore_terminations: false
     reward_coef: 1.0
@@ -22,13 +22,13 @@ env:
     rollout_epoch: 1
     physical_gpus:
     - 6
-    rpc_dir: /data/chenyiteng/deployment-20261111/cql-pour/g6/rpc
+    rpc_dir: /data/chenyiteng/deployment-20261111/cql-pour-56/g6/rpc
     rpc_timeout: 900
     reset_timeout: 1200
     dsrl_acceleration: {}
   eval:
     env_type: robodojo
-    total_num_envs: 64
+    total_num_envs: 56
     auto_reset: false
     ignore_terminations: false
     reward_coef: 1.0
@@ -49,10 +49,10 @@ env:
     rollout_epoch: 1
     physical_gpus:
     - 6
-    rpc_dir: /data/chenyiteng/deployment-20261111/cql-pour/g6/rpc
+    rpc_dir: /data/chenyiteng/deployment-20261111/cql-pour-56/g6/rpc
     rpc_timeout: 900
     reset_timeout: 1200
-    fixed_layout_cycle: 64
+    fixed_layout_cycle: 56
     dsrl_acceleration: {}
   group_name: EnvGroup
   enable_offload: false
@@ -131,13 +131,13 @@ cluster:
 runner:
   task_type: embodied
   logger:
-    log_path: /home/chenyiteng/results/cql-pour-20261111/g6/formal
+    log_path: /home/chenyiteng/results/cql-pour-20261111/g6-56/formal
     project_name: rlinf-rlt
     experiment_name: formal
     logger_backends:
     - tensorboard
   max_epochs: 1000
-  max_steps: 79
+  max_steps: 90
   only_eval: false
   weight_sync_interval: 1
   val_check_interval: 2
@@ -211,7 +211,7 @@ algorithm:
       config_name: pi05_robodojo
       reconstruction: current_causal_ar
       stage1_token_path: /home/chenyiteng/results/cql-pour-20261111/g6/stage1/token-final.pt
-      stage1_token_sha256: pending_stage1
+      stage1_token_sha256: 50ddcebc555a3a56d8356cd86884cb44bb615aa4152a19d45e05a7a268011635
       norm_stats_sha256: ad7dea3e3d2bcdb348945fe03422ab1adccd03baf67318b1a1d153dfe8694db5
       train_vla: false
       prefix_seq_len: 768

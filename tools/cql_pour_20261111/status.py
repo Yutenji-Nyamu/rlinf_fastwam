@@ -4,10 +4,18 @@ import time
 from pathlib import Path
 
 B = Path("/data/chenyiteng/deployment-20261111/cql-pour")
+active = json.loads(
+    Path(
+        "/data/chenyiteng/deployment-20261105/dsrl-fp32-accel/active-runs.json"
+    ).read_text()
+)
 o = {"time": time.time(), "slots": {}}
 for g in ["4", "6"]:
-    d = B / ("g" + g)
-    r = {}
+    slot = active["slots"][g]
+    d = Path(slot["deployment"])
+    r = {"deployment": str(d), "run": slot["run"]}
+    p = json.loads((d / "plan.json").read_text())
+    r["num_envs"] = p["num_envs"]
     for f in [
         "status.json",
         "gpu-smoke.json",
@@ -23,7 +31,7 @@ for g in ["4", "6"]:
         with f.open("rb") as s:
             s.seek(max(0, s.seek(0, 2) - 8000))
             r["tail"] = s.read().decode(errors="replace")[-5000:]
-    run = Path("/home/chenyiteng/results/cql-pour-20261111") / ("g" + g)
+    run = Path(slot["run"])
     if (run / "stage1/complete.json").exists():
         r["stage1"] = json.loads((run / "stage1/complete.json").read_text())
     r["complete_checkpoints"] = [
