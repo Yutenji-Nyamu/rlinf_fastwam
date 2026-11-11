@@ -247,6 +247,19 @@ class EnvWorker(Worker):
         ]
 
     def init_worker(self):
+        # Ray workers do not inherit the training driver's resource limits.
+        # Vulkan camera semaphore exports consume file descriptors per env.
+        requested = int(self.cfg.env.get("max_open_files", 0))
+        if requested > 0:
+            import resource
+
+            soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+            target = (
+                requested if hard == resource.RLIM_INFINITY else min(requested, hard)
+            )
+            if target > soft:
+                resource.setrlimit(resource.RLIMIT_NOFILE, (target, hard))
+            self.log_info(f"Open-file limit: {max(soft, target)}")
         # This is a barrier to ensure all envs' initial setup upon import is done
         # Essential for RealWorld env to ensure initial ROS node setup is done
         self.broadcast(
