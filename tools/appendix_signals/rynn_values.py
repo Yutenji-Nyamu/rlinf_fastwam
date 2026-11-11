@@ -260,7 +260,4 @@ if __name__ == "__main__":
     p.add_argument("--data", required=True)
     p.add_argument("--model", required=True)
     args = p.parse_args()
-    from .pending_retries import run as run_pending
-
-    run_pending(args.data)
     main(args)

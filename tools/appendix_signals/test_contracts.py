@@ -7,6 +7,42 @@ import torch
 from .common import causal_prefix, entropy, seed_for, uniform_indices
 
 
+def test_legacy_dojo_trace_preserves_native_rng_and_injects_requested_noise():
+    from types import SimpleNamespace
+
+    from .dojo_sampling import add_legacy_trace
+
+    class LegacyModel:
+        config = SimpleNamespace(num_steps=10, action_env_dim=2)
+
+        def sample_actions(self, observation, noise=None):
+            if noise is None:
+                noise = torch.randn(2, 3, 4)
+            return noise + 2, noise
+
+        def predict_action_batch(self, obs, **kwargs):
+            full, noise = self.sample_actions(obs)
+            return full[..., :2], {
+                "model_actions": full,
+                "forward_inputs": {"chains": torch.stack([noise, full], dim=1)},
+            }
+
+    model = LegacyModel()
+    initial_rng = torch.get_rng_state().clone()
+    expected, _ = model.predict_action_batch(None)
+    expected_rng = torch.get_rng_state().clone()
+    torch.set_rng_state(initial_rng)
+    add_legacy_trace(model)
+    actual, _ = model.predict_action_batch(None, num_steps=10)
+    assert torch.equal(expected, actual)
+    assert torch.equal(expected_rng, torch.get_rng_state())
+    requested = torch.full((2, 3, 4), 7.0)
+    actual, result = model.predict_action_batch(None, noise=requested, num_steps=10)
+    assert torch.equal(actual, (requested + 2)[..., :2])
+    assert torch.equal(result["dvac_telemetry"]["initial_noise_full"], requested)
+    assert torch.equal(expected_rng, torch.get_rng_state())
+
+
 def test_entropy_known_distribution_and_dimensions():
     a = np.array([[-1.0, -2.0], [1.0, 2.0]])[None, :, None, :]
     expected = 0.5 * np.log(2 * np.pi * np.e * (np.array([2.0, 8.0]) + 1e-6)).sum()

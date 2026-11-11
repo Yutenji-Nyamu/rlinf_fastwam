@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+import inspect
 import json
 import time
 from pathlib import Path
@@ -9,6 +10,39 @@ from pathlib import Path
 import numpy as np
 
 from .common import Timer, cuda_guard, entropy, uniform_indices, write_json, write_npz
+
+
+def add_legacy_trace(model):
+    """Expose existing native outputs without changing the deployed sampler."""
+    original = model.predict_action_batch
+    if "return_dvac_telemetry" in inspect.signature(original).parameters:
+        return
+    sampler = model.sample_actions
+
+    def predict(obs, *, noise=None, num_steps=None, **kwargs):
+        if num_steps is not None:
+            assert num_steps == model.config.num_steps
+        if noise is not None:
+
+            def with_noise(observation, *args, **options):
+                options["noise"] = noise
+                return sampler(observation, *args, **options)
+
+            model.sample_actions = with_noise
+        try:
+            actions, result = original(obs, **kwargs)
+        finally:
+            model.sample_actions = sampler
+        chains = result["forward_inputs"]["chains"]
+        result["dvac_telemetry"] = {
+            "initial_noise_full": chains[:, 0].detach(),
+            "final_model_action": result["model_actions"][
+                ..., : model.config.action_env_dim
+            ].detach(),
+        }
+        return actions, result
+
+    model.predict_action_batch = predict
 
 
 def main(args):
@@ -30,6 +64,7 @@ def main(args):
         mc.openpi.use_rlt = False
     model = get_model(mc).cuda().eval()
     model.requires_grad_(False)
+    add_legacy_trace(model)
     ec = copy.deepcopy(c.env.eval)
     ec.total_num_envs = 12
     ec.auto_reset = False
@@ -63,13 +98,8 @@ def main(args):
                 if v is not None
             }
             with Timer() as main_timer, torch.inference_mode():
-                noise = model.sample_noise(
-                    (12, model.config.action_horizon, model.config.action_dim),
-                    torch.device("cuda"),
-                ).to(model.action_in_proj.weight.dtype)
                 actions, r = model.predict_action_batch(
                     obs,
-                    noise=noise,
                     mode="eval",
                     compute_values=False,
                     num_steps=10,
@@ -77,7 +107,6 @@ def main(args):
                     record_signals=False,
                 )
             trace = r["dvac_telemetry"]
-            trace["initial_noise_full"] = noise
             observed = None
             cpu = torch.get_rng_state().clone()
             cuda = torch.cuda.get_rng_state().clone()

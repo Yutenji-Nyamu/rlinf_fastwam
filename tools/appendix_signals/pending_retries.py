@@ -9,17 +9,24 @@ from .common import write_json
 from .pipeline import cleanup
 
 
-def run(data):
-    path = Path(data) / "pending-repairs.json"
+def run(data, plan_name="pending-repairs.json"):
+    path = Path(data) / plan_name
     if not path.exists():
         return
     plan = json.loads(path.read_text())
-    out = Path(data) / "repairs"
+    out = Path(data) / (
+        "repairs" if plan_name == "pending-repairs.json" else "dojo-repairs"
+    )
     out.mkdir(exist_ok=True)
     tag = os.environ["APPENDIX_STAGE_ID"]
     results = []
     for job in plan["jobs"]:
-        assert job["module"] in {"rt_sampling", "rt_appearance", "mcr_features"}
+        assert job["module"] in {
+            "rt_sampling",
+            "rt_appearance",
+            "mcr_features",
+            "native_stage",
+        }
         if not all(Path(p).exists() for p in job.get("requires", [])):
             results.append(dict(name=job["module"], state="skipped_missing_input"))
             continue
@@ -33,7 +40,7 @@ def run(data):
             "tools.appendix_signals." + job["module"],
             *job["args"],
         ]
-        with (out / (job["module"] + ".log")).open("xb") as log:
+        with (out / (job.get("name", job["module"]) + ".log")).open("xb") as log:
             try:
                 code = subprocess.run(
                     command,
@@ -55,4 +62,4 @@ def run(data):
             )
         )
         write_json(out / "results.json", results)
-    path.rename(path.with_name("repairs-submitted.json"))
+    path.rename(path.with_name(path.stem + "-submitted.json"))
