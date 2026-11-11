@@ -63,8 +63,13 @@ def main(args):
                 if v is not None
             }
             with Timer() as main_timer, torch.inference_mode():
+                noise = model.sample_noise(
+                    (12, model.config.action_horizon, model.config.action_dim),
+                    torch.device("cuda"),
+                ).to(model.action_in_proj.weight.dtype)
                 actions, r = model.predict_action_batch(
                     obs,
+                    noise=noise,
                     mode="eval",
                     compute_values=False,
                     num_steps=10,
@@ -72,6 +77,7 @@ def main(args):
                     record_signals=False,
                 )
             trace = r["dvac_telemetry"]
+            trace["initial_noise_full"] = noise
             observed = None
             cpu = torch.get_rng_state().clone()
             cuda = torch.cuda.get_rng_state().clone()
