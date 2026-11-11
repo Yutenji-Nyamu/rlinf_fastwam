@@ -1,6 +1,6 @@
 # Copyright 2026 The RLinf Authors.
 # Licensed under the Apache License, Version 2.0.
-"""One 8-episode frozen-reference evaluation plus action adapter parity."""
+"""Frozen-reference evaluation plus action adapter parity (eight by default)."""
 
 import copy
 import json
@@ -23,10 +23,12 @@ def main(directory):
     c = OmegaConf.load(d / "config/formal.yaml")
     model = get_model(c.rollout.rlt_feature_model).eval().cuda()
     ec = copy.deepcopy(c.env.eval)
-    ec.total_num_envs = 8
+    episodes = int(p.get("reference_eval_episodes", 8))
+    assert 0 < episodes <= int(p["num_envs"])
+    ec.total_num_envs = episodes
     ec.auto_reset = False
     ec.ignore_terminations = False
-    env = get_env_cls(ec.env_type, ec)(ec, 8, 0, 1, None)
+    env = get_env_cls(ec.env_type, ec)(ec, episodes, 0, 1, None)
     obs, _ = env.reset()
     obs.setdefault("extra_view_images", None)
     with torch.no_grad():
@@ -40,7 +42,7 @@ def main(directory):
         native = torch.as_tensor(native).cpu().float()
         delta = (decoded - native).abs()
         assert torch.isfinite(decoded).all() and float(delta.max()) < 1e-5
-    success = torch.zeros(8, dtype=torch.bool)
+    success = torch.zeros(episodes, dtype=torch.bool)
     done = success.clone()
     start = time.time()
     chunk = int(c.actor.model.num_action_chunks)
@@ -49,8 +51,8 @@ def main(directory):
         with torch.no_grad():
             actions, _ = model.predict_action_batch(obs, mode="eval")
         next_obs, _, term, trunc, _ = env.chunk_step(actions)
-        term = torch.as_tensor(term).bool().reshape(8, -1).any(-1).cpu()
-        trunc = torch.as_tensor(trunc).bool().reshape(8, -1).any(-1).cpu()
+        term = torch.as_tensor(term).bool().reshape(episodes, -1).any(-1).cpu()
+        trunc = torch.as_tensor(trunc).bool().reshape(episodes, -1).any(-1).cpu()
         success |= term & ~done
         done |= term | trunc
         obs = next_obs[-1]
@@ -59,7 +61,7 @@ def main(directory):
     result = {
         "time": time.time(),
         "successes": int(success.sum()),
-        "episodes": 8,
+        "episodes": episodes,
         "layout_ids": env.reset_state_ids.tolist(),
         "seconds": time.time() - start,
         "canonical_decode_max_abs": float(delta.max()),

@@ -638,5 +638,26 @@
       "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/rt2-rlt-clean-g7/stage1/token-final.pt"
     ],
     "note": "Protect all best-policy subdirectories and their manifest-referenced feature models/configs. RLT compact policies require the matching Stage1 token; they are not standalone VLA checkpoints. Keep latest complete DCP/trainer/replay separately for continuation. CP30 4/12 is a functioning candidate, not evidence of improvement over the base policy."
-  }
+  },
+{
+  "id": "cql_pour_20261111_dependencies",
+  "host": "sz1",
+  "protected": "/home/chenyiteng/models/protected-eval/cql-pour-20261111",
+  "kind": "directory",
+  "do_not_delete": true,
+  "required_stage1_tokens": [
+    "/home/chenyiteng/results/cql-pour-20261111/g6/stage1/token-final.pt"
+  ],
+  "token_sha256": "50ddcebc555a3a56d8356cd86884cb44bb615aa4152a19d45e05a7a268011635",
+  "token_task": "pour_liquid_into_cup",
+  "preserve_previous_candidate": {
+    "policy": "/data/chenyiteng/models/protected-eval/stability-retry-20261110/dojo-rlt-clean-g6/global_step_16/rlt-policy.pt",
+    "token": "/data/chenyiteng/results/dsrl-rlt-warmstart-20261106/dojo-rlt-clean-g6/stage1/token-final.pt",
+    "task": "put_bottles_into_dustbin",
+    "successes": 63,
+    "episodes": 64,
+    "role": "pure_imitation_candidate_not_RL_gain"
+  },
+  "note": "Preserve matching VLA/config/token. Keep current complete resume checkpoints separately. New pour-task stage1 uses official 50 train and 10 held-out demonstrations; token is not interchangeable with dustbin."
+}
 ]
