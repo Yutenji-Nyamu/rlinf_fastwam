@@ -156,7 +156,7 @@ def main(args):
             torch_dtype=torch.bfloat16,
             attn_implementation="sdpa",
         )
-        .to("cuda")
+        .to(device="cuda", dtype=torch.bfloat16)
         .eval()
     )
     model.requires_grad_(False)
