@@ -1,6 +1,6 @@
 # 绘图材料交付核对（2026-11-13）
 
-- 新增离线图册：`appendix-figure-viewer-complete-20261113.zip`，解压后打开 `index.html`。
+- 新增离线图册：`appendix-figure-viewer-20261113.zip`，解压后打开 `index.html`。
 - 本图册含训练新旧曲线、仿真逐动作信号、GR-BC、K稳定性、时间和RynnValue图；附当前训练曲线原始标量。
 - 168.4 MiB主包含原始补采数组、状态、特征、帧索引、PNG/SVG/PDF/CSV、统计与重绘脚本。
 - GR-BC受控干预、四组原生随机化均包含RGB、状态和MCR特征。
