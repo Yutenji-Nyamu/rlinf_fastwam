@@ -4,7 +4,7 @@
 
 ## 现有候选
 
-11份小策略权重均存在、CPU重新加载成功、40个张量均有限，每份约8.3 MiB；状态复核时间15:32。候选的评估成绩来自当时的记录，本次刷新曲线没有新增策略评估。
+11份小策略权重均存在、CPU重新加载成功、40个张量均有限，每份约8.3 MiB；状态复核时间18:20。候选的评估成绩来自当时的记录，本次刷新曲线没有新增策略评估。
 
 - 按铃：Clean CP625与加权CP1125均20/20，后续末5评仍100%。
 - 拨开关：旧CP270为12/12，CP614为11/12，新从头训练CP62为12/12。新组末5评均76.7%，单次满分之后仍有波动。
@@ -40,6 +40,12 @@
 
 优先复用失败样本明确的place_fan、place_phone_stand、stamp_seal、move_stapler_pad。扩展新难任务时可进入400步以外任务，先用当前π0.5接口的小评估确定初始成功率。move_stapler_pad与press_stapler是不同任务，历史表现也完全不同。
 
+当前RLT成绩反映的是我们的训练结果。比如放风扇公开π0.5 Clean成绩为87%，本机末5评均7%；后续优先复核老师在相同接口、动作预算下的表现，再分析小策略接管。原短任务上限400步而当前RLT使用200动作，值得作为接口核对项。
+
+## 尚未见RLT训练记录的长任务
+
+可继续筛选挂杯子、按大小排积木、开微波炉。Fast-WAM表3的π0.5 Clean/Randomized成功率分别为18/17%、49/26%、34/77%；官方动作上限为900、1200、1500步。这三项在已整理三机RLT记录中没有正式训练记录；配套使用更长动作预算。挂杯子在两种设置均难；积木排序含多个阶段；微波炉先复测当前π0.5接口，确认较大设置差异的实际表现。
+
 ## 数据与来源
 
 - 本次1机扫描155份含实际成功率事件的RLT运行目录；筛掉smoke后选择上述正式运行。
@@ -47,3 +53,4 @@
 - data.json包含全部绘图点、候选位置、来源运行目录和历史24任务排序；网页离线可打开，悬停查看成绩，点击任务切换曲线。
 - 历史依据：TASK_SELECTION_FOUR_RLT_20260928.md、FOUR_TASKS_RLT_20260928.md、RLT_NEXT_SIX_20261002.md、RLT_SZ3_TIMEOUT_RECOVERY_20261003.md、OVERALL_REFRESH_20261005_1500.md（原RL项目docs/server-admin）。
 - [官方任务步数表](https://github.com/RoboTwin-Platform/RoboTwin/blob/6dde57155eafa3e4ebf6ad1f93a7cf7d5d41a755/env_cfg/task_config/_eval_step_limit.yml)、[Fast-WAM Table 3](https://arxiv.org/html/2603.16666v2#A1.T3)、[LingBot-VA Table S1](https://arxiv.org/html/2601.21998v2)。
+

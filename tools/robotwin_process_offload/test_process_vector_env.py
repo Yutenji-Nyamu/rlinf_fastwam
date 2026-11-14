@@ -2,7 +2,10 @@
 
 import json
 import os
+import subprocess
+import sys
 import tempfile
+import time
 from pathlib import Path
 
 from process_vector_env import ProcessVectorEnv
@@ -51,6 +54,38 @@ class Vector:
         e.close()
         assert e.worker_pid is None and not Path("/proc/" + str(pids[-1])).exists()
     assert len(set(pids)) == 16
+    # An abruptly stopped owner must not leave its simulator alive.
+    record = p / "abrupt.json"
+    code = (
+        "import sys,time,json; from pathlib import Path; "
+        + "sys.path.insert(0,"
+        + repr(str(Path(__file__).parent))
+        + "); "
+        + "from process_vector_env import ProcessVectorEnv; "
+        + "e=ProcessVectorEnv(factory='fake_vector:Vector',seeds=[1,2]); "
+        + "o=e.get_obs(); Path("
+        + repr(str(record))
+        + ").write_text(json.dumps(o)); "
+        + "time.sleep(30)"
+    )
+    owner = subprocess.Popen([sys.executable, "-c", code])
+    try:
+        deadline = time.monotonic() + 10
+        while not record.exists():
+            assert owner.poll() is None and time.monotonic() < deadline
+            time.sleep(0.05)
+        child_pid = json.loads(record.read_text())["pid"]
+        owner.terminate()
+        owner.wait(timeout=10)
+        state = Path("/proc") / str(child_pid) / "stat"
+        deadline = time.monotonic() + 5
+        while state.exists() and state.read_text().split(") ", 1)[1].split()[0] != "Z":
+            assert time.monotonic() < deadline, "Orphan simulator survived its owner"
+            time.sleep(0.05)
+    finally:
+        if owner.poll() is None:
+            owner.kill()
+            owner.wait(timeout=10)
 print(
     json.dumps(
         {
@@ -60,6 +95,7 @@ print(
             "step_reward_termination_order": True,
             "exceptions_forwarded": True,
             "all_children_reaped": True,
+            "abrupt_owner_exit": True,
         }
     )
 )

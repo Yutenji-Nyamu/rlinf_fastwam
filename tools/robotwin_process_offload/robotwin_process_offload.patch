@@ -6,9 +6,9 @@
  
 -        from robotwin.envs.vector_env import VectorEnv
 +        if self.cfg.get("process_offload", False):
-+            from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv
-+
 +            from functools import partial
++
++            from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv
 +
 +            VectorEnv = partial(ProcessVectorEnv, torch_threads=torch.get_num_threads())
 +        else:

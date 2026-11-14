@@ -1,0 +1,11 @@
+--- a/tools/dsrl_rlt_warmstart/rt2_owner.py
++++ b/tools/dsrl_rlt_warmstart/rt2_owner.py
+@@ -36,7 +36,7 @@
+         if p.get("from_rlt"):
+             sys.path.insert(0, str(Path(p["training_source"]) / "tools/rlt_disk_fallback"))
+             from priority_pair_handoff import handoff
+-            h = d / (d.name + "-handoff")
++            h = d / (d.parent.name + "-" + d.name + "-handoff")
+             h.mkdir()
+             handoff(h, [p["gpu"]], me, reservations={str(p["gpu"]): {"identity": me, "release": str(d / "released.json")}})
+         else:

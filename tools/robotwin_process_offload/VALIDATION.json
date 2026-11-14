@@ -51,7 +51,20 @@
       "seconds": 166.42
     }
   ],
-  "process32": [],
+  "process32": [
+    {
+      "cycle": 0,
+      "active_free_tls": 918,
+      "offloaded_free_tls": 918,
+      "seconds": 540.4
+    },
+    {
+      "cycle": 1,
+      "active_free_tls": 918,
+      "offloaded_free_tls": 918,
+      "seconds": 1210.69
+    }
+  ],
   "lifecycle32-original": [
     {
       "phase": "imported",
@@ -105,6 +118,7 @@
   "runtime-201-exit": -11,
   "runtime-222-r2-exit": -11,
   "process-probe-exit": 0,
+  "process32-exit": -15,
   "cpu_tests": {
     "cycles": 16,
     "passed": true,
@@ -113,7 +127,58 @@
       "partial_reset",
       "step_reward_done_order",
       "exception_transport",
-      "worker_reaping"
+      "worker_reaping",
+      "abrupt_owner_exit"
     ]
+  },
+  "process32-accepted": {
+    "time": 1794651382.2428854,
+    "cycles": [
+      {
+        "cycle": 0,
+        "active_free_tls": 918,
+        "offloaded_free_tls": 918,
+        "seconds": 540.4
+      },
+      {
+        "cycle": 1,
+        "active_free_tls": 918,
+        "offloaded_free_tls": 918,
+        "seconds": 1210.69
+      }
+    ],
+    "end": "deliberate stop after two complete 32-env cycles; formal run next"
+  },
+  "formal": {
+    "4": {
+      "phase": "formal",
+      "evaluations": [
+        {
+          "phase": "formal",
+          "round": 0,
+          "time": 1794651790.2792885,
+          "metrics": {
+            "success_once": 0.34375,
+            "return": 2.125,
+            "reward": 0.010624999180436134,
+            "episode_len": 200.0,
+            "success_at_end": 0.34375,
+            "num_trajectories": 32
+          }
+        }
+      ],
+      "simulators_started": 2,
+      "simulators_released": 1,
+      "oidn_failure": false,
+      "checked_unix_time": 1794652001.8381698
+    },
+    "7": {
+      "phase": "formal",
+      "evaluations": [],
+      "simulators_started": 1,
+      "simulators_released": 0,
+      "oidn_failure": false,
+      "checked_unix_time": 1794652001.8383842
+    }
   }
 }

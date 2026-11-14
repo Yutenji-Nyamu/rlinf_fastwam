@@ -81,7 +81,15 @@ class RoboTwinEnv(gym.Env):
         mp.set_start_method("spawn", force=True)
         os.environ["ASSETS_PATH"] = self.cfg.assets_path
 
-        from robotwin.envs.vector_env import VectorEnv
+        if self.cfg.get("process_offload", False):
+            from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv
+
+            def VectorEnv(**kwargs):
+                return ProcessVectorEnv(
+                    torch_threads=torch.get_num_threads(), **kwargs
+                )
+        else:
+            from robotwin.envs.vector_env import VectorEnv
 
         env_seeds = self.reset_state_ids.tolist()
 

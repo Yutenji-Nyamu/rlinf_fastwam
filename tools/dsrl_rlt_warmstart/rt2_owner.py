@@ -37,7 +37,7 @@ def main(directory: Any) -> None:
             )
             from priority_pair_handoff import handoff
 
-            h = d / (d.name + "-handoff")
+            h = d / (d.parent.name + "-" + d.name + "-handoff")
             h.mkdir()
             handoff(
                 h,

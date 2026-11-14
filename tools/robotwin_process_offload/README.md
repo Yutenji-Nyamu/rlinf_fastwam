@@ -16,15 +16,18 @@
 
 ## 验证
 
-- 16次CPU进程循环：完整/局部reset、动作与奖励/终止顺序、错误返回、子进程回收通过。
+- 16次CPU进程循环：完整/局部reset、动作与奖励/终止顺序、错误返回、子进程回收通过；额外验证父进程异常结束时，仿真子进程也被回收。
 - 真实RoboTwin 2路、4次卸载重建：父进程可用TLS键一直918，正常退出。
 - 固定种子2路：主相机、左右腕相机全部像素、状态及指令与原实现逐项相同。
 - Ruff格式和检查通过；两份正式配置检查通过。
-- 32路反复切换、正式训练的结果继续记录在VALIDATION.json。
+- 真实32路连续两次完整重建、执行、卸载通过；父进程可用TLS键保持918。两周期分别约540秒、670秒，随后切入正式训练。
+- 4、7卡均已切入正式任务；正式运行阶段继续记录在VALIDATION.json。
 
 ## 使用
 
-将补丁应用于包含本文配套DSRL实现的源代码，加入`process_vector_env.py`，在`env.train`和`env.eval`均设置`process_offload: true`。其余渲染设置不变。CPU测试使用模拟VectorEnv，仿真验证需要匹配的RoboTwin安装和资产。
+配套分支已接入`rlinf/envs/robotwin/process_vector_env.py`及包装器入口。在`env.train`和`env.eval`均设置`process_offload: true`即可启用。其余渲染设置不变；单独移植时可用本目录补丁。CPU测试：`python test_process_vector_env.py`（Linux）。原生验证：`python probe_runtime.py CONFIG_YAML OUTPUT_PREFIX 4 2`，最后两项为循环数和环境数；需要匹配的RoboTwin安装、GPU与资产。它会保存首个观测用于比较，并打印测试专用资源计数；正式训练不运行该计数。
+
+另修正切换脚本的临时目录命名：加入部署父目录名，避免不同批次同为`g7`时，与旧恢复目录重名。原训练在切换失败后自动恢复；新目录准备完成后重新切换。
 
 ## 参考
 
@@ -34,4 +37,7 @@
 - [OIDN 2.2.2发布说明](https://github.com/RenderKit/oidn/releases/tag/v2.2.2)：涉及GPU资源释放修复，本次升级实测仍有累积。
 
 这是RoboTwin渲染生命周期问题；本次失败日志不是Dojo/Isaac，也未出现CUDA OOM。
+
+
+
 
