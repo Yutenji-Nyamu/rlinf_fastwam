@@ -1,0 +1,96 @@
+--- a/rlinf/models/embodiment/modules/q_head.py
++++ b/rlinf/models/embodiment/modules/q_head.py
+@@ -112,7 +112,15 @@
+ 
+         # Original simple concatenation
+         x = torch.cat([state_features, action_features], dim=-1)
+-        q_values = self.net(x)
++        if getattr(self, "output_feature_normalization", False):
++            # OFN: normalize the final critic feature, before the scalar head.
++            # Keep Sequential indices/state_dict keys compatible with checkpoints.
++            for layer in list(self.net.children())[:-1]:
++                x = layer(x)
++            x = torch.nn.functional.normalize(x, p=2, dim=-1, eps=1e-8)
++            q_values = self.net[-1](x)
++        else:
++            q_values = self.net(x)
+ 
+         return q_values
+ 
+--- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
+@@ -81,6 +81,13 @@
+         module = self.model_provider_func()
+         if initialize_target:
+             target_module = self.model_provider_func()
++
++        if self.cfg.algorithm.get("q_output_feature_normalization", False):
++            if self.cfg.actor.model.get("q_head_type", "default") != "default":
++                raise ValueError("Q output feature normalization requires default QHead")
++            for policy in ([module, target_module] if initialize_target else [module]):
++                for head in policy.q_head.qs:
++                    head.output_feature_normalization = True
+ 
+         # Enable gradient checkpointing if configured
+         if self.cfg.actor.model.get("gradient_checkpointing", False):
+@@ -568,6 +575,17 @@
+         """Prepare optional actor weights before splitting the sampled batch."""
+         return global_batch, {}
+ 
++    def _clear_grads_outside_optimizer(self, optimizer):
++        """Restrict FSDP's global norm to the optimizer being stepped.
++
++        Actor backprop still traverses Q to obtain dQ/da. Discard only parameter
++        gradients owned by the other optimizer, after backward has completed.
++        """
++        owned = {id(p) for group in optimizer.param_groups for p in group["params"]}
++        for parameter in self.model.parameters():
++            if id(parameter) not in owned:
++                parameter.grad = None
++
+     @Worker.timer("update_one_epoch")
+     def update_one_epoch(self, train_actor: bool = True):
+         global_batch_size_per_rank = (
+@@ -606,6 +624,7 @@
+         all_critic_metrics = {
+             f"critic/{key}": self._metric_mean(value) for key, value in all_critic_metrics.items()
+         }
++        self._clear_grads_outside_optimizer(self.qf_optimizer)
+         qf_grad_norm = self.model.clip_grad_norm_(
+             max_norm=self.cfg.actor.critic_optim.clip_grad
+         )
+@@ -639,6 +658,7 @@
+             all_actor_metrics.update(
+                 {f"actor/{key}": value for key, value in prepared_actor_metrics.items()}
+             )
++            self._clear_grads_outside_optimizer(self.optimizer)
+             actor_grad_norm = self.model.clip_grad_norm_(
+                 max_norm=self.cfg.actor.optim.clip_grad
+             )
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -604,11 +604,23 @@
+                 next_actions=next_actions,
+             )
+ 
++        target_min = self.cfg.algorithm.get("critic_target_min", None)
++        target_max = self.cfg.algorithm.get("critic_target_max", None)
++        raw_target = target_q_values
++        if target_min is not None or target_max is not None:
++            target_q_values = target_q_values.clamp(min=target_min, max=target_max)
+         target_q_values = target_q_values.to(dtype=all_data_q_values.dtype)
+         critic_loss = F.mse_loss(
+             all_data_q_values, target_q_values.expand_as(all_data_q_values)
+         )
+-        return critic_loss, {"q_data": self._metric(all_data_q_values.mean())}
++        return critic_loss, {
++            "q_data": self._metric(all_data_q_values.mean()),
++            "q_target": self._metric(target_q_values.mean()),
++            "q_target_raw": self._metric(raw_target.mean()),
++            "q_target_clipped_fraction": self._metric(
++                (target_q_values != raw_target).float().mean()
++            ),
++        }
+ 
+     @Worker.timer("forward_actor")
+     def forward_actor(self, batch):
