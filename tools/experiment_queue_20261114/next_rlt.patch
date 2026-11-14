@@ -1,0 +1,64 @@
+--- a/tools/dsrl_rlt_warmstart/rt2_owner.py
++++ b/tools/dsrl_rlt_warmstart/rt2_owner.py
+@@ -21,7 +21,7 @@
+     p = read(d / "plan.json")
+     me = proc(os.getpid())
+     child = None
+-    assert os.getuid() == 1003 and p["gpu"] in (4, 7)
++    assert os.getuid() == 1003 and p["gpu"] in (4, 5, 6, 7)
+     save(d / "identity.json", me)
+     save(d / "status.json", {"phase": "WAIT_PREPARED_SWAP", "time": time.time()})
+ 
+@@ -37,7 +37,7 @@
+             )
+             from priority_pair_handoff import handoff
+ 
+-            h = d / (d.name + "-handoff")
++            h = d / (d.parent.name + "-" + d.name + "-handoff")
+             h.mkdir()
+             handoff(
+                 h,
+--- a/tools/dsrl_rlt_warmstart/reference_eval.py
++++ b/tools/dsrl_rlt_warmstart/reference_eval.py
+@@ -23,10 +23,10 @@
+     c = OmegaConf.load(d / "config/formal.yaml")
+     model = get_model(c.rollout.rlt_feature_model).eval().cuda()
+     ec = copy.deepcopy(c.env.eval)
+-    ec.total_num_envs = 8
++    n = int(ec.total_num_envs)
+     ec.auto_reset = False
+     ec.ignore_terminations = False
+-    env = get_env_cls(ec.env_type, ec)(ec, 8, 0, 1, None)
++    env = get_env_cls(ec.env_type, ec)(ec, n, 0, 1, None)
+     obs, _ = env.reset()
+     obs.setdefault("extra_view_images", None)
+     with torch.no_grad():
+@@ -40,7 +40,7 @@
+         native = torch.as_tensor(native).cpu().float()
+         delta = (decoded - native).abs()
+         assert torch.isfinite(decoded).all() and float(delta.max()) < 1e-5
+-    success = torch.zeros(8, dtype=torch.bool)
++    success = torch.zeros(n, dtype=torch.bool)
+     done = success.clone()
+     start = time.time()
+     chunk = int(c.actor.model.num_action_chunks)
+@@ -49,8 +49,8 @@
+         with torch.no_grad():
+             actions, _ = model.predict_action_batch(obs, mode="eval")
+         next_obs, _, term, trunc, _ = env.chunk_step(actions)
+-        term = torch.as_tensor(term).bool().reshape(8, -1).any(-1).cpu()
+-        trunc = torch.as_tensor(trunc).bool().reshape(8, -1).any(-1).cpu()
++        term = torch.as_tensor(term).bool().reshape(n, -1).any(-1).cpu()
++        trunc = torch.as_tensor(trunc).bool().reshape(n, -1).any(-1).cpu()
+         success |= term & ~done
+         done |= term | trunc
+         obs = next_obs[-1]
+@@ -59,7 +59,7 @@
+     result = {
+         "time": time.time(),
+         "successes": int(success.sum()),
+-        "episodes": 8,
++        "episodes": n,
+         "layout_ids": env.reset_state_ids.tolist(),
+         "seconds": time.time() - start,
+         "canonical_decode_max_abs": float(delta.max()),
