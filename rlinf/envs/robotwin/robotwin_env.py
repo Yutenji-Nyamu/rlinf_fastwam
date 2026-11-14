@@ -82,12 +82,11 @@ class RoboTwinEnv(gym.Env):
         os.environ["ASSETS_PATH"] = self.cfg.assets_path
 
         if self.cfg.get("process_offload", False):
+            from functools import partial
+
             from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv
 
-            def VectorEnv(**kwargs):
-                return ProcessVectorEnv(
-                    torch_threads=torch.get_num_threads(), **kwargs
-                )
+            VectorEnv = partial(ProcessVectorEnv, torch_threads=torch.get_num_threads())
         else:
             from robotwin.envs.vector_env import VectorEnv
 
