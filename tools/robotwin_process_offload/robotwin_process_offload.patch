@@ -1,0 +1,18 @@
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -86,7 +86,14 @@
+         mp.set_start_method("spawn", force=True)
+         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+ 
+-        from robotwin.envs.vector_env import VectorEnv
++        if self.cfg.get("process_offload", False):
++            from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv
++
++            from functools import partial
++
++            VectorEnv = partial(ProcessVectorEnv, torch_threads=torch.get_num_threads())
++        else:
++            from robotwin.envs.vector_env import VectorEnv
+ 
+         env_seeds = self.reset_state_ids.tolist()
+ 
