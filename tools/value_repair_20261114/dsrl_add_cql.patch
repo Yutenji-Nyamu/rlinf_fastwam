@@ -1,33 +1,46 @@
 --- /dev/null
 +++ b/rlinf/algorithms/conservative_q.py
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,15 @@
++# Copyright 2026 The RLinf Authors.
++# Licensed under the Apache License, Version 2.0.
 +"""Two-candidate CQL penalty, following verl-vla SACTrainingWorker."""
++
 +import torch
++
++
 +def conservative_q_loss(q_data, q_candidate, temperature=1.0):
 +    if temperature <= 0:
 +        raise ValueError("temperature must be positive")
-+    return (torch.logsumexp(torch.stack((q_data, q_candidate)) / temperature, dim=0) * temperature - q_data).mean()
++    return (
++        torch.logsumexp(torch.stack((q_data, q_candidate)) / temperature, dim=0)
++        * temperature
++        - q_data
++    ).mean()
 --- a/rlinf/models/embodiment/modules/gaussian_policy.py
 +++ b/rlinf/models/embodiment/modules/gaussian_policy.py
-@@ -190,7 +190,7 @@
+@@ -190,7 +190,9 @@
          # Bias initialized to 0 so log_std starts at 0 (std = exp(0) = 1.0)
          nn.init.zeros_(self.log_std_layer.bias)
  
 -    def forward(self, features, sample=False, deterministic=False):
-+    def forward(self, features, sample=False, deterministic=False, noise_scale=None):
++    def forward(
++        self, features, sample=False, deterministic=False, noise_scale=None
++    ):
          """Forward pass returning a SquashedNormal distribution.
  
          Args:
-@@ -200,7 +200,7 @@
+@@ -200,7 +202,9 @@
              distribution: SquashedNormal distribution.
          """
          if sample:
 -            return self.sample(features, deterministic=deterministic)
-+            return self.sample(features, deterministic=deterministic, noise_scale=noise_scale)
++            return self.sample(
++                features, deterministic=deterministic, noise_scale=noise_scale
++            )
          # Shared feature extraction
          h = self.shared_net(features)
  
-@@ -216,7 +216,7 @@
+@@ -216,7 +220,7 @@
  
          return dist
  
@@ -36,7 +49,7 @@
          """Sample actions for inference.
  
          Uses CleanRL-style manual reparameterization to avoid issues with
-@@ -239,6 +239,8 @@
+@@ -239,6 +243,8 @@
              # Sum 1600 log densities in FP32, while FSDP parameters stay bf16.
              mean, log_std = mean.float(), log_std.float()
          std = torch.exp(log_std)
@@ -47,23 +60,33 @@
              # Deterministic policy: use tanh(mean)
 --- /dev/null
 +++ b/rlinf/models/embodiment/modules/gaussian_shift_policy.py
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,68 @@
++# Copyright 2026 The RLinf Authors.
++# Licensed under the Apache License, Version 2.0.
 +"""Unit-variance Gaussian steering with a bounded state-dependent mean.
 +
 +Inspired by LP-DS zero-initialized bounded perturbations. This is a restricted
 +Gaussian-shift experiment, not the complete LP-DS algorithm (no action critic).
 +"""
++
 +import math
++
 +import torch
 +from torch import nn
 +
 +
 +class GaussianShiftPolicy(nn.Module):
-+    def __init__(self, input_dim, output_dim, hidden_dims=(128, 128, 128),
-+                 shift_bound=0.5, **unused):
++    def __init__(
++        self,
++        input_dim,
++        output_dim,
++        hidden_dims=(128, 128, 128),
++        shift_bound=0.5,
++        **unused,
++    ):
 +        super().__init__()
 +        if not math.isfinite(shift_bound) or shift_bound <= 0:
-+            raise ValueError('shift_bound must be positive and finite')
++            raise ValueError("shift_bound must be positive and finite")
 +        self.output_dim = output_dim
 +        self.shift_bound = float(shift_bound)
 +        layers = []
@@ -76,19 +99,30 @@
 +        nn.init.zeros_(self.mean_layer.bias)
 +
 +    def forward(self, features, sample=False, deterministic=False, noise_scale=None):
-+        mean = self.shift_bound * torch.tanh(self.mean_layer(self.shared_net(features)).float())
-+        variance = 1.0 + (0.0 if noise_scale is None else float(noise_scale)**2)
-+        dist = torch.distributions.Independent(torch.distributions.Normal(mean, torch.full_like(mean, math.sqrt(variance))), 1)
++        mean = self.shift_bound * torch.tanh(
++            self.mean_layer(self.shared_net(features)).float()
++        )
++        variance = 1.0 + (0.0 if noise_scale is None else float(noise_scale) ** 2)
++        dist = torch.distributions.Independent(
++            torch.distributions.Normal(
++                mean, torch.full_like(mean, math.sqrt(variance))
++            ),
++            1,
++        )
 +        if not sample:
 +            return dist
 +        if deterministic:
-+            raise ValueError('Gaussian-shift evaluation must retain independent Gaussian sampling')
++            raise ValueError(
++                "Gaussian-shift evaluation must retain independent Gaussian sampling"
++            )
 +        # Explicit standard-normal sampling supports exact paired-input checks.
 +        noise = mean + dist.stddev * torch.randn_like(mean)
 +        return noise.unsqueeze(1), dist.log_prob(noise)
 +
 +    def sample(self, features, deterministic=False, noise_scale=None):
-+        return self.forward(features, sample=True, deterministic=deterministic, noise_scale=noise_scale)
++        return self.forward(
++            features, sample=True, deterministic=deterministic, noise_scale=noise_scale
++        )
 +
 +    def evaluate_actions(self, features, actions):
 +        dist = self.forward(features)
@@ -106,7 +140,7 @@
      dsrl_vectorized_q: bool = False
      dsrl_compile_q: bool = False
      dsrl_compile_q_mode: str = "default"
-@@ -321,13 +323,26 @@
+@@ -321,13 +323,35 @@
                  self.config.dsrl_state_latent_dim + self.config.dsrl_image_latent_dim
              )  # e.g. 64 + 64 = 128
  
@@ -114,11 +148,20 @@
 +            policy_cls = GaussianPolicy
 +            policy_kwargs = {}
 +            if self.config.dsrl_noise_parameterization == "gaussian_shift":
-+                from rlinf.models.embodiment.modules.gaussian_shift_policy import GaussianShiftPolicy
-+                if (not self.config.dsrl_full_noise or self.config.dsrl_eval_deterministic
-+                    or self.config.dsrl_action_noise_dim != self.config.action_horizon * self.config.action_dim
-+                    or self.config.dsrl_noise_groups not in (0, self.config.action_horizon)):
-+                    raise ValueError("Gaussian shift requires full independent noise and stochastic evaluation")
++                from rlinf.models.embodiment.modules.gaussian_shift_policy import (
++                    GaussianShiftPolicy,
++                )
++
++                if (
++                    not self.config.dsrl_full_noise
++                    or self.config.dsrl_eval_deterministic
++                    or self.config.dsrl_action_noise_dim
++                    != self.config.action_horizon * self.config.action_dim
++                    or self.config.dsrl_noise_groups not in (0, self.config.action_horizon)
++                ):
++                    raise ValueError(
++                        "Gaussian shift requires full independent noise and stochastic evaluation"
++                    )
 +                policy_cls = GaussianShiftPolicy
 +                policy_kwargs["shift_bound"] = self.config.dsrl_shift_bound
 +            elif self.config.dsrl_noise_parameterization != "tanh":
@@ -134,7 +177,7 @@
              ).to(dtype=_dsrl_dtype)
              self.dsrl_action_noise_net.probability_float32 = self.config.dsrl_full_noise
              if self.config.dsrl_noise_groups:
-@@ -1748,7 +1763,8 @@
+@@ -1748,7 +1772,8 @@
  
          # Call forward so a nested FSDP unit runs its parameter/gradient hooks.
          action_noise, logprobs = self.dsrl_action_noise_net(
@@ -146,7 +189,7 @@
          # Optional: return distribution parameters for logging
 --- a/rlinf/workers/actor/fsdp_sac_policy_worker.py
 +++ b/rlinf/workers/actor/fsdp_sac_policy_worker.py
-@@ -705,7 +705,48 @@
+@@ -705,7 +705,50 @@
          critic_loss = F.mse_loss(
              all_data_q_values, target_q_values.expand_as(all_data_q_values)
          )
@@ -169,7 +212,9 @@
 +                    candidate_actions = torch.randn_like(actions, dtype=torch.float32)
 +                else:
 +                    candidate_actions, _, _ = self.model(
-+                        forward_type=ForwardType.SAC, obs=curr_obs, train=True,
++                        forward_type=ForwardType.SAC,
++                        obs=curr_obs,
++                        train=True,
 +                        noise_scale=self.cfg.algorithm.get("dsrl_cql_noise_scale", None),
 +                    )
 +            candidate_q = self.model(

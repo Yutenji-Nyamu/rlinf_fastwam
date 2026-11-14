@@ -4,13 +4,15 @@
     {
       "patch": "dsrl_existing_cql.patch",
       "applies_cleanly": true,
-      "matches_deployed_overlay_after_newline_normalization": true,
+      "matches_prepared_overlay_after_newline_normalization": true,
+      "deployed_overlay_normalized_ast_equivalent": true,
       "edited_files": 5
     },
     {
       "patch": "dsrl_add_cql.patch",
       "applies_cleanly": true,
-      "matches_deployed_overlay_after_newline_normalization": true,
+      "matches_prepared_overlay_after_newline_normalization": true,
+      "deployed_overlay_normalized_ast_equivalent": true,
       "edited_files": 5
     },
     {
@@ -31,8 +33,16 @@
     "cpu-rlt-result.json",
     "dsrl_add_cql.patch",
     "dsrl_existing_cql.patch",
+    "lint-validation.json",
     "probe_rlt.py",
     "rlt.patch",
     "test_dsrl.py"
-  ]
+  ],
+  "style_verification": {
+    "ruff_version": "0.17.3",
+    "lint_passed": true,
+    "format_checked": "four public scripts and two new DSRL modules; existing-file edits scoped to added lines",
+    "normalized_ast_equal": "lint-validation.json",
+    "formatted_rlt_applier_matches_original_output": true
+  }
 }
