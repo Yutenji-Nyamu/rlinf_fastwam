@@ -12,12 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
+import json
+import math
+import os
 import queue
 
 import torch
 import torch.nn.functional as F
+from omegaconf import OmegaConf
 
-from rlinf.algorithms.rlt.transition import use_simulator_transition_replay
+from rlinf.algorithms.rlt.dv_observation import record_collected
+from rlinf.algorithms.rlt.dvac_controls import (
+    apply_chunk_dropout,
+    effective_alphas,
+    rlt_controls_contract,
+)
+from rlinf.algorithms.rlt.dvac_two_level import (
+    _weight_moments,
+    build_two_level_success_weights,
+)
+from rlinf.algorithms.rlt.dvac_weighting import (
+    FrozenGlobalZMoments,
+    build_rlt_bc_targets_and_weights,
+    centered_mean_one_weights,
+    episode_success_flags,
+    global_z_scores,
+    summarize_weights,
+)
+from rlinf.algorithms.rlt.transition import (
+    core_rlt_obs,
+    use_simulator_transition_replay,
+)
 from rlinf.data.schema.embodied_types import Trajectory
 from rlinf.models.embodiment.base_policy import ForwardType
 from rlinf.scheduler import Worker
@@ -42,6 +68,19 @@ class RLTACLossMixin:
     RLT objective disables entropy/alpha and uses a fixed-std actor, min-Q
     critic target, Q1 actor objective, and BC regularization.
     """
+
+    def _rlt_transition_replay_cfg(self):
+        return self.cfg.algorithm.get("rlt_transition_replay", {}) or {}
+
+    def _bootstrap_on_truncation(self) -> bool:
+        return bool(
+            self._rlt_transition_replay_cfg().get(
+                "bootstrap_on_truncation", False
+            )
+        )
+
+    def _use_compact_rlt_transition(self) -> bool:
+        return bool(self._rlt_transition_replay_cfg().get("compact", False))
 
     @staticmethod
     def _flatten_chunk(tensor: torch.Tensor) -> torch.Tensor:
@@ -99,6 +138,10 @@ class RLTACLossMixin:
         actions: torch.Tensor,
         ref_chunk: torch.Tensor,
         intervene_flags: torch.Tensor | None,
+        *,
+        episode_success: torch.Tensor | None = None,
+        success_weights: torch.Tensor | None = None,
+        apply_success_weights: bool = False,
     ) -> tuple[torch.Tensor, dict[str, float]]:
         chunk_len, action_dim = self._chunk_shape()
         pi_chunk = self._flatten_chunk(pi).reshape(-1, chunk_len, action_dim)
@@ -120,9 +163,16 @@ class RLTACLossMixin:
                 .any(dim=-1)
             )
 
-        bc_target = torch.where(human_mask[..., None], action_chunk, bc_ref_chunk)
+        bc_target, bc_weights, success_mask = build_rlt_bc_targets_and_weights(
+            action_chunk,
+            bc_ref_chunk,
+            human_mask,
+            episode_success=episode_success,
+            success_weights=success_weights,
+            apply_success_weights=apply_success_weights,
+        )
         bc_error = torch.mean(torch.square(pi_chunk - bc_target), dim=-1)
-        bc_loss = torch.mean(bc_error)
+        bc_loss = torch.mean(bc_weights * bc_error)
 
         policy_mask = ~human_mask
         ref_error = torch.mean(torch.square(pi_chunk - bc_ref_chunk), dim=-1)
@@ -141,8 +191,265 @@ class RLTACLossMixin:
             "bc_human_loss": bc_human.detach().item(),
             "human_mask_ratio": human_ratio,
             "policy_mask_ratio": 1.0 - human_ratio,
+            "rlt_dvac/success_query_ratio": float(
+                success_mask[:, 0].float().mean().item()
+            ),
+            "rlt_dvac/success_bc_applied": float(apply_success_weights),
         }
         return bc_loss, metrics
+
+    def _rlt_dvac_selected_variances(
+        self, obs: dict[str, torch.Tensor]
+    ) -> torch.Tensor:
+        teacher_v = obs.get("teacher_dvac_v")
+        if not isinstance(teacher_v, torch.Tensor):
+            raise ValueError(
+                "RLT DVAC requires curr_obs.teacher_dvac_v from the frozen pi0 teacher."
+            )
+        l_values = getattr(self, "rlt_dvac_l_values", (2, 3, 4))
+        selected_l = getattr(self, "rlt_dvac_selected_l", 3)
+        if int(teacher_v.shape[-2]) != len(l_values):
+            raise ValueError(
+                "RLT teacher_dvac_v must be [...,3,H] in L=(2,3,4) order, got "
+                f"{tuple(teacher_v.shape)}."
+            )
+        return teacher_v[
+            ..., l_values.index(selected_l), : getattr(self, "rlt_dvac_horizon", 10)
+        ]
+
+    def _rlt_dvac_success_weights(
+        self, curr_obs: dict[str, torch.Tensor]
+    ) -> tuple[torch.Tensor | None, bool, dict[str, float]]:
+        mode = getattr(self, "rlt_dvac_mode", "off")
+        if mode == "off":
+            return None, False, {"rlt_dvac/enabled": 0.0}
+        if getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch":
+            raise ValueError("RLT DVAC new requires weights prepared on the full batch.")
+
+        selected_v = self._rlt_dvac_selected_variances(curr_obs)
+        stats = self.rlt_dvac_stats
+        if stats.frozen:
+            z_scores, log_variances = global_z_scores(
+                selected_v,
+                mean=stats.mean,
+                std=stats.std,
+                log_eps=stats.log_eps,
+                std_floor=stats.std_floor,
+                z_clip=self.rlt_dvac_z_clip,
+            )
+            success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
+            candidate = centered_mean_one_weights(
+                z_scores, strength=self.rlt_dvac_strength
+            ) * success_scale
+        else:
+            log_variances = torch.log(
+                selected_v.float().clamp_min(0) + stats.log_eps
+            )
+            z_scores = torch.zeros_like(log_variances)
+            candidate = torch.ones_like(log_variances)
+        apply_weights = mode == "apply" and stats.frozen
+        weights = candidate if apply_weights else torch.ones_like(candidate)
+        metrics = summarize_weights(weights, z_scores, log_variances)
+        if stats.frozen:
+            metrics.update(scale_metrics)
+        metrics.update(
+            {
+                "rlt_dvac/enabled": 1.0,
+                "rlt_dvac/mode_apply": float(mode == "apply"),
+                "rlt_dvac/baseline_frozen": float(stats.frozen),
+                "rlt_dvac/baseline_count": float(stats.count),
+                "rlt_dvac/baseline_mean": float(stats.mean),
+                "rlt_dvac/baseline_std": float(stats.std),
+            }
+        )
+        return weights.detach(), apply_weights, metrics
+
+    def _prepare_global_batch(
+        self, global_batch: dict, *, train_actor: bool
+    ) -> tuple[dict, dict[str, float]]:
+        """Compare successful queries once over the entire actor-update batch."""
+        if (
+            not train_actor
+            or getattr(self, "rlt_dvac_mode", "off") == "off"
+            or getattr(self, "rlt_dvac_mapping", "frozen_global_z") != "two_level_batch"
+        ):
+            return global_batch, {}
+        if int(self._world_size) != 1:
+            raise ValueError("RLT DVAC new currently requires one actor rank.")
+        curr_obs = global_batch["curr_obs"]
+        selected_v = self._rlt_dvac_selected_variances(curr_obs)
+        if tuple(selected_v.shape) != (
+            int(self.cfg.actor.global_batch_size),
+            self.rlt_dvac_horizon,
+        ):
+            raise ValueError("RLT DVAC new must receive the complete actor batch [B,C].")
+        success = curr_obs.get("episode_success")
+        if not isinstance(success, torch.Tensor):
+            raise ValueError("RLT DVAC new requires cached episode_success flags.")
+        success_scale, scale_metrics = self._effective_rlt_dvac_success_scale()
+        controls = getattr(self, "rlt_dvac_controls", {})
+        alpha_local, alpha_chunk = self.rlt_dvac_alpha_local, self.rlt_dvac_alpha_chunk
+        if controls:
+            alpha_local, alpha_chunk = effective_alphas(
+                alpha_local, alpha_chunk, controls, runner_step=int(self.version)
+            )
+        weights, metrics = build_two_level_success_weights(
+            selected_v,
+            success.reshape(-1),
+            alpha_local=alpha_local,
+            alpha_chunk=alpha_chunk,
+            log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
+            minmax_eps=float(self.rlt_dvac_cfg.get("minmax_eps", 1e-6)),
+            success_scale=success_scale,
+            factor_mapping=getattr(
+                self, "rlt_dvac_factor_mapping", "linear_centered"
+            ),
+            temperature_local=getattr(self, "rlt_dvac_temperature_local", 1.0),
+            temperature_chunk=getattr(self, "rlt_dvac_temperature_chunk", 1.0),
+        )
+        metrics.update(scale_metrics)
+        if controls:
+            success_mask = success.reshape(-1).to(device=weights.device)
+            weights, dropped = apply_chunk_dropout(
+                weights, success_mask, controls, update_step=int(self.update_step)
+            )
+            prefix = "rlt_dvac_controls/"
+            metrics.update({
+                prefix + "runner_round": float(self.version + 1),
+                prefix + "update_step": float(self.update_step),
+                prefix + "alpha_local": alpha_local,
+                prefix + "alpha_chunk": alpha_chunk,
+                prefix + "dropout_probability": controls.get("chunk_dropout", {}).get("probability", 0.0),
+                prefix + "dropout_count": float(dropped.sum().item()),
+                prefix + "dropout_fraction_success": float(dropped.sum().item()) / max(1, int(success_mask.sum().item())),
+            })
+            for domain, values in (("success_applied", weights[success_mask]), ("applied", weights)):
+                for name, value in _weight_moments(values).items():
+                    tag = f"rlt_dvac_new/{domain}_{name}"
+                    metrics[tag.replace("applied", "pre_dropout")] = metrics[tag]
+                    metrics[tag] = value
+        if self.rlt_dvac_mode == "observe":
+            for domain in ("success_applied", "applied"):
+                for name, neutral in (("mean", 1.0), ("std", 0.0), ("ess_ratio", 1.0)):
+                    key = f"rlt_dvac_new/{domain}_{name}"
+                    metrics[key.replace("applied", "candidate")] = metrics[key]
+                    metrics[key] = neutral
+            weights = torch.ones_like(weights)
+        # Transient sampled-batch field: never store permanently in replay.
+        prepared = dict(global_batch)
+        prepared["rlt_dvac_new_weights"] = weights
+        metrics.update(
+            {
+                "rlt_dvac/enabled": 1.0,
+                "rlt_dvac/mode_apply": float(self.rlt_dvac_mode == "apply"),
+            }
+        )
+        return prepared, metrics
+
+    def _accumulate_rlt_dvac_baseline(
+        self, replay_trajectories: list[Trajectory]
+    ) -> None:
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None or stats.frozen:
+            return
+        for trajectory in replay_trajectories:
+            stats.update_variances(
+                self._rlt_dvac_selected_variances(trajectory.curr_obs)
+            )
+
+    def _freeze_rlt_dvac_baseline(self) -> None:
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None or stats.frozen:
+            return
+        count, total, total_sq = stats.sufficient_statistics()
+        global_stats = {
+            "count": float(count),
+            "total": float(total),
+            "total_sq": float(total_sq),
+        }
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            global_stats = all_reduce_dict(
+                global_stats, op=torch.distributed.ReduceOp.SUM
+            )
+        stats.freeze_from_statistics(
+            int(global_stats["count"]),
+            float(global_stats["total"]),
+            float(global_stats["total_sq"]),
+        )
+
+    def _rlt_dvac_baseline_metrics(self) -> dict[str, float]:
+        if (
+            getattr(self, "rlt_dvac_mode", "off") != "off"
+            and getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch"
+        ):
+            return {"rlt_dvac/enabled": 1.0, "rlt_dvac/new_mapping": 1.0}
+        stats = getattr(self, "rlt_dvac_stats", None)
+        if stats is None:
+            return {"rlt_dvac/enabled": 0.0}
+        return {
+            "rlt_dvac/enabled": 1.0,
+            "rlt_dvac/baseline_frozen": float(stats.frozen),
+            "rlt_dvac/baseline_count": float(stats.count),
+            "rlt_dvac/baseline_mean": float(stats.mean),
+            "rlt_dvac/baseline_std": float(stats.std),
+        }
+
+    def _rlt_dvac_success_scale_schedule(self) -> dict | None:
+        """Validate the opt-in scale switch and describe its resume anchor."""
+        scale_cfg = getattr(self, "rlt_dvac_cfg", {}).get(
+            "success_scale_schedule", {}
+        ) or {}
+        if not isinstance(scale_cfg, dict):
+            raise ValueError("RLT DVAC success_scale_schedule must be a mapping.")
+        if not bool(scale_cfg.get("enable", False)):
+            return None
+        if (
+            self.rlt_dvac_mode != "apply"
+            or self.rlt_dvac_mapping != "two_level_batch"
+        ):
+            raise ValueError(
+                "RLT DVAC success_scale_schedule requires apply/two_level_batch."
+            )
+        if scale_cfg.get("anchor", "actor_weight_schedule_end") != (
+            "actor_weight_schedule_end"
+        ):
+            raise ValueError("RLT DVAC scale anchor must be actor_weight_schedule_end.")
+        final_scale = float(scale_cfg.get("final_scale", self.rlt_dvac_success_scale))
+        if not math.isfinite(final_scale) or final_scale <= 0:
+            raise ValueError("RLT DVAC final_scale must be finite and positive.")
+        course = self.cfg.algorithm.get("actor_weight_schedule", {}) or {}
+        if OmegaConf.is_config(course):
+            course = OmegaConf.to_container(course, resolve=True)
+        if not isinstance(course, dict) or not bool(course.get("enable", False)):
+            raise ValueError("RLT DVAC scale schedule requires actor_weight_schedule.")
+        for name in ("warmup_updates", "ramp_updates"):
+            value = course.get(name, 0)
+            if isinstance(value, bool) or int(value) != value or value < 0:
+                raise ValueError(f"RLT scale anchor {name} must be a nonnegative integer.")
+        warmup, ramp = int(course.get("warmup_updates", 0)), int(course.get("ramp_updates", 0))
+        return {
+            "final_scale": final_scale,
+            "actor_weight_schedule": dict(course),
+            "actor_weight_defaults": {
+                "bc_weight": float(self.cfg.algorithm.get("bc_weight", 1.0)),
+                "q_weight": float(self.cfg.algorithm.get("q_weight", 1.0)),
+            },
+            "end_update_step": max(warmup, warmup + ramp - 1),
+        }
+
+    def _effective_rlt_dvac_success_scale(self) -> tuple[float, dict[str, float]]:
+        schedule = self._rlt_dvac_success_scale_schedule()
+        if schedule is None:
+            return self.rlt_dvac_success_scale, {}
+        # Use the actor's actual BC/Q curriculum result; do not duplicate its clock.
+        _, _, course_metrics = self._actor_objective_weights()
+        switched = course_metrics["actor_weight_ramp_progress"] >= 1.0
+        scale = schedule["final_scale"] if switched else self.rlt_dvac_success_scale
+        return scale, {
+            "rlt_dvac/success_scale_effective": float(scale),
+            "rlt_dvac/success_scale_schedule_enabled": 1.0,
+            "rlt_dvac/success_scale_switched": float(switched),
+        }
 
     def _actor_objective_weights(self) -> tuple[float, float, dict[str, float]]:
         """Resolve RLT actor-objective BC/Q weights."""
@@ -224,6 +531,9 @@ class RLTACLossMixin:
         return bc_weight, q_weight, metrics
 
     def _next_actions_for_critic_target(self, next_obs):
+        if self.cfg.algorithm.get("rlt_reference_bootstrap", False):
+            ref = self._ref_chunk(next_obs)
+            return ref, torch.zeros((ref.shape[0], 1), device=ref.device), None
         return self.model(
             forward_type=ForwardType.SAC,
             obs=next_obs,
@@ -239,7 +549,10 @@ class RLTACLossMixin:
         actions = batch["actions"]
         rewards = batch["rewards"]
         done_source = batch["terminations"]
-        if use_simulator_transition_replay(self.cfg):
+        if (
+            use_simulator_transition_replay(self.cfg)
+            and not self._bootstrap_on_truncation()
+        ):
             done_source = batch["dones"]
         done_source = done_source.to(self.torch_dtype)
         not_done = ~done_source.reshape(done_source.shape[0], -1).bool().any(
@@ -291,17 +604,42 @@ class RLTACLossMixin:
                 next_actions=next_actions,
             )
 
+        target_min = self.cfg.algorithm.get("critic_target_min", None)
+        target_max = self.cfg.algorithm.get("critic_target_max", None)
+        raw_target = target_q_values
+        if target_min is not None or target_max is not None:
+            target_q_values = target_q_values.clamp(min=target_min, max=target_max)
         target_q_values = target_q_values.to(dtype=all_data_q_values.dtype)
         critic_loss = F.mse_loss(
             all_data_q_values, target_q_values.expand_as(all_data_q_values)
         )
-        return critic_loss, {"q_data": all_data_q_values.mean().item()}
+        return critic_loss, {
+            "q_data": self._metric(all_data_q_values.mean()),
+            "q_target": self._metric(target_q_values.mean()),
+            "q_target_raw": self._metric(raw_target.mean()),
+            "q_target_clipped_fraction": self._metric(
+                (target_q_values != raw_target).float().mean()
+            ),
+        }
 
     @Worker.timer("forward_actor")
     def forward_actor(self, batch):
         use_crossq = self.cfg.algorithm.get("q_head_type", "default") == "crossq"
 
         curr_obs = batch["curr_obs"]
+        if (
+            getattr(self, "rlt_dvac_mode", "off") != "off"
+            and getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch"
+        ):
+            success_weights = batch.get("rlt_dvac_new_weights")
+            if not isinstance(success_weights, torch.Tensor):
+                raise ValueError("RLT DVAC new requires weights prepared on the full batch.")
+            apply_success_weights = self.rlt_dvac_mode == "apply"
+            dvac_metrics = {}
+        else:
+            success_weights, apply_success_weights, dvac_metrics = (
+                self._rlt_dvac_success_weights(curr_obs)
+            )
         reference_dropout_prob = float(
             self.cfg.algorithm.get("reference_dropout_prob", 0.0)
         )
@@ -334,11 +672,11 @@ class RLTACLossMixin:
 
         num_q_values = all_qf_pi.shape[-1]
         metrics = {
-            f"q_value_{q_id}": all_qf_pi[..., q_id].mean().item()
+            f"q_value_{q_id}": self._metric(all_qf_pi[..., q_id].mean())
             for q_id in range(num_q_values)
         }
         qf_pi = self._q1(all_qf_pi)
-        metrics["q_pi"] = qf_pi.mean().item()
+        metrics["q_pi"] = self._metric(qf_pi.mean())
 
         ref_chunk = self._ref_chunk(curr_obs)
         bc_loss, rlt_metrics = self._bc_metrics(
@@ -346,8 +684,12 @@ class RLTACLossMixin:
             actions=batch["actions"],
             ref_chunk=ref_chunk,
             intervene_flags=batch.get("intervene_flags", None),
+            episode_success=curr_obs.get("episode_success"),
+            success_weights=success_weights,
+            apply_success_weights=apply_success_weights,
         )
         metrics.update(rlt_metrics)
+        metrics.update(dvac_metrics)
 
         entropy = -log_pi.mean()
         bc_weight, q_weight, weight_metrics = self._actor_objective_weights()
@@ -360,8 +702,8 @@ class RLTACLossMixin:
             .detach()
             .item()
         )
-        metrics["weighted_q"] = (q_weight * qf_pi.mean()).detach().item()
-        metrics["weighted_bc"] = (bc_weight * bc_loss).detach().item()
+        metrics["weighted_q"] = self._metric(q_weight * qf_pi.mean())
+        metrics["weighted_bc"] = self._metric(bc_weight * bc_loss)
         metrics["reference_dropout_prob"] = reference_dropout_prob
 
         return actor_loss, entropy, metrics
@@ -477,24 +819,42 @@ class RLTACReplayMixin:
         ):
             return [], 0
 
-        tensor_fields = (
-            "actions",
-            "intervene_flags",
-            "rewards",
-            "terminations",
-            "truncations",
-            "dones",
-            "prev_logprobs",
-            "prev_values",
-            "versions",
-        )
-        dict_fields = ("forward_inputs",)
+        if self._use_compact_rlt_transition():
+            tensor_fields = (
+                "actions",
+                "intervene_flags",
+                "rewards",
+                "terminations",
+                "truncations",
+                "dones",
+            )
+            dict_fields = ()
+        else:
+            tensor_fields = (
+                "actions",
+                "intervene_flags",
+                "rewards",
+                "terminations",
+                "truncations",
+                "dones",
+                "prev_logprobs",
+                "prev_values",
+                "versions",
+            )
+            dict_fields = ("forward_inputs",)
         replay_trajectories = []
         completed_episodes = 0
-        traj_len = int(trajectory.actions.shape[0])
-        bsz = int(trajectory.actions.shape[1])
-        num_rows = int(actions.shape[0])
+        # The final policy query supplies bootstrap features but is not executed.
+        # Rewards and transition observations contain only the executed chunks.
+        traj_len = int(trajectory.rewards.shape[0])
+        bsz = int(trajectory.rewards.shape[1])
+        if trajectory.actions.shape[0] < traj_len or trajectory.actions.shape[1] != bsz:
+            raise ValueError("RLT action/reward trajectory dimensions do not align")
+        num_rows = int(rewards.shape[0])
         auto_reset = bool(self.cfg.env.train.get("auto_reset", False))
+        episode_success = None
+        if getattr(self, "rlt_dvac_mode", "off") != "off" or self.cfg.algorithm.get("dv_observe", False):
+            episode_success = episode_success_flags(trajectory.rewards)
 
         for env_idx in range(bsz):
             for t in range(traj_len):
@@ -527,6 +887,14 @@ class RLTACReplayMixin:
                         f"before replay ingestion, got row index {idx}."
                     )
                 transition.curr_obs = curr_obs
+                if episode_success is not None:
+                    curr_obs["episode_success"] = (
+                        episode_success[env_idx]
+                        .detach()
+                        .reshape(1, 1, 1)
+                        .cpu()
+                        .contiguous()
+                    )
 
                 # Dones have one extra initial slot, so transition t reads
                 # terminal flags from t+1. Rewards are already action-aligned
@@ -555,10 +923,25 @@ class RLTACReplayMixin:
                     isinstance(transition.dones, torch.Tensor)
                     and transition.dones.reshape(-1).to(torch.bool).any()
                 )
-                if is_done:
-                    next_obs = curr_obs
+                is_termination = (
+                    isinstance(transition.terminations, torch.Tensor)
+                    and transition.terminations.reshape(-1).to(torch.bool).any()
+                )
+                is_truncation = (
+                    isinstance(transition.truncations, torch.Tensor)
+                    and transition.truncations.reshape(-1).to(torch.bool).any()
+                )
+                bootstrap_truncation = bool(
+                    self._bootstrap_on_truncation()
+                    and is_truncation
+                    and not is_termination
+                )
+                if is_done and not bootstrap_truncation:
+                    next_obs = core_rlt_obs(curr_obs)
                 else:
                     next_obs = self._rlt_obs_from_flat_dict(flat, "next_obs", idx)
+                    if next_obs is not None:
+                        next_obs = core_rlt_obs(next_obs)
                 if next_obs is not None:
                     transition.next_obs = next_obs
                 else:
@@ -620,13 +1003,31 @@ class RLTACReplayMixin:
                 )
                 replay_list.extend(transition_trajs)
                 completed += completed_count
+            self._accumulate_rlt_dvac_baseline(replay_list)
             self._last_replay_metrics = {
                 **self._transition_replay_metrics(replay_list),
                 **collect_trajectory_replay_metrics(recv_list, reducer=all_reduce_dict),
             }
+            if self.cfg.algorithm.get("dv_observe", False):
+                self._last_replay_metrics.update(record_collected(
+                    replay_list, output_dir=self.cfg.runner.logger.log_path,
+                    round_number=int(self.version)+1, rank=int(self._rank),
+                    selected_l=3, horizon=int(self.cfg.actor.model.num_action_chunks),
+                ))
             self.replay_buffer.add_trajectories(replay_list)
 
-            if self.demo_buffer is not None:
+            reference_limit = int(self.cfg.algorithm.get("rlt_reference_replay_size", 0))
+            if reference_limit:
+                # Initial precollection is produced by the frozen reference policy.
+                # Fill once, then keep this buffer immutable during online learning.
+                assert self.demo_buffer is not None
+                remaining = max(0, reference_limit - self.demo_buffer.total_samples)
+                if remaining:
+                    self.demo_buffer.add_trajectories(replay_list[:remaining])
+                self._last_replay_metrics["replay/reference_retained"] = float(
+                    self.demo_buffer.total_samples
+                )
+            elif self.demo_buffer is not None:
                 intervene_traj_list = [
                     traj
                     for traj in replay_list
@@ -671,10 +1072,14 @@ class RLTACReplayMixin:
 class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
     """Synchronous RLT AC worker with transition replay and warmup scheduling."""
 
+    _RLT_STATE_SCHEMA_VERSION = 1
+
     def __init__(self, cfg):
         super().__init__(cfg)
         self.rlt_schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
         self.use_rlt_schedule = bool(self.rlt_schedule_cfg.get("enable", False))
+        self.rlt_resume_cfg = cfg.algorithm.get("rlt_resume", {}) or {}
+        self.use_rlt_resume = bool(self.rlt_resume_cfg.get("enable", False))
         self.transitions_since_train = 0
         self.episodes_since_train = 0
         self.total_transitions_added = 0
@@ -682,6 +1087,439 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         self._warmup_ready_total_transitions: int | None = None
         self._warmup_ready_total_episodes: int | None = None
         self.pending_update_budget = 0
+
+        raw_dvac_cfg = cfg.algorithm.get("rlt_dvac", {}) or {}
+        if OmegaConf.is_config(raw_dvac_cfg):
+            raw_dvac_cfg = OmegaConf.to_container(raw_dvac_cfg, resolve=True)
+        self.rlt_dvac_cfg = dict(raw_dvac_cfg)
+        self.rlt_dvac_controls = rlt_controls_contract(self.rlt_dvac_cfg)
+        self.rlt_dvac_mode = str(self.rlt_dvac_cfg.get("mode", "off")).lower()
+        if self.rlt_dvac_mode not in {"off", "observe", "apply"}:
+            raise ValueError("algorithm.rlt_dvac.mode must be off, observe, or apply.")
+        self.rlt_dvac_mapping = str(
+            self.rlt_dvac_cfg.get("mapping", "frozen_global_z")
+        ).lower()
+        if self.rlt_dvac_mapping not in {"frozen_global_z", "two_level_batch"}:
+            raise ValueError("RLT DVAC mapping must be frozen_global_z or two_level_batch.")
+        self.rlt_dvac_l_values = tuple(
+            int(value) for value in self.rlt_dvac_cfg.get("l_values", (2, 3, 4))
+        )
+        self.rlt_dvac_selected_l = int(self.rlt_dvac_cfg.get("selected_l", 3))
+        self.rlt_dvac_horizon = int(
+            self.rlt_dvac_cfg.get(
+                "applied_horizon", self.cfg.actor.model.num_action_chunks
+            )
+        )
+        self.rlt_dvac_z_clip = float(self.rlt_dvac_cfg.get("z_clip", 2.0))
+        self.rlt_dvac_strength = float(self.rlt_dvac_cfg.get("strength", 1.5))
+        self.rlt_dvac_success_scale = float(
+            self.rlt_dvac_cfg.get("success_scale", 1.0)
+        )
+        if self.rlt_dvac_mode != "off":
+            if self.rlt_dvac_l_values != (2, 3, 4):
+                raise ValueError("RLT teacher DVAC requires fixed L=(2,3,4) order.")
+            if self.rlt_dvac_selected_l not in self.rlt_dvac_l_values:
+                raise ValueError("RLT DVAC selected_l must be included in l_values.")
+            if self.rlt_dvac_horizon != int(self.cfg.actor.model.num_action_chunks):
+                raise ValueError(
+                    "RLT DVAC applied_horizon must match the student action chunk."
+                )
+            if str(
+                self.rlt_dvac_cfg.get("application", "success_episode_bc")
+            ).lower() != "success_episode_bc":
+                raise ValueError(
+                    "This current port supports RLT DVAC only at success_episode_bc."
+                )
+            if str(self.rlt_dvac_cfg.get("success_target", "reference")).lower() != (
+                "reference"
+            ):
+                raise ValueError("RLT-DVAC-Pure requires success_target=reference.")
+            if bool(self.cfg.env.train.get("auto_reset", False)):
+                raise ValueError(
+                    "Success-episode RLT DVAC BC requires env.train.auto_reset=false."
+                )
+            if self.rlt_dvac_mapping == "frozen_global_z" and (
+                self.rlt_dvac_z_clip <= 0 or self.rlt_dvac_strength < 0
+            ):
+                raise ValueError(
+                    "RLT DVAC z_clip must be positive and strength nonnegative."
+                )
+            if self.rlt_dvac_success_scale <= 0:
+                raise ValueError("RLT DVAC success_scale must be positive.")
+            if self.rlt_dvac_mapping == "two_level_batch":
+                if int(self._world_size) != 1:
+                    raise ValueError("RLT DVAC new currently requires one actor rank.")
+                if self.rlt_dvac_cfg.get("outer_scope", "successful_batch") != (
+                    "successful_batch"
+                ):
+                    raise ValueError("RLT DVAC new outer_scope must be successful_batch.")
+                self.rlt_dvac_alpha_local = float(
+                    self.rlt_dvac_cfg.get("alpha_local", 1.0)
+                )
+                self.rlt_dvac_alpha_chunk = float(
+                    self.rlt_dvac_cfg.get("alpha_chunk", 1.0)
+                )
+                # Effective defaults remain attributes only. The original cfg
+                # is already in the resume contract; do not inject new keys
+                # and change hashes for legacy linear checkpoints.
+                self.rlt_dvac_factor_mapping = str(
+                    self.rlt_dvac_cfg.get("factor_mapping", "linear_centered")
+                ).lower()
+                if self.rlt_dvac_factor_mapping not in {
+                    "linear_centered", "exp_mean"
+                }:
+                    raise ValueError(
+                        "RLT DVAC new factor_mapping must be linear_centered or exp_mean."
+                    )
+                self.rlt_dvac_temperature_local = float(
+                    self.rlt_dvac_cfg.get("temperature_local", 1.0)
+                )
+                self.rlt_dvac_temperature_chunk = float(
+                    self.rlt_dvac_cfg.get("temperature_chunk", 1.0)
+                )
+                for name in ("alpha_local", "alpha_chunk"):
+                    value = float(self.rlt_dvac_cfg.get(name, 1.0))
+                    if not math.isfinite(value) or not 0 <= value <= 1:
+                        raise ValueError(f"RLT DVAC new {name} must be finite in [0,1].")
+                for name, default in (
+                    ("log_eps", 1e-12),
+                    ("minmax_eps", 1e-6),
+                    ("success_scale", 1.0),
+                    ("temperature_local", 1.0),
+                    ("temperature_chunk", 1.0),
+                ):
+                    value = float(self.rlt_dvac_cfg.get(name, default))
+                    if not math.isfinite(value) or value <= 0:
+                        raise ValueError(
+                            f"RLT DVAC new {name} must be finite and positive."
+                        )
+                self.rlt_dvac_stats = None
+            else:
+                self.rlt_dvac_stats = FrozenGlobalZMoments(
+                    log_eps=float(self.rlt_dvac_cfg.get("log_eps", 1e-12)),
+                    std_floor=float(self.rlt_dvac_cfg.get("std_floor", 1e-6)),
+                )
+        else:
+            self.rlt_dvac_stats = None
+        self._rlt_dvac_success_scale_schedule()
+
+    def _rlt_state_dir(self, base_path: str) -> str:
+        return os.path.join(base_path, "sac_components/rlt_trainer_state")
+
+    def _rlt_state_path(self, base_path: str) -> str:
+        return os.path.join(
+            self._rlt_state_dir(base_path), f"checkpoint_rank_{self._rank}.pt"
+        )
+
+    def _rlt_manifest_path(self, base_path: str) -> str:
+        return os.path.join(self._rlt_state_dir(base_path), "complete.json")
+
+    @staticmethod
+    def _atomic_json_dump(payload: dict, path: str) -> None:
+        temporary = f"{path}.tmp.{os.getpid()}"
+        with open(temporary, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, sort_keys=True, indent=2)
+            handle.write("\n")
+        os.replace(temporary, path)
+
+    @staticmethod
+    def _barrier_if_distributed() -> None:
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.barrier()
+
+    def _rlt_contract(self) -> tuple[str, str]:
+        contract = self.rlt_resume_cfg.get("contract", {})
+        if OmegaConf.is_config(contract):
+            contract = OmegaConf.to_container(contract, resolve=True)
+        if not isinstance(contract, dict) or not contract:
+            raise ValueError(
+                "algorithm.rlt_resume.contract must be a non-empty mapping."
+            )
+        unresolved = [
+            key
+            for key, value in contract.items()
+            if isinstance(value, str) and value.startswith("UNRESOLVED_")
+        ]
+        if unresolved:
+            raise ValueError(
+                "algorithm.rlt_resume.contract has unresolved fields: "
+                f"{sorted(unresolved)}."
+            )
+        contract = dict(contract)
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            contract["rlt_dvac"] = dict(self.rlt_dvac_cfg)
+        scale_schedule = self._rlt_dvac_success_scale_schedule()
+        if scale_schedule is not None:
+            # The rlt_dvac dict already carries the scale settings. Protect the
+            # external BC/Q curriculum and its fallback values only when enabled.
+            contract["rlt_dvac_success_scale_anchor"] = scale_schedule
+        serialized = json.dumps(contract, sort_keys=True, separators=(",", ":"))
+        digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+        return serialized, digest
+
+    def _rlt_state_payload(self, runner_step: int) -> dict:
+        contract, contract_sha256 = self._rlt_contract()
+        return {
+            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+            "rank": int(self._rank),
+            "actor_world_size": int(self._world_size),
+            "saved_runner_step": int(runner_step),
+            "rlt_resume_contract": contract,
+            "rlt_resume_contract_sha256": contract_sha256,
+            "update_step": int(self.update_step),
+            "local_total_transitions_added": int(self.total_transitions_added),
+            "local_total_episodes_added": int(self.total_episodes_added),
+            "global_warmup_ready_total_transitions": (
+                None
+                if self._warmup_ready_total_transitions is None
+                else int(self._warmup_ready_total_transitions)
+            ),
+            "global_warmup_ready_total_episodes": (
+                None
+                if self._warmup_ready_total_episodes is None
+                else int(self._warmup_ready_total_episodes)
+            ),
+            "rlt_dvac_baseline": (
+                None
+                if getattr(self, "rlt_dvac_stats", None) is None
+                else self.rlt_dvac_stats.state_dict()
+            ),
+        }
+
+    def _gather_rlt_state_summaries(self, state: dict) -> list[dict]:
+        summary = {
+            "rank": int(state["rank"]),
+            "update_step": int(state["update_step"]),
+            "warmup_transitions": state["global_warmup_ready_total_transitions"],
+            "warmup_episodes": state["global_warmup_ready_total_episodes"],
+            "contract_sha256": state["rlt_resume_contract_sha256"],
+        }
+        if not (
+            torch.distributed.is_available()
+            and torch.distributed.is_initialized()
+        ):
+            return [summary]
+        summaries = [None] * int(self._world_size)
+        torch.distributed.all_gather_object(summaries, summary)
+        return summaries
+
+    def _validate_rlt_state(self, state: dict) -> None:
+        required = {
+            "schema_version",
+            "rank",
+            "actor_world_size",
+            "saved_runner_step",
+            "rlt_resume_contract",
+            "rlt_resume_contract_sha256",
+            "update_step",
+            "local_total_transitions_added",
+            "local_total_episodes_added",
+            "global_warmup_ready_total_transitions",
+            "global_warmup_ready_total_episodes",
+        }
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            required.add("rlt_dvac_baseline")
+        missing = sorted(required.difference(state))
+        if missing:
+            raise ValueError(f"RLT trainer state is missing keys: {missing}.")
+        contract, contract_sha256 = self._rlt_contract()
+        checks = {
+            "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+            "rank": int(self._rank),
+            "actor_world_size": int(self._world_size),
+            "rlt_resume_contract": contract,
+            "rlt_resume_contract_sha256": contract_sha256,
+        }
+        for key, expected in checks.items():
+            if state[key] != expected:
+                raise ValueError(
+                    f"RLT trainer state mismatch for {key}: "
+                    f"{state[key]!r} != {expected!r}."
+                )
+        if getattr(self, "rlt_dvac_mode", "off") != "off":
+            if getattr(self, "rlt_dvac_mapping", "frozen_global_z") == "two_level_batch":
+                if state.get("rlt_dvac_baseline") is not None:
+                    raise ValueError("RLT DVAC new state must not contain a frozen baseline.")
+            elif not isinstance(state.get("rlt_dvac_baseline"), dict):
+                raise ValueError("RLT DVAC trainer state is missing its baseline payload.")
+
+    def _save_rlt_state(self, save_base_path: str, runner_step: int) -> None:
+        state_dir = self._rlt_state_dir(save_base_path)
+        os.makedirs(state_dir, exist_ok=True)
+        state = self._rlt_state_payload(runner_step)
+        state_path = self._rlt_state_path(save_base_path)
+        temporary = f"{state_path}.tmp.{os.getpid()}"
+        torch.save(state, temporary)
+        os.replace(temporary, state_path)
+
+        summaries = self._gather_rlt_state_summaries(state)
+        ranks = sorted(int(item["rank"]) for item in summaries)
+        if ranks != list(range(int(self._world_size))):
+            raise ValueError(f"RLT trainer state rank set mismatch: {ranks}.")
+        for key in (
+            "update_step",
+            "warmup_transitions",
+            "warmup_episodes",
+            "contract_sha256",
+        ):
+            if len({item[key] for item in summaries}) != 1:
+                raise ValueError(f"RLT trainer state ranks disagree on {key}.")
+
+        self._barrier_if_distributed()
+        if int(self._rank) == 0:
+            self._atomic_json_dump(
+                {
+                    "complete": True,
+                    "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+                    "actor_world_size": int(self._world_size),
+                    "saved_runner_step": int(runner_step),
+                    "update_step": int(self.update_step),
+                    "rlt_resume_contract_sha256": state[
+                        "rlt_resume_contract_sha256"
+                    ],
+                    "rank_files": [
+                        f"checkpoint_rank_{rank}.pt"
+                        for rank in range(int(self._world_size))
+                    ],
+                },
+                self._rlt_manifest_path(save_base_path),
+            )
+        self._barrier_if_distributed()
+
+    def _load_rlt_state(self, load_base_path: str) -> dict:
+        manifest_path = self._rlt_manifest_path(load_base_path)
+        if not os.path.isfile(manifest_path):
+            raise FileNotFoundError(f"Missing RLT completion manifest: {manifest_path}")
+        with open(manifest_path, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+        _, contract_sha256 = self._rlt_contract()
+        if not manifest.get("complete", False):
+            raise ValueError("RLT completion manifest is incomplete.")
+        if int(manifest.get("schema_version", -1)) != self._RLT_STATE_SCHEMA_VERSION:
+            raise ValueError("RLT completion manifest schema mismatch.")
+        if int(manifest.get("actor_world_size", -1)) != int(self._world_size):
+            raise ValueError("RLT completion manifest world-size mismatch.")
+        if manifest.get("rlt_resume_contract_sha256") != contract_sha256:
+            raise ValueError("RLT completion manifest contract mismatch.")
+        expected_files = [
+            f"checkpoint_rank_{rank}.pt" for rank in range(int(self._world_size))
+        ]
+        if manifest.get("rank_files") != expected_files:
+            raise ValueError("RLT completion manifest rank-file set mismatch.")
+        if any(
+            not os.path.isfile(os.path.join(self._rlt_state_dir(load_base_path), name))
+            for name in expected_files
+        ):
+            raise FileNotFoundError("RLT trainer state is missing one or more ranks.")
+        state = torch.load(
+            self._rlt_state_path(load_base_path),
+            map_location="cpu",
+            weights_only=True,
+        )
+        self._validate_rlt_state(state)
+        return state
+
+    def _restore_rlt_state(self, state: dict) -> None:
+        self._validate_rlt_state(state)
+        self.update_step = int(state["update_step"])
+        self.total_transitions_added = int(
+            state["local_total_transitions_added"]
+        )
+        self.total_episodes_added = int(state["local_total_episodes_added"])
+        self._warmup_ready_total_transitions = state[
+            "global_warmup_ready_total_transitions"
+        ]
+        self._warmup_ready_total_episodes = state[
+            "global_warmup_ready_total_episodes"
+        ]
+        if getattr(self, "rlt_dvac_stats", None) is not None:
+            self.rlt_dvac_stats.load_state_dict(state["rlt_dvac_baseline"])
+        self.transitions_since_train = 0
+        self.episodes_since_train = 0
+        self.pending_update_budget = 0
+
+    def save_checkpoint(self, save_base_path, step):
+        if self.use_rlt_resume:
+            state_dir = self._rlt_state_dir(save_base_path)
+            os.makedirs(state_dir, exist_ok=True)
+            if int(self._rank) == 0:
+                self._atomic_json_dump(
+                    {
+                        "complete": False,
+                        "schema_version": self._RLT_STATE_SCHEMA_VERSION,
+                        "actor_world_size": int(self._world_size),
+                        "saved_runner_step": int(step),
+                    },
+                    self._rlt_manifest_path(save_base_path),
+                )
+            self._barrier_if_distributed()
+        super().save_checkpoint(save_base_path, step)
+        if self.cfg.algorithm.get("rlt_reference_replay_size", 0):
+            self.demo_buffer.save_checkpoint(os.path.join(
+                save_base_path, f"sac_components/reference_replay/rank_{self._rank}"
+            ))
+        if self.use_rlt_resume:
+            self._save_rlt_state(save_base_path, step)
+
+    def load_checkpoint(self, load_base_path):
+        state = None
+        if self.use_rlt_resume:
+            state = self._load_rlt_state(load_base_path)
+        super().load_checkpoint(load_base_path)
+        if self.cfg.algorithm.get("rlt_reference_replay_size", 0):
+            self.demo_buffer.load_checkpoint(os.path.join(
+                load_base_path, f"sac_components/reference_replay/rank_{self._rank}"
+            ))
+        if state is not None:
+            self._restore_rlt_state(state)
+        self._recover_actor_from_policy(load_base_path)
+
+    def _recover_actor_from_policy(self, load_base_path):
+        """Restore a BC actor once while retaining the resumed critic and replay."""
+        recovery = self.cfg.algorithm.get("rlt_actor_recovery", {}) or {}
+        if not recovery.get("enable", False):
+            return
+        expected = os.path.join(recovery["resume_checkpoint"], "actor")
+        if os.path.realpath(load_base_path) != os.path.realpath(expected):
+            # New checkpoints already contain the recovered actor and its Adam.
+            return
+        if self.cfg.actor.model.model_type != "rlt_mlp_policy":
+            raise ValueError("Actor-only recovery requires rlt_mlp_policy.")
+
+        weights = torch.load(
+            recovery["policy_path"], map_location="cpu", weights_only=True
+        )
+        current = self._strategy.get_model_state_dict(
+            self.model, cpu_offload=True, full_state_dict=True
+        )
+        prefixes = ("backbone.", "actor_mean.", "actor_logstd.")
+        actor_keys = [key for key in current if key.startswith(prefixes)]
+        if not actor_keys or not any(key.startswith("actor_mean.") for key in actor_keys):
+            raise ValueError("RLT actor state is missing from the resumed model.")
+        for key in actor_keys:
+            value = weights[key]
+            if value.shape != current[key].shape or not torch.isfinite(value).all():
+                raise ValueError(f"Incompatible recovered actor tensor: {key}.")
+            current[key] = value.to(dtype=current[key].dtype)
+        self._strategy.load_model_with_state_dict(
+            self.model, current, cpu_offload=False, full_state_dict=True
+        )
+        # The old Adam moments describe the degraded actor, not the restored BC actor.
+        self.optimizer.state.clear()
+        self.optimizer.zero_grad(set_to_none=True)
+        for group in self.optimizer.param_groups:
+            group["lr"] = float(self.cfg.actor.optim.lr)
+            group["initial_lr"] = float(self.cfg.actor.optim.lr)
+        if hasattr(self.lr_scheduler, "base_lrs"):
+            self.lr_scheduler.base_lrs = [
+                group["lr"] for group in self.optimizer.param_groups
+            ]
+        self.logger.info(
+            "Recovered %d actor tensors from %s; reset actor Adam; "
+            "retained critic, target, trainer counters and replay.",
+            len(actor_keys),
+            recovery["policy_path"],
+        )
 
     def setup_sac_components(self):
         """Initialize replay components and let RLT schedule own readiness."""
@@ -735,6 +1573,8 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
         )
         counters = self._global_rlt_counters()
         buffer_ready = counters["min_replay_size"] >= min_buffer_size
+        if buffer_ready:
+            self._freeze_rlt_dvac_baseline()
         warmup_required_updates = int(
             schedule_cfg.get("warmup_post_collect_updates", 0)
         )
@@ -823,6 +1663,7 @@ class RLTACFSDPPolicy(RLTACLossMixin, RLTACReplayMixin, EmbodiedSACFSDPPolicy):
             ),
         }
         metrics.update(getattr(self, "_last_replay_metrics", {}))
+        metrics.update(self._rlt_dvac_baseline_metrics())
         return updates_to_run, metrics
 
     def run_training(self):
@@ -892,6 +1733,13 @@ class AsyncRLTACFSDPPolicy(
     RLTACLossMixin, RLTACReplayMixin, AsyncEmbodiedSACFSDPPolicy
 ):
     def __init__(self, cfg):
+        dvac_mode = str(
+            (cfg.algorithm.get("rlt_dvac", {}) or {}).get("mode", "off")
+        ).lower()
+        if dvac_mode != "off":
+            raise NotImplementedError(
+                "RLT-DVAC-Pure currently supports the synchronous RLT policy only."
+            )
         super().__init__(cfg)
         self.rlt_schedule_cfg = cfg.algorithm.get("rlt_schedule", {}) or {}
         self.use_rlt_schedule = bool(self.rlt_schedule_cfg.get("enable", False))
