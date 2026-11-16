@@ -15,9 +15,7 @@
 import asyncio
 import copy
 import gc
-import socket
 import time
-from datetime import datetime, timezone
 from typing import Any, Callable, Literal, Optional
 
 import numpy as np
@@ -25,7 +23,6 @@ import torch
 from omegaconf import DictConfig, OmegaConf, open_dict
 from tqdm import tqdm
 
-from rlinf.algorithms.dvac_train_weighting import compute_endpoint_variance
 from rlinf.algorithms.expert import build_expert_model_config
 from rlinf.algorithms.rlt import (
     build_rlt_route,
@@ -37,9 +34,7 @@ from rlinf.hybrid_engines.weight_syncer import WeightSyncer
 from rlinf.models import get_model
 from rlinf.models.embodiment.base_policy import BasePolicy
 from rlinf.scheduler import Channel, Cluster, Worker, split_channel_message
-from rlinf.utils.dvac_telemetry import DVACTelemetryWriter
 from rlinf.utils.placement import HybridComponentPlacement
-from rlinf.utils.utils import get_rng_state, seed_everything, set_rng_state
 
 
 class MultiStepRolloutWorker(Worker):
@@ -47,7 +42,6 @@ class MultiStepRolloutWorker(Worker):
         Worker.__init__(self)
 
         self.cfg = cfg
-        self.rollout_seed = cfg.rollout.get("seed", None)
         self.should_stop = False
 
         self.only_eval = cfg.runner.get("only_eval", False)
@@ -135,57 +129,6 @@ class MultiStepRolloutWorker(Worker):
 
         self.env_decoupled_mode = self.cfg.runner.get("enable_decoupled_mode", False)
 
-        self.dvac_telemetry_cfg = OmegaConf.select(
-            self.cfg, "rollout.dvac_telemetry", default=None
-        )
-        self.dvac_telemetry_enabled = bool(
-            self.dvac_telemetry_cfg is not None
-            and self.dvac_telemetry_cfg.get("enabled", False)
-        )
-        self.dvac_telemetry_writer: DVACTelemetryWriter | None = None
-        if self.dvac_telemetry_enabled:
-            if not self.only_eval:
-                raise ValueError(
-                    "DVAC telemetry v1 only supports standalone evaluation."
-                )
-            if self.env_decoupled_mode:
-                raise ValueError("DVAC telemetry v1 does not support decoupled mode.")
-            if self.eval_rollout_epoch != 1:
-                raise ValueError("DVAC telemetry v1 requires exactly one eval epoch.")
-            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
-                raise ValueError("DVAC telemetry v1 requires an OpenPI rollout model.")
-            if self.cfg.runner.get("ckpt_path", None) is not None:
-                raise ValueError(
-                    "DVAC telemetry v1 expects the original SFT model_path."
-                )
-
-        dvac_train_cfg = OmegaConf.select(
-            self.cfg, "algorithm.dvac_gradient_weighting", default=None
-        )
-        self.dvac_train_cfg = (
-            {}
-            if dvac_train_cfg is None
-            else OmegaConf.to_container(dvac_train_cfg, resolve=True)
-        )
-        self.dvac_train_mode = str(
-            self.dvac_train_cfg.get("mode", "off")
-        ).lower()
-        if self.dvac_train_mode not in {"off", "observe", "apply"}:
-            raise ValueError(
-                "algorithm.dvac_gradient_weighting.mode must be 'off', 'observe', or 'apply'"
-            )
-        self.dvac_train_enabled = self.dvac_train_mode in {"observe", "apply"}
-        self.dvac_selected_l = int(self.dvac_train_cfg.get("selected_l", 3))
-        if self.dvac_train_enabled:
-            if self.only_eval:
-                raise ValueError("DVAC gradient weighting requires a training run.")
-            if self.env_decoupled_mode:
-                raise ValueError(
-                    "DVAC gradient weighting does not support decoupled mode."
-                )
-            if SupportedModel(self.model_cfg.model_type) != SupportedModel.OPENPI:
-                raise ValueError("DVAC gradient weighting requires OpenPI.")
-
         if self.env_decoupled_mode:
             # save the run-time imformation in communicate channel for decoupled mode
             # The batch_router is a dictionary that maps the tag to the list of batch_index.
@@ -233,109 +176,6 @@ class MultiStepRolloutWorker(Worker):
         if self.rlt_feature_model is not None:
             self.rlt_feature_model.eval()
 
-        if self.dvac_telemetry_enabled:
-            if self.rlt_feature_model is not None:
-                raise ValueError("DVAC telemetry v1 records native OpenPI, not RLT.")
-            if self.expert_model is not None:
-                raise ValueError("DVAC telemetry v1 does not support an expert route.")
-            active_modes = [
-                name
-                for name in ("use_dsrl", "use_rlt", "is_nft", "rtc_enabled")
-                if bool(getattr(self.hf_model.config, name, False))
-            ]
-            if active_modes:
-                raise ValueError(
-                    "DVAC telemetry v1 requires plain SFT OpenPI; active modes: "
-                    + ", ".join(active_modes)
-                )
-            output_dir = self.dvac_telemetry_cfg.get("output_dir", None)
-            if not output_dir:
-                raise ValueError("rollout.dvac_telemetry.output_dir must be set.")
-            required_metadata = (
-                "run_id",
-                "source_commit",
-                "robotwin_commit",
-                "checkpoint_revision",
-                "norm_stats_sha256",
-                "seed_file_sha256",
-                "renderer",
-                "launch_command",
-            )
-            missing_metadata = [
-                key
-                for key in required_metadata
-                if not self.dvac_telemetry_cfg.get(key, None)
-            ]
-            if missing_metadata:
-                raise ValueError(
-                    "Missing DVAC run metadata: " + ", ".join(missing_metadata)
-                )
-            self.dvac_telemetry_writer = DVACTelemetryWriter(
-                str(output_dir),
-                self._rank,
-                save_query_inputs=self.dvac_telemetry_cfg.get(
-                    "save_query_inputs", True
-                ),
-                run_metadata={
-                    "run_id": str(self.dvac_telemetry_cfg.run_id),
-                    "common_base_commit": str(
-                        self.dvac_telemetry_cfg.common_base_commit
-                    ),
-                    "source_commit": str(self.dvac_telemetry_cfg.source_commit),
-                    "robotwin_commit": str(self.dvac_telemetry_cfg.robotwin_commit),
-                    "checkpoint_revision": str(
-                        self.dvac_telemetry_cfg.checkpoint_revision
-                    ),
-                    "norm_stats_sha256": str(self.dvac_telemetry_cfg.norm_stats_sha256),
-                    "seed_file_path": str(self.cfg.env.eval.seeds_path),
-                    "seed_file_sha256": str(self.dvac_telemetry_cfg.seed_file_sha256),
-                    "launch_command": str(self.dvac_telemetry_cfg.launch_command),
-                    "run_started_at_utc": datetime.now(timezone.utc).isoformat(),
-                    "run_started_at_local": datetime.now().astimezone().isoformat(),
-                    "hostname": socket.gethostname(),
-                    "model_path": str(self.model_cfg.model_path),
-                    "model_type": str(self.model_cfg.model_type),
-                    "task_name": str(self.cfg.env.eval.task_config.task_name),
-                    "renderer": str(self.dvac_telemetry_cfg.renderer),
-                    "planner_backend": str(
-                        self.cfg.env.eval.task_config.planner_backend
-                    ),
-                    "model_action_horizon": int(self.hf_model.config.action_chunk),
-                    "model_action_dim": int(self.hf_model.config.action_dim),
-                    "active_action_dim": int(self.hf_model.config.action_env_dim),
-                    "execution_chunk_length": int(self.model_cfg.num_action_chunks),
-                    "denoising_steps": int(self.model_cfg.num_steps),
-                    "model_parameter_dtype": str(
-                        next(self.hf_model.parameters()).dtype
-                    ).removeprefix("torch."),
-                    "eval_sampling_method": "flow_ode",
-                    "rollout_world_size": int(self.placement.get_world_size("rollout")),
-                    "env_world_size": int(self.placement.get_world_size("env")),
-                    "camera_mapping": {
-                        "main_images": "head",
-                        "wrist_images_0": "left_wrist",
-                        "wrist_images_1": "right_wrist",
-                    },
-                },
-                resolved_config=OmegaConf.to_yaml(self.cfg, resolve=True),
-            )
-
-        if self.dvac_train_enabled:
-            if self.rlt_feature_model is not None or self.expert_model is not None:
-                raise ValueError(
-                    "DVAC gradient weighting requires the native OpenPI policy."
-                )
-            active_modes = [
-                name
-                for name in ("use_dsrl", "use_rlt", "is_nft")
-                if bool(getattr(self.hf_model.config, name, False))
-            ]
-            if active_modes:
-                raise ValueError(
-                    "DVAC gradient weighting does not support: "
-                    + ", ".join(active_modes)
-                )
-
         if self.cfg.rollout.get("enable_torch_compile", False):
             mode = self.cfg.rollout.get(
                 "torch_compile_mode", "max-autotune-no-cudagraphs"
@@ -350,18 +190,6 @@ class MultiStepRolloutWorker(Worker):
         self.setup_sample_params()
         if self.enable_offload:
             self.offload_model()
-
-        self._seed_rollout()
-        if self.rollout_seed is not None:
-            print(
-                f"Rollout RNG seed={int(self.rollout_seed) + self._rank}; "
-                "fresh noise per query; eval RNG isolated",
-                flush=True,
-            )
-
-    def _seed_rollout(self):
-        if self.rollout_seed is not None:
-            seed_everything(int(self.rollout_seed) + self._rank)
 
     def setup_sample_params(self):
         # sampling parameters for rollout
@@ -674,15 +502,6 @@ class MultiStepRolloutWorker(Worker):
         ]:
             kwargs["return_obs"] = not hasattr(self.hf_model, "q_head")
 
-        if (
-            self.dvac_telemetry_enabled
-            and mode == "eval"
-            and SupportedModel(self.model_cfg.model_type) == SupportedModel.OPENPI
-        ):
-            kwargs["return_dvac_telemetry"] = True
-        if self.dvac_train_enabled and mode == "train":
-            kwargs["return_dvac_telemetry"] = True
-
         only_save_expert = self.algorithm_cfg.get("dagger", {}).get(
             "only_save_expert", True
         )
@@ -727,17 +546,6 @@ class MultiStepRolloutWorker(Worker):
                     result["forward_inputs"]["action"] = expert_action
                     result["forward_inputs"]["model_action"] = expert_target
                 expert_label_flag = True
-
-        if self.dvac_train_enabled and mode == "train":
-            telemetry = result.pop("dvac_telemetry", None)
-            if telemetry is None or "z_endpoint" not in telemetry:
-                raise ValueError("OpenPI did not return DVAC endpoint telemetry.")
-            variance = compute_endpoint_variance(
-                telemetry["z_endpoint"], self.dvac_selected_l
-            )
-            result["forward_inputs"][f"dvac_v_l{self.dvac_selected_l}"] = (
-                variance.detach().cpu().contiguous()
-            )
 
         if isinstance(actions, np.ndarray):
             actions = torch.from_numpy(actions)
@@ -993,16 +801,6 @@ class MultiStepRolloutWorker(Worker):
 
     @Worker.timer("evaluate")
     async def evaluate(self, input_channel: Channel, output_channel: Channel):
-        if self.rollout_seed is None:
-            return await self._evaluate(input_channel, output_channel)
-        train_rng_state = get_rng_state()
-        try:
-            self._seed_rollout()
-            return await self._evaluate(input_channel, output_channel)
-        finally:
-            set_rng_state(train_rng_state)
-
-    async def _evaluate(self, input_channel: Channel, output_channel: Channel):
         if self.enable_offload:
             self.reload_model()
         if self.env_decoupled_mode:
@@ -1054,7 +852,7 @@ class MultiStepRolloutWorker(Worker):
                             merge_fn=self._merge_obs_batches,
                             infer_batch_size_fn=self._infer_env_batch_size,
                         ).async_wait()
-                        actions, result = self._predict_rollout_actions(
+                        actions, _ = self._predict_rollout_actions(
                             env_output["obs"],
                             mode="eval",
                             final_obs=env_output.get("final_obs", None),
@@ -1072,16 +870,6 @@ class MultiStepRolloutWorker(Worker):
                             async_op=True,
                             batch_size=self.eval_batch_size,
                         )
-                        if self.dvac_telemetry_writer is not None:
-                            self.dvac_telemetry_writer.append(
-                                telemetry=result["dvac_telemetry"],
-                                env_action=actions,
-                                env_obs=env_output["obs"],
-                                query_metadata=env_output["dvac_query_metadata"],
-                            )
-
-            if self.dvac_telemetry_writer is not None:
-                self.dvac_telemetry_writer.finalize()
 
             if self.enable_offload:
                 self.offload_model()
@@ -1151,9 +939,6 @@ class MultiStepRolloutWorker(Worker):
         intervene_flags_list = [
             obs_batch.get("intervene_flags", None) for obs_batch in obs_batches
         ]
-        query_metadata_list = [
-            obs_batch.get("dvac_query_metadata", None) for obs_batch in obs_batches
-        ]
 
         def _merge_obs_dicts(dicts: list[dict[str, Any]]) -> dict[str, Any]:
             merged: dict[str, Any] = {}
@@ -1181,12 +966,6 @@ class MultiStepRolloutWorker(Worker):
             ]
             merged_final_obs = _merge_obs_dicts(final_obs_or_obs)
 
-        merged_query_metadata = None
-        if any(metadata is not None for metadata in query_metadata_list):
-            if not all(metadata is not None for metadata in query_metadata_list):
-                raise ValueError("DVAC query metadata must align with every obs batch.")
-            merged_query_metadata = _merge_obs_dicts(query_metadata_list)
-
         return {
             "obs": merged_obs,
             "final_obs": merged_final_obs,
@@ -1196,7 +975,6 @@ class MultiStepRolloutWorker(Worker):
             "intervene_flags": self._merge_optional_flag_tensors(
                 obs_dicts, intervene_flags_list
             ),
-            "dvac_query_metadata": merged_query_metadata,
         }
 
     def _split_policy_output(

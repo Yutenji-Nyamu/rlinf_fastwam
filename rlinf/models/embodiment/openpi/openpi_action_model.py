@@ -17,7 +17,6 @@ import random
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
-# pi05-signals-20261003: explicit eval-only collection
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -27,13 +26,15 @@ import torch.nn.functional as F
 from openpi import transforms as _transforms
 from openpi.models import model as _model
 from openpi.models.pi0_config import Pi0Config
-from openpi.models_pytorch.pi0_pytorch import (
-    PI0Pytorch,
-    create_sinusoidal_pos_embedding,
-    make_att_2d_masks,
-)
+from openpi.models_pytorch.pi0_pytorch import PI0Pytorch, make_att_2d_masks
 from torch.utils._pytree import tree_map
 
+from rlinf.algorithms.dsrl_ugrow import (
+    make_signal_spec,
+    relative_disagreement,
+    validate_signal_spec,
+)
+from rlinf.algorithms.norm_signal import capture_expert_norm, reduce_expert_norm
 from rlinf.models.embodiment.base_policy import BasePolicy, ForwardType
 from rlinf.models.embodiment.modules.explore_noise_net import ExploreNoiseNet
 from rlinf.models.embodiment.modules.value_head import ValueHead
@@ -50,6 +51,43 @@ from rlinf.utils.pytree import register_pytree_dataclasses
 
 def _to_numpy(x):
     return np.asarray(x.detach().cpu()) if torch.is_tensor(x) else x
+
+
+def preprocess_dsrl_images(images):
+    """Map raw or compact main-camera images to ``[B,1,3,64,64]`` BF16 input."""
+    main_image = images[0] if isinstance(images, (list, tuple)) else images
+    if main_image.ndim == 5 and main_image.shape[1] == 1:
+        main_image = main_image[:, 0]
+    if main_image.ndim != 4:
+        raise ValueError(
+            f"DSRL main image must be BCHW or BHWC, got {tuple(main_image.shape)}"
+        )
+
+    if main_image.dtype == torch.bfloat16 and main_image.shape[1:] == (3, 64, 64):
+        return main_image.unsqueeze(1)
+
+    if main_image.shape[-1] == 3:
+        main_image = main_image.permute(0, 3, 1, 2)
+    elif main_image.shape[1] != 3:
+        raise ValueError(
+            "DSRL main image must have three RGB channels, "
+            f"got {tuple(main_image.shape)}"
+        )
+
+    if main_image.dtype == torch.uint8:
+        main_image = main_image.float().div_(255.0)
+    else:
+        main_image = main_image.float()
+        if main_image.min() < 0:
+            main_image = (main_image + 1.0) / 2.0
+    main_image = main_image.clamp_(0.0, 1.0)
+    main_image = F.interpolate(
+        main_image,
+        size=(64, 64),
+        mode="bilinear",
+        align_corners=False,
+    )
+    return (main_image * 2.0 - 1.0).unsqueeze(1)
 
 
 @dataclass(frozen=True)
@@ -79,7 +117,6 @@ class OpenPi0Config(Pi0Config):
     rtc_guidance_clip: float = 5.0
     # training config
     train_expert_only: bool = False
-    distill_target_time: bool = False
     safe_get_logprob: bool = False
     joint_logprob: bool = False  # designed for flow-noise
     double_layer: bool = False  # designed for flow-sde without acceleration
@@ -93,8 +130,21 @@ class OpenPi0Config(Pi0Config):
 
     # ===== DSRL-specific parameters =====
     use_dsrl: bool = False  # Enable DSRL algorithm
+    dsrl_na_enabled: bool = False
+    dsrl_shift_l2_bound: float = 0.0
+    dsrl_eval_gaussian_seed: int = -1
     dsrl_state_dim: int = 8  # Raw state dimension for DSRL encoders
     dsrl_action_noise_dim: int = 32  # Noise dimension output by GaussianPolicy
+    dsrl_full_noise: bool = False
+    dsrl_noise_groups: int = 0  # 0 keeps the legacy full/repeated mapping.
+    dsrl_fp32_small: bool = False
+    dsrl_noise_bound: float = 1.0
+    dsrl_noise_parameterization: str = "tanh"
+    dsrl_shift_bound: float = 0.5
+    dsrl_vectorized_q: bool = False
+    dsrl_compile_q: bool = False
+    dsrl_compile_q_mode: str = "default"
+    dsrl_channels_last: bool = False
     dsrl_num_q_heads: int = 10  # Number of Q-networks
     dsrl_agg_q: str = "mean"  # Q aggregation method: 'mean' | 'min'
     dsrl_image_latent_dim: int = 64  # Latent dim for lightweight image encoder
@@ -102,6 +152,10 @@ class OpenPi0Config(Pi0Config):
     dsrl_hidden_dims: tuple = field(
         default_factory=lambda: (128, 128, 128)
     )  # Hidden dims for Q-head and GaussianPolicy
+    dsrl_gaussian_warmup: bool = False
+    dsrl_eval_deterministic: bool = True
+    dsrl_u_enabled: bool = False
+    dsrl_u_spec: dict[str, Any] | None = None
 
     # ===== NFT-specific parameters =====
     is_nft: bool = False
@@ -162,7 +216,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # --pi05 only--
             "time_mlp_in",
             "time_mlp_out",
-        ]
+        ] + ([
+            "paligemma_with_expert",
+            "dsrl_action_noise_net", "actor_image_encoder", "actor_state_encoder",
+            "critic_image_encoder", "critic_state_encoder", "q_head",
+            "action_critic_image_encoder", "action_critic_state_encoder", "action_q_head",
+        ] if self.config.use_dsrl and self.config.dsrl_fp32_small else [])
 
     def __init__(
         self,
@@ -174,11 +233,26 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         self.sample_actions = sample_actions_func
         self.logger = get_logger()
         self.global_step = 0
-        if config.distill_target_time:
-            assert config.pi05, "Target-time conditioning is implemented for pi05"
-            width = self.action_in_proj.out_features
-            self.distill_stop_proj = torch.nn.Linear(width, width, bias=False)
-            torch.nn.init.zeros_(self.distill_stop_proj.weight)
+        self.dsrl_u_spec = None
+        if not isinstance(self.config.dsrl_u_enabled, bool):
+            raise ValueError("dsrl_u_enabled must be a boolean")
+        if self.config.dsrl_u_enabled:
+            if not self.config.use_dsrl:
+                raise ValueError("DSRL U requires use_dsrl=True")
+            self.dsrl_u_spec = validate_signal_spec(self.config.dsrl_u_spec)
+            expected_u_spec = make_signal_spec(
+                signal_kind=self.dsrl_u_spec["name"],
+                main_steps=self.config.num_steps,
+                side_steps=self.dsrl_u_spec.get("side_steps", 5),
+                action_dim=self.config.action_env_dim,
+                action_horizon=self.config.action_horizon,
+                chunk_length=self.config.action_chunk,
+            )
+            if self.dsrl_u_spec != expected_u_spec:
+                raise ValueError("DSRL U spec does not match the active model config")
+            expected_latent = self.config.action_dim * (self.config.action_horizon if self.config.dsrl_full_noise else 1)
+            if self.config.dsrl_action_noise_dim != expected_latent:
+                raise ValueError("DSRL U latent dimension does not match its noise mode")
         # assert
         assert not (self.config.double_layer and self.config.joint_logprob), (
             "double_layer and joint_logprob can not be set at the same time"
@@ -244,27 +318,49 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             )
             from rlinf.models.embodiment.modules.gaussian_policy import GaussianPolicy
 
-            # Use explicit bfloat16 to match the backbone dtype that will be
-            # loaded from the checkpoint later.  At __init__ time the backbone
-            # parameters are still float32 (weights are loaded afterwards by
-            # safetensors.torch.load_model), so next(self.parameters()).dtype
-            # would incorrectly return float32.  Hardcoding bfloat16 here
-            # ensures all parameters share a single dtype when FSDP creates
-            # its FlatParameter, avoiding the writeback shape-mismatch error.
-            _dsrl_dtype = torch.bfloat16
+            # FP32 SAC parameters are separate FSDP units; frozen VLA stays BF16.
+            _dsrl_dtype = torch.float32 if self.config.dsrl_fp32_small else torch.bfloat16
+            if self.config.dsrl_noise_bound <= 0:
+                raise ValueError("DSRL noise bound must be positive")
 
             dsrl_input_dim = (
                 self.config.dsrl_state_latent_dim + self.config.dsrl_image_latent_dim
             )  # e.g. 64 + 64 = 128
 
-            self.dsrl_action_noise_net = GaussianPolicy(
+            policy_cls = GaussianPolicy
+            policy_kwargs = {}
+            if self.config.dsrl_noise_parameterization == "gaussian_shift":
+                from rlinf.models.embodiment.modules.gaussian_shift_policy import GaussianShiftPolicy
+                if (not self.config.dsrl_full_noise or self.config.dsrl_eval_deterministic
+                    or self.config.dsrl_action_noise_dim != self.config.action_horizon * self.config.action_dim
+                    or self.config.dsrl_noise_groups not in (0, self.config.action_horizon)):
+                    raise ValueError("Gaussian shift requires full independent noise and stochastic evaluation")
+                policy_cls = GaussianShiftPolicy
+                policy_kwargs["shift_bound"] = self.config.dsrl_shift_bound
+                policy_kwargs["l2_bound"] = self.config.dsrl_shift_l2_bound
+            elif self.config.dsrl_noise_parameterization != "tanh":
+                raise ValueError("Unknown DSRL noise parameterization")
+            self.dsrl_action_noise_net = policy_cls(
                 input_dim=dsrl_input_dim,
                 output_dim=self.config.dsrl_action_noise_dim,
                 hidden_dims=self.config.dsrl_hidden_dims,
-                low=None,
-                high=None,
-                action_horizon=self.config.action_horizon,
+                low=-self.config.dsrl_noise_bound,
+                high=self.config.dsrl_noise_bound,
+                action_horizon=1 if self.config.dsrl_full_noise else self.config.action_horizon,
+                **policy_kwargs,
             ).to(dtype=_dsrl_dtype)
+            self.dsrl_action_noise_net.probability_float32 = self.config.dsrl_full_noise
+            if self.config.dsrl_noise_groups:
+                if not self.config.dsrl_full_noise:
+                    raise ValueError("Grouped noise requires compact full-noise replay")
+                groups = self.config.dsrl_noise_groups
+                if groups < 1 or self.config.action_horizon % groups:
+                    raise ValueError("Noise groups must divide the action horizon")
+            if self.config.dsrl_full_noise:
+                groups = self.config.dsrl_noise_groups or self.config.action_horizon
+                if self.config.dsrl_action_noise_dim != groups * self.config.action_dim:
+                    raise ValueError("DSRL latent dimension must equal groups * action_dim")
+
 
             self.actor_image_encoder = LightweightImageEncoder64(
                 num_images=1,
@@ -292,6 +388,20 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 num_q_heads=self.config.dsrl_num_q_heads,
                 output_dim=1,
             ).to(dtype=_dsrl_dtype)
+            self.actor_image_encoder.channels_last = self.config.dsrl_channels_last
+            self.critic_image_encoder.channels_last = self.config.dsrl_channels_last
+            self.q_head.vectorized = self.config.dsrl_vectorized_q
+            self.q_head.compile_vectorized = self.config.dsrl_compile_q
+            self.q_head.compile_mode = self.config.dsrl_compile_q_mode
+            if self.config.dsrl_na_enabled:
+                from rlinf.models.embodiment.modules.dsrl_na import initialize_action_critic
+                initialize_action_critic(self, _dsrl_dtype)
+            initial_phase = 0 if self.config.dsrl_gaussian_warmup else 1
+            self.register_buffer(
+                "dsrl_policy_phase",
+                torch.tensor(initial_phase, dtype=torch.uint8),
+                persistent=True,
+            )
 
         for name, module in self.named_modules():
             # Set _fsdp_wrap_name to the last part of the path (e.g., "model.action_in_proj" -> "action_in_proj")
@@ -380,8 +490,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         elif forward_type == ForwardType.NFT:
             return self.nft_forward(**kwargs)
         elif forward_type == ForwardType.SAC:
+            if kwargs.get("na_operation"):
+                from rlinf.models.embodiment.modules.dsrl_na import model_operation
+                return model_operation(self, **kwargs)
             return self.sac_forward(**kwargs)
         elif forward_type == ForwardType.SAC_Q:
+            if kwargs.get("na_action_critic", False):
+                from rlinf.models.embodiment.modules.dsrl_na import action_q_forward
+                return action_q_forward(self, **kwargs)
             return self.sac_q_forward(**kwargs)
         else:
             raise NotImplementedError
@@ -855,22 +971,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode: Literal["train", "eval"] = "train",
         compute_values=True,
         rtc_context: RTCGuidanceContext | None = None,
-        return_dvac_telemetry: bool = False,
-        record_signals: bool = False,
-        consistency_steps: int = 5,
-        noise=None,
-        num_steps: int | None = None,
-        return_fql_features: bool = False,
         **kwargs,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
-        if mode != "eval" and (noise is not None or num_steps is not None or record_signals):
-            raise ValueError("Per-call inference overrides and signal collection require mode='eval'")
-        if record_signals and not return_dvac_telemetry:
-            raise ValueError("record_signals requires return_dvac_telemetry=True")
-        if return_fql_features and (mode != "eval" or self.config.use_dsrl or rtc_context is not None):
-            raise ValueError("Q diagnostics require native non-DSRL eval")
-        if self.config.use_dsrl and (noise is not None or record_signals):
-            raise ValueError("External noise/signal collection is not supported on the DSRL path")
         to_process_obs = self.obs_processor(env_obs)  # env obs -> policy input obs
         processed_obs = self.input_transform(
             to_process_obs, transpose=False
@@ -887,18 +989,52 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # Step 1: SAC agent outputs noise
             dsrl_obs = {"images": [env_obs["main_images"]], "states": env_obs["states"]}
 
-            noise_actions, noise_logprob, _ = self.sac_forward(
-                dsrl_obs, train=False, mode=mode
-            )
+            if int(self.dsrl_policy_phase.item()) == 0:
+                generator = None
+                if mode == "eval" and self.config.dsrl_eval_gaussian_seed >= 0:
+                    if getattr(self, "_gaussian_eval_version", None) != self.global_step:
+                        self._gaussian_eval_version = self.global_step
+                        self._gaussian_eval_generator = torch.Generator(device=observation.state.device)
+                        self._gaussian_eval_generator.manual_seed(self.config.dsrl_eval_gaussian_seed)
+                    generator = self._gaussian_eval_generator
+                latent = torch.randn(
+                    observation.state.shape[0],
+                    self.config.dsrl_action_noise_dim,
+                    generator=generator,
+                    device=observation.state.device,
+                    dtype=torch.float32,
+                )
+                noise_logprob = (
+                    -0.5 * (latent.square() + math.log(2.0 * math.pi))
+                ).sum(dim=-1)
+                noise_actions = latent.to(
+                    dtype=next(self.dsrl_action_noise_net.parameters()).dtype
+                )
+                if self.config.dsrl_full_noise:
+                    groups = self.config.dsrl_noise_groups or self.config.action_horizon
+                    noise_actions = noise_actions.reshape(-1, groups, self.config.action_dim)
+                else:
+                    noise_actions = noise_actions.unsqueeze(1).repeat(
+                        1, self.config.action_horizon, 1
+                    )
+            else:
+                noise_actions, noise_logprob, _ = self.sac_forward(
+                    dsrl_obs, train=False, mode=mode
+                )
 
-            # Step 2: Use noise to sample actual actions from diffusion model
+            # Expand only for the VLA; replay and log-prob retain compact coordinates.
+            generation_noise = noise_actions
+            if self.config.dsrl_noise_groups:
+                generation_noise = noise_actions.repeat_interleave(
+                    self.config.action_horizon // self.config.dsrl_noise_groups, dim=1
+                )
+            # Step 2: Use the same expanded noise for the main VLA and optional U.
             outputs = self.sample_actions(
                 observation,
-                noise=noise_actions,
+                noise=generation_noise,
                 mode="eval",
-                num_steps=num_steps,
                 compute_values=compute_values,
-                return_dvac_telemetry=return_dvac_telemetry,
+                collect_dsrl_u=self.config.dsrl_u_enabled and mode == "train",
             )
 
             # Step 3: Extract actual actions for environment interaction
@@ -915,13 +1051,6 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             # Non-DSRL or eval mode
             if rtc_context is not None and mode == "eval" and self.config.rtc_enabled:
-                if noise is not None or num_steps is not None or record_signals:
-                    raise ValueError("Per-call inference overrides/signal collection require the native non-RTC path")
-                if return_dvac_telemetry:
-                    raise ValueError(
-                        "DVAC telemetry records the native OpenPI sampler; RTC guidance "
-                        "telemetry is not supported."
-                    )
                 # RTC is only used during evaluation: the rollout worker passes
                 # the previous model-space action chunk so the sampler can guide
                 # the overlapping horizon without changing normal training.
@@ -933,15 +1062,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 )
             else:
                 outputs = self.sample_actions(
-                    observation,
-                    mode=mode,
-                    compute_values=compute_values,
-                    return_dvac_telemetry=return_dvac_telemetry,
-                    noise=noise,
-                    num_steps=num_steps,
-                    record_signals=record_signals,
-                    consistency_steps=consistency_steps,
-                    return_fql_features=return_fql_features,
+                    observation, mode=mode, compute_values=compute_values
                 )
             actions = self.output_transform(
                 {"actions": outputs["actions"], "state": observation.state}
@@ -965,6 +1086,24 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         }
         if forward_action is not None:
             forward_inputs["action"] = forward_action
+            if self.config.dsrl_na_enabled:
+                forward_inputs["dsrl_env_actions"] = actions.detach().clone()
+        if "dsrl_u" in outputs:
+            forward_inputs["dsrl_u"] = outputs["dsrl_u"]
+            forward_inputs["dsrl_u_valid"] = outputs["dsrl_u_valid"]
+            metadata_shape = (outputs["dsrl_u"].shape[0], 1)
+            forward_inputs["dsrl_u_policy_step"] = torch.full(
+                metadata_shape,
+                int(self.global_step),
+                dtype=torch.int64,
+                device=outputs["dsrl_u"].device,
+            )
+            forward_inputs["dsrl_u_phase"] = (
+                self.dsrl_policy_phase.detach()
+                .to(device=outputs["dsrl_u"].device, dtype=torch.int64)
+                .expand(metadata_shape)
+                .clone()
+            )
 
         if self.config.is_nft:
             nft_outputs = {
@@ -984,10 +1123,6 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             "forward_inputs": forward_inputs,
             "model_actions": outputs["actions"],
         }
-        if return_dvac_telemetry:
-            result["dvac_telemetry"] = outputs["dvac_telemetry"]
-        if return_fql_features:
-            result["fql_features"] = outputs["fql_features"]
         return actions, result
 
     @torch.no_grad()
@@ -1020,28 +1155,19 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
-        return_dvac_telemetry: bool = False,
-        num_steps: int | None = None,
-        record_signals: bool = False,
-        consistency_steps: int = 5,
-        return_fql_features: bool = False,
+        collect_dsrl_u: bool = False,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
-        if num_steps is not None:
-            if mode != "eval":
-                raise ValueError("num_steps override is evaluation-only")
-            if isinstance(num_steps, bool) or not isinstance(num_steps, int) or num_steps < 1:
-                raise ValueError("num_steps must be a positive integer")
-        if record_signals:
-            if mode != "eval" or not return_dvac_telemetry:
-                raise ValueError("record_signals requires eval and return_dvac_telemetry=True")
-            if isinstance(consistency_steps, bool) or not isinstance(consistency_steps, int) or consistency_steps < 1:
-                raise ValueError("consistency_steps must be a positive integer")
-            main_steps = self.config.num_steps if num_steps is None else num_steps
-            if main_steps != 10:
-                raise ValueError("Signal collection is defined on the M10 main chain")
-            if getattr(self, "_signal_observer", None) is None:
-                raise ValueError("Bind model._signal_observer before enabling record_signals")
+        if collect_dsrl_u and (
+            mode != "eval"
+            or not self.config.use_dsrl
+            or not self.config.dsrl_u_enabled
+            or self.dsrl_u_spec is None
+            or noise is None
+        ):
+            raise ValueError(
+                "DSRL U requires configured ODE inference with behavior noise"
+            )
         bsize = observation.state.shape[0]
         device = observation.state.device
         if noise is None:
@@ -1050,6 +1176,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         else:
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
+        if collect_dsrl_u:
+            expected_shape = (bsize, self.config.action_horizon, self.config.action_dim)
+            if tuple(noise.shape) != expected_shape or noise.device != device:
+                raise ValueError(
+                    "DSRL U requires full model-space noise on the state device"
+                )
+            # Capture the actual cast noise before either complete solve.
+            initial_noise = noise.detach().clone()
 
         images, img_masks, lang_tokens, lang_masks, state = (
             self._preprocess_observation(observation, train=False)
@@ -1059,6 +1193,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             images, img_masks, lang_tokens, lang_masks
         )
 
+        collect_norm = collect_dsrl_u and self.dsrl_u_spec["name"].startswith(
+            "norm_residual_"
+        )
         result = self._sample_actions_with_prefix_cache(
             state,
             prefix_output,
@@ -1067,40 +1204,39 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             noise=noise,
             mode=mode,
             compute_values=compute_values,
-            return_dvac_telemetry=return_dvac_telemetry,
-            num_steps=num_steps,
-            record_signals=record_signals,
+            **({"collect_norm": True} if collect_norm else {}),
         )
-        if record_signals:
-            telemetry = result["dvac_telemetry"]
-            # This is the full noise AFTER the cached sampler's dtype cast.
-            # Reusing the original pre-cast random sample can change the path.
-            initial_noise = telemetry["initial_noise_full"]
-            rng_devices = []
-            if initial_noise.device.type == "cuda":
-                rng_devices = [initial_noise.device.index]
-            # flow_ode still samples zero-weight noise each round. Restore
-            # CPU and this CUDA RNG so the next main query is unchanged.
+        if collect_norm:
+            result["dsrl_u"] = result.pop("action_norm")[
+                :, : self.dsrl_u_spec["chunk_length"]
+            ].contiguous()
+            result["dsrl_u_valid"] = torch.ones_like(result["dsrl_u"], dtype=torch.bool)
+        elif collect_dsrl_u:
+            rng_devices = (
+                [initial_noise.device.index]
+                if initial_noise.device.type == "cuda"
+                else []
+            )
+            # Even native ODE samples zero-weight noise each round. Restore CPU
+            # and this GPU's RNG so the extra solve cannot change later rollouts.
             with torch.random.fork_rng(devices=rng_devices, enabled=True):
                 side = self._sample_actions_with_prefix_cache(
-                    state, prefix_output, prefix_pad_masks, past_key_values,
-                    noise=initial_noise.clone(), mode="eval",
-                    compute_values=False, return_dvac_telemetry=False,
-                    num_steps=consistency_steps, record_signals=False,
+                    state,
+                    prefix_output,
+                    prefix_pad_masks,
+                    past_key_values,
+                    noise=initial_noise.clone(),
+                    mode="eval",
+                    compute_values=False,
+                    num_steps=self.dsrl_u_spec["side_steps"],
                 )
-            telemetry["side_action_model"] = side["actions"][
-                ..., : self.config.action_env_dim
-            ].detach()
-            telemetry["side_num_steps"] = torch.tensor(
-                consistency_steps, device=initial_noise.device, dtype=torch.int64
+            chunk_length = self.dsrl_u_spec["chunk_length"]
+            action_dim = self.dsrl_u_spec["action_dim"]
+            result["dsrl_u"], result["dsrl_u_valid"] = relative_disagreement(
+                result["actions"][:, :chunk_length, :action_dim],
+                side["actions"][:, :chunk_length, :action_dim],
+                epsilon=self.dsrl_u_spec["epsilon"],
             )
-            side_grid = self._get_timesteps(consistency_steps, initial_noise.device)
-            telemetry["side_timesteps"] = side_grid[:-1].detach()
-            telemetry["side_final_time"] = side_grid[-1].detach()
-        if return_fql_features:
-            from rlinf.algorithms.pi05_distillation.q_evaluation import pooled_features
-
-            result["fql_features"] = pooled_features(prefix_output, prefix_pad_masks, state)
         return result
 
     def _sample_actions_with_prefix_cache(
@@ -1112,26 +1248,20 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         noise=None,
         mode="train",
         compute_values=True,
-        return_dvac_telemetry: bool = False,
+        collect_norm=False,
         num_steps: int | None = None,
-        record_signals: bool = False,
     ) -> torch.Tensor:
         bsize = state.shape[0]
         device = state.device
         if num_steps is None:
             num_steps = self.config.num_steps
-        else:
-            if mode != "eval":
-                raise ValueError("num_steps override is evaluation-only")
-            if isinstance(num_steps, bool) or not isinstance(num_steps, int) or num_steps < 1:
-                raise ValueError("num_steps must be a positive integer")
-        observer = None
-        if record_signals:
-            if mode != "eval" or not return_dvac_telemetry or num_steps != 10:
-                raise ValueError("record_signals requires native M10 eval telemetry")
-            observer = getattr(self, "_signal_observer", None)
-            if observer is None:
-                raise ValueError("Bind model._signal_observer before enabling record_signals")
+        elif (
+            mode != "eval"
+            or isinstance(num_steps, bool)
+            or not isinstance(num_steps, int)
+            or num_steps < 1
+        ):
+            raise ValueError("num_steps override requires eval and a positive integer")
         if noise is None:
             actions_shape = (bsize, self.config.action_horizon, self.config.action_dim)
             noise = self.sample_noise(actions_shape, device)
@@ -1139,22 +1269,16 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # DSRL: SAC provides noise, convert dtype to match action_in_proj
             noise = noise.to(self.action_in_proj.weight.dtype)
 
-        if record_signals:
-            expected_shape = (bsize, self.config.action_horizon, self.config.action_dim)
-            if tuple(noise.shape) != expected_shape or noise.device != device:
-                raise ValueError("Signal collection requires full model-space initial noise on the state device")
-        initial_noise_full = noise.detach().clone() if return_dvac_telemetry else None
-        velocity_trace = [] if record_signals else None
+        if collect_norm and (mode != "eval" or num_steps not in (4, 10)):
+            raise ValueError("Norm requires deterministic ODE4 or ODE10")
+        norm_tail_steps = min(5, num_steps)
+        norm_values = []
         x_t = noise
         # add sde sample and traj collect
         chains = []
         log_probs = []
         values = []
         chains.append(x_t)
-        endpoint_trace = [] if return_dvac_telemetry else None
-        telemetry_timesteps = (
-            self._get_timesteps(num_steps, device) if return_dvac_telemetry else None
-        )
 
         # add value based on the vlm for pi05, expert for pi0
         if self.use_vlm_value:
@@ -1196,7 +1320,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             else:
                 sample_method = "flow_ode"
             x_t_prev = x_t
-            with (observer.step(idx, num_steps) if observer is not None else nullcontext()):
+            capture = (
+                capture_expert_norm(self, self.config.action_horizon)
+                if collect_norm and idx >= num_steps - norm_tail_steps
+                else nullcontext()
+            )
+            with capture as step_norms:
                 x_t_mean, x_t_std, value_t, v_t = self.sample_mean_var_val(
                     x_t,
                     idx,
@@ -1207,13 +1336,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                     num_steps,
                     compute_values,
                 )
-            if velocity_trace is not None:
-                velocity_trace.append(v_t[..., : self.config.action_env_dim].detach().clone())
-            if endpoint_trace is not None:
-                t_i = telemetry_timesteps[idx].to(dtype=x_t_prev.dtype)
-                endpoint_trace.append(
-                    (x_t_prev - v_t * t_i)[..., : self.config.action_env_dim].detach()
-                )
+            if step_norms is not None:
+                norm_values.extend(step_norms)
             # Euler step - use new tensor assignment instead of in-place operation
             x_t = x_t_mean + self.sample_noise(x_t.shape, device) * x_t_std
             self._update_nft_state(nft_state, idx, x_t_prev, v_t, x_t, sample_method)
@@ -1250,16 +1374,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if collect_nft_state:
             result.update(nft_state)
             result["nft_x0"] = x_0.detach()
-        if endpoint_trace is not None:
-            result["dvac_telemetry"] = {
-                "x_chain": chains[..., : self.config.action_env_dim].detach(),
-                "z_endpoint": torch.stack(endpoint_trace, dim=1),
-                "timesteps": telemetry_timesteps[:-1].detach(),
-                "final_model_action": x_0[..., : self.config.action_env_dim].detach(),
-                "initial_noise_full": initial_noise_full,
-            }
-        if record_signals:
-            result["dvac_telemetry"]["velocity"] = torch.stack(velocity_trace, dim=1)
+        if collect_norm:
+            result["action_norm"] = reduce_expert_norm(
+                norm_values, tail_steps=norm_tail_steps
+            )
         return result
 
     def _get_timesteps(self, denoise_steps, device):
@@ -1349,22 +1467,11 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         past_key_values,
         x_t,
         timestep,
-        stop_time=None,
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep."""
         suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = (
             self.embed_suffix(state, x_t, timestep)
         )
-        if self.config.distill_target_time:
-            stop_time = torch.zeros_like(timestep) if stop_time is None else stop_time
-            stop_emb = create_sinusoidal_pos_embedding(
-                stop_time,
-                self.action_in_proj.out_features,
-                min_period=4e-3,
-                max_period=4.0,
-                device=stop_time.device,
-            ).to(timestep.dtype)
-            adarms_cond = adarms_cond + self.distill_stop_proj(stop_emb)
 
         suffix_len = suffix_pad_masks.shape[1]
         batch_size = prefix_pad_masks.shape[0]
@@ -1401,12 +1508,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         suffix_out = suffix_out.to(dtype=torch.float32)
         return suffix_out
 
-    def get_velocity(
-        self, state, x_t, timestep, prefix_pad_masks, past_key_values, stop_time=None
-    ):
+    def get_velocity(self, state, x_t, timestep, prefix_pad_masks, past_key_values):
         """Compute velocity prediction v_t and raw suffix_out at a given timestep."""
         suffix_out = self.get_suffix_out(
-            state, prefix_pad_masks, past_key_values, x_t, timestep, stop_time=stop_time
+            state, prefix_pad_masks, past_key_values, x_t, timestep
         )
         v_t = self.action_out_proj(suffix_out)
         return v_t, suffix_out
@@ -1666,10 +1771,10 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         images = self._preprocess_dsrl_images(obs["images"], train=train)
         states = self._preprocess_states(obs["states"])
 
-        # Move to the same device as actor encoders, convert to bfloat16
-        device = next(self.actor_image_encoder.parameters()).device
-        images = images.to(device=device, dtype=torch.bfloat16)
-        states = states.to(device=device, dtype=torch.bfloat16)
+        encoder_param = next(self.actor_image_encoder.parameters())
+        device, dtype = encoder_param.device, encoder_param.dtype
+        images = images.to(device=device, dtype=dtype)
+        states = states.to(device=device, dtype=dtype)
 
         # Extract features (using actor's independent encoder)
         image_features = self.actor_image_encoder(images)  # [B, 64]
@@ -1678,18 +1783,23 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         # Sample from GaussianPolicy
         mode = kwargs.get("mode", "train")
-        deterministic = mode == "eval"
+        deterministic = mode == "eval" and self.config.dsrl_eval_deterministic
 
-        action_noise, logprobs = self.dsrl_action_noise_net.sample(
-            features, deterministic=deterministic
+        # Call forward so a nested FSDP unit runs its parameter/gradient hooks.
+        action_noise, logprobs = self.dsrl_action_noise_net(
+            features, sample=True, deterministic=deterministic,
+            noise_scale=kwargs.get("noise_scale"),
         )
 
         # Optional: return distribution parameters for logging
         dist_params = None
         if return_dist_params:
-            dist = self.dsrl_action_noise_net.forward(features)
+            dist = self.dsrl_action_noise_net(features)
             dist_params = (dist.mean, dist.stddev)
 
+        if self.config.dsrl_full_noise:
+            groups = self.config.dsrl_noise_groups or self.config.action_horizon
+            action_noise = action_noise.reshape(-1, groups, self.config.action_dim)
         return action_noise, logprobs, dist_params
 
     def sac_q_forward(
@@ -1742,11 +1852,11 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         images = self._preprocess_dsrl_images(obs["images"], train=train)
         states = self._preprocess_states(obs["states"])
 
-        # Move to the same device as critic encoders, convert to bfloat16
-        device = next(self.critic_image_encoder.parameters()).device
-        images = images.to(device=device, dtype=torch.bfloat16)
-        states = states.to(device=device, dtype=torch.bfloat16)
-        actions = actions.to(device=device, dtype=torch.bfloat16)
+        encoder_param = next(self.critic_image_encoder.parameters())
+        device, dtype = encoder_param.device, encoder_param.dtype
+        images = images.to(device=device, dtype=dtype)
+        states = states.to(device=device, dtype=dtype)
+        actions = actions.to(device=device, dtype=dtype)
 
         # Extract features (using critic's independent encoder)
         image_features = self.critic_image_encoder(images)
@@ -1759,7 +1869,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         # Process actions (DSRL: should be noise, already flattened)
         if actions.dim() == 3:
-            actions = actions[:, 0, :]  # [B, action_horizon, dim] -> [B, dim]
+            actions = actions.flatten(1) if self.config.dsrl_full_noise else actions[:, 0, :]
+        assert actions.shape[-1] == self.config.dsrl_action_noise_dim
 
         # Compute Q values
         q_values = self.q_head(state_features, image_features, actions)
@@ -1841,67 +1952,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         return torch.full((), noise_level, device=device, dtype=dtype)
 
     def _preprocess_dsrl_images(self, images, train=False):
-        """Preprocess images for DSRL: resize to 64x64, use only agentview camera.
-
-        Args:
-            images: List of tensors.
-                Can be [B, H, W, C] (NHWC) from environment or
-                [B, C, H, W] (NCHW) from processed data.
-                For Libero: images[0] is agentview, images[1] is wrist.
-            train: Whether to use data augmentation (placeholder for now).
-
-        Returns:
-            Tensor of shape [B, 1, C, 64, 64] - only agentview, resized, in [-1, 1].
-        """
-
-        # Extract only agentview camera (first image in the list)
-        if isinstance(images, list):
-            agentview_img = images[0]
-        else:
-            # Assume it's already a tensor
-            agentview_img = images
-
-        # Detect and convert NHWC -> NCHW (environment outputs NHWC)
-        if agentview_img.shape[-1] == 3:
-            # NHWC format: [B, H, W, C] -> [B, C, H, W]
-            agentview_img = agentview_img.permute(0, 3, 1, 2)
-
-        B, C, H, W = agentview_img.shape
-        target_size = 64
-
-        # ===== UNIFIED VALUE RANGE HANDLING =====
-        # Convert to float32 and normalize to [0, 1] for PyTorch resize
-        if agentview_img.dtype == torch.uint8:
-            # [0, 255] -> [0, 1]
-            agentview_img = agentview_img.float() / 255.0
-        else:
-            # Check if in [-1, 1] range
-            if agentview_img.min() < 0:
-                # [-1, 1] -> [0, 1]
-                agentview_img = (agentview_img + 1.0) / 2.0
-            # else: already in [0, 1] range, assume correctly normalized
-        # ===========================================
-
-        # Clamp to ensure valid range
-        agentview_img = agentview_img.clamp(0.0, 1.0)
-
-        # ===== GPU-ACCELERATED RESIZE (aligned with PIL behavior) =====
-        # PyTorch bilinear with align_corners=False approximates PIL's behavior
-        resized_img = F.interpolate(
-            agentview_img,
-            size=(target_size, target_size),
-            mode="bilinear",
-            align_corners=False,
-        )
-        # =============================================================
-
-        # Convert back to [-1, 1] range (to match PIL-based pipeline)
-        resized_img = resized_img * 2.0 - 1.0  # [0, 1] -> [-1, 1]
-
-        # Add num_images dimension: [B, C, 64, 64] -> [B, 1, C, 64, 64]
-        resized_img = resized_img.unsqueeze(1)
-
-        return resized_img
+        del train
+        return preprocess_dsrl_images(images)
 
     def _preprocess_states(self, states):
         """
@@ -1915,9 +1967,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         """
         if states.dim() > 2:
             states = states.reshape(states.shape[0], -1)
-        # Convert to bfloat16 to match encoder's dtype
-        if states.dtype != torch.bfloat16:
-            states = states.to(torch.bfloat16)
+        dtype = torch.float32 if self.config.dsrl_fp32_small else torch.bfloat16
+        if states.dtype != dtype:
+            states = states.to(dtype)
         return states
 
     def enable_torch_compile(

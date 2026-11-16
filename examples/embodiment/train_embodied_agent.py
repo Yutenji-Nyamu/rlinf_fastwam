@@ -56,6 +56,9 @@ def main(cfg) -> None:
         from rlinf.workers.actor.fsdp_sac_policy_worker import EmbodiedSACFSDPPolicy
 
         actor_worker_cls = EmbodiedSACFSDPPolicy
+        if cfg.algorithm.get("dsrl_na", {}).get("enabled", False):
+            from rlinf.workers.actor.fsdp_dsrl_na_policy_worker import EmbodiedDSRLNAFSDPPolicy
+            actor_worker_cls = EmbodiedDSRLNAFSDPPolicy
     elif cfg.algorithm.loss_type == "rlt_ac":
         if use_training_pipeline:
             raise ValueError(

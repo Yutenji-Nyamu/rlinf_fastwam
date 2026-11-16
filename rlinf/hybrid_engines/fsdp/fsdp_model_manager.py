@@ -339,14 +339,6 @@ class FSDPModelManager:
         )
         return state_dict
 
-    def _get_checkpoint_format(self) -> str:
-        checkpoint_format = self._cfg.fsdp_config.get("checkpoint_format", "dcp")
-        if checkpoint_format not in {"dcp", "local_shard"}:
-            raise ValueError(
-                f"Unsupported FSDP checkpoint format: {checkpoint_format!r}"
-            )
-        return checkpoint_format
-
     def load_checkpoint(self, load_path: str) -> None:
         """
         Load checkpoint from local path.
@@ -362,11 +354,7 @@ class FSDPModelManager:
             self.is_optimizer_offloaded = False
 
         self._strategy.load_checkpoint(
-            self.model,
-            self.optimizer,
-            self.lr_scheduler,
-            load_path,
-            checkpoint_format=self._get_checkpoint_format(),
+            self.model, self.optimizer, self.lr_scheduler, load_path
         )
 
     def save_checkpoint(self, save_path: str, step: int = 0) -> None:
@@ -393,7 +381,6 @@ class FSDPModelManager:
             save_full_model_weights=self._cfg.fsdp_config.get(
                 "save_full_model_weights", True
             ),
-            checkpoint_format=self._get_checkpoint_format(),
         )
 
         if restore_weight_offload:
@@ -662,7 +649,8 @@ class FSDPModelManager:
                     "betas": main_betas,
                     "eps": main_adam_eps,
                 },
-            ]
+            ],
+            fused=bool(main_optim_config.get("fused", False)),
         )
         optimizers = [main_optimizer]
 
@@ -680,7 +668,8 @@ class FSDPModelManager:
                             "betas": filtered_optim_batas_map[key],
                             "eps": filtered_optim_adam_eps_map[key],
                         },
-                    ]
+                    ],
+                    fused=bool(filtered_optim_config[key].get("fused", False)),
                 )
             )
         return optimizers

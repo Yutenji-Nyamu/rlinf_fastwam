@@ -38,8 +38,7 @@ class LeRobotAlohaDataConfig(DataConfigFactory):
     # Set to False for standard Aloha data that does not require realignment.
     adapt_to_pi: bool = True
 
-    # None preserves OpenPI's model-family default. Set explicitly for checkpoints
-    # trained with mean/std normalization, such as SidneyXie/pi05_robotwin.
+    # Preserve the family default unless a checkpoint specifies mean/std stats.
     use_quantile_norm: bool | None = None
 
     # Configuration to map dataset keys to the keys expected by the model.

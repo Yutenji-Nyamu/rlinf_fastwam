@@ -76,6 +76,22 @@ from rlinf.models.embodiment.openpi.dataconfig.robotwin_aloha_dataconfig import 
 
 _CONFIGS = [
     TrainConfig(
+        name="pi05_robodojo",
+        model=pi0_config.Pi0Config(
+            pi05=True, action_horizon=50, discrete_state_input=True
+        ),
+        data=LeRobotAlohaDataConfig(
+            repo_id="arx_x5_sim",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(asset_id="arx_x5_sim"),
+            adapt_to_pi=False,
+            extra_delta_transform=True,
+            use_quantile_norm=True,
+        ),
+        pytorch_weight_path="checkpoints/torch/pi05_base",
+        num_train_steps=20_000,
+    ),
+    TrainConfig(
         name="pi0_libero",
         model=pi0_config.Pi0Config(),
         data=LeRobotLiberoDataConfig(
@@ -447,22 +463,6 @@ _CONFIGS = [
                 assets_dir="checkpoints/torch/pi05_aloha_robotwin/assets"
             ),
             extra_delta_transform=True,  # True for delta action, False for abs_action
-        ),
-        pytorch_weight_path="checkpoints/torch/pi05_base",
-        num_train_steps=20_000,
-    ),
-    TrainConfig(
-        name="pi05_robodojo",
-        model=pi0_config.Pi0Config(
-            pi05=True, action_horizon=50, discrete_state_input=True
-        ),
-        data=LeRobotAlohaDataConfig(
-            repo_id="arx_x5_sim",
-            base_config=DataConfig(prompt_from_task=True),
-            assets=AssetsConfig(asset_id="arx_x5_sim"),
-            adapt_to_pi=False,
-            extra_delta_transform=True,
-            use_quantile_norm=True,
         ),
         pytorch_weight_path="checkpoints/torch/pi05_base",
         num_train_steps=20_000,
