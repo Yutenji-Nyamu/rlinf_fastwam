@@ -92,6 +92,10 @@ def main(args):
             before = env.elapsed_steps.numpy().copy()
             active = ~done
             obs.setdefault("extra_view_images", None)
+            original_obs=np.load(old/'observations'/f'q{q:03d}.npz',allow_pickle=False)
+            write_json(out/'alignment'/f'q{q:03d}.json',dict(query=q,
+                state_max_abs_by_slot=np.max(np.abs(obs['states'].numpy()-original_obs['states']),axis=-1).tolist(),
+                image_mean_abs_by_slot=np.mean(np.abs(obs['main_images'].numpy().astype(float)-original_obs['main_images'].astype(float)),axis=(1,2,3)).tolist()))
             frozen = {
                 k: (
                     v.detach().cpu().numpy().copy()

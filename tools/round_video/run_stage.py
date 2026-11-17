@@ -6,6 +6,8 @@ from pathlib import Path
 def main(path,gpu):
     root=Path(path);stage=json.loads((root/'stages.json').read_text())[gpu]
     out=root/f'stage-g{gpu}';out.mkdir(exist_ok=True)
+    previous=out/'finished.json'
+    if previous.exists():previous.rename(out/f'previous-finished-{int(time.time())}.json')
     tag=f'round-video-1117/g{gpu}'
     env={**os.environ,**stage['environment'],'APPENDIX_STAGE_ID':tag}
     p=None;result={};start=time.time()
@@ -34,7 +36,7 @@ def main(path,gpu):
     # A publication error cannot hold the GPU reservation.
     try:
         publisher=root/'publish_results.py'
-        if publisher.exists():
+        if publisher.exists() and result.get('returncode') == 0:
             log=(out/'publish.log').open('a')
             subprocess.Popen([sys.executable,'-B',str(publisher),gpu],env={**os.environ,'CUDA_VISIBLE_DEVICES':''},stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     except Exception as e:(out/'publish-error.txt').write_text(repr(e))
