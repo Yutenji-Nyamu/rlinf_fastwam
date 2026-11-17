@@ -233,7 +233,8 @@ def main(args):
             ),
         )
     finally:
-        env.close()
+        try: env._rpc('finalize_video')
+        finally: env.close()
 
 
 if __name__ == "__main__":

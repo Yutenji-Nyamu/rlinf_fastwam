@@ -1,0 +1,13 @@
+--- a/tools/dojo_grpo/native_entry.py
++++ b/tools/dojo_grpo/native_entry.py
+@@ -362,6 +362,10 @@
+                             value = {
+                                 "capture_every_action": self.cfg["capture_every_action"]
+                             }
++                        elif op == "finalize_video":
++                            for writer in getattr(self, "_video_writers", {}).values(): writer.release()
++                            for stream in getattr(self, "_video_streams", {}).values(): stream.flush()
++                            value = {"frames": getattr(self, "_video_counts", {})}
+                         elif op == "close":
+                             connection.send({"ok": True, "value": None})
+                             break

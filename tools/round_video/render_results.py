@@ -58,8 +58,8 @@ def video(root,dest):
         for j,idx in enumerate(chosen):
             f=min(frames,key=lambda f:abs(int(f['action_step'])-xs[idx]));cap.set(cv2.CAP_PROP_POS_FRAMES,int(f['frame']));ok,img=cap.read()
             if not ok:raise RuntimeError('Missing selected execution frame')
-            label='ABC'[j];cv2.imwrite(str(target/f'{label}.png'),img);ax=fig.add_subplot(gs[0,j]);ax.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB));ax.axis('off');ax.set_title(f'{label}: action {xs[idx]}')
-            marks.append(dict(label=label,action=xs[idx],query=qs[idx],frame=int(f['frame'])))
+            label='ABC'[j];cv2.imwrite(str(target/f'{label}.png'),img);ax=fig.add_subplot(gs[0,j]);ax.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB));ax.axis('off');ax.set_title(f"{label}: action {f['action_step']}")
+            marks.append(dict(label=label,action=int(f['action_step']),query=int(f['query']),frame=int(f['frame']),requested_action=xs[idx]))
         cap.release();ax=fig.add_subplot(gs[1,:]);ax.plot(xs,ys,color='#227eab',lw=1.3);ax.set(xlabel='Executed action step',ylabel='Action entropy',title=name)
         for m in marks:ax.axvline(m['action'],ls=':',color='#777')
         for ext in ['png','pdf','svg']:fig.savefig(target/f'{name}.{ext}',dpi=180)
