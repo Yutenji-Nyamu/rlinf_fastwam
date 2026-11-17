@@ -36,6 +36,25 @@ def main(job):
     student=get_model(mc).cuda();params=[p for p in student.parameters()if p.requires_grad]
     for p in params:p.data=p.data.float()
     initial=[p.detach().cpu().clone()for p in params]
+    # Verify the real weighted FM update before paying for simulator initialization.
+    with np.load(job['preflight_inputs'],allow_pickle=False)as z:
+        ids=np.arange(job['micro_batch'])%len(z['states'])
+        ob={key:torch.from_numpy(z[key][ids].copy())for key in ['main_images','wrist_images','states']}
+        ob.update(task_descriptions=z['task_descriptions'][ids].tolist(),extra_view_images=None)
+    with torch.no_grad():act,ret=teacher.predict_action_batch(ob,mode='eval',compute_values=False)
+    batch={key:value.detach().cpu().clone()for key,value in ret['forward_inputs'].items()if torch.is_tensor(value)}
+    batch.update(action=act.cpu(),model_action=ret['model_actions'].cpu())
+    prepared=student.prepare_dagger_sft_batch(batch);count=act.shape[1]
+    probe_opt=torch.optim.AdamW(params,lr=2.5e-5,fused=True)
+    with torch.autocast('cuda',dtype=torch.bfloat16):
+        probe_loss=student(forward_type=ForwardType.SFT,data=prepared,use_action_chunk_loss=True,
+            action_valid_mask=torch.ones((len(ids),count,14),device='cuda',dtype=torch.bool),action_weights=torch.ones((len(ids),count),device='cuda'))
+    assert bool(torch.isfinite(probe_loss));probe_loss.backward();norm=torch.nn.utils.clip_grad_norm_(params,1.)
+    assert torch.isfinite(norm)and norm>0;probe_opt.step();probe_opt.zero_grad(set_to_none=True)
+    write(out/'update-preflight.json',dict(loss=float(probe_loss.detach()),gradient_norm=float(norm),optimizer_step=True))
+    with torch.no_grad():
+        for p,v in zip(params,initial):p.copy_(v)
+    del probe_opt,probe_loss,prepared,batch,act,ret,ob;torch.cuda.empty_cache()
     n=job['parallel'];chunk=int(mc.num_action_chunks);steps=int(cfg.env.eval.max_episode_steps)
     manifest=dict(algorithm='Online success FM-BC, fixed update workload',task=cfg.env.eval.task_config.task_name,
         gpu=torch.cuda.get_device_name(),parallel=n,trajectories_per_round=n,denoise_steps=10,chunk=chunk,
@@ -81,9 +100,9 @@ def main(job):
                     record={a:(b.detach().cpu().clone()if torch.is_tensor(b)else copy.deepcopy(b))for a,b in ret['forward_inputs'].items()}
                     record.update(model_action=main.cpu().clone(),action=actions.cpu().clone(),action_weights=w[:,:chunk].cpu())
                     del samples,ret,main,h,w
-                    t=time.perf_counter();before=env.elapsed_steps.clone();nxt,_,term,trunc,info=env.chunk_step(actions);after=env.elapsed_steps.clone()
+                    t=time.perf_counter();before=env.elapsed_steps.detach().cpu().clone();nxt,_,term,trunc,info=env.chunk_step(actions);after=env.elapsed_steps.detach().cpu().clone()
                     timings['environment']+=time.perf_counter()-t
-                    mask=(torch.arange(chunk)[None,:]<(after-before)[:,None])[:,:,None].expand(n,chunk,14)
+                    mask=(torch.arange(chunk,device='cpu')[None,:]<(after-before)[:,None])[:,:,None].expand(n,chunk,14)
                     record['action_valid_mask']=mask;records.append(record);obs=nxt[-1]
                     success|=env.success_once.cpu().numpy().astype(bool)
                     write(out/'progress.json',dict(K=k,repeat=repeat,query=q,phase='rollout',time=time.time()))

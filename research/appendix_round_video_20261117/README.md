@@ -10,6 +10,8 @@ Record reset/environment, main inference, candidate inference, entropy/weights, 
 
 Sources reused: RLinf `OpenPi0ForRLActionPrediction`, `prepare_dagger_sft_batch`, `sft_forward`, `rlinf.data.online_bc.masked_fm_loss`; the bounded-linear mapping from `rlinf.algorithms.online_bc_dvac`; the existing ProcessVectorEnv lifecycle and appendix K entropy definition. Raw values and configuration accompany the figure.
 
+Before simulator initialization, the local `preflight_inputs` NPZ supplies recorded RGB/state/instruction inputs for one real weighted FM forward/backward/optimizer step. Student weights are then restored. This acceptance step is outside all measured rounds.
+
 ## Dojo video
 
 Reuse original Put Bottles Into Dustbin layout IDs, native seed 1, policy seed 20261111 and original H50/C50 settings. Preserve the original 12-environment batch. Record slots 0, 11 and 9 as D-B00/D-B11/D-B09. Enable the existing per-action readback and encode frames without adding physics steps or extra rendering calls. Recompute K4 on every observation, keeping the main RNG unchanged. The initial-state comparison is saved; the new curve is paired with this execution's frames.
