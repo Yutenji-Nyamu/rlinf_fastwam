@@ -928,6 +928,7 @@ class EnvWorker(Worker):
                         else None
                     ),
                     env_infos=infos if isinstance(infos, dict) else None,
+                    rlt_switch_flags=infos.get("rlt_switch_flags"),
                     intervene_actions=None,
                     intervene_flags=None,
                 )
@@ -1389,6 +1390,7 @@ class EnvWorker(Worker):
                             else None
                         ),
                         env_infos=infos if isinstance(infos, dict) else None,
+                        rlt_switch_flags=infos.get("rlt_switch_flags"),
                     )
                     env_batch = env_output.to_dict()
                     self.send_to(
