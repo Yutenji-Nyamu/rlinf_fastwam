@@ -301,11 +301,11 @@ class CriticalPhaseRLTRoute(SimulatorRLTRoute):
     """Reference control before the native phase flag; actor control afterwards."""
 
     def route(self, ctx: RLTRouteContext) -> RLTRouteOutput:
-        if "rlt_critical_phase" not in ctx.env_obs:
+        if ctx.rlt_switch_flags is None:
             raise ValueError("Critical-phase RLT requires the environment phase flag")
         version = max(ctx.version, self.warmup_updates) if ctx.mode == "eval" else ctx.version
         return super().route(replace(ctx, version=version,
-            rlt_switch_flags=ctx.env_obs["rlt_critical_phase"]))
+            rlt_switch_flags=ctx.rlt_switch_flags))
 
 
 def build_rlt_route(cfg: Any) -> RLTRoute:

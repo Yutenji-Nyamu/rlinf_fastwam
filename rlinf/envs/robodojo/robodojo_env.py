@@ -112,7 +112,11 @@ class RoboDojoEnv(gym.Env):
         self._returns.zero_()
         self._success.zero_()
         self.is_start = False
-        return self._obs(value["obs"]), {"reset_audit": value["audit"]}
+        obs = self._obs(value["obs"])
+        info = {"reset_audit": value["audit"]}
+        if "rlt_critical_phase" in obs:
+            info["rlt_switch_flags"] = obs["rlt_critical_phase"].reshape(-1, 1).clone()
+        return obs, info
 
     def chunk_step(self, actions):
         if isinstance(actions, dict):
@@ -138,6 +142,7 @@ class RoboDojoEnv(gym.Env):
             },
         }
         if "rlt_critical_phase" in obs:
+            info["rlt_switch_flags"] = obs["rlt_critical_phase"].reshape(-1, 1).clone()
             info["episode"]["critical_phase_once"] = obs["rlt_critical_phase"].reshape(-1).clone()
         # No auto-reset inside a wave: success latches, later action slots mask out.
         return [obs], rewards, terms, truncs, [info]
