@@ -1,0 +1,26 @@
+{
+  "kind": "dsrl",
+  "chunk": 20,
+  "budget": 200,
+  "parallel": 32,
+  "episodes_per_condition": 32,
+  "max_takeover_queries": 3,
+  "targets": [
+    10,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100
+  ],
+  "entropy": "diagonal Gaussian K4, unbiased variance, eps1e-6, normalized D14",
+  "score": "mean entropy over execution prefix",
+  "distance": "per-action RMSE over normalized D14; raw normalized and physical actions saved",
+  "calibration_noise_seed": 1171117,
+  "evaluation_noise_seed": 171117,
+  "source": "teacher_eval; pi05_policy_eval.protocol/threshold_sweep; teacher_shadow.py"
+}
