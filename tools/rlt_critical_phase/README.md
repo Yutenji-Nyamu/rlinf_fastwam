@@ -8,6 +8,6 @@ For Dojo pouring, the initial condition uses the native `RewardManager.is_lift` 
 
 The final success rate still includes every evaluation episode. A second metric records how often an episode reached the critical phase. Actor/Q/optimizer/replay start fresh; the trained frozen RL-token encoder is reused. Previous fixes (FP32, Q-gradient isolation, output feature normalization, target bounds, fixed reference replay and BC protection) remain enabled.
 
-CPU tests check reference/actor selection before and after warmup and in evaluation, and check that only critical-phase transitions are recorded. A GPU smoke must verify that the native predicate triggers, the selected transitions reach replay, the actor and critics update, and full-state resume works.
+CPU tests check reference/actor selection before and after warmup and in evaluation, and check that only critical-phase transitions are recorded. They also exercise the actual EnvWorker train/evaluation reset messages through the route: `rlt_switch_flags` travels in the existing dedicated message field. A GPU smoke verifies that the native predicate triggers, the selected transitions reach replay, the actor and critics update, and a checkpoint is written. This change retains the existing checkpoint format.
 
 Native source: [RoboDojo](https://github.com/RoboDojo-Benchmark/RoboDojo), `env/reward_manager/reward_manager.py`, `env/reward_manager/func_parser.py`.
