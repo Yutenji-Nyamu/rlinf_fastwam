@@ -66,6 +66,7 @@ class NativeLoop:
         self.n = 0
         self.mode = None
         self.last_obs = None
+        self.rlt_critical_phase = np.zeros(self.n, dtype=bool)
         self.output = Path(cfg["output"])
         self.output.mkdir(parents=True, exist_ok=True)
         # The accepted lean collection already disables streaming this way.
@@ -145,6 +146,17 @@ class NativeLoop:
             "task_descriptions": [x["instruction"] for x in rows],
             "extra_view_images": None,
         }
+        phase = self.cfg.get("rlt_critical_phase")
+        if phase:
+            manager = self.env.reward_manager
+            for i in range(self.n):
+                if not self.rlt_critical_phase[i] and not self.env.end_flag[i]:
+                    predicate = manager.is_lift(phase["label"], z_threshold=float(phase["z_threshold"]))
+                    self.rlt_critical_phase[i] = bool(manager.call_func_parser(predicate, i))
+            result["rlt_critical_phase"] = self.rlt_critical_phase.copy()
+            with (self.output / "rlt-phase-history.jsonl").open("a") as stream:
+                stream.write(json.dumps(dict(mode=self.mode,counts=list(map(int,self.env.take_action_cnt[:self.n])),
+                    phase=self.rlt_critical_phase.tolist(),success=list(map(bool,self.env.success[:self.n]))))+"\n")
         self.totals["observation_seconds"] += time.monotonic() - t
         return result
 
@@ -152,6 +164,7 @@ class NativeLoop:
         requested_ids = list(request["layout_ids"])
         ids = list(requested_ids)
         self.n = len(ids)
+        self.rlt_critical_phase = np.zeros(self.n, dtype=bool)
         self.mode = request["mode"]
         group = int(request["group_size"])
         assert self.n <= self.env.num_envs
@@ -220,6 +233,9 @@ class NativeLoop:
                 int(self.cfg["gpu"]) % 2,
             )
             replacements.extend(changes)
+        from tools.dsrl_accel_v2 import dojo_runtime
+
+        dojo_runtime.after_construct(self.env, self.cfg.get("acceleration", {}))
         self.totals["reset_seconds"] += time.monotonic() - start
         # EvalEnv.run_eval registers these AFTER reset, which clears all checks.
         # We replace its policy loop only; the native success rule stays intact.
@@ -335,9 +351,12 @@ class NativeLoop:
                         request = connection.recv()
                         op = request["op"]
                         if op == "describe":
+                            from tools.dsrl_accel_v2.dojo_runtime import status
+
                             value = {
                                 "pools": {k: len(v) for k, v in self.pools.items()},
                                 "num_envs": self.env.num_envs,
+                                "acceleration": status(),
                             }
                         elif op == "reset":
                             if self.mode is not None and self.cfg.get(
@@ -382,11 +401,15 @@ def main():
     faulthandler.register(signal.SIGUSR1, all_threads=True)
     cfg = json.loads(Path(os.environ["DOJO_GRPO_NATIVE_CONFIG"]).read_text())
     root = Path(cfg["repo"])
+    from tools.dsrl_accel_v2 import dojo_runtime
+
+    dojo_runtime.startup(cfg.get("acceleration", {}))
     sys.path[:0] = [str(root), str(root / "XPolicyLab")]
     # Native main performs AppLauncher before simulator imports, GPU binding,
     # zero-delay rendering, config processing and PhysX monitoring unchanged.
     import src.eval_client.eval_env as environment
     import src.eval_client.main as native
+    dojo_runtime.install(cfg.get("acceleration", {}))
 
     class NoPolicyClient:
         def __init__(self, **kwargs):

@@ -137,6 +137,8 @@ class RoboDojoEnv(gym.Env):
                 "reward": self._returns / self._elapsed_steps.clamp_min(1),
             },
         }
+        if "rlt_critical_phase" in obs:
+            info["episode"]["critical_phase_once"] = obs["rlt_critical_phase"].reshape(-1).clone()
         # No auto-reset inside a wave: success latches, later action slots mask out.
         return [obs], rewards, terms, truncs, [info]
 
