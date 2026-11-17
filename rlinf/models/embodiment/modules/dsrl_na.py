@@ -57,10 +57,14 @@ def model_operation(model, na_operation, obs, actions=None, tokens=None, **kwarg
     if na_operation == 'pack':
         raw = dict(obs)
         raw.setdefault('wrist_images', None); raw.setdefault('extra_view_images', None)
-        raw['task_descriptions'] = [''] * len(raw['states'])
+        has_prompt = 'task_descriptions' in raw
+        raw.setdefault('task_descriptions', [''] * len(raw['states']))
         inputs = model.obs_processor(raw)
-        inputs.pop('prompt')
-        inputs.update(tokens)
+        if not has_prompt:
+            inputs.pop('prompt')
+            inputs.update(tokens)
+        # pi0.5 encodes normalized state into the prompt. Retokenize each
+        # observation using the original instruction, especially next_obs.
         processed = model.input_transform(inputs, transpose=False)
         # Preserve the exact transformed image values; the production transform
         # emits uint8 RGB, which Observation.from_dict converts during decoding.

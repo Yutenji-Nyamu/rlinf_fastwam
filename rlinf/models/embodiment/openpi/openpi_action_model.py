@@ -1096,6 +1096,14 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             forward_inputs["action"] = forward_action
             if self.config.dsrl_na_enabled:
                 forward_inputs["dsrl_env_actions"] = actions.detach().clone()
+                # Preserve the instruction separately from state-dependent pi0.5 tokens.
+                encoded = [str(text).encode('utf-8') for text in env_obs['task_descriptions']]
+                if any(len(text) > 1024 for text in encoded):
+                    raise ValueError('NA replay instruction exceeds 1024 UTF-8 bytes')
+                prompt_bytes = torch.zeros((len(encoded), 1024), dtype=torch.uint8, device=actions.device)
+                for row, text in enumerate(encoded):
+                    prompt_bytes[row, :len(text)] = torch.tensor(list(text), dtype=torch.uint8, device=actions.device)
+                forward_inputs['dsrl_prompt_utf8'] = prompt_bytes
             if self.config.dsrl_vla_features:
                 forward_inputs["dsrl_vla_features"] = dsrl_obs["vla_features"].detach().clone()
         if "dsrl_u" in outputs:

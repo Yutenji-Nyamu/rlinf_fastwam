@@ -22,6 +22,9 @@ def project_na_fields(trajectory, keep, chunk_length, pack):
                if isinstance(obs.get(key), torch.Tensor)}
         if any(value.shape[0] != selected.shape[0] for value in raw.values()):
             raise ValueError('NA observation rows do not match selected macro transitions')
+        if 'dsrl_prompt_utf8' in fields:
+            raw['task_descriptions'] = [bytes(row.tolist()).rstrip(b'\x00').decode('utf-8')
+                for row in fields['dsrl_prompt_utf8'][keep].cpu()]
         packed[target] = pack(raw, tokens)
     packed['env_actions'] = selected.float().reshape(selected.shape[0], -1).cpu().contiguous()
     return packed

@@ -1,9 +1,10 @@
 # DSRL-NA source alignment
 
-This revision corrects two differences from the public pi0 implementation:
+This revision corrects three differences in the pi0.5 integration:
 
 * The actor, action critic and noise critic now receive the frozen VLA's 2048-dimensional last valid prefix token, in addition to the existing image and proprioception encoders. Rollout reuses the prefix KV cache for action generation. Current features are stored with the executed transition; next-observation features are computed from the aligned next observation. Features enter the small MLP directly, without another compression bottleneck.
 * Every gradient update draws a new replay minibatch. The previous implementation repeatedly resampled a 256-row decoded pool. That reduced coverage and is removed. VLA inference is only microbatched; gradients and targets remain independent across updates.
+* pi0.5 includes discretized state in its prompt tokens. Reusing current tokens for `next_obs` left that state stale. Replay now preserves the original UTF-8 instruction and tokenizes each observation using its own normalized state. The tokenizer test verifies that a changed next state produces the expected new tokens.
 
 Sources pinned for review:
 
