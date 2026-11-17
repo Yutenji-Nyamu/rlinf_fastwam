@@ -22,7 +22,8 @@ def main(path,gpu):
                 if time.time()-start>stage['timeout']:raise TimeoutError('Collection deadline reached')
                 r=subprocess.run(['nvidia-smi','-i',gpu,'--query-gpu=memory.used,utilization.gpu','--format=csv,noheader,nounits'],capture_output=True,text=True,timeout=10)
                 f.write(json.dumps(dict(time=time.time(),reading=r.stdout.strip()))+'\n');f.flush();time.sleep(2)
-        result=dict(returncode=p.returncode,seconds=time.time()-start)
+        result=dict(returncode=p.returncode,seconds=time.time()-start,
+                    data_complete=Path(stage['completion_file']).is_file())
     except BaseException as e:result=dict(error=repr(e),seconds=time.time()-start)
     finally:
         if p is not None and p.poll() is None:
@@ -36,7 +37,7 @@ def main(path,gpu):
     # A publication error cannot hold the GPU reservation.
     try:
         publisher=root/'publish_results.py'
-        if publisher.exists() and result.get('returncode') == 0:
+        if publisher.exists() and result.get('returncode') == 0 and result.get('data_complete'):
             log=(out/'publish.log').open('a')
             subprocess.Popen([sys.executable,'-B',str(publisher),gpu],env={**os.environ,'CUDA_VISIBLE_DEVICES':''},stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
     except Exception as e:(out/'publish-error.txt').write_text(repr(e))

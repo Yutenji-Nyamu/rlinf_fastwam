@@ -14,6 +14,7 @@ def timing(root,dest,memory_log):
         rr=[r for r in records if r['K']==k and not r['warmup']]
         if len(rr)!=3:raise ValueError(f'K{k} has {len(rr)}/3 measured rounds')
         row={'K':k,'wall_s':float(np.mean([r['wall_seconds']for r in rr]))}
+        row['wall_std_s']=float(np.std([r['wall_seconds']for r in rr],ddof=1))
         for key in ['environment','policy','candidates','entropy_weights','update']:
             row[key+'_s']=float(np.mean([r['seconds'][key]for r in rr]))
         row['other_s']=row['wall_s']-sum(row[x+'_s']for x in ['environment','policy','candidates','entropy_weights','update'])
@@ -65,4 +66,6 @@ def video(root,dest):
         plt.close(fig);np.savez_compressed(target/'curve.npz',action=xs,entropy=ys,query=qs)
         (target/'selected-frames.json').write_text(json.dumps(marks,indent=2));(target/'episode.json').write_text(json.dumps(episodes[slot],indent=2))
     (dest/'initial-match.json').write_bytes((task/'initial-match.json').read_bytes())
+    aligned=[json.loads(p.read_text())for p in sorted((task/'alignment').glob('*.json'))]
+    (dest/'query-alignment.json').write_text(json.dumps(aligned,indent=2))
     (dest/'RESULT.md').write_text('# Dojo continuous execution frames\n\nD-B00, D-B11 and D-B09: original layout IDs and policy RNG; K4 recomputed on every reached observation. New curves are paired to this recorded execution. MP4 is one frame per native action, played at 25 fps; frame/action/query CSV is the alignment reference. A/B/C mark peak minus 20 actions, peak, and peak plus 20 actions.\n')
