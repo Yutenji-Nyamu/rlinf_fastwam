@@ -3,7 +3,7 @@
 No optimizer, rollout scheduling, chunk conversion or teacher policy is replaced.
 The native simulator is discarded between batches to release renderer resources.
 """
-import argparse, json, os, random, resource, time
+import argparse, dataclasses, json, os, random, resource, time
 from pathlib import Path
 import numpy as np
 import torch
@@ -54,8 +54,9 @@ def build_models(cfg, kind, checkpoint):
 
 
 def predict(models, kind, condition, obs):
+    obs=dict(obs); obs.setdefault('extra_view_images',None)
     if kind=='dsrl':
-        model=models['model']; model.config.use_dsrl=(condition=='teacher')
+        model=models['model']; model.config=dataclasses.replace(model.config,use_dsrl=(condition=='teacher'))
         actions,result=model.predict_action_batch(obs,mode='eval',compute_values=False)
         return actions, dict(learned_noise=condition=='teacher', phase=int(model.dsrl_policy_phase.item()))
     feature=models['feature']
@@ -124,8 +125,15 @@ def main():
             env=environment(cfg,[e['scene_seed']for e in items]); history=[]
             try:
                 obs,_=env.reset(); initial=env.venv._call('episode_state')
+                write(out/f'{condition}-batch-{batch_id}-initial.json',[{**item,**initial[i]}for i,item in enumerate(items)])
                 np.savez_compressed(out/f'{condition}-batch-{batch_id}-initial.npz',states=obs['states'].numpy(),
                     main_images=obs['main_images'].numpy(),scene_seeds=np.array([e['scene_seed']for e in items]))
+                if condition=='base' and batch_id==0:
+                    with torch.random.fork_rng(devices=[0]), torch.inference_mode():
+                        probe,proof=predict(models,job['kind'],'teacher',obs)
+                    assert tuple(probe.shape)==(len(items),chunk,14) and bool(torch.isfinite(probe).all())
+                    write(out/'teacher-inference-check.json',dict(time=time.time(),shape=list(probe.shape),**proof))
+                    del probe
                 success=np.zeros(len(items),dtype=bool);first_success=[None]*len(items)
                 queries=max_steps//chunk
                 for query in range(queries):
@@ -143,16 +151,16 @@ def main():
                     for i in np.flatnonzero(current & ~success): first_success[i]=(query+1)*chunk
                     success|=current
                     tick=dict(query_index=query,inference_s=inference,environment_s=time.monotonic()-begin,
-                              successes=int(success.sum()),teacher_proof=proof,
+                              successes=int(success.sum()),success_flags=success.tolist(),teacher_proof=proof,
                               model_peak_gib=torch.cuda.max_memory_allocated()/2**30,
                               native_action_count=[x['native_action_count']for x in meta])
                     history.append(tick)
                     write(out/'progress.json',dict(condition=condition,batch=batch_id,stage='rollout',
                           query=query+1,queries=queries,completed=len(rows),time=time.time(),**tick))
                     print(condition,batch_id,query+1,'success',int(success.sum()),'/',len(items),flush=True)
-                batch_rows=[dict(**item,**initial[i],success=bool(success[i]),first_success_step=first_success[i],
-                             native_action_count=meta[i]['native_action_count'],chunk_steps=chunk,
-                             submitted_steps=max_steps,condition=condition)for i,item in enumerate(items)]
+                batch_rows=[{**item,**initial[i],'success':bool(success[i]),'first_success_step':first_success[i],
+                             'native_action_count':meta[i]['native_action_count'],'chunk_steps':chunk,
+                             'submitted_steps':max_steps,'condition':condition}for i,item in enumerate(items)]
                 write(path,batch_rows);write(path.with_name(path.stem+'-timing.json'),history)
                 rows+=batch_rows;write(out/f'{condition}.json',rows)
             finally: env.offload(clear_cache=True)
@@ -163,5 +171,8 @@ def main():
     print(json.dumps(report),flush=True)
 
 if __name__=='__main__':main()
+
+
+
 
 

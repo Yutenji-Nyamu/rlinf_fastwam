@@ -24,6 +24,17 @@ def main():
     def interrupted(*_): raise SystemExit(143)
     signal.signal(signal.SIGTERM,interrupted)
     try:
+        for stage in job.get('before', []):
+            with (out / (stage['name'] + '.log')).open('a') as log:
+                child = subprocess.Popen(stage['command'], cwd=stage.get('cwd',job['source']),
+                    env={**env,**stage.get('environment',{})}, stdin=subprocess.DEVNULL,
+                    stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            try:
+                code=child.wait(timeout=stage.get('timeout',900))
+            except subprocess.TimeoutExpired:
+                stop(child);code=124
+            write(out/(stage['name']+'-result.json'),dict(returncode=code,time=time.time()))
+            child=None
         with(out/'worker.log').open('a')as log:
             child=subprocess.Popen([sys.executable,'-u','-B','-m','tools.teacher_eval.evaluate','--job',str(job_path)],
                  cwd=job['source'],env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -41,3 +52,4 @@ def main():
     print(json.dumps(result),flush=True)
 
 if __name__=='__main__':main()
+
