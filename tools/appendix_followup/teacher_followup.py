@@ -61,6 +61,17 @@ def run(j):
     cfg=OmegaConf.load(j['config']);models=build_models(cfg,j['kind'],j['checkpoint']);C=j['chunk_steps'];n=len(j['seeds']);out=Path(j['output']);out.mkdir(parents=True,exist_ok=True)
     for k in ['model','feature']:
         if k in models:models[k].cuda()
+    if j.get('preflight_inputs'):
+        with np.load(j['preflight_inputs'],allow_pickle=False)as z:
+            ob={key:torch.from_numpy(z[key][:2].copy())for key in ['main_images','wrist_images','states']}
+            ob.update(task_descriptions=z['task_descriptions'][:2].tolist(),extra_view_images=None)
+        checks={}
+        for condition in ['base','teacher']:
+            with torch.inference_mode():
+                seed(171117);new,_=inference(models,j['kind'],condition,ob)
+                seed(171117);original,_=predict(models,j['kind'],condition,ob)
+                torch.testing.assert_close(new,original,rtol=0,atol=1e-5);checks[condition]=float((new-original).abs().max())
+        write(out/'preflight-parity.json',dict(passed=True,max_abs=checks))
     write(out/'protocol.json',dict(kind=j['kind'],chunk=C,budget=200,parallel=n,episodes_per_condition=n,max_takeover_queries=3,targets=list(range(10,100,10))+[100],entropy='diagonal Gaussian K4, unbiased variance, eps1e-6, normalized D14',score='mean entropy over execution prefix',distance='per-action RMSE over normalized D14; raw normalized and physical actions saved',calibration_noise_seed=j['noise_seed']+1000000,evaluation_noise_seed=j['noise_seed'],source='teacher_eval; pi05_policy_eval.protocol/threshold_sweep; teacher_shadow.py'))
     def rollout(name,direction,target,threshold=None):
         done=out/'conditions'/f'{name}.json'
