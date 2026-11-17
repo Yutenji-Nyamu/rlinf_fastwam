@@ -59,7 +59,7 @@ def main(job):
     manifest=dict(algorithm='Online success FM-BC, fixed update workload',task=cfg.env.eval.task_config.task_name,
         gpu=torch.cuda.get_device_name(),parallel=n,trajectories_per_round=n,denoise_steps=10,chunk=chunk,
         action_budget=steps,optimizer_steps=job['updates'],global_batch=job['batch'],micro_batch=job['micro_batch'],
-        warmup_rounds=1,measured_rounds=3,K=[1,2,4,8],scheduling='synchronous; preserved main plus batched extra candidates; candidate microbatch <=32',
+        warmup_rounds=1,measured_rounds=3,K=[1,2,4,8],scheduling='synchronous; preserved main plus batched extra candidates; candidate microbatch <=128',
         weighting='K1 unit; K>1 diagonal Gaussian entropy, round z-score, bounded linear 0/1/5',
         update_scope='successful online action buffer; same initialization and sampling schedule across K; updated actor synchronized each round',trainable_parameters=sum(p.numel()for p in params))
     write(out/'protocol.json',manifest);rows=[]
@@ -88,8 +88,8 @@ def main(job):
                         with torch.random.fork_rng(devices=[0]),torch.no_grad():
                             torch.manual_seed(seed+q*100+k)
                             extra_parts=[]
-                            # Keep all K-1 candidates of each observation together; cap total batch at 32.
-                            obs_micro=max(1,32//(k-1))
+                            # Keep all K-1 candidates of each observation together; cap total batch at 128.
+                            obs_micro=max(1,128//(k-1))
                             for lo in range(0,n,obs_micro):
                                 hi=min(n,lo+obs_micro);bo={}
                                 for key,value in obs.items():
