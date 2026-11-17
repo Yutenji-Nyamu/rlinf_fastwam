@@ -189,6 +189,8 @@ def project_dsrl_trajectory(
     if na_pack is not None:
         from rlinf.data.storage.replay.dsrl_na import project_na_fields
         projected.update(project_na_fields(trajectory, keep, num_action_chunks, na_pack))
+        if 'dsrl_vla_features' in forward_inputs:
+            projected['curr_obs']['vla_features'] = forward_inputs['dsrl_vla_features'][keep].float().cpu().contiguous()
     if u_spec is not None:
         from rlinf.algorithms.dsrl_ugrow import validate_signal_spec
 

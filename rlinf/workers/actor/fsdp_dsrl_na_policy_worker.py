@@ -1,10 +1,9 @@
 # Copyright 2026 The RLinf Authors.
 # Licensed under the Apache License, Version 2.0.
-"""DSRL-NA with delayed actor updates and blockwise frozen-VLA reuse.
+"""DSRL-NA: fresh replay minibatches, VLA features, and delayed actor updates.
 
-Action TD and noise distillation follow DSRL Algorithm 1. The actor stays fixed
-while a block's decoded samples are used; Q targets are recomputed after every
-update. Only deterministic VLA outputs, never Q labels, are cached in a block.
+The three update types follow the public pi0 NA implementation. Every gradient
+step samples replay anew; deterministic VLA inference is microbatched only.
 """
 import math
 import os
@@ -38,7 +37,7 @@ class EmbodiedDSRLNAFSDPPolicy(EmbodiedSACFSDPPolicy):
             raise ValueError('NA targets are reward-only')
         if not self.cfg.actor.model.openpi.dsrl_full_noise:
             raise ValueError('NA decoding requires full independent VLA noise')
-        for name in ['pool_size', 'blocks_per_round', 'action_q_steps', 'noise_q_steps', 'actor_steps', 'decode_batch_size']:
+        for name in ['blocks_per_round', 'action_q_steps', 'noise_q_steps', 'actor_steps', 'decode_batch_size']:
             if int(c[name]) <= 0: raise ValueError(name)
         critic_ids = {id(p) for group in self.qf_optimizer.param_groups for p in group['params']}
         actor_ids = {id(p) for group in self.optimizer.param_groups for p in group['params']}
@@ -73,6 +72,17 @@ class EmbodiedDSRLNAFSDPPolicy(EmbodiedSACFSDPPolicy):
                 latent_dim=model_cfg.dsrl_action_noise_dim, state_dim=model_cfg.dsrl_state_dim,
                 num_action_chunks=self.cfg.actor.model.num_action_chunks, gamma=self.cfg.algorithm.gamma,
                 full_noise=True, na_pack=pack)
+            if model_cfg.dsrl_vla_features:
+                # The collector already computed current features before selecting noise.
+                packed = projected['next_vla']; rows = projected['actions'].shape[0]
+                outputs = []
+                self.model.eval()
+                for start in range(0, rows, int(self.cfg.algorithm.dsrl_na.decode_batch_size)):
+                    ix = torch.arange(start, min(rows, start + int(self.cfg.algorithm.dsrl_na.decode_batch_size)))
+                    outputs.append(self.model(forward_type=ForwardType.SAC, na_operation='features',
+                        obs=index_tree(packed, ix)).detach().float().cpu())
+                projected['next_obs']['vla_features'] = torch.cat(outputs)
+                self.model.train()
             self._local_new_transitions += self.replay_buffer.add_batch(projected)
 
     @torch.no_grad()
@@ -86,42 +96,31 @@ class EmbodiedDSRLNAFSDPPolicy(EmbodiedSACFSDPPolicy):
         return torch.cat(outputs)
 
     @torch.no_grad()
-    def _prepare_block(self, warmup):
-        c = self.cfg.algorithm.dsrl_na
-        raw = self.replay_buffer.sample(int(c.pool_size))
+    def _fresh_batch(self, warmup, kind):
+        raw = self.replay_buffer.sample(int(self.cfg.actor.global_batch_size))
         packed_curr, packed_next = raw.pop('curr_vla'), raw.pop('next_vla')
         batch = put_tensor_device(raw, device=self.device)
-        n = batch['actions'].shape[0]
         self.model.eval()
         try:
             if self.na_replay_decode_error is None:
-                ix = torch.arange(min(4, n))
+                ix = torch.arange(min(4, batch['actions'].shape[0]))
                 replay_actions = self._decode(index_tree(packed_curr, ix), batch['actions'][:len(ix)])
                 error = (replay_actions - batch['env_actions'][:len(ix)]).abs()
                 self.na_replay_decode_error = {'mean': error.mean().item(), 'max': error.max().item()}
                 self.log_on_first_rank(f'NA replay action reconstruction: {self.na_replay_decode_error}')
-            if warmup:
-                next_noise = torch.randn_like(batch['actions'], dtype=torch.float32)
-                distill_noise = torch.randn_like(next_noise)
-            else:
-                next_noise = self.model(forward_type=ForwardType.SAC, obs=batch['next_obs'], train=False)[0].flatten(1)
-                current_noise = self.model(forward_type=ForwardType.SAC, obs=batch['curr_obs'], train=False)[0].flatten(1)
-                prior_noise = torch.randn_like(current_noise)
-                # Equal row-level mixture covers the prior and actual actor.
-                mask = (torch.arange(n, device=self.device) % 2 == 0).unsqueeze(1)
-                distill_noise = torch.where(mask, prior_noise, current_noise)
-            batch['next_env_actions'] = self._decode(packed_next, next_noise)
-            batch['distill_actions'] = self._decode(packed_curr, distill_noise)
-            batch['distill_noise'] = distill_noise.detach()
+            if kind == 'action_q':
+                noise = torch.randn_like(batch['actions'], dtype=torch.float32) if warmup else self.model(
+                    forward_type=ForwardType.SAC, obs=batch['next_obs'], train=False)[0].flatten(1)
+                batch['next_env_actions'] = self._decode(packed_next, noise)
+            elif kind == 'noise_q':
+                prior = torch.randn_like(batch['actions'], dtype=torch.float32)
+                current = prior if warmup else self.model(
+                    forward_type=ForwardType.SAC, obs=batch['curr_obs'], train=False)[0].flatten(1)
+                mask = (torch.arange(len(prior), device=self.device) % 2 == 0).unsqueeze(1)
+                batch['distill_noise'] = torch.where(mask, prior, current).detach()
+                batch['distill_actions'] = self._decode(packed_curr, batch['distill_noise'])
         finally:
             self.model.train()
-        return batch
-
-    def _sample_block(self, block):
-        size = int(self.cfg.actor.global_batch_size)
-        ix = torch.randint(block['actions'].shape[0], (size,), device=self.device,
-                           generator=self.critic_sample_generator)
-        batch = index_tree(block, ix)
         if self.enable_drq:
             drq.apply_drq(batch['curr_obs'], pad=4)
             drq.apply_drq(batch['next_obs'], pad=4)
@@ -185,24 +184,23 @@ class EmbodiedDSRLNAFSDPPolicy(EmbodiedSACFSDPPolicy):
         decode_seconds = 0.0; update_seconds = 0.0
         for block_id in range(blocks):
             warmup = self.dsrl_critic_warmup_done < required
-            start = time.monotonic(); block = self._prepare_block(warmup)
-            decode_seconds += time.monotonic()-start
-            start = time.monotonic()
-            # Actor remains fixed throughout target decoding and both Q phases.
-            for _ in range(qa_steps):
-                append_to_dict(metrics, self._critic_step(self._sample_block(block), 'action_q'))
-                if warmup: self.dsrl_critic_warmup_done += 1
-            for _ in range(qw_steps):
-                append_to_dict(metrics, self._critic_step(self._sample_block(block), 'noise_q'))
-            if not warmup:
-                for _ in range(actor_steps):
-                    append_to_dict(metrics, self._actor_step(self._sample_block(block)))
+            # Fresh replay draws and freshly decoded target actions for every update.
+            for kind, count in [('action_q', qa_steps), ('noise_q', qw_steps),
+                                ('actor', 0 if warmup else actor_steps)]:
+                for _ in range(count):
+                    start = time.monotonic()
+                    batch = self._fresh_batch(warmup, kind)
+                    decode_seconds += time.monotonic() - start
+                    start = time.monotonic()
+                    value = self._actor_step(batch) if kind == 'actor' else self._critic_step(batch, kind)
+                    append_to_dict(metrics, value)
+                    if kind == 'action_q' and warmup: self.dsrl_critic_warmup_done += 1
+                    update_seconds += time.monotonic() - start
+                    del batch
             if self.dsrl_critic_warmup_done >= required: self._set_dsrl_policy_phase(1)
             self.na_counts['blocks'] += 1
             Worker.torch_platform.synchronize()
-            update_seconds += time.monotonic()-start
             self.log_on_first_rank(f'NA block {block_id+1}/{blocks}: warmup={warmup}, counts={self.na_counts}')
-            del block
         append_to_dict(metrics, {'na/decode_seconds': decode_seconds, 'na/update_seconds': update_seconds,
             'warmup/critic_updates_done': self.dsrl_critic_warmup_done,
             **{'na/total_' + k: v for k, v in self.na_counts.items()}})
@@ -215,12 +213,12 @@ class EmbodiedDSRLNAFSDPPolicy(EmbodiedSACFSDPPolicy):
         path = self._dsrl_trainer_state_path(save_base_path)
         state = torch.load(path, map_location='cpu', weights_only=False)
         state['na_counts'] = self.na_counts
-        state['na_version'] = 1
+        state['na_version'] = 2
         temporary = path + '.na-tmp'
         torch.save(state, temporary); os.replace(temporary, path)
 
     def _load_dsrl_trainer_state(self, load_base_path):
         super()._load_dsrl_trainer_state(load_base_path)
         state = torch.load(self._dsrl_trainer_state_path(load_base_path), map_location='cpu', weights_only=False)
-        if state.get('na_version') != 1: raise ValueError('NA continuation requires a matching full-state checkpoint')
+        if state.get('na_version') != 2: raise ValueError('NA continuation requires a matching full-state checkpoint')
         self.na_counts = dict(state['na_counts'])

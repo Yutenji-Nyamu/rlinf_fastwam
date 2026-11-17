@@ -131,6 +131,7 @@ class OpenPi0Config(Pi0Config):
     # ===== DSRL-specific parameters =====
     use_dsrl: bool = False  # Enable DSRL algorithm
     dsrl_na_enabled: bool = False
+    dsrl_vla_features: bool = False
     dsrl_shift_l2_bound: float = 0.0
     dsrl_eval_gaussian_seed: int = -1
     dsrl_state_dim: int = 8  # Raw state dimension for DSRL encoders
@@ -324,7 +325,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 raise ValueError("DSRL noise bound must be positive")
 
             dsrl_input_dim = (
-                self.config.dsrl_state_latent_dim + self.config.dsrl_image_latent_dim
+                self.config.dsrl_state_latent_dim + self.config.dsrl_image_latent_dim + (2048 if self.config.dsrl_vla_features else 0)
             )  # e.g. 64 + 64 = 128
 
             policy_cls = GaussianPolicy
@@ -381,7 +382,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 hidden_dim=self.config.dsrl_state_latent_dim,
             ).to(dtype=_dsrl_dtype)
             self.q_head = CompactMultiQHead(
-                state_dim=self.config.dsrl_state_latent_dim,
+                state_dim=self.config.dsrl_state_latent_dim + (2048 if self.config.dsrl_vla_features else 0),
                 image_dim=self.config.dsrl_image_latent_dim,
                 action_dim=self.config.dsrl_action_noise_dim,
                 hidden_dims=self.config.dsrl_hidden_dims,
@@ -988,6 +989,12 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
             # Step 1: SAC agent outputs noise
             dsrl_obs = {"images": [env_obs["main_images"]], "states": env_obs["states"]}
+            prefix_cache = None
+            if self.config.dsrl_vla_features:
+                from rlinf.models.embodiment.modules.dsrl_na import last_valid_prefix
+                prefix, mask, cache, _, state = self._build_rlt_prefix_cache(observation, train=False)
+                dsrl_obs["vla_features"] = last_valid_prefix(prefix, mask)
+                prefix_cache = (prefix, mask, cache, state)
 
             if int(self.dsrl_policy_phase.item()) == 0:
                 generator = None
@@ -1035,6 +1042,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
                 mode="eval",
                 compute_values=compute_values,
                 collect_dsrl_u=self.config.dsrl_u_enabled and mode == "train",
+                prefix_cache=prefix_cache,
             )
 
             # Step 3: Extract actual actions for environment interaction
@@ -1088,6 +1096,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             forward_inputs["action"] = forward_action
             if self.config.dsrl_na_enabled:
                 forward_inputs["dsrl_env_actions"] = actions.detach().clone()
+            if self.config.dsrl_vla_features:
+                forward_inputs["dsrl_vla_features"] = dsrl_obs["vla_features"].detach().clone()
         if "dsrl_u" in outputs:
             forward_inputs["dsrl_u"] = outputs["dsrl_u"]
             forward_inputs["dsrl_u_valid"] = outputs["dsrl_u_valid"]
@@ -1156,6 +1166,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         mode="train",
         compute_values=True,
         collect_dsrl_u: bool = False,
+        prefix_cache=None,
     ) -> torch.Tensor:
         """Do a full inference forward and compute the action (batch_size x num_steps x num_motors)"""
         if collect_dsrl_u and (
@@ -1185,13 +1196,15 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
             # Capture the actual cast noise before either complete solve.
             initial_noise = noise.detach().clone()
 
-        images, img_masks, lang_tokens, lang_masks, state = (
-            self._preprocess_observation(observation, train=False)
-        )
-
-        prefix_output, prefix_pad_masks, past_key_values = self._build_prefix_cache(
-            images, img_masks, lang_tokens, lang_masks
-        )
+        if prefix_cache is None:
+            images, img_masks, lang_tokens, lang_masks, state = (
+                self._preprocess_observation(observation, train=False)
+            )
+            prefix_output, prefix_pad_masks, past_key_values = self._build_prefix_cache(
+                images, img_masks, lang_tokens, lang_masks
+            )
+        else:
+            prefix_output, prefix_pad_masks, past_key_values, state = prefix_cache
 
         collect_norm = collect_dsrl_u and self.dsrl_u_spec["name"].startswith(
             "norm_residual_"
@@ -1760,7 +1773,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if "images" not in obs:
             # Convert env format to internal format
             if "main_images" in obs:
-                obs = {"images": [obs["main_images"]], "states": obs["states"]}
+                obs = {**obs, "images": [obs["main_images"]]}
             else:
                 raise ValueError(
                     f"Invalid obs format: {obs.keys()}. Expected 'images' or 'main_images' key."
@@ -1778,7 +1791,9 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
 
         # Extract features (using actor's independent encoder)
         image_features = self.actor_image_encoder(images)  # [B, 64]
-        state_features = self.actor_state_encoder(states)  # [B, 64]
+        state_features = self.actor_state_encoder(states)
+        from rlinf.models.embodiment.modules.dsrl_na import append_vla_features
+        state_features = append_vla_features(self, obs, state_features)  # [B, 64]
         features = torch.cat([state_features, image_features], dim=-1)  # [B, 128]
 
         # Sample from GaussianPolicy
@@ -1841,7 +1856,7 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         if "images" not in obs:
             # Convert env format to internal format
             if "main_images" in obs:
-                obs = {"images": [obs["main_images"]], "states": obs["states"]}
+                obs = {**obs, "images": [obs["main_images"]]}
             else:
                 raise ValueError(
                     f"Invalid obs format: {obs.keys()}. Expected 'images' or 'main_images' key."
@@ -1861,6 +1876,8 @@ class OpenPi0ForRLActionPrediction(PI0Pytorch, BasePolicy):
         # Extract features (using critic's independent encoder)
         image_features = self.critic_image_encoder(images)
         state_features = self.critic_state_encoder(states)
+        from rlinf.models.embodiment.modules.dsrl_na import append_vla_features
+        state_features = append_vla_features(self, obs, state_features)
 
         # Optionally detach encoder
         if detach_encoder:
