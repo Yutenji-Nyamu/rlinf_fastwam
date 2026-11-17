@@ -1,0 +1,25 @@
+{
+  "algorithm": "Online success FM-BC, fixed update workload",
+  "task": "turn_switch",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "parallel": 32,
+  "trajectories_per_round": 32,
+  "denoise_steps": 10,
+  "chunk": 50,
+  "action_budget": 200,
+  "optimizer_steps": 4,
+  "global_batch": 128,
+  "micro_batch": 8,
+  "warmup_rounds": 1,
+  "measured_rounds": 3,
+  "K": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "scheduling": "synchronous; preserved main plus batched extra candidates; candidate microbatch <=128",
+  "weighting": "K1 unit; K>1 diagonal Gaussian entropy, round z-score, bounded linear 0/1/5",
+  "update_scope": "successful online action buffer; same initialization and sampling schedule across K; updated actor synchronized each round",
+  "trainable_parameters": 693422112
+}
