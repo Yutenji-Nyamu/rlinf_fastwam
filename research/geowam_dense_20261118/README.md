@@ -2,7 +2,7 @@
 
 36 dense recorded trajectories. The requested episodes are G08 (Plug Charger) and G02 (Sort Block). Each row links to its action-level CSV, overview, H.264 video and complete drawing materials.
 
-**17 / 36 episodes published.**
+**18 / 36 episodes published.**
 
 | ID | Task | Recording | Valid / total | Global peak (step) | Materials |
 |---|---|---|---:|---:|---|
@@ -22,6 +22,7 @@
 | G29 | sort_block | 20261007_154617 | 251 / 255 | 215 | [CSV](G29/curve.csv) · [Figure](G29/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G29.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G29-materials.zip) |
 | G30 | sort_block | 20261007_154703 | 211 / 215 | 153 | [CSV](G30/curve.csv) · [Figure](G30/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G30.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G30-materials.zip) |
 | G32 | plug_charger | 20261007_160404 | 116 / 118 | 25 | [CSV](G32/curve.csv) · [Figure](G32/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G32.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G32-materials.zip) |
+| G33 | plug_charger | 20261007_160617 | 129 / 130 | 39 | [CSV](G33/curve.csv) · [Figure](G33/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G33.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G33-materials.zip) |
 | G36 | plug_charger | 20261007_160916 | 146 / 146 | 28 | [CSV](G36/curve.csv) · [Figure](G36/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G36.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G36-materials.zip) |
 
 ## Method
