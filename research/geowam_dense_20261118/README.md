@@ -52,3 +52,9 @@ The CSV retains one row per original observation. Action steps start at 1. The o
 The triptych uses the source observation for the plotted action. Before and after are the nearest valid observations to one second either side. The global maximum is recorded separately if it lies at a boundary; in that case the triptych uses the largest interior local peak. Each archive includes original and labeled frames, CSV, PNG/PDF, state and sampled action arrays. The original RGB-D source IDs and split are in [the manifest](manifest.json).
 
 [G00/G01 dense reference](https://github.com/Yutenji-Nyamu/rlinf_fastwam/tree/1f97ca9b420e314a71ed7432e3c016ff814262af/research/appendix_followup_20261117/geowam-dense-offline) · [Earlier sparse samples](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/tag/appendix-signals-20261112)
+
+## Comparing episodes
+
+[All episode peak steps, coverage and separation](review/episodes.csv) · [Plug Charger comparisons](review/plug_charger.jpg) · [Sort Block comparisons](review/sort_block.jpg). Each sheet starts with the requested recording. Alternatives are ranked by separation from other local peaks at least one second away, scaled by the trajectory entropy interdecile range.
+
+[G01 sampler source](https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/bd5f3d1222d27e86d38a21f94981b9857741b9c0/tools/appendix_signals/geowam_sampling.py).
