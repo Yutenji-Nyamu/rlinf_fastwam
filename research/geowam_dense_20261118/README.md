@@ -2,7 +2,7 @@
 
 36 dense recorded trajectories. The requested episodes are G08 (Plug Charger) and G02 (Sort Block). Each row links to its action-level CSV, overview, H.264 video and complete drawing materials.
 
-**26 / 36 episodes published.**
+**27 / 36 episodes published.**
 
 | ID | Task | Recording | Valid / total | Global peak (step) | Materials |
 |---|---|---|---:|---:|---|
@@ -13,6 +13,7 @@
 | G09 | plug_charger | 20261006_175607 | 177 / 177 | 54 | [CSV](G09/curve.csv) · [Figure](G09/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G09.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G09-materials.zip) |
 | G10 | block_drawer | 20261006_165531 | 182 / 192 | 20 | [CSV](G10/curve.csv) · [Figure](G10/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G10.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G10-materials.zip) |
 | G11 | block_drawer | 20261006_165614 | 168 / 172 | 42 | [CSV](G11/curve.csv) · [Figure](G11/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G11.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G11-materials.zip) |
+| G12 | block_drawer | 20261006_165649 | 203 / 206 | 39 | [CSV](G12/curve.csv) · [Figure](G12/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G12.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G12-materials.zip) |
 | G13 | sort_block | 20261006_170411 | 278 / 282 | 37 | [CSV](G13/curve.csv) · [Figure](G13/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G13.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G13-materials.zip) |
 | G14 | sort_block | 20261006_170626 | 265 / 267 | 42 | [CSV](G14/curve.csv) · [Figure](G14/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G14.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G14-materials.zip) |
 | G15 | sort_block | 20261006_171249 | 241 / 241 | 227 | [CSV](G15/curve.csv) · [Figure](G15/figure.png) · [Video](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G15.mp4) · [Materials](https://github.com/Yutenji-Nyamu/rlinf_fastwam/releases/download/geowam-dense-20261118/G15-materials.zip) |
