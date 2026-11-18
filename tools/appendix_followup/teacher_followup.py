@@ -119,7 +119,7 @@ def run(j):
                 meta=env.venv._call('episode_state');success|=np.array([x['success']for x in meta])|env.success_once.cpu().numpy().astype(bool);obs=result[0][-1]
                 queries.append(dict(query=q,action_before=before.tolist(),action_after=after.tolist(),entropy=score.tolist(),selected=select.tolist(),eligible=valid_before.tolist() if q<3 else [False]*n))
                 write(out/'progress.json',dict(condition=name,phase='rollout',query=q,success=int(success.sum()),time=time.time()))
-            episodes=[dict(scene_seed=int(j['seeds'][i]),**initial[i],success=bool(success[i]),eligible=int(eligible[i]),takeovers=int(taken[i]))for i in range(n)]
+            episodes=[{**initial[i], 'scene_seed':int(j['seeds'][i]), 'success':bool(success[i]), 'eligible':int(eligible[i]), 'takeovers':int(taken[i])}for i in range(n)]
             report=dict(direction=direction,target=target,threshold=threshold,success_rate=float(success.mean()),actual_rate=float(taken.sum()/max(1,eligible.sum())),all_query_rate=float(taken.sum()/(n*(200//C))),episodes=episodes,queries=queries)
             if direction=='calibration':write(out/'calibration-scores.json',scores)
             write(done,report);return report
