@@ -1,4 +1,4 @@
-"""Publish generic collectors and completed figure bundles; private real data stay private."""
+"""Publish generic collectors and completed figure bundles; use the project repository."""
 import sys,json,time,base64,fcntl,zipfile,os,subprocess
 from pathlib import Path
 def main(config,kind):
@@ -13,11 +13,6 @@ def main(config,kind):
         if kind=='batched-round-cost' and (dest/'complete.json').exists():
             from render_results import timing
             rendered=dest/'figures';rendered.mkdir(exist_ok=True);timing(dest,rendered,Path(stage['memory']))
-        if kind=='geowam-dense-offline':
-            lib.repo=j['private_repo'];lib.branch=j['private_branch'];prefix='materials/appendix_geowam_dense_20261117/'
-            # Read current repo visibility before uploading any private RGB-D/recordings.
-            r=subprocess.run(['gh','api','repos/'+lib.repo],capture_output=True,text=True,env=lib.env,timeout=30)
-            info=json.loads(r.stdout);assert info['private'] is True
         contents=[p for p in dest.rglob('*')if p.is_file()and p.suffix not in ['.zip','.log']]
         pack=root/'packages'/kind;pack.mkdir(parents=True,exist_ok=True)
         groups=[];group=[];size=0
