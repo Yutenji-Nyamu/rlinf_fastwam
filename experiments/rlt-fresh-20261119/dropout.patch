@@ -1,0 +1,22 @@
+--- a/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
++++ b/rlinf/workers/actor/fsdp_rlt_ac_policy_worker.py
+@@ -643,6 +643,11 @@
+         reference_dropout_prob = float(
+             self.cfg.algorithm.get("reference_dropout_prob", 0.0)
+         )
++        bc_weight, q_weight, weight_metrics = self._actor_objective_weights()
++        online_dropout = self.cfg.algorithm.get("online_reference_dropout_prob")
++        if online_dropout is not None:
++            progress = weight_metrics["actor_weight_ramp_progress"]
++            reference_dropout_prob += progress * (float(online_dropout) - reference_dropout_prob)
+         pi, log_pi, _ = self.model(
+             forward_type=ForwardType.SAC,
+             obs=curr_obs,
+@@ -692,7 +697,6 @@
+         metrics.update(dvac_metrics)
+ 
+         entropy = -log_pi.mean()
+-        bc_weight, q_weight, weight_metrics = self._actor_objective_weights()
+         actor_loss = -q_weight * qf_pi.mean() + bc_weight * bc_loss
+         metrics.update(weight_metrics)
+         metrics["action_ref_abs_mean"] = (

@@ -1,0 +1,31 @@
+{
+  "bench": "dojo",
+  "method": "rlt",
+  "primary_task": "pour_liquid_into_cup",
+  "train_envs": 56,
+  "eval_envs": 56,
+  "episode_steps": 400,
+  "chunk": 10,
+  "rounds": 400,
+  "resume": null,
+  "warmup": {
+    "enable": true,
+    "max_updates_per_train_step": 44800,
+    "warmup_min_size": 20000,
+    "warmup_post_collect_updates": 30000,
+    "train_every_episodes": 0,
+    "train_every_transitions": 1
+  },
+  "weights": {
+    "enable": true,
+    "warmup_updates": 52400,
+    "ramp_updates": 112000,
+    "warmup_bc_weight": 1.0,
+    "warmup_q_weight": 0.0,
+    "online_bc_weight": 1.0,
+    "online_q_weight": 0.05
+  },
+  "reference_dropout": 0.0,
+  "online_reference_dropout": 0.5,
+  "screen_tasks": null
+}

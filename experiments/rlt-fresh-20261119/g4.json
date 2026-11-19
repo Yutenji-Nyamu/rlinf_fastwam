@@ -1,0 +1,34 @@
+{
+  "bench": "rt2",
+  "method": "rlt",
+  "primary_task": "place_bread_skillet",
+  "train_envs": 48,
+  "eval_envs": 48,
+  "episode_steps": 200,
+  "chunk": 10,
+  "rounds": 400,
+  "resume": null,
+  "warmup": {
+    "enable": true,
+    "max_updates_per_train_step": 9600,
+    "warmup_min_size": 20000,
+    "warmup_post_collect_updates": 30000,
+    "train_every_episodes": 0,
+    "train_every_transitions": 1
+  },
+  "weights": {
+    "enable": true,
+    "warmup_updates": 20000,
+    "ramp_updates": 50000,
+    "warmup_bc_weight": 7.0,
+    "warmup_q_weight": 0.05,
+    "online_bc_weight": 2.5,
+    "online_q_weight": 0.45
+  },
+  "reference_dropout": 0.5,
+  "online_reference_dropout": null,
+  "screen_tasks": [
+    "place_bread_skillet",
+    "move_can_pot"
+  ]
+}
