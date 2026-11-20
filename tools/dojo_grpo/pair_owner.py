@@ -17,15 +17,15 @@ from multiprocessing.connection import Client
 from pathlib import Path
 
 sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
-from common import exact_signal, gpus, proc, read, same, save
+from common import admission_card, exact_signal, gpus, proc, read, same, save
+from pour_protocol import sample_device_memory
 
 
 def main(directory):
     d = Path(directory)
     plan = read(d / "plan.json")
     root = Path(plan["training_source"])
-    sys.path.insert(0, str(root / "tools/rlt_disk_fallback"))
-    from priority_pair_handoff import handoff
+    cards = list(plan["gpus"])
 
     me = proc(os.getpid())
     save(d / "identity.json", me)
@@ -73,16 +73,6 @@ def main(directory):
     def stop(*_):
         raise SystemExit(143)
 
-    def take_cards(cards):
-        nonlocal registered
-        directory = d / (d.name + "-handoff-" + "".join(map(str, cards)))
-        directory.mkdir()
-        reservations = {
-            str(g): {"identity": me, "release": str(d / "released.json")} for g in cards
-        }
-        handoff(directory, cards, me, reservations=reservations)
-        registered = True
-
     def model_parity():
         pt = launch(
             "torch-probe",
@@ -96,11 +86,11 @@ def main(directory):
                 "--deployment",
                 str(d),
             ],
-            dict(training_env, CUDA_VISIBLE_DEVICES="6"),
+            dict(training_env, CUDA_VISIBLE_DEVICES=str(cards[0])),
         )
         je = dict(
             os.environ,
-            CUDA_VISIBLE_DEVICES="7",
+            CUDA_VISIBLE_DEVICES=str(cards[1]),
             XLA_PYTHON_CLIENT_MEM_FRACTION="0.25",
             OMP_NUM_THREADS="8",
             OPENPI_DATA_HOME="/home/chenyiteng/cache/dojo-sz1-20261001/openpi",
@@ -142,14 +132,23 @@ def main(directory):
 
     signal.signal(signal.SIGTERM, stop)
     try:
-        assert os.getuid() == 1003 and plan["gpus"] == [6, 7]
-        assert (Path(plan["model"]) / "conversion-receipt.json").is_file()
-        status("HANDOFF_FROM_RLT")
-        # Keep useful RLT work on GPU7 during GPU6 simulator construction/reset.
-        staged = bool(plan.get("parity_source")) and all(
-            int(plan.get("render_gpus", {}).get(str(g), g)) == 6 for g in [6, 7]
-        )
-        take_cards([6] if staged else [6, 7])
+        assert len(cards) == 2 and len(set(cards)) == 2
+        status("WAIT_PREPARED_PAIR")
+        while not (d / "registered.json").exists():
+            time.sleep(0.2)
+        assert read(d / "registered.json")["identity"] == me
+        registered = True
+        while any(same(who) for who in plan["predecessors"]):
+            time.sleep(0.25)
+        deadline = time.monotonic() + 240
+        while True:
+            snapshot = gpus()
+            if all(not admission_card(snapshot[g], plan["admission"][str(g)])["processes"] for g in cards):
+                break
+            if time.monotonic() > deadline:
+                raise TimeoutError("Predecessor GPU cleanup; see actual device occupancy")
+            time.sleep(0.5)
+        sample_device_memory(d, cards)
         parity = None
         if plan.get("parity_source"):
             previous = Path(plan["parity_source"])
@@ -162,7 +161,7 @@ def main(directory):
             status("MODEL_PARITY_SAVED_NATIVE_OBSERVATION")
             parity = model_parity()
         native = []
-        for g in [6, 7]:
+        for g in cards:
             render_gpu = int(plan.get("render_gpus", {}).get(str(g), g))
             cache = d / f"native-g{g}" / "cache"
             cache.mkdir(parents=True, exist_ok=True)
@@ -171,7 +170,7 @@ def main(directory):
                 CUDA_VISIBLE_DEVICES=str(render_gpu),
                 DOJO_GRPO_NATIVE_CONFIG=str(d / f"native-g{g}.json"),
                 ROBODOJO_RENDER_GPU=str(render_gpu),
-                ROBODOJO_RUN_ID=f"dojo-grpo-1103-g{g}",
+                ROBODOJO_RUN_ID=f"{d.name}-g{g}",
                 XDG_CACHE_HOME=str(cache / "xdg"),
                 CUDA_CACHE_PATH=str(cache / "cuda"),
                 __GL_SHADER_DISK_CACHE_PATH=str(cache / "gl"),
@@ -192,7 +191,7 @@ def main(directory):
                 "-B",
                 str(root / "tools/dojo_grpo/native_entry.py"),
                 "--task_name",
-                "put_bottles_into_dustbin",
+                plan["task"],
                 "--num_envs",
                 str(plan["native_envs_per_card"]),
                 "--env_cfg_type",
@@ -237,11 +236,11 @@ def main(directory):
             native.append(launch(f"native-g{g}", command, e, plan["native_repo"]))
         status("NATIVE_STARTING", envs_per_card=plan["native_envs_per_card"])
         deadline = time.monotonic() + 900
-        while not all((d / f"rpc/gpu{g}.sock").exists() for g in [6, 7]):
+        while not all((d / f"rpc/gpu{g}.sock").exists() for g in cards):
             assert all(p.poll() is None for p in native), (
                 "Native simulator exited during startup"
             )
-            for g in [6, 7]:
+            for g in cards:
                 with (d / f"native-g{g}.log").open("rb") as stream:
                     stream.seek(max(0, stream.seek(0, 2) - 32768))
                     tail = stream.read()
@@ -258,7 +257,7 @@ def main(directory):
             time.sleep(1)
         # Verify computing AND graphics contexts before continuing.
         owned = (
-            {read(d / f"native-g{g}-child.json")["pid"] for g in (6, 7)}
+            {read(d / f"native-g{g}-child.json")["pid"] for g in cards}
             if plan.get("fresh_process_per_wave")
             else {p.pid for p in native}
         )
@@ -266,7 +265,7 @@ def main(directory):
             {"gpu": g, **r}
             for g, card in gpus().items()
             for r in card["processes"]
-            if r["pid"] in owned and g not in [6, 7]
+            if r["pid"] in owned and g not in cards
         ]
         save(
             d / "native-binding.json", {"observed": gpus(), "outside_pair": unexpected}
@@ -281,7 +280,7 @@ def main(directory):
             limits = plan.get("reviewed_graphics_residual_mib", {})
             for index, gpu in enumerate(tree.findall("gpu")):
                 for process in gpu.findall("processes/process_info"):
-                    if int(process.findtext("pid")) not in owned or index in [6, 7]:
+                    if int(process.findtext("pid")) not in owned or index in cards:
                         continue
                     amount = int(process.findtext("used_memory").split()[0])
                     assert process.findtext("type") == "G" and amount <= limits.get(
@@ -343,11 +342,11 @@ def main(directory):
                     "--deployment",
                     str(d),
                 ],
-                dict(training_env, CUDA_VISIBLE_DEVICES="6"),
+                dict(training_env, CUDA_VISIBLE_DEVICES=str(cards[0])),
             )
             try:
                 wait(comparison, 600)
-                for g in [6, 7]:
+                for g in cards:
                     with Client(
                         str(d / f"rpc/gpu{g}.sock"),
                         family="AF_UNIX",
@@ -370,9 +369,6 @@ def main(directory):
                     {"mode": "native_per_action", "probe_error": str(error)},
                 )
         # Do not run a formal job if the model/environment contract failed.
-        if staged:
-            status("HANDOFF_GPU7_BEFORE_TRAINING")
-            take_cards([7])
         if plan.get("accepted_smoke"):
             accepted = Path(plan["accepted_smoke"])
             assert read(accepted / "plan.json")["model"] == plan["model"]
@@ -412,7 +408,7 @@ def main(directory):
             if time.monotonic() > deadline:
                 raise TimeoutError("Formal acceptance not supplied; restore RLT")
             time.sleep(0.5)
-        status("FORMAL_TRAINING", rounds=200)
+        status("FORMAL_TRAINING", rounds=plan["rounds"], task=plan["task"])
         wait(
             launch(
                 "formal-driver",
@@ -472,3 +468,4 @@ def main(directory):
 
 if __name__ == "__main__":
     main(sys.argv[1])
+

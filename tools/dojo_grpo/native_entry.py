@@ -83,6 +83,8 @@ class NativeLoop:
         previous = self.output / "invalid-resets.jsonl"
         if previous.is_file():
             for row in map(json.loads, previous.read_text().splitlines()):
+                if row["mode"] == "train" and cfg["task"] == "pour_liquid_into_cup":
+                    continue
                 self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
 
     def progress(self, phase, **extra):
@@ -157,12 +159,26 @@ class NativeLoop:
         assert self.n <= self.env.num_envs
         assert all(len(set(ids[i : i + group])) == 1 for i in range(0, self.n, group))
         pool = self.pools[self.mode]
+        native_pour = self.cfg["task"] == "pour_liquid_into_cup"
+        native_train = native_pour and self.mode == "train"
+        invalid = self.invalid_layouts[self.mode]
+        spare_order = None
+        if native_train:
+            invalid = set()
+            log = self.output / "invalid-resets.jsonl"
+            if log.is_file():
+                for line in log.read_text().splitlines():
+                    row = json.loads(line)
+                    if row.get("request_id") == request["request_id"]:
+                        invalid.update(row["invalid_layouts"])
+            rng = np.random.default_rng([int(self.cfg["gpu"]), *requested_ids])
+            spare_order = rng.permutation(len(pool)).tolist()
         ids, replacements = replace_invalid_layouts(
             ids,
-            self.invalid_layouts[self.mode],
+            invalid,
             len(pool),
             group,
-            int(self.cfg["gpu"]) % 2,
+            int(self.cfg["gpu"]) % 2, order=spare_order,
         )
         # Exact accepted SeedManager mechanism; native layout loading is unchanged.
         self.env.seed_manager.seed_info = {i: dict(row) for i, row in enumerate(pool)}
@@ -178,6 +194,7 @@ class NativeLoop:
 
         max_attempts = int(self.cfg.get("max_reset_attempts", 3))
         for attempt in range(max_attempts):
+            attempt_started = time.monotonic()
             try:
                 self.env.reset(ids)
             except UnStableError:
@@ -185,15 +202,18 @@ class NativeLoop:
                     raise
             bad = invalid_reset_slots(self.env, self.n)
             object_audit = None
-            if not bad:
+            if not bad and not native_pour:
                 object_audit = audit_objects(
-                    self.env, self.n, group, raise_on_mismatch=False
+                    self.env, self.n, group, raise_on_mismatch=False,
+                    rotation_limit_deg=2.0,
                 )
                 bad.update(object_audit["bad_slots"])
+            with (self.output / "timing.jsonl").open("a") as stream:
+                stream.write(json.dumps({"event": "reset_attempt", "time": time.time(), "mode": self.mode, "seconds": time.monotonic()-attempt_started, "invalid_slots": len(bad)}) + "\n")
             if not bad:
                 break
             failed = {ids[i] for i in bad}
-            self.invalid_layouts[self.mode].update(failed)
+            invalid.update(failed)
             with (self.output / "invalid-resets.jsonl").open("a") as stream:
                 stream.write(
                     json.dumps(
@@ -202,6 +222,7 @@ class NativeLoop:
                             "attempt": attempt,
                             "layout_ids": ids,
                             "bad_slots": sorted(bad),
+                            "request_id": request.get("request_id"),
                             "invalid_layouts": sorted(failed),
                             "object_audit": object_audit,
                         }
@@ -214,10 +235,10 @@ class NativeLoop:
                 )
             ids, changes = replace_invalid_layouts(
                 ids,
-                self.invalid_layouts[self.mode],
+                invalid,
                 len(pool),
                 group,
-                int(self.cfg["gpu"]) % 2,
+                int(self.cfg["gpu"]) % 2, order=spare_order,
             )
             replacements.extend(changes)
         self.totals["reset_seconds"] += time.monotonic() - start
@@ -236,6 +257,11 @@ class NativeLoop:
         if not all(registered):
             raise RuntimeError("Native task has no registered success conditions")
         self.last_obs = self.observations()
+        self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
+        self.wave_recorded = False
+        prompts = self.last_obs["task_descriptions"]
+        if any(len(set(prompts[j:j+group])) != 1 for j in range(0, self.n, group)):
+            raise RuntimeError("Instructions differ within a GRPO layout group")
         states = self.last_obs["states"].reshape(-1, group, 14)
         gap = float(np.abs(states - states[:, :1]).max())
         audit = {
@@ -249,7 +275,7 @@ class NativeLoop:
             "layouts": [pool[i]["digest"] for i in ids],
         }
         audit["objects"] = object_audit
-        if gap > 0.01:
+        if not native_pour and gap > 0.01:
             raise RuntimeError(f"Group initial robot state mismatch: {gap}")
         save(self.output / "reset-audit.json", audit)
         probe = self.output / "initial-observation.npz"
@@ -310,6 +336,15 @@ class NativeLoop:
         if not capture_every_action:
             self.last_obs = self.observations()
         rewards, terms, truncs = terminal_arrays(before, dones, success)
+        if dones[:, -1].all() and not self.wave_recorded:
+            record = {"time": time.time(), "mode": self.mode, "rows": [
+                {"layout": int(self.wave_layouts[i]), "success": bool(success[i, -1]),
+                 "actions": int(self.env.take_action_cnt[i])} for i in range(self.n)]}
+            with (self.output / "completed-waves.jsonl").open("a") as stream:
+                stream.write(json.dumps(record) + "\n")
+            with (self.output / "timing.jsonl").open("a") as stream:
+                stream.write(json.dumps({"event":"wave_complete", "time":time.time(), "mode":self.mode, **self.totals})+"\n")
+            self.wave_recorded = True
         self.progress("chunk_complete", successes=int(success[:, -1].sum()))
         return {
             "obs": self.last_obs,

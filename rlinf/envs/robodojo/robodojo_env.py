@@ -97,7 +97,7 @@ class RoboDojoEnv(gym.Env):
     def reset(self, env_idx=None, env_seeds=None, **kwargs):
         assert env_idx is None, "Partial resets would change GRPO group membership"
         ids = self.reset_state_ids.tolist() if env_seeds is None else list(env_seeds)
-        value = self._rpc("reset", layout_ids=ids, group_size=self.group_size)
+        value = self._rpc("reset", layout_ids=ids, group_size=self.group_size, request_id=time.time_ns())
         self.reset_state_ids = torch.tensor(
             value["audit"]["layout_ids"], dtype=torch.long
         )

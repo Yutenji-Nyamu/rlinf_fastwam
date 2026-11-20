@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def audit_objects(env, n, group, *, raise_on_mismatch=True):
+def audit_objects(env, n, group, *, raise_on_mismatch=True, rotation_limit_deg=2.0):
     manager = env.scene_manager.layout_manager
     poses = []
 
@@ -47,12 +47,13 @@ def audit_objects(env, n, group, *, raise_on_mismatch=True):
                 )
         position_error = max(position_error, group_position)
         rotation_error = max(rotation_error, group_rotation)
-        if group_position > 0.005 or group_rotation > 2:
+        if group_position > 0.005 or group_rotation > rotation_limit_deg:
             bad_slots.extend(range(start, start + group))
     result = {
         "object_count": len(poses[0]),
         "position_max_m": position_error,
         "rotation_max_deg": rotation_error,
+        "rotation_limit_deg": rotation_limit_deg,
         "bad_slots": bad_slots,
     }
     # Numerical settling tolerance, much tighter than native instability checks

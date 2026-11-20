@@ -37,6 +37,7 @@ def layout_pools(root, task):
                     "digest": digest,
                 }
             )
+    pools["eval"].sort(key=lambda row: row["source_layout_id"])
     if not all(pools.values()):
         raise ValueError("Independent train/eval native layouts are required")
     return pools
@@ -54,13 +55,13 @@ def grouped_indices(pool_size, n, group_size, rng, offset=0, fixed=False):
     return np.repeat(ids, group_size).tolist()
 
 
-def replace_invalid_layouts(ids, invalid, pool_size, group_size, lane=0):
+def replace_invalid_layouts(ids, invalid, pool_size, group_size, lane=0, order=None):
     """Skip physical reset failures as complete groups, never policy failures."""
     result = list(ids)
     used = set(ids)
     changes = []
     # Distinct lane order avoids both eval workers choosing the same spare first.
-    order = (
+    order = order if order is not None else (
         list(range(32 + lane, pool_size, 2))
         + list(range(lane, pool_size, 2))
         + list(range(pool_size))
@@ -89,3 +90,4 @@ def terminal_arrays(before_done, done_by_action, success_by_action):
     )
     reward = (dones & ~previous & success).astype(np.float32)
     return reward, dones & success, dones & ~success
+
