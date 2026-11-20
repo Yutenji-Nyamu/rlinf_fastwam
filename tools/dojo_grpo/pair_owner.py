@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from multiprocessing.connection import Client
 from pathlib import Path
 
-sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
+sys.path.insert(0, os.environ["DOJO_QUEUE_OPS"])
 from common import admission_card, exact_signal, gpus, proc, read, same, save
 from pour_protocol import sample_device_memory
 
@@ -93,7 +93,7 @@ def main(directory):
             CUDA_VISIBLE_DEVICES=str(cards[1]),
             XLA_PYTHON_CLIENT_MEM_FRACTION="0.25",
             OMP_NUM_THREADS="8",
-            OPENPI_DATA_HOME="/home/chenyiteng/cache/dojo-sz1-20261001/openpi",
+            OPENPI_DATA_HOME=os.environ["OPENPI_DATA_HOME"],
             PYTHONPATH=plan["native_repo"]
             + "/XPolicyLab/policy/Pi_05/openpi/src:"
             + plan["native_repo"],
@@ -161,6 +161,8 @@ def main(directory):
             status("MODEL_PARITY_SAVED_NATIVE_OBSERVATION")
             parity = model_parity()
         native = []
+        full = []
+        small = []
         for g in cards:
             render_gpu = int(plan.get("render_gpus", {}).get(str(g), g))
             cache = d / f"native-g{g}" / "cache"
@@ -224,6 +226,10 @@ def main(directory):
                     str(render_gpu),
                     "--",
                 ] + command
+            small_cmd=list(command)
+            small_cmd[small_cmd.index("--num_envs")+1]=str(len(read(d/'trial/layouts.json')))
+            small_env=dict(e, DOJO_GRPO_NATIVE_CONFIG=str(d/f'trial/g{g}.json'))
+            small.append(launch(f'trial-native-{g}',small_cmd,small_env,plan['native_repo']))
             if plan.get("fresh_process_per_wave"):
                 command = [
                     plan["python"],
@@ -233,6 +239,21 @@ def main(directory):
                     str(d),
                     str(g),
                 ] + command
+            full.append((g,command,e))
+        status("RENDER_CROSSOVER", layouts=read(d/'trial/layouts.json'))
+        try:
+            wait(launch("render-trial",[plan["python"],"-uB",str(d/'render_trial.py'),str(d)],dict(training_env,CUDA_VISIBLE_DEVICES=str(cards[0]))),1800)
+        except Exception as exc:
+            save(d/'trial/error.json',dict(error=str(exc)))
+        finally:
+            for child in small:
+                if child.poll() is None:child.terminate()
+            for child in small:
+                try:child.wait(timeout=12)
+                except subprocess.TimeoutExpired:
+                    child.kill()
+                    child.wait(timeout=20)
+        for g,command,e in full:
             native.append(launch(f"native-g{g}", command, e, plan["native_repo"]))
         status("NATIVE_STARTING", envs_per_card=plan["native_envs_per_card"])
         deadline = time.monotonic() + 900

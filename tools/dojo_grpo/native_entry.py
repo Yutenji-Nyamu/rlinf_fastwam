@@ -76,6 +76,10 @@ class NativeLoop:
             "action_seconds": 0.0,
             "observation_seconds": 0.0,
         }
+        self.trial_profile = {}
+        if cfg.get('render_trial'):
+            from render_profile import instrument
+            instrument(self)
         self.invalid_layouts = {
             mode: set(cfg.get("invalid_layouts", {}).get(mode, []))
             for mode in self.pools
@@ -298,6 +302,12 @@ class NativeLoop:
                 "capture_every_action", self.cfg.get("capture_every_action", True)
             )
         )
+        decision = self.output.parent / 'trial/result.json'
+        if self.cfg.get('render_trial'):
+            skip = request.get('trial_skip', False)
+        else:
+            skip = self.mode == 'train' and decision.is_file() and json.loads(decision.read_text()).get('accept_train', False)
+        step_start = time.monotonic()
         before = np.asarray(self.env.end_flag[: self.n], dtype=bool).copy()
         dones = np.zeros((self.n, horizon), bool)
         success = np.zeros_like(dones)
@@ -329,7 +339,8 @@ class NativeLoop:
                     if self.env.physx_monitor_enabled:
                         self.env._check_physx_broken_envs()
                         self.env._check_endpose_finite(list(range(self.n)))
-                    self.env.obs_manager.render_for_capture()
+                    if not skip:
+                        self.env.obs_manager.render_for_capture()
                     self.totals["observation_seconds"] += time.monotonic() - start
             dones[:, t] = self.env.end_flag[: self.n]
             success[:, t] = np.asarray(self.env.success[: self.n]) & dones[:, t]
@@ -353,6 +364,8 @@ class NativeLoop:
             "truncations": truncs,
             "success": success[:, -1],
             "counts": self.env.take_action_cnt[: self.n],
+            "trial_seconds": time.monotonic()-step_start,
+            "trial_profile": dict(self.trial_profile),
         }
 
     def serve(self):
@@ -416,6 +429,11 @@ class NativeLoop:
 def main():
     faulthandler.register(signal.SIGUSR1, all_threads=True)
     cfg = json.loads(Path(os.environ["DOJO_GRPO_NATIVE_CONFIG"]).read_text())
+    from dojo_reset_pair import maybe_run, run_in_shadow
+    try:
+        maybe_run(cfg, Path(__file__).resolve())
+    except Exception:
+        traceback.print_exc()
     root = Path(cfg["repo"])
     sys.path[:0] = [str(root), str(root / "XPolicyLab")]
     # Native main performs AppLauncher before simulator imports, GPU binding,
@@ -440,7 +458,10 @@ def main():
         print("[dojo-grpo] constructing native environments", flush=True)
         env = factory(config, app, **kwargs)
         try:
-            if NativeLoop(env, cfg).serve():
+            loop = NativeLoop(env, cfg)
+            if os.environ.get("DOJO_RESET_PAIR_CHILD"):
+                run_in_shadow(loop, os.environ["DOJO_RESET_PAIR_CHILD"])
+            elif loop.serve():
                 # Match upstream shell-level recovery: exit the native process
                 # instead of retaining corrupted physics/renderer state.
                 sys.stdout.flush()
