@@ -1,0 +1,23 @@
+--- a/rlinf/workers/actor/embodied_fsdp_actor_worker.py
++++ b/rlinf/workers/actor/embodied_fsdp_actor_worker.py
+@@ -116,6 +116,10 @@
+ 
+     def model_provider_func(self) -> nn.Module:
+         model = get_model(self.cfg.actor.model)
++        # FSDP retains FP32 action master shards and casts for BF16 forward.
++        if self.cfg.actor.model.model_type == "fastwam":
++            model.model.mot.mixtures["action"].float()
++
+         if model is None:
+             model = super().model_provider_func()
+ 
+@@ -561,7 +565,8 @@
+ 
+                 self.torch_platform.empty_cache()
+ 
+-                grad_norm, lr_list = self.optimizer_step()
++                from fastwam_update_audit import observe_update
++                grad_norm, lr_list = observe_update(self)
+                 data = {
+                     "actor/grad_norm": grad_norm,
+                     "actor/lr": lr_list[0],
