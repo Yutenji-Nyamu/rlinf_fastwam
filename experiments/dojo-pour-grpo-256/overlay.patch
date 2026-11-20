@@ -1,0 +1,278 @@
+--- a/tools/dojo_grpo/pair_owner.py
++++ b/tools/dojo_grpo/pair_owner.py
+@@ -19,3 +19,4 @@
+ sys.path.insert(0, "/data/chenyiteng/deployment-20261008/bc-signal-tau-v1/ops")
+-from common import exact_signal, gpus, proc, read, same, save
++from common import admission_card, exact_signal, gpus, proc, read, same, save
++from pour_protocol import sample_device_memory
+ 
+@@ -26,4 +27,3 @@
+     root = Path(plan["training_source"])
+-    sys.path.insert(0, str(root / "tools/rlt_disk_fallback"))
+-    from priority_pair_handoff import handoff
++    cards = list(plan["gpus"])
+ 
+@@ -74,12 +74,2 @@
+         raise SystemExit(143)
+-
+-    def take_cards(cards):
+-        nonlocal registered
+-        directory = d / (d.name + "-handoff-" + "".join(map(str, cards)))
+-        directory.mkdir()
+-        reservations = {
+-            str(g): {"identity": me, "release": str(d / "released.json")} for g in cards
+-        }
+-        handoff(directory, cards, me, reservations=reservations)
+-        registered = True
+ 
+@@ -98,3 +88,3 @@
+             ],
+-            dict(training_env, CUDA_VISIBLE_DEVICES="6"),
++            dict(training_env, CUDA_VISIBLE_DEVICES=str(cards[0])),
+         )
+@@ -102,3 +92,3 @@
+             os.environ,
+-            CUDA_VISIBLE_DEVICES="7",
++            CUDA_VISIBLE_DEVICES=str(cards[1]),
+             XLA_PYTHON_CLIENT_MEM_FRACTION="0.25",
+@@ -144,10 +134,19 @@
+     try:
+-        assert os.getuid() == 1003 and plan["gpus"] == [6, 7]
+-        assert (Path(plan["model"]) / "conversion-receipt.json").is_file()
+-        status("HANDOFF_FROM_RLT")
+-        # Keep useful RLT work on GPU7 during GPU6 simulator construction/reset.
+-        staged = bool(plan.get("parity_source")) and all(
+-            int(plan.get("render_gpus", {}).get(str(g), g)) == 6 for g in [6, 7]
+-        )
+-        take_cards([6] if staged else [6, 7])
++        assert len(cards) == 2 and len(set(cards)) == 2
++        status("WAIT_PREPARED_PAIR")
++        while not (d / "registered.json").exists():
++            time.sleep(0.2)
++        assert read(d / "registered.json")["identity"] == me
++        registered = True
++        while any(same(who) for who in plan["predecessors"]):
++            time.sleep(0.25)
++        deadline = time.monotonic() + 240
++        while True:
++            snapshot = gpus()
++            if all(not admission_card(snapshot[g], plan["admission"][str(g)])["processes"] for g in cards):
++                break
++            if time.monotonic() > deadline:
++                raise TimeoutError("Predecessor GPU cleanup; see actual device occupancy")
++            time.sleep(0.5)
++        sample_device_memory(d, cards)
+         parity = None
+@@ -164,3 +163,3 @@
+         native = []
+-        for g in [6, 7]:
++        for g in cards:
+             render_gpu = int(plan.get("render_gpus", {}).get(str(g), g))
+@@ -173,3 +172,3 @@
+                 ROBODOJO_RENDER_GPU=str(render_gpu),
+-                ROBODOJO_RUN_ID=f"dojo-grpo-1103-g{g}",
++                ROBODOJO_RUN_ID=f"{d.name}-g{g}",
+                 XDG_CACHE_HOME=str(cache / "xdg"),
+@@ -194,3 +193,3 @@
+                 "--task_name",
+-                "put_bottles_into_dustbin",
++                plan["task"],
+                 "--num_envs",
+@@ -239,3 +238,3 @@
+         deadline = time.monotonic() + 900
+-        while not all((d / f"rpc/gpu{g}.sock").exists() for g in [6, 7]):
++        while not all((d / f"rpc/gpu{g}.sock").exists() for g in cards):
+             assert all(p.poll() is None for p in native), (
+@@ -243,3 +242,3 @@
+             )
+-            for g in [6, 7]:
++            for g in cards:
+                 with (d / f"native-g{g}.log").open("rb") as stream:
+@@ -260,3 +259,3 @@
+         owned = (
+-            {read(d / f"native-g{g}-child.json")["pid"] for g in (6, 7)}
++            {read(d / f"native-g{g}-child.json")["pid"] for g in cards}
+             if plan.get("fresh_process_per_wave")
+@@ -268,3 +267,3 @@
+             for r in card["processes"]
+-            if r["pid"] in owned and g not in [6, 7]
++            if r["pid"] in owned and g not in cards
+         ]
+@@ -283,3 +282,3 @@
+                 for process in gpu.findall("processes/process_info"):
+-                    if int(process.findtext("pid")) not in owned or index in [6, 7]:
++                    if int(process.findtext("pid")) not in owned or index in cards:
+                         continue
+@@ -345,3 +344,3 @@
+                 ],
+-                dict(training_env, CUDA_VISIBLE_DEVICES="6"),
++                dict(training_env, CUDA_VISIBLE_DEVICES=str(cards[0])),
+             )
+@@ -349,3 +348,3 @@
+                 wait(comparison, 600)
+-                for g in [6, 7]:
++                for g in cards:
+                     with Client(
+@@ -372,5 +371,2 @@
+         # Do not run a formal job if the model/environment contract failed.
+-        if staged:
+-            status("HANDOFF_GPU7_BEFORE_TRAINING")
+-            take_cards([7])
+         if plan.get("accepted_smoke"):
+@@ -414,3 +410,3 @@
+             time.sleep(0.5)
+-        status("FORMAL_TRAINING", rounds=200)
++        status("FORMAL_TRAINING", rounds=plan["rounds"], task=plan["task"])
+         wait(
+@@ -474 +470,2 @@
+     main(sys.argv[1])
++
+--- a/tools/dojo_grpo/native_entry.py
++++ b/tools/dojo_grpo/native_entry.py
+@@ -238,2 +238,7 @@
+         self.last_obs = self.observations()
++        self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
++        self.wave_recorded = False
++        prompts = self.last_obs["task_descriptions"]
++        if any(len(set(prompts[j:j+group])) != 1 for j in range(0, self.n, group)):
++            raise RuntimeError("Instructions differ within a GRPO layout group")
+         states = self.last_obs["states"].reshape(-1, group, 14)
+@@ -251,2 +256,15 @@
+         audit["objects"] = object_audit
++        if self.cfg["task"] == "pour_liquid_into_cup":
++            manager = self.env.scene_manager.layout_manager
++            particle_counts = []
++            for idx in range(self.n):
++                name = manager.get_instance_name(label="wine", env_idx=idx)
++                fluid = manager.get_scene_object(inst_name=name, env_idx=idx)
++                points = np.asarray(fluid.get_particle_positions()[0])
++                if points.size == 0 or not np.isfinite(points).all():
++                    raise RuntimeError("Invalid liquid particle state at reset")
++                particle_counts.append(len(points))
++            audit["particle_counts"] = particle_counts
++            if any(len(set(particle_counts[j:j+group])) > 1 for j in range(0, self.n, group)):
++                raise RuntimeError("Liquid quantity differs within a GRPO layout group")
+         if gap > 0.01:
+@@ -312,2 +330,9 @@
+         rewards, terms, truncs = terminal_arrays(before, dones, success)
++        if dones[:, -1].all() and not self.wave_recorded:
++            record = {"time": time.time(), "mode": self.mode, "rows": [
++                {"layout": int(self.wave_layouts[i]), "success": bool(success[i, -1]),
++                 "actions": int(self.env.take_action_cnt[i])} for i in range(self.n)]}
++            with (self.output / "completed-waves.jsonl").open("a") as stream:
++                stream.write(json.dumps(record) + "\n")
++            self.wave_recorded = True
+         self.progress("chunk_complete", successes=int(success[:, -1].sum()))
+@@ -424 +449,2 @@
+     main()
++
+--- a/tools/dojo_grpo/training_entry.py
++++ b/tools/dojo_grpo/training_entry.py
+@@ -61,2 +61,17 @@
+     EmbodiedRunner._save_checkpoint = save_latest
++    from pour_protocol import standard_evaluation
++    original_evaluate_run = EmbodiedRunner.evaluate
++
++    def evaluate_with_layouts(self):
++        started = time.time()
++        metrics = original_evaluate_run(self)
++        if phase != "final_eval":
++            score = standard_evaluation(d, plan["gpus"], started, 25)
++            score.update(round=self.global_step, seed=1)
++            with (d / "standard-evaluations.jsonl").open("a") as stream:
++                stream.write(json.dumps(score) + "\n")
++            metrics["standard_success_25"] = score["successes"] / 25
++        return metrics
++
++    EmbodiedRunner.evaluate = evaluate_with_layouts
+     original_run = EmbodiedRunner.run
+@@ -120,3 +135,3 @@
+                 scores = [
+-                    float(v) for k, v in metrics.items() if k.endswith("success_once")
++                    float(v) for k, v in metrics.items() if k.endswith("standard_success_25")
+                 ]
+@@ -140,13 +155,11 @@
+                         # A peak survives later full-checkpoint rolling deletion.
+-                        protected = (
+-                            Path(plan["protected_output"])
+-                            / f"global_step_{self.global_step}"
+-                        )
+-                        protected.mkdir(parents=True, exist_ok=False)
+-                        shutil.copy2(
++                        protected = Path(plan["protected_output"]) / "best"
++                        protected.mkdir(parents=True, exist_ok=True)
++                        os.link(
+                             checkpoint / "actor/model_state_dict/full_weights.pt",
+-                            protected / "full_weights.pt",
+-                        )
++                            protected / "full_weights.next",
++                        )
++                        os.replace(protected / "full_weights.next", protected / "full_weights.pt")
+                         shutil.copytree(
+-                            Path(plan["model"]) / "assets", protected / "assets"
++                            Path(plan["model"]) / "assets", protected / "assets", dirs_exist_ok=True
+                         )
+@@ -157,3 +170,3 @@
+                             "protected": str(protected),
+-                            "task": "put_bottles_into_dustbin",
++                            "task": plan["task"],
+                         }
+@@ -212 +225,2 @@
+     main()
++
+--- a/rlinf/envs/robodojo/protocol.py
++++ b/rlinf/envs/robodojo/protocol.py
+@@ -39,2 +39,3 @@
+             )
++    pools["eval"].sort(key=lambda row: row["source_layout_id"])
+     if not all(pools.values()):
+@@ -91 +92,2 @@
+     return reward, dones & success, dones & ~success
++
+--- /dev/null
++++ b/tools/dojo_grpo/pour_protocol.py
+@@ -0,0 +1,44 @@
++"""Record per-layout results and sampled, simultaneous device memory."""
++import json
++import subprocess
++import threading
++import time
++from pathlib import Path
++
++
++def standard_evaluation(directory, cards, after, count):
++    cases = {}
++    for gpu in cards:
++        path = Path(directory) / f"native-g{gpu}" / "completed-waves.jsonl"
++        with path.open() as stream:
++            for line in stream:
++                batch = json.loads(line)
++                if batch["mode"] != "eval" or batch["time"] < after:
++                    continue
++                for row in batch["rows"]:
++                    cases.setdefault(row["layout"], row)
++    selected = [cases[k] for k in sorted(cases)[:count]]
++    if len(selected) != count:
++        raise ValueError(f"Only {len(selected)}/{count} distinct completed evaluation layouts")
++    return {"episodes": count, "successes": sum(r["success"] for r in selected),
++            "rows": selected, "distinct_completed": len(cases)}
++
++
++def sample_device_memory(directory, cards):
++    command = ["nvidia-smi", "--id=" + ",".join(map(str, cards)),
++               "--query-gpu=index,memory.used,memory.total,utilization.gpu",
++               "--format=csv,noheader,nounits"]
++
++    def collect():
++        with (Path(directory) / "gpu-samples.csv").open("a", buffering=1) as stream:
++            while True:
++                try:
++                    rows = subprocess.check_output(command, text=True, timeout=8)
++                    for row in rows.splitlines():
++                        stream.write(f"{time.time():.2f},{row}\n")
++                except (OSError, subprocess.SubprocessError):
++                    pass
++                time.sleep(15)
++
++    threading.Thread(target=collect, daemon=True).start()
++
