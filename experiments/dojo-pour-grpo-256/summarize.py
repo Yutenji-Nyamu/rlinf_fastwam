@@ -19,16 +19,20 @@ def write(path, payload):
 cards = [5, 6]
 gpus = {}
 waves = {}
+train_reset = {}
 for card in cards:
     folder = root / f"native-g{card}"
     progress = read(folder / "progress.json")
     audits = read(folder / "reset-audit.json")
     counts = progress.get("counts", [])
+    during_reset = progress.get("phase") == "reset_started"
+    if not during_reset and audits.get("mode") == "train" and audits.get("group_size") == 8:
+        train_reset[card] = audits
     waves[card] = rows(folder / "completed-waves.jsonl")
     gpus[card] = dict(phase=progress.get("phase"), mode=progress.get("mode", audits.get("mode")),
-                      slots=len(audits.get("layout_ids", [])),
-                      action_range=([min(counts[:len(audits.get("layout_ids", []))] or counts), max(counts)] if counts else []),
-                      completed_waves=len(waves[card]), group=audits.get("group_size"))
+                      slots=len((progress if during_reset else audits).get("layout_ids", [])),
+                      action_range=([min(counts[:len(audits.get("layout_ids", []))] or counts), max(counts)] if counts and not during_reset else []),
+                      completed_waves=len(waves[card]), group=None if during_reset else audits.get("group_size"))
 
 mem_path = root / "gpu-samples.csv"
 mem = {g: [] for g in cards}
@@ -39,6 +43,22 @@ for gpu in cards:
     if mem[gpu]:
         gpus[gpu].update(latest_GiB=round(mem[gpu][-1] / 1024, 1),
                          peak_GiB=round(max(mem[gpu]) / 1024, 1))
+
+start_receipt = root / "training-start.json"
+if set(train_reset) == set(cards) and not start_receipt.exists():
+    summary = {}
+    for gpu, audit in train_reset.items():
+        ids = audit["layout_ids"]
+        assert len(ids) == 32 and all(len(set(ids[i:i+8])) == 1 for i in range(0,32,8))
+        summary[gpu] = dict(active_envs=len(ids), groups=len(ids)//8,
+                            layout_pool_indices=ids[::8],
+                            particles_per_env=sorted(set(audit["particle_counts"])),
+                            position_gap_m=audit["objects"]["position_max_m"],
+                            rotation_gap_deg=audit["objects"]["rotation_max_deg"],
+                            rotation_limit_deg=audit["objects"].get("rotation_limit_deg", 2.0),
+                            device_peak_so_far_GiB=gpus[gpu]["peak_GiB"])
+    write(start_receipt, dict(task="pour_liquid_into_cup", current_wave_episodes=64,
+                              trajectories_per_round=256, group_size=8, cards=summary))
 
 standard = rows(root / "standard-evaluations.jsonl")
 full = rows(root / "evaluations.jsonl")
