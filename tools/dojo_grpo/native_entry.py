@@ -236,6 +236,11 @@ class NativeLoop:
         if not all(registered):
             raise RuntimeError("Native task has no registered success conditions")
         self.last_obs = self.observations()
+        self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
+        self.wave_recorded = False
+        prompts = self.last_obs["task_descriptions"]
+        if any(len(set(prompts[j:j+group])) != 1 for j in range(0, self.n, group)):
+            raise RuntimeError("Instructions differ within a GRPO layout group")
         states = self.last_obs["states"].reshape(-1, group, 14)
         gap = float(np.abs(states - states[:, :1]).max())
         audit = {
@@ -249,6 +254,19 @@ class NativeLoop:
             "layouts": [pool[i]["digest"] for i in ids],
         }
         audit["objects"] = object_audit
+        if self.cfg["task"] == "pour_liquid_into_cup":
+            manager = self.env.scene_manager.layout_manager
+            particle_counts = []
+            for idx in range(self.n):
+                name = manager.get_instance_name(label="wine", env_idx=idx)
+                fluid = manager.get_scene_object(inst_name=name, env_idx=idx)
+                points = np.asarray(fluid.get_particle_positions()[0])
+                if points.size == 0 or not np.isfinite(points).all():
+                    raise RuntimeError("Invalid liquid particle state at reset")
+                particle_counts.append(len(points))
+            audit["particle_counts"] = particle_counts
+            if any(len(set(particle_counts[j:j+group])) > 1 for j in range(0, self.n, group)):
+                raise RuntimeError("Liquid quantity differs within a GRPO layout group")
         if gap > 0.01:
             raise RuntimeError(f"Group initial robot state mismatch: {gap}")
         save(self.output / "reset-audit.json", audit)
@@ -310,6 +328,13 @@ class NativeLoop:
         if not capture_every_action:
             self.last_obs = self.observations()
         rewards, terms, truncs = terminal_arrays(before, dones, success)
+        if dones[:, -1].all() and not self.wave_recorded:
+            record = {"time": time.time(), "mode": self.mode, "rows": [
+                {"layout": int(self.wave_layouts[i]), "success": bool(success[i, -1]),
+                 "actions": int(self.env.take_action_cnt[i])} for i in range(self.n)]}
+            with (self.output / "completed-waves.jsonl").open("a") as stream:
+                stream.write(json.dumps(record) + "\n")
+            self.wave_recorded = True
         self.progress("chunk_complete", successes=int(success[:, -1].sum()))
         return {
             "obs": self.last_obs,
@@ -422,3 +447,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -59,6 +59,21 @@ def main():
             )
 
     EmbodiedRunner._save_checkpoint = save_latest
+    from pour_protocol import standard_evaluation
+    original_evaluate_run = EmbodiedRunner.evaluate
+
+    def evaluate_with_layouts(self):
+        started = time.time()
+        metrics = original_evaluate_run(self)
+        if phase != "final_eval":
+            score = standard_evaluation(d, plan["gpus"], started, 25)
+            score.update(round=self.global_step, seed=1)
+            with (d / "standard-evaluations.jsonl").open("a") as stream:
+                stream.write(json.dumps(score) + "\n")
+            metrics["standard_success_25"] = score["successes"] / 25
+        return metrics
+
+    EmbodiedRunner.evaluate = evaluate_with_layouts
     original_run = EmbodiedRunner.run
 
     def run(self):
@@ -118,7 +133,7 @@ def main():
                 )
             if phase == "formal":
                 scores = [
-                    float(v) for k, v in metrics.items() if k.endswith("success_once")
+                    float(v) for k, v in metrics.items() if k.endswith("standard_success_25")
                 ]
                 if scores:
                     score = scores[0]
@@ -138,24 +153,22 @@ def main():
                         if not (checkpoint / "dojo-complete.json").is_file():
                             self._save_checkpoint()
                         # A peak survives later full-checkpoint rolling deletion.
-                        protected = (
-                            Path(plan["protected_output"])
-                            / f"global_step_{self.global_step}"
-                        )
-                        protected.mkdir(parents=True, exist_ok=False)
-                        shutil.copy2(
+                        protected = Path(plan["protected_output"]) / "best"
+                        protected.mkdir(parents=True, exist_ok=True)
+                        os.link(
                             checkpoint / "actor/model_state_dict/full_weights.pt",
-                            protected / "full_weights.pt",
+                            protected / "full_weights.next",
                         )
+                        os.replace(protected / "full_weights.next", protected / "full_weights.pt")
                         shutil.copytree(
-                            Path(plan["model"]) / "assets", protected / "assets"
+                            Path(plan["model"]) / "assets", protected / "assets", dirs_exist_ok=True
                         )
                         receipt = {
                             "round": self.global_step,
                             "success": score,
                             "checkpoint": str(checkpoint),
                             "protected": str(protected),
-                            "task": "put_bottles_into_dustbin",
+                            "task": plan["task"],
                         }
                         (protected / "manifest.json").write_text(
                             json.dumps(receipt, indent=2)
@@ -210,3 +223,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

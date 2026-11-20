@@ -37,6 +37,7 @@ def layout_pools(root, task):
                     "digest": digest,
                 }
             )
+    pools["eval"].sort(key=lambda row: row["source_layout_id"])
     if not all(pools.values()):
         raise ValueError("Independent train/eval native layouts are required")
     return pools
@@ -89,3 +90,4 @@ def terminal_arrays(before_done, done_by_action, success_by_action):
     )
     reward = (dones & ~previous & success).astype(np.float32)
     return reward, dones & success, dones & ~success
+
