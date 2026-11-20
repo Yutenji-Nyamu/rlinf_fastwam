@@ -11,6 +11,8 @@ Train the action expert of the official seed-1 Dojo π0.5 policy on `pour_liquid
 | Training duration | 200 rounds from the original model |
 | Evaluation | Fresh base policy first, rounds 2 and every 5 thereafter, fixed seed-1 validation layouts. Each ordinary evaluation runs 32 slots; the first 25 distinct valid layouts in official numeric order form the standard-task score. Report the full 32 separately. The paired final evaluation uses four waves. |
 
+The starting policy completed 5 of the 25 standard layouts (20%) and 8 of all 32 evaluated layouts (25%). These are the scores before the first gradient update. [Per-layout results](baseline.json)
+
 The original RoboTwin full-256 control used 64 environments, four waves, five denoising steps and a 200-action limit. This experiment retains the full-256 optimization recipe and adopts Dojo's native ten-step model and 400-action task. The rendered simulator and rollout/model workers share the pair. Sample device memory across the full phases; 32 slots per card is a trial setting, and the largest safe concurrency depends on the peak during simulation and learning.
 
 The standard and randomized variants each have an official target of 25 valid episodes per seed. This run uses the standard variant and seed 1. Initial policy uses ODE sampling with Gaussian initial noise, training uses Flow-SDE. Every group shares the initial layout, instruction and quantity of liquid. Failures during physical initialization are distinguished from a policy failing to pour.
