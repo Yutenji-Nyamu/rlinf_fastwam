@@ -17,11 +17,11 @@ def install(Runner,d,phase):
             score(self,"a")
             return self._finish_run()
         Runner.run=run
-    elif phase=="candidate_one":
+    elif phase in ("candidate_one","reference_one"):
         original_finish=Runner._finish_run
         def finish(self):
             assert self.global_step==1
-            score(self,"b")
+            score(self,"b" if phase=="candidate_one" else "a")
             return original_finish(self)
         def run(self):
             assert self.global_step==0 and self.max_steps==200

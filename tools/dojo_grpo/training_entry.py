@@ -45,7 +45,7 @@ def main():
     def evaluate_with_layouts(self):
         started = time.time()
         metrics = original_evaluate_run(self)
-        if phase not in ("final_eval","reference_eval","candidate_one"):
+        if phase not in ("final_eval","reference_eval","candidate_one","reference_one"):
             score = standard_evaluation(d, plan["gpus"], started, 25)
             score.update(round=self.global_step, seed=1)
             with (d / "standard-evaluations.jsonl").open("a") as stream:
@@ -141,7 +141,7 @@ def main():
         return metrics
 
     EmbodiedRunner._maybe_eval_and_checkpoint = evaluate_checkpoint
-    if phase in ("reference_eval","candidate_one"):
+    if phase in ("reference_eval","candidate_one","reference_one"):
         sys.path.insert(0,str(d))
         from pilot_hooks import install
         install(EmbodiedRunner,d,phase)

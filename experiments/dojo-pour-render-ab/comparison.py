@@ -23,12 +23,12 @@ def evaluation(directory, start):
     assert len(result) == 32
     return result
 
-def training(directory, results):
+def training(directory, results, after):
     layouts=[]; seconds=[]; ops=[]; successes=0; mixed=0; executed=0
     for gpu in (5,6):
         native=directory/f"native-g{gpu}"
-        waves = [w for w in records(native/"completed-waves.jsonl") if w["mode"]=="train"][:2]
-        timings = [w for w in records(native/"timing.jsonl") if w["event"]=="wave_complete" and w["mode"]=="train"][:2]
+        waves = [w for w in records(native/"completed-waves.jsonl") if w["mode"]=="train" and w["time"]>=after][:2]
+        timings = [w for w in records(native/"timing.jsonl") if w["event"]=="wave_complete" and w["mode"]=="train" and w["time"]>=after][:2]
         assert len(waves)==len(timings)==2
         for wave,t in zip(waves,timings):
             rows=wave["rows"]; assert len(rows)==32
@@ -73,14 +73,14 @@ def decide(a,b,ae,be,base):
 
 def finalize(d):
     previous=Path(read(d/"comparison-plan.json")["reference_deployment"])
-    a=training(previous,read(previous/"plan.json")["run"])
-    b=training(d,Path(read(d/"plan.json")["run"])/"pilot-b")
+    a=training(d,Path(read(d/"plan.json")["run"])/"pilot-a",read(d/"a-window.json")["start"])
+    b=training(d,Path(read(d/"plan.json")["run"])/"pilot-b",read(d/"b-window.json")["start"])
     ae,be=[read(d/f"{s}-eval.json")["rows"] for s in ("a","b")]
     base=evaluation(previous,0)
     result=dict(reference=a,candidate=b,baseline=base,eval_a=ae,eval_b=be,decision=decide(a,b,ae,be,base))
     windows=records(d/"chunk-times.jsonl") if (d/"chunk-times.jsonl").exists() else []
     result["fixed_work_100_actions_per_env"]={name:[dict(gpu=w["gpu"], generation=w["generation"],
          elapsed_step_seconds=w["action_seconds"]+w["observation_seconds"], observation_seconds=w["observation_seconds"])
-         for w in windows if w["arm"]==name and len(w["counts"])==32 and set(w["counts"])=={100}] for name in ("A","B")}
+         for w in windows if w["arm"]==name and w["time"]>=read(d/f"{name.lower()}-window.json")["start"] and len(w["counts"])==32 and set(w["counts"])=={100}] for name in ("A","B")}
     write(d/"comparison-result.json",result)
     return result["decision"]["winner"]
