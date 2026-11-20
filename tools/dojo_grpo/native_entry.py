@@ -83,9 +83,12 @@ class NativeLoop:
             mode: set(cfg.get("invalid_layouts", {}).get(mode, []))
             for mode in self.pools
         }
+        self.study_stage = json.loads((self.output.parent/"active-renderer.json").read_text()).get("stage","reference")
         previous = self.output / "invalid-resets.jsonl"
         if previous.is_file():
             for row in map(json.loads, previous.read_text().splitlines()):
+                if row.get("study_stage") != self.study_stage:
+                    continue
                 if row["mode"] == "train" and cfg["task"] == "pour_liquid_into_cup":
                     continue
                 self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
@@ -190,6 +193,11 @@ class NativeLoop:
         self.env.seed_manager.ed_idx = len(pool)
         self.env.seed_manager.idx = 0
         self.env.seed_manager._current_batch_seeds = None
+        self.train_renderer = json.loads((self.output.parent/"active-renderer.json").read_text())["training"]
+        if self.train_renderer not in ("native","chunk"):
+            raise ValueError("Unknown train renderer")
+        with (self.output/"requested-layouts.jsonl").open("a") as stream:
+            stream.write(json.dumps(dict(time=time.time(),mode=self.mode,requested=requested_ids,renderer=self.train_renderer if self.mode=="train" else "native"))+"\n")
         self.progress("reset_started", mode=self.mode, layout_ids=ids)
         start = time.monotonic()
         from initial_state import audit_objects
@@ -222,6 +230,7 @@ class NativeLoop:
                     json.dumps(
                         {
                             "mode": self.mode,
+                            "study_stage": self.study_stage,
                             "attempt": attempt,
                             "layout_ids": ids,
                             "bad_slots": sorted(bad),
@@ -302,11 +311,10 @@ class NativeLoop:
                 "capture_every_action", self.cfg.get("capture_every_action", True)
             )
         )
-        decision = self.output.parent / 'trial/result.json'
-        if self.cfg.get('render_trial'):
-            skip = request.get('trial_skip', False)
+        if self.mode == "train":
+            skip = self.train_renderer == "chunk"
         else:
-            skip = self.mode == 'train' and decision.is_file() and json.loads(decision.read_text()).get('accept_train', False)
+            skip = False
         step_start = time.monotonic()
         before = np.asarray(self.env.end_flag[: self.n], dtype=bool).copy()
         dones = np.zeros((self.n, horizon), bool)

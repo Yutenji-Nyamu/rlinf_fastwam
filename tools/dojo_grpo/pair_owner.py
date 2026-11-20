@@ -226,10 +226,6 @@ def main(directory):
                     str(render_gpu),
                     "--",
                 ] + command
-            small_cmd=list(command)
-            small_cmd[small_cmd.index("--num_envs")+1]=str(len(read(d/'trial/layouts.json')))
-            small_env=dict(e, DOJO_GRPO_NATIVE_CONFIG=str(d/f'trial/g{g}.json'))
-            small.append(launch(f'trial-native-{g}',small_cmd,small_env,plan['native_repo']))
             if plan.get("fresh_process_per_wave"):
                 command = [
                     plan["python"],
@@ -240,19 +236,6 @@ def main(directory):
                     str(g),
                 ] + command
             full.append((g,command,e))
-        status("RENDER_CROSSOVER", layouts=read(d/'trial/layouts.json'))
-        try:
-            wait(launch("render-trial",[plan["python"],"-uB",str(d/'render_trial.py'),str(d)],dict(training_env,CUDA_VISIBLE_DEVICES=str(cards[0]))),1800)
-        except Exception as exc:
-            save(d/'trial/error.json',dict(error=str(exc)))
-        finally:
-            for child in small:
-                if child.poll() is None:child.terminate()
-            for child in small:
-                try:child.wait(timeout=12)
-                except subprocess.TimeoutExpired:
-                    child.kill()
-                    child.wait(timeout=20)
         for g,command,e in full:
             native.append(launch(f"native-g{g}", command, e, plan["native_repo"]))
         status("NATIVE_STARTING", envs_per_card=plan["native_envs_per_card"])
@@ -429,6 +412,18 @@ def main(directory):
             if time.monotonic() > deadline:
                 raise TimeoutError("Formal acceptance not supplied; restore RLT")
             time.sleep(0.5)
+        sys.path.insert(0,str(d))
+        from comparison import finalize,write
+        def pilot(phase,limit):
+            status(phase.upper())
+            wait(launch(phase,[plan["python"],"-uB",str(root/"tools/dojo_grpo/training_entry.py"),
+                               "--config-path",str(d/"config"),"--config-name",phase],training_env),limit)
+        write(d/"active-renderer.json",{"training":"native"})
+        pilot("reference_eval",4800)
+        write(d/"active-renderer.json",{"training":"chunk","stage":"candidate"})
+        pilot("candidate_one",12000)
+        selected=finalize(d)
+        write(d/"active-renderer.json",{"training":selected,"stage":"formal"})
         status("FORMAL_TRAINING", rounds=plan["rounds"], task=plan["task"])
         wait(
             launch(
