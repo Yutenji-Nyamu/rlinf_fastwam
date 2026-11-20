@@ -77,9 +77,8 @@ class NativeLoop:
             "observation_seconds": 0.0,
         }
         self.trial_profile = {}
-        if cfg.get('render_trial'):
-            from render_profile import instrument
-            instrument(self)
+        from render_profile import instrument
+        instrument(self)
         self.invalid_layouts = {
             mode: set(cfg.get("invalid_layouts", {}).get(mode, []))
             for mode in self.pools
@@ -263,6 +262,7 @@ class NativeLoop:
         self.last_obs = self.observations()
         self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
         self.wave_recorded = False
+        self.trial_profile.clear()
         prompts = self.last_obs["task_descriptions"]
         if any(len(set(prompts[j:j+group])) != 1 for j in range(0, self.n, group)):
             raise RuntimeError("Instructions differ within a GRPO layout group")
@@ -354,7 +354,7 @@ class NativeLoop:
             with (self.output / "completed-waves.jsonl").open("a") as stream:
                 stream.write(json.dumps(record) + "\n")
             with (self.output / "timing.jsonl").open("a") as stream:
-                stream.write(json.dumps({"event":"wave_complete", "time":time.time(), "mode":self.mode, **self.totals})+"\n")
+                stream.write(json.dumps({"event":"wave_complete", "time":time.time(), "mode":self.mode, "timed_operations":dict(self.trial_profile), **self.totals})+"\n")
             self.wave_recorded = True
         self.progress("chunk_complete", successes=int(success[:, -1].sum()))
         return {

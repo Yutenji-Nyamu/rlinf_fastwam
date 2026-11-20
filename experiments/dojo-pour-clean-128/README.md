@@ -10,3 +10,6 @@ The deployment places render_trial.py beside its plan, CPU preflight and trial/l
 
 [RoboDojo environment](https://github.com/RoboDojo-Benchmark/RoboDojo/blob/main/src/eval_client/eval_env.py) · [XPolicyLab π0.5 inference](https://github.com/XPolicyLab/XPolicyLab/blob/main/policy/Pi_05/model.py) · [Camera synchronization](https://github.com/RoboDojo-Benchmark/RoboDojo/blob/main/env/camera_manager/capture/render_sync.py) · [Isaac Sim 5.1 performance handbook](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/reference_material/sim_performance_optimization_handbook.html)
 
+## Measured run
+
+[Results and formal settings](./measured.md) · [Native observations and episode outcomes](./observed-render.json). Formal training uses per-action rendering.
