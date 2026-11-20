@@ -34,3 +34,25 @@ class StandardEvaluationTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "32/33"):
                 standard_evaluation(root, [5, 6], 2, 33)
 
+    def test_pouring_groups_keep_position_and_native_settling_limits(self):
+        import math
+        from types import SimpleNamespace
+
+        from initial_state import audit_objects
+        from native_entry import group_rotation_limit
+
+        def audit(dx, angle):
+            a = math.radians(angle) / 2
+            poses = [([0, 0, 0], [1, 0, 0, 0]), ([dx, 0, 0], [math.cos(a), 0, 0, math.sin(a)])]
+            manager = SimpleNamespace(instance_type_by_env=[{"b": "rigid"}] * 2,
+                                      decode_inst_name=lambda _: ("bottle",),
+                                      get_instance_pose=lambda env_idx, **kw: poses[env_idx])
+            env = SimpleNamespace(scene_manager=SimpleNamespace(layout_manager=manager))
+            return audit_objects(env, 2, 2, raise_on_mismatch=False,
+                                 rotation_limit_deg=group_rotation_limit("pour_liquid_into_cup", "train"))
+        self.assertEqual(group_rotation_limit("put_bottles_into_dustbin", "train"), 2.0)
+        self.assertEqual(group_rotation_limit("pour_liquid_into_cup", "eval"), 2.0)
+        self.assertEqual(audit(0.004, 5.33)["bad_slots"], [])
+        self.assertEqual(audit(0.006, 5.33)["bad_slots"], [0, 1])
+        self.assertEqual(audit(0.004, 11.0)["bad_slots"], [0, 1])
+

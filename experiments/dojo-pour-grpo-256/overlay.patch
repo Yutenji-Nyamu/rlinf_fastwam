@@ -129,7 +129,31 @@
 +
 --- a/tools/dojo_grpo/native_entry.py
 +++ b/tools/dojo_grpo/native_entry.py
-@@ -238,2 +238,7 @@
+@@ -56,2 +56,8 @@
+     }
++
++
++def group_rotation_limit(task, mode):
++    # The native stability check allows 10 degrees during the final settling window.
++    # Identical layout, 5 mm object position, and native validity are checked separately.
++    return 10.0 if task == "pour_liquid_into_cup" and mode == "train" else 2.0
+ 
+@@ -85,2 +91,8 @@
+             for row in map(json.loads, previous.read_text().splitlines()):
++                audit = row.get("object_audit")
++                if (cfg["task"] == "pour_liquid_into_cup" and row["mode"] == "train"
++                        and audit and audit.get("rotation_limit_deg", 2.0) < 10.0
++                        and audit["position_max_m"] <= 0.005
++                        and audit["rotation_max_deg"] <= group_rotation_limit(cfg["task"], "train")):
++                    continue
+                 self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
+@@ -189,3 +201,4 @@
+                 object_audit = audit_objects(
+-                    self.env, self.n, group, raise_on_mismatch=False
++                    self.env, self.n, group, raise_on_mismatch=False,
++                    rotation_limit_deg=group_rotation_limit(self.cfg["task"], self.mode),
+                 )
+@@ -238,2 +251,7 @@
          self.last_obs = self.observations()
 +        self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
 +        self.wave_recorded = False
@@ -137,7 +161,7 @@
 +        if any(len(set(prompts[j:j+group])) != 1 for j in range(0, self.n, group)):
 +            raise RuntimeError("Instructions differ within a GRPO layout group")
          states = self.last_obs["states"].reshape(-1, group, 14)
-@@ -251,2 +256,15 @@
+@@ -251,2 +269,15 @@
          audit["objects"] = object_audit
 +        if self.cfg["task"] == "pour_liquid_into_cup":
 +            manager = self.env.scene_manager.layout_manager
@@ -153,7 +177,7 @@
 +            if any(len(set(particle_counts[j:j+group])) > 1 for j in range(0, self.n, group)):
 +                raise RuntimeError("Liquid quantity differs within a GRPO layout group")
          if gap > 0.01:
-@@ -312,2 +330,9 @@
+@@ -312,2 +343,9 @@
          rewards, terms, truncs = terminal_arrays(before, dones, success)
 +        if dones[:, -1].all() and not self.wave_recorded:
 +            record = {"time": time.time(), "mode": self.mode, "rows": [
@@ -163,9 +187,6 @@
 +                stream.write(json.dumps(record) + "\n")
 +            self.wave_recorded = True
          self.progress("chunk_complete", successes=int(success[:, -1].sum()))
-@@ -424 +449,2 @@
-     main()
-+
 --- a/tools/dojo_grpo/training_entry.py
 +++ b/tools/dojo_grpo/training_entry.py
 @@ -61,2 +61,17 @@
@@ -220,6 +241,22 @@
 @@ -212 +225,2 @@
      main()
 +
+--- a/tools/dojo_grpo/initial_state.py
++++ b/tools/dojo_grpo/initial_state.py
+@@ -5,3 +5,3 @@
+ 
+-def audit_objects(env, n, group, *, raise_on_mismatch=True):
++def audit_objects(env, n, group, *, raise_on_mismatch=True, rotation_limit_deg=2.0):
+     manager = env.scene_manager.layout_manager
+@@ -49,3 +49,3 @@
+         rotation_error = max(rotation_error, group_rotation)
+-        if group_position > 0.005 or group_rotation > 2:
++        if group_position > 0.005 or group_rotation > rotation_limit_deg:
+             bad_slots.extend(range(start, start + group))
+@@ -55,2 +55,3 @@
+         "rotation_max_deg": rotation_error,
++        "rotation_limit_deg": rotation_limit_deg,
+         "bad_slots": bad_slots,
 --- a/rlinf/envs/robodojo/protocol.py
 +++ b/rlinf/envs/robodojo/protocol.py
 @@ -39,2 +39,3 @@

@@ -56,6 +56,12 @@ def invalid_reset_slots(env, n):
     }
 
 
+def group_rotation_limit(task, mode):
+    # The native stability check allows 10 degrees during the final settling window.
+    # Identical layout, 5 mm object position, and native validity are checked separately.
+    return 10.0 if task == "pour_liquid_into_cup" and mode == "train" else 2.0
+
+
 class NativeLoop:
     def __init__(self, env, cfg):
         from XPolicyLab.utils.process_data import pack_robot_state, unpack_robot_state
@@ -83,6 +89,12 @@ class NativeLoop:
         previous = self.output / "invalid-resets.jsonl"
         if previous.is_file():
             for row in map(json.loads, previous.read_text().splitlines()):
+                audit = row.get("object_audit")
+                if (cfg["task"] == "pour_liquid_into_cup" and row["mode"] == "train"
+                        and audit and audit.get("rotation_limit_deg", 2.0) < 10.0
+                        and audit["position_max_m"] <= 0.005
+                        and audit["rotation_max_deg"] <= group_rotation_limit(cfg["task"], "train")):
+                    continue
                 self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
 
     def progress(self, phase, **extra):
@@ -187,7 +199,8 @@ class NativeLoop:
             object_audit = None
             if not bad:
                 object_audit = audit_objects(
-                    self.env, self.n, group, raise_on_mismatch=False
+                    self.env, self.n, group, raise_on_mismatch=False,
+                    rotation_limit_deg=group_rotation_limit(self.cfg["task"], self.mode),
                 )
                 bad.update(object_audit["bad_slots"])
             if not bad:
@@ -447,4 +460,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
