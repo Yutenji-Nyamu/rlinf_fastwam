@@ -46,7 +46,7 @@ def training(directory, results):
     times={k:val("time/"+k) for k in ("sync_weights","generate_rollouts","cal_adv_and_returns","actor_training")}
     extras={k:val(k) for k in events.Tags()["scalars"] if k in ("train/grad_norm","train/actor/grad_norm","train/lr","train/actor_loss","train/loss","rollout/advantages_std")}
     return dict(episodes=128,successes=successes,mixed_groups=mixed,groups=16,executed=executed,group_layouts=layouts,
-                train_seconds=val('time/step'),sampler_and_update=sum(times.values()),runner_seconds=times,update_metrics=extras,native_wave_seconds=seconds,native_ops=ops)
+                train_seconds=val('time/step'),successes_per_hour=successes*3600/val('time/step'),mixed_groups_per_hour=mixed*3600/val('time/step'),env_actions_per_second=executed/val('time/step'),sampler_and_update=sum(times.values()),runner_seconds=times,update_metrics=extras,native_wave_seconds=seconds,native_ops=ops)
 
 def decide(a,b,ae,be,base):
     # A layout replaced during a native reset is comparable only to the same realized layout.
@@ -78,5 +78,9 @@ def finalize(d):
     ae,be=[read(d/f"{s}-eval.json")["rows"] for s in ("a","b")]
     base=evaluation(previous,0)
     result=dict(reference=a,candidate=b,baseline=base,eval_a=ae,eval_b=be,decision=decide(a,b,ae,be,base))
+    windows=records(d/"chunk-times.jsonl") if (d/"chunk-times.jsonl").exists() else []
+    result["fixed_work_100_actions_per_env"]={name:[dict(gpu=w["gpu"], generation=w["generation"],
+         elapsed_step_seconds=w["action_seconds"]+w["observation_seconds"], observation_seconds=w["observation_seconds"])
+         for w in windows if w["arm"]==name and len(w["counts"])==32 and set(w["counts"])=={100}] for name in ("A","B")}
     write(d/"comparison-result.json",result)
     return result["decision"]["winner"]
