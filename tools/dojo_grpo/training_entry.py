@@ -69,18 +69,8 @@ def main():
             )
             return self._finish_run()
         if self.global_step == 0 and phase == "formal":
-            study=json.loads((d/"comparison-plan.json").read_text())
-            previous=Path(study["reference_deployment"])
-            assert json.loads((previous/"plan.json").read_text())["model"]==plan["model"]
-            ref=next(json.loads(line) for line in (previous/"evaluations.jsonl").read_text().splitlines()
-                     if json.loads(line)["round"]==0)
-            standard=next(json.loads(line) for line in (previous/"standard-evaluations.jsonl").read_text().splitlines()
-                          if json.loads(line)["round"]==0)
-            assert int(ref["metrics"]["num_trajectories"])==32 and standard["episodes"]==25
-            for name,row in (("evaluations.jsonl",ref),("standard-evaluations.jsonl",standard)):
-                with (d/name).open("a") as stream:
-                    stream.write(json.dumps({**row,"baseline_source":"measured common initial policy before A/B"})+"\n")
-            self.metric_logger.log(data={f"eval/{k}":v for k,v in ref["metrics"].items()},step=0)
+            from initial_evaluation import run_baseline
+            run_baseline(self, original_evaluate_run, d, plan)
         return original_run(self)
 
     EmbodiedRunner.run = run

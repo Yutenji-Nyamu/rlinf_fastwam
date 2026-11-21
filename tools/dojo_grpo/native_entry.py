@@ -89,7 +89,7 @@ class NativeLoop:
             for row in map(json.loads, previous.read_text().splitlines()):
                 if row.get("study_stage") != self.study_stage:
                     continue
-                if row["mode"] == "train" and cfg["task"] == "pour_liquid_into_cup":
+                if row["mode"] == "train" and cfg.get("use_native_layout_check", cfg["task"] == "pour_liquid_into_cup"):
                     continue
                 self.invalid_layouts[row["mode"]].update(row["invalid_layouts"])
 
@@ -165,8 +165,8 @@ class NativeLoop:
         assert self.n <= self.env.num_envs
         assert all(len(set(ids[i : i + group])) == 1 for i in range(0, self.n, group))
         pool = self.pools[self.mode]
-        native_pour = self.cfg["task"] == "pour_liquid_into_cup"
-        native_train = native_pour and self.mode == "train"
+        native_layout_check = self.cfg.get("use_native_layout_check", self.cfg["task"] == "pour_liquid_into_cup")
+        native_train = native_layout_check and self.mode == "train"
         invalid = self.invalid_layouts[self.mode]
         spare_order = None
         if native_train:
@@ -213,7 +213,7 @@ class NativeLoop:
                     raise
             bad = invalid_reset_slots(self.env, self.n)
             object_audit = None
-            if not bad and not native_pour:
+            if not bad and not native_layout_check:
                 object_audit = audit_objects(
                     self.env, self.n, group, raise_on_mismatch=False,
                     rotation_limit_deg=2.0,
@@ -288,7 +288,7 @@ class NativeLoop:
             "layouts": [pool[i]["digest"] for i in ids],
         }
         audit["objects"] = object_audit
-        if not native_pour and gap > 0.01:
+        if not native_layout_check and gap > 0.01:
             raise RuntimeError(f"Group initial robot state mismatch: {gap}")
         save(self.output / "reset-audit.json", audit)
         probe = self.output / "initial-observation.npz"

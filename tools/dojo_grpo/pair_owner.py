@@ -412,21 +412,7 @@ def main(directory):
             if time.monotonic() > deadline:
                 raise TimeoutError("Formal acceptance not supplied; restore RLT")
             time.sleep(0.5)
-        sys.path.insert(0,str(d))
-        from comparison import finalize,write
-        def pilot(phase,limit):
-            status(phase.upper())
-            wait(launch(phase,[plan["python"],"-uB",str(root/"tools/dojo_grpo/training_entry.py"),
-                               "--config-path",str(d/"config"),"--config-name",phase],training_env),limit)
-        write(d/"active-renderer.json",{"training":"chunk","stage":"candidate"})
-        write(d/"b-window.json",{"start": time.time()})
-        pilot("candidate_one",12000)
-        write(d/"active-renderer.json",{"training":"native","stage":"reference"})
-        write(d/"a-window.json",{"start": time.time()})
-        pilot("reference_one",12000)
-        selected=finalize(d)
-        write(d/"active-renderer.json",{"training":selected,"stage":"formal"})
-        status("FORMAL_TRAINING", rounds=plan["rounds"], task=plan["task"])
+        status("INITIAL_EVALUATION", episodes=128, completed=0, task=plan["task"])
         wait(
             launch(
                 "formal-driver",
