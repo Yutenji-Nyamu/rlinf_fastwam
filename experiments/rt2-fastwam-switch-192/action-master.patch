@@ -16,7 +16,7 @@
                  self.torch_platform.empty_cache()
  
 -                grad_norm, lr_list = self.optimizer_step()
-+                from fastwam_update_audit import observe_update
++                from rlinf.workers.actor.fastwam_update_audit import observe_update
 +                grad_norm, lr_list = observe_update(self)
                  data = {
                      "actor/grad_norm": grad_norm,
