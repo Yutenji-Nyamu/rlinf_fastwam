@@ -1,0 +1,90 @@
+--- a/robotwin/envs/vector_env.py
++++ b/rlinf/envs/robotwin/affine_vector_env.py
+@@ -6,6 +6,7 @@
+ import cv2
+ import torch
+ import yaml
++import robotwin.envs.vector_env
+ from envs import *
+ 
+ sys.path.append("../../")
+@@ -319,21 +320,22 @@
+ 
+         self.global_lock = threading.Lock()
+ 
+-        self.env_thread_pool = ThreadPoolExecutor(max_workers=n_envs)
++        self._lanes = []
+ 
+         self._init_envs()
+ 
+     def _init_envs(self):
++        self._lanes = [ThreadPoolExecutor(max_workers=1) for _ in range(self.n_envs)]
+         for i in range(self.n_envs):
+-            sub_env = SubEnv(
++            sub_env = self._lanes[i].submit(SubEnv,
+                 env_id=i,
+                 task_name=self.task_name,
+                 args=self.args,
+                 env_seed=self.env_seeds[i] if self.env_seeds else None,
+                 instruction_type=self.instruction_type,
+                 global_lock=self.global_lock,
+-            )
+-            sub_env.setup_task()
++            ).result()
++            self._lanes[i].submit(sub_env.setup_task).result()
+             self.envs.append(sub_env)
+ 
+     def transform(self, results):
+@@ -357,7 +359,7 @@
+ 
+         step_futures = {}
+         for i in range(self.n_envs):
+-            future = self.env_thread_pool.submit(self.envs[i].step, actions[i])
++            future = self._lanes[i].submit(self.envs[i].step, actions[i])
+             step_futures[i] = future
+ 
+         results = []
+@@ -396,7 +398,7 @@
+                     seed_idx = env_idx.index(idx)
+                     seed = env_seeds[seed_idx]
+ 
+-                future = self.env_thread_pool.submit(
++                future = self._lanes[idx].submit(
+                     self.envs[idx].reset, env_seed=seed
+                 )
+                 reset_futures[idx] = future
+@@ -411,18 +413,19 @@
+ 
+     def get_obs(self):
+         obs_venv = []
+-        for env in self.envs:
+-            obs_venv.append(env.get_obs())
++        for lane, env in zip(self._lanes, self.envs):
++            obs_venv.append(lane.submit(env.get_obs).result())
+ 
+         return obs_venv
+ 
+     def close(self, clear_cache=True):
+-        for env in self.envs:
+-            env.close(clear_cache=clear_cache)
++        for lane, env in zip(self._lanes, self.envs):
++            lane.submit(env.close, clear_cache=clear_cache).result()
+ 
+         if clear_cache:
+-            for env in self.envs:
+-                env = None
++            for lane in self._lanes:
++                lane.shutdown(wait=True)
++            self._lanes = []
+             self.envs = []
+             gc.collect()
+             torch.cuda.empty_cache()
+@@ -431,7 +434,7 @@
+         assert len(seeds) == self.n_envs
+         check_futures = {}
+         for i in range(self.n_envs):
+-            future = self.env_thread_pool.submit(self.envs[i].check_seed, seeds[i])
++            future = self._lanes[i].submit(self.envs[i].check_seed, seeds[i])
+             check_futures[i] = future
+ 
+         results = [None] * self.n_envs

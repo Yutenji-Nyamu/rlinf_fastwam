@@ -1,0 +1,11 @@
+--- a/tools/dsrl_rlt_warmstart/rlt_training_entry.py
++++ b/tools/dsrl_rlt_warmstart/rlt_training_entry.py
+@@ -116,7 +116,7 @@
+         )
+         removed = []
+         for old in root.glob("global_step_*"):
+-            if old == current or not (old / "dojo-complete.json").is_file():
++            if old.is_symlink() or old == current or not (old / "dojo-complete.json").is_file():
+                 continue
+             assert old.resolve().is_relative_to(root)
+             for f in old.rglob("*"):

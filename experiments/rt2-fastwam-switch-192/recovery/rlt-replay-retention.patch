@@ -1,0 +1,15 @@
+--- a/tools/dsrl_rlt_warmstart/rlt_training_entry.py
++++ b/tools/dsrl_rlt_warmstart/rlt_training_entry.py
+@@ -115,10 +115,10 @@
+             json.dumps({"step": self.global_step, "time": time.time()})
+         )
+         removed = []
+-        completed = sorted((p for p in root.glob("global_step_*") if (p / "dojo-complete.json").is_file()),
++        completed = sorted((p for p in root.glob("global_step_*") if not p.is_symlink() and (p / "dojo-complete.json").is_file()),
+                            key=lambda p: int(p.name.split("_")[-1]), reverse=True)
+         for old in completed[2:]:
+-            if old == current or not (old / "dojo-complete.json").is_file():
++            if old.is_symlink() or old == current or not (old / "dojo-complete.json").is_file():
+                 continue
+             assert old.resolve().is_relative_to(root)
+             for replay_name in ("replay_buffer", "reference_replay"):
