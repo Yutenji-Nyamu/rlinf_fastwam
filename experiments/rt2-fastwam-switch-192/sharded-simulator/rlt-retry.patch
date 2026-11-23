@@ -1,0 +1,62 @@
+--- a/tools/dsrl_rlt_warmstart/rt2_owner.py
++++ b/tools/dsrl_rlt_warmstart/rt2_owner.py
+@@ -67,30 +67,37 @@
+         )
+         for phase in p["phases"]:
+             save(d / "status.json", {"phase": phase["name"], "time": time.time()})
+-            with (d / (phase["name"] + ".log")).open("x") as log:
+-                child = subprocess.Popen(
+-                    phase["command"],
+-                    cwd=p["training_source"],
+-                    env=env,
+-                    stdin=subprocess.DEVNULL,
+-                    stdout=log,
+-                    stderr=subprocess.STDOUT,
+-                    start_new_session=True,
+-                )
+-            who = proc(child.pid)
+-            save(d / "child.json", who)
+-            try:
+-                code = child.wait(timeout=phase.get("timeout"))
+-            except subprocess.TimeoutExpired:
+-                exact_signal(who, signal.SIGTERM)
++            sys.path.insert(0,str(d.parent))
++            from rlt_retry import prepare_retry
++            for attempt in range(2):
++                output=d/(phase["name"] + (".log" if attempt==0 else "-retry.log"))
++                with output.open("x") as log:
++                    child = subprocess.Popen(
++                        phase["command"],
++                        cwd=p["training_source"],
++                        env=env,
++                        stdin=subprocess.DEVNULL,
++                        stdout=log,
++                        stderr=subprocess.STDOUT,
++                        start_new_session=True,
++                    )
++                who = proc(child.pid)
++                save(d / "child.json", who)
+                 try:
+-                    child.wait(timeout=90)
++                    code = child.wait(timeout=phase.get("timeout"))
+                 except subprocess.TimeoutExpired:
+-                    exact_signal(who, signal.SIGKILL)
+-                    child.wait(timeout=15)
+-                code = 124
+-            child = None
+-            assert code == 0, (phase["name"], code)
++                    exact_signal(who, signal.SIGTERM)
++                    try:
++                        child.wait(timeout=90)
++                    except subprocess.TimeoutExpired:
++                        exact_signal(who, signal.SIGKILL)
++                        child.wait(timeout=15)
++                    code = 124
++                child = None
++                if code==0:
++                    break
++                if attempt or phase["name"]!="formal" or not prepare_retry(d,p,output):
++                    raise RuntimeError(f"{phase['name']} exited {code}, see {output.name}")
+             save(d / (phase["name"] + "-complete.json"), {"time": time.time()})
+         result = {"phase": "COMPLETE_RETURN_RLT", "time": time.time()}
+     except BaseException:

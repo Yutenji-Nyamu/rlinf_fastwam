@@ -1,0 +1,22 @@
+--- a/fastwam_driver.py
++++ b/fastwam_driver.py
+@@ -17,6 +17,7 @@
+         stream.write(json.dumps(dict(round=self.global_step,metrics=metrics,time=time.time()),default=float)+'\n')
+     return metrics
+ def run(self):
++    self._restored_global_step=self.global_step
+     if not self.global_step:
+         reference=json.loads((b/'reference-evaluation.json').read_text())
+         assert reference['round']==0 and reference['metrics']['num_trajectories']==32
+@@ -32,8 +33,10 @@
+     rotate_latest(current)
+ def after(self,step):
+     result=original_after(self,step)
+-    if self.global_step==1:
++    if self.global_step==self._restored_global_step+1 and not (root/f'global_step_{self.global_step}'/'dojo-complete.json').is_file():
+         self._save_checkpoint()
++    if self.global_step==self._restored_global_step+1:
++        (b/'first-resumed-update.json').write_text(json.dumps(dict(resumed=self._restored_global_step,completed=self.global_step,time=time.time())))
+     if 'eval/success_once' in result:
+         current=root/f'global_step_{self.global_step}'
+         if not Path('/data2').is_mount():raise RuntimeError('Archive disk unavailable')

@@ -1,0 +1,15 @@
+--- a/rlinf/envs/robotwin/robotwin_env.py
++++ b/rlinf/envs/robotwin/robotwin_env.py
+@@ -86,7 +86,11 @@
+         mp.set_start_method("spawn", force=True)
+         os.environ["ASSETS_PATH"] = self.cfg.assets_path
+ 
+-        if self.cfg.get("process_offload", False):
++        if self.cfg.get("native_shards", 0):
++            from functools import partial
++            from rlinf.envs.robotwin.sharded_vector_env import ShardedVectorEnv
++            VectorEnv = partial(ShardedVectorEnv, shards=self.cfg.native_shards)
++        elif self.cfg.get("process_offload", False):
+             from functools import partial
+ 
+             from rlinf.envs.robotwin.process_vector_env import ProcessVectorEnv

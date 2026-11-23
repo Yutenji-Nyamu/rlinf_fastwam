@@ -1,0 +1,124 @@
+--- a/fastwam_pair.py
++++ b/fastwam_pair.py
+@@ -1,48 +1,90 @@
+-"""Coordinate the 4/7 pair with existing slot admission and return owners."""
+-import os, signal, subprocess, sys, time, traceback
++"""Own GPUs 4/7 and resume one interrupted simulator run from a complete checkpoint."""
++import json
++import os
++import signal
++import subprocess
++import sys
++import time
++import traceback
+ from pathlib import Path
++
++from omegaconf import OmegaConf
++
+ b=Path(__file__).resolve().parent
+-q=Path(os.environ['RLINF_QUEUE_OPS']).parent
+-sys.path.insert(0,str(q/'ops'))
+-from common import read,save,same,proc,exact_signal,gpus,admission_card
+-p=read(b/'plan.json');me=proc(os.getpid());child=None;registered=False
+-def status(name,**kw):save(b/'status.json',dict(phase=name,time=time.time(),**kw))
+-def stop(*_):raise SystemExit(143)
++sys.path.insert(0,os.environ['RLINF_QUEUE_OPS'])
++from common import admission_card, exact_signal, gpus, proc, read, same, save
++
++p=read(b/'plan.json')
++me=proc(os.getpid())
++child=None
++registered=False
++def status(phase,**kwargs):
++    save(b/'status.json',dict(phase=phase,time=time.time(),**kwargs))
++def stop(*_):
++    raise SystemExit(143)
++def admit():
++    end=time.monotonic()+400
++    while True:
++        devices=gpus()
++        if all(not admission_card(devices[g],read(b/f'return-g{g}/plan.json')['gpu_admission'])['processes'] for g in p['gpus']):
++            return
++        if time.monotonic()>=end:
++            raise TimeoutError('Waiting for predecessor cleanup on GPUs 4/7')
++        time.sleep(.5)
++def latest_checkpoint():
++    cfg=OmegaConf.load(b/'config/formal.yaml')
++    base=Path(cfg.runner.resume_dir)
++    root=Path(p['run'])/'turn_switch/checkpoints'
++    complete=[c for c in [base,*root.glob('global_step_*')] if (c/'dojo-complete.json').is_file()
++              and (c/'actor/dcp_checkpoint/.metadata').is_file()
++              and sum(f.stat().st_size>0 for f in c.rglob('*.distcp'))>=2]
++    cp=max(complete,key=lambda c:int(c.name[12:]))
++    cfg.runner.resume_dir=str(cp)
++    OmegaConf.save(cfg,b/'config/formal.yaml')
++    return cp
+ signal.signal(signal.SIGTERM,stop)
+ save(b/'identity.json',me);status('WAIT_PREPARED_PAIR')
+ try:
+     while not (b/'registered.json').is_file():time.sleep(.2)
+-    assert read(b/'registered.json')['identity']==me;registered=True
++    assert read(b/'registered.json')['identity']==me
++    registered=True
+     while any(same(w) for w in p['predecessors']):time.sleep(.3)
+-    deadline=time.monotonic()+400
+-    while True:
+-        devices=gpus()
+-        if all(not admission_card(devices[g],read(b/f'return-g{g}/plan.json')['gpu_admission'])['processes'] for g in p['gpus']):break
+-        if time.monotonic()>deadline:raise TimeoutError('Waiting for 4/7 predecessor cleanup')
+-        time.sleep(.5)
+     environment={**os.environ,**read(b/'training-environment.json'),'CUDA_VISIBLE_DEVICES':''}
+-    with (b/'formal-driver.log').open('x') as log:
+-        child=subprocess.Popen([p['python'],'-uB',str(b/'fastwam_driver.py')],cwd=p['training_source'],env=environment,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+-    identity=proc(child.pid);save(b/'driver-identity.json',identity)
+-    status('FORMAL_TRAINING',task=p['task'],rounds=p['rounds'])
+-    with (b/'gpu-samples.csv').open('w',buffering=1) as samples:
++    with (b/'gpu-samples.csv').open('x',buffering=1) as samples:
+         samples.write('unix_time,gpu,used_mib,util_pct\n')
+-        while child.poll() is None:
+-            stats=subprocess.run(['nvidia-smi','--query-gpu=index,memory.used,utilization.gpu','--format=csv,noheader,nounits'],capture_output=True,text=True,timeout=15)
+-            for line in stats.stdout.splitlines():
+-                fields=line.split(',')
+-                if fields[0].strip() in ('4','7'):samples.write(str(time.time())+','+line+'\n')
+-            try:child.wait(timeout=10)
+-            except subprocess.TimeoutExpired:pass
+-    if child.returncode:raise RuntimeError(f'Formal driver exited {child.returncode}')
++        for attempt in range(2):
++            admit()
++            cp=latest_checkpoint()
++            logfile=b/('formal-driver.log' if attempt==0 else 'formal-retry.log')
++            with logfile.open('x') as log:
++                child=subprocess.Popen([p['python'],'-uB',str(b/'fastwam_driver.py')],cwd=p['training_source'],
++                    env=environment,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
++            who=proc(child.pid)
++            save(b/'driver-identity.json',who)
++            status('FORMAL_TRAINING',task=p['task'],rounds=p['rounds'],attempt=attempt+1,resume=int(cp.name[12:]))
++            while child.poll() is None:
++                rows=subprocess.run(['nvidia-smi','--query-gpu=index,memory.used,utilization.gpu','--format=csv,noheader,nounits'],
++                                    capture_output=True,text=True,timeout=15)
++                for row in rows.stdout.splitlines():
++                    if row.partition(',')[0].strip() in ('4','7'):
++                        samples.write(f'{time.time()},{row}\n')
++                try:child.wait(timeout=10)
++                except subprocess.TimeoutExpired:pass
++            if child.returncode==0:
++                break
++            message=logfile.read_text(errors='replace')
++            native_fault=any(term in message for term in ('SimulatorTransportError:', 'Fatal Python error: PyGILState_Release',
++                                                          'RoboTwin simulator RPC exceeded'))
++            if attempt or not native_fault:
++                raise RuntimeError(f'Formal driver exited {child.returncode}, see {logfile.name}')
++            save(b/'simulator-retry.json',dict(time=time.time(),code=child.returncode,failed_log=logfile.name))
+     status('COMPLETE_RETURN_RLT')
+ except BaseException:
+     status('FAILED_RETURN_RLT',error=traceback.format_exc())
+ finally:
+     signal.signal(signal.SIGTERM,signal.SIG_IGN)
+     if child and child.poll() is None:
+-        exact_signal(identity,signal.SIGTERM)
++        exact_signal(who,signal.SIGTERM)
+         try:child.wait(timeout=120)
+-        except subprocess.TimeoutExpired:exact_signal(identity,signal.SIGKILL)
++        except subprocess.TimeoutExpired:exact_signal(who,signal.SIGKILL)
+     if registered:save(b/'released.json',dict(time=time.time(),result=read(b/'status.json')))
+-

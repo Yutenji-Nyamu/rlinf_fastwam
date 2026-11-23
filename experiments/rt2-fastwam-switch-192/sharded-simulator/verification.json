@@ -1,0 +1,136 @@
+{
+  "fastwam_checkpoint": 30,
+  "rlt_checkpoints": {
+    "return-g4": 68,
+    "next-g4": 28,
+    "return-g7": 74,
+    "next-g7": 24
+  },
+  "ipc": {
+    "ipc": true,
+    "indexed_seeds": true,
+    "ordered_outputs": true,
+    "full_reset_recovered": true,
+    "mid_episode_loss_propagated": true,
+    "offload_reinitialized": true
+  },
+  "retry_selection": {
+    "return-g4": 68,
+    "next-g4": 28,
+    "return-g7": 74,
+    "next-g7": 24
+  },
+  "robotwin_gpu_probes": [
+    {
+      "task": "turn_switch",
+      "gpu": 4,
+      "width": 4,
+      "shards": 2,
+      "timings": {
+        "first": 226.08,
+        "after_offload": 224.89
+      },
+      "total_seconds": 491.74
+    },
+    {
+      "task": "turn_switch",
+      "gpu": 7,
+      "width": 4,
+      "shards": 2,
+      "timings": {
+        "first": 248.88,
+        "after_offload": 265.0
+      },
+      "total_seconds": 545.95
+    },
+    {
+      "task": "pick_diverse_bottles",
+      "gpu": 4,
+      "width": 4,
+      "shards": 4,
+      "timings": {
+        "first": 165.34,
+        "after_offload": 172.93
+      },
+      "total_seconds": 387.79
+    },
+    {
+      "task": "pick_diverse_bottles",
+      "gpu": 4,
+      "width": 48,
+      "shards": 4,
+      "entry": "RoboTwinEnv.reset/chunk_step/offload",
+      "action_steps": 10,
+      "total_seconds": 770.83
+    },
+    {
+      "task": "place_dual_shoes",
+      "gpu": 7,
+      "width": 4,
+      "shards": 4,
+      "timings": {
+        "first": 148.8,
+        "after_offload": 165.06
+      },
+      "total_seconds": 355.01
+    },
+    {
+      "task": "place_dual_shoes",
+      "gpu": 7,
+      "width": 48,
+      "shards": 4,
+      "entry": "RoboTwinEnv.reset/chunk_step/offload",
+      "action_steps": 10,
+      "total_seconds": 717.52
+    },
+    {
+      "task": "move_can_pot",
+      "gpu": 4,
+      "width": 4,
+      "shards": 4,
+      "timings": {
+        "first": 245.78,
+        "after_offload": 220.79
+      },
+      "total_seconds": 533.57
+    },
+    {
+      "task": "pick_dual_bottles",
+      "gpu": 7,
+      "width": 4,
+      "shards": 4,
+      "timings": {
+        "first": 145.54,
+        "after_offload": 137.63
+      },
+      "total_seconds": 324.5
+    }
+  ],
+  "formal": {
+    "resume_round": 30,
+    "completed_round": 31,
+    "trajectories": 256,
+    "training_successes": 92,
+    "actor_grad_norm": 10.65,
+    "checkpoint_shard_bytes": {
+      "__1_0.distcp": 17516465174,
+      "__0_0.distcp": 17518408065
+    },
+    "checkpoint_metadata_entries": 4586,
+    "model_adam_scheduler_present": true,
+    "observed_phase": "FORMAL_TRAINING",
+    "rlt_waiters": {
+      "4": [
+        "move_can_pot",
+        "pick_diverse_bottles"
+      ],
+      "7": [
+        "pick_dual_bottles",
+        "place_dual_shoes"
+      ]
+    },
+    "rollout_progress_seconds": 2867,
+    "previous_rollout_progress_median_seconds": 1552,
+    "previous_complete_rounds": 17
+  }
+}
