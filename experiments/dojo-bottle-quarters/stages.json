@@ -1,0 +1,26 @@
+{
+  "task": "put_bottles_into_dustbin",
+  "phases": [
+    {
+      "name": "initial_evaluation",
+      "episodes": 32
+    },
+    {
+      "name": "formal_training",
+      "rounds": 200
+    }
+  ],
+  "native_overrides": {
+    "training_reward": "bottle_quarters",
+    "use_native_layout_check": true
+  },
+  "renderer": {
+    "training": "chunk",
+    "evaluation": "native"
+  },
+  "model_init": "original_pi05",
+  "previous_reference": {
+    "successes": 76,
+    "episodes": 128
+  }
+}

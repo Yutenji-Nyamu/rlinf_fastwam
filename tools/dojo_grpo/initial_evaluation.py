@@ -14,7 +14,7 @@ def run_baseline(runner, evaluate, directory, plan):
     size = int(config.env.eval.total_num_envs)
     target = plan["phases"][0]["episodes"]
     assert runner.global_step == 0 and config.runner.resume_dir is None
-    assert size == 32 and target == 128 and config.env.eval.rollout_epoch == 1
+    assert size == 32 and target >= size and target % size == 0 and config.env.eval.rollout_epoch == 1
     runner.update_rollout_weights()
     successes = 0
     batch_log = directory / "baseline-batches.jsonl"

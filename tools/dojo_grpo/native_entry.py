@@ -19,6 +19,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "rlinf/envs/robodojo"))
+from bottle_progress import BottleProgress
 from protocol import layout_pools, replace_invalid_layouts, terminal_arrays
 
 
@@ -268,6 +269,13 @@ class NativeLoop:
         ]
         if not all(registered):
             raise RuntimeError("Native task has no registered success conditions")
+        self.bottles = None
+        if self.cfg.get("training_reward") == "bottle_quarters":
+            if self.cfg["task"] != "put_bottles_into_dustbin" or any(
+                len(manager.score_list[i]) != 4 for i in range(self.n)
+            ):
+                raise ValueError("Bottle rewards require four registered native stages")
+            self.bottles = BottleProgress(self.n)
         self.last_obs = self.observations()
         self.wave_layouts = [pool[i]["source_layout_id"] for i in ids]
         self.wave_recorded = False
@@ -319,6 +327,8 @@ class NativeLoop:
         before = np.asarray(self.env.end_flag[: self.n], dtype=bool).copy()
         dones = np.zeros((self.n, horizon), bool)
         success = np.zeros_like(dones)
+        if self.bottles is not None:
+            increments = np.zeros(dones.shape, dtype=np.float32)
         for t in range(horizon):
             active = [i for i in range(self.n) if not self.env.end_flag[i]]
             if active:
@@ -352,13 +362,26 @@ class NativeLoop:
                     self.totals["observation_seconds"] += time.monotonic() - start
             dones[:, t] = self.env.end_flag[: self.n]
             success[:, t] = np.asarray(self.env.success[: self.n]) & dones[:, t]
+            if self.bottles is not None:
+                active_before_action = ~(before if t == 0 else dones[:, t - 1])
+                increments[:, t] = self.bottles.advance(
+                    self.env.reward_manager.score_completed_count[: self.n],
+                    success[:, t], active_before_action, self.env.take_action_cnt[: self.n],
+                )
         if not capture_every_action:
             self.last_obs = self.observations()
         rewards, terms, truncs = terminal_arrays(before, dones, success)
+        if self.bottles is not None:
+            if self.mode == "train":
+                rewards = increments
+            self.bottles.episode_return += rewards.sum(axis=1)
         if dones[:, -1].all() and not self.wave_recorded:
             record = {"time": time.time(), "mode": self.mode, "rows": [
                 {"layout": int(self.wave_layouts[i]), "success": bool(success[i, -1]),
                  "actions": int(self.env.take_action_cnt[i])} for i in range(self.n)]}
+            if self.bottles is not None:
+                for i, row in enumerate(record["rows"]):
+                    row.update(self.bottles.episode(i))
             with (self.output / "completed-waves.jsonl").open("a") as stream:
                 stream.write(json.dumps(record) + "\n")
             with (self.output / "timing.jsonl").open("a") as stream:

@@ -412,7 +412,7 @@ def main(directory):
             if time.monotonic() > deadline:
                 raise TimeoutError("Formal acceptance not supplied; restore RLT")
             time.sleep(0.5)
-        status("INITIAL_EVALUATION", episodes=128, completed=0, task=plan["task"])
+        status("INITIAL_EVALUATION", episodes=plan["phases"][0]["episodes"], completed=0, task=plan["task"])
         wait(
             launch(
                 "formal-driver",

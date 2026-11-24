@@ -419,14 +419,15 @@ class EmbodiedFSDPActor(FSDPModelManager, Worker):
                 n_prompts, group_size, rewards.shape[-1]
             )  # [n_prompts, group_size, n_step]
             reward_matrix = reward_matrix.sum(dim=-1)  # [n_prompts, group_size]
-            mean_reward_in_group = reward_matrix.mean(dim=1)  # [n_prompts]
-
-            # mask
-            reward_filter_mask = (
-                mean_reward_in_group >= self.cfg.algorithm.rewards_lower_bound
-            ) & (
-                mean_reward_in_group <= self.cfg.algorithm.rewards_upper_bound
-            )  # [n_prompts]
+            if self.cfg.algorithm.get("filter_by_reward_variation", False):
+                reward_filter_mask = reward_matrix.amax(dim=1) > reward_matrix.amin(dim=1)
+            else:
+                mean_reward_in_group = reward_matrix.mean(dim=1)
+                reward_filter_mask = (
+                    mean_reward_in_group >= self.cfg.algorithm.rewards_lower_bound
+                ) & (
+                    mean_reward_in_group <= self.cfg.algorithm.rewards_upper_bound
+                )
 
             # extend mask dimension
             reward_filter_mask = reward_filter_mask.repeat_interleave(
