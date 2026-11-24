@@ -1,0 +1,23 @@
+--- a/rlinf/workers/actor/fastwam_update_audit.py
++++ b/rlinf/workers/actor/fastwam_update_audit.py
+@@ -1,5 +1,5 @@
+ """Record the first actual action-expert update on each FSDP rank."""
+-import json, os, time
++import json, logging, os, time
+ from pathlib import Path
+ import torch
+ 
+@@ -29,8 +29,11 @@
+         for key in ('exp_avg','exp_avg_sq'):
+             if key in state:moments.add(str(state[key].dtype))
+     out=dict(time=time.time(),rank=os.environ['RANK'],observed_tensors=len(picks),changed_coordinates=changed,max_delta=peak,master='torch.float32',moments=sorted(moments))
+-    d=Path(os.environ['DOJO_GRPO_OWNER'])
+-    (d/f"first-update-rank-{os.environ['RANK']}.json").write_text(json.dumps(out))
++    log_dir = Path(worker.cfg.runner.logger.log_path) / worker.cfg.runner.logger.experiment_name
++    try:
++        (log_dir / f"first-update-rank-{out['rank']}.json").write_text(json.dumps(out))
++    except OSError as error:
++        logging.getLogger(__name__).warning("Could not write first-update receipt: %s", error)
+     if picks and changed:
+         worker._fastwam_step_audited=True
+     return result
