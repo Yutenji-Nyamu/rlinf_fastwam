@@ -73,3 +73,7 @@ print(json.dumps(out,indent=2))
 if "--save" in sys.argv:
     assert zero or training
     (d/"public-run.json").write_text(json.dumps(out,indent=2)+"\n")
+    if zero:
+        selected=("layout","success","actions","bottles","first_bottle_steps","episode_return")
+        layout_rows=[{key:row[key] for key in selected} for row in sorted(zero,key=lambda r:r["layout"])]
+        (d/"baseline-layouts.json").write_text(json.dumps(layout_rows,indent=2)+"\n")
