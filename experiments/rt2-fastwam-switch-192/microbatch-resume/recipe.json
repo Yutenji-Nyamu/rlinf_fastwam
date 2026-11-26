@@ -1,0 +1,136 @@
+{
+  "task": "turn_switch",
+  "method": "FastWAM GRPO",
+  "resume_round": 95,
+  "last_logged_round_before_failure": 98,
+  "target_round": 300,
+  "sampling": {
+    "envs_per_gpu": 16,
+    "gpus": 2,
+    "rollout_epochs": 8,
+    "trajectories_per_round": 256,
+    "group_size": 8,
+    "actions_per_episode": 192,
+    "eval_episodes": 32
+  },
+  "actor": {
+    "global_batch_size": 1024,
+    "micro_batch_before": 2,
+    "micro_batch_after": 1,
+    "gradient_accumulation_before": 256,
+    "gradient_accumulation_after": 512
+  },
+  "previous_oom": {
+    "rank": 1,
+    "operation": "FSDP2 pre-forward unshard",
+    "requested_MiB": 32,
+    "gpu_capacity_GiB": 79.18,
+    "actor_process_GiB": 56.34,
+    "additional_process_GiB": 21.15,
+    "additional_process_identity": "unknown"
+  },
+  "queued_rlt": {
+    "return-g4": {
+      "task": "move_can_pot",
+      "resume_round": 116
+    },
+    "next-g4": {
+      "task": "pick_diverse_bottles",
+      "resume_round": 28
+    },
+    "return-g7": {
+      "task": "pick_dual_bottles",
+      "resume_round": 74
+    },
+    "next-g7": {
+      "task": "place_dual_shoes",
+      "resume_round": 24
+    }
+  },
+  "closed_rlt": {
+    "place_fan": {
+      "classification": "failed",
+      "eval_episodes": 20,
+      "recent_evals": [
+        [
+          1000,
+          2
+        ],
+        [
+          1025,
+          3
+        ],
+        [
+          1050,
+          1
+        ],
+        [
+          1075,
+          0
+        ],
+        [
+          1100,
+          1
+        ],
+        [
+          1125,
+          1
+        ],
+        [
+          1150,
+          5
+        ],
+        [
+          1175,
+          3
+        ]
+      ]
+    },
+    "click_bell": {
+      "classification": "successful",
+      "eval_episodes": 20,
+      "recent_evals": [
+        [
+          2575,
+          20
+        ],
+        [
+          2600,
+          20
+        ],
+        [
+          2625,
+          20
+        ],
+        [
+          2650,
+          20
+        ],
+        [
+          2675,
+          20
+        ],
+        [
+          2700,
+          20
+        ],
+        [
+          2725,
+          20
+        ],
+        [
+          2750,
+          20
+        ]
+      ]
+    }
+  },
+  "fallback": {
+    "task_per_lane": [
+      "pick_diverse_bottles",
+      "place_dual_shoes"
+    ],
+    "save_interval": -1,
+    "resume": "latest complete state of the last queued task"
+  }
+}

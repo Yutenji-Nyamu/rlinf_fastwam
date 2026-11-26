@@ -1,0 +1,35 @@
+--- a/fastwam_pair.py
++++ b/fastwam_pair.py
+@@ -24,12 +24,6 @@
+     raise SystemExit(143)
+ def admit():
+-    end=time.monotonic()+400
+-    while True:
+-        devices=gpus()
+-        if all(not admission_card(devices[g],read(b/f'return-g{g}/plan.json')['gpu_admission'])['processes'] for g in p['gpus']):
+-            return
+-        if time.monotonic()>=end:
+-            raise TimeoutError('Waiting for predecessor cleanup on GPUs 4/7')
+-        time.sleep(.5)
++    from queue_admission import wait_for_cards
++    wait_for_cards(b,{g:read(b/f'return-g{g}/plan.json')['gpu_admission'] for g in p['gpus']})
+ def latest_checkpoint():
+     cfg=OmegaConf.load(b/'config/formal.yaml')
+--- a/fastwam_driver.py
++++ b/fastwam_driver.py
+@@ -48,5 +48,5 @@
+ spec=importlib.util.spec_from_file_location('accepted_ops',p['legacy_ops'])
+ ops=importlib.util.module_from_spec(spec);spec.loader.exec_module(ops)
+-ops.ROOT=Path(p['training_source']);ops.RUN=b/'driver';(ops.RUN/'runtime').mkdir(parents=True,exist_ok=True)
++ops.ROOT=Path(p['training_source']);ops.RUN=b/f'driver-{os.getpid()}';(ops.RUN/'runtime').mkdir(parents=True,exist_ok=True)
+ ops.NAMESPACE=p['namespace']+'_'+str(os.getpid())
+ sys.argv=[sys.argv[0],'formal_driver','--config-path',str(b/'config'),'--config-name','formal']
+--- a/wait_owner.py
++++ b/wait_owner.py
+@@ -105,4 +105,6 @@
+             )
+ 
++        from queue_admission import wait_for_cards
++        wait_for_cards(d, {p["gpu"]: p["gpu_admission"]})
+         active_path = Path(wait["active_index"])
+         with active_path.with_suffix(".continuation.lock").open("a") as lock:

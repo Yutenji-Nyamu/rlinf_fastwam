@@ -1,0 +1,76 @@
+{
+  "fastwam": {
+    "resumed_from": 95,
+    "first_durable_round": 96,
+    "physical_gpu_sampling_peak_mib": {
+      "4": 70254,
+      "7": 70220
+    },
+    "micro_batch_per_device": 1,
+    "total_update_batch": 1024,
+    "trajectories_per_round": 256,
+    "rank_updates": [
+      {
+        "rank": "0",
+        "sampled_tensors": 12,
+        "changed_coordinates": 6143,
+        "max_abs_delta": 3.519933670759201e-06,
+        "master": "torch.float32"
+      },
+      {
+        "rank": "1",
+        "sampled_tensors": 12,
+        "changed_coordinates": 6137,
+        "max_abs_delta": 3.834720700979233e-06,
+        "master": "torch.float32"
+      }
+    ]
+  },
+  "reservations": {
+    "4": {
+      "normal_rlt": [
+        "move_can_pot",
+        "pick_diverse_bottles"
+      ],
+      "waiting_owners_verified": true,
+      "disk_fallback": "pick_diverse_bottles",
+      "fallback_save_interval": -1
+    },
+    "5": {
+      "normal_rlt": [
+        "pour_liquid_into_cup"
+      ],
+      "waiting_owners_verified": true,
+      "disk_fallback": "pick_diverse_bottles",
+      "fallback_save_interval": -1
+    },
+    "6": {
+      "normal_rlt": [
+        "pour_liquid_into_cup",
+        "move_stapler_pad"
+      ],
+      "waiting_owners_verified": true,
+      "disk_fallback": "pick_dual_bottles",
+      "fallback_save_interval": -1
+    },
+    "7": {
+      "normal_rlt": [
+        "pick_dual_bottles",
+        "place_dual_shoes"
+      ],
+      "waiting_owners_verified": true,
+      "disk_fallback": "place_dual_shoes",
+      "fallback_save_interval": -1
+    }
+  },
+  "queued_stapler": {
+    "state": "waiting_before_first_formal_round",
+    "treatment": "success_episode_bc",
+    "actor_weighting_enabled": true,
+    "rollout_previews_enabled": true,
+    "resume_online_training": false,
+    "unit_tests_passed": 25
+  },
+  "queue_regression_tests_passed": 2,
+  "checks": "Checkpoint and optimizer update after resuming were verified. Sampling peaks refer to total board memory, not a matched peak-memory comparison."
+}
