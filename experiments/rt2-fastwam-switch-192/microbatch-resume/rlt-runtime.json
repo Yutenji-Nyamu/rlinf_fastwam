@@ -1,0 +1,40 @@
+{
+  "method": "RT2 clean RLT",
+  "train_envs": 48,
+  "eval_envs": 48,
+  "train_native_shards": 4,
+  "eval_native_shards": 4,
+  "envs_per_shard": 12,
+  "eval_every_rounds": 2,
+  "learner_global_batch": 512,
+  "learner_micro_batch": 256,
+  "action_chunk": 10,
+  "measurement": {
+    "task": "move_can_pot",
+    "units": "seconds",
+    "statistic": "median of last 8 positive observations in each segment",
+    "boundary": "2026-11-23 11:41 China Standard Time",
+    "train_records_before_after": [
+      43,
+      49
+    ],
+    "independent_eval_records_before_after": [
+      21,
+      24
+    ],
+    "records_begin_at_round": 25,
+    "training_rollout_before_after": [
+      1129.5,
+      598.3
+    ],
+    "independent_eval_before_after": [
+      1487,
+      727.1
+    ],
+    "actor_update_before_after": [
+      144.4,
+      157.1
+    ],
+    "comparison": "same task and batch size, different training periods and system load"
+  }
+}

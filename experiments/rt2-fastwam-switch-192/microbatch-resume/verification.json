@@ -65,11 +65,17 @@
   },
   "queued_stapler": {
     "state": "waiting_before_first_formal_round",
-    "treatment": "success_episode_bc",
-    "actor_weighting_enabled": true,
-    "rollout_previews_enabled": true,
+    "method": "clean RLT",
+    "actor_weighting_enabled": false,
+    "rollout_previews_enabled": false,
+    "native_shards": 4,
+    "train_envs": 48,
+    "eval_envs": 48,
+    "envs_per_shard": 12,
+    "eval_every_rounds": 2,
     "resume_online_training": false,
-    "unit_tests_passed": 25
+    "stage1_continues_in_original_run": true,
+    "teacher_actor_algorithm_and_rollout_equal_to_original_config": true
   },
   "queue_regression_tests_passed": 2,
   "checks": "Checkpoint and optimizer update after resuming were verified. Sampling peaks refer to total board memory, not a matched peak-memory comparison."
