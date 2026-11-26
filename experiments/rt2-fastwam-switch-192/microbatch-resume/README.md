@@ -6,9 +6,11 @@
 
 旧运行在 actor 前向前聚合 FSDP2 权重时报告 CUDA OOM。本次训练微批从 2 改到 1。两卡每卡 16 个仿真环境，每轮采集 256 局，每组 8 局，总更新批量 1024。RLinf 的每卡梯度累积次数由 256 增到 512。微批影响反传激活的占用，权重聚合本身仍需要显存。参数及旧现场的显存分项见 [recipe.json](recipe.json)。[梯度累积说明](https://huggingface.co/docs/transformers/grad_accumulation)
 
-## 当前队列（11 月 26 日 15:56）
+## 当前队列（11 月 26 日 17:03）
 
-5、6 卡的两路倒液体候补均已撤下。5 卡在 GRPO 结束后直接进入抓不同瓶子的无保存兜底，6 卡接鼠标放垫。4、7 卡按原顺序。下面的 13:08 记录为历史快照。[最新巡检曲线](inspection-1556.html)
+4 卡的正式候补依次为移罐入锅、抓不同瓶子。5 卡在 GRPO 结束后直接进入无保存兜底。6 卡为 Dojo 倒液体（全程 clean，从头、训练种子 43），随后 RT2 鼠标放垫。7 卡为双手抓瓶、放双鞋。6 项正式候补进程均在等候，4 个无保存兜底在位。
+
+[Clean RLT 全任务台账](clean-results.html) · [逐任务可复算数据](clean-coverage.json) · [丢瓶子 GRPO 诊断](dojo-bottle-diagnosis.html) · [逐轮统计与历史对照](bottles-study.json)
 
 ## 较早的队列记录
 
