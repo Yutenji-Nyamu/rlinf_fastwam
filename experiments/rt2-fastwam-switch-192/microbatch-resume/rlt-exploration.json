@@ -1,0 +1,152 @@
+{
+  "historical_recipes": {
+    "early_1106": {
+      "train_envs": 8,
+      "action_chunk": 20,
+      "eval_envs": 4,
+      "eval_waves": 3,
+      "eval_every": 20,
+      "eval_episodes": 12,
+      "learner_batch": 256,
+      "learner_microbatch": 256,
+      "warmup_transitions": 2000,
+      "pre_takeover_critic_updates": 5000,
+      "update_epoch": 5
+    },
+    "switch_1108": {
+      "train_envs": 16,
+      "action_chunk": 10,
+      "eval_envs": 4,
+      "eval_waves": 3,
+      "eval_every": 10,
+      "eval_episodes": 12,
+      "learner_batch": 512,
+      "learner_microbatch": 256,
+      "warmup_transitions": 20000,
+      "pre_takeover_critic_updates": 30000,
+      "update_epoch": 5
+    },
+    "switch_end_1111": {
+      "train_envs": 48,
+      "action_chunk": 10,
+      "eval_envs": 4,
+      "eval_waves": 3,
+      "eval_every": 2,
+      "eval_episodes": 12,
+      "learner_batch": 512,
+      "learner_microbatch": 256,
+      "warmup_transitions": 20000,
+      "pre_takeover_critic_updates": 30000,
+      "update_epoch": 5
+    },
+    "switch_fresh_1112": {
+      "train_envs": 48,
+      "action_chunk": 10,
+      "eval_envs": 4,
+      "eval_waves": 3,
+      "eval_every": 2,
+      "eval_episodes": 12,
+      "learner_batch": 512,
+      "learner_microbatch": 256,
+      "warmup_transitions": 20000,
+      "pre_takeover_critic_updates": 30000,
+      "update_epoch": 5
+    },
+    "dust_1108": {
+      "train_envs": 16,
+      "action_chunk": 10,
+      "eval_envs": 16,
+      "eval_waves": 2,
+      "eval_every": 10,
+      "eval_episodes": 32,
+      "learner_batch": 512,
+      "learner_microbatch": 256,
+      "warmup_transitions": 20000,
+      "pre_takeover_critic_updates": 30000,
+      "update_epoch": 5
+    },
+    "dust_bc64_1110": {
+      "train_envs": 64,
+      "action_chunk": 10,
+      "eval_envs": 64,
+      "eval_waves": 1,
+      "eval_every": 2,
+      "eval_episodes": 64,
+      "learner_batch": 512,
+      "learner_microbatch": 256,
+      "warmup_transitions": 20000,
+      "pre_takeover_critic_updates": 30000,
+      "update_epoch": 5
+    }
+  },
+  "early_1106_note": "The launch used 8 environments, and the subsequent 16-environment segment has its own plotted trace.",
+  "rank7_reference": "switch_1108, switch_end_1111 and the independent switch_fresh_1112 run",
+  "historical_gpu7_48env_peak_gib": 69.1,
+  "historical_gpu7_usable_gib": 79.6,
+  "historical_gpu7_64env_error": "Simulator 62.31 GiB, inference 15.20 GiB; an additional 1.89 GiB allocation failed.",
+  "scheduled_runtime": {
+    "method": "RT2 clean RLT",
+    "train_envs": 48,
+    "eval_envs": 48,
+    "train_native_shards": 4,
+    "eval_native_shards": 4,
+    "envs_per_shard": 12,
+    "eval_every_rounds": 2,
+    "learner_global_batch": 512,
+    "learner_micro_batch": 256,
+    "action_chunk": 10,
+    "measurement": {
+      "task": "move_can_pot",
+      "units": "seconds",
+      "statistic": "median of last 8 positive observations in each segment",
+      "boundary": "2026-11-23 11:41 China Standard Time",
+      "train_records_before_after": [
+        43,
+        49
+      ],
+      "independent_eval_records_before_after": [
+        21,
+        24
+      ],
+      "records_begin_at_round": 25,
+      "training_rollout_before_after": [
+        1129.5,
+        598.3
+      ],
+      "independent_eval_before_after": [
+        1487,
+        727.1
+      ],
+      "actor_update_before_after": [
+        144.4,
+        157.1
+      ],
+      "comparison": "same task and batch size, different training periods and system load"
+    }
+  },
+  "optimizer_speed_test": {
+    "statistic": "milliseconds per RLT learner update, same replay, 4 warmups and 64 measured updates per configuration",
+    "columns": [
+      "baseline",
+      "combined",
+      "baseline_repeat"
+    ],
+    "rt2": [
+      17.992,
+      18.401,
+      17.518
+    ],
+    "dojo": [
+      10.346,
+      11.893,
+      10.212
+    ],
+    "enabled_in_reference_and_queue": false
+  },
+  "stage1_cache": "Cache frozen prefix features and attention masks for the 2000 Stage 1 updates.",
+  "sources": [
+    "https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/0b604854ede7cb24f4d2644220d9cf037c83bc80/docs/dojo_rl/28_RECIPE_RETRY_20261108.md",
+    "https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/0b604854ede7cb24f4d2644220d9cf037c83bc80/docs/dojo_rl/26_DSRL_Q_WARMSTART_RLT_20261106.md",
+    "https://github.com/Yutenji-Nyamu/rlinf_fastwam/commit/302dcc6106dffac43b6b9767c14e57c2a6daa64b"
+  ]
+}
