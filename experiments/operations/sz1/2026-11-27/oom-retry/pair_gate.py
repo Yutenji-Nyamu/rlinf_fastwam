@@ -1,4 +1,4 @@
-"""Keep a running pair's queue position for one formal GPU-OOM retry."""
+"""Keep a running pair's queue position during GPU-OOM recovery."""
 import argparse
 import fcntl
 import json
@@ -16,6 +16,7 @@ import traceback
 QUEUE_OPS = os.environ.get("QUEUE_OPS", "")
 ACTIVE_INDEX = Path(os.environ.get("ACTIVE_RUN_INDEX", "active-runs.json"))
 from oom_classify_1127 import driver_failure, find_gpu_oom
+from oom_contention import retry_delay
 
 FORMAL_LOGS = ("formal-driver.log", "formal-retry.log")
 NATIVE_LOGS = ("native-g5.log", "native-g6.log")
@@ -91,7 +92,7 @@ def oom_evidence(pair, positions, released, driver_started, kind=None, native_du
                 receipt = json.loads(retry_receipt.read_text())
                 if receipt.get("failed_log") == first.name and driver_failure(appended_lines(first, positions))[1]:
                     # This already-running owner used its internal transport retry for the same GPU OOM.
-                    return None
+                    match["internal_oom_retry"] = step is None
             return {"log": name, **match}
         if kind == "dojo" and rpc_failure and native_during_formal:
             for native in NATIVE_LOGS:
@@ -147,7 +148,13 @@ def original_result(pair, kind, origin, state, read, same, save):
         return read(receipt)
     if live_driver(pair, kind, read, same):
         state("WAIT_LIVE_ORPHAN_DRIVER", owner=origin)
+        deadline = time.monotonic() + 120
         while not receipt.is_file() and live_driver(pair, kind, read, same):
+            if time.monotonic() >= deadline:
+                result = {"phase": "LIVE_ORPHAN_DRIVER", "owner": origin}
+                completed = {"time": time.time(), "result": result, "owner": origin}
+                save(receipt, completed)
+                return completed
             time.sleep(3)
     if receipt.is_file():
         return read(receipt)
@@ -219,7 +226,10 @@ def run_locked(gate, pair, kind):
     try:
         state("ADOPTING", owner=origin, deployment=str(pair))
         save(gate / "identity.json", own)
+        deadline = time.monotonic() + 30
         while not (gate / "registered.json").is_file():
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Queue did not register this CPU observer")
             time.sleep(.25)
         assert read(gate / "registered.json")["identity"] == own
         registered = True
@@ -232,74 +242,97 @@ def run_locked(gate, pair, kind):
                 positions.update({n:pos for n,pos in log_positions(pair).items() if n in NATIVE_LOGS})
                 native_during_formal = True
             time.sleep(2)
-        assert read(pair / "identity.json") == origin
-        original_release = original_result(pair, kind, origin, state, read, same, save)
-        checkpoint_root = (Path(OmegaConf.load(pair / "config/formal.yaml").runner.resume_dir).parent
-                           if kind == "dojo" else None)
-        evidence = oom_evidence(pair, positions, original_release, started, kind, native_during_formal,
-                                checkpoint_root)
-        if not evidence:
-            outcome = "ORIGINAL_RELEASED"
-            detail = {"original_phase": original_release.get("result", original_release).get("phase")}
-            return
-        cfg_file = pair / "config/formal.yaml"
-        cfg = OmegaConf.load(cfg_file)
-        step, cp = complete_checkpoint(Path(cfg.runner.resume_dir).parent, kind)
-        if step >= int(cfg.runner.max_steps):
-            outcome = "TARGET_REACHED"
-            detail = {"step": step}
-            return
-        attempt = gate / "attempt-1"
-        attempt.mkdir()
-        save(attempt / "reason.json", dict(checkpoint=str(cp), evidence=evidence, original_owner=origin))
-        shutil.copy2(cfg_file, attempt / "formal.before.yaml")
-        state("PREPARING_OOM_RETRY", checkpoint=str(cp), evidence=evidence)
-        # All current jobs use launchers that create fresh logs exclusively.
-        # Archive only completed control artifacts in the original directory
-        # to preserve atomic renames even when the run and gate use different mounts.
-        archive = pair / ("prior-oom-retry-" + str(own["pid"]) + "-" + str(own["start"]))
-        archive.mkdir()
-        names = ["released.json", "identity.json", "registered.json", "status.json",
-                 "formal-driver.log", "formal-retry.log", "driver-identity.json",
-                 "formal-driver-identity.json", "first-resumed-update.json", "simulator-retry.json"]
-        if kind == "dojo":
-            names += ["native-g5.log", "native-g6.log"]
-        for name in names:
-            source = pair / name
-            if source.is_file():
-                source.rename(archive / name)
-        cfg.runner.resume_dir = str(cp)
-        cfg_tmp = cfg_file.with_name(".formal.oom-retry.yaml")
-        OmegaConf.save(cfg, cfg_tmp)
-        os.replace(cfg_tmp, cfg_file)
-        launcher = pair / "fastwam_pair.py" if kind == "fastwam" else Path(
-            plan["training_source"]) / "tools/dojo_grpo/pair_owner.py"
-        with (attempt / "owner.log").open("x") as stream:
-            child = subprocess.Popen([plan["python"], "-uB", str(launcher), str(pair)],
-                cwd=plan["training_source"], env=dict(os.environ, CUDA_VISIBLE_DEVICES="",
-                PYTHONPATH=plan["training_source"], PAIR_OOM_RETRY_RULES=str(Path(__file__).resolve().parent)),
-                stdin=subprocess.DEVNULL,
-                stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
-        while not (pair / "identity.json").is_file():
-            if child.poll() is not None:
-                raise RuntimeError(f"Retry owner exited before registration: {child.returncode}")
-            time.sleep(.2)
-        retry = read(pair / "identity.json")
-        assert retry["pid"] == child.pid and same(retry)
-        save(pair / "registered.json", {"identity": retry})
-        try:
-            updated = replace_active_identity(pair, expected, origin, retry, read, save)
-        except (OSError, KeyError, ValueError) as exc:
-            updated = []
-            print(f"Active index refresh: {exc}", file=sys.stderr, flush=True)
-        state("RUNNING_OOM_RETRY", owner=retry, resume=step, archive=str(archive), indexed_cards=updated)
-        rc = child.wait()
-        if (pair / "released.json").is_file():
-            result = read(pair / "released.json")
-        else:
-            result = {"phase": "RETRY_EXITED_WITHOUT_RECEIPT"}
-        detail = {"returncode": rc, "result": result, "resume": step}
-        outcome = "RETRY_FINISHED"
+        attempts, same_step_retries, contention_streak, last_step = 0, 0, 0, None
+        while True:
+            assert read(pair / "identity.json") == origin
+            original_release = original_result(pair, kind, origin, state, read, same, save)
+            checkpoint_root = (Path(OmegaConf.load(pair / "config/formal.yaml").runner.resume_dir).parent
+                               if kind == "dojo" else None)
+            evidence = oom_evidence(pair, positions, original_release, started, kind, native_during_formal,
+                                    checkpoint_root)
+            if not evidence:
+                if attempts:
+                    outcome = "RETRY_FINISHED"
+                    detail.update(result=original_release)
+                else:
+                    outcome = "ORIGINAL_RELEASED"
+                    detail = {"original_phase": original_release.get("result", original_release).get("phase")}
+                return
+            cfg_file = pair / "config/formal.yaml"
+            cfg = OmegaConf.load(cfg_file)
+            step, cp = complete_checkpoint(Path(cfg.runner.resume_dir).parent, kind)
+            if step >= int(cfg.runner.max_steps):
+                outcome = "TARGET_REACHED"
+                detail = {"step": step}
+                return
+            if step != last_step:
+                same_step_retries, contention_streak = 0, 0
+            last_step = step
+            same_step_retries += int(bool(evidence.get("internal_oom_retry")))
+            delay, attribution = retry_delay(evidence, expected, same_step_retries, contention_streak)
+            if delay is None:
+                outcome = "RETRY_FINISHED" if attempts else "ORIGINAL_RELEASED"
+                detail.update(result=original_release, resume=step, reason=attribution)
+                return
+            attempts += 1
+            same_step_retries += 1
+            contention_streak = contention_streak + 1 if attribution.get("external") else 0
+            attempt = gate / f"attempt-{attempts}"
+            attempt.mkdir()
+            save(attempt / "reason.json", dict(checkpoint=str(cp), evidence=evidence, original_owner=origin,
+                                                attribution=attribution, delay_seconds=delay))
+            if delay:
+                state("OOM_RETRY_BACKOFF", attempt=attempts, seconds=delay, reason=attribution)
+                time.sleep(delay)
+            shutil.copy2(cfg_file, attempt / "formal.before.yaml")
+            state("PREPARING_OOM_RETRY", checkpoint=str(cp), evidence=evidence)
+            # All current jobs use launchers that create fresh logs exclusively.
+            # Archive only completed control artifacts in the original directory
+            # to preserve atomic renames even when the run and gate use different mounts.
+            archive = pair / f"prior-oom-retry-{own['pid']}-{own['start']}-{attempts}"
+            archive.mkdir()
+            names = ["released.json", "identity.json", "registered.json", "status.json",
+                     "formal-driver.log", "formal-retry.log", "driver-identity.json",
+                     "formal-driver-identity.json", "first-resumed-update.json", "simulator-retry.json"]
+            if kind == "dojo":
+                names += ["native-g5.log", "native-g6.log"]
+            for name in names:
+                source = pair / name
+                if source.is_file():
+                    source.rename(archive / name)
+            cfg.runner.resume_dir = str(cp)
+            cfg_tmp = cfg_file.with_name(".formal.oom-retry.yaml")
+            OmegaConf.save(cfg, cfg_tmp)
+            os.replace(cfg_tmp, cfg_file)
+            launcher = pair / "fastwam_pair.py" if kind == "fastwam" else Path(
+                plan["training_source"]) / "tools/dojo_grpo/pair_owner.py"
+            started = time.time()
+            with (attempt / "owner.log").open("x") as stream:
+                child = subprocess.Popen([plan["python"], "-uB", str(launcher), str(pair)],
+                    cwd=plan["training_source"], env=dict(os.environ, CUDA_VISIBLE_DEVICES="",
+                    PYTHONPATH=plan["training_source"], PAIR_OOM_RETRY_RULES=str(Path(__file__).resolve().parent), OOM_RETRY_OWNER=str(pair)),
+                    stdin=subprocess.DEVNULL,
+                    stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+            deadline = time.monotonic() + 30
+            while not (pair / "identity.json").is_file():
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Retry owner did not publish its identity")
+                if child.poll() is not None:
+                    raise RuntimeError(f"Retry owner exited before registration: {child.returncode}")
+                time.sleep(.2)
+            retry = read(pair / "identity.json")
+            assert retry["pid"] == child.pid and same(retry)
+            save(pair / "registered.json", {"identity": retry})
+            try:
+                updated = replace_active_identity(pair, expected, origin, retry, read, save)
+            except (OSError, KeyError, ValueError) as exc:
+                updated = []
+                print(f"Active index refresh: {exc}", file=sys.stderr, flush=True)
+            state("RUNNING_OOM_RETRY", owner=retry, resume=step, archive=str(archive), indexed_cards=updated)
+            detail = {"returncode": child.wait(), "resume": step, "attempts": attempts}
+            origin = retry
+            positions = {}  # Previous attempt files were archived before this launch.
+            native_during_formal = (pair / "formal-driver.log").is_file()
     except SystemExit:
         outcome = "OPERATOR_STOP"
         raise
@@ -311,7 +344,10 @@ def run_locked(gate, pair, kind):
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         if child is not None and child.poll() is None:
             child.terminate()
-            child.wait()
+            try:
+                child.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                detail["cleanup"] = "Retry owner still holds its slot after SIGTERM"
         if original_release is not None and not (pair / "released.json").is_file():
             save(pair / "released.json", original_release)
         result = dict(phase=outcome, time=time.time(), **detail)
@@ -328,6 +364,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     sys.path.insert(0, QUEUE_OPS)
     run(args.gate.resolve(), args.pair.resolve(), args.kind)
-
-
-

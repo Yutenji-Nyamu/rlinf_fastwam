@@ -25,7 +25,15 @@
 +    _, cp = max(complete)
      cfg.runner.resume_dir=str(cp)
      OmegaConf.save(cfg,b/'config/formal.yaml')
-@@ -58,7 +70,14 @@
+@@ -43,5 +55,6 @@
+     assert read(b/'registered.json')['identity']==me
+     registered=True
+-    while any(same(w) for w in p['predecessors']):time.sleep(.3)
++    if os.environ.get('OOM_RETRY_OWNER') != str(b):
++        while any(same(w) for w in p['predecessors']):time.sleep(.3)
+     environment={**os.environ,**read(b/'training-environment.json'),'CUDA_VISIBLE_DEVICES':''}
+     for attempt in range(2):
+@@ -58,7 +71,14 @@
          if child.returncode==0:
              break
 -        message=logfile.read_text(errors='replace')
@@ -43,7 +51,7 @@
 +                                                          'RoboTwin simulator RPC exceeded'))
          if attempt or not native_fault:
              raise RuntimeError(f'Formal driver exited {child.returncode}, see {logfile.name}')
-@@ -74,2 +93,4 @@
+@@ -74,2 +94,4 @@
          except subprocess.TimeoutExpired:exact_signal(who,signal.SIGKILL)
      if registered:save(b/'released.json',dict(time=time.time(),result=read(b/'status.json')))
 +

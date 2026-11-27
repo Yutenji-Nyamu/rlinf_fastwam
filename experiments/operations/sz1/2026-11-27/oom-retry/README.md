@@ -1,14 +1,19 @@
-# 显存不足后优先恢复原训练
+# 在共享 GPU 上恢复显存不足的训练
 
-深圳 1 机的 4–7 卡由两个双卡 GRPO 和后续七个正式 clean RLT 共用。正式任务因 GPU 显存不足退出时，队列保留原卡位，从最近完整检查点重新启动同一任务一次。重试结束后按既有顺序交班。RLT 首次保存前从原始训练配置启动。四项无保存兜底继续由原队列循环管理，训练与评估各用 24 个环境分两批执行。
+4、7 卡运行 FastWAM，5、6 卡运行 Dojo。GPU 显存不足导致任务退出时，先从原任务最近完整检查点恢复。七个正式 RLT 候补也沿用这套判断。普通启动保留原队列规则。
 
-- 双卡任务保留模型、优化器、采样设置和原有卡号。FastWAM 核对两个 DCP 分片，Dojo 核对两份本地分片及完成标记。
-- 识别 CUDA、Vulkan 和渲染器明确报告的显存不足。CPU 观察进程读取任务退出记录和训练日志。队列等原任务释放后交接。人工停止、单独的通信失败和 GPU 驱动失去响应走各自原有处理。
-- RT2 单卡 RLT 的仿真通信重试和显存重试共用一个额外启动名额。正式 Dojo RLT 重开本任务自己的仿真并从正式训练接回。
-- 生产训练持续运行。验证使用 CPU 临时目录、模拟子进程、既有故障日志和真实恢复点。部署快照见 [deployment.json](deployment.json)。
+| 这次失败留下的证据 | 同一检查点如何处理 |
+|---|---|
+| 明确的 CUDA、Vulkan 或 GPU 渲染显存错误，同一张卡还有足以影响本次分配的其他用户占用 | 每次重新判断。证据持续时继续重试，间隔 30 秒、60 秒，随后每次 120 秒。|
+| 有显著同卡占用但进程已消失，或双卡中只有一张有外部占用且故障卡未定位 | 额外尝试至多两次。|
+| 已确认 GPU 显存不足，尚无争用证据 | 额外尝试一次，然后按原顺序交班。|
+| 普通 RPC 断开、CPU 内存不足、单独的驱动 Xid | 沿用各自原有的故障处理。|
 
-## 代码入口
+判据综合本次分配大小、报错中的空闲显存和其他 PID 的占用。1 GiB 是本机用于忽略零星图形上下文的判断下限。PyTorch 消息里的逻辑 GPU 0 由进程或作业信息映射至物理卡。已经写出新完整检查点后，重新计算连续失败次数。
 
-双卡接管用 `pair_gate.py` 和 `queue_admission.py`。FastWAM 原启动器的改动列于 `fastwam_pair.patch`。单卡 RLT 通过 `patch_formal_owners.py` 接入 `rlt_formal_oom_1127.py`。单次部署入口分别为 `arm_live_pairs.py` 和 `install_rlt.py`。它们复用现有队列的 `common`、计划文件及训练环境。
+双卡任务重新入场只等待与该任务匹配的旧 GPU 进程，清理预算 90 秒。查驱动限时 8 秒。清理超时留下占用进程并走原队列。其他用户可以留在卡上。发生 OOM 时才查询争用情况，正常训练期间没有新增 GPU 轮询。
 
-归档版用 `QUEUE_DEPLOYMENT`、`QUEUE_ROOT`、`FASTWAM_OWNER_ROOT`、`QUEUE_OPS`、`ACTIVE_RUN_INDEX` 指定现场目录。应用时保留改动前后的启动器用于回读。运行当前队列版本的 CPU 测试时，将原队列的 `ops` 加入 `PYTHONPATH`，用 `OOM_RETRY_OWNER_SOURCES` 指向对应版本的原始 RT2 和 Dojo RLT 启动器，再运行 `python -B -m unittest discover -p 'test_*.py'`。
+`oom_classify_1127.py` 识别失败，`oom_contention.py` 决定是否重试及退避时间。`pair_gate.py` 负责双卡队列，`queue_admission.py` 核对旧进程，`patch_dojo_admission.py` 与 `fastwam_pair.patch` 对接两路启动器。`rlt_formal_oom_1127.py` 和 `patch_formal_owners.py` 接入单卡 RLT。无保存兜底沿用既有循环。
+
+`install_contention.py` 是现有队列的在线升级入口，依赖原调度模块、实际启动器和上一版部署目录。`QUEUE_ROOT`、`FASTWAM_OWNER_ROOT`、`QUEUE_OPS`、`ACTIVE_RUN_INDEX` 分别指定这些现场路径。CPU 测试中将原队列的 `ops` 放入 `PYTHONPATH`，用 `OOM_RETRY_OWNER_SOURCES` 指向 RT2 与 Dojo RLT owner。现场回读见 [deployment.json](deployment.json)。
+

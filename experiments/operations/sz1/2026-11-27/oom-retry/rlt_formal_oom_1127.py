@@ -1,4 +1,4 @@
-"""Select the starting state for one formal clean RLT retry after confirmed GPU OOM."""
+"""Resume a clean RLT task after device-memory pressure on its assigned GPU."""
 import json
 import os
 import re
@@ -81,8 +81,8 @@ def select_retry(config):
     return not bool(prior), None
 
 
-def prepare_oom_retry(directory, output, native=None):
-    """The owner calls this only after its first failed formal child has exited."""
+def prepare_oom_retry(directory, output, native=None, *, budget=None, gpu=None, phase="formal"):
+    """Return None for unrelated exits, False on handoff, True when a retry is ready."""
     from omegaconf import OmegaConf
     from common import save
     step, evidence, rpc, _ = driver_failure(read_attempt(output))
@@ -108,18 +108,39 @@ def prepare_oom_retry(directory, output, native=None):
         if not evidence:
             return None
         source = native[0].name
-    allowed, checkpoint = select_retry(config)
+    allowed, checkpoint = select_retry(config) if phase == "formal" else (True, None)
     if not allowed:
         return False
+    receipt = dict(time=time.time(), phase=phase, source=source,
+                   checkpoint=str(checkpoint) if checkpoint else None, kind=evidence["kind"],
+                   start="checkpoint" if checkpoint else "initial", error=evidence["line"][-500:])
+    if budget is not None:
+        from oom_contention import retry_delay
+        key = (phase, receipt["checkpoint"])
+        if budget.get("key") != key:
+            budget.update(key=key, retries=0, streak=0)
+        evidence = dict(evidence, source=source, phase=phase, checkpoint=receipt["checkpoint"],
+                        physical_gpu=int(gpu))
+        delay, decision = retry_delay(evidence, [int(gpu)], budget["retries"], budget["streak"])
+        receipt.update(decision=decision, delay_seconds=delay, prior_retries=budget["retries"])
+        if delay is None:
+            save(directory / "formal-oom-retry.json", receipt)
+            return False
+        budget.update(retries=budget["retries"] + 1, delay=delay,
+                      streak=budget["streak"] + 1 if decision.get("external") else 0)
     if checkpoint is not None and config.runner.resume_dir != str(checkpoint):
         config.runner.resume_dir = str(checkpoint)
         temp = target.with_suffix(".oom-retry.tmp")
         OmegaConf.save(config, temp)
         os.replace(temp, target)
-    save(directory / "formal-oom-retry.json",
-         dict(time=time.time(), source=source, checkpoint=str(checkpoint) if checkpoint else None,
-              start="checkpoint" if checkpoint else "initial", kind=evidence["kind"], error=evidence["line"][-500:]))
+    save(directory / "formal-oom-retry.json", receipt)
     return True
+
+
+def attempt_name(phase, attempt):
+    if attempt == 0:
+        return phase
+    return phase + ("-retry" if attempt == 1 else f"-retry-{attempt}")
 
 
 def native_after(lines, timestamp):

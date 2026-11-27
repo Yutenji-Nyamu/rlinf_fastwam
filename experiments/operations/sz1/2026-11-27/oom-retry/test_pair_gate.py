@@ -33,9 +33,11 @@ class PairGateTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             d = Path(tmp)
             (d/"formal-driver.log").write_text(OOM + RPC)
-            (d/"formal-retry.log").write_text(STEP + OOM)
+            (d/"formal-retry.log").write_text(OOM)
             (d/"simulator-retry.json").write_text(json.dumps({"failed_log":"formal-driver.log"}))
-            self.assertIsNone(oom_evidence(d, {}, FAILED, 0, "fastwam"))
+            self.assertTrue(oom_evidence(d, {}, FAILED, 0, "fastwam")["internal_oom_retry"])
+            (d/"formal-retry.log").write_text(STEP + OOM)
+            self.assertFalse(oom_evidence(d, {}, FAILED, 0, "fastwam")["internal_oom_retry"])
             (d/"formal-driver.log").write_text(OOM + STEP + RPC)
             self.assertEqual(oom_evidence(d, {}, FAILED, 0, "fastwam")["log"], "formal-retry.log")
 
@@ -134,7 +136,7 @@ class PairGateTests(unittest.TestCase):
         from unittest import mock
         from pair_gate import run
 
-        for result in ("success", "second_oom", "launch_failure"):
+        for result in ("success", "second_oom", "launch_failure", "external_then_clear", "advanced_checkpoint"):
             with self.subTest(result=result), TemporaryDirectory() as td:
                 base = Path(td)
                 pair, gate = base / "pair", base / "gate"
@@ -185,7 +187,14 @@ class PairGateTests(unittest.TestCase):
                     return live[0] if who["pid"] == 50 else Path("/proc",str(who["pid"])).exists()
                 deps={"common":types.SimpleNamespace(proc=lambda pid:controller,same=same,read=read,save=save),
                       "omegaconf":types.SimpleNamespace(OmegaConf=oc)}
-                with mock.patch.dict(sys.modules,deps), mock.patch("pair_gate.ACTIVE_INDEX",active_file), \
+                calls = []
+                def decide(evidence, cards, previous, streak):
+                    self.assertEqual(cards, [4, 7])
+                    self.assertEqual(evidence["kind"], "cuda")
+                    calls.append((previous, streak))
+                    external = result == "external_then_clear" and len(calls) <= 2
+                    return (0 if external or not previous else None), {"external": external}
+                with mock.patch("pair_gate.retry_delay", side_effect=decide), mock.patch.dict(sys.modules,deps), mock.patch("pair_gate.ACTIVE_INDEX",active_file), \
                      mock.patch("pair_gate.os.getuid",return_value=1003), mock.patch("pair_gate.signal.signal"):
                     if result == "launch_failure":
                         with mock.patch("pair_gate.subprocess.Popen",side_effect=OSError("launch failed")):
@@ -197,14 +206,35 @@ class PairGateTests(unittest.TestCase):
                     self.assertEqual(read(pair/"released.json"),FAILED)
                     self.assertEqual(read(gate/"released.json")["phase"],"GATE_ERROR")
                 else:
-                    terminal="COMPLETE_RETURN_RLT" if result=="success" else "FAILED_RETURN_RLT"
+                    terminal="COMPLETE_RETURN_RLT" if result in ("success", "advanced_checkpoint") else "FAILED_RETURN_RLT"
                     self.assertEqual(read(pair/"released.json")["result"]["phase"],terminal)
                     receipt=read(gate/"released.json")
-                    self.assertEqual((receipt["phase"],receipt["resume"]),("RETRY_FINISHED",20))
+                    end_step = 21 if result == "advanced_checkpoint" else 20
+                    self.assertEqual((receipt["phase"],receipt["resume"]),("RETRY_FINISHED",end_step))
                     self.assertEqual(read(active_file)["slots"]["7"]["identity"],read(pair/"identity.json"))
                     self.assertEqual(read(active_file)["slots"]["5"]["identity"],"untouched")
-                    self.assertEqual((pair/"retry-count").read_text(),"1")
+                    count = 2 if result in ("external_then_clear", "advanced_checkpoint") else 1
+                    self.assertEqual(int((pair/"retry-count").read_text()), count)
+                    self.assertEqual(len(list(gate.glob("attempt-*/reason.json"))), count)
+                    self.assertEqual(len(list(pair.glob("prior-oom-retry-*"))), count)
+                    if result == "external_then_clear":
+                        self.assertEqual(calls, [(0,0),(1,1),(2,2)])
+                    elif result == "advanced_checkpoint":
+                        self.assertEqual(calls, [(0,0),(0,0)])
                 self.assertTrue((gate/"attempt-1/reason.json").is_file())
+
+    def test_orphan_is_reported_after_bounded_cleanup_wait(self):
+        from unittest import mock
+        from pair_gate import original_result
+        with TemporaryDirectory() as td:
+            pair=Path(td)
+            read=lambda p:json.loads(p.read_text())
+            save=lambda p,v:p.write_text(json.dumps(v))
+            with mock.patch("pair_gate.live_driver",return_value=True), \
+                 mock.patch("pair_gate.time.monotonic",side_effect=[0,121]):
+                r=original_result(pair,"fastwam",{"pid":12},lambda *a,**k:None,read,lambda _:False,save)
+            self.assertEqual(r["result"]["phase"],"LIVE_ORPHAN_DRIVER")
+            self.assertEqual(read(pair/"released.json"),r)
 
     def test_lost_owner_and_driver_reconstruct_release(self):
         from unittest import mock
@@ -224,16 +254,22 @@ FAKE_OWNER = """import json,os,time,sys
 from pathlib import Path
 d=Path(sys.argv[1]);w=dict(pid=os.getpid(),uid=os.getuid(),start=100)
 assert (Path(os.environ["PAIR_OOM_RETRY_RULES"])/"pair_gate.py").is_file()
-assert Path((d/'config/formal.yaml').read_text()).name=='global_step_20'
-with (d/'retry-count').open('x') as out: out.write('1')
+assert Path(os.environ['OOM_RETRY_OWNER']) == d
+count_path=d/'retry-count'
+n=1+int(count_path.read_text() if count_path.exists() else 0)
+count_path.write_text(str(n))
+mode=(d/'expected-result').read_text()
+cp=Path((d/'config/formal.yaml').read_text())
+assert cp.name==('global_step_21' if mode=='advanced_checkpoint' and n==2 else 'global_step_20')
+if mode=='advanced_checkpoint' and n==1:
+ (cp.parent/'global_step_21/actor/dcp_checkpoint/__1_0.distcp').write_bytes(b'model')
 (d/'identity.json').write_text(json.dumps(w))
 for i in range(100):
  if (d/'registered.json').is_file():break
  time.sleep(.03)
 assert json.loads((d/'registered.json').read_text())['identity']==w
-succeeded=(d/'expected-result').read_text()=='success'
+succeeded=mode=='success' or (mode=='advanced_checkpoint' and n==2)
 (d/'formal-driver.log').write_text('finished' if succeeded else 'torch.OutOfMemoryError: CUDA out of memory')
 (d/'released.json').write_text(json.dumps({'result':{'phase':'COMPLETE_RETURN_RLT' if succeeded else 'FAILED_RETURN_RLT'}}))
 sys.exit(0 if succeeded else 1)
 """
-

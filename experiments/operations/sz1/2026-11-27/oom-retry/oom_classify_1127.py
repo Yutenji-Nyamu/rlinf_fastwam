@@ -11,8 +11,14 @@ _CUDA = re.compile(
     r"CUDA(?: error:)?\s+out of memory\b|\bCUDA error:\s*out of memory\b",
     re.IGNORECASE,
 )
+_NAMED = re.compile(
+    r"\btorch\.cuda\.OutOfMemoryError\s*:|"
+    r"\b(?:vk::OutOfDeviceMemoryError|ErrorOutOfDeviceMemory)\b|"
+    r"\b(?:CUDA|Vulkan)\s+(?:error\s*[:(]?\s*2\)?\s*[:,-]\s*)?out of (?:device )?memory\b",
+    re.IGNORECASE,
+)
 _STATUS = re.compile(
-    r"(?:^\s*|\b(?:error:|returned|failed with)\s+)"
+    r"(?:^\s*|\b(?:error:|returned|failed with|failed:|result:)\s+)"
     r"(?P<code>VK_ERROR_OUT_OF_DEVICE_MEMORY|CUDA_ERROR_OUT_OF_MEMORY|cudaErrorMemoryAllocation)\b",
     re.IGNORECASE,
 )
@@ -37,6 +43,8 @@ def find_gpu_oom(lines):
             continue
         if _CUDA.search(line):
             kind = "cuda"
+        elif _NAMED.search(line) and not any(t in line.lower() for t in ("enable checks","out of host memory","defaultcpuallocator")):
+            kind = "vulkan" if any(t in line.lower() for t in ("vk::", "vulkan", "outofdevicememory")) else "cuda"
         elif _OIDN.search(line):
             kind = "oidn_renderer"
         else:

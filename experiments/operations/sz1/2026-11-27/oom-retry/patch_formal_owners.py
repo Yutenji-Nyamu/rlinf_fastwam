@@ -59,7 +59,7 @@ def replace_section(text, before, after):
     return text.replace(before, after, 1)
 
 
-def update(text, bench):
+def intermediate_owner(text, bench):
     if bench == "rt2":
         if RT2_NEW in text:
             return text
@@ -80,6 +80,69 @@ def update(text, bench):
     original = text[start:end]
     assert 'p = launch(phase["name"], phase["command"], env)' in original and 'code = 124' in original
     return replace_section(text,original,DOJO_RUN)
+
+
+RT2_LOOP = '''            if p.get("retry_formal_gpu_oom"):
+                from rlt_formal_oom_1127 import attempt_name, drain_formal, prepare_oom_retry
+            budget = {}
+            attempt = 0
+            while True:
+                if p.get("retry_formal_gpu_oom"):
+                    output = d / (attempt_name(phase["name"], attempt) + ".log")
+                else:
+                    output = d / (phase["name"] + ("-retry.log" if attempt else ".log"))
+'''
+RT2_DECIDE = '''                oom_retry = None
+                if (p.get("retry_formal_gpu_oom") and phase["name"] in ("formal", "stage1", "reference_eval")
+                        and code not in (124, 143, -15)):
+                    oom_retry = prepare_oom_retry(d, output, budget=budget, gpu=p["gpu"], phase=phase["name"])
+                if oom_retry:
+                    drain_formal(d)
+                    time.sleep(budget["delay"])
+                elif not (oom_retry is None and attempt == 0 and phase["name"] == "formal"
+                          and prepare_retry(d, p, output)):
+                    raise RuntimeError(f"{phase['name']} exited {code}, see {output.name}")
+                attempt += 1
+'''
+DOJO_LOOP = '''            eligible = name == "formal" and plan.get("retry_formal_gpu_oom")
+            if not eligible:
+                code = run_phase(name, phase)
+            else:
+                from rlt_formal_oom_1127 import attempt_name, prepare_oom_retry, drain_formal, clear_inactive_socket
+                attempt, budget = 0, {}
+                native_name = f"native-g{gpu}"
+                while True:
+                    native_log = d / (native_name + ".log")
+                    native_offset = native_log.stat().st_size
+                    attempt_log = attempt_name(name, attempt)
+                    code = run_phase(attempt_log, phase)
+                    if not code or code in (124, 143, -15):
+                        break
+                    if not prepare_oom_retry(d, d / (attempt_log + ".log"), (native_log, native_offset),
+                                             budget=budget, gpu=gpu, phase=name):
+                        break
+                    drain_formal(d)
+                    native.wait(timeout=15)
+                    clear_inactive_socket(d / f"rpc/gpu{gpu}.sock")
+                    time.sleep(budget["delay"])
+                    attempt += 1
+                    native_name = attempt_name(f"native-g{gpu}", attempt)
+                    native = start_native(native_name)
+                    status(name, started=time.time(), attempt=attempt + 1)
+'''
+
+
+def update(text, bench):
+    """Upgrade either the original launcher or the installed single-retry version."""
+    if (bench == "rt2" and RT2_DECIDE in text) or (bench == "dojo" and DOJO_LOOP in text):
+        return text
+    text = intermediate_owner(text, bench)
+    if bench == "rt2":
+        old_loop = ('            for attempt in range(2):\n'
+                    '                output=d/(phase["name"] + (".log" if attempt==0 else "-retry.log"))\n')
+        return replace_section(replace_section(text, old_loop, RT2_LOOP), RT2_NEW, RT2_DECIDE)
+    old_loop = "            eligible = " + DOJO_RUN.split("            eligible = ", 1)[1]
+    return replace_section(text, old_loop, DOJO_LOOP)
 
 
 def main():
