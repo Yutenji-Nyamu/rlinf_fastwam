@@ -1,11 +1,22 @@
 {
-  "phase": "blocked_in_gpu_driver",
-  "observed_at": "2026-11-27T12:02:24+08:00",
+  "phase": "training_resumed",
+  "observed_at": "2026-11-27T14:33:24+08:00",
   "resume_from": {
     "turn_switch": 115,
     "put_bottles_into_dustbin": 88
   },
-  "new_complete_checkpoints": {},
-  "note": "New completed checkpoints after dispatch will be recorded here. No hardware reset has been recorded.",
+  "new_complete_checkpoints": {
+    "turn_switch": {
+      "round": 116,
+      "checkpoint_completed_at": "2026-11-27T14:14:45+08:00",
+      "two_rank_files": "present"
+    },
+    "put_bottles_into_dustbin": {
+      "round": 89,
+      "checkpoint_completed_at": "2026-11-27T14:31:54+08:00",
+      "two_rank_files": "present"
+    }
+  },
+  "note": "Both training jobs completed and saved a new round after dispatch. Hardware maintenance action requires a separate operator record.",
   "local_recovery": "Root-issued targeted reset blocked inside the management lock before the driver acknowledged a reset. Standard UVM and core module unload were both refused as in use. Queue is armed for the current boot."
 }
