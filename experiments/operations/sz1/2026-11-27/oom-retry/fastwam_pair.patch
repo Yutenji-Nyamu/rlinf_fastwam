@@ -1,0 +1,50 @@
+--- a/fastwam_pair.py
++++ b/fastwam_pair.py
+@@ -30,8 +30,20 @@
+     base=Path(cfg.runner.resume_dir)
+     root=Path(p['run'])/'turn_switch/checkpoints'
+-    complete=[c for c in [base,*root.glob('global_step_*')] if (c/'dojo-complete.json').is_file()
+-              and (c/'actor/dcp_checkpoint/.metadata').is_file()
+-              and sum(f.stat().st_size>0 for f in c.rglob('*.distcp'))>=2]
+-    cp=max(complete,key=lambda c:int(c.name[12:]))
++    complete = []
++    for candidate in [base, *root.glob('global_step_*')]:
++        if not candidate.name[12:].isdigit():
++            continue
++        try:
++            step = int(candidate.name[12:])
++            marker = read(candidate/'dojo-complete.json')
++            files = [candidate/'actor/dcp_checkpoint/.metadata',
++                     *(candidate/f'actor/dcp_checkpoint/__{rank}_0.distcp' for rank in (0, 1))]
++            if int(marker['step']) == step and all(f.is_file() and f.stat().st_size > 0 for f in files):
++                complete.append((step, candidate))
++        except (FileNotFoundError, ValueError, TypeError, KeyError):
++            continue
++    if not complete:
++        raise RuntimeError(f'No complete two-rank FastWAM checkpoint in {root}')
++    _, cp = max(complete)
+     cfg.runner.resume_dir=str(cp)
+     OmegaConf.save(cfg,b/'config/formal.yaml')
+@@ -58,7 +70,14 @@
+         if child.returncode==0:
+             break
+-        message=logfile.read_text(errors='replace')
+-        native_fault=any(term in message for term in ('SimulatorTransportError:', 'Fatal Python error: PyGILState_Release',
+-                                                      'RoboTwin simulator RPC exceeded'))
++        rules = os.environ.get('PAIR_OOM_RETRY_RULES')
++        if rules:
++            sys.path.insert(0, rules)
++            from pair_gate import retry_transport
++            with logfile.open(errors='replace') as attempt_log:
++                native_fault = retry_transport(attempt_log)
++        else:
++            message=logfile.read_text(errors='replace')
++            native_fault=any(term in message for term in ('SimulatorTransportError:', 'Fatal Python error: PyGILState_Release',
++                                                          'RoboTwin simulator RPC exceeded'))
+         if attempt or not native_fault:
+             raise RuntimeError(f'Formal driver exited {child.returncode}, see {logfile.name}')
+@@ -74,2 +93,4 @@
+         except subprocess.TimeoutExpired:exact_signal(who,signal.SIGKILL)
+     if registered:save(b/'released.json',dict(time=time.time(),result=read(b/'status.json')))
++
++
