@@ -270,7 +270,7 @@ class NativeLoop:
         if not all(registered):
             raise RuntimeError("Native task has no registered success conditions")
         self.bottles = None
-        if self.cfg.get("training_reward") == "bottle_quarters":
+        if self.cfg.get("training_reward") in ("bottle_quarters", "bottle_official"):
             if self.cfg["task"] != "put_bottles_into_dustbin" or any(
                 len(manager.score_list[i]) != 4 for i in range(self.n)
             ):
@@ -372,7 +372,14 @@ class NativeLoop:
             self.last_obs = self.observations()
         rewards, terms, truncs = terminal_arrays(before, dones, success)
         if self.bottles is not None:
-            if self.mode == "train":
+            if self.mode == "train" and self.cfg.get("training_reward") == "bottle_official":
+                # Successful lanes already received 1 at their first terminal action.
+                failed = np.flatnonzero(~before & truncs[:, -1])
+                if failed.size:
+                    points = self.env.reward_manager.get_score(self.env.success)
+                    final_action = np.argmax(dones[failed], axis=1)
+                    rewards[failed, final_action] = np.asarray(points, dtype=np.float32)[failed] / 100
+            elif self.mode == "train":
                 rewards = increments
             self.bottles.episode_return += rewards.sum(axis=1)
         if dones[:, -1].all() and not self.wave_recorded:

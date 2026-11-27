@@ -18,7 +18,7 @@ from rlinf.algorithms.utils import calculate_scores, preprocess_embodied_advanta
 from rlinf.workers.actor.embodied_fsdp_actor_worker import EmbodiedFSDPActor
 
 
-def native_case(mode, directory):
+def native_case(mode, directory, reward_mode="bottle_quarters"):
     # Four lanes: 2 bottles at timeout, 4 without home, full success, no bottles.
     stages = [[0, 1, 0, 0], [1, 2, 1, 0], [1, 3, 2, 0], [2, 4, 3, 0]]
     env = SimpleNamespace(end_flag=[False] * 4, success=[False] * 4,
@@ -34,11 +34,16 @@ def native_case(mode, directory):
                 env.end_flag[i] = True
                 env.success[i] = i == 2
 
+    # Mimic the native score API. A fourth bottle with no return to origin gives 40.
+    def score(success):
+        return [100 if won else (0, 10, 25, 40, 40)[count]
+                for won, count in zip(success, env.reward_manager.score_completed_count)]
+    env.reward_manager.get_score = score
     env.take_action_batch = step
     with TemporaryDirectory(dir=directory) as temp:
         loop = NativeLoop.__new__(NativeLoop)
         loop.env, loop.n, loop.mode = env, 4, mode
-        loop.cfg = {"capture_every_action":True}
+        loop.cfg = {"capture_every_action":True, "training_reward":reward_mode}
         loop.bottles = BottleProgress(4)
         loop.train_renderer = "chunk"
         loop.totals = {"action_seconds":0.0,"observation_seconds":0.0}
@@ -51,7 +56,13 @@ def native_case(mode, directory):
         batches = [loop.step({"mode": mode,"actions":actions}) for _ in range(3)]
         rewards = np.concatenate([b["rewards"] for b in batches], axis=1)
         rows = json.loads((loop.output/"completed-waves.jsonl").read_text())["rows"]
-        np.testing.assert_array_equal(rewards.sum(axis=1), [.5, 1, 1, 0] if mode=="train" else [0,0,1,0])
+        expected = [0,0,1,0]
+        if mode == "train":
+            expected = [.25,.4,1,0] if reward_mode == "bottle_official" else [.5,1,1,0]
+        np.testing.assert_allclose(rewards.sum(axis=1), expected)
+        if reward_mode == "bottle_official":
+            np.testing.assert_allclose(rewards[:,3], expected)
+            assert not rewards[:,:3].any()
         assert not rewards[:,4:].any()
         assert [r["bottles"] for r in rows] == [2,4,4,0]
         assert [r["success"] for r in rows] == [False,False,True,False]
@@ -61,9 +72,9 @@ def native_case(mode, directory):
 
 
 def actor_case():
-    # The first group has just one quarter-point across eight episodes.
+    # The first group has just one partial score across eight episodes.
     # The second has identical partial scores and the third spans the full range.
-    episode_scores = torch.tensor([.25]+[0.]*7+[.50]*8+[0,.25,.50,.75,1,0,0,0])
+    episode_scores = torch.tensor([.10]+[0.]*7+[.40]*8+[0,.10,.25,.40,1,0,0,0])
     rewards = torch.zeros(3,24,50)
     rewards[0,:,3] = torch.minimum(episode_scores, torch.full_like(episode_scores,.25))
     rewards[1,:,10] = episode_scores - rewards[0,:,3]
@@ -91,5 +102,7 @@ if __name__ == "__main__":
     with TemporaryDirectory() as temp:
         native_case("train",temp)
         native_case("eval",temp)
+        native_case("train",temp,"bottle_official")
+        native_case("eval",temp,"bottle_official")
     actor_case()
     print("PASS native train and eval, repeated and terminal steps, GRPO filters, scores and advantages")

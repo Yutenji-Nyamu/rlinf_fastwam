@@ -1,0 +1,19 @@
+--- a/tools/dojo_grpo/pair_owner.py
++++ b/tools/dojo_grpo/pair_owner.py
+@@ -137,14 +137,14 @@
+             time.sleep(0.2)
+         assert read(d / "registered.json")["identity"] == me
+         registered = True
++        while any(same(previous) for previous in plan["predecessors"]):
++            time.sleep(0.25)
+         rules = os.environ.get("PAIR_OOM_RETRY_RULES")
+         if rules:
+             sys.path.insert(0, rules)
+             from queue_admission import wait_retry_cleanup
+             wait_retry_cleanup(d, cards)
+         else:
+-            while any(same(who) for who in plan["predecessors"]):
+-                time.sleep(0.25)
+             deadline = time.monotonic() + 240
+             while True:
+                 snapshot = gpus()

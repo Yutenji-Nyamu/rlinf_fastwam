@@ -1,0 +1,47 @@
+--- a/pair_gate.py
++++ b/pair_gate.py
+@@ -246,8 +246,10 @@
+         while True:
+             assert read(pair / "identity.json") == origin
+             original_release = original_result(pair, kind, origin, state, read, same, save)
+-            checkpoint_root = (Path(OmegaConf.load(pair / "config/formal.yaml").runner.resume_dir).parent
+-                               if kind == "dojo" else None)
++            cfg_file = pair / "config/formal.yaml"
++            cfg = OmegaConf.load(cfg_file)
++            checkpoint_root = (Path(cfg.runner.logger.log_path) / cfg.runner.logger.experiment_name / "checkpoints"
++                               if cfg.runner.resume_dir is None else Path(cfg.runner.resume_dir).parent)
+             evidence = oom_evidence(pair, positions, original_release, started, kind, native_during_formal,
+                                     checkpoint_root)
+             if not evidence:
+@@ -258,9 +260,10 @@
+                     outcome = "ORIGINAL_RELEASED"
+                     detail = {"original_phase": original_release.get("result", original_release).get("phase")}
+                 return
+-            cfg_file = pair / "config/formal.yaml"
+-            cfg = OmegaConf.load(cfg_file)
+-            step, cp = complete_checkpoint(Path(cfg.runner.resume_dir).parent, kind)
++            if cfg.runner.resume_dir is None and not any(checkpoint_root.glob("global_step_*/dojo-complete.json")):
++                step, cp = 0, None
++            else:
++                step, cp = complete_checkpoint(checkpoint_root, kind)
+             if step >= int(cfg.runner.max_steps):
+                 outcome = "TARGET_REACHED"
+                 detail = {"step": step}
+@@ -279,7 +282,7 @@
+             contention_streak = contention_streak + 1 if attribution.get("external") else 0
+             attempt = gate / f"attempt-{attempts}"
+             attempt.mkdir()
+-            save(attempt / "reason.json", dict(checkpoint=str(cp), evidence=evidence, original_owner=origin,
++            save(attempt / "reason.json", dict(checkpoint=str(cp) if cp is not None else None, evidence=evidence, original_owner=origin,
+                                                 attribution=attribution, delay_seconds=delay))
+             if delay:
+                 state("OOM_RETRY_BACKOFF", attempt=attempts, seconds=delay, reason=attribution)
+@@ -300,7 +303,7 @@
+                 source = pair / name
+                 if source.is_file():
+                     source.rename(archive / name)
+-            cfg.runner.resume_dir = str(cp)
++            cfg.runner.resume_dir = str(cp) if cp is not None else None
+             cfg_tmp = cfg_file.with_name(".formal.oom-retry.yaml")
+             OmegaConf.save(cfg, cfg_tmp)
+             os.replace(cfg_tmp, cfg_file)
