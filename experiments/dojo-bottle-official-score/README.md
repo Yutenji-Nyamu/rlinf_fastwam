@@ -4,5 +4,5 @@
 
 与旧版逐瓶 0.25 对照，从原始 π0.5 开始。每轮 128 局，每组 8 局，两卡各 32 个仿真环境、采两批。每局 700 步，每 50 步看图，训练噪声 0.5，学习率 5e-6，每轮更新两遍，上限 300 轮。先做原模型 32 局独评，再在第 2 轮及每 10 轮评估同批布局。第 20、30 轮重点看完整成功率、平均瓶数、投完三瓶后最终完成的比例。
 
-配置来自正式入口。[训练配置](formal.yaml) · [评估配置](final_eval.yaml) · [原始参考配置](../dojo-bottle-quarters/formal.yaml) · [训练实现](../../tools/dojo_grpo/native_entry.py) · [CPU 测试](../../tools/dojo_grpo/test_bottle_progress.py)。设置两个 native worker 的 `training_reward` 为 `bottle_official`。原始逐局记录存于各自 `native-g*/completed-waves.jsonl`，将部署目录传给 [summarize_progress.py](summarize_progress.py) 可复算三个指标。首轮回执以 [run.json](run.json) 为准。
+配置来自正式入口。[训练配置](formal.yaml) · [评估配置](final_eval.yaml) · [原始参考配置](../dojo-bottle-quarters/formal.yaml) · [训练实现](../../tools/dojo_grpo/native_entry.py) · [CPU 测试](../../tools/dojo_grpo/test_bottle_progress.py)。设置两个 native worker 的 `training_reward` 为 `bottle_official`。原始逐局记录存于各自 `native-g*/completed-waves.jsonl`，将部署目录传给 [summarize_progress.py](summarize_progress.py) 可复算三个指标。[端到端抽查](validation.json) 包含旧版的 128 局实际轨迹重评分结果。新实验的采样和完整检查点见 [run.json](run.json)。
 
