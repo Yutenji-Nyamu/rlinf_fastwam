@@ -1,0 +1,73 @@
+--- a/tools/dojo_grpo/pair_owner.py
++++ b/tools/dojo_grpo/pair_owner.py
+@@ -12,7 +12,6 @@
+ import sys
+ import time
+ import traceback
+-import xml.etree.ElementTree as ET
+ from multiprocessing.connection import Client
+ from pathlib import Path
+ 
+@@ -236,6 +235,16 @@
+                     str(g),
+                 ] + command
+             full.append((g,command,e))
++        # A crash can leave the Unix socket on disk after its listener is gone.
++        for g in cards:
++            socket_path = d / f"rpc/gpu{g}.sock"
++            if socket_path.exists():
++                entries = Path("/proc/net/unix").read_text().splitlines()[1:]
++                if any(line.split(maxsplit=7)[-1] == str(socket_path) for line in entries):
++                    raise RuntimeError(f"Native socket still active: {socket_path}")
++                if not socket_path.is_socket() or socket_path.stat().st_uid != os.getuid():
++                    raise RuntimeError(f"Unexpected object at native socket path: {socket_path}")
++                socket_path.unlink()
+         for g,command,e in full:
+             native.append(launch(f"native-g{g}", command, e, plan["native_repo"]))
+         status("NATIVE_STARTING", envs_per_card=plan["native_envs_per_card"])
+@@ -265,33 +274,22 @@
+             if plan.get("fresh_process_per_wave")
+             else {p.pid for p in native}
+         )
++        snapshot = gpus()
+         unexpected = [
+-            {"gpu": g, **r}
+-            for g, card in gpus().items()
+-            for r in card["processes"]
+-            if r["pid"] in owned and g not in cards
++            {"gpu": g, **row}
++            for g, card in snapshot.items()
++            for row in card["processes"]
++            if row["pid"] in owned and g not in cards
+         ]
+-        save(
+-            d / "native-binding.json", {"observed": gpus(), "outside_pair": unexpected}
+-        )
++        save(d / "native-binding.json", {"observed": snapshot, "outside_pair": unexpected})
+         if unexpected:
+-            if any(r["type"] != "G" for r in unexpected):
+-                raise RuntimeError(f"Native compute binding mismatch: {unexpected}")
+-            # Reuse the previously reviewed 7 MiB graphics-only Kit residual.
+-            # Inspect this exact PID's memory, never approve a compute context.
+-            tree = ET.fromstring(subprocess.check_output(["nvidia-smi", "-q", "-x"]))
++            limits = plan.get("reviewed_graphics_residual_mib", {})
+             residuals = []
+-            limits = plan.get("reviewed_graphics_residual_mib", {})
+-            for index, gpu in enumerate(tree.findall("gpu")):
+-                for process in gpu.findall("processes/process_info"):
+-                    if int(process.findtext("pid")) not in owned or index in cards:
+-                        continue
+-                    amount = int(process.findtext("used_memory").split()[0])
+-                    assert process.findtext("type") == "G" and amount <= limits.get(
+-                        str(index), -1
+-                    )
+-                    residuals.append({"gpu": index, "mib": amount, "type": "G"})
+-            assert len(residuals) == len(unexpected)
++            for row in unexpected:
++                gpu, size = row["gpu"], row["mib"]
++                if row["type"] != "G" or size < 0 or size > limits.get(str(gpu), -1):
++                    raise RuntimeError(f"Unexpected native GPU context: {row}")
++                residuals.append({"gpu": gpu, "mib": size, "type": "G"})
+             save(
+                 d / "graphics-binding-reviewed.json",
+                 {
