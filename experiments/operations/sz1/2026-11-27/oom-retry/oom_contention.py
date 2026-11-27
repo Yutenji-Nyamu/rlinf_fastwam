@@ -1,5 +1,6 @@
 """Decide whether another restart is warranted after a terminal GPU allocation error."""
 import os
+import pwd
 import re
 import subprocess
 from pathlib import Path
@@ -64,7 +65,12 @@ def card_snapshot(cards):
 
 def retry_delay(evidence, cards, previous_retries, contention_streak, *, snapshot=None):
     """A delay of None hands off. Never infer a physical card from a CUDA logical device number."""
+    if evidence.get("kind") == "robotwin_native_restart":
+        # A native reset fault only warrants another try after training has made progress.
+        return (30 if previous_retries == 0 else None), dict(external=False, reason="reproduced_robotwin_native_error")
     cards = tuple(map(int, cards))
+    if evidence.get("physical_gpu") in cards:
+        cards = (evidence["physical_gpu"],)
     line = evidence.get("line", "")
     native = re.search(r"native-g(\d+)(?:[-.]|$)", str(evidence.get("log", "")))
     if native and int(native[1]) in cards:
@@ -80,6 +86,8 @@ def retry_delay(evidence, cards, previous_retries, contention_streak, *, snapsho
     ids = set(peers)
     if source_pid:
         ids.add(int(source_pid[1]))
+    if evidence.get("worker_pid"):
+        ids.add(evidence["worker_pid"])
     located = [{g for g in cards if any(pid == ident for pid, _, _ in rows.get(g, []))}
                for ident in ids]
     located = [group for group in located if group]
@@ -112,6 +120,23 @@ def retry_delay(evidence, cards, previous_retries, contention_streak, *, snapsho
         delay = 30 if previous_retries == 0 else 60
     else:
         delay = None
+    # Keep the identity from the same post-failure snapshot that informed the decision.
+    # The PID or context may have disappeared by the next inspection.
+    def account(uid):
+        try:
+            return pwd.getpwuid(uid).pw_name
+        except KeyError:
+            return str(uid)
+    external_processes = [
+        dict(gpu=g, pid=p, uid=uid, account=account(uid), mib=m)
+        for g in cards for p,uid,m in rows.get(g, [])
+        if uid is not None and uid != ours and m >= MATERIAL_MIB
+    ]
+    reported_processes = [
+        dict(pid=p, uid=uid, account=account(uid), mib=round(peers[p]))
+        for p,uid in accounted.items() if uid is not None and uid != ours
+    ]
     return delay, dict(external=external,reason=reason,foreign_mib=foreign,
+                       external_processes=external_processes,reported_external_processes=reported_processes,
                        reported_foreign_mib=round(foreign_log),reported_unattributed_mib=round(unknown_log))
 

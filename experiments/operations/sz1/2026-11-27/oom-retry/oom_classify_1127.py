@@ -1,4 +1,4 @@
-"""Find explicit device-memory errors in one attempt's stdout/stderr lines."""
+"""Recognize GPU allocation errors and the native RoboTwin camera-buffer traceback."""
 
 from collections import deque
 from itertools import groupby
@@ -28,6 +28,12 @@ _OIDN = re.compile(
 )
 
 
+_CAMERA_FRAME = re.compile(r'/envs/camera/camera\.py", line \d+, in update_picture\s*$')
+_CAMERA_CALL = re.compile(r'\bself\.\w+\.take_picture\(\)\s*$')
+_ENV_WORKER = re.compile(r'ray::EnvWorker\.\w+\(\).*?pid=(\d+).*?EnvGroup\(rank=(\d+)\)')
+_NON_DEVICE_MEMORY = re.compile(r'VK_ERROR_(?:DEVICE_LOST|OUT_OF_HOST_MEMORY)|vk::(?:DeviceLost|OutOfHostMemory)Error', re.I)
+
+
 def find_gpu_oom(lines):
     """Return first explicit error and final 8 lines, or None; pass only this attempt.
 
@@ -36,15 +42,28 @@ def find_gpu_oom(lines):
     """
     tail = deque(maxlen=8)
     evidence = None
+    env_worker = None
+    conflicting_error = False
     for number, raw in enumerate(lines, 1):
         line = _ANSI.sub("", raw).rstrip("\r\n")
         tail.append(line[-1200:])
-        if evidence is not None:
+        if evidence is not None and evidence["kind"] != "robotwin_camera_buffer":
             continue
+        if "ray::EnvWorker." in line:
+            match = _ENV_WORKER.search(line)
+            env_worker = (number, int(match[1]), int(match[2])) if match else None
+        if _NON_DEVICE_MEMORY.search(line):
+            conflicting_error = True
         if _CUDA.search(line):
             kind = "cuda"
         elif _NAMED.search(line) and not any(t in line.lower() for t in ("enable checks","out of host memory","defaultcpuallocator")):
             kind = "vulkan" if any(t in line.lower() for t in ("vk::", "vulkan", "outofdevicememory")) else "cuda"
+        elif (line.endswith("RuntimeError: cannot create buffer") and len(tail) >= 3
+              and _CAMERA_FRAME.search(tail[-3]) and _CAMERA_CALL.search(tail[-2])):
+            evidence = dict(kind="robotwin_camera_buffer", line_number=number, line=line)
+            if env_worker and number - env_worker[0] <= 24:
+                evidence.update(worker_pid=env_worker[1], env_rank=env_worker[2])
+            continue
         elif _OIDN.search(line):
             kind = "oidn_renderer"
         else:
@@ -53,6 +72,8 @@ def find_gpu_oom(lines):
                 continue
             kind = "vulkan" if status["code"].upper().startswith("VK_") else "cuda"
         evidence = {"kind": kind, "line_number": number, "line": line}
+    if conflicting_error and evidence and evidence["kind"] == "robotwin_camera_buffer":
+        return None
     if evidence is not None:
         evidence["tail"] = list(tail)
     return evidence

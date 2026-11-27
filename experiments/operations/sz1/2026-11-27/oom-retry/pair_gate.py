@@ -15,7 +15,7 @@ import traceback
 
 QUEUE_OPS = os.environ.get("QUEUE_OPS", "")
 ACTIVE_INDEX = Path(os.environ.get("ACTIVE_RUN_INDEX", "active-runs.json"))
-from oom_classify_1127 import driver_failure, find_gpu_oom
+from oom_classify_1127 import STEP, UNRELATED, driver_failure, find_gpu_oom
 from oom_contention import retry_delay
 
 FORMAL_LOGS = ("formal-driver.log", "formal-retry.log")
@@ -26,6 +26,19 @@ UTC_STAMP = re.compile(r"(?<!\d)(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+
 def retry_transport(lines):
     _, oom, _, transport = driver_failure(lines)
     return transport and not oom
+
+
+def recoverable_native_error(lines):
+    """Only the two previously reproduced RoboTwin native signatures after the last round."""
+    cause, lost = None, False
+    for raw in lines:
+        if STEP.search(raw) or UNRELATED.search(raw):
+            cause, lost = None, False
+        elif "VK_ERROR_DEVICE_LOST" in raw or "vk::DeviceLostError" in raw:
+            lost = True
+        elif "Fatal Python error: PyGILState_Release" in raw or "RoboTwin simulator RPC exceeded" in raw:
+            cause = raw.strip()[-600:]
+    return None if lost else cause
 
 
 def log_positions(pair):
@@ -84,7 +97,7 @@ def oom_evidence(pair, positions, released, driver_started, kind=None, native_du
         st = path.stat()
         if st.st_mtime + 1 < driver_started:
             continue
-        step, match, rpc_failure, _ = driver_failure(appended_lines(path, positions))
+        step, match, rpc_failure, transport = driver_failure(appended_lines(path, positions))
         if match:
             retry_receipt = pair / "simulator-retry.json"
             first = pair / FORMAL_LOGS[0]
@@ -94,6 +107,12 @@ def oom_evidence(pair, positions, released, driver_started, kind=None, native_du
                     # This already-running owner used its internal transport retry for the same GPU OOM.
                     match["internal_oom_retry"] = step is None
             return {"log": name, **match}
+        if kind == "fastwam" and name == "formal-retry.log" and transport:
+            native_error = recoverable_native_error(appended_lines(path, positions))
+            if native_error:
+                # With no new round, the owner already used its one immediate transport restart.
+                return dict(kind="robotwin_native_restart", log=name, line=native_error,
+                            internal_oom_retry=step is None)
         if kind == "dojo" and rpc_failure and native_during_formal:
             for native in NATIVE_LOGS:
                 path = pair / native
@@ -269,6 +288,11 @@ def run_locked(gate, pair, kind):
                 same_step_retries, contention_streak = 0, 0
             last_step = step
             same_step_retries += int(bool(evidence.get("internal_oom_retry")))
+            rank = evidence.get("env_rank")
+            if kind == "fastwam" and rank in range(len(expected)):
+                placement = cfg.cluster.component_placement.get("actor, env, rollout")
+                if str(placement).replace(" ", "") == ",".join(map(str, expected)):
+                    evidence["physical_gpu"] = expected[rank]
             delay, attribution = retry_delay(evidence, expected, same_step_retries, contention_streak)
             if delay is None:
                 outcome = "RETRY_FINISHED" if attempts else "ORIGINAL_RELEASED"
