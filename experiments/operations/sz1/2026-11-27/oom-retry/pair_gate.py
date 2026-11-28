@@ -114,7 +114,10 @@ def oom_evidence(pair, positions, released, driver_started, kind=None, native_du
                 return dict(kind="robotwin_native_restart", log=name, line=native_error,
                             internal_oom_retry=step is None)
         if kind == "dojo" and rpc_failure and native_during_formal:
+            timed_out = re.search(r"Dojo step timed out on GPU (\d+)\b", rpc_failure, re.I)
             for native in NATIVE_LOGS:
+                if timed_out and native != f"native-g{timed_out[1]}.log":
+                    continue
                 path = pair / native
                 if path.is_file() and path.stat().st_mtime + 1 >= driver_started:
                     match = find_gpu_oom(native_lines(path, positions, step, checkpoint_root))
@@ -252,6 +255,26 @@ def run_locked(gate, pair, kind):
             time.sleep(.25)
         assert read(gate / "registered.json")["identity"] == own
         registered = True
+        policy_file = gate / "primary-policy.json"
+        primary = policy_file.is_file() and read(policy_file).get("mode") == "retry_original"
+        if primary:
+            from primary_retry_policy import failure_evidence, terminal_reason
+            follow = read(policy_file).get("previous_gate")
+            if follow:
+                state("FOLLOWING_EXISTING_GATE", previous=follow["identity"], owner=origin)
+                while same(follow["identity"]):
+                    time.sleep(2)
+                previous = Path(follow["release"])
+                if previous.exists() and read(previous).get("phase") == "OPERATOR_STOP":
+                    outcome = "OPERATOR_STOP"
+                    return
+                # An existing supervisor may have restarted the pair after we registered.
+                current = read(pair / "identity.json")
+                if current != origin:
+                    origin = current
+                    positions = {}
+                    started = next(int(s.split()[1]) for s in Path("/proc/stat").read_text().splitlines()
+                                   if s.startswith("btime ")) + origin["start"] / os.sysconf("SC_CLK_TCK")
         state("MONITORING_ORIGINAL", owner=origin)
         formal_path = pair / "formal-driver.log"
         native_during_formal = "formal-driver.log" in positions and formal_path.stat().st_mtime + 1 >= started
@@ -264,11 +287,23 @@ def run_locked(gate, pair, kind):
         attempts, same_step_retries, contention_streak, last_step = 0, 0, 0, None
         while True:
             assert read(pair / "identity.json") == origin
+            if primary and not (pair / "released.json").is_file():
+                while live_driver(pair, kind, read, same):
+                    state("WAIT_LIVE_ORPHAN_DRIVER", owner=origin)
+                    time.sleep(15)
             original_release = original_result(pair, kind, origin, state, read, same, save)
+            if primary:
+                reason = terminal_reason(original_release)
+                if reason:
+                    outcome = reason
+                    detail = {"result": original_release}
+                    return
             checkpoint_root = (Path(OmegaConf.load(pair / "config/formal.yaml").runner.resume_dir).parent
                                if kind == "dojo" else None)
             evidence = oom_evidence(pair, positions, original_release, started, kind, native_during_formal,
                                     checkpoint_root)
+            if primary and not evidence:
+                evidence = failure_evidence(original_release)
             if not evidence:
                 if attempts:
                     outcome = "RETRY_FINISHED"
@@ -293,7 +328,10 @@ def run_locked(gate, pair, kind):
                 placement = cfg.cluster.component_placement.get("actor, env, rollout")
                 if str(placement).replace(" ", "") == ",".join(map(str, expected)):
                     evidence["physical_gpu"] = expected[rank]
-            delay, attribution = retry_delay(evidence, expected, same_step_retries, contention_streak)
+            if primary:
+                delay, attribution = 0, {"reason": "retry_original_after_cleanup"}
+            else:
+                delay, attribution = retry_delay(evidence, expected, same_step_retries, contention_streak)
             if delay is None:
                 outcome = "RETRY_FINISHED" if attempts else "ORIGINAL_RELEASED"
                 detail.update(result=original_release, resume=step, reason=attribution)

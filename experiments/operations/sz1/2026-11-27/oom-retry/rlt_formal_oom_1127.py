@@ -81,11 +81,37 @@ def select_retry(config):
     return not bool(prior), None
 
 
+def socket_listening(path):
+    """Wait for the local simulator to listen without connecting to its RL protocol."""
+    if not path.is_socket():
+        return False
+    for line in Path("/proc/net/unix").read_text().splitlines()[1:]:
+        fields = line.split(maxsplit=7)
+        if len(fields) == 8 and fields[7] == str(path) and int(fields[3], 16) & 0x10000:
+            return True
+    return False
+
+
+def dojo_refused(lines):
+    from collections import deque
+    last = deque(maxlen=18)
+    for line in lines:
+        if "ConnectionRefusedError: [Errno 111] Connection refused" in line:
+            if any("robodojo_env.py" in prev and "in _rpc" in prev for prev in last):
+                return {"kind": "dojo_local_connection_refused", "line": line.strip()}
+        last.append(line)
+    return None
+
+
 def prepare_oom_retry(directory, output, native=None, *, budget=None, gpu=None, phase="formal"):
     """Return None for unrelated exits, False on handoff, True when a retry is ready."""
     from omegaconf import OmegaConf
     from common import save
     step, evidence, rpc, _ = driver_failure(read_attempt(output))
+    plan = directory / "plan.json"
+    immediate = plan.is_file() and json.loads(plan.read_text()).get("retry_sim_after_cleanup", False)
+    if immediate and native and not evidence:
+        evidence = dojo_refused(read_attempt(output))
     if not evidence and not (native and rpc):
         return None
     target = directory / "config/formal.yaml"
@@ -114,7 +140,10 @@ def prepare_oom_retry(directory, output, native=None, *, budget=None, gpu=None, 
     receipt = dict(time=time.time(), phase=phase, source=source,
                    checkpoint=str(checkpoint) if checkpoint else None, kind=evidence["kind"],
                    start="checkpoint" if checkpoint else "initial", error=evidence["line"][-500:])
-    if budget is not None:
+    if immediate and budget is not None:
+        receipt.update(delay_seconds=0, decision={"reason": "restart_after_cleanup"})
+        budget["delay"] = 0
+    elif budget is not None:
         from oom_contention import retry_delay
         key = (phase, receipt["checkpoint"])
         if budget.get("key") != key:

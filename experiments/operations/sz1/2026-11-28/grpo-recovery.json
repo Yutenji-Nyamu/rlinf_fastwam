@@ -1,0 +1,86 @@
+{
+  "as_of": "2026-11-28T11:36:45+08:00",
+  "dojo": {
+    "task": "put_bottles_into_dustbin",
+    "gpus": [
+      5,
+      6
+    ],
+    "restored_from": "original_pi05",
+    "completed_update": 1,
+    "checkpoint_two_ranks": true,
+    "checkpoint_written_at": "2026-11-28T11:33:27+08:00",
+    "training_episodes": 128,
+    "training_successes": 21,
+    "baseline": {
+      "successes": 21,
+      "episodes": 32
+    },
+    "actor_metrics": {
+      "actor/grad_norm": 13.432,
+      "actor/policy_loss": -0.022
+    },
+    "settings": {
+      "reward": "bottle_official",
+      "envs_per_gpu": 32,
+      "actor_micro_batch": 32,
+      "round_limit": 300
+    },
+    "handoff_time": "2026-11-28T10:19:59+08:00",
+    "successors": {
+      "5": [
+        "click_alarmclock"
+      ],
+      "6": [
+        "pour_liquid_into_cup",
+        "place_mouse_pad"
+      ]
+    }
+  },
+  "fastwam": {
+    "task": "turn_switch",
+    "gpus": [
+      4,
+      7
+    ],
+    "latest_complete_checkpoint": 145,
+    "evaluation_round": 145,
+    "successes": 15,
+    "episodes": 32
+  },
+  "recovery_rule": {
+    "failing_gpu": 5,
+    "simulator": "PhysX",
+    "error": "failed to allocate GPU memory",
+    "requested_bytes": 100000000,
+    "driver": "Dojo step timed out on GPU 5",
+    "tests": 6,
+    "replayed_real_failure": true
+  },
+  "queue": {
+    "fixed_wait_seconds": 0,
+    "retry_limit": null,
+    "clean_rlt_tasks": {
+      "5": [
+        "click_alarmclock"
+      ],
+      "6": [
+        "pour_liquid_into_cup",
+        "place_mouse_pad"
+      ],
+      "4": [
+        "move_can_pot",
+        "pick_diverse_bottles"
+      ],
+      "7": [
+        "pick_dual_bottles",
+        "place_dual_shoes"
+      ]
+    },
+    "replayed_failures": [
+      "robotwin_camera_buffer",
+      "dojo_local_connection_refused"
+    ],
+    "cpu_tests_immediate": 11
+  }
+}

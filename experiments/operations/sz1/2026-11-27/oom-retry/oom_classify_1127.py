@@ -64,6 +64,9 @@ def find_gpu_oom(lines):
             if env_worker and number - env_worker[0] <= 24:
                 evidence.update(worker_pid=env_worker[1], env_rank=env_worker[2])
             continue
+        elif ("[omni.physx.plugin]" in line and
+              "PhysX ABORT error: PhysX failed to allocate GPU memory - aborting simulation." in line):
+            kind = "physx_gpu_oom"
         elif _OIDN.search(line):
             kind = "oidn_renderer"
         else:
@@ -81,7 +84,7 @@ def find_gpu_oom(lines):
 
 RPC_FAILURE = re.compile(r"SimulatorTransportError|EOFError|BrokenPipeError|Connection(?:Reset|Refused|Aborted)Error|"
                          r"(?:RPC|socket|native server).{0,80}(?:timed out|timeout|disconnected|closed|reset|EOF)|"
-                         r"Connection reset by peer", re.IGNORECASE)
+                         r"TimeoutError:\s*Dojo step timed out on GPU \d+\b|Connection reset by peer", re.IGNORECASE)
 STEP = re.compile(r"│\s*Global Step:\s*(\d+)/\d+\s*│\s*Progress:")
 TRANSPORT_ERRORS = ("SimulatorTransportError:", "Fatal Python error: PyGILState_Release",
                     "RoboTwin simulator RPC exceeded")
@@ -107,7 +110,9 @@ def driver_failure(lines):
             def observed():
                 nonlocal rpc, transport
                 for line in segment:
-                    if not rpc and RPC_FAILURE.search(line):
+                    is_dojo_timeout = re.search(r"TimeoutError:\s*Dojo step timed out on GPU \d+\b", line)
+                    is_config = re.match(r"^\s*['\"]?(?:rpc|socket|native_server)_timeout['\"]?\s*[:=]\s*[0-9]", line, re.I)
+                    if is_dojo_timeout or (not rpc and not is_config and RPC_FAILURE.search(line)):
                         rpc = line.strip()[-800:]
                     if not transport and any(token in line for token in TRANSPORT_ERRORS):
                         transport = True

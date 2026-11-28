@@ -1,0 +1,106 @@
+--- a/tools/dsrl_rlt_warmstart/rlt_dojo_owner.py
++++ b/tools/dsrl_rlt_warmstart/rlt_dojo_owner.py
+@@ -180,26 +180,45 @@
+             str(gpu),
+         ] + command
++        from rlt_formal_oom_1127 import clear_inactive_socket, socket_listening
++        endpoint = d / f"rpc/gpu{gpu}.sock"
++        immediate = plan.get("retry_sim_after_cleanup", False)
++        ready = socket_listening if immediate else Path.exists
++
+         def start_native(name):
+-            native = launch(name, command, e, plan["native_repo"])
+-            status("NATIVE_STARTING", envs=plan["num_envs"])
+-            deadline = time.monotonic() + 600
+-            while not (d / f"rpc/gpu{gpu}.sock").exists():
+-                assert native.poll() is None, "Native exited during startup"
+-                with (d / f"{name}.log").open("rb") as stream:
+-                    stream.seek(max(0, stream.seek(0, 2) - 32768))
+-                    tail = stream.read()
+-                if any(
+-                    x in tail
+-                    for x in (
+-                        b"[Fatal]",
+-                        b"GPU crash detected",
+-                        b"ERROR_DEVICE_LOST",
+-                        b"gpu_crash_dump_",
+-                        b"Crash report files for upload",
+-                    )
+-                ):
+-                    raise RuntimeError("Isaac renderer fault; bounded attempt ends")
+-                assert time.monotonic() < deadline, "Native startup timeout"
+-                time.sleep(1)
++            while True:
++                if immediate:
++                    clear_inactive_socket(endpoint)
++                native = launch(name, command, e, plan["native_repo"])
++                try:
++                    status("NATIVE_STARTING", envs=plan["num_envs"])
++                    deadline = time.monotonic() + 600
++                    while not ready(endpoint):
++                        if native.poll() is not None:
++                            raise ConnectionError("Native exited during startup")
++                        with (d / f"{name}.log").open("rb") as stream:
++                            stream.seek(max(0, stream.seek(0, 2) - 32768))
++                            tail = stream.read()
++                        if any(
++                            x in tail
++                            for x in (
++                                b"[Fatal]",
++                                b"GPU crash detected",
++                                b"ERROR_DEVICE_LOST",
++                                b"gpu_crash_dump_",
++                                b"Crash report files for upload",
++                            )
++                        ):
++                            raise ConnectionError("Isaac renderer failed during startup")
++                        if time.monotonic() >= deadline:
++                            raise TimeoutError("Native startup timeout")
++                        time.sleep(1)
++                    break
++                except (ConnectionError, TimeoutError):
++                    if not immediate:
++                        raise
++                    if native.poll() is None:
++                        native.terminate()
++                    native.wait(timeout=30)
++                    name = f"native-g{gpu}-start-retry-{time.time_ns()}"
+             pid = read(d / f"native-g{gpu}-child.json")["pid"]
+             tree = ET.fromstring(subprocess.check_output(["nvidia-smi", "-q", "-x"]))
+@@ -218,7 +237,7 @@
+                 {"native": pid, "snapshot": gpus(), "residuals": residuals},
+             )
+-            return native
+-
+-        native = start_native(f"native-g{gpu}")
++            return native, name
++
++        native, initial_native_name = start_native(f"native-g{gpu}")
+         env = dict(os.environ, **read(d / "training-environment.json"))
+         def run_phase(name, phase):
+@@ -245,5 +264,5 @@
+                 from rlt_formal_oom_1127 import attempt_name, prepare_oom_retry, drain_formal, clear_inactive_socket
+                 attempt, budget = 0, {}
+-                native_name = f"native-g{gpu}"
++                native_name = initial_native_name
+                 while True:
+                     native_log = d / (native_name + ".log")
+@@ -257,10 +276,14 @@
+                         break
+                     drain_formal(d)
+-                    native.wait(timeout=15)
+-                    clear_inactive_socket(d / f"rpc/gpu{gpu}.sock")
+-                    time.sleep(budget["delay"])
++                    if immediate and native.poll() is None:
++                        native.terminate()
++                    native.wait(timeout=30 if immediate else 15)
++                    if not immediate:
++                        clear_inactive_socket(endpoint)
++                    if budget["delay"]:
++                        time.sleep(budget["delay"])
+                     attempt += 1
+                     native_name = attempt_name(f"native-g{gpu}", attempt)
+-                    native = start_native(native_name)
++                    native, native_name = start_native(native_name)
+                     status(name, started=time.time(), attempt=attempt + 1)
+             if code and phase["name"] in ("sac_v2", "environment_v2"):
