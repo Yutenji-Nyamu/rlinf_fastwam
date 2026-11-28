@@ -1,0 +1,134 @@
+{
+  "snapshot": "2026-11-28T13:10:13+08:00",
+  "physical_gpus": [
+    4,
+    7
+  ],
+  "preflight": {
+    "imports": true,
+    "inputs_valid": true
+  },
+  "smoke": {
+    "global_batch": 2,
+    "critic_updates": 1,
+    "fm_updates": 1,
+    "editor_updates": 1,
+    "temperature_updates": 1,
+    "oracle_qpos_max_abs": 0.0,
+    "normalize_roundtrip_max_abs": 2.384185791015625e-07,
+    "sampled_bf16_weights_changed": 17423,
+    "peak_reserved_gib": [
+      44.130859375,
+      28.232421875
+    ],
+    "peak_allocated_gib": [
+      42.865249156951904,
+      27.08015489578247
+    ],
+    "ode_batch_calibration": {
+      "ode_batch_per_gpu": 2,
+      "trials": [
+        {
+          "ode_batch_per_gpu": 2,
+          "median_seconds": 4.1274517249985365,
+          "timed_passes": 3,
+          "examples": 4,
+          "candidates": 32,
+          "peak_reserved_gib": [
+            35.85546875,
+            23.802734375
+          ],
+          "free_fraction_at_peak": [
+            0.3255174327626477,
+            0.29968857678046973
+          ],
+          "physical_qpos_max_abs": 0.0,
+          "physical_qpos_mean_abs": 0.0,
+          "relative_max": 0.0,
+          "matched_q_choices": 4,
+          "eligible": true
+        },
+        {
+          "ode_batch_per_gpu": 4,
+          "median_seconds": 1.9448279009957332,
+          "timed_passes": 3,
+          "examples": 4,
+          "candidates": 32,
+          "peak_reserved_gib": [
+            35.85546875,
+            23.8046875
+          ],
+          "free_fraction_at_peak": [
+            0.3255174327626477,
+            0.2996639095947644
+          ],
+          "physical_qpos_max_abs": 0.016001462936401367,
+          "physical_qpos_mean_abs": 0.0006849979399703443,
+          "relative_max": 0.006358345504850149,
+          "matched_q_choices": 4,
+          "eligible": false
+        },
+        {
+          "ode_batch_per_gpu": 8,
+          "median_seconds": 1.0190643889945932,
+          "timed_passes": 3,
+          "examples": 4,
+          "candidates": 32,
+          "peak_reserved_gib": [
+            36.20703125,
+            24.2265625
+          ],
+          "free_fraction_at_peak": [
+            0.32107733933568183,
+            0.29433579748240535
+          ],
+          "physical_qpos_max_abs": 0.016001462936401367,
+          "physical_qpos_mean_abs": 0.0008777502225711942,
+          "relative_max": 0.006358345504850149,
+          "matched_q_choices": 4,
+          "eligible": false
+        }
+      ]
+    },
+    "model_init_seconds": 209.96,
+    "eight_candidates_seconds": 5.18,
+    "update_seconds": 10.05,
+    "metrics": {
+      "critic_loss": 0.132506862282753,
+      "critic_grad_norm": 10.449782371520996,
+      "q_mean": 0.15353326499462128,
+      "target_mean": 0.048711199313402176,
+      "critic_global_batch": 2.0,
+      "critic_microbatches": 1.0,
+      "base/base_fm_loss": 1.858118548625498e-05,
+      "base/base_grad_norm": 0.007298560347408056,
+      "base/base_updates": 1.0,
+      "base/base_global_batch": 2.0,
+      "base/base_parallel_devices": 2.0,
+      "base/base_sampled_parameter_delta_max": 2.4605542421340942e-05,
+      "base/fm_callback_called": 1.0,
+      "editor_loss": 319.22723388671875,
+      "editor_grad_norm": 64.58086395263672,
+      "edit_q": -0.14539210498332977,
+      "entropy": -319.0818176269531,
+      "temperature_loss": 389.6893005371094,
+      "temperature": 0.9997000694274902,
+      "edit_norm": 2.3341150283813477,
+      "editor_global_batch": 2.0,
+      "editor_microbatches": 1.0,
+      "update_calls": 1.0,
+      "critic_steps": 1.0,
+      "editor_steps": 1.0,
+      "temperature_steps": 1.0
+    },
+    "pinned_runtime": {
+      "ode_batch_per_gpu": 2
+    }
+  },
+  "formal": {
+    "phase": "initializing",
+    "cadence": {
+      "version": 2
+    }
+  }
+}
