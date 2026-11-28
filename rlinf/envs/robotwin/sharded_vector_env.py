@@ -80,6 +80,13 @@ class ShardedVectorEnv:
                             first_index=start, n_envs=end-start, env_seeds=seeds[start:end], **kwargs)
             self.parts.append((start, end, worker))
 
+    @property
+    def env_thread_pool(self):
+        """The EXPO lifecycle joins outstanding work before offloading this vector."""
+        if self.pool is None:
+            self.pool = ThreadPoolExecutor(max_workers=len(self.parts), thread_name_prefix="robotwin-ipc")
+        return self.pool
+
     def _map(self, requests):
         if self.pool is None:
             self.pool = ThreadPoolExecutor(max_workers=len(self.parts), thread_name_prefix="robotwin-ipc")
@@ -140,7 +147,12 @@ class ShardedVectorEnv:
         if self.pool is None:
             return
         try:
-            self._map([(w.close, (clear_cache,)) for _, _, w in self.parts])
+            if self.pool._shutdown:
+                # A caller already joined the executor. Native RPC workers still need to close.
+                for _, _, worker in self.parts:
+                    worker.close(clear_cache)
+            else:
+                self._map([(w.close, (clear_cache,)) for _, _, w in self.parts])
         finally:
             if clear_cache:
                 self.pool.shutdown(wait=True)

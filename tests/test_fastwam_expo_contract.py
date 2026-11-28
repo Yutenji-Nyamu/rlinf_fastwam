@@ -14,7 +14,7 @@ import torch
 from PIL import Image
 from omegaconf import OmegaConf
 
-from rlinf.algorithms.expo_ft.formal_eval import evaluate
+from rlinf.algorithms.expo_ft.formal_eval import evaluate, fixed_noise_states
 from rlinf.algorithms.expo_ft.formal_replay import C, D, H, FormalReplay, batch_ready
 from rlinf.models.embodiment.fastwam.robotwin_adapter import compose_three_camera_image
 
@@ -39,10 +39,18 @@ class ModelStub:
     def sample_normalized(self, obs, num_candidates, generator):
         assert generator.device.type == 'cpu' and num_candidates == 8
         self.queries += 1
-        return torch.zeros(4, 8, H, D)
+        return torch.zeros(1, 8, H, D)
+
+    def check_shared_text_actions(self, obs, seed):
+        return {'max_error': 0.0}
+
+    def sample_base_eval(self, obs, generator):
+        assert generator.device.type == 'cpu' and len(obs['states'])==1
+        self.queries += 1
+        return torch.zeros(1,1,H,D)
 
     def decode(self, obs, actions):
-        assert actions.shape == (4, C, D)
+        assert actions.shape == (1, C, D)
         return actions
 
 
@@ -86,7 +94,7 @@ def check_eval(root,backend):
     path=root/'seeds.json'
     path.write_text(json.dumps({'turn_switch':{'success_seeds':list(range(20))}}))
     cfg=dict(_expo_seed_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),task_config=dict(task_name='turn_switch',step_lim=192),
-             total_num_envs=4,rollout_epoch=5,max_episode_steps=192,max_steps_per_rollout_epoch=192,
+             total_num_envs=1,rollout_epoch=20,max_episode_steps=192,max_steps_per_rollout_epoch=192,
              ignore_terminations=True,is_eval=True,video_cfg={})
 
     class EnvStub:
@@ -95,22 +103,35 @@ def check_eval(root,backend):
         def reset(self,env_seeds):
             self.seedblock=env_seeds
             self.steps=0
-            return image_obs(4),{}
+            return image_obs(1),{}
         def step(self,command,auto_reset):
-            assert not auto_reset and command.shape==(4,1,D)
+            assert not auto_reset and command.shape==(1,1,D)
             self.steps+=1
             assert self.steps<=192
             success=torch.tensor([s%2==0 and self.steps==192 for s in self.seedblock])
-            return self.obs,None,success,torch.full((4,),self.steps==192),{'success':success}
+            return self.obs,None,success,torch.full((1,),self.steps==192),{'success':success}
 
     env=EnvStub()
-    env.obs=image_obs(4)
+    env.obs=image_obs(1)
     learner=SimpleNamespace(generator=torch.Generator(),update_calls=1,select_actions=lambda obs,base:{'actions':base[:,0]})
+    for n in (1, 8):
+        states=fixed_noise_states(4,8,n,90042)
+        legacy=torch.Generator().manual_seed(90042)
+        single=torch.Generator()
+        for step in range(8):
+            orig=torch.randn(4,n,H,D,generator=legacy)
+            for case in range(4):
+                single.set_state(states[case,step])
+                assert torch.equal(orig[case],torch.randn(n,H,D,generator=single))
     backend.queries=0
     with patch('rlinf.algorithms.expo_ft.formal_eval.create_robotwin_env',return_value=env), \
          patch('rlinf.algorithms.expo_ft.formal_eval.close_robotwin_env'):
         r=evaluate(backend,learner,cfg,root/'eval',path)
-    assert (r['successes'],r['episodes'],backend.queries)==(10,20,5*8)
+        assert backend.queries == 20*8
+        backend.queries=0
+        rb=evaluate(backend,learner,cfg,root/'base',path,base_only=True)
+        assert rb['successes']==10
+    assert (r['successes'],r['episodes'],backend.queries)==(10,20,20*8)
     assert r['evaluation_physical_actions']==20*192 and all(row['physical_actions']==192 for row in r['rows'])
 
 
@@ -121,5 +142,5 @@ if __name__=='__main__':
         model=ModelStub()
         check_replay(root,model)
         check_eval(root,model)
-    print('PASS: official RGB equality; Q24/FM32 actual windows; 40 queries, 20 x 192 eval and last-step success')
+    print('PASS: official RGB equality; Q24/FM32 actual windows; 160 single-observation queries, 20 x 192 eval and last-step success')
 

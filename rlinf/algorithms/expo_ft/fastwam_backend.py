@@ -8,6 +8,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+from threading import Lock
 
 import torch
 from torch.nn import functional as F
@@ -55,7 +56,8 @@ class FastWAMBackend(Pi05Backend):
                            for i in range(parallel_devices)]
         self.policies = []
         self.experts = []
-        self.prompt_cache = [{} for _ in self.device_ids]
+        self.prompt_cache = {}
+        self.prompt_lock = Lock()
         self.critic_camera_keys = critic_camera_keys
         self.batch_cap = int(model_cfg.model_forward_batch_size)
         self.obs_batch = min(self.batch_cap, int(observation_microbatch))
@@ -64,13 +66,20 @@ class FastWAMBackend(Pi05Backend):
         self.fm_batch = min(self.batch_cap, int(fm_microbatch))
         if min(self.obs_batch, self.candidate_batch, self.fm_batch) < 1:
             raise ValueError("All microbatch sizes must be positive")
-        for dev in self.device_ids:
+        for rank, dev in enumerate(self.device_ids):
             with torch.cuda.device(dev):
-                policy = build_fastwam_policy(model_cfg, torch_dtype=torch.bfloat16)
+                policy = build_fastwam_policy(model_cfg, torch_dtype=torch.bfloat16,
+                                              load_text_encoder=rank == 0)
                 policy.model.device = dev
                 self.policies.append(policy)
                 self.experts.append({n: p for n, p in policy.model.named_parameters() if p.requires_grad})
         self.model = self.policies[0].model
+        text_weights = list(self.model.text_encoder.parameters())
+        self.text_receipt = dict(encoder_gib=sum(p.numel()*p.element_size() for p in text_weights)/2**30,
+                                 encoder_devices=sorted({str(p.device) for p in text_weights}),
+                                 text_encoders_per_replica=[int(p.model.text_encoder is not None)
+                                                            for p in self.policies])
+        print(json.dumps(dict(event="shared_text_encoder", **self.text_receipt)), flush=True)
         # Keep the released BF16 calculation identical to the GRPO evaluation.
         # Store the trainable action expert and Adam updates in FP32.
         self.trainable = {n: torch.nn.Parameter(p.detach().float().clone())
@@ -106,11 +115,14 @@ class FastWAMBackend(Pi05Backend):
         dev = self.device_ids[rank]
         image, state, prompts = adapt_robotwin_observation(
             obs, policy.processor, device=dev, dtype=policy.model_dtype)
-        texts = self.prompt_cache[rank]
-        for prompt in dict.fromkeys(prompts):
-            if prompt not in texts:
-                texts[prompt] = policy.model.encode_prompt([prompt])
-        context, mask = (torch.cat([texts[p][j] for p in prompts]) for j in (0, 1))
+        # A frozen encoder yields identical prompt features for every scene.
+        # A CPU cache also establishes completion on GPU0 before GPU1 copies a miss.
+        texts = self.prompt_cache
+        with self.prompt_lock, torch.cuda.device(self.device_ids[0]):
+            for prompt in dict.fromkeys(prompts):
+                if prompt not in texts:
+                    texts[prompt] = tuple(x.detach().cpu() for x in self.model.encode_prompt([prompt]))
+        context, mask = (torch.cat([texts[p][j] for p in prompts]).to(dev) for j in (0, 1))
         return build_action_conditioning(policy.model, input_image=image, text_context=context,
                                          text_context_mask=mask, proprio=state,
                                          action_horizon=self.HORIZON, tiled=policy.config.tiled)
@@ -156,6 +168,38 @@ class FastWAMBackend(Pi05Backend):
             jobs.append(self.pool.submit(self._predict, rank, obs, z))
         wait(jobs)
         return torch.cat([job.result().to(self.device) for job in jobs], dim=int(split_candidates))
+
+    @torch.no_grad()
+    def sample_base_eval(self, env_obs, generator=None, *, noise=None):
+        size = len(env_obs["states"])
+        if noise is None:
+            noise = torch.randn(size, 1, self.HORIZON, self.MODEL_DIM, generator=generator,
+                                dtype=torch.float32, device="cpu")
+        if noise.shape != (size, 1, self.HORIZON, self.MODEL_DIM):
+            raise ValueError("Expected pre-drawn base evaluation noise [B,1,32,14]")
+        return torch.cat([self._predict(0, _slice(env_obs, i, i+1), noise[i:i+1])
+                          for i in range(size)])
+
+    @torch.no_grad()
+    def check_shared_text_actions(self, first_obs, seed=0):
+        """Check the actual selected 24-dimensional-time prefix on an evaluation observation."""
+        obs = _slice(first_obs, 0, 1)
+        with torch.cuda.device(self.device_ids[0]):
+            policy = self.policies[0]
+            image, state, prompts = adapt_robotwin_observation(obs, policy.processor,
+                                                  device=self.device, dtype=policy.model_dtype)
+            native = self.model.infer_action(prompt=prompts[0], input_image=image,
+                                              action_horizon=self.HORIZON, proprio=state, seed=seed,
+                                              num_inference_steps=policy.config.num_inference_steps,
+                                              sigma_shift=policy.config.sigma_shift, rand_device="cpu")["action"]
+            actual = self.sample_base_eval(obs, torch.Generator().manual_seed(seed))[:, 0]
+            oracle = self.decode(obs, native[:self.CHUNK].unsqueeze(0))
+            difference = (self.decode(obs, actual[:, :self.CHUNK]) - oracle).abs()
+            maximum = difference.max().item()
+            if maximum > .002:
+                raise RuntimeError(f"Shared encoder differs from FastWAM oracle by {maximum:.6g}")
+            return dict(oracle_qpos_max_abs=maximum, oracle_qpos_mean_abs=difference.mean().item(),
+                        **self.text_receipt)
 
     def decode(self, env_obs, normalized_chunk):
         chunk = normalized_chunk.detach().cpu().float()

@@ -1,5 +1,5 @@
 {
-  "snapshot": "2026-11-28T13:10:13+08:00",
+  "snapshot": "2026-11-28T13:37:43+08:00",
   "physical_gpus": [
     4,
     7
@@ -125,10 +125,21 @@
       "ode_batch_per_gpu": 2
     }
   },
-  "formal": {
-    "phase": "initializing",
-    "cadence": {
-      "version": 2
-    }
+  "formal": {},
+  "version_status": {
+    "tested_gpu_smoke": "initial two-text-encoder model; the GPU action parity, tensors, parameter update and microbatch timing above are from this version",
+    "latest_deployment": {
+      "text_encoder": "single shared text encoder",
+      "initial_eval": {
+        "episodes": 20,
+        "parallel": 1,
+        "steps": 192,
+        "noise_seed": 90042
+      },
+      "native_adapter": "single shard default and compatible shutdown"
+    },
+    "latest_formal_result": "pending new native evaluation and optimizer update",
+    "scheduler": "EXPO is first on GPUs 4 and 7; CPU waiter waits for the previous owned worker group to exit before starting the replacement",
+    "incident": "Administrator inspection found several clients waiting in NVIDIA rmapiLockAcquire. Other active GPU workloads also have device handles. A non-disruptive local reset was unavailable. No host reboot was performed."
   }
 }

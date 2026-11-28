@@ -186,7 +186,7 @@ def assert_model_inventory(model: torch.nn.Module) -> dict[str, list[str]]:
 
 
 def _validate_official_contract(
-    model, processor, cfg: DictConfig, official_cfg
+    model, processor, cfg: DictConfig, official_cfg, *, load_text_encoder: bool = True
 ) -> None:
     action_dim = int(_cfg_get(cfg, "action_dim", 14))
     action_horizon = int(_cfg_get(cfg, "action_horizon", 32))
@@ -220,7 +220,7 @@ def _validate_official_contract(
         raise ValueError("Fast-WAM RoboTwin proprio encoder must consume 14D qpos")
     if int(model.text_dim) != 4096:
         raise ValueError("Pinned Fast-WAM text context width must be 4096")
-    if model.tokenizer is None or int(model.tokenizer.seq_len) != 128:
+    if load_text_encoder and (model.tokenizer is None or int(model.tokenizer.seq_len) != 128):
         raise ValueError("Pinned Fast-WAM tokenizer length must be 128")
 
     state_meta = list(processor.shape_meta["state"])
@@ -238,6 +238,7 @@ def _validate_official_contract(
 def build_fastwam_policy(
     cfg: DictConfig,
     torch_dtype: torch.dtype | None = None,
+    *, load_text_encoder: bool = True,
 ):
     """Instantiate official Fast-WAM, canonicalize it and wrap it for RLinf."""
 
@@ -268,7 +269,7 @@ def build_fastwam_policy(
         raise FileNotFoundError(f"Fast-WAM dataset stats not found: {stats_path}")
 
     official_cfg = compose_official_robotwin_cfg(cfg)
-    official_cfg.model.load_text_encoder = True
+    official_cfg.model.load_text_encoder = load_text_encoder
     if torch_dtype is None:
         torch_dtype = torch.bfloat16
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -282,7 +283,8 @@ def build_fastwam_policy(
 
     processor = instantiate(official_cfg.data.train.processor).eval()
     processor.set_normalizer_from_stats(load_dataset_stats_from_json(str(stats_path)))
-    _validate_official_contract(model, processor, cfg, official_cfg)
+    _validate_official_contract(model, processor, cfg, official_cfg,
+                                load_text_encoder=load_text_encoder)
     canonicalize_fastwam_module_tree(model)
     freeze_action_only(model)
     inventory = assert_model_inventory(model)

@@ -83,7 +83,7 @@ class RoboTwinEnv(gym.Env):
 
         from functools import partial
         from rlinf.envs.robotwin.sharded_vector_env import ShardedVectorEnv
-        VectorEnv = partial(ShardedVectorEnv, shards=self.cfg.native_shards)
+        VectorEnv = partial(ShardedVectorEnv, shards=self.cfg.get('native_shards', 1))
 
         env_seeds = self.reset_state_ids.tolist()
 
