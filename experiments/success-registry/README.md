@@ -2,6 +2,10 @@
 
 按实验查实际配置、学习器源码、独立评估和检查点。本文整理深圳系列中已登记的成功对照，覆盖 2026 年 8–11 月本轮核对的记录。链接固定到对应提交。
 
+## RoboTwin 2.0 · FastWAM GRPO 拨开关
+
+原模型 13/32，第 130 轮 21/32；后段有所回落。[配置、实现、训练与评估曲线、推理权重和续训点](fastwam-grpo-turn-switch/README.md)。
+
 ## RoboTwin 2.0 · π0.5 clean RLT
 
 11 月 26 日覆盖表标记了 8 个成功任务。各行保留原评估局数与训练分段。[50 项 RT2 任务逐评数据](https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/dbf2e488f41ba9ffe1489b653d1f7a0f0e1ecd83/experiments/rt2-fastwam-switch-192/microbatch-resume/clean-coverage.json) · [1 机逐轮曲线](https://github.com/Yutenji-Nyamu/rlinf_fastwam/blob/dbf2e488f41ba9ffe1489b653d1f7a0f0e1ecd83/experiments/rt2-fastwam-switch-192/microbatch-resume/rlt-series.json)
